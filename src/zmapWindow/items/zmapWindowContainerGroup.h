@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 20 11:13 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.9 2010-05-24 14:24:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.10 2010-06-08 08:31:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_H
@@ -50,7 +50,7 @@
 /*!
  * ZMapWindowContainerGroup for containing and positioning of canvas items.
  * Each ZMapWindowContainerGroup consists of:
- * 
+ *
  *               -------- parent_group -----------
  *              /         /        \              \
  *             /         /          \              \
@@ -74,14 +74,14 @@
  * group then we make a container root, i.e. the top of the container tree.
  *
  * The new object code means that each container member including the member itself
- * has a G_TYPE*  This means code that does ZMAP_IS_CONTAINER_GROUP(pointer) is 
- * simpler and hopefully more readable.  
+ * has a G_TYPE*  This means code that does ZMAP_IS_CONTAINER_GROUP(pointer) is
+ * simpler and hopefully more readable.
  *
  * The ZMapWindowContainerGroup are sub classes of FooCanvasGroup and implement the
  * FooCanvasItem interface (draw, update, bounds, etc...).  The update code takes
- * care of cropping the Container "owned" items, such as the background and any 
- * overlays/underlays that might be being drawn.  It also includes hooks to 
- * provide similar functionality to the ContainerExecute callbacks.  These are 
+ * care of cropping the Container "owned" items, such as the background and any
+ * overlays/underlays that might be being drawn.  It also includes hooks to
+ * provide similar functionality to the ContainerExecute callbacks.  These are
  * attached/owned by each specific container so only get called by the container
  * they relate to.  This again leads to simpler code, without the switch on the
  * container level.
@@ -96,8 +96,14 @@
 
 
 #define ZMAP_TYPE_CONTAINER_GROUP           (zmapWindowContainerGroupGetType())
+
+#if GOBJ_CAST
+#define ZMAP_CONTAINER_GROUP(obj)       ((ZMapWindowContainerGroup) obj)
+#define ZMAP_CONTAINER_GROUP_CONST(obj)     ((ZMapWindowContainerGroup const) obj)
+#else
 #define ZMAP_CONTAINER_GROUP(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroup))
 #define ZMAP_CONTAINER_GROUP_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroup const))
+#endif
 #define ZMAP_CONTAINER_GROUP_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroupClass))
 #define ZMAP_IS_CONTAINER_GROUP(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_GROUP))
 #define ZMAP_CONTAINER_GROUP_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroupClass))
@@ -126,7 +132,7 @@ typedef struct _zmapWindowContainerGroupStruct  zmapWindowContainerGroup, *ZMapW
 typedef struct _zmapWindowContainerGroupClassStruct  zmapWindowContainerGroupClass, *ZMapWindowContainerGroupClass ;
 
 
-typedef gboolean (* ZMapWindowContainerUpdateHook)(ZMapWindowContainerGroup group_updated, 
+typedef gboolean (* ZMapWindowContainerUpdateHook)(ZMapWindowContainerGroup group_updated,
 						   FooCanvasPoints         *group_bounds,
 						   ZMapContainerLevelType   group_level,
 						   gpointer                 user_data);
@@ -147,7 +153,7 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible);
 void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container);
 void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height);
-void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container, 
+void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container,
 						 gboolean redraw_required);
 void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup container,
 						 GdkColor *new_colour);

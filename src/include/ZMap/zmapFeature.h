@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar  3 13:40 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.174 2010-04-22 14:31:52 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.175 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -410,6 +410,8 @@ typedef struct ZMapFeatureSetStruct_
 							       set of ZMapFeatureStruct. */
   char *description ;					    /* As it says... */
 
+  ZMapFeatureTypeStyle style;
+
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -546,8 +548,12 @@ typedef struct ZMapFeatureStruct_
 							       "trans_splice_acceptor_site", this
 							       might be recognised SO term or not. */
 
+      // style id tp be removed when style fully working
   GQuark style_id ;					    /* Style defining how this feature is processed.
 							       (use Styles _unique_ id.) */
+
+  ZMapFeatureTypeStyle style;                   // pointer to the style structure
+
 
   /* coords are _always_ with reference to forward strand, i.e. x1 <= x2, strand flag gives the
    * strand of the feature. */
@@ -685,7 +691,7 @@ typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 char   **error);
 
 typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
-					       GData         *styles,
+					       GHashTable    *styles,
 					       GString       *dump_string_in_out,
 					       GError       **error,
 					       gpointer       user_data);
@@ -697,7 +703,7 @@ ZMapFeatureAny zMapFeatureAnyCreate(ZMapStyleMode feature_type) ;
 ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
 gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id) ;
-gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *styles) ;
+gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
@@ -773,7 +779,7 @@ gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
-void     zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles) ;
+void     zMapFeatureReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
@@ -926,35 +932,35 @@ char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
-gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *styles) ;
+gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 
 /* Probably should be merged at some time.... */
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GData *styles, GError **error_out) ;
-gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename,char *header, GData *styles, GError **error_out);
-gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GData *styles,
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename,char *header, GHashTable *styles, GError **error_out);
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,
 				GIOChannel *file, GError **error_out) ;
 
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
-				      GData *styles,
+				      GHashTable *styles,
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
 				      GError                   **dump_error_out);
 gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
-					   GData                     *styles,
+					   GHashTable                     *styles,
 					   ZMapSpan                   span_data,
 					   ZMapFeatureDumpFeatureFunc dump_func,
 					   gpointer                   dump_user_data,
 					   GIOChannel                *dump_file,
 					   GError                   **dump_error_out) ;
 gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
-				   GData *styles,
+				   GHashTable *styles,
 				   ZMapFeatureDumpFeatureFunc dump_func,
 				   gpointer                   dump_user_data,
 				   GIOChannel                *dump_file,
 				   GError                   **dump_error_out);
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
-					    GData *styles,
+					    GHashTable *styles,
 					    gpointer                   dump_user_data,
 					    GDestroyNotify             dump_user_free,
 					    GIOChannel                *dump_file,

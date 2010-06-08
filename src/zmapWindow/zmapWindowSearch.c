@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,12 +25,12 @@
  * Description: Implements a search window which allows a user to
  *              specify align, block, set and feature patterns to
  *              find sets of features.
- *              
+ *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
  * Last edited: Jun 12 08:58 2009 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.42 2010-03-04 15:13:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.43 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@ typedef struct
   ZMapWindow window ;
   FooCanvasItem *feature_item ;
   ZMapFeatureAny feature_any ;
-  GData *styles ;
+  GHashTable *styles ;
 
   GHashTable *context_to_item;
   ZMapWindowListGetFToIHash get_hash_func;
@@ -135,15 +135,15 @@ static void setFilterDefaults(SearchData search_data) ;
 static void addToComboBoxText(gpointer list_data, gpointer combo_data);
 static void addToComboBoxQuark(gpointer list_data, gpointer combo_data);
 static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks);
-static void fetchAllComboLists(ZMapFeatureAny feature_any, 
+static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
                                GList **set_list_out);
-static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data, 
+static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data,
                                                         gpointer user_data, char **err_out);
 
-static GList *getStyleQuarks(GData *styles) ;
-static void getQuark(GQuark style_id, gpointer data, gpointer user_data) ;
+static GList *getStyleQuarks(GHashTable *styles) ;
+static void getQuark(gpointer key, gpointer data, gpointer user_data) ;
 
 gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
 
@@ -166,7 +166,7 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
 }
 
 
-void zmapWindowCreateSearchWindow(ZMapWindow                window, 
+void zmapWindowCreateSearchWindow(ZMapWindow                window,
 				  ZMapWindowListGetFToIHash get_hash_func,
 				  gpointer                  get_hash_data,
 				  FooCanvasItem            *feature_item)
@@ -231,9 +231,9 @@ void zmapWindowCreateSearchWindow(ZMapWindow                window,
 
   buttonBox = gtk_hbutton_box_new();
   gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
-  gtk_box_set_spacing (GTK_BOX(buttonBox), 
+  gtk_box_set_spacing (GTK_BOX(buttonBox),
                        ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-  gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
+  gtk_container_set_border_width (GTK_CONTAINER (buttonBox),
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
   search_button = gtk_button_new_with_label("Search") ;
@@ -245,7 +245,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow                window,
   gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
 
   frame = gtk_frame_new("") ;
-  gtk_container_set_border_width(GTK_CONTAINER(frame), 
+  gtk_container_set_border_width(GTK_CONTAINER(frame),
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
 
@@ -381,7 +381,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *combo ;
   ZMapFeatureContext context ;
-  GData *styles ;
+  GHashTable *styles ;
   GList *style_quarks ;
 
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
@@ -389,7 +389,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
   search_data->styles = styles = search_data->window->read_only_styles ;
   style_quarks = getStyleQuarks(styles) ;
- 
+
 
   setFilterDefaults(search_data) ;
 
@@ -569,7 +569,7 @@ static GQuark entry_get_text_quark(GtkEntry *entry, char *wildcard)
   else if((entry_text = g_strdup(entry_text)))
     {
       entry_text = g_strstrip(entry_text);
-      
+
       entry_quark = g_quark_from_string(entry_text);
 
       /* The Quark table has a reference to this now... Free it. */
@@ -580,11 +580,11 @@ static GQuark entry_get_text_quark(GtkEntry *entry, char *wildcard)
 }
 
 /* return either usable, wildcard or canonicalized(user_set) */
-static GQuark manage_quark_from_entry(GQuark user_set, GQuark original, 
+static GQuark manage_quark_from_entry(GQuark user_set, GQuark original,
 				      GQuark usable,   GQuark wildcard)
 {
   GQuark managed_quark = 0;
-  
+
   managed_quark = user_set;
 
   if(managed_quark == original)
@@ -615,7 +615,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
   char *style_text ;
-  
+
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
@@ -636,11 +636,11 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   /* Needed in more than one place. */
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
   end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
-  
+
   if((align_id = entry_get_text_quark(GTK_ENTRY(search_data->align_entry), wild_card_str)) != 0)
     {
       /* fix up align_id */
-      align_id = manage_quark_from_entry(align_id, search_data->align_original_id, 
+      align_id = manage_quark_from_entry(align_id, search_data->align_original_id,
 					 search_data->align_id, wild_card_id);
 
       /* fix up block_id */
@@ -654,7 +654,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	    {
 	      set_id = manage_quark_from_entry(set_id, search_data->set_original_id,
 					       search_data->set_id, wild_card_id);
-	      
+
 	      /* fix up feature_id */
 	      if((feature_id = entry_get_text_quark(GTK_ENTRY(search_data->feature_entry), wild_card_str)) != 0)
 		{
@@ -718,7 +718,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       search_pred_ptr   = &search_pred ;
 
       search_pred.start = atoi(start_txt) ;
-  
+
       search_pred.end   = atoi(end_text) ;
 
       search_pred.locus = locus ;
@@ -778,9 +778,9 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  char *title = NULL;
 	  title = g_strdup_printf("Results '%s'", feature_txt);
-	  zmapWindowListWindow(search_data->window, 
+	  zmapWindowListWindow(search_data->window,
 			       NULL, title,
-			       search_data->get_hash_func, 
+			       search_data->get_hash_func,
 			       search_data->get_hash_data,
 			       NULL, NULL, NULL,
 			       zoom_to_item);
@@ -789,7 +789,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	}
       else
 	{
-	  zMapMessage("Sorry, list windows of %ss within a feature context not currently supported.", 
+	  zMapMessage("Sorry, list windows of %ss within a feature context not currently supported.",
 		      zMapFeatureStructType2Str(any_feature->struct_type)) ;
 	}
 
@@ -803,7 +803,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       SearchPredCBData search_pred_data = NULL ;
       gboolean zoom_to_item = TRUE;
       char *title = NULL;
-	
+
       title = g_strdup_printf("Results '%s'", feature_txt);
 
       if(callback && search_pred_ptr)
@@ -1078,7 +1078,7 @@ static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks)
   return combo;
 }
 
-static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data, 
+static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data,
                                                         gpointer user_data, char **err_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
@@ -1114,7 +1114,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
   return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
-static void fetchAllComboLists(ZMapFeatureAny feature_any, 
+static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
                                GList **set_list_out)
@@ -1136,7 +1136,7 @@ static void addToComboBoxText(gpointer list_data, gpointer combo_data)
 {
   GtkWidget *combo = (GtkWidget *)combo_data;
   char *text = (char *)list_data;
-  
+
   gtk_combo_box_append_text(GTK_COMBO_BOX(combo), text);
 
   return ;
@@ -1147,7 +1147,7 @@ static void addToComboBoxQuark(gpointer list_data, gpointer combo_data)
   GtkWidget *combo = (GtkWidget *)combo_data;
   GQuark textId = GPOINTER_TO_UINT(list_data);
   const char *text = NULL;
-  
+
   if(textId)
     {
       text = g_quark_to_string(textId);
@@ -1248,18 +1248,18 @@ static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data)
 
 
 
-static GList *getStyleQuarks(GData *styles)
+static GList *getStyleQuarks(GHashTable *styles)
 {
   GList *style_quarks = NULL ;
 
-  g_datalist_foreach(&styles, getQuark, &style_quarks) ;
+  g_hash_table_foreach(styles, getQuark, &style_quarks) ;
 
   return style_quarks ;
 }
 
 
 
-static void getQuark(GQuark style_id, gpointer data, gpointer user_data)
+static void getQuark(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   GList *style_quarks = *((GList **)user_data) ;

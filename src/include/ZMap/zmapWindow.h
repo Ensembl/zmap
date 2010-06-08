@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,11 +24,11 @@
  *
  * Description: Defines interface to code that creates/handles a
  *              window displaying genome data.
- *              
+ *
  * HISTORY:
  * Last edited: May  5 17:27 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.110 2010-05-06 11:58:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.111 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -134,13 +134,13 @@ typedef struct
 
 
 
-/* 
+/*
  * THIS IS GOING BACK TO HOW I ORIGINALLY ENVISAGED THE CALLBACK SYSTEM WHICH WAS AS A COMMAND
  * FIELD FOLLOWED BY DIFFERENT INFO. STRUCTS...I.E. LIKE THE SIGNAL INTERFACE OF GTK ETC...
- * 
+ *
  * Data returned by the "command" callback, note all command structs must start with the
  * CommandAny fields.
- * 
+ *
  */
 
 typedef enum
@@ -225,12 +225,12 @@ typedef struct _ZMapWindowCallbacksStruct
 
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
-ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, 
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             char *sequence, void *app_data,
                             GList *feature_set_names) ;
-ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
+ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 			  void *app_data, ZMapWindow old,
-			  ZMapFeatureContext features, GData *all_styles, GData *new_styles,
+			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
 			  ZMapWindowLockType window_locking) ;
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
@@ -244,16 +244,16 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-			   GData *all_styles, GData *new_styles,
+			   GHashTable *all_styles, GHashTable *new_styles,
 			   GHashTable *new_featuresets_2_stylelist) ;
-void zMapWindowUnDisplayData(ZMapWindow window, 
+void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     GData *all_styles, GData *new_styles,
+			     GHashTable *all_styles, GHashTable *new_styles,
 			     gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
@@ -266,7 +266,7 @@ double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
 
 gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-				   double rootx1, double rooty1, 
+				   double rootx1, double rooty1,
                                    double rootx2, double rooty2);
 
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
@@ -274,7 +274,7 @@ gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
 void zMapWindowToggle3Frame(ZMapWindow window) ;
-void zMapWindowToggleDNAProteinColumns(ZMapWindow window, 
+void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
                                        gboolean dna,      gboolean protein,
                                        gboolean force_to, gboolean force);
@@ -289,8 +289,8 @@ void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in
 /* Remove this to use Ed's version */
 //PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window);
 #endif
-PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window, 
-                                                          double *width_out, 
+PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
+                                                          double *width_out,
                                                           double *height_out);
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
@@ -307,7 +307,7 @@ gboolean zMapWindowPrint(ZMapWindow window) ;
 FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 			      FooCanvasGroup *feature_group, ZMapFeature feature) ;
 FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
-                                       FooCanvasGroup *block_group, 
+                                       FooCanvasGroup *block_group,
                                        char *feature_set_name) ;
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 					FooCanvasItem *curr_feature_item,
@@ -335,10 +335,10 @@ void zMapWindowMergeInFeatureSetNames(ZMapWindow window, GList *feature_set_name
 GList *zMapWindowGetSpawnedPIDList(ZMapWindow window);
 void zMapWindowDestroy(ZMapWindow window) ;
 
-void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window, 
-                                      ZMapGUIMenuItem each_align, 
-                                      ZMapGUIMenuItem each_block, 
-                                      char *root, 
+void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
+                                      ZMapGUIMenuItem each_align,
+                                      ZMapGUIMenuItem each_block,
+                                      char *root,
                                       GArray **items_array_out);
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);

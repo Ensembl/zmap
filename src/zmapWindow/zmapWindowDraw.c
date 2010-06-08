@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:52 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.123 2010-05-26 12:02:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.124 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,7 @@ typedef struct execOnChildrenStruct_
 } execOnChildrenStruct, *execOnChildren ;
 
 
+#if 0
 /* For 3 frame display/normal display. */
 typedef struct
 {
@@ -83,7 +84,7 @@ typedef struct
 
   ZMapFeatureTypeStyle style;
 } RedrawDataStruct, *RedrawData ;
-
+#endif
 
 
 typedef struct
@@ -103,7 +104,7 @@ typedef struct
 
   /* Records which alignment, block, set, type we are processing. */
   ZMapFeatureContext full_context ;
-  GData *styles ;
+  GHashTable *styles ;
   ZMapFeatureAlignment curr_alignment ;
   ZMapFeatureBlock curr_block ;
   ZMapFeatureSet curr_set ;
@@ -168,6 +169,7 @@ void zMapWindowToggle3Frame(ZMapWindow window)
 
   zMapWindowBusy(window, TRUE) ;
 
+  zMapStartTimer("3Frame" ,window->display_3_frame ? "off" : "on");
       // yuk...
   three_frame_id = GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME));
   three_frame_Id = GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME));
@@ -184,11 +186,13 @@ void zMapWindowToggle3Frame(ZMapWindow window)
 
       // remove always columns or 3-frame depending on mode
       zmapWindowDrawRemove3FrameFeatures(window);
+      zMapStopTimer("3FrameRemove","");
 
       window->display_3_frame = !window->display_3_frame;
 
       // draw always columns or 3-frame depending on mode
       zmapWindowDraw3FrameFeatures(window);
+      zMapStopTimer("3FrameDraw","");
 
      /* Now we've drawn all the features we can position them all. */
      zmapWindowColOrderColumns(window);
@@ -199,6 +203,8 @@ void zMapWindowToggle3Frame(ZMapWindow window)
     }
   else
     zMapWarning("%s", "No '" ZMAP_FIXED_STYLE_3FRAME "' column in config file.");
+
+  zMapStopTimer("3Frame" ,window->display_3_frame ? "off" : "on");
 
   zMapWindowBusy(window, FALSE) ;
 
@@ -245,10 +251,12 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
  *
  *  */
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
+                        // new_col_state = NULL if new (empty) column
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
   ZMapWindowContainerFeatureSet container;
   ZMapStyleColumnDisplayState curr_col_state ;
+  gboolean test_mag = TRUE;
 
   container = (ZMapWindowContainerFeatureSet)column_group;
 
@@ -260,8 +268,14 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       gboolean redraw = FALSE ;
 
       if (!new_col_state)
-	new_col_state = curr_col_state ;
+        {
+          test_mag = FALSE;
+          // we are creating the column: mag not vis due to no features
+          // but we still want it to be visible
+          // a bit hacky, but less grief than adding a new flag
 
+	    new_col_state = curr_col_state ;
+        }
       switch(new_col_state)
 	{
 	case ZMAPSTYLE_COLDISPLAY_HIDE:
@@ -276,21 +290,11 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  {
 	    gboolean mag_visible, frame_visible ;
 
-	    mag_visible = zmapWindowColumnIsMagVisible(window, column_group) ;
+// ha ha ... this runs nearly 2x slower and we get blank columns
+//	    mag_visible = test_mag ? zmapWindowColumnIsMagVisible(window, column_group) : TRUE ;
+          mag_visible = zmapWindowColumnIsMagVisible(window, column_group);;
 
 	    frame_visible = zmapWindowColumnIs3frameVisible(window, column_group) ;
-
-
-	    if (mag_visible && frame_visible)
-	      {
-		zmapWindowContainerSetVisibility(column_group, TRUE) ;
-		redraw = TRUE;
-	      }
-	    else if (!mag_visible || !frame_visible)
-	      {
-		zmapWindowContainerSetVisibility(column_group, FALSE) ;
-		redraw = TRUE;
-	      }
 
 
 	    /* Check mag, mark, compress etc. etc....probably need some funcs in compress/mark/mag
@@ -319,14 +323,14 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	    break ;
 	  }
 	}
-
+      zMapStopTimer("DrawFeatureSet","SetVis");
       /* Set the new display for the column _and_ all styles within the column. */
       zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
 
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
-	zmapWindowFullReposition(window) ;
+            zmapWindowFullReposition(window) ;
     }
 
 

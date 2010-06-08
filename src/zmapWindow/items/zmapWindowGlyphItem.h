@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 14:45 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.6 2010-04-15 11:19:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.7 2010-06-08 08:31:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,14 @@
 #define ZMAP_WINDOW_GLYPH_ITEM_NAME "ZMapWindowGlyphItem"
 
 #define ZMAP_TYPE_WINDOW_GLYPH_ITEM           (zMapWindowGlyphItemGetType())
+
+#if GOBJ_CAST
+#define ZMAP_WINDOW_GLYPH_ITEM(obj)       ((ZMapWindowGlyphItem) obj)
+#define ZMAP_WINDOW_GLYPH_ITEM_CONST(obj) ((ZMapWindowGlyphItem const) obj)
+#else
 #define ZMAP_WINDOW_GLYPH_ITEM(obj)	      (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_GLYPH_ITEM, zmapWindowGlyphItem))
 #define ZMAP_WINDOW_GLYPH_ITEM_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_GLYPH_ITEM, zmapWindowGlyphItem const))
+#endif
 #define ZMAP_WINDOW_GLYPH_ITEM_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_GLYPH_ITEM, zmapWindowGlyphItemClass))
 #define ZMAP_IS_WINDOW_GLYPH_ITEM(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_GLYPH_ITEM))
 #define ZMAP_WINDOW_GLYPH_ITEM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_GLYPH_ITEM, zmapWindowGlyphItemClass))

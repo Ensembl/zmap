@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Nov 19 15:23 2009 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.10 2010-03-04 15:10:35 mh17 Exp $
+ * CVS info:   $Id: gffparser.c,v 1.11 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@ typedef struct
 
 
 
-static int parseFile(char *filename, GData *styles) ;
+static int parseFile(char *filename, GHashTable *styles) ;
 static GIOChannel *openFileOrDie(char *filename) ;
 static int readHeader(parserFile data) ;
 static gboolean readFeatures(parserFile data) ;
@@ -59,7 +59,7 @@ static gboolean readFeatures(parserFile data) ;
 int main(int argc, char *argv[])
 {
   int main_rc ;
-  GData *styles = NULL;
+  GHashTable *styles = NULL;
 
 #if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
 #error "Cannot compile, threads not properly enabled."
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     g_thread_init(NULL);
 
   zMapConfigDirCreate(NULL, NULL) ;
-  
+
   zMapLogCreate(NULL) ;
 
   zMapConfigIniGetStylesFromFile(argv[2],argv[3],&styles);     //  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
@@ -85,12 +85,12 @@ int main(int argc, char *argv[])
 
 
 
-/* 
- *                  Internal routines. 
+/*
+ *                  Internal routines.
  */
 
 
-static int parseFile(char *filename, GData *styles)
+static int parseFile(char *filename, GHashTable *styles)
 {
   parserFileStruct data = {NULL};
 
@@ -101,7 +101,7 @@ static int parseFile(char *filename, GData *styles)
 
   if(!(readHeader(&data)))
      readFeatures(&data);
-  
+
   zMapGFFDestroyParser(data.parser) ;
   g_string_free(data.gff_line, TRUE) ;
 
@@ -143,13 +143,13 @@ static int readHeader(parserFile data)
           if (!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header))
             {
               GError *error = zMapGFFGetError(data->parser) ;
-              
+
               if (!error && (header = zMapGFFGetHeader(data->parser)))
                 {
                   /* Header finished..ugh poor interface.... */
                   break ;
                 }
-              
+
               if (!error)
                 {
                   printf("error %d\n", __LINE__);
@@ -170,7 +170,7 @@ static int readHeader(parserFile data)
                       error_occurred = 1;
                     }
                 }
-              
+
               break ;
             }
           data->gff_line = g_string_truncate(data->gff_line, 0) ;
@@ -197,7 +197,7 @@ static gboolean readFeatures(parserFile data)
   parser = data->parser;
   gff_file = data->file;
   gff_line = data->gff_line;
-  
+
   while ((status = g_io_channel_read_line_string(gff_file, gff_line, &terminator_pos,
 						 &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
@@ -224,7 +224,7 @@ static gboolean readFeatures(parserFile data)
 		}
 	      else
 		{
-                  /* Ignore these for this debugging. 
+                  /* Ignore these for this debugging.
 		  printf("%s", error->message) ;
                   */
 		}

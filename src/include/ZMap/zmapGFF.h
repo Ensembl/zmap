@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 21 18:23 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.23 2010-05-19 13:15:31 mh17 Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.24 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -104,7 +104,7 @@ typedef struct
 
 
 ZMapGFFParser zMapGFFCreateParser(void) ;
-gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GData *sources, gboolean parse_only) ;
+gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length) ;
@@ -128,10 +128,10 @@ gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
 void zMapGFFDestroyParser(ZMapGFFParser parser) ;
 
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GData *styles, GIOChannel *file, GError **error_out);
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GData *styles,
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 			   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
-gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GData *styles,
+gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles,
 				GIOChannel *file, GError **error_out,
 				char *sequence,
 				GFunc *list_func_out, gpointer *list_data_out) ;

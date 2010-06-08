@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:20 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.19 2010-03-04 14:40:58 mh17 Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.20 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -68,14 +68,14 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GHashTable **featureset_2_stylelist_out,
 						 GHashTable **source_2_featureset_out,
 						 GHashTable **source_2_sourcedata_out) ;
-ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **types_out) ;
+ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GHashTable **types_out) ;
 ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode) ;
 ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout) ;
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
-ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GData *styles, ZMapFeatureContext feature_context) ;
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GHashTable *styles, ZMapFeatureContext feature_context) ;
 ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server,
-						     GData *styles, ZMapFeatureContext feature_context) ;
+						     GHashTable *styles, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerFreeConnection(ZMapServer server) ;

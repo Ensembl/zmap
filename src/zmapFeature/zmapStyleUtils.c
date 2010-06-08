@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.17 2010-04-20 12:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.18 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,7 @@ typedef struct
 
 
 
-static void setPrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
+static void setPrintFunc(gpointer key_id, gpointer data, gpointer user_data) ;
 static void listPrintFunc(gpointer data, gpointer user_data) ;
 
 
@@ -171,7 +171,7 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText,            ZMapStyleBu
 
 
 
-void zMapStyleSetPrintAll(ZMapIOOut dest, GData *type_set, char *user_string, gboolean full)
+void zMapStyleSetPrintAll(ZMapIOOut dest, GHashTable *type_set, char *user_string, gboolean full)
 {
   StylePrintStruct print_data ;
 
@@ -180,12 +180,12 @@ void zMapStyleSetPrintAll(ZMapIOOut dest, GData *type_set, char *user_string, gb
 
   zMapOutWriteFormat(dest, "\nTypes at %s\n", user_string) ;
 
-  g_datalist_foreach(&type_set, setPrintFunc, &print_data) ;
+  g_hash_table_foreach(type_set, setPrintFunc, &print_data) ;
 
   return ;
 }
 
-void zMapStyleSetPrintAllStdOut(GData *type_set, char *user_string, gboolean full)
+void zMapStyleSetPrintAllStdOut(GHashTable *type_set, char *user_string, gboolean full)
 {
   ZMapIOOut output ;
 
@@ -380,7 +380,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
 
 
-static void setPrintFunc(GQuark key_id, gpointer data, gpointer user_data)
+static void setPrintFunc(gpointer key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   StylePrint print_data = (StylePrint)user_data ;

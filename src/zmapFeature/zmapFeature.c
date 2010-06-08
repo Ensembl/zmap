@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.129 2010-04-26 14:29:42 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.130 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,7 +116,7 @@ typedef struct
 typedef struct _HackForForcingStyleModeStruct
 {
   gboolean force;
-  GData *styles ;
+  GHashTable *styles ;
   ZMapFeatureSet feature_set;
 } HackForForcingStyleModeStruct, *HackForForcingStyleMode;
 
@@ -288,7 +288,7 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
  * in our styles...
  *
  *  */
-gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *styles)
+gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles)
 {
   gboolean result = TRUE;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
@@ -315,7 +315,7 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *style
  * mode to basic for featureset where there are no features to get the
  * mode from... When adding new features to these once empty
  * columns, we must force the styles... */
-gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *styles)
+gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles)
 {
   gboolean result = TRUE;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
@@ -546,7 +546,7 @@ ZMapFeature zMapFeatureCreateEmpty(void)
  * Because the contents of this are quite a lot of work. Useful for
  * creating single features, but be warned that usually you will need
  * to keep track of uniqueness, so for large parser the GFF style of
- * doing things is better (assuming we get a fix for g_datalist!).
+ * doing things is better
  * ==================================================================
  */
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
@@ -608,6 +608,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->type = feature_type ;
       feature->ontology = g_quark_from_string(ontology) ;
       feature->style_id = zMapStyleGetUniqueID(style) ;
+      feature->style = style;
       feature->x1 = start ;
       feature->x2 = end ;
       feature->strand = strand ;
@@ -1037,7 +1038,9 @@ void zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
   zMapAssert(feature_set && style) ;
 
-  //feature_set->style = style ;
+      // MH17: was for the column (historically)
+      // new put back to be used for each feature
+  feature_set->style = style ;
 
   return ;
 }
@@ -2591,7 +2594,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 
 
 
-/* A GDataForeachFunc() to add a mode to the styles for all features in a set, note that
+/* A GHashTableForeachFunc() to add a mode to the styles for all features in a set, note that
  * this is not efficient as we go through all features but we would need more information
  * stored in the feature set to avoid this as there may be several different types of
  * feature stored in a feature set.

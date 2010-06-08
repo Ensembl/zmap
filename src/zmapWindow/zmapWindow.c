@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 24 16:04 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.322 2010-05-24 15:04:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.323 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,8 +61,8 @@ typedef struct
 {
   ZMapFeatureContext current_features ;
   ZMapFeatureContext new_features ;
-  GData *all_styles ;
-  GData *new_styles ;
+  GHashTable *all_styles ;
+  GHashTable *new_styles ;
   GHashTable *featuresets_2_stylelist ;
   ZMapWindowState state ;	/* Can be NULL! */
 } FeatureSetsStateStruct, *FeatureSetsState ;
@@ -367,7 +367,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 			  void *app_data, ZMapWindow original_window,
 			  ZMapFeatureContext feature_context,
-			  GData *read_only_styles, GData *display_styles,
+			  GHashTable *read_only_styles, GHashTable *display_styles,
 			  ZMapWindowLockType window_locking)
 {
   ZMapWindow new_window = NULL ;
@@ -399,7 +399,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
   /* Update styles lists in original window, new window is done by display call. */
   zMapAssert(read_only_styles && display_styles) ;
-  if (!zmapWindowUpdateStyles(original_window, &read_only_styles, &display_styles))
+  if (!zmapWindowUpdateStyles(original_window, read_only_styles, display_styles))
     zMapLogWarning("%s", "Errors in copying read only and display styles for original window.") ;
 
   /* Lock windows together for scrolling/zooming if requested. */
@@ -511,7 +511,7 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-			   GData *all_styles, GData *new_styles,
+			   GHashTable *all_styles, GHashTable *new_styles,
 			   GHashTable *new_featuresets_2_stylelist)
 {
   FeatureSetsState feature_sets ;
@@ -523,8 +523,8 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   feature_sets->current_features = current_features ;
   feature_sets->new_features     = new_features ;
 
-  zMapStyleCopyAllStyles(&all_styles, &(feature_sets->all_styles)) ;
-  zMapStyleCopyAllStyles(&new_styles, &(feature_sets->new_styles)) ;
+  zMapStyleCopyAllStyles(all_styles, &(feature_sets->all_styles)) ;
+  zMapStyleCopyAllStyles(new_styles, &(feature_sets->new_styles)) ;
 
   feature_sets->featuresets_2_stylelist = new_featuresets_2_stylelist ;
 
@@ -715,7 +715,7 @@ void zMapWindowStats(ZMapWindow window, GString *text)
  * We also need the information so that we can maintain window position after a revcomp.
  * We really do need to know even though it feels a bit hacky... */
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     GData *all_styles, GData *new_styles,
+			     GHashTable *all_styles, GHashTable *new_styles,
 			     gboolean features_are_revcomped)
 {
   int x, y ;
@@ -725,6 +725,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
   gboolean state_saves_position = TRUE;
 
+  zMapStartTimer("WindowFeatureRedraw","");
   state = zmapWindowStateCreate();
 
   /* Note that currently we lose the 3 frame state and other state such as columns */
@@ -787,21 +788,27 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       free_child_windows = TRUE ;
     }
 
+  zMapStopTimer("WindowFeatureRedraw","Revcomp");
+
   /* wrap the resetCanvas and set scroll region in a expose free cape */
   zmapWindowInterruptExpose(window);
 
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
+  zMapStopTimer("WindowFeatureRedraw","ResetCanvas");
 
   if(window->strand_separator_context)
     zMapFeatureContextDestroy(window->strand_separator_context, TRUE);
   window->strand_separator_context = NULL;
+  zMapStopTimer("WindowFeatureRedraw","Separator");
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   zMapWindowDisplayData(window, state, feature_context, feature_context,
 			all_styles, new_styles, window->featureset_2_styles) ;
+
+  zMapStopTimer("WindowFeatureRedraw","Display");
 
   /* stop the expose avoidance */
   zmapWindowUninterruptExpose(window);
@@ -815,6 +822,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
        * Code moved to the correct place, dataEventCB()
        */
     }
+  zMapStopTimer("WindowFeatureRedraw","");
 
 
   return ;
@@ -1125,9 +1133,9 @@ void zMapWindowDestroy(ZMapWindow window)
     unlockWindow(window, FALSE) ;
 
   if (window->read_only_styles)
-    zMapStyleDestroyStyles(&(window->read_only_styles)) ;
+    zMapStyleDestroyStyles(window->read_only_styles) ;
   if (window->display_styles)
-    zMapStyleDestroyStyles(&(window->display_styles)) ;
+    zMapStyleDestroyStyles(window->display_styles) ;
 
   /* free the array of feature list windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->featureListWindows), TRUE) ;
@@ -2482,7 +2490,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	diff_context = feature_sets->current_features ;
 
       /* Reload the styles lists. */
-      if (!zmapWindowUpdateStyles(window, &(feature_sets->all_styles), &(feature_sets->new_styles)))
+      if (!zmapWindowUpdateStyles(window, feature_sets->all_styles, feature_sets->new_styles))
 	zMapLogWarning("%s", "Errors in copying read only and display styles.") ;
 
 
@@ -2566,8 +2574,8 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	zMapLogMessage("%s", "event handler for canvas already registered.");
 
 
-      zMapStyleDestroyStyles(&(feature_sets->all_styles)) ;
-      zMapStyleDestroyStyles(&(feature_sets->new_styles)) ;
+      zMapStyleDestroyStyles(feature_sets->all_styles) ;
+      zMapStyleDestroyStyles(feature_sets->new_styles) ;
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
@@ -3861,7 +3869,7 @@ GList *zmapWindowDeferredColumns(ZMapWindow window)
 {
   GList *list = NULL;
 
-  //g_datalist_foreach(&(window->read_only_styles), filter_deferred_styles, &list);
+  //g_hash_table_foreach(&(window->read_only_styles), filter_deferred_styles, &list);
 
   list = g_list_copy(window->feature_set_names);
 
@@ -4191,9 +4199,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		else
 		  compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 	      }
-
-
-	    zMapResetTimer(NULL) ;
 
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), bump_mode, compress_mode) ;
 

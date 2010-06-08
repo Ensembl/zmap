@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 28 09:49 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.81 2010-04-28 08:51:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.82 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -550,7 +550,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           ZMapFrame frame;
 	  ZMapStrand strand;
 
-          g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, style) ;
+          g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, (gpointer) style) ;
 
 	  frame  = zmapWindowContainerFeatureSetGetFrame((ZMapWindowContainerFeatureSet)parent_container);
 	  strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet)parent_container);
@@ -700,6 +700,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   /* Feature span coords are already clipped to block sapce.
    * We just need to Seq2CanOffset */
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
+
 
   if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
     {

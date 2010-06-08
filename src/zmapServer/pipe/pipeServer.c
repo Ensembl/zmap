@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.23 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.24 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,12 +82,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GHashTable **featureset_2_stylelist_inout,
 						 GHashTable **featureset_2_column_out,
 						 GHashTable **source_2_sourcedata_out) ;
-static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
+static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -462,7 +462,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
  * something has gone wrong.
  *
  *  */
-static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
+static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
@@ -653,7 +653,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   PipeServer server = (PipeServer)server_in ;
 
@@ -808,7 +808,7 @@ static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_dat
 /*
  * we have pre-read the sequence and simple copy/move the data over if it's there
  */
-static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out)
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out)
 {
   PipeServer server = (PipeServer)server_in ;
 

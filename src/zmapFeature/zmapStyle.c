@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.53 2010-05-26 12:02:50 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.54 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -396,7 +396,7 @@ GType zMapFeatureTypeStyleGetType(void)
         (GClassInitFunc)     zmap_feature_type_style_class_init,
         (GClassFinalizeFunc) NULL,
         NULL /* class_data */,
-        sizeof (zmapFeatureTypeStyle),
+        sizeof (zmapFeatureTypeStyleStruct),
         0 /* n_preallocs */,
         (GInstanceInitFunc)  zmap_feature_type_style_init,
         NULL
@@ -1478,7 +1478,7 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
 
                         ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
-                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
+                        ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,TRUE,                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
 
                         ZMAPSTYLE_PROPERTY_WIDTH,30.0,
                         ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,
@@ -1687,6 +1687,12 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 static void zmap_feature_type_style_init(ZMapFeatureTypeStyle style)
 {
   zmapStyleSetIsSet(style,STYLE_PROP_IS_SET);
+
+      // default values, they don't count as being set for inheritance
+      // but will be returned if a paramter is not set
+      // ** only need to set if non zero **
+
+//  style->curr_bump_mode = ZMAPBUMP_INVALID;           // why not umbump?
 
   return ;
 }
@@ -1939,6 +1945,14 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
 
         break;
 #endif
+
+      case STYLE_PROP_MODE:
+            // set non zero default vaues for mode data
+        if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+        {
+            style->mode_data.alignment.unmarked_colinear = TRUE;
+        }
+        break;
       default:
         break;
       }

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Apr 22 14:26 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.22 2010-04-22 13:51:48 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.23 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -69,7 +69,7 @@ typedef enum
   {
     GFF_BUF_SEQUENCE, GFF_BUF_SOURCE, GFF_BUF_FEATURE_TYPE,
     GFF_BUF_SCORE, GFF_BUF_STRAND, GFF_BUF_PHASE,
-    GFF_BUF_ATTRIBUTES, GFF_BUF_COMMENTS, 
+    GFF_BUF_ATTRIBUTES, GFF_BUF_COMMENTS,
     GFF_BUF_NUM
   } GFFStringFieldsType ;
 
@@ -151,7 +151,8 @@ typedef struct ZMapGFFParserStruct_
   GQuark locus_set_id ;					    /* If not zero then make a locus set from
 							       locus tags in sequence objects. */
 
-  GData *sources ;					    /* If present, only make features from
+      // NB for sources read styles
+  GHashTable *sources ;					    /* If present, only make features from
 							       GFF records with a source from this
 							       list. */
 
@@ -165,7 +166,7 @@ typedef struct ZMapGFFParserStruct_
    * known line length and construct a format string for the scanf using this length. */
   gsize buffer_length ;
   char **buffers[GFF_BUF_NUM] ;
-  char *format_str ;  
+  char *format_str ;
 
   /* Parsing DNA sequence data, used when DNA sequence is embedded in the file. */
   struct

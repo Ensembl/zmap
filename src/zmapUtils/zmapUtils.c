@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Utility functions for the ZMap code.
- *              
+ *
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
  * Last edited: Jun  5 17:55 2009 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.33 2010-03-04 15:11:27 mh17 Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.34 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,9 +51,9 @@ static gboolean getVersionNumbers(char *version_str,
 
 /*! @defgroup zmaputils   zMapUtils: utilities for ZMap
  * @{
- * 
+ *
  * \brief  Utilities for ZMap.
- * 
+ *
  * zMapUtils routines provide services such as debugging, testing and logging,
  * string handling, file utilities and GUI functions. They are general routines
  * used by all of ZMap.
@@ -62,13 +62,13 @@ static gboolean getVersionNumbers(char *version_str,
 
 
 /*! Can be set on/off to turn on/off debugging output via the zMapDebug() macro. */
-gboolean zmap_debug_G = FALSE ; 
+gboolean zmap_debug_G = FALSE ;
 
 
 /*! A global timer used for giving overall timings for zmap operations.
  * See the timer macros in zmapUtilsDebug.h */
 GTimer *zmap_global_timer_G = NULL ;
-
+gboolean zmap_timing_G = FALSE;     // ouput timing info?
 
 
 
@@ -283,7 +283,7 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 
 /* Given an int between 0 and 9 returns the corresponding char representation,
  * (surely this must exist somewhere ??).
- * 
+ *
  * Returns '.' if number not in [0-9]
  *  */
 char zMapInt2Char(int num)
@@ -302,7 +302,7 @@ char zMapInt2Char(int num)
 /* There follow a series of conversion routines. These are provided either
  * because there are no existing ones or because the existing ones have
  * arcane usage.
- * 
+ *
  * All of them can just be used to test for validity without needing a
  * return variable.
  *  */
@@ -423,7 +423,7 @@ gboolean zMapStr2Float(char *str, float *float_out)
   if (str && *str)
     {
       errno = 0 ;
- 
+
       ret_val = strtof(str, &end_ptr) ;
 
       if (ret_val == 0 && end_ptr == str)
@@ -469,7 +469,7 @@ gboolean zMapStr2Double(char *str, double *double_out)
   if (str && *str)
     {
       errno = 0 ;
- 
+
       ret_val = strtod(str, &end_ptr) ;
 
       if (ret_val == 0 && end_ptr == str)
@@ -514,7 +514,7 @@ gboolean zMapStr2Double(char *str, double *double_out)
  * If the call failed and err_msg_out is non-NULL then an error message is returned
  * explaining the failure. The caller should free error message using g_free() when
  * no longer required.
- * 
+ *
  * It is not straight forward to interpret the return value of the system call so this
  * function attempts to interpret the value correctly.
  *
@@ -564,7 +564,7 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
 	      result = FALSE ;
 	      if (err_msg_out)
 		*err_msg_out = g_strdup("Child process did not exit normally.") ;
-	      
+
 	    }
 	  else
 	    {
@@ -572,7 +572,7 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
 	      int true_rc ;
 
 	      true_rc = WEXITSTATUS(sys_rc) ;
-		  
+
 	      if (true_rc == EXIT_SUCCESS)
 		result = TRUE ;
 	      else
@@ -594,7 +594,7 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
 void zMapPrintQuark(GQuark quark)
 {
   printf("GQuark (%d) = '%s'\n", quark, g_quark_to_string(quark));
-  return ;  
+  return ;
 }
 
 /* make logging from totalview evaluations a lot easier... */
@@ -659,7 +659,7 @@ gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str)
 
 
 
-/* 
+/*
  *                   Internal routines.
  */
 
@@ -685,7 +685,7 @@ static gboolean getVersionNumbers(char *version_str,
       *release_out = release ;
       *update_out = update ;
     }
-  
+
 
   return result ;
 }

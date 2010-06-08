@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.35 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.36 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -74,7 +74,7 @@ typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GHashTable **source_2_sourcedata_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in,
-						      GData **styles_out) ;
+						      GHashTable **styles_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerStylesHaveModes)(void *server_in, gboolean *have_modes_out) ;
 
@@ -87,10 +87,10 @@ typedef ZMapFeatureContext
                  (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType
-                 (*ZMapServerGetFeatures)(void *server_conn, GData *styles, ZMapFeatureContext feature_context) ;
+                 (*ZMapServerGetFeatures)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
 
 typedef ZMapServerResponseType
-                 (*ZMapServerGetContextSequences)(void *server_conn, GData *styles, ZMapFeatureContext feature_context) ;
+                 (*ZMapServerGetContextSequences)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
 
 
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;

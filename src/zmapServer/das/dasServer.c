@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.46 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: dasServer.c,v 1.47 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,14 +42,14 @@ typedef struct
 {
   ZMapServerResponseType result ;
   DasServer server ;
-  GData *styles ;
+  GHashTable *styles ;
 } GetFeaturesStruct, *GetFeatures ;
 
 typedef struct
 {
   ZMapFeatureBlock block;
   DasServer server;
-  GData *styles ;
+  GHashTable *styles ;
 } BlockServerStruct, *BlockServer;
 
 typedef struct
@@ -62,7 +62,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   DasServer server;
-  GData *output;
+  GHashTable *output;
 }DasServerTypesStruct, *DasServerTypes;
 
 typedef struct
@@ -88,7 +88,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server,gboolean sequence_server) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
-static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
+static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType getFeatureSets(void *server,
@@ -99,8 +99,8 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GHashTable **featureset_2_column_inout,
 					     GHashTable **source_2_sourcedata_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
-static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -120,7 +120,7 @@ static void initialiseXMLParser(DasServer server);
 static void getFeatures4Aligns(gpointer key, gpointer data, gpointer userData);
 static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData) ;
 
-static gboolean fetchFeatures(DasServer server, GData *styles, ZMapFeatureBlock block);
+static gboolean fetchFeatures(DasServer server, GHashTable *styles, ZMapFeatureBlock block);
 
 
 /* curl required */
@@ -137,7 +137,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
 static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data);
 static void stylesheetFilter (ZMapDAS1Stylesheet style,       gpointer user_data);
 
-static void applyGlyphToEachType(GQuark style_id, gpointer data, gpointer user_data) ;
+static void applyGlyphToEachType(gpointer style_id, gpointer data, gpointer user_data) ;
 
 static gboolean getRequestedDSN(DasServer das, ZMapDAS1DSN *dsn_out);
 
@@ -384,7 +384,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 
 
 
-static ZMapServerResponseType getStyles(void *server_in, GData **types)
+static ZMapServerResponseType getStyles(void *server_in, GHashTable **types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -487,7 +487,7 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 }
 
 
-static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -503,7 +503,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 }
 
 
-static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
@@ -995,7 +995,7 @@ static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData)
   return ;
 }
 
-static gboolean fetchFeatures(DasServer server, GData *styles, ZMapFeatureBlock block)
+static gboolean fetchFeatures(DasServer server, GHashTable *styles, ZMapFeatureBlock block)
 {
   char *segStr = NULL, *query = NULL, *url = NULL;
   requestParseDetailStruct detail = {0};
@@ -1308,7 +1308,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
 
   zMapStyleSetWidth(style, width) ;
 
-  g_datalist_id_set_data(&(server_types->output), zMapStyleGetID(style), style) ;
+  g_hash_table_insert(server_types->output, GUINT_TO_POINTER(zMapStyleGetID(style)), (gpointer) style) ;
 
   return ;
 }
@@ -1332,7 +1332,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
 
   /* gdouble        feature_score = 0.0; */
   gboolean has_score = TRUE;
-  GData  *all_styles = NULL;
+  GHashTable  *all_styles = NULL;
   char *feature_name = NULL,
     *short_ft_name   = NULL,
     *type_name       = NULL,
@@ -1409,7 +1409,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
   return ;
 }
 
-static void applyGlyphToEachType(GQuark style_id, gpointer data, gpointer user_data)
+static void applyGlyphToEachType(gpointer style_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data;
   ZMapDAS1Glyph glyph = (ZMapDAS1Glyph)user_data;
@@ -1441,7 +1441,7 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style, gpointer user_data)
   if(category->id == default_id) /* apply to all categories */
     {
       if(type->id == default_id) /* apply to all types in all categories*/
-	g_datalist_foreach(&(server_types->output), applyGlyphToEachType, (gpointer)glyph);
+	g_hash_table_foreach(server_types->output, applyGlyphToEachType, (gpointer)glyph);
       else                      /* apply to just the specific type in all categories */
         printf("[dasServer] Applying type '%s' to like types in all categories\n",
                (char *)g_quark_to_string(type->id));

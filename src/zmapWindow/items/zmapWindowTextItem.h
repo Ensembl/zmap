@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jun 18 15:01 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.h,v 1.3 2010-03-04 15:12:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextItem.h,v 1.4 2010-06-08 08:31:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,14 @@
 #define ZMAP_WINDOW_TEXT_ITEM_NAME "ZMapWindowTextItem"
 
 #define ZMAP_TYPE_WINDOW_TEXT_ITEM           (zMapWindowTextItemGetType())
+
+#if GOBJ_CAST
+#define ZMAP_WINDOW_TEXT_ITEM(obj)       ((ZMapWindowTextItem) obj)
+#define ZMAP_WINDOW_TEXT_ITEM_CONST(obj) ((ZMapWindowTextItem const) obj)
+#else
 #define ZMAP_WINDOW_TEXT_ITEM(obj)	     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_TEXT_ITEM, zmapWindowTextItem))
 #define ZMAP_WINDOW_TEXT_ITEM_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_TEXT_ITEM, zmapWindowTextItem const))
+#endif
 #define ZMAP_WINDOW_TEXT_ITEM_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_TEXT_ITEM, zmapWindowTextItemClass))
 #define ZMAP_IS_WINDOW_TEXT_ITEM(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_TEXT_ITEM))
 #define ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_TEXT_ITEM, zmapWindowTextItemClass))
@@ -82,10 +88,10 @@ typedef gint (* ZMapTextItemAllocateCB)(FooCanvasItem   *item,
 					gint             buffer_size,
 					gpointer         user_data);
 
-typedef gint (* ZMapTextItemFetchTextCB)(FooCanvasItem   *item, 
+typedef gint (* ZMapTextItemFetchTextCB)(FooCanvasItem   *item,
 					 ZMapTextItemDrawData draw_data,
-					 char            *buffer, 
-					 gint             buffer_size, 
+					 char            *buffer,
+					 gint             buffer_size,
 					 gpointer         user_data);
 
 
@@ -98,7 +104,7 @@ typedef gboolean (* ZMapWindowTextItemSelectionCB)(ZMapWindowTextItem text_item,
 GType zMapWindowTextItemGetType(void);
 
 
-void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end, 
+void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end,
 			      gboolean deselect_first, gboolean emit_signal);
 void zMapWindowTextItemDeselect(ZMapWindowTextItem text_item,
 				gboolean emit_signal);

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep  2 09:42 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.69 2010-03-29 15:32:39 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.70 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,7 @@ static int feature_block_frame_offset(ZMapFeature feature);
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
-static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data) ;
+static void addTypeQuark(gpointer style_id, gpointer data, gpointer user_data) ;
 
 static void map_parent2child(gpointer exon_data, gpointer user_data);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
@@ -626,11 +626,11 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set)
 
 
 /* Retrieve a style struct for the given style id. */
-ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id)
+ZMapFeatureTypeStyle zMapFindStyle(GHashTable *styles, GQuark style_id)
 {
   ZMapFeatureTypeStyle style = NULL ;
 
-  style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&styles, style_id) ;
+  style = (ZMapFeatureTypeStyle) g_hash_table_lookup(styles, GUINT_TO_POINTER(style_id));
 
   return style ;
 }
@@ -654,20 +654,20 @@ gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
 
 
 /* Retrieve a Glist of the names of all the styles... */
-GList *zMapStylesGetNames(GData *styles)
+GList *zMapStylesGetNames(GHashTable *styles)
 {
   GList *quark_list = NULL ;
 
   zMapAssert(styles) ;
 
-  g_datalist_foreach(&styles, addTypeQuark, (void *)&quark_list) ;
+  g_hash_table_foreach(styles, addTypeQuark, (void *)&quark_list) ;
 
   return quark_list ;
 }
 
 /* GFunc() callback function, appends style names to a string, its called for lists
  * of either style name GQuarks or lists of style structs. */
-static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data)
+static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   GList **quarks_out = (GList **)user_data ;

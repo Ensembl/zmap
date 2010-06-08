@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jan 13 13:40 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.h,v 1.2 2010-03-04 15:12:32 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.h,v 1.3 2010-06-08 08:31:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,8 +39,15 @@
 #define ZMAP_WINDOW_TEXT_FEATURE_NAME "ZMapWindowTextFeature"
 
 #define ZMAP_TYPE_WINDOW_TEXT_FEATURE           (zMapWindowTextFeatureGetType())
+
+#if GOBJ_CAST
+#define ZMAP_WINDOW_TEXT_FEATURE(obj)              ((ZMapWindowTextFeature) obj)
+#define ZMAP_WINDOW_TEXT_FEATURE_CONST(obj)    ((ZMapWindowTextFeature const) obj)
+#else
 #define ZMAP_WINDOW_TEXT_FEATURE(obj)	         (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_TEXT_FEATURE, zmapWindowTextFeature))
 #define ZMAP_WINDOW_TEXT_FEATURE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_TEXT_FEATURE, zmapWindowTextFeature const))
+#endif
+
 #define ZMAP_WINDOW_TEXT_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_TEXT_FEATURE, zmapWindowTextFeatureClass))
 #define ZMAP_IS_WINDOW_TEXT_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_TEXT_FEATURE))
 #define ZMAP_WINDOW_TEXT_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_TEXT_FEATURE, zmapWindowTextFeatureClass))

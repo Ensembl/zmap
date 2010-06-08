@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jan 21 22:01 2010 (roy)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.5 2010-03-04 15:12:01 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.6 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,8 +46,15 @@
 
 
 #define ZMAP_TYPE_CONTAINER_BLOCK           (zmapWindowContainerBlockGetType())
+
+#if GOBJ_CAST
+#define ZMAP_CONTAINER_BLOCK(obj)       ((ZMapWindowContainerBlock) obj)
+#define ZMAP_CONTAINER_BLOCK_CONST(obj) ((ZMapWindowContainerBlock const ) obj)
+#else
 #define ZMAP_CONTAINER_BLOCK(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock))
 #define ZMAP_CONTAINER_BLOCK_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock const))
+#endif
+
 #define ZMAP_CONTAINER_BLOCK_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
 #define ZMAP_IS_CONTAINER_BLOCK(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_BLOCK))
 #define ZMAP_CONTAINER_BLOCK_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
@@ -65,10 +72,10 @@ typedef struct _zmapWindowContainerBlockClassStruct  zmapWindowContainerBlockCla
 GType zmapWindowContainerBlockGetType(void);
 ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
 							 ZMapFeatureBlock feature_block);
-void   zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, 
+void   zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data,
 						   FooCanvasGroup *container);
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data);
-void   zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, 
+void   zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data,
 					       FooCanvasGroup *container);
 GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data);
 
@@ -78,12 +85,12 @@ void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block);
 void zmapWindowContainerBlockFlagRegion(ZMapWindowContainerBlock block_data,
 					ZMapFeatureBlock         block);
 void zmapWindowContainerBlockFlagRegionForColumn(ZMapWindowContainerBlock       container_block,
-						 ZMapFeatureBlock               block, 
+						 ZMapFeatureBlock               block,
 						 ZMapWindowContainerFeatureSet  container_set);
 GList *zmapWindowContainerBlockFilterFlaggedColumns(ZMapWindowContainerBlock block_data,
 						    GList *list, int world1, int world2);
 gboolean zmapWindowContainerBlockIsColumnLoaded(ZMapWindowContainerBlock      container_block,
-						ZMapWindowContainerFeatureSet container_set, 
+						ZMapWindowContainerFeatureSet container_set,
 						int world1, int world2);
 
 

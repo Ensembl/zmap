@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.46 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.47 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -211,7 +211,7 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 }
 
 
-ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **styles_out)
+ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GHashTable **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -294,7 +294,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 }
 
 
-ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GData *styles, ZMapFeatureContext feature_context)
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -315,7 +315,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GData *styles, Z
 }
 
 
-ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GData *styles,
+ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTable *styles,
 						     ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;

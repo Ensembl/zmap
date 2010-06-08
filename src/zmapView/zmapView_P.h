@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Apr  7 13:48 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.61 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.62 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -253,7 +253,7 @@ typedef struct _ZMapViewStruct
   /* Original styles, these are all the styles as they were loaded from the server(s).
    * N.B. the list may be updated during the lifetime of the view and hence is always
    * passed into window for all update operations. */
-  GData *orig_styles ;
+  GHashTable *orig_styles ;
 
   GHashTable *featureset_2_stylelist ;	/* Mapping of each feature_set to all the styles
 							 * the styles it requires. using a GHashTable of

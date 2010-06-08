@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Feb 16 09:58 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.7 2010-03-04 15:12:29 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.8 2010-06-08 08:31:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,15 @@
 
 
 #define ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE           (zMapWindowSequenceFeatureGetType())
+
+#if GOBJ_CAST
+#define ZMAP_WINDOW_SEQUENCE_FEATURE(obj)     ((ZMapWindowSequenceFeature) obj)
+#define ZMAP_WINDOW_SEQUENCE_FEATURE_CONST(obj)     ((ZMapWindowSequenceFeature const) obj)
+#else
 #define ZMAP_WINDOW_SEQUENCE_FEATURE(obj)	     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeature))
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeature const))
+#endif
+
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeatureClass))
 #define ZMAP_IS_WINDOW_SEQUENCE_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE))
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeatureClass))

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.61 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.62 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -307,22 +307,22 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
  *
  */
 
-gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GData **display_styles)
+gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles, GHashTable *display_styles)
 {
   gboolean result = FALSE ;
 
-  if (*read_only_styles)
+  if (read_only_styles)
     {
       if (window->read_only_styles)
-	zMapStyleDestroyStyles(&(window->read_only_styles)) ;
+	zMapStyleDestroyStyles(window->read_only_styles) ;
 
       result = zMapStyleCopyAllStyles(read_only_styles, &(window->read_only_styles)) ;
     }
 
-  if (*display_styles)
+  if (display_styles)
     {
       if (window->display_styles)
-	zMapStyleDestroyStyles(&(window->display_styles)) ;
+	zMapStyleDestroyStyles(window->display_styles) ;
 
       result = zMapStyleCopyAllStyles(display_styles, &(window->display_styles)) ;
     }
@@ -403,7 +403,7 @@ ZMapFeatureTypeStyle zmapWindowStyleTableAddCopy(GHashTable *style_table, ZMapFe
     {
       style = zMapFeatureStyleCopy(new_style) ;
 
-      g_hash_table_insert(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)), style) ;
+      g_hash_table_insert(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)), (gpointer) style) ;
     }
 
   return style ;
@@ -455,10 +455,10 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 
 
 /* Free the list, but not the styles    ......um, what does this mean.....EG */
-/* It means there's no copying of the style from GData[all_styles] ->
+/* It means there's no copying of the style from GHashTable[all_styles] ->
  * GList[some_styles] going on in this function. Just allocation of
  * GList items to hold onto the styles pointers. */
-GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark feature_set_id)
+GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id)
 {
   GList *styles_list = NULL;
   GList *styles_quark_list = NULL;
@@ -480,7 +480,7 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
 
 	      if((style = zMapFindStyle(all_styles, style_id)))     // add styles needed by featuresets
 		{
-		  styles_list = g_list_append(styles_list, style);
+		  styles_list = g_list_append(styles_list, (gpointer) style);
 
               for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
               {
@@ -491,7 +491,7 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
                 {
                   if((sub = zMapFindStyle(all_styles, sub_id)))
                   {
-                    styles_list = g_list_append(styles_list, sub);
+                    styles_list = g_list_append(styles_list, (gpointer) sub);
                   }
                 }
               }
@@ -499,12 +499,11 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
 
             else
             {
-                  static int fred  = 0;
-                  void printStyle(GQuark style_id, gpointer data, gpointer user_data);
+                  //void printStyle(gpointer key, gpointer data, gpointer user_data);
+                  //g_hash_table_foreach(&all_styles, printStyle, "FeatureSetStyles") ;
 
                   zMapLogWarning("could not find style %s for featureset %s\n",
                         g_quark_to_string(style_id),g_quark_to_string(feature_set_id));
-                  //g_datalist_foreach(&all_styles, printStyle, "FeatureSetStyles") ;
             }
 	    }
 	  while((list = g_list_next(list)));

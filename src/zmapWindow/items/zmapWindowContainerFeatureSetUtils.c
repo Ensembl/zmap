@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.2 2010-05-26 12:02:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.3 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -586,11 +586,27 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
       spliceosome[4] = fragment_b[1];
       spliceosome[5] = '\0';
 
+#define NEW_RULES 0
+#if NEW_RULES
       if(!g_ascii_strcasecmp(fragment_b, "AG"))
         {
           if(!g_ascii_strcasecmp(&spliceosome[1], "GT") || !g_ascii_strcasecmp(&spliceosome[0], "GGC"))
 	        splice = TRUE;
 	  }
+#else
+      if(g_ascii_strcasecmp(&spliceosome[1], "GTAG") == 0)
+      {
+        splice = TRUE;
+      }
+      else if(g_ascii_strcasecmp(&spliceosome[1], "GCAG") == 0)
+      {
+        splice = TRUE;
+      }
+      else if(g_ascii_strcasecmp(&spliceosome[1], "ATAC") == 0)
+      {
+        splice = TRUE;
+      }
+#endif
     }
 
 

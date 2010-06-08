@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.31 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.32 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -193,7 +193,7 @@
 //#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
-#define ZMAPSTANZA_APP_COLUMNS            "columns"
+#define ZMAPSTANZA_APP_COLUMNS           "columns"
 
 
 /*! @addtogroup config_stanzas
@@ -717,6 +717,7 @@
 #define ZMAPSTANZA_DEBUG_APP_THREADS "threads"
 #define ZMAPSTANZA_DEBUG_APP_FEATURE2STYLE      "feature2style"
 #define ZMAPSTANZA_DEBUG_APP_STYLES  "styles"
+#define ZMAPSTANZA_DEBUG_APP_TIMING            "timing"     // output timing of various things to STDOUT
 
 
 /*! @addtogroup config_stanzas

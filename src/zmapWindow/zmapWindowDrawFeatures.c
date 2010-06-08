@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.272 2010-05-26 12:02:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.273 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,7 @@ typedef struct _ZMapCanvasDataStruct
 
   /* Records which alignment, block, set, type we are processing. */
   ZMapFeatureContext full_context ;
-  GData *styles ;
+  GHashTable *styles ;
   ZMapFeatureAlignment curr_alignment ;
   ZMapFeatureBlock curr_block ;
   ZMapFeatureSet curr_set ;
@@ -106,7 +106,7 @@ typedef struct
 typedef struct
 {
   ZMapWindow window ;
-  GData *styles ;
+  GHashTable *styles ;
   GHashTable *feature_hash ;
   int feature_count;
   ZMapWindowContainerFeatures curr_forward_col ;
@@ -116,7 +116,7 @@ typedef struct
 } CreateFeatureSetDataStruct, *CreateFeatureSetData ;
 
 static void windowDrawContext(ZMapCanvasData     canvas_data,
-			       GData             *styles,
+			       GHashTable             *styles,
 			       ZMapFeatureContext full_context,
 			       ZMapFeatureContext diff_context);
 static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
@@ -448,7 +448,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     ZMapWindowContainerFeatures reverse_strand_group,
                                     ZMapFeatureBlock block,
                                     ZMapFeatureSet feature_set,
-				    GData *styles,
+				    GHashTable *styles,
                                     ZMapFrame frame,
                                     FooCanvasGroup **forward_col_out,
                                     FooCanvasGroup **reverse_col_out,
@@ -620,7 +620,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
  * ProcessFeature splits the feature sets features into the separate strands.
  */
 void zmapWindowDrawFeatureSet(ZMapWindow window,
-			      GData *styles,
+			      GHashTable *styles,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col_wcp,
                               FooCanvasGroup *reverse_col_wcp,
@@ -670,7 +670,9 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.feature_count = 0;
 
   /* Now draw all the features in the column. */
+  zMapStartTimer("DrawFeatureSet","ProcessFeature");
   g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+  zMapStopTimer("DrawFeatureSet","ProcessFeature");
 
   if(featureset_data.feature_count > 0)
     {
@@ -689,6 +691,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	}
     }
 
+  zMapStartTimer("DrawFeatureSet","Bump");
   /* We should be bumping columns here if required... */
   if (bump_required && view_feature_set)
     {
@@ -708,6 +711,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
        * already loaded in this column a COMPRESS_ALL will bump the whole column
        * _not_ just the newly loaded ones... */
 
+
       if (forward_col_wcp)
 	{
 	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)forward_container)) != ZMAPBUMP_UNBUMP)
@@ -715,8 +719,10 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
 	   * set explicitly in the style for the column. */
+    zMapStartTimer("DrawFeatureSet","SetState");
 	  zmapWindowColumnSetState(window, forward_col_wcp, ZMAPSTYLE_COLDISPLAY_INVALID, FALSE) ;
-	}
+    zMapStopTimer("DrawFeatureSet","SetState");
+    	}
 
       if (reverse_col_wcp)
 	{
@@ -728,7 +734,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  zmapWindowColumnSetState(window, reverse_col_wcp, ZMAPSTYLE_COLDISPLAY_INVALID, FALSE) ;
 	}
     }
-
+    zMapStopTimer("DrawFeatureSet","Bump");
   return ;
 }
 
@@ -937,7 +943,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
  */
 
 static void windowDrawContext(ZMapCanvasData     canvas_data,
-			      GData             *styles,
+			      GHashTable             *styles,
 			      ZMapFeatureContext full_context,
 			      ZMapFeatureContext diff_context)
 {
@@ -1515,6 +1521,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         double x, y;
         gboolean block_created = FALSE;
 
+        zMapStartTimer("DrawBlock","");
+
         feature_block = (ZMapFeatureBlock)feature_any;
 #ifdef MH17_REVCOMP_DEBUG
 printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_block->block_to_sequence.t2);
@@ -1678,14 +1686,18 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
             canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
 
 
+          zMapStartTimer("CreateColumns","");
 
 	    /* We create the columns here now. */
 	    /* Why? So that we always have the column, even though it's empty... */
 	    g_list_foreach(window->feature_set_names,
 			   set_name_create_set_columns,
 			   canvas_data);
+
+          zMapStopTimer("CreateColumns","");
           }
 
+        zMapStopTimer("DrawBlock","");
 
 	break;
       }
@@ -1711,6 +1723,8 @@ printf("drawFeatures set %s",feature_set->description);
 	  {
 	    int i, got_columns = 0;
 
+//printf("drawFeatures set %s\n",g_quark_to_string(feature_set->unique_id));
+
 	    /* re-written for(i = frame_start; i <= frame_end; i++) */
 	    i = frame_start;
 	    do
@@ -1731,7 +1745,7 @@ printf("drawFeatures set %s",feature_set->description);
 #ifdef MH17_REVCOMP_DEBUG
       printf("\nFeatures...\n");
 #endif
-
+                zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
 		    zmapWindowDrawFeatureSet(window,
 					     canvas_data->styles,
@@ -1739,6 +1753,7 @@ printf("drawFeatures set %s",feature_set->description);
 					     tmp_forward,
 					     tmp_reverse,
 					     canvas_data->current_frame);
+                zMapStopTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 		  }
 		i++;
 	      }
@@ -2049,11 +2064,15 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 
   featureset_data->feature_count++;
 
-  style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+  style = feature->style;     // fails: no display. fixed it for pipe via GFF2parser, ACE seems to call it???
+                              // features paint so it musk be ok!
+//  style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+
 #ifdef MH17_REVCOMP_DEBUG
   if(!style) printf("no style 1 ");
 #endif
 
+#if MH17_FEATURESET_HAS_OWN_COPY_POINTED_AT_BY_FEATURE
   if(style)
     style = zmapWindowContainerFeatureSetStyleFromStyle((ZMapWindowContainerFeatureSet)column_group, style) ;
   else
@@ -2065,13 +2084,15 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   if(!style) printf("no style 2");
   printf("\n");
 #endif
+
+#endif
+
   if(style)
     feature_item = zmapWindowFeatureDraw(window, style, (FooCanvasGroup *)column_group, feature) ;
   else
     g_warning("definitely need a style '%s' for feature '%s'",
 	      g_quark_to_string(feature->style_id),
 	      g_quark_to_string(feature->original_id));
-
   return ;
 }
 

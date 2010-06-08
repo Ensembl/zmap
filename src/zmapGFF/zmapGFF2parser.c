@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 28 09:11 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.110 2010-05-19 13:15:31 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.111 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,7 +143,7 @@ ZMapGFFParser zMapGFFCreateParser(void)
 /* We should do this internally with a var in the parser struct.... */
 /* This function must be called prior to parsing feature lines, it is not required
  * for either the header lines or sequences. */
-gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GData *sources, gboolean parse_only)
+gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only)
 {
   gboolean result = FALSE ;
   GQuark locus_id ;
@@ -1158,7 +1158,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   char *feature_name_id = NULL, *feature_name = NULL ;
   GQuark feature_style_id ;
   ZMapFeatureSet feature_set = NULL ;
-  ZMapFeatureTypeStyle feature_set_style, feature_style ;
+  ZMapFeatureTypeStyle feature_set_style = NULL, feature_style = NULL;
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
@@ -1232,11 +1232,18 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       feature_set_name = source ;
     }
 
+      // get the feature set so that we can find the style for the feature;
+  parser_feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
+                                                       feature_set_name);
 
+      // we know featureset is set (see below) but this costs little
+  if(parser_feature_set && parser_feature_set->feature_set)
+      feature_set_style = parser_feature_set->feature_set->style;
 
   /* If a feature set style or a feature style is missing then we can't carry on.
    * NOTE the feature sets style has the same name as the feature set. */
-  if (!(feature_set_style = zMapFindStyle(parser->sources, feature_style_id)))
+
+  if (!feature_set_style && !(feature_set_style = zMapFindStyle(parser->sources, feature_style_id)))
     {
       *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
 				  g_quark_to_string(feature_style_id), feature_set_name) ;
@@ -1244,8 +1251,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       return result ;
     }
+  feature_style = feature_set_style;
 
-  if (!(feature_style = zMapFindStyle(parser->sources, feature_style_id)))
+#if MH17_NOT_NEEDED
+  if (!feature_style && !(feature_style = zMapFindStyle(parser->sources, feature_style_id)))
     {
       *err_text = g_strdup_printf("feature ignored, could not find its style \"%s\".",
 				  g_quark_to_string(feature_style_id)) ;
@@ -1253,7 +1262,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       return result ;
     }
-
+#endif
 
   /* I'M NOT HAPPY WITH THIS, IT DOESN'T WORK AS A CONCEPT....NEED TYPES IN FEATURE STRUCT
    * AND IN STYLE...BUT THEY HAVE DIFFERENT PURPOSE.... */
@@ -1308,9 +1317,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
   /* Check if the feature_set_name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
-  if (!parser->parse_only &&
-      (parser_feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
-									 feature_set_name)))
+  if (!parser->parse_only && parser_feature_set)
+//      (parser_feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
+//									 feature_set_name)))
     {
       feature_set = parser_feature_set->feature_set ;
 
@@ -1348,7 +1357,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	  feature_set = parser_feature_set->feature_set = zMapFeatureSetCreate(feature_set_name, NULL) ;
 
-	  zMapFeatureSetStyle(feature_set, feature_set_style) ;	/* Set the style for the set. */
+        // thse are both the same, feature_set_style no longer used
+        // but ZMap now has a column style in addition
+        // zMapFeatureSetStyle(feature_set, feature_set_style) ;	/* Set the style for the set. */
+
+        // we need a copy as these may be re-used.
+        // styles have already been inherited by this point by zmapView code and passed back to us
+        feature_style = zMapFeatureStyleCopy(feature_style);
+        zMapFeatureSetStyle(feature_set, feature_style) ;     /* Set the style for the set. */
 
 	  parser_feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(parser_feature_set->multiline_features)) ;
@@ -1462,7 +1478,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 result = zMapFeatureAddAlignmentData(feature, clone_id,
 					      query_start, query_end,
 					      homol_type, query_length, query_strand, ZMAPPHASE_0,
-					      gaps, zmapStyleGetWithinAlignError(feature_style),
+					      gaps, zMapStyleGetWithinAlignError(feature_style),
 					      local_sequence) ;
        }
      else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
@@ -2463,6 +2479,9 @@ static void destroyFeatureArray(gpointer data)
 
   /* No data to free in this list, just clear it. */
   g_datalist_clear(&(parser_feature_set->multiline_features)) ;
+  if(parser_feature_set->feature_set && parser_feature_set->feature_set->style)
+      zMapStyleDestroy(parser_feature_set->feature_set->style);
+
 
   g_free(parser_feature_set) ;
 

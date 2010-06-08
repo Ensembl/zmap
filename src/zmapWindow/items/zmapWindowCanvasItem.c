@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 13:13 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.27 2010-05-26 12:49:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.28 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -249,7 +249,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 
       if (item && ZMAP_IS_CANVAS_ITEM(item))
 	{
-	  GObject *object ;
+
 	  ZMapWindowCanvasItemClass canvas_item_class ;
 
 
@@ -262,21 +262,27 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 
 	  if (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
 	    (* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item) ;
-#ifdef AUTO_RESIZE_OFF
+#if 0
+{        GObject *object ;
+        #ifdef AUTO_RESIZE_OFF
 	  expand_background(canvas_item, NULL, NULL, NULL, NULL);
 #endif /* AUTO_RESIZE_OFF */
 
 	  /* This needs to be removed and replaced by zMapWindowCanvasItemGetFeature() */
-	  object = G_OBJECT(item);
-#ifdef RDS_DONT_INCLUDE
-	  g_object_set_data(object, ITEM_FEATURE_DATA, feature);
-	  g_object_set_data(object, ITEM_FEATURE_TYPE, GUINT_TO_POINTER(ITEM_FEATURE_SIMPLE));
-#endif
 
+#ifdef RDS_DONT_INCLUDE
+        object = G_OBJECT(item);
+        g_object_set_data(object, ITEM_FEATURE_DATA, feature);
+        g_object_set_data(object, ITEM_FEATURE_TYPE, GUINT_TO_POINTER(ITEM_FEATURE_SIMPLE));
+#endif
+}
+#endif
 	  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
 	  zmapWindowItemStatsIncr(&(canvas_item_class->stats)) ;
+
 	}
+
     }
 
   return canvas_item;
@@ -422,6 +428,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
       if(interval && ZMAP_IS_CANVAS(interval->canvas))
 	{
 	  FooCanvasItem *long_interval;
+
 	  long_interval = zmapWindowLongItemCheckPoint(interval);
 
 	  if(long_interval != interval)
@@ -447,6 +454,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
 	      (* canvas_item_class->set_colour)(canvas_item, interval, sub_feature,
 						colour_type, NULL);
 	    }
+
 	}
     }
 
@@ -1147,7 +1155,7 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
 
 
 
-/* 
+/*
  *                Internal routines.
  */
 
@@ -1445,9 +1453,9 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 /* This function is kind of a disaster from the memory and processing point of view,
  * it has taken the original basic feature item and bloated by adding:
- * 
+ *
  * FOO_TYPE_CANVAS_RECT, FOO_TYPE_CANVAS_GROUP & FOO_TYPE_CANVAS_GROUP
- * 
+ *
  *  */
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
 {

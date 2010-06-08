@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.60 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.61 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ typedef struct
 
 typedef struct
 {
-  GData *all_styles ;
+  GHashTable *all_styles ;
   gboolean found_style ;
   GString *missing_styles ;
 } FindStylesStruct, *FindStyles ;
@@ -92,10 +92,10 @@ static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
-static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out) ;
+static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out) ;
 static void findStyleCB(gpointer data, gpointer user_data) ;
 #if OLD_STYLES_CODE
-static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out) ;
+static gboolean getStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out) ;
 #endif
 ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out) ;
 
@@ -747,7 +747,7 @@ static ZMapThreadReturnCode destroyServer(ZMapServer *server)
 
 
 // returns whether we have any of the needed styles and lists the ones we don't
-static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out)
+static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
   FindStylesStruct find_data = {NULL} ;
@@ -798,7 +798,7 @@ static void findStyleCB(gpointer data, gpointer user_data)
 ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
-  GData *tmp_styles = NULL ;
+  GHashTable *tmp_styles = NULL ;
   char *missing_styles = NULL ;
 
 
@@ -859,7 +859,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 
 	  tmp_styles = zMapStyleMergeStyles(tmp_styles, styles->styles_out, ZMAPSTYLE_MERGE_MERGE) ;
 
-	  zMapStyleDestroyStyles(&(styles->styles_out)) ;
+	  zMapStyleDestroyStyles(styles->styles_out) ;
 
 
 	  if(styles_debug)
@@ -876,7 +876,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	    }
 
 	  /* Now we have all the styles do the inheritance for them all. */
-	  if (!zMapStyleInheritAllStyles(&(tmp_styles)))
+	  if (!zMapStyleInheritAllStyles(tmp_styles))
 	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
 

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 21 17:20 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.156 2010-05-19 13:15:31 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.157 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ typedef struct
 {
   GList *methods ;
   GHashTable *method_2_data ;
-  GData *styles ;
+  GHashTable *styles ;
 } LoadableStruct, *Loadable ;
 
 
@@ -96,7 +96,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   AcedbServer server ;
-  GData *styles ;
+  GHashTable *styles ;
   GHFunc eachBlock ;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
@@ -111,7 +111,7 @@ typedef struct
 typedef struct
 {
   GHashTable *method_2_data ;
-  GData *styles;
+  GHashTable *styles;
   GList *fetch_methods ;
 } MethodFetchStruct, *MethodFetch ;
 
@@ -162,12 +162,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GHashTable **featureset_2_stylelist_inout,
 						 GHashTable **featureset_2_column_inout,
 						 GHashTable **source_2_sourcedata_inout) ;
-static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
+static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -179,13 +179,13 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 					       GList **feature_methods_out,
 					       GList **required_styles_out,
 					       GHashTable **featureset_2_stylelist_inout) ;
-static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GData *styles) ;
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles) ;
 static void loadableCB(gpointer data, gpointer user_data) ;
 static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean find_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
-static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block) ;
-static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block) ;
+static gboolean sequenceRequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block) ;
+static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block) ;
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
 			      int *dna_length_out, char **dna_sequence_out) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
@@ -199,7 +199,7 @@ static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server, char *sequence_name) ;
 static gboolean setQuietMode(AcedbServer server) ;
 
-static gboolean parseTypes(AcedbServer server, GData **styles_out,
+static gboolean parseTypes(AcedbServer server, GHashTable **styles_out,
 			   ParseMethodNamesFunc parse_func_in, gpointer user_data) ;
 static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, int *num_found) ;
 static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_names_out) ;
@@ -626,7 +626,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
 
 
-static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
+static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -748,7 +748,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_features ;
@@ -788,7 +788,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 
 
 /* Get features and/or sequence. */
-static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_sequence ;
@@ -1060,7 +1060,7 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 
 
 
-static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GData *styles)
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles)
 {
   GList *loadable_methods = NULL ;
   LoadableStruct loadable_data ;
@@ -1096,7 +1096,7 @@ static void loadableCB(gpointer data, gpointer user_data)
 	{
 	  gboolean deferred = FALSE ;
 
-	  g_object_get(style, ZMAPSTYLE_PROPERTY_DEFERRED, &deferred, NULL) ;
+	  g_object_get(G_OBJECT(style), ZMAPSTYLE_PROPERTY_DEFERRED, &deferred, NULL) ;
 
 	  if (!deferred)
 	    loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
@@ -1216,7 +1216,7 @@ static void addTypeName(gpointer data, gpointer user_data)
  * I guess the best thing is to shove the errors out to the log and look for the gff start...
  *
  */
-static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block)
+static gboolean sequenceRequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
   char *gene_finder_cmds = "seqactions -gf_features no_draw ;" ;
@@ -1529,7 +1529,7 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
  *
  *
  */
-static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block)
+static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
   ZMapFeatureContext context = NULL ;
@@ -2211,7 +2211,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
  *
  *
  *  */
-static gboolean parseTypes(AcedbServer server, GData **types_out,
+static gboolean parseTypes(AcedbServer server, GHashTable **types_out,
 			   ParseMethodNamesFunc parse_func_in, gpointer user_data)
 {
   gboolean result = FALSE ;
@@ -2219,7 +2219,7 @@ static gboolean parseTypes(AcedbServer server, GData **types_out,
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-  GData *types = NULL ;
+  GHashTable *types = NULL ;
 
   /* Get all the methods and then filter them if there are requested types. */
   command = "show -a" ;
@@ -2264,7 +2264,7 @@ static gboolean parseTypes(AcedbServer server, GData **types_out,
 	    }
 	  else if ((style = (parse_func)(next_line, &curr_pos, &col_group)))
 	    {
-	      g_datalist_id_set_data(&types, zMapStyleGetUniqueID(style), style) ;
+	      g_hash_table_insert(types, GUINT_TO_POINTER(zMapStyleGetUniqueID(style)), style) ;
 	      num_types++ ;
 	    }
 

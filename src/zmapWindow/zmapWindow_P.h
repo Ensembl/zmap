@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,11 +23,11 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Defines internal interfaces/data structures of zMapWindow.
- *              
+ *
  * HISTORY:
  * Last edited: May 24 13:37 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.260 2010-05-24 12:37:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.261 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -46,13 +46,13 @@
 #include <zmapWindowContainerUtils.h>
 
 
-/* set a KNOWN initial size for the foo_canvas! 
+/* set a KNOWN initial size for the foo_canvas!
  * ... the same size as foo_canvas sets ...
  */
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
-/* 
+/*
  *  This section details data that we attach to the foocanvas items that represent
  *  contexts, aligns etc. Each data structure is accessed via a key given by the
  *  string in the hash define for each struct.
@@ -162,7 +162,7 @@ typedef struct
   GQuark block_id;
   GQuark set_id;
   GQuark feature_id;
-  
+
   char *strand_str;
   char *frame_str;
 
@@ -231,22 +231,22 @@ typedef struct
  * be changed any time soon...they impinge on the canvas which could have a very
  * large windows indeed. Unfortunately X just silently resets the window to size
  * 1 when you try to create larger windows....now read on...
- * 
+ *
  * The largest X window that can be created has max dimensions of 65535 (i.e. an
  * unsigned short), you can easily test this for a server by creating a window and
  * then querying its size, you should find this is the max. window size you can have.
- * 
+ *
  * BUT....you can't really make use of a window this size _because_ when positioning
  * anything (other windows, lines etc.), the coordinates are given via _signed_ ints.
  * This means that the maximum position you can specify must in the range -32768
  * to 32767. In a way this makes sense because it means that you can have a window
  * that covers this entire span and so position things anywhere inside it. In a way
  * its completely crap and confusing.......
- * 
+ *
  * BUT....it means that in the visible window you are limited to the range 0 - 32767.
  * by sticking at 30,000 we allow ourselves a margin for error that should work on any
  * machine.
- * 
+ *
  */
 
 enum
@@ -262,13 +262,13 @@ enum
     ZMAP_WINDOW_INTRON_POINTS = 3			    /* Number of points to draw an intron. */
   } ;
 
-enum 
+enum
   {
     ZMAP_WINDOW_GTK_BOX_SPACING = 5, /* Size in pixels for the GTK_BOX spacing between children */
     ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING = 10
   };
 
-enum 
+enum
   {
     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH = 5
   };
@@ -308,7 +308,7 @@ typedef enum
 /* Controls what data is displayed in the feature list window. */
 
 typedef enum
-  { 
+  {
     ZMAP_WINDOW_LIST_COL_NAME,				    /*!< feature name column  */
     ZMAP_WINDOW_LIST_COL_TYPE,				    /*!< feature type column  */
     ZMAP_WINDOW_LIST_COL_STRAND,			    /*!< feature strand  */
@@ -334,7 +334,7 @@ typedef enum
 
 /* Controls what data is displayed in the dna list window. */
 typedef enum
-  { 
+  {
     ZMAP_WINDOW_LIST_DNA_SCREEN_START,			    /* match screen start coord */
     ZMAP_WINDOW_LIST_DNA_SCREEN_END,			    /* match screen end coord */
     ZMAP_WINDOW_LIST_DNA_SCREEN_STRAND,			    /* match strand */
@@ -418,7 +418,7 @@ typedef void (*ZMapWindowRulerCanvasCallback)(gpointer data,
 typedef struct _ZMapWindowRulerCanvasCallbackListStruct
 {
   ZMapWindowRulerCanvasCallback paneResize;
-  
+
   gpointer user_data;           /* Goes to all! */
 } ZMapWindowRulerCanvasCallbackListStruct, *ZMapWindowRulerCanvasCallbackList;
 
@@ -531,7 +531,7 @@ typedef struct _ZMapWindowStruct
 
 
   /* Max canvas window size can either be set in pixels or in DNA bases, the latter overrides the
-   * former. In either case the window cannot be more than 30,000 pixels (32k is the actual 
+   * former. In either case the window cannot be more than 30,000 pixels (32k is the actual
    * X windows limit. */
   int canvas_maxwin_size ;
   int canvas_maxwin_bases ;
@@ -563,8 +563,8 @@ typedef struct _ZMapWindowStruct
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
-  GData *read_only_styles ;				    /* Original styles list from server. */
-  GData *display_styles ;				    /* Styles used for current display. */
+  GHashTable *read_only_styles ;				    /* Original styles list from server. */
+  GHashTable *display_styles ;				    /* Styles used for current display. */
 
   ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
 
@@ -583,7 +583,7 @@ typedef struct _ZMapWindowStruct
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
    * than this limit as we zoom in and crop them ourselves. */
-  ZMapWindowLongItems long_items ;				    
+  ZMapWindowLongItems long_items ;
   ZMapWindowFToIFactory item_factory;
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
@@ -720,8 +720,8 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
 
-void zmapWindowListWindowCreate(ZMapWindow                   window, 
-				FooCanvasItem               *current_item, 
+void zmapWindowListWindowCreate(ZMapWindow                   window,
+				FooCanvasItem               *current_item,
 				char                        *title,
 				ZMapWindowListGetFToIHash    get_hash_func,
 				gpointer                     get_hash_data,
@@ -729,8 +729,8 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
 				gpointer                     search_hash_data,
 				GDestroyNotify               search_hash_free,
 				gboolean                     zoom_to_item);
-void zmapWindowListWindow(ZMapWindow                   window, 
-			  FooCanvasItem               *current_item, 
+void zmapWindowListWindow(ZMapWindow                   window,
+			  FooCanvasItem               *current_item,
 			  char                        *title,
 			  ZMapWindowListGetFToIHash    get_hash_func,
 			  gpointer                     get_hash_data,
@@ -740,7 +740,7 @@ void zmapWindowListWindow(ZMapWindow                   window,
 			  gboolean                     zoom_to_item);
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
 
-void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, 
+void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow,
 				  ZMapWindowListGetFToIHash get_hash_func,
 				  gpointer get_hash_data,
 				  FooCanvasItem *feature_item) ;
@@ -769,7 +769,7 @@ void zmapWindowLongItemPrint(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
-void zmapWindowDrawFeatures(ZMapWindow window, 
+void zmapWindowDrawFeatures(ZMapWindow window,
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
 void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 				      ZMapContainerUtilsExecFunc enter_cb,
@@ -827,7 +827,7 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
 				     char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
-				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ; 
+				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
 GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
 				       char *set_strand, char *set_frame, ZMapFeature feature) ;
 
@@ -905,9 +905,9 @@ ZMapFeatureSet zmapWindowItemFeatureSetRecoverFeatureSet(ZMapWindowItemFeatureSe
 
 
 
-void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem *item, 
+void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem *item,
 					       int region_start, int region_end);
-void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
+void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item,
 					      ZMapFrame required_frame,
 					      int region_start, int region_end) ;
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
@@ -927,7 +927,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
 gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;
 
-void zmapWindowItemGetVisibleCanvas(ZMapWindow window, 
+void zmapWindowItemGetVisibleCanvas(ZMapWindow window,
                                     double *wx1, double *wy1,
                                     double *wx2, double *wy2);
 
@@ -956,17 +956,17 @@ void zmapWindowGetScrollRegion(ZMapWindow window,
 void zmapWindowSetScrollRegion(ZMapWindow window,
 			       double *x1_inout, double *y1_inout,
 			       double *x2_inout, double *y2_inout);
-ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, 
-                                     double *top_inout, 
+ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window,
+                                     double *top_inout,
                                      double *bot_inout) ;
-ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window, 
-                                             double *top_inout, 
+ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window,
+                                             double *top_inout,
                                              double *bot_inout) ;
 
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature,  FooCanvasItem *item);
-void zMapWindowMoveSubFeatures(ZMapWindow window, 
-			       ZMapFeature originalFeature, 
+void zMapWindowMoveSubFeatures(ZMapWindow window,
+			       ZMapFeature originalFeature,
 			       ZMapFeature modifiedFeature,
 			       GArray *origArray, GArray *modArray,
 			       gboolean isExon);
@@ -1004,7 +1004,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
-ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ; 
+ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
@@ -1066,8 +1066,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
 
-gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, 
-                                     ZMapFeatureAny feature_any, 
+gboolean zmapWindowUpdateXRemoteData(ZMapWindow window,
+                                     ZMapFeatureAny feature_any,
                                      char *action,
                                      FooCanvasItem *real_item);
 gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
@@ -1084,7 +1084,7 @@ void zmapWindowZoomControlHandleResize(ZMapWindow window);
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
-                                          double *x1_out, double *y1_out, 
+                                          double *x1_out, double *y1_out,
                                           double *x2_out, double *y2_out);
 
 
@@ -1103,7 +1103,7 @@ char *zmapWindowFeatureDescription(ZMapFeature feature) ;
 void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item);
 
 char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only);
-/* 
+/*
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
 */
 void zmapWindowDebugWindowCopy(ZMapWindow window);
@@ -1115,7 +1115,7 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
 
 /*!-------------------------------------------------------------------!
  *| Checks to see if the item really is visible.  In order to do this |
- *| all the item's parent groups need to be examined.                 |  
+ *| all the item's parent groups need to be examined.                 |
  *!-------------------------------------------------------------------!*/
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 /*!-------------------------------------------------------------------!
@@ -1190,7 +1190,7 @@ void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
 #ifdef RDS_BREAKING_STUFF
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group);
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group);
-gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_control, 
+gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_control,
                                                int *firstIdx, int *lastIdx);
 void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control);
 gboolean zmapWindowItemTextHighlightValidForMotion(ZMapWindowItemHighlighter select_control);
@@ -1200,7 +1200,7 @@ gboolean zmapWindowItemTextHighlightBegin(ZMapWindowItemHighlighter select_contr
                                           FooCanvasGroup *group_under_control,
                                           FooCanvasItem *item_receiving_event);
 void zmapWindowItemTextHighlightUpdateCoords(ZMapWindowItemHighlighter select_control,
-                                             double event_x_coord, 
+                                             double event_x_coord,
                                              double event_y_coord);
 void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
                                        FooCanvasItem *feature_parent,
@@ -1210,33 +1210,33 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
 void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 #endif
-gboolean zmapWindowCreateSetColumns(ZMapWindow window, 
-                                    ZMapWindowContainerFeatures forward_strand_group, 
+gboolean zmapWindowCreateSetColumns(ZMapWindow window,
+                                    ZMapWindowContainerFeatures forward_strand_group,
                                     ZMapWindowContainerFeatures reverse_strand_group,
-                                    ZMapFeatureBlock block, 
+                                    ZMapFeatureBlock block,
                                     ZMapFeatureSet feature_set,
-				    GData *styles,
+				    GHashTable *styles,
                                     ZMapFrame frame,
-                                    FooCanvasGroup **forward_col_out, 
+                                    FooCanvasGroup **forward_col_out,
                                     FooCanvasGroup **reverse_col_out,
 				    FooCanvasGroup **separator_col_out);
 void zmapWindowDrawFeatureSet(ZMapWindow window,
-			      GData *styles,
+			      GHashTable *styles,
                               ZMapFeatureSet feature_set,
-                              FooCanvasGroup *forward_col, 
+                              FooCanvasGroup *forward_col,
                               FooCanvasGroup *reverse_col,
                               ZMapFrame frame) ;
 void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group) ;
 
-void zmapWindowDrawSeparatorFeatures(ZMapWindow           window, 
+void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureBlock     block,
 				     ZMapFeatureSet       feature_set,
 				     ZMapFeatureTypeStyle style);
 
-gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GData **display_styles) ;
-gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window, 
+gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles, GHashTable *display_styles) ;
+gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 					     ZMapFeatureBlock block,
 					     int *start, int *end);
 
@@ -1246,7 +1246,7 @@ ZMapFeatureTypeStyle zmapWindowStyleTableFind(GHashTable *style_table, GQuark st
 void zmapWindowStyleTableForEach(GHashTable *style_table,
 				 ZMapWindowStyleTableCallback app_func, gpointer app_data) ;
 void zmapWindowStyleTableDestroy(GHashTable *style_table) ;
-GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark feature_set_id);
+GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
 
 /* Ruler Functions */
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
@@ -1261,7 +1261,7 @@ void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustmen
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, 
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at,
                               double origin, double start, double end);
 
 /* Stats functions. */

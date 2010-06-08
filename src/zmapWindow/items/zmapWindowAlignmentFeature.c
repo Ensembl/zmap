@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.10 2010-05-26 12:44:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.11 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,7 +132,9 @@ void zmap_window_alignment_feature_clear(ZMapWindowCanvasItem canvas_item)
 
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item);
 
-  zMapStyleGetGappedAligns(style, &parse_gaps, &show_gaps) ;
+//  zMapStyleGetGappedAligns(style, &parse_gaps, &show_gaps) ;
+  parse_gaps = zMapStyleIsParseGaps(style);
+  show_gaps = zMapStyleIsShowGaps(style);
 
   if(alignment->flags.no_gaps_hidden  == 0 &&
      alignment->flags.no_gaps_display == 1 &&

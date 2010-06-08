@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.22 2010-05-26 12:02:50 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.23 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -523,10 +523,10 @@ GQuark zMapStyleQuark(gchar *str)
 
 
 // get style stanzas in styles_list of all from the file
-gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GData **styles_out)
+gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out)
 {
   gboolean result = FALSE ;
-  GData *styles = NULL ;
+  GHashTable *styles = NULL ;
   GList *settings_list = NULL, *free_this_list = NULL;
   ZMapConfigIniContext context ;
   GHashTable *shapes = NULL;
@@ -548,7 +548,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
     {
       free_this_list = settings_list ;
 
-      g_datalist_init(&styles) ;
+      styles = g_hash_table_new(NULL,NULL);
 
       do
       {
@@ -684,7 +684,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
 
         if ((new_style = zMapStyleCreateV(num_params, params)))
           {
-            if (!zMapStyleSetAdd(&styles, new_style))
+            if (!zMapStyleSetAdd(styles, new_style))
             {
               /* Free style, report error and move on. */
               zMapStyleDestroy(new_style) ;
@@ -1064,6 +1064,7 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
     { ZMAPSTANZA_DEBUG_APP_THREADS, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_DEBUG_APP_FEATURE2STYLE, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_DEBUG_APP_STYLES, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_DEBUG_APP_TIMING, G_TYPE_BOOLEAN, NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_DEBUG_CONFIG;

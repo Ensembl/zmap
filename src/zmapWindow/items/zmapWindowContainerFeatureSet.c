@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 21 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.28 2010-05-25 14:17:01 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.29 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -173,6 +173,7 @@ GType zmapWindowContainerFeatureSetGetType(void)
  * \return ZMapWindowContainerFeatureSet that was edited.
  */
 
+// this is only called on column creation
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
 								   GQuark     align_id,
@@ -210,8 +211,11 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 	  while((list = g_list_next(list)));
 	}
 
+      // try to guess the intended visibility mode to avoid extra foo_canvas activity
+      zmapWindowColumnSetState(window, FOO_CANVAS_GROUP(container_set),
+                        ZMAPSTYLE_COLDISPLAY_INVALID, FALSE);
 
-      zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
+//      zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
     }
 
   return container_set;
@@ -659,7 +663,7 @@ void zmapWindowContainerFeatureSetStyleDisplay(ZMapWindowContainerFeatureSet con
       value_data.gvalue    = &value;
       value_data.param_id  = ITEM_FEATURE_SET_VISIBLE;
 
-      value_to_each_style_in_table(GUINT_TO_POINTER(style_id), local_style, &value_data);
+      value_to_each_style_in_table(GUINT_TO_POINTER(style_id), (gpointer) local_style, &value_data);
 
       g_value_unset(&value);
     }
@@ -1069,6 +1073,8 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
   return item_feature_set;
 }
 
+
+#if MH17_function_not_used
 /* This function is written the wrong way round.  It should be
  * re-written, along with extract_value_from_style_table so that
  * this function is part of utils and extract_value_from_style_table
@@ -1113,7 +1119,7 @@ gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,
   return result;
 }
 
-
+#endif
 
 /*
  *  OBJECT CODE
@@ -1575,7 +1581,9 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 
 	if(!current)
 	  {
-	    if(zMapStyleGetJoinAligns(style, &style_version))
+//	    if(zMapStyleGetJoinAligns(style, &style_version))
+            style_version = zMapStyleGetWithinAlignError(style);
+            if(style_version) // if it's set we only care if it's not zero
 	      {
 		g_value_set_uint(value_data->gvalue, style_version);
 	      }

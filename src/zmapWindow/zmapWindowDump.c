@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.15 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.16 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1184,7 +1184,7 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	  double x, y ;
 
 // so I can look at them in the debugger
-ZMapWindowTextItem zwt = ZMAP_WINDOW_TEXT_ITEM(text_item);
+//ZMapWindowTextItem zwt = ZMAP_WINDOW_TEXT_ITEM(text_item);
 // "GLib-GObject-WARNING **: invalid cast from `ZMapWindowTextItem' to `FooCanvasZMapText'"
 //FooCanvasZMapText *fzt = FOO_CANVAS_ZMAP_TEXT(text_item);
 

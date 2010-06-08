@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 22 14:46 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.19 2010-04-22 13:49:41 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.20 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,8 +65,8 @@ GFF_END
 #define GFF_SEP_NOSCORE    GFF_SEPARATOR "%c"
 #define GFF_STRAND_FRAME   GFF_SEPARATOR GFF_STRAND GFF_SEPARATOR GFF_FRAME
 #define GFF_SEP_ATTRIBUTES GFF_SEPARATOR GFF_ATTRIBUTES
-#define GFF_OBLIGATORY         GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_SCORE GFF_STRAND_FRAME 
-#define GFF_OBLIGATORY_NOSCORE GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_NOSCORE GFF_STRAND_FRAME 
+#define GFF_OBLIGATORY         GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_SCORE GFF_STRAND_FRAME
+#define GFF_OBLIGATORY_NOSCORE GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_NOSCORE GFF_STRAND_FRAME
 #define GFF_FULL_LINE GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_SCORE GFF_STRAND_FRAME GFF_SEP_ATTRIBUTES
 
 typedef struct _GFFDumpDataStruct *GFFDumpData;
@@ -87,7 +87,7 @@ typedef struct
 /* Fields are: <sequence> <source> <feature> <start> <end> <score> <strand> <frame> <attributes> */
 typedef struct _GFFDumpDataStruct
 {
-  GData *styles ;
+  GHashTable *styles ;
 
   const char *gff_sequence;	/* The sequence name. e.g. 16.12345-23456 */
   char *gff_source;		/* The source e.g. augustus, TrEMBL, trf, polya_site */
@@ -106,8 +106,8 @@ typedef struct _GFFDumpDataStruct
 /* Functions to dump the header section of gff files */
 static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, GError **error_out,
 				 const char **sequence_in_out) ;
-static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key, 
-							      gpointer data, 
+static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
+							      gpointer data,
 							      gpointer user_data,
 							      char   **err_out) ;
 
@@ -115,7 +115,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
 
 /* ZMapFeatureDumpFeatureFunc to dump gff. writes lines into gstring buffer... */
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
-			    GData         *styles,
+			    GHashTable         *styles,
 			    GString       *gff_string,
 			    GError       **error,
 			    gpointer       user_data);
@@ -156,7 +156,7 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
 static gboolean dump_transcript_foreach_subpart(ZMapFeature feature,
 						GString    *buffer,
 						GError    **error_out,
-						GArray     *subparts, 
+						GArray     *subparts,
 						GFFDumpData gff_data);
 
 
@@ -202,18 +202,18 @@ static DumpGFFAttrFunc text_funcs_G[] = {
   dump_text_note,
   dump_transcript_locus,
   NULL
-};      
+};
 
 
 /* NOTE: if we want this to dump a context it will have to cope with lots of different
  * sequences for the different alignments...I think the from alignment down is ok but the title
  * for the file is not if we have different alignments....and neither are the coords....?????
- * 
+ *
  * I think we would need multiple Type and sequence-region comment lines for the different
  * sequences.
- * 
+ *
  *  */
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GData *styles, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out)
 {
   gboolean result = TRUE;
 
@@ -222,7 +222,7 @@ gboolean zMapGFFDump(ZMapFeatureAny dump_set, GData *styles, GIOChannel *file, G
   return result;
 }
 
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GData *styles,
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 			   ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   const char *sequence = NULL;
@@ -249,22 +249,22 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GData *styles,
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
-      gff_data.gff_sequence = sequence;	
+      gff_data.gff_sequence = sequence;
       if(region_span)
-	result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, styles, region_span, 
+	result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, styles, region_span,
 						   dump_gff_cb, &gff_data, file, error_out) ;
       else
-	result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, styles, dump_gff_cb, 
+	result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, styles, dump_gff_cb,
 					      &gff_data, file, error_out) ;
     }
 
-  return result ;  
+  return result ;
 }
 
 /*!
  * \brief Dump a list of ZMapFeatureAny. sequence can be NULL
  */
-gboolean zMapGFFDumpList(GList *dump_list, GData *styles, char *sequence, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GError **error_out)
 {
   const char *int_sequence = NULL;
   gboolean result = FALSE ;
@@ -290,16 +290,16 @@ gboolean zMapGFFDumpList(GList *dump_list, GData *styles, char *sequence, GIOCha
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
-      gff_data.gff_sequence = int_sequence;	
+      gff_data.gff_sequence = int_sequence;
 
-      result = zMapFeatureListDumpToFile(dump_list, styles, dump_gff_cb, &gff_data, 
+      result = zMapFeatureListDumpToFile(dump_list, styles, dump_gff_cb, &gff_data,
 					 file, error_out) ;
     }
 
   return result ;
 }
 
-gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GData *styles,
+gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles,
 				GIOChannel *file, GError **error_out,
 				char *sequence,
 				GFunc *list_func_out, gpointer *list_data_out)
@@ -325,10 +325,10 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GData *styles,
 
 	  /* This might get overwritten later, but as DumpToFile uses
 	   * Subset, there's a chance it wouldn't get set at all */
-	  gff_data->gff_sequence = int_sequence;	
+	  gff_data->gff_sequence = int_sequence;
 
 	  result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data, g_free,
-						      file,          error_out, 
+						      file,          error_out,
 						      list_func_out, list_data_out) ;
 	}
     }
@@ -355,7 +355,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, G
     header_data.gff_sequence = *sequence_in_out;
 
   /* gff-version, source-version, date */
-  g_string_append_printf(header_data.header_string, 
+  g_string_append_printf(header_data.header_string,
 			 "##gff-version %d\n"
 			 "##source-version %s %s\n"
 			 "##date %s\n",
@@ -367,15 +367,15 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, G
 
   zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_BLOCK,
 			    get_type_seq_header_cb, &header_data);
-  
+
   if(header_data.status)
     {
       GIOStatus write_status ;
       gsize bytes_written ;
 
-      if ((write_status = g_io_channel_write_chars(file, 
-						   header_data.header_string->str, 
-						   header_data.header_string->len, 
+      if ((write_status = g_io_channel_write_chars(file,
+						   header_data.header_string->str,
+						   header_data.header_string->len,
 						   &bytes_written, error_out)) != G_IO_STATUS_NORMAL)
 	{
 	  header_data.status = FALSE;
@@ -390,8 +390,8 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, G
   return header_data.status;
 }
 
-static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key, 
-							      gpointer data, 
+static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
+							      gpointer data,
 							      gpointer user_data,
 							      char   **err_out)
 {
@@ -402,7 +402,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
-      
+
       break;
     case ZMAPFEATURE_STRUCT_ALIGN:
       if(header_data->status && header_data->cont)
@@ -426,17 +426,17 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
 	  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)feature_any;
 	  gboolean reversed = FALSE;
 	  int start, end;
-	  
+
 	  start = feature_block->block_to_sequence.q1;
 	  end   = feature_block->block_to_sequence.q2;
-	  
+
 	  /* I'm a little unsure about the strand stuff...think more about this... */
 	  if (feature_block->block_to_sequence.q_strand == ZMAPSTRAND_REVERSE)
 	    reversed = TRUE ;
-	  
+
 	  g_string_append_printf(header_data->header_string,
 				 "##sequence-region %s %d %d %s\n",
-				 g_quark_to_string(feature_any->original_id), 
+				 g_quark_to_string(feature_any->original_id),
 				 start, end, (reversed ? "(reversed)" : "")) ;
 	  header_data->status = TRUE;
 	  header_data->cont   = FALSE;
@@ -452,15 +452,15 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
   return status;
 }
 
-static gboolean dump_gff_cb(ZMapFeatureAny feature_any, 
-			    GData         *styles,
+static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
+			    GHashTable         *styles,
 			    GString       *gff_string,
 			    GError       **error,
 			    gpointer       user_data)
 {
   GFFDumpData gff_data = (GFFDumpData)user_data;
   gboolean result = TRUE;
-  
+
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
@@ -487,7 +487,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	  gff_data->gff_source = (char *)zMapStyleGetName(style);
 	if(!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
 	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology);
-	
+
 	/* Obligatory fields. */
 	g_string_append_printf(gff_string,
 			       GFF_SEQ_SOURCE_FEAT_START_END,
@@ -501,7 +501,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	  g_string_append_printf(gff_string, GFF_SEP_SCORE, feature->score) ;
 	else
 	  g_string_append_printf(gff_string, GFF_SEP_NOSCORE, '.') ;
-	
+
 	g_string_append_printf(gff_string, GFF_STRAND_FRAME,
 			       strand2Char(feature->strand),
 			       phase2Char(feature->phase)) ;
@@ -511,8 +511,8 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	switch(feature->type)
 	  {
 	  case ZMAPSTYLE_MODE_BASIC:
-	    {	      
-	      result = dump_attributes(gff_data->basic, feature, 
+	    {
+	      result = dump_attributes(gff_data->basic, feature,
 				       &(feature->feature.basic),
 				       gff_string, error, gff_data);
 	    }
@@ -524,15 +524,15 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	      gff_data->link_term    = "Sequence";
 	      gff_data->link_term    = gff_data->gff_feature;
 
-	      result = dump_attributes(gff_data->transcript, feature, 
+	      result = dump_attributes(gff_data->transcript, feature,
 				       &(feature->feature.transcript),
 				       gff_string, error, gff_data);
-	      
+
 	    }
 	    break;
 	  case ZMAPSTYLE_MODE_ALIGNMENT:
 	    {
-	      result = dump_attributes(gff_data->homol, feature, 
+	      result = dump_attributes(gff_data->homol, feature,
 				       &(feature->feature.homol),
 				       gff_string, error, gff_data);
      	    }
@@ -585,10 +585,10 @@ static gboolean dump_attributes(DumpGFFAttrFunc func_array[],
 
       if((*funcs_ptr)(feature, feature_data, gff_string, error, gff_data))
 	need_separator = TRUE;
-      
+
       funcs_ptr++;
     }
-  
+
   return result;
 }
 
@@ -602,7 +602,7 @@ static gboolean dump_text_note(ZMapFeature    feature,
 
   if(feature->description)
     {
-      g_string_append_printf(gff_string, 
+      g_string_append_printf(gff_string,
 			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
 			     "Note", feature->description);
       result = TRUE;
@@ -624,11 +624,11 @@ static gboolean dump_transcript_identifier(ZMapFeature    feature,
   gboolean result = TRUE;
 
   /* To make       Sequence "AC12345.1"          */
-  g_string_append_printf(gff_string, 
+  g_string_append_printf(gff_string,
 			 GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
 			 gff_data->link_term,
 			 gff_data->feature_name);
-  
+
 
   return result;
 }
@@ -644,13 +644,13 @@ static gboolean dump_transcript_locus(ZMapFeature    feature,
   if(feature->locus_id)
     {
       /* To make       Locus "AC12345.1"          */
-      g_string_append_printf(gff_string, 
+      g_string_append_printf(gff_string,
 			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
 			     "Locus",
 			     (char *)g_quark_to_string(feature->locus_id));
       result = TRUE;
     }
-  
+
   return result;
 }
 
@@ -668,7 +668,7 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
   if(result && transcript->exons)
     {
       gff_data->gff_feature = "exon";
-      result = dump_transcript_foreach_subpart(feature, gff_string, error, 
+      result = dump_transcript_foreach_subpart(feature, gff_string, error,
 					       transcript->exons, gff_data);
     }
 
@@ -682,19 +682,19 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
   if(result && transcript->flags.cds)
     {
       gff_data->gff_feature = "CDS";
-      g_string_append_printf(gff_string, 
+      g_string_append_printf(gff_string,
 			     "\n" GFF_OBLIGATORY_NOSCORE,
 			     gff_data->gff_sequence,
 			     gff_data->gff_source,
 			     gff_data->gff_feature,
-			     transcript->cds_start, 
+			     transcript->cds_start,
 			     transcript->cds_end,
 			     '.',
 			     strand2Char(feature->strand),
 			     phase2Char(feature->phase)) ;
-      
+
       result = dump_transcript_identifier(feature, transcript,
-					  gff_string, error, 
+					  gff_string, error,
 					  gff_data);
     }
 
@@ -704,7 +704,7 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
 static gboolean dump_transcript_foreach_subpart(ZMapFeature feature,
 						GString    *buffer,
 						GError    **error_out,
-						GArray     *subparts, 
+						GArray     *subparts,
 						GFFDumpData gff_data)
 {
   gboolean result = TRUE ;
@@ -731,7 +731,7 @@ static gboolean dump_transcript_foreach_subpart(ZMapFeature feature,
       result = dump_transcript_identifier(feature, &(feature->feature.transcript),
 					  buffer, error_out, gff_data);
     }
-  
+
   return result ;
 }
 
@@ -747,7 +747,7 @@ static gboolean dump_alignment_target(ZMapFeature feature, gpointer homol_data,
 
   if(feature->original_id)
     {
-      g_string_append_printf(gff_string, 
+      g_string_append_printf(gff_string,
 			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE " %d %d" GFF_ATTRIBUTE_TAB_END,
 			     "Target", g_quark_to_string(feature->original_id),
 			     homol->y1, homol->y2);
@@ -770,28 +770,28 @@ static gboolean dump_alignment_gaps(ZMapFeature feature, gpointer homol_data,
       has_gaps = TRUE;
 
       g_string_append_printf(gff_string, GFF_ATTRIBUTE_TAB_BEGIN "%s ", "Gaps");
-      
+
       g_string_append_c(gff_string, '"');
 
       for(i = 0; i < gaps_array->len; i++)
 	{
 	  ZMapAlignBlock block = NULL;
-	  
+
 	  block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
-	  
-	  g_string_append_printf(gff_string, "%d %d %d %d,", 
-				 block->q1, block->q2, 
+
+	  g_string_append_printf(gff_string, "%d %d %d %d,",
+				 block->q1, block->q2,
 				 block->t1, block->t2);
 	}
-      
+
       /* remove the last comma! */
       g_string_truncate(gff_string, gff_string->len - 1);
       /* and add a quote and a tab?*/
-      g_string_append_printf(gff_string, 
+      g_string_append_printf(gff_string,
 			     "%c" GFF_ATTRIBUTE_TAB_END,
 			     '"');
     }
-  
+
   return has_gaps;
 }
 
@@ -804,7 +804,7 @@ static gboolean dump_alignment_clone(ZMapFeature feature, gpointer homol_data,
 
   if(homol->flags.has_clone_id)
     {
-      g_string_append_printf(gff_string, 
+      g_string_append_printf(gff_string,
 			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
 			     "Clone", g_quark_to_string(homol->clone_id));
       has_clone = TRUE;
@@ -821,8 +821,8 @@ static gboolean dump_alignment_length(ZMapFeature feature, gpointer homol_data,
   gboolean has_length = FALSE;
 
   if(homol->length)
-    {    
-      g_string_append_printf(gff_string, 
+    {
+      g_string_append_printf(gff_string,
 			     GFF_ATTRIBUTE_TAB_BEGIN "Length %d" GFF_ATTRIBUTE_TAB_END,
 			     homol->length);
       has_length = TRUE;

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: May 10 08:06 2007 (edgrif)
  * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.7 2010-03-04 15:10:30 mh17 Exp $
+ * CVS info:   $Id: zmapFeature_P.h,v 1.8 2010-06-08 08:31:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H
@@ -49,7 +49,7 @@ typedef struct
 // mh17: needed in zmapFeature3Frame.c as well as FeatureContext.c
 typedef struct
 {
-  GData *styles ;
+  GHashTable *styles ;
   int start;
   int end ;
 } RevCompDataStruct, *RevCompData ;

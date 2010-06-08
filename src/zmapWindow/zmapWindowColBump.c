@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.74 2010-05-26 15:28:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.75 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -414,7 +414,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(bump_properties.display_state),
 		       NULL);
 
-	  zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
+//	  zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
+        bump_properties.match_threshold = zMapStyleGetWithinAlignError(style);
 
 	  zMapStyleSetBumpMode(style, bump_mode);
 	}

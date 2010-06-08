@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:49 2010 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.33 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.34 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -182,7 +182,7 @@ typedef struct
    * themseleves. This is completely data source dependent. */
   gboolean server_styles_have_mode ;
 
-  GData *styles_out ;					    /* List of prespecified styles or NULL
+  GHashTable *styles_out ;					    /* List of prespecified styles or NULL
 							       to get all available styles. */
 } ZMapServerReqStylesStruct, *ZMapServerReqStyles ;
 
@@ -204,7 +204,7 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  GData *styles ;					    /* Needed for some features to control
+  GHashTable *styles ;					    /* Needed for some features to control
 							       how they are fetched. */
 
   ZMapFeatureContext context ;		    /* Returned feature sets. */

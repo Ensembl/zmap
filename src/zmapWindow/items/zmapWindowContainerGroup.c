@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 24 15:23 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.13 2010-05-24 14:23:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.14 2010-06-08 08:31:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ typedef struct
 
 static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupClass container_class);
 static void zmap_window_container_group_init        (ZMapWindowContainerGroup      group);
-static void zmap_window_container_group_set_property(GObject               *object, 
+static void zmap_window_container_group_set_property(GObject               *object,
 						     guint                  param_id,
 						     const GValue          *value,
 						     GParamSpec            *pspec);
@@ -72,19 +72,19 @@ static void zmap_window_container_group_destroy     (GtkObject *gtkobject);
 static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
 					      GdkEventExpose *expose);
 static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
-static void zmap_window_container_group_reposition(ZMapWindowContainerGroup container_group, 
+static void zmap_window_container_group_reposition(ZMapWindowContainerGroup container_group,
 						   double rect_x1,   double rect_y1,
 						   double rect_x2,   double rect_y2,
 						   double *dx_repos, double *dy_repos);
 
-static void maximise_background_rectangle(ZMapWindowContainerGroup this_container, 
+static void maximise_background_rectangle(ZMapWindowContainerGroup this_container,
 					  FooCanvasItem           *container_item,
 					  FooCanvasRE             *rect);
 static void crop_rectangle_to_scroll_region(gpointer rectangle_data, gpointer points_data);
 static void zmap_window_container_scroll_region_get_item_bounds(FooCanvasItem *item,
 								double *x1, double *y1,
 								double *x2, double *y2);
-static void zmap_window_container_update_with_crop(FooCanvasItem *item, 
+static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 						   double i2w_dx, double i2w_dy,
 						   FooCanvasPoints *itemised_scroll_region,
 						   int flags);
@@ -108,16 +108,16 @@ static FooCanvasItemClass  *item_parent_class_G  = NULL;
 
 /*!
  * \brief Get the GType for the ZMapWindowContainerGroup GObjects
- * 
+ *
  * \return GType corresponding to the GObject as registered by glib.
  */
 
 GType zmapWindowContainerGroupGetType(void)
 {
   static GType group_type = 0;
-  
+
   if (!group_type) {
-    static const GTypeInfo group_info = 
+    static const GTypeInfo group_info =
       {
 	sizeof (zmapWindowContainerGroupClass),
 	(GBaseInitFunc) NULL,
@@ -128,21 +128,21 @@ GType zmapWindowContainerGroupGetType(void)
 	sizeof (zmapWindowContainerGroup),
 	0,              /* n_preallocs */
 	(GInstanceInitFunc) zmap_window_container_group_init
-	
+
       };
-    
+
     group_type = g_type_register_static (FOO_TYPE_CANVAS_GROUP,
 					 ZMAP_WINDOW_CONTAINER_GROUP_NAME,
 					 &group_info,
 					 0);
   }
-  
+
   return group_type;
 }
 
 /*!
  * \brief Create a new ZMapWindowContainerGroup object.
- * 
+ *
  * \param parent    This is the parent ZMapWindowContainerFeatures
  * \param level     The level the new ZMapWindowContainerGroup should be.
  * \param child_spacing The distance between the children of this container.
@@ -171,7 +171,7 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatu
 
 /*!
  * \brief Create a new ZMapWindowContainerGroup object.
- * 
+ *
  * \param parent    This is the parent FooCanvasGroup.
  * \param level     The level the new ZMapWindowContainerGroup should be.
  * \param child_spacing The distance between the children of this container.
@@ -202,7 +202,7 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
   if(ZMAP_IS_CONTAINER_GROUP(parent))
     {
       zMapAssertNotReached();
-      
+
       parent = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent);
     }
   else
@@ -213,9 +213,9 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 	  level            = parent_container->level + 1;
 	}
     }
-  
+
   container_type = ZMAP_TYPE_CONTAINER_GROUP;
-  
+
   switch(level)
     {
     case ZMAPCONTAINER_LEVEL_ROOT:
@@ -238,11 +238,11 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
       break;
     }
 
-  item = foo_canvas_item_new(parent, container_type, 
+  item = foo_canvas_item_new(parent, container_type,
 			     "x", 0.0,
 			     "y", 0.0,
 			     NULL);
-      
+
   if(item && ZMAP_IS_CONTAINER_GROUP(item))
     {
       group     = FOO_CANVAS_GROUP(item);
@@ -265,13 +265,13 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
       if(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)
 	(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)(container);
     }
-  
+
   return container;
 }
 
 /*!
  * \brief Set the visibility of a whole ZMapWindowContainerGroup.
- * 
+ *
  * \param container_parent  A FooCanvasGroup which _must_ be a ZMapWindowContainerGroup.
  * \param visible           A boolean to specify visibility. TRUE = visible, FALSE = hidden.
  *
@@ -293,6 +293,8 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
 	foo_canvas_item_show((FooCanvasItem *)container_parent);
       else
 	foo_canvas_item_hide((FooCanvasItem *)container_parent);
+
+      zMapStopTimer("SetVis",visible ? "true" : "false");
 
       setable = TRUE;
     }
@@ -343,7 +345,7 @@ void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, 
 }
 
 /*!
- * \brief A ZMapWindowContainerGroup may need to redraw it's children.  
+ * \brief A ZMapWindowContainerGroup may need to redraw it's children.
  *        This sets a flag so that it happens
  *
  * \param container  The container that needs its flag set.
@@ -352,7 +354,7 @@ void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, 
  * \return void
  */
 
-void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container, 
+void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container,
 						 gboolean redraw_required)
 {
   container->flags.column_redraw = redraw_required;
@@ -417,7 +419,7 @@ void zmapWindowContainerGroupAddPreUpdateHook(ZMapWindowContainerGroup container
       update_hook->hook_func = hook;
       update_hook->hook_data = user_data;
 
-      container->pre_update_hooks = g_slist_append(container->pre_update_hooks, 
+      container->pre_update_hooks = g_slist_append(container->pre_update_hooks,
 						   update_hook);
     }
 
@@ -449,7 +451,7 @@ void zmapWindowContainerGroupRemovePreUpdateHook(ZMapWindowContainerGroup contai
  *
  * Internally the containers hold a list of these hook which get
  * called every time the container gets drawn.  This can be done
- * on a per container basis, rather than across all containers. 
+ * on a per container basis, rather than across all containers.
  * In terms of utility and use case the block marking and navigator
  * are users of this.
  *
@@ -471,7 +473,7 @@ void zmapWindowContainerGroupAddUpdateHook(ZMapWindowContainerGroup container,
       update_hook->hook_func = hook;
       update_hook->hook_data = user_data;
 
-      container->post_update_hooks = g_slist_append(container->post_update_hooks, 
+      container->post_update_hooks = g_slist_append(container->post_update_hooks,
 						    update_hook);
     }
 
@@ -480,7 +482,7 @@ void zmapWindowContainerGroupAddUpdateHook(ZMapWindowContainerGroup container,
 
 /*!
  * \brief Remove an update hook on a ZMapWindowContainerGroup.
- * 
+ *
  * Exactly the opposite of Add. Both the hook and the data are required
  * to successfully remove the hook.
  *
@@ -512,11 +514,11 @@ void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerGroup.
- * 
+ *
  * \code container = zmapWindowContainerGroupDestroy(container);
- * 
+ *
  * \param container  The container to be free'd
- * 
+ *
  * \return The container that has been free'd. i.e. NULL
  */
 
@@ -597,7 +599,7 @@ static void zmap_window_container_group_init        (ZMapWindowContainerGroup co
   return ;
 }
 
-static void zmap_window_container_group_set_property(GObject               *object, 
+static void zmap_window_container_group_set_property(GObject               *object,
 						     guint                  param_id,
 						     const GValue          *value,
 						     GParamSpec            *pspec)
@@ -698,23 +700,23 @@ static void zmap_window_container_group_get_property(GObject               *obje
   return ;
 }
 #ifdef POINT_REQUIRED
-static double window_container_group_invoke_point (FooCanvasItem *item, 
-						      double x, double y, 
+static double window_container_group_invoke_point (FooCanvasItem *item,
+						      double x, double y,
 						      int cx, int cy,
 						      FooCanvasItem **actual_item)
 {
   /* Calculate x & y in item local coordinates */
-  
+
   if (FOO_CANVAS_ITEM_GET_CLASS (item)->point)
     return FOO_CANVAS_ITEM_GET_CLASS (item)->point (item, x, y, cx, cy, actual_item);
-  
+
   return 1e18;
 }
 
 
 /* Point handler for canvas groups */
-static double zmap_window_container_group_item_point (FooCanvasItem *item, 
-						      double x,  double y, 
+static double zmap_window_container_group_item_point (FooCanvasItem *item,
+						      double x,  double y,
 						      int    cx, int    cy,
 						      FooCanvasItem **actual_item)
 {
@@ -726,15 +728,15 @@ static double zmap_window_container_group_item_point (FooCanvasItem *item,
   double dist, best;
 
   group = FOO_CANVAS_GROUP (item);
-  
+
   x1 = cx - item->canvas->close_enough;
   y1 = cy - item->canvas->close_enough;
   x2 = cx + item->canvas->close_enough;
   y2 = cy + item->canvas->close_enough;
-  
+
   best = 0.0;
   *actual_item = NULL;
-  
+
   gx = x - group->xpos;
   gy = y - group->ypos;
 
@@ -747,7 +749,7 @@ static double zmap_window_container_group_item_point (FooCanvasItem *item,
       child = list->data;
 
       if ((child->object.flags & FOO_CANVAS_ITEM_MAPPED)
-	  && FOO_CANVAS_ITEM_GET_CLASS (child)->point) 
+	  && FOO_CANVAS_ITEM_GET_CLASS (child)->point)
 	{
 	  dist = window_container_group_invoke_point (child, gx, gy, cx, cy, &point_item);
 	  if(point_item && ((int)(dist * item->canvas->pixels_per_unit_x + 0.5) <= item->canvas->close_enough) &&
@@ -756,10 +758,10 @@ static double zmap_window_container_group_item_point (FooCanvasItem *item,
 	      best = dist;
 	      *actual_item = point_item;
 	    }
-	} 
+	}
       list = list->next;
     }
-  
+
   if(actual_item == NULL && item_parent_class_G->point)
     best = (item_parent_class_G->point)(item, x, y, cx, cy, actual_item);
 
@@ -781,7 +783,7 @@ static void zmap_window_container_group_destroy     (GtkObject *gtkobject)
       g_slist_free(container->pre_update_hooks);
       container->pre_update_hooks = NULL;
     }
-  
+
   if(container->post_update_hooks)
     {
       g_slist_foreach(container->post_update_hooks, (GFunc)g_free, NULL);
@@ -805,15 +807,15 @@ static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *
   return ;
 }
 
-static void maximise_background_rectangle(ZMapWindowContainerGroup this_container, 
+static void maximise_background_rectangle(ZMapWindowContainerGroup this_container,
 					  FooCanvasItem           *container_item,
 					  FooCanvasRE             *rect)
 {
   FooCanvasItem *rect_item;
   double irx1, irx2, iry1, iry2;
   int container_x2, container_y2; /* container canvas coords, calculated from group->update above. */
-  
-  
+
+
   /* We can't trust item->x1 and item->y1 as empty child
    * groups return 0,0->0,0 hence extend all parents to
    * 0,0! */
@@ -828,7 +830,7 @@ static void maximise_background_rectangle(ZMapWindowContainerGroup this_containe
 
   if((iry2 - iry1 + 1) < this_container->height)
     iry2 = this_container->height + iry1 ;
-  
+
   rect->x1 = irx1;
   rect->y1 = iry1;
   rect->x2 = irx2;
@@ -853,7 +855,7 @@ static void crop_rectangle_to_scroll_region(gpointer rectangle_data, gpointer po
   FooCanvasPoints *scroll_region = (FooCanvasPoints *)points_data;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2;
   double iwx1, iwy1, iwx2, iwy2;
-  
+
   rect       = (FooCanvasRE *)rectangle_data;
   crop_item  = (FooCanvasItem *)rect;
   foo_canvas = crop_item->canvas;
@@ -868,10 +870,10 @@ static void crop_rectangle_to_scroll_region(gpointer rectangle_data, gpointer po
       /* x unused ATM */
       scroll_x1 = foo_canvas->scroll_x1;
       scroll_x2 = foo_canvas->scroll_x2;
-      
+
       scroll_y1 = foo_canvas->scroll_y1;
       scroll_y2 = foo_canvas->scroll_y2;
-      
+
       foo_canvas_item_w2i(crop_item, &scroll_x1, &scroll_y1);
       foo_canvas_item_w2i(crop_item, &scroll_x2, &scroll_y2);
     }
@@ -889,7 +891,7 @@ static void crop_rectangle_to_scroll_region(gpointer rectangle_data, gpointer po
 	{
 	  rect->y1 = scroll_y1 - 1.0;
 	}
-      
+
       if(iwy2 > scroll_y2)
 	{
 	  rect->y2 = scroll_y2 + 1.0;
@@ -913,10 +915,10 @@ static void zmap_window_container_scroll_region_get_item_bounds(FooCanvasItem *i
 
   scroll_y1 = foo_canvas->scroll_y1;
   scroll_y2 = foo_canvas->scroll_y2;
-  
+
   foo_canvas_item_w2i(item, &scroll_x1, &scroll_y1);
   foo_canvas_item_w2i(item, &scroll_x2, &scroll_y2);
-  
+
   if(x1)
     *x1 = scroll_x1;
   if(y1)
@@ -929,7 +931,7 @@ static void zmap_window_container_scroll_region_get_item_bounds(FooCanvasItem *i
   return ;
 }
 
-static void zmap_window_container_update_with_crop(FooCanvasItem *item, 
+static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 						   double i2w_dx, double i2w_dy,
 						   FooCanvasPoints *itemised_scroll_region,
 						   int flags)
@@ -955,7 +957,7 @@ static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 
 	  do
 	    {
-	      zmap_window_container_update_with_crop((FooCanvasItem *)(list->data), 
+	      zmap_window_container_update_with_crop((FooCanvasItem *)(list->data),
 						     sub_i2w_dx, sub_i2w_dy,
 						     itemised_scroll_region, flags);
 	    }
@@ -997,16 +999,16 @@ static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hook
   coords[1] = y1;
   coords[2] = x2;
   coords[3] = y2;
-  
+
   bounds.coords     = &coords[0];
   bounds.ref_count  = 1;
   bounds.num_points = 2;
-  
+
   item = (FooCanvasItem *)container;
 
   if(canvas_in_update)		/* actually we might not want to do this. */
     canvas_in_update = item->canvas->doing_update;
-  
+
 
   if(canvas_in_update)
     {
@@ -1024,9 +1026,9 @@ static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hook
   do
     {
       ContainerUpdateHook update_hook;
-      
+
       update_hook = (ContainerUpdateHook)(hooks->data);
-      
+
       if(update_hook->hook_func)
 	(update_hook->hook_func)(container, &bounds, container->level, update_hook->hook_data);
     }
@@ -1120,7 +1122,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
   if(doing_reposition)
     {
-      GList *list, *list_end, tmp_features = {NULL}, tmp_background = {NULL}; 
+      GList *list, *list_end, tmp_features = {NULL}, tmp_background = {NULL};
       gboolean print_debug = FALSE;
 
       if((item_list = canvas_group->item_list))
@@ -1131,12 +1133,12 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	      if(FOO_IS_CANVAS_GROUP(item_list->data))
 		{
 		  FooCanvasGroup *group = (FooCanvasGroup *)(item_list->data);
-		  
+
 		  if(group->xpos != 0.0)
 		    group->xpos = 0.0;
 		  if(group->ypos != 0.0)
 		    group->ypos = 0.0;
-		  
+
 		  if(ZMAP_IS_CONTAINER_OVERLAY(item_list->data))
 		    overlay = (ZMapWindowContainerOverlay)(item_list->data);
 		  else if(ZMAP_IS_CONTAINER_UNDERLAY(item_list->data))
@@ -1145,12 +1147,12 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	      else if(ZMAP_IS_CONTAINER_BACKGROUND(item_list->data))
 		{
 		  rect = FOO_CANVAS_RE(item_list->data);
-		  
+
 		  if(rect->x1 != 0.0)
 		    rect->x1 = 0.0;
 		  if(rect->y1 != 0.0)
 		    rect->y1 = 0.0;
-		  
+
 		  rect->x2 = 1.0;	/* There's no way to know width */
 		  rect->y2 = this_container->height; /* We know height though. */
 		}
@@ -1172,7 +1174,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	    default:
 	      break;
 	    }
-	  
+
 	  printf("current_x=%f, current_y=%f\n", current_x, current_y);
 	}
 
@@ -1226,18 +1228,18 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	  if(parent_container)
 	    {
 	      double dx, dy;
-	      
+
 	      if(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)
-		(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)(this_container, 
-										   rect->x1, rect->y1, 
-										   rect->x2, rect->y2, 
+		(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)(this_container,
+										   rect->x1, rect->y1,
+										   rect->x2, rect->y2,
 										   &dx, &dy);
-	      
+
 	      parent_container->reposition_x += dx;
 	      parent_container->reposition_y += dy;
 	    }
 
-	  zmap_window_container_invoke_post_update_hooks(this_container, 
+	  zmap_window_container_invoke_post_update_hooks(this_container,
 							 rect->x1, rect->y1,
 							 rect->x2, rect->y2);
 	}
@@ -1260,7 +1262,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	  update_items[i++] = (FooCanvasItem *)overlay;
 	  update_items[i++] = (FooCanvasItem *)underlay;
 
-	  zmap_window_container_scroll_region_get_item_bounds(update_items[0], 
+	  zmap_window_container_scroll_region_get_item_bounds(update_items[0],
 							      &coords[0], &coords[1],
 							      &coords[2], &coords[3]);
 	  scroll_region.coords     = &coords[0];
@@ -1269,12 +1271,12 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
 	  /* We need to maximise overlays and underlays if required too. */
 	  if(overlay)
-	    zmapWindowContainerOverlayMaximiseItems(overlay, 
+	    zmapWindowContainerOverlayMaximiseItems(overlay,
 						    rect->x1, rect->y1,
 						    rect->x2, rect->y2);
 
 	  if(underlay)
-	    zmapWindowContainerUnderlayMaximiseItems(underlay, 
+	    zmapWindowContainerUnderlayMaximiseItems(underlay,
 						     rect->x1, rect->y1,
 						     rect->x2, rect->y2);
 
@@ -1295,7 +1297,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 }
 
 
-static void zmap_window_container_group_reposition(ZMapWindowContainerGroup container_group, 
+static void zmap_window_container_group_reposition(ZMapWindowContainerGroup container_group,
 						   double  rect_x1,  double  rect_y1,
 						   double  rect_x2,  double  rect_y2,
 						   double *dx_repos, double *dy_repos)

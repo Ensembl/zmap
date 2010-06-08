@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  5 16:32 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.185 2010-05-26 12:02:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.186 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,7 +207,7 @@ static gboolean mouse_debug_G = FALSE ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GData *zMapWindowFeatureAllStyles(ZMapWindow window)
+GHashTable *zMapWindowFeatureAllStyles(ZMapWindow window)
 {
   zMapAssert(window && window->feature_context);
 
@@ -474,7 +474,8 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   ZMapFeatureTypeStyle style = NULL;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
-  style = zMapFindStyle(window->read_only_styles, feature->style_id) ;
+//  style = zMapFindStyle(window->read_only_styles, feature->style_id) ;
+  style = feature->style;     // safe failure...
 
   g_return_val_if_fail(style != NULL, strand);
 
@@ -552,6 +553,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
                                                block,
                                                set,
                                                feature);
+
   return new_feature;
 }
 

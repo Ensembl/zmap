@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 12:54 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.19 2010-05-26 12:47:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.20 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -135,7 +135,6 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       ZMapFeature feature;
       gboolean interval_type_from_feature_type = TRUE; /* for now */
       feature = basic->feature;
-      style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
 
 
       if (interval_type_from_feature_type)
@@ -169,12 +168,16 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 		which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
 	      }
 
-	    // style is as configured or retrofitted in zMapStyleMakeDrawable()
-	    // x and y coords are relative to main feature set up in CanvasItemCreate()
-	    item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic),
-							     style, which, 0.0, 0.0, feature->score,strand));
+            style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
+                  // style is as configured or retrofitted in zMapStyleMakeDrawable()
+                  // x and y coords are relative to main feature set up in CanvasItemCreate()
 
-	    // colour should be set by caller, esp if style is frame specific
+      	      // style is as configured or retrofitted in zMapStyleMakeDrawable()
+	            // x and y coords are relative to main feature set up in CanvasItemCreate()
+            item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic),
+                  style, which, 0.0, 0.0, feature->score,strand));
+
+      	      // colour should be set by caller, esp if style is frame specific
 
 	    break;
 	  }

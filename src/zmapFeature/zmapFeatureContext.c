@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 30 16:23 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.53 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.54 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,7 +123,7 @@ static gboolean catch_hash_abuse_G = TRUE;
  * mappings etc.....needs some thought and effort....
  *
  */
-void zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
+void zMapFeatureReverseComplement(ZMapFeatureContext context, GHashTable *styles)
 {
   RevCompDataStruct cb_data ;
 

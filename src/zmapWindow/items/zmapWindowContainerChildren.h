@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jun  4 08:32 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.h,v 1.4 2010-03-04 15:12:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.h,v 1.5 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,8 +61,15 @@ typedef gboolean (*zmapWindowContainerItemTestCallback)(FooCanvasItem *item, gpo
 
 
 #define ZMAP_TYPE_CONTAINER_FEATURES           (zmapWindowContainerFeaturesGetType())
+
+#if GOBJ_CAST
+#define ZMAP_CONTAINER_FEATURES(obj)           ((ZMapWindowContainerFeatures) obj)
+#define ZMAP_CONTAINER_FEATURES_CONST(obj)     ((ZMapWindowContainerFeatures const) obj)
+#else
 #define ZMAP_CONTAINER_FEATURES(obj)           (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURES, zmapWindowContainerFeatures))
 #define ZMAP_CONTAINER_FEATURES_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURES, zmapWindowContainerFeatures const))
+#endif
+
 #define ZMAP_CONTAINER_FEATURES_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_FEATURES, zmapWindowContainerFeaturesClass))
 #define ZMAP_IS_CONTAINER_FEATURES(obj)	       (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_FEATURES))
 #define ZMAP_CONTAINER_FEATURES_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_FEATURES, zmapWindowContainerFeaturesClass))

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.47 2010-06-03 12:21:42 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.48 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,8 +121,8 @@ typedef struct
   GQuark style_id ;
   ZMapFeatureTypeStyle style ;
 
-  GList             *feature_list;
-  GData             *styles;
+  GList                *feature_list;
+  GHashTable           *styles;
 
   GList *locations ;
 

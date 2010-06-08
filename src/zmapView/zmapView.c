@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  5 17:39 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.200 2010-06-03 12:21:41 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.201 2010-06-08 08:31:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,7 @@
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapCmdLineArgs.h>
+#include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
@@ -78,7 +79,7 @@ typedef struct
   GHashTable *featureset_2_column;        // needed by pipeServers
   GHashTable *source_2_sourcedata;
 
-  GData *curr_styles ;                              /* Styles for this context. */
+  GHashTable *curr_styles ;                              /* Styles for this context. */
   ZMapFeatureContext curr_context ;
 
   ZMapServerReqType display_after ;
@@ -94,7 +95,7 @@ typedef struct
 
 typedef struct
 {
-  GData *styles ;
+  GHashTable *styles ;
   gboolean error ;
 } UnsetDeferredLoadStylesStruct, *UnsetDeferredLoadStyles ;
 
@@ -120,7 +121,7 @@ static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *win
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
 
-static void unsetDeferredLoadStylesCB(GQuark key_id, gpointer data, gpointer user_data) ;
+static void unsetDeferredLoadStylesCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -150,14 +151,14 @@ static void killConnections(ZMapView zmap_view) ;
 static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view,
 			       ZMapFeatureContext all_features,
-                               ZMapFeatureContext new_features, GData *new_styles,
+                               ZMapFeatureContext new_features, GHashTable *new_styles,
                                gboolean undisplay) ;
 static void killAllWindows(ZMapView zmap_view) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
-static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, GData *styles) ;
+static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, GHashTable *styles) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -165,8 +166,8 @@ static GList *string2StyleQuarks(char *feature_sets) ;
 static gboolean nextIsQuoted(char **text) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GData *styles);
-static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GData *styles);
+static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GHashTable *styles);
+static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *styles);
 
 static ZMapFeatureContext createContext(char *sequence, int start, int end, GList *feature_set_names) ;
 
@@ -174,7 +175,7 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
 static void addAlignments(ZMapFeatureContext context) ;
 
-static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout, GData *styles);
+static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout, GHashTable *styles);
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
 
 #ifdef NOT_REQUIRED_ATM
@@ -193,11 +194,11 @@ static void killAllSpawned(ZMapView zmap_view);
 static gboolean checkContinue(ZMapView zmap_view) ;
 
 
-static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out) ;
-static void drawableCB(GQuark key_id, gpointer data, gpointer user_data) ;
+static gboolean makeStylesDrawable(GHashTable *styles, char **missing_styles_out) ;
+static void drawableCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
-static void addPredefined(GData **styles_inout, GHashTable **featureset_2_stylelist_inout) ;
-static void styleCB(GQuark key_id, gpointer data, gpointer user_data) ;
+static void addPredefined(GHashTable **styles_inout, GHashTable **featureset_2_stylelist_inout) ;
+static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 
@@ -327,6 +328,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
    * in config file and next time they create a view the debugging will go on/off. */
   zMapUtilsConfigDebug();
 
+  zMapInitTimer() ; // operates as a reset if already defined
 
   /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
   sequence_fetch = g_new0(ZMapViewSequenceMapStruct, 1) ;
@@ -701,7 +703,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
     {
       GList *settings_list = NULL, *free_this_list = NULL;
 
-      zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
+
       zMapPrintTimer(NULL, "Open connection") ;
 
       zmapViewBusy(zmap_view, TRUE) ;
@@ -910,7 +912,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      GData *copy_styles ;
+      GHashTable *copy_styles ;
 
 
       /* the view _must_ already have a window _and_ data. */
@@ -1178,8 +1180,12 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zmapViewBusy(zmap_view, TRUE) ;
 
+      zMapStartTimer("RevComp","");
+
       /* Call the feature code that will do the revcomp. */
       zMapFeatureReverseComplement(zmap_view->features, zmap_view->orig_styles) ;
+
+      zMapStopTimer("RevComp","Feature");
 
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
@@ -1187,20 +1193,23 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapWindowNavigatorReset(zmap_view->navigator_window);
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->orig_styles);
+      zMapStopTimer("RevComp","Navigator");
 
       if((list_item = g_list_first(zmap_view->window_list)))
 	{
 	  do
 	    {
 	      ZMapViewWindow view_window ;
-	      GData *copy_styles = NULL;
+	      GHashTable *copy_styles = NULL;
 
 	      view_window = list_item->data ;
 
 	      copy_styles = zmap_view->orig_styles ;
 
+            zMapStartTimer("RevComp","Window");
 	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
 				      zmap_view->orig_styles, copy_styles, TRUE) ;
+            zMapStopTimer("RevComp","Window");
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
 	}
@@ -1209,6 +1218,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
 
+      zMapStopTimer("RevComp","");
       zmapViewBusy(zmap_view, FALSE);
 
       result = TRUE ;
@@ -1356,9 +1366,9 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
   return features ;
 }
 
-GData *zMapViewGetStyles(ZMapViewWindow view_window)
+GHashTable *zMapViewGetStyles(ZMapViewWindow view_window)
 {
-  GData *styles = NULL ;
+  GHashTable *styles = NULL ;
   ZMapView view = zMapViewGetView(view_window);
 
   if (view->state != ZMAPVIEW_DYING)
@@ -2871,9 +2881,9 @@ printf("\nview styles lists after merge:\n");
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
       //printf("\nmerging...old\n");
-      //g_datalist_foreach(&(zmap_view->orig_styles), printStyle, "got styles") ;
+      //g_hash_table_foreach(&(zmap_view->orig_styles), printStyle, "got styles") ;
       //printf("\nmerging...new\n");
-      //g_datalist_foreach(&(get_styles->styles_out), printStyle, "got styles") ;
+      //g_hash_table_foreach(&(get_styles->styles_out), printStyle, "got styles") ;
 
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
@@ -2884,9 +2894,9 @@ printf("\nview styles lists after merge:\n");
 	    gboolean is_complete_sequence = FALSE;
 
 	    if (is_complete_sequence)
-	      g_datalist_foreach(&(zmap_view->orig_styles), unsetDeferredLoadStylesCB, NULL) ;
+	      g_hash_table_foreach(zmap_view->orig_styles, unsetDeferredLoadStylesCB, NULL) ;
 
-	    g_datalist_foreach(&(get_styles->styles_out), unsetDeferredLoadStylesCB, NULL) ;
+	    g_hash_table_foreach(get_styles->styles_out, unsetDeferredLoadStylesCB, NULL) ;
 	  }
 
 
@@ -3287,7 +3297,7 @@ static void resetWindows(ZMapView zmap_view)
 /* Signal all windows there is data to draw. */
 static void displayDataWindows(ZMapView zmap_view,
 			       ZMapFeatureContext all_features,
-                               ZMapFeatureContext new_features, GData *new_styles,
+                               ZMapFeatureContext new_features, GHashTable *new_styles,
                                gboolean undisplay)
 {
   GList *list_item, *window_list  = NULL;
@@ -3405,7 +3415,7 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 
 
 /* We have far too many function calls here...it's all confusing..... */
-static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, GData *styles)
+static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, GHashTable *styles)
 {
   ZMapFeatureContext new_features = NULL ;
 
@@ -3434,7 +3444,7 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
  * We should free the context_inout context here....actually better
  * would to have a "free" flag............
  *  */
-static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_in, GData *styles)
+static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_in, GHashTable *styles)
 {
   gboolean merge_results = FALSE ;
   ZMapFeatureContext diff_context = NULL ;
@@ -3449,7 +3459,7 @@ static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_in
   return merge_results ;
 }
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GData *styles)
+static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GHashTable *styles)
 {
   gboolean merge_result = FALSE ;
   ZMapFeatureContext new_features, diff_context = NULL ;
@@ -3459,15 +3469,15 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
 //  printf("just Merge new = %s\n",zMapFeatureContextGetDNAStatus(new_features) ? "yes" : "non");
 
-  zMapPrintTimer(NULL, "Merge Context starting...") ;
+  zMapStartTimer("Merge Context","") ;
 
   if (view->revcomped_features)
     {
-      zMapPrintTimer(NULL, "Merge Context has to rev comp first, starting") ;
+      zMapStartTimer("MergeRevComp","") ;
 
       zMapFeatureReverseComplement(new_features, view->orig_styles);
 
-      zMapPrintTimer(NULL, "Merge Context has to rev comp first, finished") ;
+      zMapStopTimer("MergeRevComp","") ;
     }
 
   merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context) ;
@@ -3496,7 +3506,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     zMapLogCritical("%s", "Context merge failed, serious error.") ;
 
 
-  zMapPrintTimer(NULL, "Merge Context Finished.") ;
+  zMapStopTimer("Merge Context","") ;
 
   /* Return the diff_context which is the just the new features (NULL if merge fails). */
   *context_inout = diff_context ;
@@ -3504,7 +3514,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   return merge_result ;
 }
 
-static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GData *new_styles)
+static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *new_styles)
 {
    /* Signal the ZMap that there is work to be done. */
   displayDataWindows(view, view->features, diff_context, new_styles, FALSE) ;
@@ -4157,12 +4167,12 @@ static gboolean checkContinue(ZMapView zmap_view)
 
 
 
-static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out)
+static gboolean makeStylesDrawable(GHashTable *styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
   DrawableDataStruct drawable_data = {FALSE} ;
 
-  g_datalist_foreach(&styles, drawableCB, &drawable_data) ;
+  g_hash_table_foreach(styles, drawableCB, &drawable_data) ;
 
   if (drawable_data.missing_styles)
     *missing_styles_out = g_string_free(drawable_data.missing_styles, FALSE) ;
@@ -4174,9 +4184,10 @@ static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out)
 
 
 
-/* A GDataForeachFunc() to make the given style drawable. */
-static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
+/* A GHashListForeachFunc() to make the given style drawable. */
+static void drawableCB(gpointer key, gpointer data, gpointer user_data)
 {
+  GQuark key_id = GPOINTER_TO_UINT(key);
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   DrawableData drawable_data = (DrawableData)user_data ;
 
@@ -4200,8 +4211,8 @@ static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-/* A GDataForeachFunc() func that unsets DeferredLoads for styles in the target. */
-static void unsetDeferredLoadStylesCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+/* A GhashListForeachFunc() func that unsets DeferredLoads for styles in the target. */
+static void unsetDeferredLoadStylesCB(gpointer key, gpointer data, gpointer user_data_unused)
 {
   ZMapFeatureTypeStyle orig_style = (ZMapFeatureTypeStyle)data ;
 
@@ -4214,14 +4225,14 @@ static void unsetDeferredLoadStylesCB(GQuark key_id, gpointer data, gpointer use
 
 
 
-static void addPredefined(GData **styles_out, GHashTable **featureset_2_stylelist_inout)
+static void addPredefined(GHashTable **styles_out, GHashTable **featureset_2_stylelist_inout)
 {
-  GData *styles ;
+  GHashTable *styles ;
   GHashTable *f2s = *featureset_2_stylelist_inout ;
 
   styles = zMapStyleGetAllPredefined() ;
 
-  g_datalist_foreach(&styles, styleCB, f2s) ;
+  g_hash_table_foreach(styles, styleCB, f2s) ;
 
   *styles_out = styles ;
   *featureset_2_stylelist_inout = f2s ;
@@ -4229,9 +4240,10 @@ static void addPredefined(GData **styles_out, GHashTable **featureset_2_stylelis
   return ;
 }
 
-/* GDataForeachFunc() to set up a feature_set/style hash. */
-static void styleCB(GQuark key_id, gpointer data, gpointer user_data)
+/* GHashListForeachFunc() to set up a feature_set/style hash. */
+static void styleCB(gpointer key, gpointer data, gpointer user_data)
 {
+  GQuark key_id = GPOINTER_TO_UINT(key);
   GHashTable *hash = (GHashTable *)user_data ;
   GQuark feature_set_id, feature_set_name_id;
 

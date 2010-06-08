@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,11 +23,11 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Contains macros, functions etc. useful for testing/debugging.
- *              
+ *
  * HISTORY:
  * Last edited: Mar 12 12:58 2010 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.11 2010-03-12 12:59:02 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.12 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -69,7 +69,7 @@ G_STMT_START{                                             \
 
 
 /* Define debug messages more easily. */
-#ifdef __GNUC__                                                       
+#ifdef __GNUC__
 #define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)                      \
   G_STMT_START                                                        \
   {								      \
@@ -88,12 +88,13 @@ G_STMT_START{                                             \
 /* Timer functions, just simplifies printing etc a bit and provides a global timer if required.
  * Just comment out #define ZMAP_DISABLE_TIMER to turn it all on.
  */
-#define ZMAP_DISABLE_TIMER
+// make this into a build option
+//#define ZMAP_DISABLE_TIMER
 
 
 #ifdef ZMAP_DISABLE_TIMER
 
-
+// the void zero bit is so we can have a semicolon after the call.
 #define zMapStartTimer(TIMER_PTR) (void)0
 #define zMapPrintTimer(TIMER, TEXT) (void)0
 #define zMapResetTimer(TIMER) (void)0
@@ -101,29 +102,51 @@ G_STMT_START{                                             \
 #else
 
 
-/* Define reference to global timer. */
+/* Define reference to global timer from view creation */
 #define ZMAP_GLOBAL_TIMER zmap_global_timer_G
 extern GTimer *ZMAP_GLOBAL_TIMER ;
+extern gboolean zmap_timing_G;
 
-/* A bit clumsy but couldn't see a neat way to allow just putting NULL for the timer to get
- * the global one.
- * Do this for the global one: zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
- * and this for your one:      zMapStartTimer(your_timer_ptr) ;
- *  */
-#define zMapStartTimer(TIMER_PTR)                                                       \
-(TIMER_PTR) = g_timer_new()
+#define zMapInitTimer() \
+ if(zmap_timing_G) \
+ { GTimeVal gtv; \
+   GDate gd;  \
+   if(ZMAP_GLOBAL_TIMER) \
+      g_timer_reset(ZMAP_GLOBAL_TIMER); \
+   else  \
+       ZMAP_GLOBAL_TIMER = g_timer_new();\
+   g_get_current_time(&gtv);\
+   g_date_set_time_val(&gd,&gtv);\
+   printf("# %s\t%02d/%02d/%4d\n",zMapConfigDirGetFile(),\
+      g_date_get_day (&gd), g_date_get_month(&gd),g_date_get_year(&gd));\
+   zMapPrintTime("Reset","Timer","");\
+ }
 
+
+// this output format is TAB delimited.
+// Func is Start or Stop
+// ID may be readable text but may not contain TABS.
+// OPT is another (descriptive) text string
+// timings in seconds.milliseconds
+// output is now configured from [ZMap] - can leave code compiled in
+// NULL args shoudl be  ""
+#define zMapPrintTime(FUNC, ID, OPT)   \
+   { if(ZMAP_GLOBAL_TIMER) \
+      printf("%s\t%.3f\t%s\t%s\n", \
+            FUNC,\
+            g_timer_elapsed(ZMAP_GLOBAL_TIMER, NULL),\
+            ID,OPT); \
+   }
+
+// can use start then stop, but stop on its own can be interpreted as previous event as start
+#define zMapStartTimer(TEXT,OPT)    zMapPrintTime("Start",TEXT,OPT)
+#define zMapStopTimer(TEXT,OPT)     zMapPrintTime("Stop",TEXT,OPT)
+
+
+// interface to legacy calls: removed to avoid clutter, redef the macro if you want them back
+// grep for PrintTimer to see them all (about 30)
 /* Takes an optional Gtimer* and an optional char* (you must supply the args but either can be NULL */
-#define zMapPrintTimer(TIMER, TEXT)	                              \
-  printf(ZMAP_MSG_FORMAT_STRING " %s   - elapsed time: %g\n",         \
-  ZMAP_MSG_FUNCTION_MACRO,                                            \
-  ((TEXT) ? (TEXT) : ""),             				      \
-  g_timer_elapsed(((TIMER) ? (TIMER) : ZMAP_GLOBAL_TIMER), NULL)) ;
-
-/* Takes an optional Gtimer* (you must supply the arg but it can be NULL */
-#define zMapResetTimer(TIMER)	                              \
-  g_timer_reset(((TIMER) ? (TIMER) : ZMAP_GLOBAL_TIMER))
-
+#define zMapPrintTimer(TIMER, TEXT) (void) 0    // zmapPrintTime(TEXT ? TEXT : "?","")
 
 #endif /* ZMAP_DISABLE_TIMER */
 

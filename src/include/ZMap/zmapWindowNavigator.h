@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,18 +23,18 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jun 10 09:44 2009 (rds)
  * Created: Thu Sep  7 09:10:32 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.h,v 1.10 2010-03-04 15:15:31 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.h,v 1.11 2010-06-08 08:31:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_NAVIGATOR_H
-#define ZMAP_WINDOW_NAVIGATOR_H 
+#define ZMAP_WINDOW_NAVIGATOR_H
 
 #include <ZMap/zmapWindow.h>
 
@@ -51,15 +51,15 @@ typedef struct _ZMapNavigatorCallbackStruct
 
 
 ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget);
-void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate, 
+void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
                               gboolean true_eq_focus);
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window);
-void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate, 
+void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
                                                GList *navigator_sets);
 void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean is_revesed);
-void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate, 
+void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext  full_context,
-				     GData              *styles);
+				     GHashTable              *styles);
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                                     double top, double bottom);
 void zMapWindowNavigatorReset(ZMapWindowNavigator navigate);

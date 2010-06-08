@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.12 2010-05-24 14:41:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.13 2010-06-08 08:31:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,8 +49,15 @@
 
 
 #define ZMAP_TYPE_CONTAINER_FEATURESET           (zmapWindowContainerFeatureSetGetType())
+
+#if GOBJ_CAST
+#define ZMAP_CONTAINER_FEATURESET(obj)           ((ZMapWindowContainerFeatureSet) obj)
+#define ZMAP_CONTAINER_FEATURESET_CONST(obj)     ((ZMapWindowContainerFeatureSet const) obj)
+#else
 #define ZMAP_CONTAINER_FEATURESET(obj)	         (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
 #define ZMAP_CONTAINER_FEATURESET_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
+#endif
+
 #define ZMAP_CONTAINER_FEATURESET_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
 #define ZMAP_IS_CONTAINER_FEATURESET(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_FEATURESET))
 #define ZMAP_CONTAINER_FEATURESET_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
@@ -99,7 +106,7 @@ ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet 
 ZMapFrame  zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet container_set);
 double     zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet container_set);
 double     zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet container_set);
-gboolean   zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set, 
+gboolean   zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set,
 						     double *min_mag_out, double *max_mag_out);
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContainerFeatureSet container_set) ;
 
@@ -135,9 +142,9 @@ void zmapWindowContainerFeatureSetPushHiddenStack(ZMapWindowContainerFeatureSet 
 
 void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet container_set);
 
-void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set, 
+void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set,
 					       gint direction);
-                                     
+
 void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet container_set);
 
 /* Finished with this container */
