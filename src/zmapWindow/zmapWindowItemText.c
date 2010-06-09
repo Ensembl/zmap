@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 13:54 2010 (edgrif)
+ * Last edited: Jun  9 14:24 2010 (edgrif)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.27 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.28 2010-06-09 13:24:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,8 +48,15 @@
 #define SHOW_TRANSLATION_COUNTER_LENGTH 5
 
 
-#define BUFFER_CAN_INC(BUFFER, MAX) ((BUFFER < MAX) ? TRUE : FALSE)
-#define BUFFER_INC(BUFFER, MAX)     (BUFFER_CAN_INC(BUFFER, MAX) ? (gboolean)(BUFFER++) : FALSE)
+#define BUFFER_CAN_INC(BUFFER, MAX) \
+((BUFFER < MAX) ? TRUE : FALSE)
+
+/* pretty hateful stuff....sigh...the original case buffer++ to a boolean which doesn't work on
+ * 64 bit machines. */
+#define BUFFER_INC(BUFFER, MAX)     \
+  (BUFFER_CAN_INC(BUFFER, MAX) ? (BUFFER++, TRUE) : FALSE)
+
+
 
 typedef struct
 {
@@ -935,7 +942,7 @@ static int skip_to_exon_start(ZMapTextDrawData draw_data,
 	    }
 	  else			/* count lines... */
 	    {
-	      if(BUFFER_CAN_INC(ptr, buffer_final))
+	      if (BUFFER_CAN_INC(ptr, buffer_final))
 		{
 		  sprintf(ptr, SHOW_TRANSLATION_COUNTER_FORMAT, lines_skipped);
 		  ptr += SHOW_TRANSLATION_COUNTER_LENGTH;
@@ -943,7 +950,8 @@ static int skip_to_exon_start(ZMapTextDrawData draw_data,
 	    }
 	}
       *ptr = skip_char;
-      if(BUFFER_INC(ptr, buffer_final))
+
+      if (BUFFER_INC(ptr, buffer_final))
 	 (*itr_in_out)++;
     }
 
@@ -968,6 +976,7 @@ static void skip_to_line_position(ZMapTextDrawData draw_data,
   for(i = 0; i < skip; i++)
     {
       *ptr = '.';
+
       if(BUFFER_INC(ptr, max))
 	(*itr)++;
     }
@@ -994,6 +1003,7 @@ static gboolean skip_to_end_of_line(ZMapTextDrawData draw_data,
   while(*itr % width != 0)
     {
       *ptr = '.';
+
       if(BUFFER_INC(ptr, max))
 	(*itr)++;
     }
