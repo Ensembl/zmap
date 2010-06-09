@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May  5 17:39 2010 (edgrif)
+ * Last edited: Jun  9 12:22 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.201 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.202 2010-06-09 13:23:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,13 @@
 #include <ZMap/zmapConfigStanzaStructs.h>
 
 #include <zmapView_P.h>
+
+
+
+#define zmapViewGetSourceFromFeatureset(hash,featurequark) \
+  (ZMapConfigSource)g_hash_table_lookup(hash, GUINT_TO_POINTER(featurequark))
+
+
 
 typedef struct
 {
@@ -715,17 +722,17 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
       settings_list = zmapViewGetIniSources(config_str,&stylesfile);    // get the stanza structs from ZMap config
 
 
-        /* There are a number of predefined methods that we require so add these in as well
-         * as the mapping for "feature set" -> style for these. */
+      /* There are a number of predefined methods that we require so add these in as well
+       * as the mapping for "feature set" -> style for these. */
       addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
 
       // read in a few ZMap stanzas
       zmapViewGetIniData(zmap_view, config_str, settings_list);
 
-      if(zmap_view->columns_set)
-      {
-           g_list_foreach(zmap_view->window_list, invoke_merge_in_names, zmap_view->columns);
-      }
+      if (zmap_view->columns_set)
+	{
+	  g_list_foreach(zmap_view->window_list, invoke_merge_in_names, zmap_view->columns);
+	}
 
       /* Set up connections to the named servers. */
       if (settings_list)
@@ -746,10 +753,10 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      ZMapViewConnection view_con ;
 
 	      current_server = (ZMapConfigSource)settings_list->data ;
-// if global            current_server->stylesfile = g_strdup(stylesfile);
+	      // if global            current_server->stylesfile = g_strdup(stylesfile);
 
-            if(current_server->delayed)   // only request data when asked by otterlace
-                  continue;
+	      if(current_server->delayed)   // only request data when asked by otterlace
+		continue;
 
 
 	      /* Check for required fields from config, if not there then we can't connect. */
@@ -776,7 +783,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		}
 
 
-
 #ifdef NOT_REQUIRED_ATM
 	      /* This will become redundant with step stuff..... */
 
@@ -790,80 +796,82 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 #endif /* NOT_REQUIRED_ATM */
 
 
-		{
-               GList *req_featuresets = NULL, *tmp_navigator_sets = NULL ;
-               ZMapFeatureContext context;
-               gboolean dna_requested = FALSE;
+	      {
+		GList *req_featuresets = NULL, *tmp_navigator_sets = NULL ;
+		ZMapFeatureContext context;
+		gboolean dna_requested = FALSE;
 
-              /* req all featuresets  as a list of their quark names. */
-              req_featuresets = zMapConfigString2QuarkList(current_server->featuresets) ;
+		/* req all featuresets  as a list of their quark names. */
+		req_featuresets = zMapConfigString2QuarkList(current_server->featuresets) ;
 
-              if(!zmap_view->columns_set)
-              {
-                  g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
-              }
+		if(!zmap_view->columns_set)
+		  {
+		    g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+		  }
 
-              /* Navigator styles are all predefined so no need to merge into main feature sets to get the styles. */
-              if (current_server->navigatorsets)
-              {
-                tmp_navigator_sets = zmap_view->navigator_set_names = zMapConfigString2QuarkList(current_server->navigatorsets);
+		/* Navigator styles are all predefined so no need to merge into main feature sets to get the styles. */
+		if (current_server->navigatorsets)
+		  {
+		    tmp_navigator_sets = zmap_view->navigator_set_names = zMapConfigString2QuarkList(current_server->navigatorsets);
                     /* We _must_ merge the set names into the navigator though. */
                     /* The navigator knows nothing of view, so saving them there isn't really useful for getting them drawn.
                      * N.B. This is zMapWindowNavigatorMergeInFeatureSetNames _not_ zMapWindowMergeInFeatureSetNames. */
-                if(zmap_view->navigator_window)
-                    zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
-              }
+		    if(zmap_view->navigator_window)
+		      zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
+		  }
 
-              while(req_featuresets)
-                {
-                  // depending on config make one request for all or one for each
-                  GList *con_featuresets = NULL;
+		while (req_featuresets)
+		  {
+		    // depending on config make one request for all or one for each
+		    GList *con_featuresets = NULL;
 
-                  if((current_server->group & SOURCE_GROUP_START))
-                    {
-                      con_featuresets = req_featuresets;          // all together
-                      req_featuresets = NULL;                     // then finished
-                    }
-                  else
-                    {
-                       // one at a time
-                       con_featuresets = g_list_append(con_featuresets,req_featuresets->data);
-                       // until cooked
-                       req_featuresets = req_featuresets->next;
-                    }
+		    if((current_server->group & SOURCE_GROUP_START))
+		      {
+			con_featuresets = req_featuresets;          // all together
+			req_featuresets = NULL;                     // then finished
+		      }
+		    else
+		      {
+			// one at a time
+			con_featuresets = g_list_append(con_featuresets,req_featuresets->data);
+			// until cooked
+			req_featuresets = req_featuresets->next;
+		      }
 
-                  /* Create data specific to this step list...and set it in the connection. */
-                  context = createContext(zmap_view->sequence, zmap_view->start, zmap_view->end, con_featuresets) ;
+		    /* Create data specific to this step list...and set it in the connection. */
+		    context = createContext(zmap_view->sequence, zmap_view->start, zmap_view->end, con_featuresets) ;
 
-                  /* Check whether DNA was requested, see comments below about setting up sequence req. */
-                  dna_requested = (gboolean) zMap_g_list_find_quark(con_featuresets,
-                         zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME));
+		    /* Check whether DNA was requested, see comments below about setting up sequence req. */
+		    if ((zMap_g_list_find_quark(con_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+		      dna_requested = TRUE ;
+		    else
+		      dna_requested = FALSE ;
 
-	    	      if ((view_con = createConnection(zmap_view, NULL, context,
-                                       current_server->url,
-						   (char *)current_server->format,
-						   current_server->timeout,
-						   (char *)current_server->version,
-						   (char *)current_server->styles_list,
-						   current_server->stylesfile,
-						   con_featuresets,
-						   dna_requested,             // current_server->sequence,
-                                       current_server->delayed )))  // has to be false or else we are not here
-		        {
-                      connections++ ;
+		    if ((view_con = createConnection(zmap_view, NULL, context,
+						     current_server->url,
+						     (char *)current_server->format,
+						     current_server->timeout,
+						     (char *)current_server->version,
+						     (char *)current_server->styles_list,
+						     current_server->stylesfile,
+						     con_featuresets,
+						     dna_requested,             // current_server->sequence,
+						     current_server->delayed )))  // has to be false or else we are not here
+		      {
+			connections++ ;
 
-                      /* If at least one connection succeeded then we are up and running, if not then the zmap
-                       * returns to the init state. */
-                      zmap_view->state = ZMAPVIEW_LOADING ;
+			/* If at least one connection succeeded then we are up and running, if not then the zmap
+			 * returns to the init state. */
+			zmap_view->state = ZMAPVIEW_LOADING ;
 
-                      /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-                      // this is an optimisation: the server supports DNA so no point in searching for it
-                      // if we implement multiple sources then we can remove this
-		          if (dna_requested)
-			      zmap_view->sequence_server  = view_con ;
-		        }
-                }
-		}
+			/* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+			// this is an optimisation: the server supports DNA so no point in searching for it
+			// if we implement multiple sources then we can remove this
+			if (dna_requested)
+			  zmap_view->sequence_server  = view_con ;
+		      }
+		  }
+	      }
 
 
 	    }
@@ -894,8 +902,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        */
       startStateConnectionChecking(zmap_view) ;
     }
-//  if(stylesfile)
-//    g_free(stylesfile);
+  //  if(stylesfile)
+  //    g_free(stylesfile);
 
   return result ;
 }
@@ -1647,11 +1655,6 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
   return(hash);
 }
 
-#define zmapViewGetSourceFromFeatureset(hash,featurequark)   (ZMapConfigSource) g_hash_table_lookup(hash,(gpointer) featurequark)
-
-
-
-
 
 
 /* Loads features within block from the sets req_featuresets that lie within features_start
@@ -1677,7 +1680,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   sources = zmapViewGetIniSources(NULL,&stylesfile);
   hash = zmapViewGetFeatureSourceHash(sources);
 
-  for(;req_sources;req_sources = g_list_next(req_sources))
+  for ( ; req_sources ; req_sources = g_list_next(req_sources))
     {
       GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
 
@@ -1689,79 +1692,82 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  if(GFFset)
 	    featureset = GFFset->feature_set_id;
 	}
+
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
-// if global            server->stylesfile = g_strdup(stylesfile);
-//zMapLogMessage("Load features %s from %s, group = %d\n", g_quark_to_string(featureset),server->url,server->group);
-      if(server)
+
+      // if global            server->stylesfile = g_strdup(stylesfile);
+      //zMapLogMessage("Load features %s from %s, group = %d\n", g_quark_to_string(featureset),server->url,server->group);
+
+      if (server)
 	{
 	  GList *req_featuresets = NULL;
 	  int existing = FALSE;
 	  ZMapViewConnection view_conn = NULL;
 
-            // make a list of one feature only
-        req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
+	  // make a list of one feature only
+	  req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
 
-        if((server->group & SOURCE_GROUP_DELAYED))
-          {
-            // get all featuresets from this source and remove from req_sources
-            GList *req_src;
-            GQuark fset;
-            ZMapConfigSource fset_server;
+	  if((server->group & SOURCE_GROUP_DELAYED))
+	    {
+	      // get all featuresets from this source and remove from req_sources
+	      GList *req_src;
+	      GQuark fset;
+	      ZMapConfigSource fset_server;
 
-            for(req_src = req_sources->next;req_src;)
-              {
-                fset = GPOINTER_TO_UINT(req_src->data);
-//zMapLogMessage("add %s\n",g_quark_to_string(fset));
-                if(view->featureset_2_column)
-                  {
-                    ZMapGFFSet GFFset = NULL;
+	      for(req_src = req_sources->next;req_src;)
+		{
+		  fset = GPOINTER_TO_UINT(req_src->data);
+		  //zMapLogMessage("add %s\n",g_quark_to_string(fset));
+		  if(view->featureset_2_column)
+		    {
+		      ZMapGFFSet GFFset = NULL;
 
-                    GFFset = g_hash_table_lookup(view->featureset_2_column, GUINT_TO_POINTER(fset)) ;
-                    if(GFFset)
-                      fset = GFFset->feature_set_id;
-                  }
-                fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+		      GFFset = g_hash_table_lookup(view->featureset_2_column, GUINT_TO_POINTER(fset)) ;
+		      if(GFFset)
+			fset = GFFset->feature_set_id;
+		    }
+		  fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
 
-//if(fset_server) zMapLogMessage("Try %s\n",fset_server->url);
-                if(fset_server == server)
-                  {
-                     GList *del;
+		  //if(fset_server) zMapLogMessage("Try %s\n",fset_server->url);
+		  if(fset_server == server)
+		    {
+		      GList *del;
 
-                        // prepend faster than append...we don't care about the order
-                     req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
+		      // prepend faster than append...we don't care about the order
+		      req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
 
-                     // avoid getting ->next from deleted item
-                     del = req_src;
-                     req_src = req_src->next;
-//zMapLogMessage("use %s\n",g_quark_to_string(fset));
+		      // avoid getting ->next from deleted item
+		      del = req_src;
+		      req_src = req_src->next;
+		      //zMapLogMessage("use %s\n",g_quark_to_string(fset));
 
-                     // as req_src is ->next of req_sources we know req_sources is still valid
-                     // even though we are removing an item from it
-                     // However we still get a retval from g_list remove()
-                     req_sources = g_list_remove_link(req_sources,del);
-// where else is this held: crashes
-//NB could use delete link if that was ok
-//                     g_free(del); // free the link; no data to free
-                  }
-                else
-                  {
-                     req_src = req_src->next;
-                  }
-              }
-          }
+		      // as req_src is ->next of req_sources we know req_sources is still valid
+		      // even though we are removing an item from it
+		      // However we still get a retval from g_list remove()
+		      req_sources = g_list_remove_link(req_sources,del);
+		      // where else is this held: crashes
+		      //NB could use delete link if that was ok
+		      //                     g_free(del); // free the link; no data to free
+		    }
+		  else
+		    {
+		      req_src = req_src->next;
+		    }
+		}
+	    }
 
-           // look for server in view->connections list
+	  // look for server in view->connections list
 
-        GList *view_con_list;
+	  GList *view_con_list;
 	  for(view_con_list = view->connection_list;view_con_list;view_con_list = g_list_next(view_con_list))
-          {
+	    {
 	      view_conn = (ZMapViewConnection) view_con_list->data;
 	      if(!strcmp(view_conn->url,server->url))
 		{
 		  existing = TRUE;
 		  break;
 		}
-          }
+	    }
 
 
 	  /* Copy the original context from the target block upwards setting feature set names
@@ -1784,7 +1790,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  context = createContext(view->sequence, view->start, view->end, req_featuresets) ;
 #endif
 	  // make the windows have the same list of featuresets so that they display
-        if(!view->columns_set)
+	  if(!view->columns_set)
             g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
 
 
@@ -1817,8 +1823,8 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
       (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
     }
 
-//  if(stylesfile)
-//    g_free(stylesfile);
+  //  if(stylesfile)
+  //    g_free(stylesfile);
 
   if(sources)
     zMapConfigSourcesFreeList(sources);
