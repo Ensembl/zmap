@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun  9 12:22 2010 (edgrif)
+ * Last edited: Jun  9 17:43 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.202 2010-06-09 13:23:34 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.203 2010-06-09 16:43:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2489,6 +2489,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	    }
 
+	  /* COMMENTED OUT BECAUSE zMapThreadExists() DOES NOT WORK ON THE MAC....
+	     AND CAUSES ZMAP TO CRASH WHEN DESTROYING A VIEW.....
+
         if(!thread_has_died && !zMapThreadExists(thread))
           {
             thread_has_died = TRUE;
@@ -2496,6 +2499,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
             // it really is sudden death, thread is just not there
             threadDebugMsg(thread, "GUI: thread %s has died suddenly so cleaning up....\n", NULL) ;
           }
+	  */
 
 	  /* If the thread has died then remove it's connection. */
 	  // do this before counting up the number of step lists
