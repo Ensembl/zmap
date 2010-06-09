@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep  2 09:42 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.70 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.71 2010-06-09 11:25:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -456,7 +456,7 @@ char *zMapFeatureCanonName(char *feature_name)
 
 
 /* This function creates a unique id for a feature. This is essential if we are to use the
- * g_datalist package to hold and reference features. Code should _ALWAYS_ use this function
+ * g_hash_table package to hold and reference features. Code should _ALWAYS_ use this function
  * to produce these IDs.
  * Caller must g_free() returned string when finished with. */
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
