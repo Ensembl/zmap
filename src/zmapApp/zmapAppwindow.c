@@ -26,9 +26,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  2 14:31 2010 (edgrif)
+ * Last edited: Jun  9 10:05 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.70 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.71 2010-06-09 10:50:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -327,7 +327,7 @@ static void initGnomeGTK(int argc, char *argv[])
   gchar *rc_dir, *rc_file;
   gtk_set_locale() ;
 
-  if ((err_msg = gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
+  if ((err_msg = (char *)gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
     {
       zMapLogCritical("%s\n", err_msg) ;
       zMapExitMsg("%s\n", err_msg) ;
