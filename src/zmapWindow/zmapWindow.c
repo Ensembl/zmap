@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 24 16:04 2010 (edgrif)
+ * Last edited: Jun  9 17:35 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.323 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.324 2010-06-09 16:45:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,7 +288,7 @@ static gboolean window_split_save_bumped_G = TRUE;
 /* Debugging canvas... */
 static gboolean busy_debug_G = FALSE ;
 static gboolean foo_debug_G = FALSE ;
-static gboolean mouse_debug_G = FALSE ;
+static gboolean mouse_debug_G = TRUE ;
 
 
 
@@ -2786,6 +2786,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  case 1:
 	    {
 
+	      /* let's try simuulating the enter.... */
+	      in_window = TRUE ;
+
 	      if (but_event->send_event)
 		{
 		  /* If we receive a button press event where send_event == TRUE, its the one we sent ourselves
@@ -3106,6 +3109,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
         if (dragging)
           {
+	    zMapDebugPrint(mouse_debug_G, "button_release %d - in dragging !!", but_event->button) ;
+
             foo_canvas_item_hide(window->rubberband);
 
 	    /* mouse must still be within window to zoom, outside means user is cancelling motion,
@@ -3130,6 +3135,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		      }
 
 		    event_handled = TRUE;		    /* We _ARE_ handling */
+
+		    zMapDebugPrint(mouse_debug_G, "button_release %d - not resending event !!", but_event->button) ;
+
 		  }
 		else
 		  {
@@ -3151,11 +3159,19 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    event_handled = FALSE ;
 		  }
 	      }
+	    else
+	      {
+		zMapDebugPrint(mouse_debug_G, "button_release %d - not in window !!", but_event->button) ;
+
+	      }
 
 	    dragging = FALSE ;
           }
         else if (guide)
           {
+	    zMapDebugPrint(mouse_debug_G, "button_release %d - in guide !!", but_event->button) ;
+
+
 	    /* If we are a locked, _vertical_ split window then also show the ruler in the
 	     * other windows. */
 	    if (locked)
@@ -3196,6 +3212,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
           }
 	else if(mark_updater.activated)
 	  {
+	    zMapDebugPrint(mouse_debug_G, "button_release %d - in mark !!", but_event->button) ;
+
 	    mark_updater.activated = FALSE;
 	    mark_updater.in_mark_move_region = FALSE;
 
