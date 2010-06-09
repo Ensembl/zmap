@@ -1,0 +1,200 @@
+#!/usr/bin/perl
+# add to the authors list in source file, sandwiched by CVS operations
+# *Please* do this with no files active from cvs and a clean build expected
+# mh17 03 Mar 2010
+# Copyright(c) 2010 Genome Research Limited
+# test data in CopyRight.txt, copy to a header first the run over it (the other file)
+# to use on ZMap try:
+#
+#     find ~/zmap/ZMap/src -name "*.c" -exec ./Author "name"\{\} \;
+#     find ~/zmap/ZMap/src -name "*.h" -exec ./Author "name" \{\} \;
+#
+# "name" is like and  "Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk"
+#
+
+
+use warnings;
+
+my ($file, $orig_found, $author_found,$author_added,$author,@authors);
+my ($ofile);
+my ($year_now);
+my $CVS = 1;      # use the CVS
+my $maxlen = 0;
+
+sub add_author
+{
+      my $pre;
+      my $len;
+      my $i;
+
+      for(@_)     # process our one argument directly
+      {
+            if($orig_found)
+            {
+                  chomp();
+                  s/^\s+\*\s+//;    # remove leading " *    "
+                  s/\s+$//;          # and trailing spaces
+                  s/,$//;
+
+                  # our author format is "bob doboleiner (Sanger Insititute) bdl@sanger.ac.uk"
+                  # tediuosly it's centered
+
+                  if(! /\(/)        # no more authors
+                  {
+                        if(!$author_found)
+                        {
+                              print OFILE "$_\n";
+                              return 0;
+                        }
+                        $maxlen /= 2;
+                        foreach my $auth (@authors)
+                        {
+                              $pre = " *    ";
+                              $len = length($auth) / 2;
+                              $len = $maxlen - $len;
+                              for($i = 0;$i < $len;$i++)
+                              {
+                                    $pre .= ' ';
+                              }
+                              print OFILE "$pre $auth,\n";
+                        }
+                        $pre = " *    ";
+                        $len = length($author) / 2;
+                        $len = $maxlen - $len;
+                        for($i = 0;$i < $len;$i++)
+                        {
+                              $pre .= ' ';
+                        }
+                        print OFILE "$pre $author\n$_\n";      # include our (blank?) line
+                        $author_added = 1;
+                        return 0;
+
+                  }
+                  else
+                  {
+                        @authors = (@authors,$_);
+                        if(length($_) > $maxlen)
+                        {
+                              $maxlen = length($_);
+                        }
+                        $author_found = 1;
+                        return 0;
+                  }
+            }
+            elsif(/riginated/)
+            {
+                  $orig_found = 1;
+            }
+      }
+      return 1;
+}
+
+
+for($i = $#ARGV;$i >= 0;$i--)
+{
+      my $arg;
+
+      $arg = shift @ARGV;
+
+      if($arg eq "--help")
+      {
+            printf("usage: Author [--help] [-no-CVS] \"author\" file\n");
+      }
+      elsif($arg eq "-no-CVS")
+      {
+            $CVS = 0;
+      }
+      elsif(!$author)
+      {
+            $author = $arg;
+            $maxlen = length($author);
+      }
+      else
+      {
+            $file = $arg;
+      }
+}
+
+if(!$author)      {     die("No author");  }
+if(!$file)        {     die("No file!\n"); }
+
+print "$file: ";
+
+$orig_found = 0;
+$author_added = 0;
+$lineno = 0;
+
+if($CVS)
+{
+      @args = ("cvs", "edit", $file);
+      # test if writeable: not sure if CVS return values are good
+      system(@args);
+
+      if(!(-w $file))
+      {
+            die("Cannot checkout $file from CVS - not writeable\n");
+      }
+}
+
+open(IFILE,$file) or die("cannot open $file\n");
+
+$ofile = $file . ".tmp";         # make tmp file in same directory
+$year_now = 2010;
+open(OFILE,"> ".$ofile) or die("cannot open $ofile\n");
+
+while($line = <IFILE>)
+{
+      my $prnt;
+
+      $lineno++;
+      $prnt = 1;
+      if($lineno < 50 && !$author_added)
+      {
+            #$line =
+            $prnt = add_author($line);
+      }
+      if($prnt)
+      {
+            print OFILE $line;
+      }
+}
+
+close $ofile;
+
+
+if($author_added)
+{
+      print "author added\n";
+
+      unlink $file or die ("Can't remove old file\n");
+      rename($ofile,$file) or die("Can't update file\n");
+
+      if($CVS)
+      {
+            @args = ("cvs", "commit", "-m", "author added", $file);
+            system(@args);
+            if(-w $file)
+            {
+                  die("author added but cannot commit $file to CVS: still writeable\n");
+            }
+      }
+}
+else
+{
+      print "author not added\n";
+      unlink $ofile;
+
+      if($CVS)
+      {
+            @args = ("cvs", "unedit", $file);
+            system(@args);
+            if(-w $file)
+            {
+                  die("Can't CVS unedit $file: still writeable\n");
+            }
+
+      }
+}
+
+
+
