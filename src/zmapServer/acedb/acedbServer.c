@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 21 17:20 2010 (edgrif)
+ * Last edited: Jun  9 13:34 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.157 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.158 2010-06-09 13:25:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2264,7 +2264,10 @@ static gboolean parseTypes(AcedbServer server, GHashTable **types_out,
 	    }
 	  else if ((style = (parse_func)(next_line, &curr_pos, &col_group)))
 	    {
-	      g_hash_table_insert(types, GUINT_TO_POINTER(zMapStyleGetUniqueID(style)), style) ;
+	      if (!types)
+		types = g_hash_table_new(NULL, NULL) ;
+
+	      g_hash_table_insert(types, GUINT_TO_POINTER(zMapStyleGetUniqueID(style)), (gpointer)style) ;
 	      num_types++ ;
 	    }
 
