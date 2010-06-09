@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 29 09:16 2010 (edgrif)
+ * Last edited: Jun  9 09:41 2010 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.12 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.13 2010-06-09 10:54:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,8 +143,7 @@ gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *file
 {
   gboolean result = FALSE ;
   GIOChannel *file ;
-  guint len;
-
+  gsize len ;
 
   file = g_io_channel_new_file(filename, "a", error_out) ;
 

@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 28 09:11 2010 (edgrif)
+ * Last edited: Jun  9 09:48 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.111 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.112 2010-06-09 10:54:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -917,7 +917,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 	      if ((parser->features_end - parser->features_start + 1) != parser->raw_line_data->len)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					      "##sequence-region length [%d] does not match DNA base count [%d].",
+					      "##sequence-region length [%d] does not match DNA base count [%lu].",
 					      (parser->features_end - parser->features_start + 1),
 					      parser->raw_line_data->len);
 
@@ -2674,7 +2674,7 @@ static gboolean resizeFormatStr(ZMapGFFParser parser)
 
   /* Lot's of "%"s here because "%%" is the way to escape a "%" !! */
   g_string_append_printf(format_str,
-			 "%%%us%%%us%%%us%%d%%d%%%us%%%us%%%us %%%u[^#] %%%uc",
+			 "%%%lus%%%lus%%%lus%%lu%%lu%%%lus%%%lus%%%lus %%%lu[^#] %%%luc",
 			 length, length, length, length, length, length, length, length) ;
 
   parser->format_str = g_string_free(format_str, FALSE) ;
