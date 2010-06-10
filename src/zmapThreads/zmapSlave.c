@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul  7 15:37 2009 (rds)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.33 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.34 2010-06-10 15:32:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ void *zmapNewThread(void *thread_args)
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
   ZMapThreadReturnCode slave_response =  ZMAPTHREAD_RETURNCODE_OK;
-  int call_clean = 1;
+  int call_clean = 1;   // call the cleanup function on exit?
 
   ZMAPTHREAD_DEBUG(("%s: main thread routine starting....\n", zMapThreadGetThreadID(thread))) ;
 
@@ -99,7 +99,7 @@ void *zmapNewThread(void *thread_args)
   zMapConnSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* Next two calls added to fix MACOSX pthread issues */
+  /* Next two calls added to fix MACOSX pthread issues */ reply) ;
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
@@ -140,7 +140,7 @@ void *zmapNewThread(void *thread_args)
 
 
 	  zMapPrintTimer(NULL, "In thread, calling handler function") ;
-
+modules/zmapThreads.shtml
 	  /* Call the registered slave handler function. */
 	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply,
 						     &slave_error) ;
@@ -191,7 +191,7 @@ void *zmapNewThread(void *thread_args)
 	      }
 	    case ZMAPTHREAD_RETURNCODE_BADREQ:
 	    case ZMAPTHREAD_RETURNCODE_SERVERDIED:
-	      {
+	      { reply) ;
 		char *error_msg ;
 
 
@@ -227,6 +227,9 @@ void *zmapNewThread(void *thread_args)
             char * error_msg;
             error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
             zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
+            // we've already closed the connection and cleaned up data
+            // but we still want to exit
+            // don't call the cleanup fucntion as it's there as an exception handler
             call_clean = 0;
             }
             break;
