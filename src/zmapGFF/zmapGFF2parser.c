@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun  9 09:48 2010 (edgrif)
+ * Last edited: Jun 10 10:47 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.112 2010-06-09 10:54:41 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.113 2010-06-10 09:48:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -917,7 +917,8 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 	      if ((parser->features_end - parser->features_start + 1) != parser->raw_line_data->len)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					      "##sequence-region length [%d] does not match DNA base count [%lu].",
+					      "##sequence-region length [%d] does not match DNA base count"
+					      " [%" G_GSSIZE_FORMAT "].",
 					      (parser->features_end - parser->features_start + 1),
 					      parser->raw_line_data->len);
 
@@ -2672,9 +2673,12 @@ static gboolean resizeFormatStr(ZMapGFFParser parser)
 
   format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
 
-  /* Lot's of "%"s here because "%%" is the way to escape a "%" !! */
+  /* Lot's of "%"s here because "%%" is the way to escape a "%" !! The G_GSSIZE_FORMAT is a
+   * portable way to printf a gsize. */
   g_string_append_printf(format_str,
-			 "%%%lus%%%lus%%%lus%%lu%%lu%%%lus%%%lus%%%lus %%%lu[^#] %%%luc",
+                         "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
+			 G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"
+			 G_GSSIZE_FORMAT "[^#] %%%" G_GSSIZE_FORMAT "c",
 			 length, length, length, length, length, length, length, length) ;
 
   parser->format_str = g_string_free(format_str, FALSE) ;
