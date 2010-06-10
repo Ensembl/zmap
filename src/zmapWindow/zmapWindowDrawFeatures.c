@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.273 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.274 2010-06-10 10:25:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1099,11 +1099,11 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
 		       frame) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("making \"%s\" %s %s column \n",
 	     g_quark_to_string(feature_set_id),
 	     zMapFeatureFrame2Str(frame), zMapFeatureStrand2Str(ZMAPSTRAND_REVERSE)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       if (canvas_data->curr_reverse_group)
 	produce_column(canvas_data,
@@ -1173,7 +1173,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
       if(window->display_3_frame)
 	{
-#if 0
+#if 1       // mh17: why did i set this to 0?
 	  if(style_list && frame_specific)
 	    {
 	      GValue value = {0};
@@ -1214,7 +1214,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
     {
       /* mh17: canvas_data ->frame mode == true means draw them
        * window->display_3_frame means we are in the mode
-       * need to set matched false to avoid initial display of sensitive data
+       * need to set matched false to avoid initial display of 3-frame data
        */
       matched = FALSE;
     }

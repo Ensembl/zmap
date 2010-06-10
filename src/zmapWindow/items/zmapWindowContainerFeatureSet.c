@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 21 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.29 2010-06-08 08:31:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.30 2010-06-10 10:25:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -212,10 +212,10 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 	}
 
       // try to guess the intended visibility mode to avoid extra foo_canvas activity
-      zmapWindowColumnSetState(window, FOO_CANVAS_GROUP(container_set),
-                        ZMAPSTYLE_COLDISPLAY_INVALID, FALSE);
+//      zmapWindowColumnSetState(window, FOO_CANVAS_GROUP(container_set),
+//                        ZMAPSTYLE_COLDISPLAY_INVALID, FALSE);
 
-//      zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
+      zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
     }
 
   return container_set;
@@ -1074,7 +1074,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
 }
 
 
-#if MH17_function_not_used
+
 /* This function is written the wrong way round.  It should be
  * re-written, along with extract_value_from_style_table so that
  * this function is part of utils and extract_value_from_style_table
@@ -1110,7 +1110,7 @@ gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,
 
 	      style = ZMAP_FEATURE_STYLE(list->data);
 	      unique_id = zMapStyleGetUniqueID(style);
-	      extract_value_from_style_table(GINT_TO_POINTER(unique_id), style, &value_data);
+	      extract_value_from_style_table(GINT_TO_POINTER(unique_id), (gpointer) style, &value_data);
 	    }
 	  while((list = g_list_next(list)));
 	}
@@ -1119,7 +1119,7 @@ gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,
   return result;
 }
 
-#endif
+
 
 /*
  *  OBJECT CODE

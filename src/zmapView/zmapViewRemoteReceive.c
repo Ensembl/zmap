@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.48 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.49 2010-06-10 10:25:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1950,7 +1950,7 @@ static void getFeatureNames(ZMapView view, RequestData input_data, ResponseData 
 	}
       else
 	{
-	  GHashTable *uniq_features = NULL ;
+	  GHashTable *uniq_features = g_hash_table_new(NULL,NULL) ;
 
 	  g_list_foreach(feature_list, findUniqueCB, &uniq_features) ;
 

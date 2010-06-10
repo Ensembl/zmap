@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:52 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.124 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.125 2010-06-10 10:25:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -256,7 +256,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 {
   ZMapWindowContainerFeatureSet container;
   ZMapStyleColumnDisplayState curr_col_state ;
-  gboolean test_mag = TRUE;
+//  gboolean test_mag = TRUE;
 
   container = (ZMapWindowContainerFeatureSet)column_group;
 
@@ -269,7 +269,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
       if (!new_col_state)
         {
-          test_mag = FALSE;
+//          test_mag = FALSE;
           // we are creating the column: mag not vis due to no features
           // but we still want it to be visible
           // a bit hacky, but less grief than adding a new flag
