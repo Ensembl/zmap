@@ -1,0 +1,102 @@
+<h2>Thread Startup and Shutdown</h2>
+<fieldset><legend>Overview</legend>
+<p>
+ZMap runs with a main thread that driver the display and user interaction and this work mainly off callbacks from GLib/GTK and also the X-remote interface (that uses X-atoms).  Interfaces to external systems (eg ACEDB, pipeServers) are handled by separate threads and these all implement a very similar interface consisting of a series of up to 8 (9?) requests.
+</p>
+<p>In <b>zmapView.c/createConnection()</b> a new thread is created, giving up to three handler functions to <b>zMapThreadCreate()</b>.
+<p>In <b>zmapThreads.c/zmapCreateThread()</b> a new thread is created and given zmapNewThread() as its main loop. This function waits on requests sent by the main thread and sends replies.  There is no normal exit from this function but faile requests can drop out of the main loop and terminate the thread.
+</p>
+<p>The server protocol defines a terminate request which has not been implemented to date (May 2010).  There is the possibility of making this over complicated: requests are expected to return success fo failure (or not implemented); the main thread has to detect and cope with spontaneous evaporation of threads and infinite loops, and call kill threads if they do not respond.
+resources have to be freed tidily.</p>
+</fieldset>
+
+<fieldset><legend>Thread termination</legend>
+<p>Each thread has its own data structure to hold its state. The main thread also has data per thread.  The thread model assumes there is some external server (eg ACEDB) whose stae can be reported; for pipeServers this is not spectacuilary relevant and may just cause confusion.</p>
+<p>
+The slave thread's data includes a pointer to the main thread's corresponding data structure, which allows data to be passed to the main thread.
+</p>
+
+<h3>Timing out</h3>
+<p>Each slave waits for a request state not equal to waiting in its main loop, and this will time out after 5 seconds and continue round the main loop.  This appears to be necessary to call pthread_testcancel(), which allows the thread to be killed by another one.  The main thread does not appear to operate any timeouts on requests.
+</p>
+<p>zmapSlave.c/zmapNewThread() handles a ZMAPTHREAD_RETURNCODE_TIMEDOUT but this is not referenced elsewhere in the source.
+</p>
+
+<h3>Slave killed by the main thread</h3>
+<p>This happens if a request fails and is regarded as critical, or on ZMap shutdown.  The main thread will issue a <b>pthread_cancel()</b> which will eventually cause the thread to exit. The main thread's slave data resources must not be released at this point.  The slave thread will call <b>zmapSlave.c/cleanUpThread()</b> and as the thread is not reporting a specific error if sets a return code of 'ZMAP_REPLY_CANCELLED'.
+</p><b>zmapView.c/checkStateConnections()</b> polls all threads during idle moments and handles the actual termination of the thread. If no requests are active the thread's state will be ZMAP_REPLY_WAIT (this is set by the main thread after replies have been processed).
+</p>
+
+<h3>Slave exits spontaneously</h3>
+<p>
+The cleanUpThread() function will be called by the posix code as there is a stack of functions to be called set up on thread creation.
+There appears to be no way to teel the difference between this and thread killed by ZMap's main thread.
+</p>
+<h3>Slave has internal error and exits by design</h3>
+<p>
+On the assumption that the slave thread interfaces to an external server there are response codes such as 'BAD REQ' and 'SERVER DIED', and these generate a reply code of 'THREAD DIED'.  The main loop breaks and the thread calls its cleanup fucntion.  ZMap will get this 'died' response and clear up it's own data.
+</p>
+
+
+<h3>Slave executes terminate request</h3>
+<p>
+Here we face a possible semantic problem. It's OK for a slave to reply to a terminate request as the response is held in data owned by the main thread, but susbsequent requests are not logical. Therefore it make sense for a terminate request to respond with success and for the thread to exit cleanly. On receipt of the response (which cannot logically be locked by the slave) the main thread should clean up its data structures, in which case we should not have a 'thread died' status.
+</p>
+<p>It's not clear from the source code whether of not we can tell if a thread has exited or not - they are set to 'detached' on creation.
+The pthread interface only includes one function that allows a signal to be sent to another thread - pthread_kill() and a signal of 0 allows testing of the thread's existance without sending the signal.  Given that the existing method for detecting a dead thread involves failing to lock memory it seems unlikely that it does actually detect whether the thread is there or not.
+</p>
+
+<h4>Proposed implementation</h4>
+<p>
+<ul>
+<li> comments in the code to be changed to reflect the fact that clean up functions get called for normal exit as well as abnormal.
+<li> <b>zmapView.c/checkStateConnections()</b> to be modified to poll thread id's to see if the threads are really there or not after processing request codes.
+<li> A new set of return codes signifying normal exit to be defined.
+<li> <b>ZMAPSERVER_REQUEST_TERMINATE</b> to return QUIT status immediately followed by thread exit.
+<li> zmapServerProtocolHandler.c to call close and destroy functions from the TERMINATE request and return QUIT status
+<li> zmapSlave.c/zmapNewThread() to break out of the main loop on QUIT status.
+</ul>
+</p>
+
+
+</fieldset>
+
+<fieldset><legend>Layers of software</legend>
+<p>Each server module implements a CloseConnection() and a FreeConnection() function.  CloseConnection() releases external interfaces and data after which the thread is in a zombie state but still has its own internal data structures allocated. FreeConnection releases the last of these memory items.
+</p>
+<p>Both of these functions are called from cleanUpThread() via the thread data structure allocated by zMapThreadCreate() and are known as thread-&gt;terminate_func() and thread-&gt;destroy_func().  The actual functions are defined in <b>zmapServerProtocolHandler.c</b> as <b>zMapServerTerminateHandler()</b> and <b>zMapServerDestroyHandler()</b> whcih call further internal (to zmapServerProtocolHandler.c) functions called terminateServer() and destroyServer().</p>
+
+<p>NB: originally these functions were commented as being called on 'abnormal' thread exit. As 'normal' thread exit was not programmed this was arguably accurate but really quite confusing.  There is no close request defined in the server protocol and terminate was not implemented.  They were called if the thread was cancelled but not if the 'server died'.
+</p>
+
+<p> So the call stack for a thread that has been killed by the main thread looks like this:
+<br />(thread_local is the thread's allocated data and thread_main is the main thread's allocated data)
+<pre>
+(main thread)
+zmapView.c/createConnection()
+      zmapThreads.c/zMapThreadCreate()
+            zmapThreads.c/createThread()  stores functions from zmapServerProtocolHandler.c
+
+zmapView.c/checkStateConnections()
+      zmapThreads.c/ZMapThreadKill()
+            pthread_cancel()
+</pre>
+<pre>
+(slave thread)
+zmapSlave.c/zmapNewThread()       (main loop)
+
+zmapSlave.c/cleanUpThread()       (on pthread clean up stack)
+      zmapServerProtocolHandler.c/zMapServerTerminateHandler()  as (thread_local)->(thread_main)->terminate_func()
+            zmapServerProtocolHandler.c/terminateServer()
+                  zmapServer.c/zMapServerCloseConnection()
+                        pipeServer.c/closeConnection()  as server->funcs->close()
+</pre>
+<pre>
+(main thread)
+zmapView.c/checkStateConnections()
+      zmapView.c/destroyConnection()      when it works out that the thread has died
+
+</pre>
+
+</fieldset>
+
