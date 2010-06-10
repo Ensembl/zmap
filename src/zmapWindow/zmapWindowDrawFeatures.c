@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.274 2010-06-10 10:25:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.275 2010-06-10 10:35:28 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1099,11 +1099,11 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
 		       frame) ;
 
 
-//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("making \"%s\" %s %s column \n",
 	     g_quark_to_string(feature_set_id),
 	     zMapFeatureFrame2Str(frame), zMapFeatureStrand2Str(ZMAPSTRAND_REVERSE)) ;
-//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       if (canvas_data->curr_reverse_group)
 	produce_column(canvas_data,
