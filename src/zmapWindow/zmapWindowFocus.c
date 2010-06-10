@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 30 11:00 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.18 2010-04-30 10:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.19 2010-06-10 14:50:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,10 +39,10 @@
 #include <zmapWindowContainerFeatureSet_I.h>
 
 /* Used for window focus items and column.
- * 
+ *
  * Note that if only a column has been selected then focus_item_set may be NULL, BUT
  * if an item has been selected then focus_column will be that items parent.
- * 
+ *
  *  */
 typedef struct _ZMapWindowFocusStruct
 {
@@ -66,7 +66,7 @@ typedef struct
 
 
 static gint find_item(gconstpointer list_data, gconstpointer user_data);
-static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, 
+static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus,
                                              FooCanvasItem *item);
 static void addFocusItemCB(gpointer data, gpointer user_data) ;
 static void freeFocusItems(ZMapWindowFocus focus) ;
@@ -86,23 +86,23 @@ static void FocusUnmaskOverlay(ZMapWindowFocus focus);
 
 static gboolean overlay_manager_list_debug_G = FALSE;
 
-/* 
+/*
  *              Set of routines to handle focus items.
- * 
+ *
  * Holds a list of items that are highlighted/focussed, one of these is the "hot" item
  * which is the last one selected by the user.
- * 
+ *
  * The first item in the list is always the "hot" item.
- * 
+ *
  * The "add" functions just append item(s) to the list, they do not remove any items from it.
- * 
+ *
  * The "hot" item must be set with a separate call.
- * 
+ *
  * To replace the list you need to free it first then add new item(s).
- * 
+ *
  * Note that these routines do not handle highlighting of items, that must be done with
  * a separate call.
- * 
+ *
  */
 
 
@@ -260,10 +260,10 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus)
   return column ;
 }
 
-/*! 
+/*!
  * zmapWindowFocusForEachFocusItem
  *
- * Call given user function for all highlighted items. 
+ * Call given user function for all highlighted items.
  * The data passed to the function will be a ZMapWindowFocusItemArea
  *
  * void callback(gpointer item_area_data, gpointer user_data);
@@ -312,7 +312,7 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 	  if ((curr_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(container_parent), item)) != -1)
 	    {
 	      position = curr_index - focus->hot_item_orig_index ;
-      
+
 	      if ((zmapWindowContainerSetItemPosition(ZMAP_CONTAINER_GROUP(container_parent),
 						      item, focus->hot_item_orig_index)) == -1)
 		zMapLogWarning("%s", "zmapWindowContainerSetItemPosition() could not find item in container_parent.") ;
@@ -370,7 +370,7 @@ void zmapWindowFocusRemoveOverlayManager(ZMapWindowFocus focus, ZMapWindowOverla
 {
   if(overlay_manager_list_debug_G)
     zMapLogWarning("removing overlay_manager %p from focus %p", overlay, focus);
-  
+
   focus->overlay_managers = g_list_remove(focus->overlay_managers, overlay);
 
   return ;
@@ -443,7 +443,7 @@ static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, FooCanvasIte
       if((remove = g_list_find_custom(focus->focus_item_set, item, find_item)))
         {
           item_area = remove->data;
-          focus->focus_item_set = g_list_remove(focus->focus_item_set, 
+          focus->focus_item_set = g_list_remove(focus->focus_item_set,
                                                 remove->data);
           associated = item_area->associated;
           item_area->associated = NULL;
@@ -464,7 +464,7 @@ static gint find_item(gconstpointer list_data, gconstpointer user_data)
 {
   ZMapWindowFocusItemArea area = (ZMapWindowFocusItemArea)list_data;
   gint result = -1;
-  
+
   if(user_data == (gconstpointer)(area->focus_item))
     result = 0;
 
@@ -474,7 +474,7 @@ static gint find_item(gconstpointer list_data, gconstpointer user_data)
 /* A GFunc() to add all items in a list to the windows focus item list. We don't want duplicates
  * so we try to remove an item first and then append it. This is a potential performance
  * problem if there is a _huge_ list of focus items....
- * 
+ * NB: append requires processing the whole list
  *  */
 static void addFocusItemCB(gpointer data, gpointer user_data)
 {
@@ -536,7 +536,7 @@ static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item,
   FooCanvasGroup  *container_parent, *container_features = NULL;
   ZMapWindowItemFeatureType item_feature_type;
   ContainerType container_type;
-  
+
   /* possibly bad to have these 2 here, but wanted to not crash, but instead return NULL. */
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(any_item), ITEM_FEATURE_TYPE));
   container_type    = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(any_item), CONTAINER_TYPE_KEY));
@@ -645,7 +645,7 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
     {
       focus->focus_column =container = (ZMapWindowContainerFeatureSet)column ;
 
-      
+
       if (!container->sorted)
 	{
 	  //zmapWindowContainerFeatureSetSortFeatures(focus->focus_column, ZMAPCONTAINER_VERTICAL) ;

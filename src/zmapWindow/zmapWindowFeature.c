@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  5 16:32 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.186 2010-06-08 08:31:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.187 2010-06-10 14:50:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -741,7 +741,8 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
 
-  zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
+  if(window->focus)
+      zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
 
   return event_handled ;
 }

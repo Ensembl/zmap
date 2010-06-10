@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.275 2010-06-10 10:35:28 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.276 2010-06-10 14:50:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2585,7 +2585,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 					     container_set->frame) ;
 
 	    /* If the focus column goes then so should the focus items as they should be in step. */
-	    if (zmapWindowFocusGetHotColumn(window->focus) == group)
+	    if (window->focus && zmapWindowFocusGetHotColumn(window->focus) == group)
 	      zmapWindowFocusReset(window->focus) ;
 
 	  }
