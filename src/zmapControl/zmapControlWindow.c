@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 16:25 2010 (edgrif)
+ * Last edited: Jun 10 10:48 2010 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.37 2010-03-04 15:09:57 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.38 2010-06-10 09:52:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -339,21 +339,29 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
        * 
        * In fact we don't use the geometry (i.e. screen size) but its useful
        * to see it.
-       */
+       * 
+       * When retrieving 32 bit items, these items will be stored in _longs_, this means 
+       * that on a 32 bit machine they come back in 32 bits BUT on 64 bit machines they
+       * come back in 64 bits.
+       * 
+       *  */
       int window_width_guess = 300, window_height_guess ;
       gboolean result ;
       GdkWindow *root_window ;
       gulong offset, length ;
       gint pdelete = FALSE ;				    /* Never delete the property data. */
       GdkAtom actual_property_type ;
-      gint actual_format, actual_length ;
-      guchar *data ;
+      gint actual_format, actual_length, field_size, num_fields ;
+      guchar *data, *curr ;
       guint width, height, left, top, right, bottom ;
+
+      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
 
       root_window = gdk_screen_get_root_window(screen) ;
 
       offset = 0 ;
-      length = 2 * 4 ;					    /* Get two unsigned ints worth of data. */
+      num_fields = 2 ;
+      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
       actual_format = actual_length = 0 ;
       data = NULL ;
       result = gdk_property_get(root_window,
@@ -367,12 +375,17 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 				&actual_length,
 				&data) ;
 
-      memcpy(&width, data, 4) ;
-      memcpy(&height, (data + 4), 4) ;
-      g_free(data) ;
+      if (num_fields == actual_length/sizeof(glong))
+	{
+	  curr = data ;
+	  memcpy(&width, curr, field_size) ;
+	  memcpy(&height, (curr += field_size), field_size) ;
+	  g_free(data) ;
+	}
 
       offset = 0 ;
-      length = 4 * 4 ;					    /* Get four unsigned ints worth of data. */
+      num_fields = 4 ;
+      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
       actual_format = actual_length = 0 ;
       data = NULL ;
       result = gdk_property_get(root_window,
@@ -385,11 +398,16 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 				&actual_format,
 				&actual_length,
 				&data) ;
-      memcpy(&left, data, 4) ;
-      memcpy(&top, (data + 4), 4) ;
-      memcpy(&right, (data + 8), 4) ;
-      memcpy(&bottom, (data + 12), 4) ;
-      g_free(data) ;
+
+      if (num_fields == actual_length/sizeof(glong))
+	{
+	  curr = data ;
+	  memcpy(&left, curr, field_size) ;
+	  memcpy(&top, (curr += field_size), field_size) ;
+	  memcpy(&right, (curr += field_size), field_size) ;
+	  memcpy(&bottom, (curr += field_size), field_size) ;
+	  g_free(data) ;
+	}
 
       window_height_guess = bottom - top ;
 
