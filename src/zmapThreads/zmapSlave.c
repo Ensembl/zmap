@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Jul  7 15:37 2009 (rds)
+ * Last edited: Jun 10 16:57 2010 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.34 2010-06-10 15:32:06 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.35 2010-06-11 10:51:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,7 +99,7 @@ void *zmapNewThread(void *thread_args)
   zMapConnSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* Next two calls added to fix MACOSX pthread issues */ reply) ;
+  /* Next two calls added to fix MACOSX pthread issues */
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
@@ -140,7 +140,7 @@ void *zmapNewThread(void *thread_args)
 
 
 	  zMapPrintTimer(NULL, "In thread, calling handler function") ;
-modules/zmapThreads.shtml
+
 	  /* Call the registered slave handler function. */
 	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply,
 						     &slave_error) ;
@@ -191,7 +191,7 @@ modules/zmapThreads.shtml
 	      }
 	    case ZMAPTHREAD_RETURNCODE_BADREQ:
 	    case ZMAPTHREAD_RETURNCODE_SERVERDIED:
-	      { reply) ;
+	      {
 		char *error_msg ;
 
 
