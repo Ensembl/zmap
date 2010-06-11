@@ -26,9 +26,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Mar 11 14:19 2010 (edgrif)
+ * Last edited: Jun 11 16:09 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.276 2010-06-10 14:50:31 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.277 2010-06-11 16:06:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2139,97 +2139,76 @@ static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 }
 
 
+/* Handles events on a column, currently this is only mouse press/release events for
+ * highlighting and column menus. */
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
-  ZMapWindow window = (ZMapWindow)data ;
 
-  switch (event->type)
+  if (event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE)
     {
-    case GDK_BUTTON_PRESS:
-      {
-	GdkEventButton *but_event = (GdkEventButton *)event ;
-	ZMapFeatureSet feature_set = NULL ;
-	ZMapWindowContainerFeatureSet container_set;
-        ZMapWindowContainerGroup container_parent;
+      ZMapWindow window = (ZMapWindow)data ;
+      GdkEventButton *but_event = (GdkEventButton *)event ;
+      ZMapFeatureSet feature_set = NULL ;
+      ZMapWindowContainerFeatureSet container_set;
+      ZMapWindowContainerGroup container_parent;
 
-        container_parent = zmapWindowContainerChildGetParent(item);
+      container_parent = zmapWindowContainerChildGetParent(item);
 
-	/* These should go in container some time.... */
-	container_set = (ZMapWindowContainerFeatureSet)container_parent;
+      /* These should go in container some time.... */
+      container_set = (ZMapWindowContainerFeatureSet)container_parent;
+      feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
+      zMapAssert(feature_set || container_set) ;
 
-	feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
 
-	zMapAssert(feature_set || container_set) ;
+      /* Only buttons 1 and 3 are handled. */
+      if (event->type == GDK_BUTTON_PRESS && but_event->button == 3)
+	{
+	  /* Do the column menu. */
+	  if (feature_set)
+	    {
+	      zmapMakeColumnMenu(but_event, window, item, feature_set, NULL) ;
+		      
+	      event_handled = TRUE ;
+	    }
+	}
+      else if (event->type == GDK_BUTTON_RELEASE && but_event->button == 1)
+	{
+	  /* Highlight a column. */
+	  ZMapWindowSelectStruct select = {0} ;
+	  GQuark feature_set_id ;
+	  char *clipboard_text = NULL;
 
 #warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
-	/* Swop focus from previous item(s)/columns to this column. */
-	zMapWindowUnHighlightFocusItems(window) ;
+	  /* Swop focus from previous item(s)/columns to this column. */
+	  zMapWindowUnHighlightFocusItems(window) ;
 
-	zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
-	zmapHighlightColumn(window, (FooCanvasGroup *)container_parent) ;
+	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
+	  zmapHighlightColumn(window, (FooCanvasGroup *)container_parent) ;
 
-	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
-	 * the root handler. */
-	switch (but_event->button)
-	  {
-	  case 1:
-	    {
-	      ZMapWindowSelectStruct select = {0} ;
-	      GQuark feature_set_id ;
-              char *clipboard_text = NULL;
+	  if (feature_set)
+	    feature_set_id = feature_set->original_id ;
+	  else
+	    feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
 
-	      if (feature_set)
-		feature_set_id = feature_set->original_id ;
-	      else
-		feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
+	  select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
 
-	      select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
-	      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
+	  select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(feature_set) ;
 
-	      select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(feature_set) ;
+	  clipboard_text = zmapWindowFeatureSetDescription(feature_set) ;
 
-	      clipboard_text = zmapWindowFeatureSetDescription(feature_set) ;
+	  select.type = ZMAPWINDOW_SELECT_SINGLE;
 
-              select.type = ZMAPWINDOW_SELECT_SINGLE;
+	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+	  zMapWindowUtilsSetClipboard(window, clipboard_text);
 
-              zMapWindowUtilsSetClipboard(window, clipboard_text);
+	  g_free(clipboard_text) ;
 
-	      g_free(clipboard_text) ;
-
-	      event_handled = TRUE ;
-	      break ;
-	    }
-	  /* There are > 3 button mouse,  e.g. scroll wheels, which we don't want to handle. */
-	  default:
-	  case 2:
-	    {
-	      event_handled = FALSE ;
-	      break ;
-	    }
-	  case 3:
-	    {
-	      if (feature_set)
-		{
-		  zmapMakeColumnMenu(but_event, window, item, feature_set, NULL) ;
-
-		  event_handled = TRUE ;
-		}
-	      break ;
-	    }
-	  }
-	break ;
-      }
-    default:
-      {
-	/* By default we _don't_ handle events. */
-	event_handled = FALSE ;
-
-	break ;
-      }
+	  event_handled = TRUE ;
+	}
     }
 
   return event_handled ;

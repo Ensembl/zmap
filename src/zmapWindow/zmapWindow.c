@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 24 16:04 2010 (edgrif)
+ * Last edited: Jun 11 16:31 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.325 2010-06-10 14:50:31 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.326 2010-06-11 16:06:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2710,24 +2710,8 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
  * zooming and we track mouse movements, if they have moved far enough then we do the zoom
  * on button release.
  *
- * BUT if on button release they have only moved a tiny amount it means that they meant
- * to _select_ a feature or column, _not_ lasso. In this case we have to reissue the original
- * button press event, when we then receive that event we just ignore it so that its passed
- * through to the object select code.
- *
- * A note from Roy (!):
- *
- * PLEASE be very careful when altering this function, as I've
- * already messed stuff up when working on it! The event_handled
- * boolean _SHOULD_ be set to true any time we handle the event.
- * While this sounds obvious I fell over it when implementing the
- * motion as well as button down and release. If there is a track
- * of events, such as button/key down .. motion .. button release
- * then the event_handled should be true for the whole of the life
- * of the track of events.  All of the statics above could/probably
- * should be replaced with a struct... please think about this if
- * adding any more!
- *
+ * If the user does lassoing, ruler or moving the mark then we return TRUE to say we have
+ * handled the event, otherwise we pass the event on (so canvas items can receive events).
  */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
@@ -2741,11 +2725,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 							       or rubber banding ? */
   double wx, wy;					    /* These hold the current world coords of the event */
   static double window_x, window_y ;			    /* Track number of pixels user moves mouse. */
-  static GdkEventButton *but_press_copy = NULL ;		    /* Used to implement both lasso _and_ object
-							       select with left button click. */
   static MarkRegionUpdateStruct mark_updater = {0};
-
-  /* We need to check that canvas is mapped here (slow connections) */
 
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
@@ -2790,18 +2770,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  {
 	  case 1:
 	    {
-
-	      if (but_event->send_event)
-		{
-		  /* If we receive a button press event where send_event == TRUE, its the one we sent ourselves
-		   * to do feature select so don't process it. */
-
-		  zMapDebugPrint(mouse_debug_G, "button_press %d was sent by us - don't process", but_event->button) ;
-
-		  event_handled = FALSE ;
-		}
-	      else if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-		       && ZMAP_IS_WINDOW_TEXT_ITEM(item))
+	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
+		  && ZMAP_IS_WINDOW_TEXT_ITEM(item))
 		{
 		  /* Don't handle if its text because the text item callbacks handle lasso'ing of
 		   * text. */
@@ -2814,9 +2784,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	      else
 		{
 		  /* Pucka button press that we need to handle. */
-
-		  /* Take a copy of the initial event in case we need to resend it to do feature select. */
-		  but_press_copy = (GdkEventButton *)gdk_event_copy((GdkEvent *)event) ;
 
 		  /* Record where are we in the window at the start of mouse/button movement. */
 		  window_x = but_event->x ;
@@ -2840,7 +2807,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 			window->rubberband = zMapDrawRubberbandCreate(window->canvas);
 		    }
 
-		  event_handled = TRUE ;
+		  /* At this stage we don't know if we are rubber banding etc. so pass the
+		   * press on. */
+		  event_handled = FALSE ;
 		}
 
 	      break ;
@@ -2931,7 +2900,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
       }
     case GDK_MOTION_NOTIFY:
       {
-
 	/* interestingly we don't check the button number here.... */
 
 	if (dragging || guide)
@@ -3057,11 +3025,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 				       &wx, mark_updater.closest_to);
 	    wy = *(mark_updater.closest_to);
 	    moveRuler(window->mark_guide_line, NULL, NULL, wx, wy);
+
 	    event_handled = TRUE;
 	  }
-	else if (mark_updater.in_mark_move_region &&
-		 (!mark_updater.activated) &&
-		 zmapWindowMarkIsSet(window->mark))
+	else if (mark_updater.in_mark_move_region && (!mark_updater.activated)
+		 && zmapWindowMarkIsSet(window->mark))
 	  {
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
 	    double world_dy;
@@ -3080,8 +3048,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	    world_dy = canvas_dy / window->canvas->pixels_per_unit_y;
 
-	    if((!((wy > mark_updater.mark_y1 - world_dy) && (wy < mark_updater.mark_y1 + world_dy))) &&
-	       (!((wy > mark_updater.mark_y2 - world_dy) && (wy < mark_updater.mark_y2 + world_dy))))
+	    if ((!((wy > mark_updater.mark_y1 - world_dy) && (wy < mark_updater.mark_y1 + world_dy)))
+		&& (!((wy > mark_updater.mark_y2 - world_dy) && (wy < mark_updater.mark_y2 + world_dy))))
 	      {
 		mark_updater.in_mark_move_region = FALSE;
 		mark_updater.closest_to = NULL;
@@ -3125,33 +3093,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 		    zoomToRubberBandArea(window) ;
 
-		    /* If there was a previous copy of a button press event we _know_ we
-		     * can throw it away at this point because it will have been processed by
-		     * a previous call to this routine. */
-		    if (but_press_copy)
-		      {
-			gdk_event_free((GdkEvent *)but_press_copy) ;
-			but_press_copy = NULL ;
-		      }
-
 		    event_handled = TRUE;		    /* We _ARE_ handling */
 		  }
 		else
 		  {
 		    /* User hasn't really moved which means they meant to select a feature, not
-		     * lasso an area so resend original button press so it will then be propagated
-		     * down to item select code. */
+		     * lasso an area so pass event on and destroy rubberband object. */
 
 		    /* Must get rid of rubberband item as it is not needed. */
 		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
 		    window->rubberband = NULL ;
-
-		    but_press_copy->send_event = TRUE ;	    /* Vital for use to detect that we
-							       sent this event. */
-		    but_press_copy->time = but_event->time ;
-		    gdk_event_put((GdkEvent *)but_press_copy) ;
-
-		    zMapDebugPrint(mouse_debug_G, "Resending original button_press %d", but_event->button) ;
 
 		    event_handled = FALSE ;
 		  }
