@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions that manipulate displayed features, they
  *              encapsulate handling of the feature context, the
@@ -30,9 +31,16 @@
  * HISTORY:
  * Last edited: Jun 11 16:58 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.188 2010-06-11 16:06:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.189 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <math.h>

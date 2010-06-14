@@ -19,9 +19,10 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Creates a global object that contains command line
  *              args, the init function should be called once at 
@@ -32,9 +33,16 @@
  * HISTORY:
  * Last edited: Feb 11 09:54 2009 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.14 2010-03-04 15:11:01 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.15 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <stdlib.h>
 #include <string.h>

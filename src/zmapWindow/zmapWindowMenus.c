@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code implementing the menus for sequence display.
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: May  5 17:27 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.71 2010-05-06 12:00:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.72 2010-06-14 15:40:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>

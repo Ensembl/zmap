@@ -19,9 +19,10 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *                               name
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+name
  *
  * Description: Implements the essential code for allows external client
  *              programs to communicate with ZMap. This same code is
@@ -32,9 +33,16 @@
  * HISTORY:
  * Last edited: May  5 16:13 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.49 2010-06-14 11:04:30 mh17 Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.50 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include "zmapXRemote_P.h"
 

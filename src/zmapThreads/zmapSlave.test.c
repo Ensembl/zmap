@@ -19,18 +19,26 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
+ *         Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk,
+ *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jul 21 17:01 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.test.c,v 1.5 2010-03-04 15:10:51 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.test.c,v 1.6 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 /* With some additional calls in the zmapConn code I could get rid of the need for
  * the private header here...... */

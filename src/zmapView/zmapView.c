@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Handles the getting of the feature context from sources
  *              and their subsequent processing.
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Jun  9 17:43 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.204 2010-06-14 10:39:05 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.205 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <sys/types.h>

@@ -19,14 +19,15 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internal data structs for the line reading package.
  * HISTORY:
  * Last edited: Jun 25 10:05 2004 (edgrif)
  * Created: Thu Jun 24 19:33:38 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine_P.h,v 1.3 2010-03-04 15:11:21 mh17 Exp $
+ * CVS info:   $Id: zmapReadLine_P.h,v 1.4 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

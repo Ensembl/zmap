@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: This code is called when a new thread is created by the
  *              zmapThread code, it loops waiting for commands from
@@ -30,9 +31,16 @@
  * HISTORY:
  * Last edited: Jun 10 16:57 2010 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.35 2010-06-11 10:51:30 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.36 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <stdio.h>
 #include <strings.h>

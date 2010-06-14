@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -19,20 +19,27 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *        Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *                               name
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: None
  * HISTORY:
  * Last edited: Mar 25 14:41 2010 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.41 2010-06-14 11:04:21 mh17 Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.42 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <zmapApp_P.h>
@@ -56,9 +63,9 @@ typedef enum
 
 typedef enum {RUNNING_ZMAPS, KILLING_ALL_ZMAPS = 1} ZMapAppContextState;
 
-/* This should be somewhere else ... 
+/* This should be somewhere else ...
    or we should be making other objects */
-typedef struct 
+typedef struct
 {
   ZMapAppContext app_context;
   ZMapAppValidXRemoteAction action;
@@ -107,8 +114,8 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   ZMapAppContext app_context = (ZMapAppContext)app_context_data;
   ZMapCmdLineArgsType value ;
 
-  zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME, 
-                              ZMAP_DEFAULT_REQUEST_ATOM_NAME, 
+  zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME,
+                              ZMAP_DEFAULT_REQUEST_ATOM_NAME,
                               ZMAP_DEFAULT_RESPONSE_ATOM_NAME,
                               application_execute_command, app_context_data);
 
@@ -215,7 +222,7 @@ static char *application_execute_command(char *command_text, gpointer app_contex
 
       response_data.code    = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
       response_data.message = g_string_sized_new(256);
-      
+
       switch(request_data.action)
         {
         case ZMAPAPP_REMOTE_OPEN_ZMAP:
@@ -284,7 +291,7 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   response_data->handled = TRUE;
   /* that screwy rabbit */
   g_string_append_printf(response_data->message, "%s", app->info->message);
-  
+
   /* Clean up. */
   if (sequence)
     g_free(sequence) ;
@@ -332,7 +339,7 @@ static gboolean start(void *user_data, ZMapXMLElement element, ZMapXMLParser par
   RequestData request_data = (RequestData)user_data;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  
+
   return handled ;
 }
 
@@ -354,7 +361,7 @@ static gboolean req_start(void *user_data, ZMapXMLElement element, ZMapXMLParser
   gboolean handled  = FALSE;
   RequestData request_data = (RequestData)user_data;
   ZMapXMLAttribute attr = NULL;
-  
+
   if ((attr = zMapXMLElementGetAttributeByName(element, "action")) != NULL)
     {
       GQuark action = zMapXMLAttributeGetValue(attr);
@@ -382,7 +389,7 @@ static gboolean req_end(void *user_data, ZMapXMLElement element, ZMapXMLParser p
   RequestData request_data = (RequestData)user_data;
   ZMapXMLElement child ;
   ZMapXMLAttribute attr;
-  
+
   if ((child = zMapXMLElementGetChildByName(element, "segment")) != NULL)
     {
       if((attr = zMapXMLElementGetAttributeByName(child, "sequence")) != NULL)

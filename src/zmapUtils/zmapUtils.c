@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for the ZMap code.
  *
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Jun  5 17:55 2009 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.34 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.35 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #define _ISOC99_SOURCE
 

@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements showing the preferences configuration
  *              window for a zmapControl instance.
@@ -30,9 +31,16 @@
  * HISTORY:
  * Last edited: Nov 20 09:32 2008 (rds)
  * Created: Wed Oct 24 15:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapControlPreferences.c,v 1.5 2010-03-04 15:09:53 mh17 Exp $
+ * CVS info:   $Id: zmapControlPreferences.c,v 1.6 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 #include <ZMap/zmapUtils.h>

@@ -20,15 +20,16 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for style.
  *
  * HISTORY:
  * Last edited: Jun 13 17:33 2008 (rds)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.15 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.16 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H

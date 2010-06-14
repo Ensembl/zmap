@@ -19,15 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
  * Last edited: Apr 22 14:26 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.23 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.24 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H

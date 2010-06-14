@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Supports output to strings or files (sockets, files etc.)
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Sep  2 16:05 2008 (rds)
  * Created: Mon Oct 15 13:50:02 2007 (edgrif)
- * CVS info:   $Id: zmapIOOut.c,v 1.3 2010-03-04 15:11:15 mh17 Exp $
+ * CVS info:   $Id: zmapIOOut.c,v 1.4 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>

@@ -19,9 +19,10 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -29,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 17 13:13 2006 (rds)
  * Created: Mon Jul 18 09:14:38 2005 (rds)
- * CVS info:   $Id: zmapDraw_P.h,v 1.7 2010-03-04 15:10:09 mh17 Exp $
+ * CVS info:   $Id: zmapDraw_P.h,v 1.8 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_P_H

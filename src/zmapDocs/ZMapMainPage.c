@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Dummy file, contains main page documentation
  *              used by doxygen tool to document ZMap.
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Jan 14 17:23 2009 (edgrif)
  * Created: Tue Apr 20 09:54:38 2004 (edgrif)
- * CVS info:   $Id: ZMapMainPage.c,v 1.5 2010-03-04 15:10:06 mh17 Exp $
+ * CVS info:   $Id: ZMapMainPage.c,v 1.6 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 /*! \mainpage ZMap Code and Interface documentation. 
  * 

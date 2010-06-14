@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for the navigator code which displays
  *              positional information for sequences.
@@ -28,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 31 18:25 2007 (rds)
  * Created: Fri Jan  7 13:50:33 2005 (edgrif)
- * CVS info:   $Id: zmapNavigator_P.h,v 1.6 2010-03-04 15:10:03 mh17 Exp $
+ * CVS info:   $Id: zmapNavigator_P.h,v 1.7 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_NAVIGATOR_P_H

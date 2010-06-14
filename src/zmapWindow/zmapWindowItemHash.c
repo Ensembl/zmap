@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions to go from an alignment, block, column or feature
  *              in a feature context to the corresponding foocanvas group or item.
@@ -31,9 +32,16 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.46 2010-03-04 15:13:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.47 2010-06-14 15:40:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>

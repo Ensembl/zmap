@@ -19,9 +19,10 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -29,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 17 12:21 2009 (edgrif)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.10 2010-03-04 15:13:30 mh17 Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.11 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

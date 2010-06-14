@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: May 20 10:34 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.7 2010-05-24 14:14:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.8 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <ZMap/zmapBase.h>
 #include <zmapWindowCanvas.h>

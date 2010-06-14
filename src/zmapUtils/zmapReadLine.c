@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Package to read lines from a string, currently this
  *              is done by altering the string, the code to do this
@@ -31,9 +32,16 @@
  * HISTORY:
  * Last edited: Apr 22 13:15 2010 (edgrif)
  * Created: Thu Jun 24 19:03:50 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine.c,v 1.5 2010-04-22 12:16:03 edgrif Exp $
+ * CVS info:   $Id: zmapReadLine.c,v 1.6 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <glib.h>
 #include <zmapReadLine_P.h>

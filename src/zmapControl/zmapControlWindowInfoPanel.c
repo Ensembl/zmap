@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Makes the information panel at the top of a zmap which
  *              shows details of features that the user selects.
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Dec 17 11:15 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.25 2010-03-04 15:10:00 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.26 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <zmapControl_P.h>
 

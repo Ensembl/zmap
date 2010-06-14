@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
+ *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Creates the first toplevel window in the zmap app.
  *
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Jun  9 10:05 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.71 2010-06-09 10:50:51 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.72 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

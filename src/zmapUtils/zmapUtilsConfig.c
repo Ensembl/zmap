@@ -19,17 +19,25 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Oct  1 16:07 2008 (rds)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.8 2010-06-08 08:31:25 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.9 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 #include <ZMap/zmapConfigIni.h>

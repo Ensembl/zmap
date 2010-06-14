@@ -19,17 +19,25 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- * 	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.61 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.62 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 /* this file is a collection of code from zmapslave that needs to handle server connections...

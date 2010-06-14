@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internals of the basic zmap canvas item class, all
  *              other item classes include this class.
@@ -29,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 10:29 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.10 2010-05-26 12:49:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.11 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

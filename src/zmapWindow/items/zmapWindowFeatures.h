@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Include this header to get access to all public
  *              zmapWindowNNNN.h feature headers. This header includes
@@ -31,7 +32,7 @@
  * HISTORY:
  * Last edited: May 26 13:13 2010 (edgrif)
  * Created: Mon Feb 15 11:40:27 2010 (edgrif)
- * CVS info:   $Id: zmapWindowFeatures.h,v 1.4 2010-05-26 12:48:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatures.h,v 1.5 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_FEATURES_H

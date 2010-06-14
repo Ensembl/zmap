@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code to construct GTK menus in a (hopefully) more
  *              straight forward way.
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Nov  3 14:39 2008 (rds)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.12 2010-03-04 15:11:12 mh17 Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.13 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <zmapUtils_P.h>

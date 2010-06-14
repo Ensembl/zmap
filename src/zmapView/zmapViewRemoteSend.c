@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Handles sending xml messages to any connected client.
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: May  5 10:50 2010 (edgrif)
  * Created: Mon Jul 16 13:48:20 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteSend.c,v 1.6 2010-05-05 15:18:22 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteSend.c,v 1.7 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 

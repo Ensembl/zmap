@@ -18,8 +18,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
+ *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Provides interface functions for controlling a data
  *              display window.
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Jun 11 16:31 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.326 2010-06-11 16:06:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.327 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <math.h>
 #include <string.h>

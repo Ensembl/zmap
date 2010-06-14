@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: dialog for searching for dna strings.
  *
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Jan 22 11:15 2010 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.25 2010-03-04 15:12:45 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.26 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>

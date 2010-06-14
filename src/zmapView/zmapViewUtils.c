@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for a ZMapView.
  * StepLists changed to be the child of a connection by Malcolm Hinsley (mh17@sanger.ac.uk) 11 Mar 2010
@@ -30,9 +31,16 @@
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.22 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.23 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>

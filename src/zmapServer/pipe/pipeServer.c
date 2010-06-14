@@ -20,8 +20,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: These functions provide code to read the output of a script
  *		as though it were a server according to the interface defined
@@ -34,9 +35,16 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.24 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.25 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 /* WARNING, THIS DOES NOT COPE WITH MULTIPLE ALIGNS/BLOCKS AS IT STANDS, TO DO THAT REQUIRES

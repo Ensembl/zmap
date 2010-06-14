@@ -20,15 +20,16 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for containers (context, align, block etc).
  *
  * HISTORY:
  * Last edited: May 20 10:24 2010 (edgrif)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.8 2010-05-24 14:29:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.9 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

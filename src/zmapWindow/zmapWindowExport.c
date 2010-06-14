@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Contains functions to export the _features_ in a window
  *              to a file in various formats (gff, zmap format etc.).
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Apr 25 13:47 2006 (edgrif)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowExport.c,v 1.5 2010-03-04 15:12:52 mh17 Exp $
+ * CVS info:   $Id: zmapWindowExport.c,v 1.6 2010-06-14 15:40:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 /* This file will contain functions to export features in the end.... */

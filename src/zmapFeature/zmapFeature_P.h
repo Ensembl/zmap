@@ -19,15 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internals for zmapFeature routines.
  *
  * HISTORY:
  * Last edited: May 10 08:06 2007 (edgrif)
  * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.8 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: zmapFeature_P.h,v 1.9 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H

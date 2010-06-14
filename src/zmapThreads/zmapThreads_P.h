@@ -19,15 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internals for the thread control code.
  *              
  * HISTORY:
  * Last edited: Mar 20 11:53 2009 (edgrif)
  * Created: Thu Jan 27 11:18:44 2005 (edgrif)
- * CVS info:   $Id: zmapThreads_P.h,v 1.9 2010-03-04 15:10:55 mh17 Exp $
+ * CVS info:   $Id: zmapThreads_P.h,v 1.10 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_PRIV_H

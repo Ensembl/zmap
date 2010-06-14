@@ -19,17 +19,25 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May  1 12:10 2008 (rds)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.26 2010-03-04 15:09:59 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.27 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 #include <zmapControl_P.h>

@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: May  1 19:01 2009 (rds)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.3 2010-03-04 15:10:20 mh17 Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.4 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapPeptide.h>

@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Convenience header to include all feature private
  *              headers (which themselves include all the public
@@ -30,7 +31,7 @@
  * HISTORY:
  * Last edited: May 26 13:11 2010 (edgrif)
  * Created: Wed May 26 13:00:34 2010 (edgrif)
- * CVS info:   $Id: zmapWindowFeatures_I.h,v 1.1 2010-05-26 12:48:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatures_I.h,v 1.2 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_FEATURES_I_H

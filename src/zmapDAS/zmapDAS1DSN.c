@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: May 24 17:07 2006 (rds)
  * Created: Wed May 24 11:43:47 2006 (rds)
- * CVS info:   $Id: zmapDAS1DSN.c,v 1.3 2010-03-04 15:10:04 mh17 Exp $
+ * CVS info:   $Id: zmapDAS1DSN.c,v 1.4 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <ZMap/zmapDAS.h>
 

@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Routines to translate DNA to peptide, optionally with
  *              an alternative genetic code.
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: May  1 15:05 2008 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.16 2010-03-04 15:11:18 mh17 Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.17 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 /* 

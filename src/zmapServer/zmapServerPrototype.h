@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk &
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk &,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *      Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Describes the interface between zmapServer, the generalised
  *              server interface and the underlying server specific
@@ -30,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.36 2010-06-08 08:31:24 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.37 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H

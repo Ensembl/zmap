@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: There are some things common to all groups and items
  *              and this file contains them.
@@ -29,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 11:54 2010 (edgrif)
  * Created: Wed May 12 11:45:10 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.h,v 1.2 2010-05-26 12:46:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAllBase.h,v 1.3 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_ALL_BASE_H

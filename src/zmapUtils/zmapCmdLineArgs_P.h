@@ -19,16 +19,17 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internals for command line parsing.
  *
  * HISTORY:
  * Last edited: May 12 17:07 2008 (rds)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.7 2010-03-04 15:11:02 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.8 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H

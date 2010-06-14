@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for the slave thread interface.
  *              
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Jan 12 09:52 2010 (edgrif)
  * Created: Thu Jan 27 11:50:01 2005 (edgrif)
- * CVS info:   $Id: zmapThreadsUtils.c,v 1.6 2010-03-04 15:10:54 mh17 Exp $
+ * CVS info:   $Id: zmapThreadsUtils.c,v 1.7 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <stdio.h>
 #include <errno.h>

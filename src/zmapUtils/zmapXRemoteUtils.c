@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Provides utility functions for xremote stuff...actually should
  *              stuff really be here...maybe it should all be in
@@ -31,9 +32,16 @@
  * HISTORY:
  * Last edited: Mar 29 11:20 2010 (edgrif)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.11 2010-03-29 10:22:56 edgrif Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.12 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapUtils.h>

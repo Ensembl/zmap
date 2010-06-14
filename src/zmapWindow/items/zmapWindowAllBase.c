@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Contains functions required by all zmap item and
  *              group types. These are mostly utility functions
@@ -31,9 +32,16 @@
  * HISTORY:
  * Last edited: May 26 13:30 2010 (edgrif)
  * Created: Wed May 26 09:43:09 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.c,v 1.1 2010-05-26 12:46:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAllBase.c,v 1.2 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <libfoocanvas/libfoocanvas.h>			    /* Used to get struct sizes/types for stats. */
 #include <zmapWindowFeatures_I.h>

@@ -30,6 +30,13 @@ modify this file, you may extend this exception to your version of the
 file, but you are not obligated to do so.  If you do not wish to do
 so, delete this exception statement from your version.  */
 
+#include <ZMap/zmap.h>
+
+
+
+
+
+
 /* This is a compatible replacement of the standard C library's <ctype.h>
    with the following properties:
 

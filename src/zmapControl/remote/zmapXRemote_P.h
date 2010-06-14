@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -28,7 +29,7 @@
  * HISTORY:
  * Last edited: May  6 15:57 2010 (edgrif)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.23 2010-05-06 15:20:41 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.24 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

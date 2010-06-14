@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface functions for xremote API to zmap control window.
  *
@@ -30,9 +31,16 @@
  * HISTORY:
  * Last edited: Mar 25 14:42 2010 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.11 2010-03-29 09:54:30 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.12 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 

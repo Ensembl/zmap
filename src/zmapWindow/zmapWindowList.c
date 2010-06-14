@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Roy Storey   (Sanger Institute, UK) rds@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
+ *         Roy Storey   (Sanger Institute, UK) rds@sanger.ac.uk,
+ *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Displays a list of features from which the user may select
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Mar 31 15:59 2010 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.77 2010-03-31 15:01:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.78 2010-06-14 15:40:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <glib.h>
 #include <ZMap/zmapGFF.h>

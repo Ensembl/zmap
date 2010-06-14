@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -29,9 +30,16 @@
  * HISTORY:
  * Last edited: Jun  9 09:35 2010 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigKey.c,v 1.4 2010-06-09 10:54:41 edgrif Exp $
+ * CVS info:   $Id: zmapConfigKey.c,v 1.5 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>		/* memset */
 #include <glib.h>

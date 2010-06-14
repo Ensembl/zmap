@@ -19,14 +19,15 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  * HISTORY:
  * Last edited: May  6 15:50 2010 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.136 2010-05-25 14:17:01 mh17 Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.137 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H

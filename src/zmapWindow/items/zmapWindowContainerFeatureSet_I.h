@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internal header for class that represents a column
  *              in zmap.
@@ -29,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 15:41 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.11 2010-05-25 14:17:01 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.12 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__

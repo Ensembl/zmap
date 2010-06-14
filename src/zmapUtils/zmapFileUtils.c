@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Set of file handling utilities.
  *              
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Sep  2 10:54 2009 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.12 2010-03-04 15:11:06 mh17 Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.13 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <sys/stat.h>
 #include <fcntl.h>

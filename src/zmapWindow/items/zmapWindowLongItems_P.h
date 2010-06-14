@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -29,7 +30,7 @@
  * HISTORY:
  * Last edited: May 14 08:43 2009 (rds)
  * Created: Tue May 12 15:54:30 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItems_P.h,v 1.2 2010-03-04 15:12:27 mh17 Exp $
+ * CVS info:   $Id: zmapWindowLongItems_P.h,v 1.3 2010-06-14 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

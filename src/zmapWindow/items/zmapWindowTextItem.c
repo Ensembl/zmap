@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements a zmap foocanvas text item that displays
  *              dna or peptide sequence including highlighting, selecting
@@ -31,9 +32,16 @@
  * HISTORY:
  * Last edited: Apr 20 09:52 2010 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.10 2010-04-20 08:53:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.11 2010-06-14 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <config.h>
 #include <math.h>

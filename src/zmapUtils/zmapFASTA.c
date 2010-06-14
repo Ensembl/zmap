@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions to handle FASTA format.
  *
@@ -28,9 +29,16 @@
  * HISTORY:
  * Last edited: Apr 15 08:57 2010 (edgrif)
  * Created: Fri Mar 17 16:24:30 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.c,v 1.7 2010-04-19 14:25:50 edgrif Exp $
+ * CVS info:   $Id: zmapFASTA.c,v 1.8 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>

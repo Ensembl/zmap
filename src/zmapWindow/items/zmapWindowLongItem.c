@@ -20,8 +20,9 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements code to clip items that would exceed the
  *              X Windows max window limit if they were drawn. Code
@@ -32,9 +33,16 @@
  * HISTORY:
  * Last edited: May 24 16:27 2010 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.c,v 1.6 2010-05-24 15:30:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowLongItem.c,v 1.7 2010-06-14 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
+
+
+
+
+
 
 
 #include <math.h>
