@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.11 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.12 2010-06-14 10:39:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -239,7 +239,8 @@ void zMapThreadKill(ZMapThread thread)
 
 gboolean zMapThreadExists(ZMapThread thread)
 {
-      if(pthread_kill(thread->thread_id,0) != ESRCH)
+//      if(pthread_kill(thread->thread_id,0) != ESRCH)
+      if(!pthread_kill(thread->thread_id,0))
             return(TRUE);
       return(FALSE);
 }
