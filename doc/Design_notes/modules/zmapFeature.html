@@ -4,8 +4,11 @@
 <a href="Design_notes/modules/zmapFeature.shtml#identity">Identifying</a>
 <a href="Design_notes/modules/zmapFeature.shtml#mapping">Mapping to columns and styles</a>
 <a href="Design_notes/modules/zmapFeature.shtml#source">Source Code</a>
-<a href="Design_notes/modules/zmapFeature.shtml#styles">Styles</a> <a href="Design_notes/modules/zmapFeature.shtml#styles_impl"> -implementation</a>
+<a href="Design_notes/modules/zmapFeature.shtml#styles">Styles</a>
+<a href="Design_notes/modules/zmapFeature.shtml#styles_impl"> -implementation</a>
 <a href="Design_notes/modules/zmapFeature.shtml#terminology">Terminology</a>
+<a href="Design_notes/modules/zmapFeature.shtml#display">Display</a>
+
 </fieldset>
 
 <a name="source">
@@ -215,3 +218,22 @@ In particular:
 </fieldset>
 
 
+<a name="display"></a>
+<fieldset><legend>Optimising performance on feature display</legend>
+<h3>The problem</h3>
+<p>Historically much use was made of GData keyed data lists but these proved to be very inefficient, and while most of this code has been changed there is still some g_datalist() code left, especially related to styles. Each feature that is displayed requires two searches in a global style list (eg of 300 styles) and this is obviously going to be quite slow.</p>
+<p>There are other aspects/ instances of similar code, but as this particular instance is likelt o hit overall performance most it will be addressed first.
+</p>
+
+<h3>A solution </h3>
+<p>Currently each feature is assigned a style ID by zmapGFF2parser.c and on display this is used to look up the style when drawing the feature in the display context.  The featureset/ column is also assinged a shorter styles list to optimise access but unfortuantely at this point it is not used.</p>
+
+<p>zmapGFF2parser will be modified to duplicate a featuresets's style on creation and each feature will be assinged a pointer to that style in parallel to the style_id as presently used.  This style will exist (invisibly) as part of the features context and should be freed on featureset destroy.</p>
+
+<p>At some later time when the styles have been fully integrated in thier new form (without g_datalist) then the style_id will be removed. </p>
+
+<p> Initially only the functions ProcessFeature() and zMapWindowFeatureStrand() will be modified to use this new pointer.</p>
+
+<h3>Some other notes<h3>
+<p>zmapGFF2parser.c/makeNewFeature() also does two style lookups for each feature when it is only necessary to look up one per featureset - it is possible to remove about 200k calls to zMapFindStyle() each of which will search a list of maybe 300 styles.  This should have a significant effect on 'Data Loading' performance.
+</p>

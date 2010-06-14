@@ -1,0 +1,21 @@
+<h2>Building ZMap</h2>
+
+<fieldset><legend>Overview</legend>
+<p>Zmap is built using autotools and a number of scripts can be found in ZMap/scripts that help drive the configuration process.  Different scripts are used depending on the host operating system, which is discovered by the command 'uname'.
+</p>
+</fieldset>
+
+<fieldset><legend>Developer controlled build options</legend>
+<h3 Options not available</h3>
+<p> There appears to be no provison for this kind of thing.  To create a new build with some experimental code it is necessary to check out a new copy of ZMap and modify the build script for the relevant target machine.
+</p>
+<p> There is also no global header in the source tree. </p>
+
+<h3>A quick solution</h3>
+<p>The file <b>ZMap/scripts/build_config.sh</b> sets up global options for the build process and this includes compiler options.  Experimental code will be optionally compiled with '#if SOME_OPTION' and these may be set via command line arguments like '-DSOME_OPTION=1;
+</p>
+<p>This will make it safe to include experimental code in a current development version without fear of forking the CVS tree.  If the code is deemed OK the the options can be made permanent by committing the build script to the CVS, or by updating the source code itself.
+</p>
+<p><b>Note</b> that is is necessary to runbootstrap and runconfig after changing any compiler options in build_config.sh.
+</p>
+</fieldset>
