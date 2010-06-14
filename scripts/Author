@@ -6,20 +6,24 @@
 # test data in CopyRight.txt, copy to a header first the run over it (the other file)
 # to use on ZMap try:
 #
-#     find ~/zmap/ZMap/src -name "*.c" -exec ./Author "name"\{\} \;
-#     find ~/zmap/ZMap/src -name "*.h" -exec ./Author "name" \{\} \;
+#     cd ZMap/src
+#     find ./zmap* -name "*.c" -exec cvs edit "name"\{\} \;
+#     find ./zmap* -name "*.c" -exec ../scripts/Author "name"\{\} \;
+#     find ./zmap* -name "*.h" -exec ../scripts/Author "name" \{\} \;
+#     cvs commit -m "added author XXXX to files"
 #
-# "name" is like and  "Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk"
+# "name" is like "Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk"
 #
-
+# $Id: Author,v 1.2 2010-06-14 15:02:41 mh17 Exp $
 
 use warnings;
 
 my ($file, $orig_found, $author_found,$author_added,$author,@authors);
 my ($ofile);
 my ($year_now);
-my $CVS = 1;      # use the CVS
+my $CVS = 0;      # use the CVS (for the brave)
 my $maxlen = 0;
+my $add_author = 1;
 
 sub add_author
 {
@@ -31,6 +35,11 @@ sub add_author
       {
             if($orig_found)
             {
+                  if(!$add_author)
+                  {
+                        return(1);
+                  }
+
                   chomp();
                   s/^\s+\*\s+//;    # remove leading " *    "
                   s/\s+$//;          # and trailing spaces
@@ -81,7 +90,7 @@ sub add_author
                         return 0;
                   }
             }
-            elsif(/riginated/)
+            elsif(/riginated/ || /written by/)
             {
                   $orig_found = 1;
             }
@@ -98,11 +107,15 @@ for($i = $#ARGV;$i >= 0;$i--)
 
       if($arg eq "--help")
       {
-            printf("usage: Author [--help] [-no-CVS] \"author\" file\n");
+            printf("usage: Author [--help] [--test] [--CVS] \"author\" file\n");
       }
-      elsif($arg eq "-no-CVS")
+      elsif($arg eq "--CVS")
       {
-            $CVS = 0;
+            $CVS = 1;
+      }
+      elsif($arg eq "--test")
+      {
+            $add_author = 0;
       }
       elsif(!$author)
       {
@@ -112,6 +125,11 @@ for($i = $#ARGV;$i >= 0;$i--)
       else
       {
             $file = $arg;
+            $_ = $file;
+            if(/\/CVS\//)
+            {
+                  exit();
+            }
       }
 }
 
@@ -164,7 +182,14 @@ close $ofile;
 
 if($author_added)
 {
-      print "author added\n";
+      if($add_author)
+      {
+            print "author added\n";
+      }
+      else
+      {
+            print("OK\n");
+      }
 
       unlink $file or die ("Can't remove old file\n");
       rename($ofile,$file) or die("Can't update file\n");
