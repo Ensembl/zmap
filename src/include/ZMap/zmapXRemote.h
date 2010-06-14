@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: May  6 16:24 2010 (edgrif)
+ * Last edited: Jun 14 15:53 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.28 2010-05-06 15:28:11 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.29 2010-06-14 14:54:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+#include <ZMap/zmapUtils.h>
 
 /*
  * XRemote interface version number, this _must_ be changed each time the interface code is
