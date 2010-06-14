@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *                               name
  *
  * Description: C main, if the executable is compiled/linked with
  *              main then you get a standard C executable.
@@ -28,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 13 14:40 2003 (edgrif)
  * Created: Thu Nov 13 14:38:41 2003 (edgrif)
- * CVS info:   $Id: zmapAppmain_c.c,v 1.3 2010-03-04 15:09:35 mh17 Exp $
+ * CVS info:   $Id: zmapAppmain_c.c,v 1.4 2010-06-14 11:04:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

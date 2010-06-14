@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *                               name
  *
  * Description: Implements the navigator window in a zmap.
  *              We tried using a scale widget but you can't set the size
@@ -31,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug  1 12:24 2007 (rds)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.32 2010-03-04 15:09:52 mh17 Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.33 2010-06-14 11:04:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -19,8 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *                               name
  *
  * Description: Creates the top level window of a ZMap.
  *              
@@ -28,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 10 10:48 2010 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.38 2010-06-10 09:52:01 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.39 2010-06-14 11:04:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
