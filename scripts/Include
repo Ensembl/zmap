@@ -6,9 +6,12 @@
 # test data in CopyRight.txt, copy to a header first the run over it (the other file)
 # to use on ZMap try:
 #
-#     find ~/zmap/ZMap/src -name "*.c" -exec ./include file \{\} \;
+#     cd ZMap/src
+#     find ./zmap* -name "*.c" -exec cvs edit "name"\{\} \;
+#     find ./ -name "*.c" -exec ../scripts/Include file \{\} \;
+#     cvs commit -m "added header XXXX to files"
 #
-#
+#     $Id: Include,v 1.2 2010-06-14 15:12:17 mh17 Exp $
 
 
 use warnings;
@@ -16,7 +19,7 @@ use warnings;
 my ($file, $comment_found, $include_added,$include);
 my ($ofile);
 my ($year_now);
-my $CVS = 1;      # use the CVS
+my $CVS = 0;      # use the CVS:  only for the brave
 
 sub add_include
 {
@@ -51,11 +54,11 @@ for($i = $#ARGV;$i >= 0;$i--)
 
       if($arg eq "--help")
       {
-            printf("usage: Include [--help] [-no-CVS] thing.h file\n");
+            printf("usage: Include [--help] [-CVS] thing.h file\n");
       }
-      elsif($arg eq "-no-CVS")
+      elsif($arg eq "-CVS")
       {
-            $CVS = 0;
+            $CVS = 1;
       }
       elsif(!$include)
       {
