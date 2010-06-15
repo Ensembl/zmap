@@ -274,11 +274,11 @@ Every wanted to remote control an application, but only ever found the
 packet of chocolate bourbon biscuits.  Well here's a module that might
 help. Assuming of course that it's a remote control TV.
 
- The idea  rests on the XChangeProperty  method in Xlib  and having an
-app which takes notice of a  change to the property.  Moreover the app
+The idea rests on the XChangeProperty method in Xlib and having an app
+which  takes notice of  a change  to the  property.  Moreover  the app
 which is being controlled must set a reply atom when it's received the
 Event,  otherwise this  module  will  wait for  it...   It's based  on
-Netscape/Mozilla remote.c and some code written by Fred Wobus of ACeDB
+Netscape/Mozilla remote.c and some code written by Fred Wobus of AceDB
 fame (see comments in C code).
 
 It seems  to work, but as  ever no representations are  made about the
@@ -300,95 +300,96 @@ after initialisation.
 
 =item I<-server> '0|1'
 
- Specifies wheather to create a server or a client.
+Specifies whether to create a server or a client.
 
 =item I<-id> window id
 
- Specifies the window id you are using in the case of a server, or the
- one you want to control in the case of a client. E.g 0x123456
+Specifies the window id you are using  in the case of a server, or the
+one you want to control in the case of a client. E.g 0x123456
 
 =item I<-request_name> atom name
 
- Specifies the name of the atom which will receive the requests. (Set Only)
+Specifies the name  of the atom which will  receive the requests. (Set
+Only)
 
 =item I<-response_name> atom name
 
- Specifies the name of the atom which will contain the response. (Set Only)
+Specifies the name  of the atom which will  contain the response. (Set
+Only)
 
 =back
 
 =head2 window_id($windowID)
 
- Set the window  id of the remote window.  It is  only possible to use
- this method  to set  the window  id for the  client mode.   If you're
- using the server mode use (-id => $windowID) in the new method.
+Set the  window id of the remote  window.  It is only  possible to use
+this method to set the window id for the client mode.  If you're using
+the server mode use (-id => $windowID) in the new method.
 
 =head2 request_name($requestName)
 
- Set the name of the atom which will receive the requests.
- 
+Set the name of the atom which will receive the requests.
+
 =head2 response_name($responseName)
 
- Set the name of the atom which will contain the response.
+Set the name of the atom which will contain the response.
 
 =head2 is_error($response)
 
- Returns True (1) if the $response is non 200, False otherwise...
+Returns True (1) if the $response is non 200, False otherwise...
 
 =head1 CLIENT MODE METHODS
 
 =head2 send_commands(@commands)
 
- Send the  commands to the remote  window.  This will  _NOT_ work with
- the server version!
+Send the commands to the remote window.  This will _NOT_ work with the
+server version!
 
 =head1 SERVER MODE METHODS
 
-=head2 request_string()
+=head2 request_string(Z<>)
 
- Get the contents of the request atom.
+Get the contents of the request atom.
 
-=head2 send_reply()
+=head2 send_reply(Z<>)
 
- This sets the contents of the response atom. ONLY works in server mode!
+This  sets the contents  of the  response atom.  ONLY works  in server
+mode!
 
-=head2 EXPORT
+=head1 SUBROUTINES
 
 All kinds of clever methods...come from the XS layer.
 
-=over 10
-
-=item format_string() 
+=head2 format_string(Z<>)
 
 A string which  can be put into sprintf() to format  the reply for the
 server mode.
 
-=item delimiter()
+=head2 delimiter(Z<>)
 
 A string which should occur  in the I<format_string()> and can be used
 to split the reply string.
 
-=item version()
+=head2 version(Z<>)
 
 A string which looks remarkablly similar to the version number.
 
-=item client_request_name()
+=head2 client_request_name(Z<>)
 
-A string which corresponds to the name of the default request atom the client should use.
+A string which corresponds to the name of the default request atom the
+client should use.
 
-=item client_response_name()
+=head2 client_response_name(Z<>)
 
-A string which corresponds to the name of the default response atom the client should use.
+A string  which corresponds to the  name of the  default response atom
+the client should use.
 
-=item x_program()
+=head2 x_program(Z<>)
 
 Gets the X program name.
 
-=item x_program($x_program)
+=head2 x_program($x_program)
 
 Sets the X program name.
-
-=back
 
 =head1 AUTHOR
 
