@@ -13,6 +13,8 @@
 #include "perl.h"
 #include "XSUB.h"
 
+char *ZMAP_X_PROGRAM_G = "X11::XRemote";
+
 typedef struct _X11__XRemote__HandleStruct
 {
   ZMapXRemoteObj handle;
