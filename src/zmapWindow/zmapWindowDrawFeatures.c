@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 11 16:09 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.278 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.279 2010-06-15 13:34:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -323,11 +323,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context, 
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;
 
-  /* I have no idea why, but... */
-  /* Get the current scroll region */
-
-// mh17: these are not used at all
-//  zmapWindowGetScrollRegion(window, &ix1, &iy1, &ix2, &iy2);
 
   if((tmp_item = zmapWindowFToIFindItemFull(window->context_to_item,
                                             0, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
@@ -340,12 +335,26 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context, 
     {
       double sx1,sy1,sx2,sy2;
 
-      sx1 = 0.0;
-      sy1 = window->min_coord;
-      sx2 = ZMAP_CANVAS_INIT_SIZE;
-      sy2 = window->max_coord;
+/*
+      MH17 -> RT162629
+      on v-split when zoomed this causes the LH pane to have a full range scroll region
+      meaning that the two widnows were not exact copies & they become unlocked
+      we set the scroll region here as this is where we have the min/max coords
 
+      this is flaky if we ever use y1 coords < 1
+      Ideally the window should hav a flag to say if it's been set
+      We are using foo defaults as this flag which is dreadful hack
+*/
+      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+      if(sy1 < 1.0)     // foo canvas defaults to 0.0
+      {
+            sx1 = 0.0;
+            sy1 = window->min_coord;
+            sx2 = ZMAP_CANVAS_INIT_SIZE;
+            sy2 = window->max_coord;
+      }
       zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+
 
       /* Add a background to the root window, must be as long as entire sequence... */
       root_group = zmapWindowContainerGroupCreateFromFoo(foo_canvas_root(window->canvas),
@@ -2176,7 +2185,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  if (feature_set)
 	    {
 	      zmapMakeColumnMenu(but_event, window, item, feature_set, NULL) ;
-		      
+
 	      event_handled = TRUE ;
 	    }
 	}
