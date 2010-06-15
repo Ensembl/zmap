@@ -63,6 +63,22 @@ client_response_name(...)
       OUTPUT:
       RETVAL
 
+char *
+_x_program_get(...)
+      CODE:
+      RETVAL = ZMAP_X_PROGRAM_G;
+      OUTPUT:
+      RETVAL
+
+void
+_x_program_set(x_program)
+      char *x_program
+      CODE:
+      {
+        ZMAP_X_PROGRAM_G = x_program;
+        XSRETURN(1);
+      }
+
 
 MODULE = X11::XRemote           PACKAGE = X11::XRemote::Handle
 

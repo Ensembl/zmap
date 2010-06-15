@@ -29,6 +29,17 @@ my $PING_COMMAND = 'ping';
 bootstrap X11::XRemote $VERSION;
 
 #==========================================================#
+#  SUBS: Call directly, do not send to an object or class  #
+#==========================================================#
+sub x_program{
+    my ($x_program) = @_;
+    if ($x_program) {
+        _x_program_set($x_program);
+    }
+    return _x_program_get();
+}
+
+#==========================================================#
 # ALL MODES SUBS: Avaiable to client and server            #
 #==========================================================#
 sub new ($){
@@ -368,6 +379,14 @@ A string which corresponds to the name of the default request atom the client sh
 =item client_response_name()
 
 A string which corresponds to the name of the default response atom the client should use.
+
+=item x_program()
+
+Gets the X program name.
+
+=item x_program($x_program)
+
+Sets the X program name.
 
 =back
 
