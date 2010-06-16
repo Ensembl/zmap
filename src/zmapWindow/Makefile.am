@@ -67,10 +67,10 @@ libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top
 
 
 libZMapWindowItems_la_SOURCES = \
-zmapWindowContainers.h \
-zmapWindowContainers_I.h \
-zmapWindowFeatures.h \
-zmapWindowFeatures_I.h \
+items/zmapWindowContainers.h \
+items/zmapWindowContainers_I.h \
+items/zmapWindowFeatures.h \
+items/zmapWindowFeatures_I.h \
 items/zmapWindowAllBase.h \
 items/zmapWindowAllBase.c \
 items/zmapWindowAlignmentFeature.c \
