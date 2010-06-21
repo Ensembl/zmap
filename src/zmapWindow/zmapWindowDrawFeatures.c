@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 11 16:09 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.279 2010-06-15 13:34:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.280 2010-06-21 14:41:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -686,6 +686,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.styles        = styles ;
   featureset_data.feature_count = 0;
 
+//printf("draw featureset %s\n",g_quark_to_string(feature_set->unique_id));
   /* Now draw all the features in the column. */
   zMapStartTimer("DrawFeatureSet","ProcessFeature");
   g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
@@ -2081,10 +2082,14 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 
   featureset_data->feature_count++;
 
-  style = feature->style;     // fails: no display. fixed it for pipe via GFF2parser, ACE seems to call it???
+#if !MH17_DONT_USE_LOOKUP
+  style = feature->style;     // if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
                               // features paint so it musk be ok!
-//  style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+#else
+  style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+#endif
 
+//printf("process feature %s/%s\n",g_quark_to_string(feature->unique_id),g_quark_to_string(style->unique_id));
 #ifdef MH17_REVCOMP_DEBUG
   if(!style) printf("no style 1 ");
 #endif

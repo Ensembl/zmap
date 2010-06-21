@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 22 14:26 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.24 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.25 2010-06-21 14:41:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -87,12 +87,16 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 {
   ZMapFeatureSet feature_set ;				    /* The feature set, gets passed on to
 							     * the feature context proper. */
+                                               /* NB this is the display column not a set of similar features */
+
   GData *multiline_features ;				    /* Features in this feature set that
 							       must be built up from multiple
 							       lines. */
   ZMapGFFParser parser ;				    /* Self reference forced on us because
 							       GData destroy func. does not have a
 							       user_data parameter. */
+  GHashTable *feature_styles;                   /* copies of styles needed by features
+                                                 * that can get pointed at by them */
 
 } ZMapGFFParserFeatureSetStruct, *ZMapGFFParserFeatureSet ;
 
