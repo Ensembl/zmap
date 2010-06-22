@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 11 16:09 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.280 2010-06-21 14:41:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.281 2010-06-22 12:19:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -342,7 +342,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context, 
       we set the scroll region here as this is where we have the min/max coords
 
       this is flaky if we ever use y1 coords < 1
-      Ideally the window should hav a flag to say if it's been set
+      Ideally the window should have a flag to say if it's been set
       We are using foo defaults as this flag which is dreadful hack
 */
       zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
@@ -403,6 +403,8 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context, 
   /*
    *     Draw all the features, so much in so few lines...sigh...
    */
+zMapLogWarning("drawFeatures with %d styles",g_hash_table_size(window->display_styles));
+
   windowDrawContext(&canvas_data, window->display_styles,
 		    full_context, diff_context);
 
@@ -1243,6 +1245,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
       matched = FALSE;
       zMapLogCritical("No style list for '%s'!",
 		      g_quark_to_string(feature_set->unique_id));
+
     }
 
   if(frame_start_out)
@@ -1862,6 +1865,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
   gboolean status ;
   gboolean proceed;
   GQuark original_id = feature_set_unique_id;
+  GHashTable *styles;
 
   /* We _must_ have an align and a block... */
   zMapAssert(align != NULL);
@@ -1922,8 +1926,11 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	}
     }
 
+  styles = window->display_styles;
+  if(!g_hash_table_size(styles))
+      styles = window->read_only_styles;
   /* Get the list of styles for this column and check that _all_ the styles are displayable. */
-  if (!(style_list = zmapWindowFeatureSetStyles(window, window->display_styles,	feature_set_unique_id)))
+  if (!(style_list = zmapWindowFeatureSetStyles(window, styles, feature_set_unique_id)))
     {
       proceed = FALSE;
       zMapLogMessage("Styles list for Column '%s' not found.",
@@ -2082,19 +2089,26 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 
   featureset_data->feature_count++;
 
-#if !MH17_DONT_USE_LOOKUP
+
   style = feature->style;     // if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
                               // features paint so it musk be ok!
-#else
-  style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
-#endif
 
-//printf("process feature %s/%s\n",g_quark_to_string(feature->unique_id),g_quark_to_string(style->unique_id));
+  // but if a user adds an object abd we make a fetaure OTF then no style is attached
+  // the above is an optimisation
+  if(!style)
+    {
+//      style = zmapWindowContainerFeatureSetStyleFromID(
+//            (ZMapWindowContainerFeatureSet)column_group,
+//            feature->style_id);
+//      feature->style = style;
+      style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+    }
+
 #ifdef MH17_REVCOMP_DEBUG
   if(!style) printf("no style 1 ");
 #endif
 
-#if MH17_FEATURESET_HAS_OWN_COPY_POINTED_AT_BY_FEATURE
+#if MH17_NOT_NEEDED_FEATURESET_HAS_OWN_COPY_POINTED_AT_BY_FEATURE
   if(style)
     style = zmapWindowContainerFeatureSetStyleFromStyle((ZMapWindowContainerFeatureSet)column_group, style) ;
   else

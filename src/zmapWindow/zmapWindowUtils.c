@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.63 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.64 2010-06-22 12:19:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -319,7 +319,7 @@ gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles,
 {
   gboolean result = FALSE ;
 
-  if (read_only_styles)
+  if (read_only_styles && g_hash_table_size(read_only_styles))
     {
       if (window->read_only_styles)
 	zMapStyleDestroyStyles(window->read_only_styles) ;
@@ -327,7 +327,7 @@ gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles,
       result = zMapStyleCopyAllStyles(read_only_styles, &(window->read_only_styles)) ;
     }
 
-  if (display_styles)
+  if (display_styles  && g_hash_table_size(display_styles))
     {
       if (window->display_styles)
 	zMapStyleDestroyStyles(window->display_styles) ;
@@ -466,6 +466,7 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 /* It means there's no copying of the style from GHashTable[all_styles] ->
  * GList[some_styles] going on in this function. Just allocation of
  * GList items to hold onto the styles pointers. */
+
 GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id)
 {
   GList *styles_list = NULL;
@@ -510,8 +511,9 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQu
                   //void printStyle(gpointer key, gpointer data, gpointer user_data);
                   //g_hash_table_foreach(&all_styles, printStyle, "FeatureSetStyles") ;
 
-                  zMapLogWarning("could not find style %s for featureset %s\n",
-                        g_quark_to_string(style_id),g_quark_to_string(feature_set_id));
+                  zMapLogWarning("could not find style %s for featureset %s in table of %d\n",
+                        g_quark_to_string(style_id),g_quark_to_string(feature_set_id),
+                        g_hash_table_size(all_styles));
             }
 	    }
 	  while((list = g_list_next(list)));

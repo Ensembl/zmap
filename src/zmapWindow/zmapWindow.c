@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 11 16:31 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.327 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.328 2010-06-22 12:19:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4204,7 +4204,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_d:
       /*  need implementing...can work on a window basis... .... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+    case GDK_d:
+    case GDK_D:
+//      { extern int mh_debug; mh_debug = 1; }
+      break;
     case GDK_h:
       {
 	/* Flip flop highlighting.... */
