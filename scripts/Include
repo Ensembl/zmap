@@ -8,10 +8,10 @@
 #
 #     cd ZMap/src
 #     find ./zmap* -name "*.c" -exec cvs edit "name"\{\} \;
-#     find ./ -name "*.c" -exec ../scripts/Include file \{\} \;
+#     find ./zmap* -name "*.c" -exec ../scripts/Include file \{\} \;
 #     cvs commit -m "added header XXXX to files"
 #
-#     $Id: Include,v 1.2 2010-06-14 15:12:17 mh17 Exp $
+#     $Id: Include,v 1.3 2010-06-23 12:05:36 mh17 Exp $
 
 
 use warnings;
