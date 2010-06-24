@@ -28,24 +28,20 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun  9 17:43 2010 (edgrif)
+ * Last edited: Jun 24 15:48 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.206 2010-06-24 08:31:52 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.207 2010-06-24 14:49:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>             /* kill() */
 #include <glib.h>
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
@@ -2499,6 +2495,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	    }
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* There is a problem with the zMapThreadExists() call on the Mac,
+	   * it says the thread has died when it hasn't. */
+
+
 //	  /* COMMENTED OUT BECAUSE zMapThreadExists() DOES NOT WORK ON THE MAC....
 //	     AND CAUSES ZMAP TO CRASH WHEN DESTROYING A VIEW.....
 
@@ -2510,6 +2513,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
             threadDebugMsg(thread, "GUI: thread %s has died suddenly so cleaning up....\n", NULL) ;
           }
 //	  */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  /* If the thread has died then remove it's connection. */
 	  // do this before counting up the number of step lists
