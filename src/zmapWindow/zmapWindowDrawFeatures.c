@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Jun 11 16:09 2010 (edgrif)
+ * Last edited: Jun 24 15:20 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.281 2010-06-22 12:19:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.282 2010-06-24 14:51:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1735,16 +1735,25 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 	 * copy of the view context's feature set.  It should also get
 	 * destroyed with the diff context, so be warned. */
         feature_set = (ZMapFeatureSet)feature_any;
-#ifdef MH17_REVCOMP_DEBUG
-printf("drawFeatures set %s",feature_set->description);
-#endif
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("drawFeatures set %s", feature_set->description);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 	if (feature_set_matches_frame_drawing_mode(window, canvas_data, canvas_data->curr_set,
 						   &frame_start, &frame_end))
 	  {
 	    int i, got_columns = 0;
 
-//printf("drawFeatures set %s\n",g_quark_to_string(feature_set->unique_id));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    printf("drawFeatures set %s\n",g_quark_to_string(feature_set->unique_id));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	    /* re-written for(i = frame_start; i <= frame_end; i++) */
 	    i = frame_start;
@@ -1982,6 +1991,14 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* Attach data to the column including what strand the column is on and what frame it
        * represents, and also its style and a table of styles, used to cache column feature styles
        * where there is more than one feature type in a column. */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("Adding column: \"%s\" %s %s\n",
+	     g_quark_to_string(original_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
       /* needs to accept style_list */
       zmapWindowContainerFeatureSetAugment((ZMapWindowContainerFeatureSet)container, window,
