@@ -183,7 +183,7 @@ AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
 
 # gtk first
 
-GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.14.0 glib-2.0 gthread-2.0"
+GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.10.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
 
