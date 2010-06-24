@@ -183,32 +183,38 @@ AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
 
 # gtk first
 
-GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.4.0 glib-2.0 gthread-2.0"
+GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.14.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
-CANVAS_TESTING=""
-GTK2_MODULES="gtk+-2.0 >= 2.10.0"
-PKG_CHECK_MODULES([LATESTGTK], [${GTK2_MODULES}], [
-  CANVAS_TESTING="canvas_choice"
-  AC_MSG_RESULT([Found GTK 2.10])
-], [
-  CANVAS_TESTING=""
-  AC_MSG_RESULT([GTK 2.10 not found.])
-])
 
-DEMO_CANVAS_MODULES="crcanvas >= 0.12 goocanvas >= 0.7 geocanvas >= 1.0.7"
-PKG_CHECK_MODULES([DEMO_CANVAS], [${DEMO_CANVAS_MODULES}], [
-  AC_MSG_RESULT([Found Canvases])
-], [
-  if test "x$CANVAS_TESTING" != "x"; then
-    CANVAS_TESTING=""
-    AC_MSG_RESULT([Are you sure?])
-  else
-    AC_MSG_RESULT([Canvases not found, but neither was GTK 2.10])
-  fi                               
-])
 
-AC_SUBST([CANVAS_TESTING])
+# canvas_choice compilation is disabled for now, it should be moved
+# out of the src dir into it's own dir. It does not fit in with
+# doing a dist build.
+#
+#CANVAS_TESTING=""
+#GTK2_MODULES="gtk+-2.0 >= 2.10.0"
+#PKG_CHECK_MODULES([LATESTGTK], [${GTK2_MODULES}], [
+#  CANVAS_TESTING="canvas_choice"
+#  AC_MSG_RESULT([Found GTK 2.10])
+#], [
+#  CANVAS_TESTING=""
+#  AC_MSG_RESULT([GTK 2.10 not found.])
+#])
+#
+#DEMO_CANVAS_MODULES="crcanvas >= 0.12 goocanvas >= 0.7 geocanvas >= 1.0.7"
+#PKG_CHECK_MODULES([DEMO_CANVAS], [${DEMO_CANVAS_MODULES}], [
+#  AC_MSG_RESULT([Found Canvases])
+#], [
+#  if test "x$CANVAS_TESTING" != "x"; then
+#    CANVAS_TESTING=""
+#    AC_MSG_RESULT([Are you sure?])
+#  else
+#    AC_MSG_RESULT([Canvases not found, but neither was GTK 2.10])
+#  fi                               
+#])
+#
+#AC_SUBST([CANVAS_TESTING])
 
 
 dnl This has to go here for our nfs mounted mac....    
@@ -222,8 +228,6 @@ if [ test "$zmap_os_type" = "darwin" ] && [ test -d /Users/zmap/nfs_mount ]; the
 fi
 
 # now foocanvas
-# really we want to allow foocanvas and foocanvas-patched(our version)
-# to live side by side but for now lets leave it like this
 PKG_CHECK_MODULES([FOOCANVAS], [libzmapfoocanvas = 0.1],,AC_MSG_ERROR(zmap version of foocanvas is required))
 
 # needs curl, we'll be looking using curl-config
@@ -235,12 +239,6 @@ PKG_CHECK_MODULES([ACECONN], [AceConn-1.1],,AC_MSG_ERROR(AceConn is required))
 
 CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
-
-#AC_CHECK_LIB(AceConn, [main],
-#  [ have_ace_conn='true' ], 
-#  [ have_ace_conn='false';
-#    AC_MSG_ERROR(AceConn package is required) ], 
-#  [-lmd5])
 
 AC_CHECK_LIB(AceConn, [main],
   [ have_ace_conn='true' ], 
@@ -318,7 +316,7 @@ AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
 
 LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
 if test "x$with_macosx_sdk_path" == "x$ZMAP_FALSE" ; then
-  AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
+  AC_CHECK_LIB(zmapfoocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
 fi
 
@@ -360,6 +358,7 @@ AC_SUBST(ZMAPSTYLESFILE)
 ZMAP_SRC_DIRS="zmapApp \
 zmapConfig \
 zmapControl \
+zmapControl/remote \
 zmapDAS \
 zmapDocs \
 zmapDraw \
@@ -383,8 +382,14 @@ done
 AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 
+# canvas_choice compilation is disabled for now, it should be moved
+# out of the src dir into it's own dir. It does not fit in with
+# doing a dist build.
+#
+#AC_CONFIG_FILES([Makefile
+#canvas_choice/Makefile
+
 AC_CONFIG_FILES([Makefile
-canvas_choice/Makefile
 zmapApp/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
@@ -415,6 +420,8 @@ zmap.pc
 dotZMap:dotZmap.in
 ])
 
+# We've decided not to the doxygen stuff, no one uses it.
+#
 #$srcdir/$DX_CONFIG:Doxyfile.in
 #
 
