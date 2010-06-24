@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 11 16:31 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.328 2010-06-22 12:19:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.329 2010-06-24 08:31:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1123,6 +1123,7 @@ void zMapWindowMergeInFeatureSetNames(ZMapWindow window, GList *feature_set_name
 {
   /* This needs to do more that just concat!! ha, it'll break something down the line ... column ordering at least */
   /* mh17: as long as featuresets are not duplicated between servers there's no probs */
+  /* mh17: but if we do an OTF alignment then we get duplicates -> don't call if existing connection */
 
   feature_set_names = g_list_copy(feature_set_names);
 

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun  9 17:43 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.205 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.206 2010-06-24 08:31:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1798,7 +1798,9 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  context = createContext(view->sequence, view->start, view->end, req_featuresets) ;
 #endif
 	  // make the windows have the same list of featuresets so that they display
-	  if(!view->columns_set)
+        // this function id a deferred load: for existing connections we already have the columns defined
+        // so don't concat new ones on the end. A better fix would be to merge the data see zMapWindowMergeInFeatureSetNames()
+	  if(!view->columns_set && !existing)
             g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
 
 
@@ -3114,7 +3116,7 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
    */
    /* mh17: column ordering is as in ZMap config
     * either by 'columns' command or by server and then featureset order
-    * concat is ok as featuresets are not duplicated
+    * concat is ok as featuresets are not duplicated, but beware repeat requests to the same server
     */
   zMapWindowMergeInFeatureSetNames(view_window->window, feature_set_names);
 
