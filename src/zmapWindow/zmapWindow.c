@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 11 16:31 2010 (edgrif)
+ * Last edited: Jun 24 13:51 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.329 2010-06-24 08:31:52 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.330 2010-06-24 14:50:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2743,6 +2743,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
     in_window = TRUE ;
   else if (event->type == GDK_LEAVE_NOTIFY)
     in_window = FALSE ;
+
+  /* This hack is really only needed for the mac.... */
+  else if (event->type == GDK_BUTTON_PRESS)
+    in_window = TRUE ;
+
 
   switch (event->type)
     {
