@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.25 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.26 2010-06-24 13:33:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -985,13 +985,12 @@ static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout)
 
   gff_pipe_err = *gff_pipe_err_inout ;
   if(gff_pipe_err)
-    {
       msg = gff_pipe_err->message;
-      g_error_free(gff_pipe_err) ;
-    }
+
   setErrMsg(server, g_strdup_printf("%s %s", server->script_path, msg)) ;
 
-
+  if(gff_pipe_err)
+      g_error_free(gff_pipe_err) ;
 
   *gff_pipe_err_inout = NULL ;
 
