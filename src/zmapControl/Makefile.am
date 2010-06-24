@@ -5,22 +5,22 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapControl.la
 
-libZMapControl_la_SOURCES = zmapControlRemoteSend.c \
-zmapNavigator_P.h \
+libZMapControl_la_SOURCES = zmapControl.c \
+zmapControlNavigator.c \
+zmapControlPreferences.c \
+zmapControlRemoteReceive.c \
+zmapControlRemoteSend.c \
+zmapControlViews.c \
+zmapControlWindow.c \
 zmapControlWindowButtons.c \
 zmapControlWindowFrame.c \
-zmapControlWindowMenubar.c \
-zmapControl.c \
-zmapControlWindow.c \
-zmapControlViews.c \
 zmapControlWindowInfoPanel.c \
-zmapControlPreferences.c \
-zmapControlNavigator.c \
-zmapControlRemoteReceive.c \
+zmapControlWindowMenubar.c \
 zmapControl_P.h \
+zmapNavigator_P.h \
+remote/zmapXRemote.c \
 remote/zmapXRemoteAPI.h \
 remote/zmapXRemote_P.h \
-remote/zmapXRemote.c \
 $(NULL)
 
 libZMapControl_la_CFLAGS = $(INCLUDE_COMMON)

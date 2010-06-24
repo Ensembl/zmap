@@ -40,14 +40,14 @@ zmapWindowItemTextFillColumn.h \
 zmapWindowList.c \
 zmapWindowLongItems.c \
 zmapWindowMark.c \
+zmapWindowMark_P.h \
 zmapWindowMenus.c \
 zmapWindowNavigator.c \
 zmapWindowNavigatorMenus.c \
-zmapWindowNavigator_P.h \
 zmapWindowNavigatorWidget.c \
+zmapWindowNavigator_P.h \
 zmapWindowOverlays.c \
 zmapWindowOverlays.h \
-zmapWindow_P.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
 zmapWindowRemoteReceive.c \
@@ -61,21 +61,18 @@ zmapWindowTextPositioner.h \
 zmapWindowUtils.c \
 zmapWindowZoomControl.c \
 zmapWindowZoomControl_P.h \
+zmapWindow_P.h \
 $(NULL)
 
 libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
 
 
 libZMapWindowItems_la_SOURCES = \
-items/zmapWindowContainers.h \
-items/zmapWindowContainers_I.h \
-items/zmapWindowFeatures.h \
-items/zmapWindowFeatures_I.h \
-items/zmapWindowAllBase.h \
-items/zmapWindowAllBase.c \
 items/zmapWindowAlignmentFeature.c \
 items/zmapWindowAlignmentFeature.h \
 items/zmapWindowAlignmentFeature_I.h \
+items/zmapWindowAllBase.c \
+items/zmapWindowAllBase.h \
 items/zmapWindowAssemblyFeature.c \
 items/zmapWindowAssemblyFeature.h \
 items/zmapWindowAssemblyFeature_I.h \
@@ -84,10 +81,10 @@ items/zmapWindowBasicFeature.h \
 items/zmapWindowBasicFeature_I.h \
 items/zmapWindowCanvas.c \
 items/zmapWindowCanvas.h \
-items/zmapWindowCanvas_I.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
 items/zmapWindowCanvasItem_I.h \
+items/zmapWindowCanvas_I.h \
 items/zmapWindowContainerAlignment.c \
 items/zmapWindowContainerAlignment.h \
 items/zmapWindowContainerAlignment_I.h \
@@ -101,8 +98,8 @@ items/zmapWindowContainerContext.c \
 items/zmapWindowContainerContext.h \
 items/zmapWindowContainerContext_I.h \
 items/zmapWindowContainerFeatureSet.c \
-items/zmapWindowContainerFeatureSetUtils.c \
 items/zmapWindowContainerFeatureSet.h \
+items/zmapWindowContainerFeatureSetUtils.c \
 items/zmapWindowContainerFeatureSet_I.h \
 items/zmapWindowContainerGroup.c \
 items/zmapWindowContainerGroup.h \
@@ -112,24 +109,34 @@ items/zmapWindowContainerStrand.h \
 items/zmapWindowContainerStrand_I.h \
 items/zmapWindowContainerUtils.c \
 items/zmapWindowContainerUtils.h \
+items/zmapWindowContainerUtils_P.h \
+items/zmapWindowContainers.h \
+items/zmapWindowContainers_I.h \
+items/zmapWindowFeatures.h \
+items/zmapWindowFeatures_I.h \
 items/zmapWindowGlyphItem.c \
 items/zmapWindowGlyphItem.h \
 items/zmapWindowGlyphItem_I.h \
 items/zmapWindowLongItem.c \
-items/zmapWindowLongItem_I.h \
 items/zmapWindowLongItem.h \
+items/zmapWindowLongItem_I.h \
+items/zmapWindowLongItems_P.h \
 items/zmapWindowSequenceFeature.c \
 items/zmapWindowSequenceFeature.h \
+items/zmapWindowSequenceFeatureCMarshal.h \
 items/zmapWindowSequenceFeature_I.h \
 items/zmapWindowTextFeature.c \
 items/zmapWindowTextFeature.h \
 items/zmapWindowTextFeature_I.h \
 items/zmapWindowTextItem.c \
 items/zmapWindowTextItem.h \
+items/zmapWindowTextItemCMarshal.h \
 items/zmapWindowTextItem_I.h \
 items/zmapWindowTranscriptFeature.c \
 items/zmapWindowTranscriptFeature.h \
-items/zmapWindowTranscriptFeature_I.h
+items/zmapWindowTranscriptFeature_I.h \
+$(NULL)
+
 
 # We need the top_builddir to find the generated marshal code
 libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils \

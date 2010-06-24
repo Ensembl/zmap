@@ -5,10 +5,11 @@ SUBDIRS = . tests
 
 noinst_LTLIBRARIES = libpfetch.la
 
-libpfetch_la_SOURCES = libpfetch.c \
-libpfetch-utils.c \
-libpfetch_P.h \
+libpfetch_la_SOURCES = libpfetch-utils.c \
+libpfetch.c \
 libpfetch.h \
+libpfetch_I.h \
+libpfetch_P.h \
 $(NULL)  
 
 libpfetch_la_CFLAGS = $(INCLUDE_COMMON)
