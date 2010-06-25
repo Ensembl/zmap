@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
  * Last edited: Feb 10 09:58 2010 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.24 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.25 2010-06-25 10:19:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ typedef struct _ZMapWindowMarkStruct
   ZMapWindowContainerBlock block_container ; /*! The block the mark is set on.  This might need to become a list of   */
   ZMapWindow               window ; /*! mark needs access to the ZMapWindow without having to pass it in.  */
   FooCanvasItem           *mark_src_item ; /*! This is the item that is the src of the mark.  Can be NULL. */
-  
+
   /*! world coords of the mark.  */
   double          world_x1 ;
   double          world_y1 ;
@@ -80,7 +80,7 @@ typedef struct _ZMapWindowMarkStruct
 
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
 static void markRange(ZMapWindowMark mark, double y1, double y2) ;
-static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 			  ZMapContainerLevelType level, gpointer user_data);
 
 
@@ -101,20 +101,20 @@ static char mark_bitmap_bits_G[] =
 
 
 
-/* 
+/*
  *    Set of functions for handling the marked feature or region
  *    ----------------------------------------------------------
- * 
+ *
  * Essentially there are two ways to mark, either by marking a feature or
  * by marking a region. The two are mutually exclusive.
- * 
+ *
  * If a feature is marked then it will be used in a number of window operations
  * such as zooming and column bumping.
- * 
+ *
  * Details:
  *
  * - Either mark using a feature item, or using a _world_ coordinate range
- * - Using an item leads to 'synchronous' setting of the mark with respect 
+ * - Using an item leads to 'synchronous' setting of the mark with respect
  *   to the ZMapWindowContainerBlock that is stored in the mark.
  * - Using a region leads to 'asynchronous' setting of the mark with respect
  *   to the ZMapWindowContainerBlock theat is stored.
@@ -124,7 +124,7 @@ static char mark_bitmap_bits_G[] =
  * - The mark items must be resized by some means for long items reasons.
  * - The long items cropping/resizing is handled in the ZMapWindowContainerBlock
  *   code by the update hooks the ZMapWindowContainerGroup interface provides.
- * - Initial selection of the correct block (setting by world coord) is again 
+ * - Initial selection of the correct block (setting by world coord) is again
  *   done in the container code by way of the update hooks.  Selection works
  *   on a world coord basis.  When setting by item the item's parent's parent
  *   is used.
@@ -132,7 +132,7 @@ static char mark_bitmap_bits_G[] =
  *   code and it handles serializing the mark and calling the mark functions.
  * - There are a couple of issues to watch out for when multiple blocks get displayed
  *  - The block_container will need to handle multiple blocks, as will the interface.
- *  - Selecting the correct block might need thought.  I think it's ok as it is, 
+ *  - Selecting the correct block might need thought.  I think it's ok as it is,
  *    but check out the container block code.
  */
 
@@ -213,7 +213,7 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 
 /*!
  * \brief Access to the state of a mark
- * 
+ *
  * This function returns whether the mark is set.
  *
  * \param mark  The mark to interrogate
@@ -249,7 +249,7 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
 
 /*!
  * \brief Reset the mark i.e. Unmark
- * 
+ *
  * \param mark  The mark to reset
  *
  * \return nothing.
@@ -286,7 +286,7 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
 
 /*!
  * \brief Set the colour for the mark
- * 
+ *
  * \param mark   The mark
  * \param colour The colour as a string for gdk_color_parse
  *
@@ -303,7 +303,7 @@ void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
 
 /*!
  * \brief Get the colour the mark is using.
- * 
+ *
  * \param mark  The mark
  *
  * \return rhe GdkColor.
@@ -317,7 +317,7 @@ GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
 
 /*!
  * \brief Set the stipple for the mark.
- * 
+ *
  * \param mark    The mark
  * \param stipple The stipple
  *
@@ -339,7 +339,7 @@ void zmapWindowMarkSetStipple(ZMapWindowMark mark, GdkBitmap *stipple)
 
 /*!
  * \brief Get the stipple from the mark
- * 
+ *
  * \param mark  The mark
  *
  * \return GdkBitmap.
@@ -352,9 +352,9 @@ GdkBitmap *zmapWindowMarkGetStipple(ZMapWindowMark mark)
   return mark->stipple ;
 }
 
-/* Mark an item, the marking must be done explicitly, it is unaffected by highlighting. 
+/* Mark an item, the marking must be done explicitly, it is unaffected by highlighting.
  * Note that the item must be a feature item.
- * 
+ *
  * The coords are all -1 or +1 to make sure we don't clip the given item with the
  * marking.
  *  */
@@ -374,8 +374,8 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
    * of a.... */
   my_foo_canvas_item_get_world_bounds(mark->mark_src_item, &x1, &y1, &x2, &y2) ;
 
-  mark->block_container = 
-    (ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(mark->mark_src_item, 
+  mark->block_container =
+    (ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(mark->mark_src_item,
 									 ZMAPCONTAINER_LEVEL_BLOCK) ;
 
   zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
@@ -402,7 +402,7 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 
 /*!
  * \brief Get the item.
- * 
+ *
  * \param mark  The mark
  *
  * \return FooCanvasItem that is the source of the mark.
@@ -416,7 +416,7 @@ FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
 
 /*!
  * \brief Set the world range of the mark
- * 
+ *
  * \param mark  The mark
  * \param x1    The start x coord
  * \param y1    The start y coord
@@ -426,7 +426,7 @@ FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
  * \return boolean.
  */
 gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
-				     double world_x1, double world_y1, 
+				     double world_x1, double world_y1,
 				     double world_x2, double world_y2)
 {
   double scroll_x1, scroll_x2;
@@ -436,7 +436,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   zMapAssert(ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
 
   zmapWindowMarkReset(mark) ;
-  
+
   /* clamp x to scroll region. Fix RT # 55131 */
   zmapWindowGetScrollRegion(mark->window, &scroll_x1, NULL, &scroll_x2, NULL);
 
@@ -458,7 +458,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   mark->world_y1 = world_y1 ;
   mark->world_x2 = world_x2 ;
   mark->world_y2 = world_y2 ;
-  
+
   mark->mark_set = result = TRUE ;
 
   markRange(mark, world_y1, world_y2) ;
@@ -468,7 +468,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 
 /*!
  * \brief Get the world range of the mark
- * 
+ *
  * \param mark  The mark
  * \param x1    Address to store the start x coord
  * \param y1    Address to store the start y coord
@@ -510,7 +510,7 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 
 /*!
  * \brief Get the sequence range of the mark
- * 
+ *
  * \param mark  The mark
  * \param start The start coord
  * \param end   The end coord
@@ -525,6 +525,13 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 
   if (mark->mark_set)
     {
+      if(!mark->seq_start)    // ie it has never been set
+      {
+            // fix for RT161721 bumped col diappears in hsplit/vsplit
+            // start and end are 0 in mark so no features displayed
+        mark->seq_start = (int) mark->world_y1 - 1 ;
+        mark->seq_end   = (int) mark->world_y2 + 1 ;
+      }
       *start = mark->seq_start ;
       *end   = mark->seq_end ;
 
@@ -536,7 +543,7 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 
 /*!
  * \brief Get the current block container that is marked
- * 
+ *
  * \param mark  The mark
  *
  * \return container block or NULL.
@@ -554,9 +561,9 @@ ZMapWindowContainerGroup zmapWindowMarkGetCurrentBlockContainer(ZMapWindowMark m
 }
 
 /*!
- * \brief Not for general use.  
- * 
- * It does not perform any marking, nor control any marking.  It is only called from 
+ * \brief Not for general use.
+ *
+ * It does not perform any marking, nor control any marking.  It is only called from
  * the zmapWindowContainerBlock code when it has matched a mark area to its area.
  *
  */
@@ -583,14 +590,14 @@ gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark, ZMapWindowContaine
        * an item the x coords might not be set. */
       if(mark->world_x1 != x1 && mark->world_x1 == 0.0)
 	mark->world_x1 = x1;
-      
+
       if(mark->world_x2 != x2 && mark->world_x2 == 0.0)
 	mark->world_x2 = x2;
-      
+
       /* I also want to check we have the correct y coords. */
       if(mark->world_y1 != y1)
 	zMapLogWarning("mark start coord (%f) does not match parameter (%f)", mark->world_y1, y1);
-      
+
       if(mark->world_y2 != y2)
 	zMapLogWarning("mark end coord (%f) does not match parameter (%f)", mark->world_y2, y2);
     }
@@ -603,7 +610,7 @@ gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark, ZMapWindowContaine
  * \brief Free the memory used by a ZMapWindowMark
  *
  * The should be changed to return a NULL ZMapWindowMark pointer.
- * 
+ *
  * \param mark  The mark to free.
  *
  * \return nothing
@@ -631,12 +638,12 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
 
 
 /* Mark/unmark an item with a highlight colour. */
-/* 
+/*
  * The bounding_box is a bit of a hack to support marking objects,
  * a better way would be to use masks as overlays but I don't have time just
  * now. ALSO....if you put highlighting over the top of the feature you won't
  * be able to click on it any more....agh....something to solve.....
- * 
+ *
  * This is solved by the ZMapWindowCanvasItems
  */
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
@@ -645,10 +652,10 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
     {
       GdkColor  *mark_colour;
       GdkBitmap *mark_stipple;
-      
+
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = mark->stipple;
-      
+
       zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
     }
   else
@@ -678,7 +685,7 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
       tmp_y1 = block_y1 ;
       block_y1 = tmp ;
     }
-  
+
   if (block_y2 < tmp_y2)
     {
       double tmp ;
@@ -696,7 +703,7 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
     {
       /* Hey, we've got the block.  We'll just mark that block rather
        * than go to each one and potentially mark one. */
-      zmapWindowContainerBlockMark(mark->block_container, mark);  
+      zmapWindowContainerBlockMark(mark->block_container, mark);
     }
   else
     {
@@ -715,7 +722,7 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
 }
 
 
-static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 			  ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
