@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:20 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.283 2010-06-28 08:30:32 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.284 2010-06-28 14:09:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1091,7 +1091,7 @@ void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window)
 
 
 
-
+#if MH17_THEY_GET_CREATED_ON_DEMAND
 static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
 {
   GQuark feature_set_id = GPOINTER_TO_INT(list_data);
@@ -1133,6 +1133,7 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
 
   return ;
 }
+#endif
 
 /* function to obtain and step through a list of styles "attached" to
  * a column, filtering for frame specificity, before returning the
@@ -1298,6 +1299,10 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
       bottom = block->block_to_sequence.t2 ;
       zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
+#if MH17_PRINT_CREATE_COL
+// now only a sensible number created.
+      printf("create column %s S-%d F-%d\n",g_quark_to_string(feature_set_id),column_strand,column_frame);
+#endif
       /* need to create the column */
       if (!(tmp_column = createColumnFull(strand_container,
 					  window, alignment, block,
@@ -1332,6 +1337,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   return column ;
 }
 
+#if MH17_THEY_GET_CREATED_ON_DEMAND
 static FooCanvasGroup *find_column(ZMapCanvasData  canvas_data,
 				   ZMapWindowContainerFeatures container,
 				   GQuark          feature_set_id,
@@ -1347,6 +1353,7 @@ static FooCanvasGroup *find_column(ZMapCanvasData  canvas_data,
 
   return existing_column;
 }
+#endif
 
 static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 				      ZMapWindowContainerFeatures container,
@@ -1375,7 +1382,7 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
   gboolean found_one = FALSE;
 
   /* forward */
-  if (fwd_col_out && canvas_data->curr_forward_group && (set_column = find_column(canvas_data,
+  if (fwd_col_out && canvas_data->curr_forward_group && (set_column = produce_column(canvas_data,
 										  canvas_data->curr_forward_group,
 										  canvas_data->curr_set->unique_id,
 										  ZMAPSTRAND_FORWARD, frame)))
@@ -1387,7 +1394,7 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
     }
 
   /* reverse */
-  if (rev_col_out && canvas_data->curr_reverse_group && (set_column = find_column(canvas_data,
+  if (rev_col_out && canvas_data->curr_reverse_group && (set_column = produce_column(canvas_data,
 										  canvas_data->curr_reverse_group,
 										  canvas_data->curr_set->unique_id,
 										  ZMAPSTRAND_REVERSE, frame)))
@@ -1705,7 +1712,7 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 
             canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
 
-
+#if MH17_THEY_GET_CREATED_ON_DEMAND
           zMapStartTimer("CreateColumns","");
 
 	    /* We create the columns here now. */
@@ -1715,6 +1722,8 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 			   canvas_data);
 
           zMapStopTimer("CreateColumns","");
+#endif
+
           }
 
         zMapStopTimer("DrawBlock","");

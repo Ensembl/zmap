@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 09:06 2009 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.18 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.19 2010-06-28 14:09:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,7 @@ typedef struct
 //  GList *names_list;
   GHashTable *names_hash;      // featureset unique id -> position
   int three_frame_position;
+  int n_names;
 } OrderColumnsDataStruct, *OrderColumnsData;
 
 static void orderPositionColumns(ZMapWindow window, gboolean redraw_too);
@@ -105,7 +106,7 @@ static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
   order_data.names_hash = g_hash_table_new(NULL,NULL);
   threeframe = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME);
 
-  for(names = window->feature_set_names,i = 0;names;names = names->next,i++)
+  for(names = window->feature_set_names,i = 1;names;names = names->next,i++)  // start at 1 to let us catch 0 == not found
   {
       GQuark id = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(names->data)));
 
@@ -116,8 +117,9 @@ static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
       if(order_debug_G)
             printf("WFSN %s = %d\n",g_quark_to_string(GPOINTER_TO_UINT(names->data)),i);
   }
-  // empty columns to to the end as we can't find them
+  // empty columns to the end as we can't find them
   g_hash_table_insert(order_data.names_hash,GUINT_TO_POINTER(0), GUINT_TO_POINTER(i));
+  order_data.n_names = i;
 
 
   if(!order_data.three_frame_position)
@@ -265,6 +267,17 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 
   pos_a = GPOINTER_TO_UINT(g_hash_table_lookup(order_data->names_hash,GUINT_TO_POINTER(idA)));
   pos_b = GPOINTER_TO_UINT(g_hash_table_lookup(order_data->names_hash,GUINT_TO_POINTER(idB)));
+
+  if(!pos_a && !pos_b)  // both not in the list: put at the end and order by featureset id
+    {
+      pos_a = idA;
+      pos_b = idB;
+    }
+    // else put unknown columsn at the end
+  else if(!pos_a)
+      pos_a = order_data->n_names + 1;
+  else if(!pos_b)
+      pos_b = order_data->n_names + 1;
 
   if(order_debug_G)
     printf("compare %s/%d=%d %s/%d=%d", g_quark_to_string(idA),(int) sens_a,pos_a, g_quark_to_string(idB),(int) sens_b, pos_b);
