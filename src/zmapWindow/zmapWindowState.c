@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jan 22 12:12 2010 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.27 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.28 2010-06-28 08:30:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,7 +66,7 @@ typedef struct
 typedef struct
 {
   SerializedItemStruct item;
-  gboolean rev_comp_state;  
+  gboolean rev_comp_state;
 } ZMapWindowFocusSerialStruct;
 
 typedef struct
@@ -95,13 +95,13 @@ typedef struct
   gboolean               rev_comp_state;
 } ZMapWindowBumpStateStruct;
 
-/* _NOTHING_ in this struct (ZMapWindowStateStruct) should refer 
+/* _NOTHING_ in this struct (ZMapWindowStateStruct) should refer
  * to dynamic memory elsewhere. This means ...
  * - No FooCanvasItems
  * - No ZMapWindows
  * - No ZMapViews
  * Everything should be serialised to enable reverse complements,
- * window splitting, zooming and any other action where state needs 
+ * window splitting, zooming and any other action where state needs
  * to be kept, but where features might be destroyed, altered or
  * logically be the wrong object to restore state to.
  *************************************/
@@ -147,8 +147,8 @@ static gboolean queue_doing_update(ZMapWindowStateQueue queue);
 static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
 
 static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointer user_data);
-static void set_scroll_region(ZMapWindow window, 
-			      double x1, double y1, 
+static void set_scroll_region(ZMapWindow window,
+			      double x1, double y1,
 			      double x2, double y2);
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
@@ -226,7 +226,7 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
   zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
   new_state = zmapWindowStateCreate();
-  
+
   memcpy(new_state, state, sizeof(ZMapWindowStateStruct));
 
   return new_state;
@@ -263,15 +263,15 @@ gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
 
       if((h_adjuster  = gtk_scrolled_window_get_hadjustment(scrolled_window)))
 	{
-	  state->position.h_adjuster = *h_adjuster; /* n.b. struct copy! */      
+	  state->position.h_adjuster = *h_adjuster; /* n.b. struct copy! */
 	}
-      
+
       foo_canvas_get_scroll_offsets(canvas, &(state->position.scroll_offset_x), &(state->position.scroll_offset_y));
-      
-      foo_canvas_get_scroll_region(canvas, 
-				   &(state->position.scroll_x1), 
+
+      foo_canvas_get_scroll_region(canvas,
+				   &(state->position.scroll_x1),
 				   &(state->position.scroll_y1),
-				   &(state->position.scroll_x2), 
+				   &(state->position.scroll_x2),
 				   &(state->position.scroll_y2));
 
       state->rev_comp_state = state->position.rev_comp_state = window->revcomped_features;
@@ -311,7 +311,7 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 	}
 
       /* Always get the world range, so that if feature can not be found on restore, we can still remark. */
-      zmapWindowMarkGetWorldRange(mark, 
+      zmapWindowMarkGetWorldRange(mark,
 				  &(state->mark.x1), &(state->mark.y1),
 				  &(state->mark.x2), &(state->mark.y2));
 
@@ -325,7 +325,7 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
 				       ZMapWindow      window)
 {
   FooCanvasItem *focus_item;
-  
+
   if((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       state->focus_items_set = serialize_item(focus_item, &(state->focus.item));
@@ -335,7 +335,7 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
   return state->focus_items_set;
 }
 
-static void get_bumped_columns(ZMapWindowContainerGroup container, 
+static void get_bumped_columns(ZMapWindowContainerGroup container,
 			       FooCanvasPoints         *unused_points,
 			       ZMapContainerLevelType   level,
 			       gpointer                 user_data)
@@ -362,9 +362,9 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
 	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
 	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
-	  
+
 	  style_name = (char *)g_quark_to_string(bump_data.column.set_id);
-	  
+
 	  bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
 	}
     }
@@ -380,7 +380,7 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
     {
       ZMapWindowCompressMode compress_mode;
 
-      state->bump.style_bump = g_array_new(FALSE, TRUE, 
+      state->bump.style_bump = g_array_new(FALSE, TRUE,
 					   sizeof(StyleBumpModeStruct));
       zmapWindowContainerUtilsExecute(window->feature_root_group,
 				      ZMAPCONTAINER_LEVEL_FEATURESET,
@@ -390,7 +390,7 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
       if (zmapWindowMarkIsSet(window->mark))
 	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
-	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;	
+	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
       state->bump.compress  = compress_mode;
       state->rev_comp_state = state->bump.rev_comp_state = window->revcomped_features;
@@ -401,8 +401,8 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
   return state->bump_state_set;
 }
 
-gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state, 
-					double *x1, double *y1, 
+gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state,
+					double *x1, double *y1,
 					double *x2, double *y2)
 {
   gboolean found_position = FALSE;
@@ -435,7 +435,7 @@ static void rev_comp_region(ZMapWindow window, double *a, double *b)
 
      /* RevComp applies to a block not a window or featurecontext
       * but for the momwnt we only handle one align and one block
-      * So we can get the block query sequence coord from here as 
+      * So we can get the block query sequence coord from here as
       * they are the same as the sequence_to_parent child coordinates
       * ref to RT 158542
       */
@@ -463,7 +463,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
     {
       rev_comp_region(window, &(restore.y1), &(restore.y2));
     }
-  
+
   if(serialized->item.align_id != 0 && serialized->item.feature_id != 0)
     {
       FooCanvasItem *mark_item;
@@ -492,16 +492,16 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
 	}
       else
-	zmapWindowMarkSetWorldRange(mark, 
-				    restore.x1, restore.y1, 
+	zmapWindowMarkSetWorldRange(mark,
+				    restore.x1, restore.y1,
 				    restore.x2, restore.y2);
 
     }
   else
-    zmapWindowMarkSetWorldRange(mark, 
-				restore.x1, restore.y1, 
+    zmapWindowMarkSetWorldRange(mark,
+				restore.x1, restore.y1,
 				restore.x2, restore.y2);
-  
+
   return ;
 }
 
@@ -515,7 +515,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
   if(window->canvas && FOO_IS_CANVAS(window->canvas))
     {
       canvas = window->canvas;
-      
+
       scrolled_window = GTK_SCROLLED_WINDOW(window->scrolled_window);
       v_adjuster      = gtk_scrolled_window_get_vadjustment(scrolled_window);
       h_adjuster      = gtk_scrolled_window_get_hadjustment(scrolled_window);
@@ -534,7 +534,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 	    print_position(position, "state_position_restore rev-comp status switched! reversing position...");
 
 	  rev_comp_region(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
-        
+
 #ifdef RDS_DONT_INCLUDE
 	  new_position.scroll_y1 = seq_length - position->scroll_y1;
 	  new_position.scroll_y2 = seq_length - position->scroll_y2;
@@ -548,10 +548,10 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 	  new_position.scroll_offset_y  = new_position.v_adjuster.upper - tmp;
 	}
 
-      set_scroll_region(window, 
+      set_scroll_region(window,
 			new_position.scroll_x1, new_position.scroll_y1,
 			new_position.scroll_x2, new_position.scroll_y2);
-      
+
       gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
       gtk_adjustment_set_value(h_adjuster, new_position.h_adjuster.value);
 
@@ -599,7 +599,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
       else
 	zMapLogWarning("%s", "Failed to find serialized focus item.");
     }
-  
+
   return ;
 }
 
@@ -659,19 +659,19 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 		{
 		  /* I'm unsure on the cause of this, so this "fixes"
 		   * the crash at the expense on _not_ restoring the
-		   * bump. Users get a message box, rather than just 
+		   * bump. Users get a message box, rather than just
 		   * a LogWarning that'll never get seen.... */
 
-		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK && 
+		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK &&
 		     (!zmapWindowMarkIsSet(window->mark)))
-              { 
-//                zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.", 
+              {
+//                zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.",
 //                        "https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
 		    zMapWarning("Failed checking MarkIsSet. We have a ticket for this and will release a fix some-time soon.","");
 		  }
               else
 		    {
-		      zmapWindowColumnBumpRange(container, 
+		      zmapWindowColumnBumpRange(container,
 						column_state->bump_mode,
 						serialized->compress);
 		      changed++;
@@ -691,8 +691,8 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 {
   printf("%s: position is\n", from);
 
-  printf("\tscroll-region:\t%f, %f, %f, %f\n", 
-	 position->scroll_x1, position->scroll_y1, 
+  printf("\tscroll-region:\t%f, %f, %f, %f\n",
+	 position->scroll_x1, position->scroll_y1,
 	 position->scroll_x2, position->scroll_y2);
 
   printf("\tv-adjuster: value = %f, page-size = %f, lower = %f, upper = %f\n",
@@ -701,7 +701,7 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 
   printf("\tscroll-offsets: x = %d, y = %d\n",
 	 position->scroll_offset_x, position->scroll_offset_y);
-  
+
   return ;
 }
 
@@ -716,7 +716,7 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
   if ((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
     {
       ZMapWindowContainerFeatureSet container_set;
-      
+
       container_set = (ZMapWindowContainerFeatureSet)container_group;
 
       serialize->strand     = container_set->strand;
@@ -757,7 +757,7 @@ ZMapWindowStateQueue zmapWindowStateQueueCreate(void)
 int zmapWindowStateQueueLength(ZMapWindowStateQueue queue)
 {
   int size = 0;
-  
+
   if((size = g_queue_get_length(queue)) > 0)
     size--;
   else if(size == 0)
@@ -777,7 +777,7 @@ gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_ou
 {
   ZMapWindowState state = NULL;
   gboolean got_state = FALSE;
-  
+
   if(zMapWindowHasHistory(window))
     {
       if(pop)
@@ -791,7 +791,7 @@ gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_ou
       got_state  = TRUE;
       *state_out = state;
     }
-  
+
   return got_state;
 }
 
@@ -804,12 +804,12 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
     {
       if(clear_current)
 	zmapWindowStateQueueClear(queue);
-      
+
       g_queue_push_tail(queue, state_in);
     }
 #ifdef RDS_DONT_INCLUDE
   else if(state_restore_copies_G == TRUE &&
-	  stored == FALSE && 
+	  stored == FALSE &&
 	  clear_current == TRUE)
     {
       zmapWindowStateQueueClear(queue);
@@ -914,7 +914,7 @@ static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointe
 }
 
 static void set_scroll_region(ZMapWindow window, double x1, double y1, double x2, double y2)
-{  
+{
   if(window->locked_display)
     {
       QLockedDisplayStruct locked = {NULL};

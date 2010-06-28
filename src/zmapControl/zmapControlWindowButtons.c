@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  3 12:27 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.57 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.58 2010-06-28 08:30:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -756,8 +756,11 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
     }
 
   if((window = data->original_data))
-    zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force);
-
+    {
+      if(menu_item_id == SHOW_3FT)
+        zmapWindowSet3Frame(window);      // force 3 frame display before showing translation, else layout is screwed
+      zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force);
+    }
   return ;
 }
 
@@ -917,9 +920,9 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
 	      window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
 	      if (widget == zmap->frame3_but)
-		protein = TRUE ;
+		  protein = TRUE ;
 	      else if (widget == zmap->dna_but)
-		dna = TRUE ;
+		  dna = TRUE ;
 
 	      if (dna || protein)
 		makeSequenceMenu(button_ev, window, dna, protein) ;

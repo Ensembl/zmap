@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:20 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.282 2010-06-24 14:51:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.283 2010-06-28 08:30:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -403,7 +403,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context, 
   /*
    *     Draw all the features, so much in so few lines...sigh...
    */
-zMapLogWarning("drawFeatures with %d styles",g_hash_table_size(window->display_styles));
 
   windowDrawContext(&canvas_data, window->display_styles,
 		    full_context, diff_context);

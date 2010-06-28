@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:52 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.126 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.127 2010-06-28 08:30:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,6 +219,13 @@ void zMapWindowToggle3Frame(ZMapWindow window)
   return ;
 }
 
+
+// we need this ot make the 3F translation display properly
+void zmapWindowSet3Frame(ZMapWindow window)
+{
+  if(!window->display_3_frame)
+    zMapWindowToggle3Frame(window);
+}
 
 
 /*! @} end of zmapwindow docs. */

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May  5 17:27 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.111 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.112 2010-06-28 08:30:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -274,6 +274,7 @@ gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
 void zMapWindowToggle3Frame(ZMapWindow window) ;
+void zmapWindowSet3Frame(ZMapWindow window);
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
                                        gboolean dna,      gboolean protein,

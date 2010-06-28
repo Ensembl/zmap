@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:48 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.207 2010-06-24 14:49:24 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.208 2010-06-28 08:30:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2496,14 +2496,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    }
 
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* There is a problem with the zMapThreadExists() call on the Mac,
 	   * it says the thread has died when it hasn't. */
-
-
-//	  /* COMMENTED OUT BECAUSE zMapThreadExists() DOES NOT WORK ON THE MAC....
-//	     AND CAUSES ZMAP TO CRASH WHEN DESTROYING A VIEW.....
 
         if(!thread_has_died && !zMapThreadExists(thread))
           {
@@ -2512,7 +2507,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
             // it really is sudden death, thread is just not there
             threadDebugMsg(thread, "GUI: thread %s has died suddenly so cleaning up....\n", NULL) ;
           }
-//	  */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
