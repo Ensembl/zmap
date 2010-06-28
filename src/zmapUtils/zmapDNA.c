@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
  * Last edited: Mar 10 17:18 2010 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.12 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.13 2010-06-28 14:11:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,14 +47,94 @@
 
 
 /* PLEASE READ THIS.....
- * 
+ *
  * THIS FILE NEEDS EXPANDING TO HOLD CODE TO HANDLE DNA SEQUENCES, IT SHOULD IMPLEMENT
  * SOME COMMON FUNCTIONS WITH PEPTIDE.C IN THAT THEY SHOULD BOTH HAVE COMMON ELEMENTS IN THEIR
  * STRUCTS FOR NAME/LENGTH ETC SO THAT WE END UP WITH A "GENERAL" SEQUENCE OBJECT
  * THAT COULD BE CALLED FROM THE FASTA CODE ETC.....
- * 
- * 
+ *
+ *
  *  */
+
+
+
+// mh17: moved DNA encoding here from zmapPeptide.c, seems more logical really
+
+ /* I have added a '-' to ASCII position 45 for '-' which is used to pad incomplete
+ * sequences. If you don't have this then on encountering a '-' the code will
+ * insert a NULL char which terminates the sequence as C string !
+ *
+ * I've also added '-' to dnaDecodeChar[] which is populated in the function
+ * that uses it....why it does that is an acedb mystery... */
+
+
+char dnaEncodeChar[0x80] =
+{
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   '-', 0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+
+  0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
+  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
+  0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
+  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
+} ;
+
+/* 1<<4 = 16, not big enough for the 45th element in dnaDecodeString() */
+char dnaDecodeChar[1<<6] = { 0 };
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Copied from acedb code.....We'll need this some time I guess..... */
+static void dnaDecodeString(char *cp)
+{
+  dnaDecodeChar[A_] = 'a';
+  dnaDecodeChar[T_] = 't';
+  dnaDecodeChar[G_] = 'g';
+  dnaDecodeChar[C_] = 'c';
+
+  dnaDecodeChar[R_] = 'r';
+  dnaDecodeChar[Y_] = 'y';
+  dnaDecodeChar[M_] = 'm';
+  dnaDecodeChar[K_] = 'k';
+  dnaDecodeChar[S_] = 's';
+  dnaDecodeChar[W_] = 'w';
+
+  dnaDecodeChar[H_] = 'h';
+  dnaDecodeChar[B_] = 'b';
+  dnaDecodeChar[V_] = 'v';
+  dnaDecodeChar[D_] = 'd';
+
+  dnaDecodeChar[N_] = 'n';
+
+  dnaDecodeChar[45] = '-';                          /* Needed for padded sequences. */
+
+  --cp;
+  while(*++cp)
+    {
+      *cp = dnaDecodeChar[((int)*cp)];
+    }
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* This is not ideal, the acedb code works on encoded strings so we have to convert the
+ * dna to this format before translating it. */
+void dnaEncodeString(char *cp)
+{
+  --cp ;
+  while(*++cp)
+    {
+      *cp = dnaEncodeChar[((int)*cp) & 0x7f] ;
+    }
+
+  return ;
+}
+
+
+
 
 
 /* Takes a dna string and lower cases it inplace. */
@@ -106,18 +186,22 @@ gboolean zMapDNAValidate(char *dna)
 }
 
 
+
 /* This code is modified from acedb code (www.acedb.org)
- * 
- * Given target and query DNA sequences find the query sequence in 
+ *
+ * Given target and query DNA sequences find the query sequence in
  * the target.
- * 
+ *
  * Returns TRUE if query sequence found and records position of first significant match
  * in position_out, FALSE otherwise.
- * 
+ *
  * In addition if match_str is not NULL a pointer to an allocated string which is the match
  * is returned. N.B. this could potentially use up a lot of memory !
- * 
- *  */
+ *
+ * MH17: many more efficient algorithms to do this search are known
+ *
+ * tp is the query (with degenerate codes) and cp is the DNA to search (with atgcn)
+ */
 gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 			  char **start_out, char **end_out, char **match_str)
 {
@@ -145,15 +229,28 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 
 	  start = c ;					    /* reset start.... */
 	}
-      else if (!(*t++ == *c++) && (--i < 0))
-	{
-	  t = tp ;
-	  c = ++cs ;
-	  i = maxError ;
-	  j = maxN ;
+      else
+        {
+          gboolean match  = FALSE;
 
-	  start = c ;					    /* reset start. */
-	}
+          char base = dnaEncodeChar[(int) *c++ & 0x7f];
+
+            /* does this cry out for an automaton or what?
+             * this runs inefficiently as a naive algorithm but as it's one match
+             *  against one shortish DNA sequence it completes in a person feasable time
+             */
+          match = (*t++ & base);
+
+          if (!match && (--i < 0))
+            {
+              t = tp ;
+              c = ++cs ;
+              i = maxError ;
+              j = maxN ;
+
+              start = c ;                                 /* reset start. */
+            }
+        }
     }
 
   if (result || !*t)
@@ -182,6 +279,10 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
   char *start, *end ;
   char *search_start, *search_end, *match ;
   char **match_ptr = NULL ;
+  char * tx_query;
+
+  tx_query = g_strdup(query);
+  dnaEncodeString(tx_query);
 
   /* Return the actual match string ? */
   if (return_matches)
@@ -205,12 +306,12 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
   if (strand == ZMAPSTRAND_NONE || strand == ZMAPSTRAND_FORWARD)
     {
       /* cp < search_end for when the last match is @ the end of target seq...
-       * e.g. 
+       * e.g.
        *  Query:               ATG
        * Target: ATGGCGGATTAGCAATG
        */
-      while (cp < search_end && zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
-	{ 
+      while (cp < search_end && zMapDNAFindMatch(cp, search_end, tx_query, max_errors, max_Ns, &start, &end, match_ptr))
+	{
 	  ZMapDNAMatch match ;
 
 	  /* Record this match. */
@@ -247,13 +348,13 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
       start = end = cp = search_start ;
 
       /* cp < search_end for when the last match is @ the end of target seq...
-       * e.g. 
+       * e.g.
        *  Query:               ATG
        * Target: ATGGCGGATTAGCAATG
        */
 
-      while (cp < search_end && zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
-	{ 
+      while (cp < search_end && zMapDNAFindMatch(cp, search_end, tx_query, max_errors, max_Ns, &start, &end, match_ptr))
+	{
 	  ZMapDNAMatch match ;
 	  int tmp ;
 
@@ -279,6 +380,7 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
       g_free(revcomp_dna) ;
     }
 
+  g_free(tx_query);
 
   return sites ;
 }
@@ -288,7 +390,7 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 
 
 /* Reverse complement the DNA. Probably this is about as good as one can do....
- * 
+ *
  * It works by reading in towards the middle and at each position, reading
  * the base, complementing it and then putting it back at the mirror position,
  * i.e. the whole thing is done in place. (if there is a middle base it is done

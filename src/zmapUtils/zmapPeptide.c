@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  1 15:05 2008 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.17 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.18 2010-06-28 14:11:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,11 +42,11 @@
 
 
 
-/* 
- * 
+/*
+ *
  * We hereby acknowledge that this code was adapted directly from
  * the dna and peptide functions in acedb (see www.acedb.org).
- * 
+ *
  */
 
 #include <string.h>
@@ -83,9 +83,9 @@ enum {PEP_BASES = 4, PEP_CODON_LENGTH = 3, PEP_TOTAL_CODONS = PEP_BASES * PEP_BA
  * translation of the DNA is done by an indexed lookup into this array
  * based on the way the DNA is encoded, so you should not reorder this array.
  * Each element also has two associated bools which control special processing
- * for the start/stop of the peptide which is required for some alternative 
+ * for the start/stop of the peptide which is required for some alternative
  * starts and stops:
- * 
+ *
  * alternative_start = TRUE means that this amino acid should be replaced with
  *                          methionine when at the start of a transcript.
  *  alternative_stop = TRUE means that this amino acid should be replaced with
@@ -118,13 +118,6 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
 static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMapStrand strand,
 				gboolean encode, gboolean include_stop) ;
 
-static void dnaEncodeString(char *cp) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Not used at the moment... */
-static void dnaDecodeString(char *cp) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 static ZMapGeneticCode pepGetTranslationTable(void) ;
 
@@ -148,104 +141,12 @@ static char E_antiCodon (char* cp, ZMapGeneticCode genetic_code, int *index_out)
 We use the standard UPAC coding for representing DNA with a single character
 per base:
 
-Exactly known bases
+(Comment moved to zmapDNA.h)
 
-A
-T  (or U for RNA)
-G
-C
-
-Double ambiguity
-
-R	AG	~Y		puRine
-Y	CT	~R		pYrimidine
-M	AC	~K		aMino
-K	GT	~M		Keto
-S	CG	~S		Strong
-W	AT	~w		Weak
-
-Triple ambiguity
-
-H	AGT	~D		not G	
-B	CGT	~V		not A
-V	ACG	~B		not T
-D	AGT	~H		not C
-
-Total ambiguity
-
-N	ACGT	~N		unkNown
-
-Possible existence of a base
-
--       0       padding
-
-Note that:
-We do NOT use U internally, but just use it for display if tag RNA is set
-
-NCBI sometimes uses X in place of N, but we only use X for peptides
-
-The - padding character is used when no sequencing is available and
-therefore means that the exact length is unknown, 300 - might not mean
-exactly 300 unkown bases.
-
-In memory, we use one byte per base, the lower 4 bits correspond to
-the 4 bases A_, T_, G_, C_. More tha one bit is set in the ambiguous cases.
-The - padding is represented as zero. In some parts of the code, the upper 
-4 bits are used as flags.
-
-On disk, we store the dna as 4 bases per byte, if there is no ambiguity, or
-2 bases per byte otherwise.
 */
 
-
-#define A_ 1
-#define T_ 2
-#define U_ 2
-#define G_ 4
-#define C_ 8
-
-#define R_ (A_ | G_)
-#define Y_ (T_ | C_)
-#define M_ (A_ | C_)
-#define K_ (G_ | T_)
-#define S_ (C_ | G_)
-#define W_ (A_ | T_)
-
-#define H_ (A_ | C_ | T_)
-#define B_ (G_ | C_ | T_)
-#define V_ (G_ | A_ | C_)
-#define D_ (G_ | A_ | T_)
-
-#define N_ (A_ | T_ | G_ | C_)
-
-
-char complementBase[] =	
+char complementBase[] =
  { 0, T_,A_,W_,C_,Y_,M_,H_,G_,K_,R_,D_,S_,B_,V_,N_ } ;
-
-
-/* I have added a '-' to ASCII position 45 for '-' which is used to pad incomplete
- * sequences. If you don't have this then on encountering a '-' the code will
- * insert a NULL char which terminates the sequence as C string !
- * 
- * I've also added '-' to dnaDecodeChar[] which is populated in the function
- * that uses it....why it does that is an acedb mystery... */
-
-
-char dnaEncodeChar[] =
-{
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   '-', 0,   0,
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-
-  0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
-  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
-  0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
-  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
-} ;
-
-/* 1<<4 = 16, not big enough for the 45th element in dnaDecodeString() */
-char dnaDecodeChar[1<<6] = { 0 }; 
 
 
 
@@ -277,7 +178,7 @@ char dnaDecodeChar[1<<6] = { 0 };
 
 
 /* Takes a dna string and returns a simple string containing the peptide translation. */
-char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolean include_stop) 
+char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolean include_stop)
 {
   char *peptide_str = NULL ;
   GArray *peptide ;
@@ -298,7 +199,7 @@ char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolea
 /* Takes a dna string and returns a simple string containing the peptide translation for the given
  * section of dna. */
 char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand strand,
-				  ZMapGeneticCode translation_table, gboolean include_stop) 
+				  ZMapGeneticCode translation_table, gboolean include_stop)
 {
   char *peptide_str = NULL ;
   GArray *peptide ;
@@ -348,7 +249,7 @@ gboolean zMapPeptideValidate(char *peptide)
       valid = TRUE ;
       while (*aa)
 	{
-	 if (*aa != 'A' && *aa != 'R' && *aa != 'N' && *aa != 'D' 
+	 if (*aa != 'A' && *aa != 'R' && *aa != 'N' && *aa != 'D'
 	     && *aa != 'C' && *aa != 'E' && *aa != 'Q' && *aa != 'G'
 	     && *aa != 'H' && *aa != 'I' && *aa != 'L' && *aa != 'K'
 	     && *aa != 'M' && *aa != 'F' && *aa != 'P' && *aa != 'S'
@@ -399,7 +300,7 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
  * it slower. It could be done with a copy, but then that uses
  * memory... */
 ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
-                                    char *dna, ZMapGeneticCode translation_table, 
+                                    char *dna, ZMapGeneticCode translation_table,
                                     gboolean include_stop)
 {
   ZMapPeptide pep = NULL;
@@ -437,7 +338,7 @@ int zMapPeptideFullCodonAALength(ZMapPeptide peptide)
 
   if(peptide->incomplete_final_codon)
     length--;
-    
+
   return length;
 }
 /* The length of the amino acid sequence than came from _full_ codons of the dna */
@@ -644,10 +545,10 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
       search_start = protein ;
       search_end = search_start + length - 1 ;
       start = end = cp = search_start ;
-	  
+
       while (zMapPeptideMatch(cp, search_end, query, strand, NULL,
 			      &start, &end, match_ptr))
-	{ 
+	{
 	  ZMapDNAMatch match ;
 
 	  /* Record this match but match needs to record if its dna or peptide so coords are
@@ -689,7 +590,7 @@ void zMapPeptideDestroy(ZMapPeptide peptide)
 
 
 
-/* 
+/*
  *                       Internal functions.
  */
 
@@ -749,7 +650,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
       for (i = 0 ; i < PEP_TOTAL_CODONS ; i++)
 	{
 	  CodonTranslation amino = &g_array_index(standard_code->table, CodonTranslationStruct, i) ;
-	  
+
 	  amino->amino_acid = STANDARD_GENETIC_CODE[i] ;
 	  amino->alternative_start = amino->alternative_stop = FALSE ;
 	}
@@ -777,17 +678,17 @@ static ZMapGeneticCode pepGetTranslationTable(void)
   /* Lets hope we don't encounter a long running database where loads of genetic code objects
    * have been created/deleted otherwise our array may be v. big.....one to watch... */
   index = KEYKEY(gKey) ;
-  
+
   if (!(translationTable = g_ptr_array_index(maps, index)))
     {
       OBJ obj ;
-      
+
       if ((obj = bsCreate(gKey)))
 	{
 	  char *translation, *start, *stop, *base1, *base2, *base3 ;
 	  char result[4*4*4+1] ;
 	  int x,n ;
-	  
+
 	  /* These fields encode the translation table, they must all be correct. */
 	  if (bsGetData(obj, str2tag("Translation"), _Text, &translation)
 	      && bsGetData(obj, str2tag("Start"), _Text, &start)
@@ -806,26 +707,26 @@ static ZMapGeneticCode pepGetTranslationTable(void)
 
 	      memset(result,0,4*4*4) ;
 	      result[4*4*4] = 0 ;
-	      
+
 	      genetic_code = arrayCreate(PEP_TOTAL_CODONS, PepTranslateStruct) ;
-	      
+
 	      /* walk through the combinations and do the conversion.  I don't
 	       * assume that the bases are in a particular order, even though it
 	       * looks like it from the database. */
 	      for (x = 0 ; x < 64 ; x++)
 		{
 		  char xl[3] ;
-		  
+
 		  xl[0] = base1[x] ;
 		  xl[1] = base2[x] ;
 		  xl[2] = base3[x] ;
-		  
+
 		  n = t_codon_code(xl) ;
 		  if (n >= 0)
 		    {
 		      PepTranslate amino = &g_array_index(genetic_code, PepTranslateStruct, n) ;
 		      result[n] = translation[x] ;
-		      
+
 		      amino->amino_acid = translation[x] ;
 		      if (start[x] == 'M')
 			amino->alternative_start = TRUE ;
@@ -840,7 +741,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
 		  else
 		    break ;
 		}
-		      
+
 	      /* Must have set all 64 translations for valid genetic code. */
 	      if (x != 64)
 		arrayDestroy(genetic_code) ;
@@ -868,7 +769,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
 
 
 
-  
+
   return translationTable ;
 }
 
@@ -878,7 +779,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
  * in order to do the translation the dna needs to be encoded and then decoded back so it
  * stays the same. */
 static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
-			    gboolean *incomplete_final_codon) 
+			    gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
 
@@ -894,16 +795,16 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
 /* Note that I have just used the code from acedb which held dna in a compact encoded form so
  * in order to do the translation the dna needs to be encoded and then decoded back so it
  * stays the same.
- * 
+ *
  * NOTE:
  *          0 <= from <= (dna_length - 1)
  *          0 < length <= (dna_length - from) || length == -1 => the rest of the dna.
  *          -3 <= frame < 3 (makes for easier loop coding)
- * 
+ *
  *  */
 static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStrand strand,
 				   ZMapGeneticCode translation_table, gboolean include_stop,
-				   gboolean *incomplete_final_codon) 
+				   gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
   char *dna ;
@@ -925,11 +826,11 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
   if((dna = g_strndup((dna_in + from), length)))
     {
       dnaEncodeString(dna) ;
-      
+
       dna_array = g_array_new(TRUE, FALSE, sizeof(char)) ;
-      
+
       dna_array = g_array_append_vals(dna_array, dna, length) ;
-      
+
       /* I think we can free the dna now... */
       g_free(dna);
     }
@@ -1049,7 +950,7 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
 	      g_array_index(pep, char, x - 1) = cc ;
 	    }
 	}
-     
+
       if (!include_stop && cc == '*')
 	pep = g_array_remove_index(pep, pep->len - 1) ;
     }
@@ -1066,7 +967,7 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
 
 /* The e_NNNN calls allow external callers to do simple translation of a codon to
  * an amino acid, no account is taken of alternative start/stop information.
- * 
+ *
  * The E_NNNN calls are internal to peptide.c and return information that can be
  * used by the peptide routines to take account of alternative start/stops when
  * translating an entire transcript. */
@@ -1095,7 +996,7 @@ char e_antiCodon(char* cp, GArray *genetic_code)
 
 
 /* E_codon() - do the actual translation
- * 
+ *
  * s points at the 3 bytes of DNA code to translate, encoded as in dna.h
  *
  * genetic_code is an array containing the 64 codon map to use.  Get it
@@ -1148,13 +1049,13 @@ static char E_codon(char *s, ZMapGeneticCode genetic_code, int *index_out)
 				*index_out = -1 ;
 			      return 'X' ;
 			    }
-			}		     
+			}
 		    }
 		}
 	    }
 	}
     }
-  
+
   if (!it)						    /*  I think this never happens */
     {
       it = 'X' ;
@@ -1233,53 +1134,4 @@ static void printTranslationTable(KEY genetic_code_key, GArray *translationTable
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-/* This is not ideal, the acedb code works on encoded strings so we have to convert the
- * dna to this format before translating it. */
-static void dnaEncodeString(char *cp)
-{
-  --cp ;
-  while(*++cp)
-    {
-      *cp = dnaEncodeChar[((int)*cp) & 0x7f] ;
-    }
-
-  return ;
-}
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Copied from acedb code.....We'll need this some time I guess..... */
-static void dnaDecodeString(char *cp)
-{
-  dnaDecodeChar[A_] = 'a';
-  dnaDecodeChar[T_] = 't';
-  dnaDecodeChar[G_] = 'g';
-  dnaDecodeChar[C_] = 'c';
-
-  dnaDecodeChar[R_] = 'r';
-  dnaDecodeChar[Y_] = 'y';
-  dnaDecodeChar[M_] = 'm';
-  dnaDecodeChar[K_] = 'k';
-  dnaDecodeChar[S_] = 's';
-  dnaDecodeChar[W_] = 'w';
-
-  dnaDecodeChar[H_] = 'h';
-  dnaDecodeChar[B_] = 'b';
-  dnaDecodeChar[V_] = 'v';
-  dnaDecodeChar[D_] = 'd';
-
-  dnaDecodeChar[N_] = 'n';
-
-  dnaDecodeChar[45] = '-';				    /* Needed for padded sequences. */
-
-  --cp;
-  while(*++cp)
-    {
-      *cp = dnaDecodeChar[((int)*cp)];
-    }
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

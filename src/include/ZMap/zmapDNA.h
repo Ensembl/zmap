@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Sep 27 11:41 2007 (edgrif)
  * Created: Fri Oct  6 14:26:08 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.h,v 1.7 2010-03-04 15:14:59 mh17 Exp $
+ * CVS info:   $Id: zmapDNA.h,v 1.8 2010-06-28 14:11:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DNA_H
@@ -35,6 +35,85 @@
 
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
+
+/*
+
+We use the standard UPAC coding for representing DNA with a single character
+per base:
+
+Exactly known bases
+
+A
+T  (or U for RNA)
+G
+C
+
+Double ambiguity
+
+R     AG    ~Y          puRine
+Y     CT    ~R          pYrimidine
+M     AC    ~K          aMino
+K     GT    ~M          Keto
+S     CG    ~S          Strong
+W     AT    ~w          Weak
+
+Triple ambiguity
+
+H     AGT   ~D          not G
+B     CGT   ~V          not A
+V     ACG   ~B          not T
+D     AGT   ~H          not C
+
+Total ambiguity
+
+N     ACGT  ~N          unkNown
+
+Possible existence of a base
+
+-       0       padding
+
+Note that:
+We do NOT use U internally, but just use it for display if tag RNA is set
+
+NCBI sometimes uses X in place of N, but we only use X for peptides
+
+The - padding character is used when no sequencing is available and
+therefore means that the exact length is unknown, 300 - might not mean
+exactly 300 unkown bases.
+
+In memory, we use one byte per base, the lower 4 bits correspond to
+the 4 bases A_, T_, G_, C_. More than one bit is set in the ambiguous cases.
+The - padding is represented as zero. In some parts of the code, the upper
+4 bits are used as flags.
+
+On disk, we store the dna as 4 bases per byte, if there is no ambiguity, or
+2 bases per byte otherwise.
+*/
+
+
+#define A_ 1
+#define T_ 2
+#define U_ 2
+#define G_ 4
+#define C_ 8
+
+#define R_ (A_ | G_)
+#define Y_ (T_ | C_)
+#define M_ (A_ | C_)
+#define K_ (G_ | T_)
+#define S_ (C_ | G_)
+#define W_ (A_ | T_)
+
+#define H_ (A_ | C_ | T_)
+#define B_ (G_ | C_ | T_)
+#define V_ (G_ | A_ | C_)
+#define D_ (G_ | A_ | T_)
+
+#define N_ (A_ | T_ | G_ | C_)
+
+char dnaEncodeChar[0x80];
+char dnaDecodeChar[1<<6];
+void dnaEncodeString(char *cp);
 
 gboolean zMapDNACanonical(char *dna) ;
 gboolean zMapDNAValidate(char *dna) ;
