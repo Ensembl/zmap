@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,13 +25,13 @@
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
 name
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  * HISTORY:
  * Last edited: Jun 24 14:26 2009 (edgrif)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.5 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.6 2010-06-28 14:46:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,16 +57,16 @@ static ZMapConfigDir dir_context_G = NULL ;
 
 /* The context is only created the first time this function is called, after that
  * it just returns a reference to the existing context.
- * 
+ *
  * Note that as this routine should be called once per application it is not
  * thread safe, it could be made so but is overkill as the GUI/master thread is
  * not thread safe anyway.
- * 
+ *
  * If config_dir is NULL, the default ~/.ZMap directory is used.
- * If config_file is NULL, the default ZMap file is used. 
- * 
+ * If config_file is NULL, the default ZMap file is used.
+ *
  * returns FALSE if the configuration directory does not exist/read/writeable.
- * 
+ *
  *  */
 gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
 {
@@ -79,20 +79,20 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
 
   dir_context_G = dir_context = g_new0(ZMapConfigDirStruct, 1) ;
 
+  if (!config_file)
+    config_file = ZMAP_USER_CONFIG_FILE ;
+
   if (!config_dir)
     {
       config_dir = ZMAP_USER_CONFIG_DIR ;
       home_relative = TRUE ;
     }
-  else if (*config_dir == '~' && *(config_dir + 1) == '/')
+  else if(*config_dir == '~' && *(config_dir + 1) == '/')
     {
       config_dir += 2 ;
       home_relative = TRUE ;
     }
 
-  if (!config_file)
-    config_file = ZMAP_USER_CONFIG_FILE ;
-     
   if ((dir_context->config_dir = zMapGetDir(config_dir, home_relative, make_dir))
       && (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
     result = TRUE ;
@@ -107,11 +107,18 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
   else
     dir_context->zmap_conf_dir = dir_context->zmap_conf_file = NULL;
 
-  if(!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE)) && 
+  if(!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE)) &&
        (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE))))
     {
       dir_context->sys_conf_dir = dir_context->sys_conf_file = NULL;
     }
+
+  if(!result)
+  {
+      //  for error reporting
+      dir_context->config_dir = config_dir;
+      dir_context->config_file = config_file;
+  }
 
   return result ;
 }
