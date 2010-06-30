@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 11 16:58 2010 (edgrif)
+ * Last edited: Jun 30 12:28 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.189 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.190 2010-06-30 11:41:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -911,22 +911,21 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 }
 
 
-/* Handle button single press to highlight and double to show feature details. */
+/* Handle button single click to highlight and double click to show feature details. */
 static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCanvasItem *item, ZMapFeature feature)
 {
   gboolean event_handled = FALSE ;
   GdkModifierType shift_mask = GDK_SHIFT_MASK,
     control_mask             = GDK_CONTROL_MASK,
     shift_control_mask       = GDK_SHIFT_MASK | GDK_CONTROL_MASK,
-    unwanted_masks           = GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK,
-    locks_mask;
+    unwanted_masks           = GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+                               | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                               | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK,
+    locks_mask ;
 
-  /* In order to make the modifier only checks work we
-   * need to OR in the unwanted masks that might be on.
-   * This includes the shift lock and num lock.
-   * Depending on the setup of X these might be mapped
-   * to other things which is why MODs 2-5 are included
-   * This in theory should include the new (since 2.10)
+  /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
+   * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
+   * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
    * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
   if((locks_mask = (but_event->state & unwanted_masks)))
     {
@@ -935,8 +934,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       shift_control_mask |= locks_mask;
     }
 
-  /* Button 1 and 3 are handled, 2 is left for a general handler which could be
-   * the root handler. */
+  /* Button 1 and 3 are handled, 2 is left for a general handler which could be the root handler. */
   if (but_event->button == 1 || but_event->button == 3)
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
@@ -954,6 +952,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	  /* Only highlight the single item user clicked on. */
 	  highlight_same_names = FALSE ;
+
 
 	  /* Annotators say they don't want subparts sub selections + multiple
 	   * selections for alignments. */
