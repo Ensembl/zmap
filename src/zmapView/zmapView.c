@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:48 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.208 2010-06-28 08:30:32 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.209 2010-07-01 13:14:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2088,6 +2088,11 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
 
   /* TEMP CODE...UNTIL I GET THE MULTIPLE SEQUENCES IN ONE VIEW SORTED OUT..... */
   /* TOTAL HACK UP MESS.... */
+
+  // mh17:  we expect the sequence name to be like 'chr4-04_210623-364887'
+  // and use start to calculate chromosome coordinates for features
+  // see zmapWindow.c/myWindowCreate() for where this happens
+
   zmap_view->sequence = g_strdup(master_seq->sequence) ;
   zmap_view->start = master_seq->start ;
   zmap_view->end = master_seq->end ;

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 13:51 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.330 2010-06-24 14:50:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.331 2010-07-01 13:14:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1693,6 +1693,19 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->caller_cbs = window_cbs_G ;
 
   window->sequence = g_strdup(sequence) ;
+
+  {
+      // this should use coords extratced from ACEDB/smap but unfortunately the info is not available
+      // so we use this unsafe mechanism in the interim
+      char *p = sequence;
+
+      while(*p && *p != '_')
+            p++;
+      if(*p)
+            p++;
+      window->chromo_start = atol(p);
+  }
+
   window->app_data = app_data ;
   window->parent_widget = parent_widget ;
 
@@ -2955,7 +2968,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    if (window->display_forward_coords)
 		      bp = zmapWindowCoordToDisplay(window, bp) ;
 
-		    tip = g_strdup_printf("%d bp", bp);
+                if(window->chromo_start)  // see comment above, search for chromo_start
+		      tip = g_strdup_printf("%d bp (%ld)", bp, window->chromo_start + bp);
+                else
+                  tip = g_strdup_printf("%d bp", bp);
 		  }
 
 		/* If we are a locked, _vertical_ split window then also show the ruler in the

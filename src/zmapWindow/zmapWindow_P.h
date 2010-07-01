@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 24 13:37 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.262 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.263 2010-07-01 13:14:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -458,6 +458,7 @@ typedef struct
 typedef struct _ZMapWindowStruct
 {
   gchar *sequence ;					    /* Should remove this... */
+  long chromo_start;                                /* chromosome coordinate of our slice start */
 
   ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
 
