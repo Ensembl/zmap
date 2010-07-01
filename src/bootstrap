@@ -41,6 +41,18 @@ DEFAULT_INC="-I . $ACLOCAL_FLAGS"
 ############################################################
 
 
+# set up zmap version number, this is arcane and horrible and all
+# autoconf's fault. See http://sources.redhat.com/automake/automake.html#Rebuilding
+# and the stuff about AC_INIT
+# NOTE that zmap_version.m4 is referenced from configure.ac
+#
+version_macro_file='zmap_version.m4'
+rm -f $version_macro_file
+ZMAP_VERSION=`../scripts/versioner -V -path ../ -quiet`
+echo "m4_define([ZMAP_VERSION_NUMBER], [$ZMAP_VERSION])" > $version_macro_file
+zmap_message_out "ZMap version is: $ZMAP_VERSION"
+
+
 ############################################################
 ############################################################
 

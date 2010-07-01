@@ -6,8 +6,16 @@
 ################################################################################
 ################################################################################
 
+# the bootstrap script makes the file zmap_version.m4 and puts zmaps current
+# version in it as the macro ZMAP_VERSION_NUMBER
+m4_include([zmap_version.m4])
+ 
+
 AC_PREREQ(2.59)
-AC_INIT([ZMap],[0.1],[zmap@sanger.ac.uk])
+
+
+AC_INIT([ZMap],[ZMAP_VERSION_NUMBER],[zmap@sanger.ac.uk])
+
 
 # check we can find the source
 AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
@@ -157,8 +165,14 @@ AC_SUBST(PKG_CONFIG)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
-VERSION="0.1"
+
+
+# set up the zmap version, used for naming dist tar file etc etc.
+VERSION=ZMAP_VERSION_NUMBER
 AC_SUBST(VERSION)
+
+
+
 ################################################################################
 ################################################################################
 # Checks for programs.
