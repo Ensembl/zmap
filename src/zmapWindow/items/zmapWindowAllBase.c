@@ -30,28 +30,28 @@
  *
  * Exported functions: See zmapWindowAllBase.h
  * HISTORY:
- * Last edited: May 26 13:30 2010 (edgrif)
+ * Last edited: Jul  2 09:55 2010 (edgrif)
  * Created: Wed May 26 09:43:09 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.c,v 1.2 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAllBase.c,v 1.3 2010-07-05 09:48:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
 
-
-
-
-
-#include <libfoocanvas/libfoocanvas.h>			    /* Used to get struct sizes/types for stats. */
 #include <zmapWindowFeatures_I.h>
 #include <zmapWindowContainers_I.h>
 
 #include <zmapWindowAllBase.h>
 
 
+#define PRINT_ITEM_TYPE(INSTANCE) \
+  printf("%s", g_type_name(G_TYPE_FROM_INSTANCE((INSTANCE))))
+
+
 /* Surprisingly I thought this would be typedef somewhere in the GType header but not so... */
 typedef GType (*MyGTypeFunc)(void) ;
+
 
 typedef struct MyGObjectInfoStructName
 {
@@ -62,10 +62,40 @@ typedef struct MyGObjectInfoStructName
 } MyGObjectInfoStruct, *MyGObjectInfo ;
 
 
-
+static GType getItemType(FooCanvasItem *item, gboolean print) ;
 static MyGObjectInfo initObjectDescriptions(void) ;
 static MyGObjectInfo findObjectInfo(GType type) ;
 
+
+
+
+
+/* Returns the most derived class type for an item, i.e. effectively this is the "true"
+ * type of the object. */
+GType zmapWindowItemTrueType(FooCanvasItem *item)
+{
+  GType item_type ;
+
+  item_type = getItemType(item, FALSE) ;
+
+  return item_type ;
+}
+
+
+/* Same as zmapWindowItemTrueType() but prints out a hierachy of the derived classes
+ * starting with FooCanvasItem. */
+GType zmapWindowItemTrueTypePrint(FooCanvasItem *item)
+{
+  GType item_type ;
+
+  item_type = getItemType(item, TRUE) ;
+
+  return item_type ;
+}
+
+
+
+/* The following are a set of simple functions to init, increment and decrement stats counters. */
 
 void zmapWindowItemStatsInit(ZMapWindowItemStats stats, GType item_type)
 {
@@ -90,7 +120,7 @@ void zmapWindowItemStatsIncr(ZMapWindowItemStats stats)
   return ;
 }
 
-
+/* "total" counter is a cumulative total so is not decremented. */
 void zmapWindowItemStatsDecr(ZMapWindowItemStats stats)
 {
   stats->curr-- ;
@@ -100,7 +130,61 @@ void zmapWindowItemStatsDecr(ZMapWindowItemStats stats)
 
 
 
-/* We can maybe make this internal completely..... */
+
+
+/* 
+ *                  Internal routines.
+ */
+
+
+
+/* Returns the most derived class type for an item, i.e. effectively this is the "true"
+ * type of the object and optionally prints out the types as it goes.
+ * 
+ * NOTE that for this to work correctly we rely on the objects description array to be correctly
+ * ordered.
+ */
+static GType getItemType(FooCanvasItem *item, gboolean print)
+{
+  GType item_type = 0 ;					    /* Have assumed that zero
+							       is not a valid type value. */
+  GType type ;
+  static MyGObjectInfo objects = NULL ;
+  MyGObjectInfo tmp ;
+
+  if (!objects)
+    objects = initObjectDescriptions() ;
+
+  type = G_TYPE_FROM_INSTANCE(item) ;
+
+  tmp = objects ;
+  while (tmp->get_type_func)
+    {
+      if ((G_TYPE_CHECK_INSTANCE_TYPE((item), tmp->get_type_func())))
+	{
+	  if (item_type)
+	    printf(" -> ") ;
+
+	  if (print)
+	    printf("%s", tmp->obj_name) ;
+
+	  item_type = type ;
+	}
+
+      tmp++ ;
+    }
+
+  if (print && !item_type)
+    printf("unknown type !") ;
+
+  printf("\n") ;
+
+  return item_type ;
+}
+
+
+
+/* Find the array entry for a particular type. */
 static MyGObjectInfo findObjectInfo(GType type)
 {
   MyGObjectInfo object_data = NULL ;
@@ -122,90 +206,18 @@ static MyGObjectInfo findObjectInfo(GType type)
       tmp++ ;
     }
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (foo_type == FOO_TYPE_CANVAS_ITEM)
-    {
-      *name_out = "FOO_CANVAS_ITEM" ;
-      *size_out = sizeof(FooCanvasItem) ;
-    }
-  if (foo_type == FOO_TYPE_CANVAS_GROUP)
-    {
-      *name_out = "FOO_CANVAS_GROUP" ;
-      *size_out = sizeof(FooCanvasGroup) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_LINE)
-    {
-      *name_out = "FOO_CANVAS_LINE" ;
-      *size_out = sizeof(FooCanvasLine) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_PIXBUF)
-    {
-      *name_out = "FOO_CANVAS_PIXBUF" ;
-      *size_out = sizeof(FooCanvasPixbuf) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_POLYGON)
-    {
-      *name_out = "FOO_CANVAS_POLYGON" ;
-      *size_out = sizeof(FooCanvasPolygon) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_RE)
-    {
-      *name_out = "FOO_CANVAS_RE" ;
-      *size_out = sizeof(FooCanvasRE) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_TEXT)
-    {
-      *name_out = "FOO_CANVAS_TEXT" ;
-      *size_out = sizeof(FooCanvasText) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_WIDGET)
-    {
-      *name_out = "FOO_CANVAS_WIDGET" ;
-      *size_out = sizeof(FooCanvasWidget) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_FLOAT_GROUP)
-    {
-      *name_out = "FOO_CANVAS_FLOAT_GROUP" ;
-      *size_out = sizeof(FooCanvasFloatGroup) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_LINE_GLYPH)
-    {
-      *name_out = "FOO_CANVAS_LINE_GLYPH" ;
-      *size_out = sizeof(FooCanvasLineGlyph) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_ZMAP_TEXT)
-    {
-      *name_out = "FOO_CANVAS_ZMAP_TEXT" ;
-      *size_out = sizeof(FooCanvasZMapText) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_LINE)
-    {
-      *name_out = "FOO_CANVAS_LINE" ;
-      *size_out = sizeof(FooCanvasLine) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_LINE)
-    {
-      *name_out = "FOO_CANVAS_LINE" ;
-      *size_out = sizeof(FooCanvasLine) ;
-    }
-  else if (foo_type == FOO_TYPE_CANVAS_LINE)
-    {
-      *name_out = "FOO_CANVAS_LINE" ;
-      *size_out = sizeof(FooCanvasLine) ;
-    }
-  else
-    {
-      result = FALSE ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   return object_data ;
 }
 
 
+/* Fills in an array of structs which can be used for various operations on all the
+ * items we use on the canvas in zmap.
+ * 
+ * NOTE that the array is ordered so that for the getType/print functions the
+ * subclassing order and final type will be correct, i.e. we have parent classes
+ * followed by derived classes.
+ * 
+ *  */
 static MyGObjectInfo initObjectDescriptions(void)
 {
   static MyGObjectInfoStruct object_descriptions[] =

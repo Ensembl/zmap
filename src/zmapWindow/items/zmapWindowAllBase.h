@@ -28,15 +28,15 @@
  *              and this file contains them.
  *
  * HISTORY:
- * Last edited: May 26 11:54 2010 (edgrif)
+ * Last edited: Jul  2 09:59 2010 (edgrif)
  * Created: Wed May 12 11:45:10 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.h,v 1.3 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAllBase.h,v 1.4 2010-07-05 09:48:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_ALL_BASE_H
 #define ZMAP_WINDOW_ALL_BASE_H
 
-
+#include <libfoocanvas/libfoocanvas.h>
 
 /* currently needed in alignmentfeatuer and featureset, if we stop using it in
  * alignment then it should go to the featureset internal header. */
@@ -63,6 +63,8 @@ typedef struct ZMapWindowItemStatsType
 } ZMapWindowItemStatsStruct, *ZMapWindowItemStats ;
 
 
+GType zmapWindowItemTrueType(FooCanvasItem *item) ;
+GType zmapWindowItemTrueTypePrint(FooCanvasItem *item) ;
 
 void zmapWindowItemStatsInit(ZMapWindowItemStats stats, GType type) ;
 void zmapWindowItemStatsIncr(ZMapWindowItemStats stats) ;
