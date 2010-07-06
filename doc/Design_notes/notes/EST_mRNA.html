@@ -1,0 +1,93 @@
+<h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
+<h3>Warning</h3>
+<p> This was once intended to be an interactive process w/ otterlace- see <a href="Design_notes/notes/otter_zmap.shtml">here</a>. However, reading the text and a quick chat w/ the requestor suggest that an interactive process was not wanted.
+</p>
+
+<fieldset><legend>Background</legend>
+<p>In 2008 ticket 69060 was created requesting this:
+<pre>
+I think Jen may have already discussed this with you, but would it be
+possible to introduce some clustering of ESTs with mRNAs. In an ideal
+world it would be great to eliminate (ie remove from Zmap) any ESTs
+which are completely covered by an mRNA (including human ESTs vs human
+mRNAs, mouse vs mouse, etc) as this would reduce the number of ESTs we
+need to look at and should make navigation round Zmap more simple. I
+guess it might also speed up the redrawing as there would hopefully be a
+lot fewer boxes.
+</pre>
+and recently (after the latest annotation test) we were requested to see how easy this would be to implement.
+</p>
+</fieldset>
+
+<fieldset><legend>Things to define/ solve</legend>
+<h3>How to decide when to not display a feature?</h3>
+<p>
+<ul>
+<li> the feature must be an EST
+<li> the EST is covered completely by a same species mRNA ?
+<li> the EST is completely covered by any mRNA (eg EST_Other x vertebrate_mRNA) ?
+</ul>
+</p>
+<h3>How to choose features to compare?</h3>
+<p>As features are effectively blank data and thier names are 'user-defined' we cannot hard code these and one obvious way to mark featuresets for 'clustering' and non-display would be via styles. EG:
+<pre>
+[EST-Human]
+# list of featuresets to compare this featureset with
+alignment-mask-sets = vertebrate_mRNA ; cDNA
+</pre>
+</p>
+<h3>Display Options</h3>
+<p>
+By default masked data will just not be displayed.
+</p>
+If styles cause data to be hidden from the annotators it may be advisable to allow this to be switched off and to display all features on demand. A new option can be added to the RC menu to toggle display of masked features independantly of existing bump options.  This option will apply to the column whether bumped or not.  Note that this flag must be stored in the featureset struct and is distinct from flags per feature whcih say whether or not each feature is displayed.
+</p>
+</fieldset>
+
+<fieldset><legend>Implementation</legend>
+<p>
+To gain display speed it is best to avoid adding hidden items to the foo canvas which implies that the masked features must be flagged as hidden in the feature context.
+But as features may arrive at any time (via pipeservers or via delayed loading) this status can change from time to time and as new featuresets arrive more features may be masked from display, in which case the foo canvas items for the features must be hidden or destroyed. The foo canvas provides a hide function or features may be removed via a GTK_object destroy function, and the foo canvas/ ZMapCanvasItems have to provide a dispose handler.
+</p>
+<p>We must provide functions to add and remove flagged features from the canvas (to implement the RC menu option)
+</p>
+<p>
+The fact that we expect featuresets to be displayed separately (esp w/ pipe servers) implies that we must be able to mask each EST featureset independantly against each mRNA featureset, although if several mRNA featuresets are available when an EST column is displayed then these could be processed together.
+</p>
+<p>In the interests of simplicity masking shall be performed on the feature context.  For an initial column display masking will be performed before display and then only those features not flagged as masked will be added to the canvas.  For a display update (eg when the masking column (mRNA) arrives after the EST) the features context will be masked and features being masked will be removed from the foo canvas on the fly.
+</p>
+Note that canvas items refer to features and not vice versa, but a canvas item can be found relatively quickly via its hash table.
+</p>
+<h4>Implementation README</h4>
+<p>
+<ul>
+<li>The list of featureset quarks stored in the styles is non canonicalised as for featureset or style ID's, but is whitespace normalised.  See zMapConfigString2QuarkList().
+<li>On merging styles we do not merge quark lists but instead just overwrite. (zMapStyleMerge())
+<li>The style parameter for the list of quarks is a string, which is how the data is input and output.
+<li>A featureset to be masked has a list of featuersets to mask with, which correspond to the styles config. As we mask against a featureset and not a style this list can only be used one-way. Whenever a featureset completes loading then before displaying it (and only if has a masker list) it is masked. If there is not masker list then all other existing featuresets are scanned and if relevent masked with it. (this will be done by an execute function that operates on the feature context).
+</ul>
+</p>
+</p>
+</fieldset>
+
+<fieldset><legend>Masking algorithms</legend>
+<p>
+There may be a combinatorial problem to solve.  A sample session from human chr-4-04 presented about 4-500 vertebrate mRNA features and 2-3000 EST_Human and given that each feature may contain many parts a naive algorithm could get quite slow.
+</p>
+<p>The following is proposed:
+<ul>
+<li> sort the mRNA's into start coordinate order, then end coordinate reversed
+<li> scan through EST's and for each one:
+<li> scan all the mRNA's until the start coordinate means no cover
+<li> skip over mRNA's whose end coord means no cover - this can be optimised by including a pointer to the next feature with a different start coordinate - many features have the same start coordinate.
+<li> express both featuresets as integer arrays or lists defining exon and intron like sections.
+<li> use a simple function to determine if one covers the other completely and if so hide that EST and quit.
+</ul>
+</p>
+<p>
+<h3>Data Structures</h3>
+<p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment Extra flags will be added to these to handle masking status.
+</p>
+
+
+</fieldset>
