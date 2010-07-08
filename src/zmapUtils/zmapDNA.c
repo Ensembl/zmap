@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 10 17:18 2010 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.13 2010-06-28 14:11:11 mh17 Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.14 2010-07-08 08:38:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,9 +76,9 @@ char dnaEncodeChar[0x80] =
   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
 
   0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
-  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
+  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,  X_,  Y_,   0,   0,   0,   0,   0,   0,
   0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
-  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
+  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,  X_,  Y_,   0,   0,   0,   0,   0,   0,
 } ;
 
 /* 1<<4 = 16, not big enough for the 45th element in dnaDecodeString() */
@@ -106,6 +106,7 @@ static void dnaDecodeString(char *cp)
   dnaDecodeChar[D_] = 'd';
 
   dnaDecodeChar[N_] = 'n';
+//  dnaDecodeChar[X_] = 'x';  // X_ is defined as N_
 
   dnaDecodeChar[45] = '-';                          /* Needed for padded sequences. */
 
@@ -172,7 +173,7 @@ gboolean zMapDNAValidate(char *dna)
 	  if (*base != 'a' && *base != 'c' && *base != 'g' && *base != 't' && *base != 'u'
 	      && *base != 'm' && *base != 'r' && *base != 'w' && *base != 's' && *base != 'y'
 	      && *base != 'k' && *base != 'v' && *base != 'h' && *base != 'd' && *base != 'b'
-	      && *base != 'n' && *base != '-' && *base != '*' && *base != '.')
+	      && *base != 'n' && *base != 'x' && *base != '-' && *base != '*' && *base != '.')
 	    {
 	      valid = FALSE ;
 	      break ;
@@ -198,9 +199,7 @@ gboolean zMapDNAValidate(char *dna)
  * In addition if match_str is not NULL a pointer to an allocated string which is the match
  * is returned. N.B. this could potentially use up a lot of memory !
  *
- * MH17: many more efficient algorithms to do this search are known
- *
- * tp is the query (with degenerate codes) and cp is the DNA to search (with atgcn)
+ * tp is the query (with degenerate codes) and cp is the DNA to search (with atgcnx)
  */
 gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 			  char **start_out, char **end_out, char **match_str)
@@ -220,7 +219,7 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 	  result = TRUE ;
 	  break ;
 	}
-      else if (*c == 'n' && --j < 0)
+      else if ((*c == 'n' || *c == 'x') && --j < 0)
 	{
 	  t = tp ;
 	  c = ++cs ;
@@ -422,6 +421,7 @@ void zMapDNAReverseComplement(char *sequence_in, int length)
   rev['b'] = 'v' ;
 
   rev['n'] = 'n' ;
+  rev['x'] = 'x' ;      // NCBI
 
   /* Other common symbols. */
   rev['-'] = '-' ;

@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Sep 27 11:41 2007 (edgrif)
  * Created: Fri Oct  6 14:26:08 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.h,v 1.8 2010-06-28 14:11:11 mh17 Exp $
+ * CVS info:   $Id: zmapDNA.h,v 1.9 2010-07-08 08:38:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DNA_H
@@ -110,6 +110,7 @@ On disk, we store the dna as 4 bases per byte, if there is no ambiguity, or
 #define D_ (G_ | A_ | T_)
 
 #define N_ (A_ | T_ | G_ | C_)
+#define X_ N_     // "NCBI sometimes uses X in place of N"  (X should really be for peptides)
 
 char dnaEncodeChar[0x80];
 char dnaDecodeChar[1<<6];
