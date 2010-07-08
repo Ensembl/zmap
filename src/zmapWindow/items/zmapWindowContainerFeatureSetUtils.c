@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.4 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.5 2010-07-08 08:41:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,7 +90,7 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 				  ZMapStrand ref_strand, MatchType match_type,
 				  FooCanvasItem *item, ZMapFeature feature) ;
 static gboolean fragments_splice(char *fragment_a, char *fragment_b);
-static void process_feature(ZMapFeature prev_feature);
+//static void process_feature(ZMapFeature prev_feature);
 static void destroyListAndData(GList *item_list) ;
 static void itemDestroyCB(gpointer data, gpointer user_data);
 
@@ -594,7 +594,7 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
       spliceosome[4] = fragment_b[1];
       spliceosome[5] = '\0';
 
-#define NEW_RULES 0
+#define NEW_RULES 1
 #if NEW_RULES
       if(!g_ascii_strcasecmp(fragment_b, "AG"))
         {
@@ -630,9 +630,9 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 }
 
 
-// mh17: this function does not do anything other than allcoate some memory look at it and free it
+// mh17: this function does not do anything other than allocate some memory look at it and free it
 // was it an experiment?
-
+#if 0
 static void process_feature(ZMapFeature prev_feature)
 {
   int i;
@@ -678,7 +678,7 @@ static void process_feature(ZMapFeature prev_feature)
 
   return ;
 }
-
+#endif
 
 
 /* Note that however we do this calculation in the end where an item is an even number
