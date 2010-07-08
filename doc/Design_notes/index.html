@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.15 2010-06-10 15:43:36 mh17 Exp $ -->
+<!-- $Id: index.html,v 1.16 2010-07-08 11:17:18 mh17 Exp $ -->
 
 <h2>ZMap Design Documentation</h2>
 
@@ -18,10 +18,16 @@
 <br />
 <a href="Design_notes/modules/zmapConfig.shtml">Configuration files</a><br />
 Coordinate systems<br />
+<a href="Design_notes/notes/EST_mRNA.shtml">Masking EST's with mRNA's</a>
+<a href="Design_notes/notes/otter_zmap.shtml#evidence">Show Evidence</a><br>
+
 <a href="Design_notes/modules/zmapFeature.shtml">Featuresets</a>
 <a href="Design_notes/notes/featureset_col.shtml">Config</a>
 <a href="Design_notes/notes/col_order.shtml">Column Ordering</a>
 <br />
+<a href="Design_notes/notes/focus_list.shtml">Focus/ highlight items</a>
+<br />
+
 <a href="Design_notes/notes/performance.shtml">Performance</a>
 <a href="Design_notes/notes/profile.shtml">Profiling</a>
 <a href="Design_notes/notes/optimise.shtml">Optimising</a>
@@ -57,10 +63,30 @@ Coordinate systems<br />
 <li>sequence server is assumed to be ACEDB or some other server that is not delayed and there can be only one
 <li>Styles have 3 fields that appear to be misplaced as they refer to column data: loaded, deferred, and cur_bump_mode. Most importantly <b>deferred styles</b> need to be looked at esp as commented around <b>zmapViewRemoteReceive.c #1242</b>
 <li><a href="Design_notes/modules/zmapView.shtml#DNA_memory">Scope and memory allocation issues</a> with DNA sequence data
-<li>zMapFeaturesetCreateID() and zmapStyleCreateId() and ZMapGFFSet and ZMapGFFSource could benefit from a review.  The problem is that sometimes we want names normalised and sometimes we want them capitalised as given.  Perhaps the best way woule be to have all key values as normalised and duplicate quarks used for display names.  There are 86 calls to these functions, and this in not all the code that would have to be checked.
+<li>zMapFeaturesetCreateID() and zmapStyleCreateId() and ZMapGFFSet and ZMapGFFSource could benefit from a review.  The problem is that sometimes we want names normalised and sometimes we want them capitalised as given.  Perhaps the best way woule be to have all key values as normalised and duplicate quarks used for display names.  There are 86 calls to these functions, and this is not all the code that would have to be checked.
 <li><b>NC-Splice</b> markers - need to verify if correct or not, need some test data.  Currently coded as previously which does display, Jmaes' recommendations also available (iffed out) but do not produce any output.
+<li><b>FeatureSet data</b> is organised in display columns by zmapGFF2parser.c and each one may contain data from several sources. Comments in zmapGFF_P.h (describing a struct that contains a ZMapFeatureSetStruct):
+<pre>
+  GData *feature_sets ;                             /* A list of ZMapGFFParserFeatureSetStruct.
+                                                 There is one of these structs per
+                                                 "source". The struct contains among
+                                                 other things an array of all
+                                                 features for that source. */
+</pre>
+and zmapfeature.c:
+<pre>
+/*!\struct ZMapFeatureSetStruct_
+ * \brief a set of ZMapFeature structs.
+ * Holds a set of ZMapFeature structs, note that the id for the set is by default the same name
+ * as the style for all features in the set. BUT it may not be, the set may consist of
+ * features with many types/styles. The set id is completely independent of the style name.
+ */
+</pre>
+appear to give alternative opinions. The problem is that 'featureset' is used to describe a set of sets of features and that the concept of 'a set of features of the same type' only occurs as a limiting case in the data structures.  Structurally as the main ZMap handles display the GFFparser is the wrong place to assign features to display columns, especially if we consider that zmapWindow/zmapWindowDrawFeatures() executes code to do just that.
+<li><b>zMapViewLoadFeatures()</b> is called for <b>OTF data requests</b> after the initial load, and featuresets etc are concatentated not merged. The server interface has some loose ends relating to whether or not the report all supported featuresets of just those requested, and currently the return all styles not just those needed. Needs a tidy up.
 </ul>
 </p>
+
 
 </fieldset>
 <fieldset><legend>Things to fix</legend>
