@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 12 08:44 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.35 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.36 2010-07-08 08:48:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -501,7 +501,24 @@ GList *zMap_g_list_split(GList *list, GList *new_list_head)
 }
 
 
+// return a list of quarks as a ; delimted string, free this string when finished
+gchar *zMap_g_list_quark_to_string(GList *l)
+{
+      gchar *str = NULL;
+      const gchar *q;
 
+      while(l)
+      {
+            q = g_quark_to_string(GPOINTER_TO_UINT(l->data));
+            if(str)
+                  str = g_strconcat(str,q,NULL);
+            else
+                  str = g_strdup(q);
+            l = l->next;
+      }
+
+      return(str);
+}
 
 
 

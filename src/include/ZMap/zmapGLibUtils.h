@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 11 15:52 2009 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.25 2010-05-25 14:17:00 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.26 2010-07-08 08:48:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -79,6 +79,8 @@ GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point);
 GList *zMap_g_list_lower(GList *move, int positions);
 GList *zMap_g_list_raise(GList *move, int positions);
 GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
+
+gchar *zMap_g_list_quark_to_string(GList *l);
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
 
