@@ -1,0 +1,76 @@
+<h2>Highlighing Selected Features</h2>
+
+<fieldset><legend>History and new developments</legend>
+
+<h3>Highlighing selected features</h3>
+
+<p>The user clicks on a feature and that feature becomes the 'hot item' aka the selected feature and it is highlighted according to configuration.  Some users prefer a single highlight colour which is defined in the ZMap [Window] section and if set  this is used.  If not then the 'selected colour' is taken from the features style.  If no selected colour is defined then the normal colour is used and there will be no indication of focus on the display.
+</p>
+<p>
+The selected column is also highlit via its background, using a window defined colour.
+</p>
+<p>The window feature highlight colour only applies to the fill attribute and for small features or minimal zoom focus may not be visible.  Using a global colour for focus has the advantage that it is easy to recognise, but the disadvantage that it could be similar to a feature's normal colour.
+</p>
+
+<p>
+Multiple features may be selected by shift-click but this is restricted to features in one column. Selecting a feature in another column will deselect the existing ones.  Features are referred to by a focus item list held in the window data.
+</p>
+
+<h3>Highlighting Evidence</h3>
+<p> There is a requirement to highlight all the features used as evidence to a given transcript and these may appear in several columns.  As we wish to show these features as a group there is an argument that the same colour should be used for all, in which case adding a style colour for this would be wrong - this colour should be defined by the window config.
+</p>
+<p>
+Another option would be to overlay the features with a stipple (similar to the mark). (A different bit map can be used). There is the disadvantage that this would obscure the features slightly, and if we choose a sparse bitmap than small features will not be highlit clearly.
+</p>
+<p>We also wish to have focus continue to work on top of evidence highlights. Focus is displayed using the fill colour and if we show evidence using fill and border then both can be visible simultaneously (subject to features being big enough to show a fill colour).
+</p>
+
+<h3>Highlighting text</h3>
+<p>DNA and peptide sequences corresponding to selected features are highlit and currently this is handled independantly of the focus feature list.
+</p>
+
+<h3>Features used for the mask</h3>
+<p>Selecting a feature and then the mask results in that feature being stippled.  This is implemented by adding an overlay item to the feature.<br />
+<b>NB</b> As we wish to simplfy basic features it may be a better idea to add this feature to the block, as for the mark range overlays.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Handling multiple feature lists</legend>
+<p>Multiple highlit features will interact - removing a focus highlight will require us to redisplay a feature in normal or 'evidence' mode and having multiple data structres will require us either to have these interact internally or to have the application code operate all of them together, niether of which is a clean solution.
+<p>
+
+<p>Extending the existing focus list to handle multiple independant groups of data looks like the best solution.  Currently the focus data has a 'hot column' and a list of references to features in it. The following is proposed:
+<ul>
+<li> the focus 'hot column' is kept as is
+<li> one list of items is maintained and this includes one entry for each item even if it is in more than one group (eg an evidence feature that has focus)
+<li> each item in the focus list will be a data structure containing a pointer to the feature/item, it's column/ featureset and a pointer to a data structure for each group implmented.  If an item is not in a group then that pointer will be NULL and if no data is needed the value 1 can be used to indicate inclusion. The list of pointers will be implemented as an array indexed by and enum specifying the different groups implemented. eg:
+<pre>
+typedef enum
+{
+      // (no invalid enum)
+      WINDOW_FOCUS_GROUP_FOCUS,
+      WINDOW_FOCUS_GROUP_EVIDENCE,
+      WINDOW_FOCUS_GROUP_TEXT,
+      N_FOCUS_GROUPS
+};
+
+typedef struct _zmapFocusList
+{
+      ZMapWindowCanvasItem item;
+      ZMapFeatureSet festureset;
+      void * group[N_FOCUS_GROUPS];
+};
+</pre>
+<li> Currently there is a need for focus, evidence (+transcript?), text (DNA and peptide), as more groups become needed they can be added to the focus structure.  We expect the number of items will be relatively small and data volumes are not critical here.
+<li> the list will be unsorted
+<li> instead of the focus 'hot item' being the head of the list as at present a pointer to the 'hot item will be held in the top level WindowFocus structure.
+<li> The existing focus list functions take callbacks to set highlight colours. This can be extended to restrict calling these functions to matching group data. For example:
+<pre>
+zmapWindowFocusForEachFocusItem(window->focus, highlightCB, window) ;
+</pre>
+would take a further argument such as WINDOW_FOCUS_GROUP_FOCUS, which is an enum and can be used to reference the array of pointers in the focus list structure.
+</ul>
+</p>
+
+</fieldset>
