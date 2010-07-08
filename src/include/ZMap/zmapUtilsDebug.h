@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar 12 12:58 2010 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.12 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.13 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -55,6 +55,9 @@ g_assert_not_reached()
 
 /* If this global is TRUE then debugging messages will be displayed. */
 extern gboolean zmap_debug_G ;
+
+
+extern gboolean zmap_development_G ;      // patch in/out half working code
 
 
 /* Takes the standard printf like args:   ZMAP_DEBUG("format string", lots, of, args) ; */

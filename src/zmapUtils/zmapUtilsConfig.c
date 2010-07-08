@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct  1 16:07 2008 (rds)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.9 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.10 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,6 +82,11 @@ gboolean zMapUtilsConfigDebug(void)
                               ZMAPSTANZA_DEBUG_CONFIG,
                               ZMAPSTANZA_DEBUG_CONFIG,
                               ZMAPSTANZA_DEBUG_APP_TIMING, &zmap_timing_G);
+
+      zMapConfigIniContextGetBoolean(context,
+                              ZMAPSTANZA_DEBUG_CONFIG,
+                              ZMAPSTANZA_DEBUG_CONFIG,
+                              ZMAPSTANZA_DEBUG_APP_DEVELOP, &zmap_development_G);
 
       zMapConfigIniContextDestroy(context);
     }

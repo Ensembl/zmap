@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  5 17:55 2009 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.35 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.36 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,6 +77,9 @@ gboolean zmap_debug_G = FALSE ;
  * See the timer macros in zmapUtilsDebug.h */
 GTimer *zmap_global_timer_G = NULL ;
 gboolean zmap_timing_G = FALSE;     // ouput timing info?
+
+
+gboolean zmap_development_G = FALSE;    // switch on/off features while testing
 
 
 

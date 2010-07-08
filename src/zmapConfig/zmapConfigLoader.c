@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.24 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.25 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1073,6 +1073,7 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
     { ZMAPSTANZA_DEBUG_APP_FEATURE2STYLE, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_DEBUG_APP_STYLES, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_DEBUG_APP_TIMING, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_DEBUG_APP_DEVELOP, G_TYPE_BOOLEAN, NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_DEBUG_CONFIG;
@@ -1533,6 +1534,8 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, ch
     { ZMAPSTANZA_WINDOW_FRAME_0,      G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_FRAME_1,      G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_FRAME_2,      G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_WINDOW_EVIDENCE_HIGH,     G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_WINDOW_TRANSCRIPT_HIGH,   G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_WINDOW_CONFIG;
