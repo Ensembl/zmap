@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.13 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.14 2010-07-09 15:07:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,41 @@
 
 /* Turn on/off all debugging messages for threads. */
 gboolean zmap_thread_debug_G = FALSE ;
+
+
+// lock out access to fork usign pthread_atfork()
+// 30 threads generate 'can't fork (no memory)' errors from linux
+// we suspect fork is not thread safe??
+static pthread_mutex_t thread_fork_mutex_G;
+
+void zMapThreadForkLock(void)
+//void prepare_atfork(void)
+{
+      int locked;
+
+//      printf("lock mutex\n");
+      locked = !pthread_mutex_lock(&thread_fork_mutex_G);
+      zMapAssert(locked);
+//      printf("mutex locked\n");
+}
+
+
+void zMapThreadForkUnlock(void)
+//void parent_atfork(void)
+{
+      int unlocked;
+
+//      printf("unlock mutex\n");
+      unlocked = !pthread_mutex_unlock(&thread_fork_mutex_G);
+      zMapAssert(unlocked);
+//      printf("mutex unlocked\n");
+}
+
+void child_atfork(void)
+{
+//    printf("child init\n");
+    pthread_mutex_init(&thread_fork_mutex_G,NULL);
+}
 
 
 static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
@@ -90,8 +125,18 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
+  static int atfork = 0;
 
   zMapAssert(handler_func) ;
+
+  if(!atfork)
+  {
+    atfork = 1;
+    pthread_mutex_init(&thread_fork_mutex_G,NULL);
+//   printf("init mutex\n");
+    // prevent concurrent fork() calls from slave threads -> and also the main one?
+//    pthread_atfork(prepare_atfork,parent_atfork,child_atfork);
+  }
 
   thread = createThread(handler_func, terminate_func, destroy_func) ;
 

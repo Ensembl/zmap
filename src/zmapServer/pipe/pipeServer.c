@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.26 2010-06-24 13:33:15 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.27 2010-07-09 15:07:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -282,6 +282,9 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
 
   argv[i]= NULL;
 
+
+  zMapThreadForkLock();
+
   result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,G_SPAWN_CHILD_INHERITS_STDIN, // can't not give a flag!
                                     NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
   if(result)
@@ -290,6 +293,8 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
     server->gff_stderr = g_io_channel_unix_new(err_fd);
     g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
   }
+
+  zMapThreadForkUnlock();
 
   g_free(argv);   // strings allocated and freed seperately
   g_strfreev(q_args);

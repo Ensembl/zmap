@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar 20 12:02 2009 (edgrif)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.10 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.11 2010-07-09 15:07:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
@@ -101,6 +101,8 @@ typedef ZMapThreadReturnCode (*ZMapThreadTerminateHandler)(void **slave_data, ch
 typedef ZMapThreadReturnCode (*ZMapThreadDestroyHandler)(void **slave_data) ;
 
 
+void zMapThreadForkLock(void);
+void zMapThreadForkUnlock(void);
 
 
 ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
