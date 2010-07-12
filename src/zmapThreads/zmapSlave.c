@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 10 16:57 2010 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.36 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.37 2010-07-12 09:05:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -303,6 +303,7 @@ static void cleanUpThread(void *thread_args)
 
   ZMAPTHREAD_DEBUG(("%s: thread clean-up routine starting....\n", zMapThreadGetThreadID(thread))) ;
 
+  zMapThreadForkUnlock(); // not needed, but play safe. See zmapThread.c
 
   if (thread_cb->thread_died)
     {

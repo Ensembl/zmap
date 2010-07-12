@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Feb  9 13:24 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.31 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.32 2010-07-12 09:05:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 
-
+#include <ZMap/zmapThreads.h>       // for thread lock functions
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
 
@@ -419,7 +419,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
 	  printf("\n") ;
 	}
 
-
+      zMapThreadForkLock();
 
       if(!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
         {
@@ -428,6 +428,8 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
         }
       else
         zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
+
+      zMapThreadForkUnlock();
 
       if (status && child_pid)
         *child_pid = spawned_pid ;

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.14 2010-07-09 15:07:21 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.15 2010-07-12 09:05:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,20 +55,39 @@
 gboolean zmap_thread_debug_G = FALSE ;
 
 
-// lock out access to fork usign pthread_atfork()
 // 30 threads generate 'can't fork (no memory)' errors from linux
-// we suspect fork is not thread safe??
+// tried using pthread_atfork() but htis has no effect
+//    NB: without the child_at_fork() function this hangs, which implies something odd
+// So fork() is thread safe but g_spawn_async_with_pipes() is not
+// Must call zMapThreadForkLock() and zMapThreadForkUnlock() around this to serialise the calls
+// as pthread_cancel() operates asynchronously then we don't have to worry about unlock on exit
+// however, we can just call pthread_mutex_unlock() regardless
+
+// NB libpfetch also call g_spwan_async()
+// ZMap has a copy of that code but does not call it
+// zMapViewCallBlixem()  also calls g_spawn_...
+// but these operate on user command so if they fail can be retried
+
 static pthread_mutex_t thread_fork_mutex_G;
 
 void zMapThreadForkLock(void)
 //void prepare_atfork(void)
 {
+      static int init = 0;
       int locked;
 
-//      printf("lock mutex\n");
+      if(!init)
+      {
+            init = 1;
+            pthread_mutex_init(&thread_fork_mutex_G,NULL);
+            // prevent concurrent fork() calls from slave threads -> and also the main one?
+//          pthread_atfork(prepare_atfork,parent_atfork,child_atfork);
+      }
+
       locked = !pthread_mutex_lock(&thread_fork_mutex_G);
+      // NB: don't ever nest calls to this function
+
       zMapAssert(locked);
-//      printf("mutex locked\n");
 }
 
 
@@ -79,16 +98,17 @@ void zMapThreadForkUnlock(void)
 
 //      printf("unlock mutex\n");
       unlocked = !pthread_mutex_unlock(&thread_fork_mutex_G);
-      zMapAssert(unlocked);
+//      zMapAssert(unlocked); /* don't assert as we call this on thread cleanup regardless of ownership */
 //      printf("mutex unlocked\n");
 }
 
+#if MH17_NOT_USED
 void child_atfork(void)
 {
 //    printf("child init\n");
     pthread_mutex_init(&thread_fork_mutex_G,NULL);
 }
-
+#endif
 
 static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
 			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
@@ -125,18 +145,8 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
-  static int atfork = 0;
 
   zMapAssert(handler_func) ;
-
-  if(!atfork)
-  {
-    atfork = 1;
-    pthread_mutex_init(&thread_fork_mutex_G,NULL);
-//   printf("init mutex\n");
-    // prevent concurrent fork() calls from slave threads -> and also the main one?
-//    pthread_atfork(prepare_atfork,parent_atfork,child_atfork);
-  }
 
   thread = createThread(handler_func, terminate_func, destroy_func) ;
 

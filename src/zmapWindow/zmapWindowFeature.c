@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 30 12:28 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.190 2010-06-30 11:41:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.191 2010-07-12 09:05:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@
 
 #include <zmapWindowFeatures.h>
 
+#include <ZMap/zmapThreads.h> // for ForkLock functions
 
 #define PFETCH_READ_SIZE 80	/* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
@@ -79,6 +80,10 @@ enum
     ITEM_MENU_SHOW_URL_IN_BROWSER,
     ITEM_MENU_SHOW_TRANSLATION,
     ITEM_MENU_TOGGLE_MARK,
+
+    ITEM_MENU_SHOW_EVIDENCE,
+    ITEM_MENU_SHOW_TRANSCRIPT,
+
     ITEM_MENU_ITEMS
   };
 
@@ -1071,6 +1076,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_data->item_cb = TRUE ;
   menu_data->window = window ;
   menu_data->item = item ;
+  menu_data->feature = feature;
 
   /* Make up the menu. */
 
@@ -1270,6 +1276,21 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	zmapWindowToggleMark(menu_data->window, 0);
       }
       break;
+
+    case ITEM_MENU_SHOW_EVIDENCE:
+      {
+ //           menu_data->window->evidence = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_EVIDENCE);
+            // request data related to this feature
+      }
+      break;
+
+    case ITEM_MENU_SHOW_TRANSCRIPT:
+      {
+//            menu_data->window->evidence = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_EVIDENCE);
+            // request data related to this feature
+      }
+      break;
+
 #ifdef RDS_DONT_INCLUDE
     case 101:
       zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
@@ -1301,8 +1322,42 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
       {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
+
+  ItemMenuCBData md = (ItemMenuCBData) callback_data;
+  int i = 2;
+
+  menu[i].type = ZMAPGUI_MENU_NONE;
+
+  if(zmap_development_G)    // during development
+  {
+            // add in evidence/ transcript items
+            // option to remove existing is in column menu
+      if(md->feature && md->feature->style)
+      {
+            if(md->feature->style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Evidence";
+                  menu[i].id = ITEM_MENU_SHOW_EVIDENCE;
+            }
+            else
+            {
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Transcript";
+                  menu[i].id = ITEM_MENU_SHOW_TRANSCRIPT;
+            }
+            i++;
+      }
+      else
+      {
+            // style should be attached to the feature, but if not don't fall over
+            // new features should also have styles attached
+            zMapLogWarning("Feature menu item does not have style","");
+      }
+  }
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -1512,8 +1567,12 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 
       g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
 
+      zMapThreadForkLock();   // see zmapThreads.c
+
       if(PFetchHandleFetch(pfetch, sequence_name) == PFETCH_STATUS_FAILED)
-	zMapWarning("Error fetching sequence '%s'", sequence_name);
+      	zMapWarning("Error fetching sequence '%s'", sequence_name);
+
+      zMapThreadForkUnlock();
     }
   else
     zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
