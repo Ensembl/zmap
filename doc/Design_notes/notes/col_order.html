@@ -45,7 +45,7 @@ All possible columns are created for featuresets when the arrive from various da
 </p>
 <p>
 There is an execute function <b>windowDrawContextCB</b> that displays a feature context and calls
-<b>set_name_create_set_columns()</b> at the block level to create solumns per strand and <b>feature_set_matches_frame_drawing_mode()</b> at the featureset level to decide whether or not to include each one.
+<b>set_name_create_set_columns()</b> at the block level to create columns per strand and <b>feature_set_matches_frame_drawing_mode()</b> at the featureset level to decide whether or not to include each one.
 <i>Note that this second function also attempts to optimise the display of columns by preventing the drawing of columns that are already there.</i>.
 </p>
 <p><b>windowDrawContextCB()</b> is also called from <b>windowDrawContext()</b> for the normal display of features.
@@ -54,5 +54,14 @@ There is an execute function <b>windowDrawContextCB</b> that displays a feature 
 <b>purge_hide_frame_specific_columns()</b> handles removing unwanted columns for these types.
 </p>
 
+
+</fieldset>
+
+<fieldset><legend>Implementation #2</legend>
+<p><b>set_name_create_set_columns()</b> has been removed and columns are now created on demand.
+</p>
+<p>
+The command [ZMap] columns= xxx; yyy ; etc is suppoed to specify which ciolums to display and in what order, but extra data requested from servers gets displayed regardless.  These extra columns are place top thr RHS of the display and ordered by featureset id - this is to ensure a stable/ predictable display.  Ideally they should be specified in the columns command.
+</p>
 
 </fieldset>

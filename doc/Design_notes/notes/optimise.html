@@ -1,4 +1,4 @@
-<!-- $Id: optimise.html,v 1.4 2010-06-14 14:31:14 mh17 Exp $ -->
+<!-- $Id: optimise.html,v 1.5 2010-07-12 14:03:36 mh17 Exp $ -->
 
 <h2>Optimising ZMap</h2>
 
@@ -395,7 +395,14 @@ If we add these up we get 6 multiplications and 22 additions amd 16 of the addit
 </p>
 <p>How to find out? Add a key handler to ZMap to call a function that does that for the trembl featureset from the feature context (not the foo-canvas) and writes the bitmap to a file using G2.  Also run it with no drawing to find out how long it takes to access the features and calculate coordinates.  Crib some code from screenshot/ print. Verify the ouput by viewing the file and test different formats.
 </p>
-<p>Is G2 efficient?
+<p>Is G2 efficient? A simple stand-alone test program would demonstrate how quickly a bitmap can be generated using random rectangles.  png may be an ineffcient format if it includes drawing instructions for each feature.
+</p>
+<p>
+How to determine the maximum size of a column's bitmap? Y is easy as we have seq start and end for the window.
+X is more complex as not all styles have a width set and features are sized according to a score, but max and min score or width have to be set and it must be possible to calculate this from the set of styles needed by a column. Removing blank space from around a column of features would also be simple if we keep a running min and max value - the bitmap can be moved and displayed partially.
+</p>
+<h5>GDK bitmaps</h5>
+<p>Cursory inspection of gdk_draw_pixbuf() reveals that bitmaps can be drawn with hardware acceleration using mediaLib in three different chipsets.
 </p>
 
 </fieldset>
@@ -427,7 +434,7 @@ Using a simple manually generated printout of timings for various parts of these
 <p><i>Reverse complementing the features themselves take only 50ms</i>.</p>
 
 <h3>Comments about timing methodology</h3>
-<p>Simply addition of timer fucntions to the code is easy but tedious and works well for major functions. Some automated procedure that gave cumulative times for all functions would be be a lot more efficient in terms of developer time, and would also provide higher quality information:
+<p>Simply addition of timer functions to the code is easy but tedious and works well for major functions. Some automated procedure that gave cumulative times for all functions would be be a lot more efficient in terms of developer time, and would also provide higher quality information:
 <ul>
 <li> By counting execution times and printing out results afterwards we can gather timing information that is not affected by diagnostic I/O.  This is particularly relevant for functions called frequently such as ProcessFeature().
 <li> Functions that take little time need not have thier execution time reported (effectively we have a 4ms resolution), but simply the number of calls, and the calling functions used to infer the time used.

@@ -44,7 +44,7 @@ Another option would be to overlay the features with a stipple (similar to the m
 <ul>
 <li> the focus 'hot column' is kept as is
 <li> one list of items is maintained and this includes one entry for each item even if it is in more than one group (eg an evidence feature that has focus)
-<li> each item in the focus list will be a data structure containing a pointer to the feature/item, it's column/ featureset and a pointer to a data structure for each group implmented.  If an item is not in a group then that pointer will be NULL and if no data is needed the value 1 can be used to indicate inclusion. The list of pointers will be implemented as an array indexed by and enum specifying the different groups implemented. eg:
+<li> each item in the focus list will be a data structure containing a pointer to the feature/item, it's column/ featureset and a pointer to a data structure for each group implemented.  If an item is not in a group then that pointer will be NULL and if no data is needed the value 1 can be used to indicate inclusion. The list of pointers will be implemented as an array indexed by an enum specifying the different groups implemented. eg:
 <pre>
 typedef enum
 {
@@ -58,7 +58,7 @@ typedef enum
 typedef struct _zmapFocusList
 {
       ZMapWindowCanvasItem item;
-      ZMapFeatureSet festureset;
+      ZMapFeatureSet featureset;
       void * group[N_FOCUS_GROUPS];
 };
 </pre>
