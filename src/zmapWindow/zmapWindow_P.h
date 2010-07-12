@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 24 13:37 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.263 2010-07-01 13:14:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.264 2010-07-12 12:20:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -397,6 +397,12 @@ typedef enum
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
 
+/* default colours for related features */
+#define ZMAP_WINDOW_ITEM_EVIDENCE_BORDER "dark grey"
+#define ZMAP_WINDOW_ITEM_EVIDENCE_FILL "light grey"
+
+
+
 
 /* Used to pass data to canvas item menu callbacks, whether columns or feature items. */
 typedef struct
@@ -407,7 +413,8 @@ typedef struct
   ZMapWindow window ;
   FooCanvasItem *item ;
 
-  ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
+  ZMapFeature feature;                    // only used in item callbacks
+  ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
 
@@ -430,6 +437,18 @@ typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
+
+typedef enum
+{
+// these are just lists of features
+      WINDOW_FOCUS_GROUP_INVALID,
+      WINDOW_FOCUS_GROUP_FOCUS,      // the original one
+      WINDOW_FOCUS_GROUP_EVIDENCE,
+      WINDOW_FOCUS_GROUP_TEXT,
+      N_FOCUS_GROUPS
+} ZMapWindowFocusType;
+
+gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
@@ -614,16 +633,21 @@ typedef struct _ZMapWindowStruct
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
 
-
   /* Highlighting colours for items/columns. The item colour is used only if a select colour
    * was not specificed in the features style. */
   struct
   {
     unsigned int item : 1 ;
     unsigned int column : 1 ;
+    unsigned int evidence : 1 ;
+
   } highlights_set ;
+
   GdkColor colour_item_highlight ;
   GdkColor colour_column_highlight ;
+
+  GdkColor colour_evidence_border ;
+  GdkColor colour_evidence_fill ;
 
 
   /* Holds the marked region or item. */
@@ -691,13 +715,6 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
   GtkTreeSelectionFunc selectionFuncCB;
 } zmapWindowFeatureListCallbacksStruct, *zmapWindowFeatureListCallbacks;
 
-
-typedef struct _ZMapWindowFocusItemAreaStruct
-{
-  FooCanvasItem  *focus_item;
-  gboolean        highlighted;
-  gpointer        associated;
-} ZMapWindowFocusItemAreaStruct,  *ZMapWindowFocusItemArea;
 
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
@@ -1153,8 +1170,9 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
  *| item in the list is the most recent.  I call this the "hot" item, |
  *| like a hot potato.                                                |
  *!-------------------------------------------------------------------!*/
+// also used for evidence highlight lists
 
-ZMapWindowFocus zmapWindowFocusCreate(void) ;
+ZMapWindowFocus zmapWindowFocusCreate(ZMapWindowFocusType type) ;
 void zmapWindowFocusAddItem(ZMapWindowFocus focus, FooCanvasItem *item);
 void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list);
 void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
@@ -1174,8 +1192,10 @@ void zmapWindowFocusRemoveOverlayManager(ZMapWindowFocus focus, ZMapWindowOverla
 void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus);
 
 
-ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item);
-void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area);
+void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList *hidden_items);
+void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
+void zmapWindowFocusHighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
+void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
 
 void zmapWindowReFocusHighlights(ZMapWindow window);
 

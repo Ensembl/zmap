@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 30 11:01 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.132 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.133 2010-07-12 12:20:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,11 +93,6 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
                                         FooCanvasItem    *subject,
                                         gpointer          user_data);
 #endif
-static void highlightCB(gpointer data, gpointer user_data) ;
-static void unhighlightCB(gpointer data, gpointer user_data) ;
-
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
-
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 static void extract_feature_from_item(gpointer list_data, gpointer user_data);
@@ -419,7 +414,8 @@ void zMapWindowHighlightFocusItems(ZMapWindow window)
     zmapHighlightColumn(window, hot_column) ;
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
-    zmapWindowFocusForEachFocusItem(window->focus, highlightCB, window) ;
+//    zmapWindowFocusForEachFocusItem(window->focus, highlightCB, window) ;
+    zmapWindowFocusHighlightFocusItems(window->focus, window) ;
 
   return ;
 }
@@ -436,7 +432,8 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
     zmapUnHighlightColumn(window, hot_column) ;
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
-    zmapWindowFocusForEachFocusItem(window->focus, unhighlightCB, window) ;
+//    zmapWindowFocusForEachFocusItem(window->focus, unhighlightCB, window) ;
+    zmapWindowFocusUnhighlightFocusItems(window->focus, window) ;
 
   if (hot_column || hot_item)
     zmapWindowFocusReset(window->focus) ;
@@ -1866,63 +1863,6 @@ void zmapWindowItemGetVisibleCanvas(ZMapWindow window,
  */
 
 
-static void highlightCB(gpointer list_data, gpointer user_data)
-{
-  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
-  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
-  ZMapWindow window = (ZMapWindow)user_data ;
-
-  if(!data->highlighted)
-    {
-      GdkColor *highlight = NULL;
-
-      highlightItem(window, item, TRUE) ;
-
-      if(window->highlights_set.item)
-        highlight = &(window->colour_item_highlight);
-
-      zmapWindowFocusMaskOverlay(window->focus, item, highlight);
-
-      data->highlighted = TRUE;
-    }
-
-  return ;
-}
-
-static void unhighlightCB(gpointer list_data, gpointer user_data)
-{
-  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
-  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
-  ZMapWindow window = (ZMapWindow)user_data ;
-
-  highlightItem(window, item, FALSE) ;
-
-  zmapWindowFocusRemoveFocusItem(window->focus, item);
-
-  return ;
-}
-
-
-/* Do the right thing with groups and items */
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
-{
-  GdkColor green = {}, blue = {};
-  gdk_color_parse("green", &green);
-  gdk_color_parse("blue", &blue);
-
-  if(highlight)
-    {
-      if(window->highlights_set.item)
-	zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_SELECTED,
-					       &(window->colour_item_highlight));
-      else
-	zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_SELECTED, NULL);
-    }
-  else
-    zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL);
-
-  return ;
-}
 
 
 

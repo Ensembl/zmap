@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 13:51 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.331 2010-07-01 13:14:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.332 2010-07-12 12:20:57 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -214,7 +214,7 @@ static void swapColumns(ZMapWindow window, guint keyval);
 
 
 
-static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
+
 static void unhideItemsCB(gpointer data, gpointer user_data) ;
 
 
@@ -236,7 +236,6 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              int *selected_length);
 static char *makePrimarySelectionText(ZMapWindow window,
                                       FooCanvasItem *highlight_item);
-static void rehighlightCB(gpointer list_data, gpointer user_data);
 
 static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand) ;
 static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
@@ -1760,7 +1759,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->feature_show_windows = g_ptr_array_new() ;
 
   /* Init focus item/column stuff. */
-  window->focus = zmapWindowFocusCreate() ;
+  window->focus = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_FOCUS) ;
 
   /* Init mark stuff. */
   window->mark = zmapWindowMarkCreate(window) ;
@@ -2122,7 +2121,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 
   /* Recreate focus object. */
 //  zmapWindowFocusDestroy(window->focus) ;
-  window->focus = zmapWindowFocusCreate() ;
+  window->focus = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_FOCUS) ;
 
   return ;
 }
@@ -2968,8 +2967,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    if (window->display_forward_coords)
 		      bp = zmapWindowCoordToDisplay(window, bp) ;
 
-                if(window->chromo_start)  // see comment above, search for chromo_start
-		      tip = g_strdup_printf("%d bp (%ld)", bp, window->chromo_start + bp);
+                if(window->chromo_start)  // see comment above, search for chromo_start;
+		      tip = g_strdup_printf("%d bp (%ld)", bp, window->chromo_start + bp - 1);
+                                    // -1 is due to both based from 1
                 else
                   tip = g_strdup_printf("%d bp", bp);
 		  }
@@ -4080,7 +4080,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		GList *hidden_items = NULL ;
 
-		zmapWindowFocusForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
+//		zmapWindowFocusForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
+            zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
 
 		zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
 
@@ -4750,26 +4751,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
 
 
-/* GFunc() to hide the given item and record it in the user hidden list. */
-static void hideItemsCB(gpointer data, gpointer user_data)
-{
-  ZMapWindowFocusItemArea item_area = (ZMapWindowFocusItemArea)data;
-  FooCanvasItem *item = (FooCanvasItem *)item_area->focus_item ;
-  GList **list_ptr = (GList **)user_data ;
-  GList *user_hidden_items = *list_ptr ;
-
-  zMapAssert(FOO_IS_CANVAS_ITEM(item));
-
-
-  foo_canvas_item_hide(item) ;
-
-  user_hidden_items = g_list_append(user_hidden_items, item) ;
-
-  *list_ptr = user_hidden_items ;
-
-  return ;
-}
-
 
 
 /* GFunc() to hide the given item and record it in the user hidden list. */
@@ -5032,21 +5013,6 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 
 
 
-static void rehighlightCB(gpointer list_data, gpointer user_data)
-{
-  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
-  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
-  ZMapWindow window = (ZMapWindow)user_data ;
-  GdkColor *highlight = NULL;
-
-  if(window->highlights_set.item)
-    highlight = &(window->colour_item_highlight);
-
-  zmapWindowFocusMaskOverlay(window->focus, item, highlight);
-
-  return ;
-}
-
 void zmapWindowReFocusHighlights(ZMapWindow window)
 {
   FooCanvasItem *hot_item = NULL;
@@ -5054,7 +5020,8 @@ void zmapWindowReFocusHighlights(ZMapWindow window)
 
   /* we only really need to do the text highlighting... */
   if (allow_rehighlight && (hot_item = zmapWindowFocusGetHotItem(window->focus)))
-    zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
+//    zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
+    zmapWindowFocusRehighlightFocusItems(window->focus, window) ;
 
   return ;
 }
