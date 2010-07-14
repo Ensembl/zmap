@@ -77,6 +77,8 @@ There may be a combinatorial problem to solve.  A sample session from human chr-
 <p>The following is proposed:
 <ul>
 <li> sort the mRNA's into start coordinate order, then end coordinate reversed
+<li> remove or flag mRNAs that are covered by another one - this will be easy as they are in order
+<li> sort the ESTs into order as for the mRNAs and hide EST's that are covered by others
 <li> scan through EST's and for each one:
 <li> scan all the mRNA's until the start coordinate means no cover
 <li> skip over mRNA's whose end coord means no cover - this can be optimised by including a pointer to the next feature with a different start coordinate - many features have the same start coordinate.
