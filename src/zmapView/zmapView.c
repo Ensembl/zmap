@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:48 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.209 2010-07-01 13:14:25 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.210 2010-07-15 10:48:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1315,6 +1315,7 @@ void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
   return ;
 }
 
+#if MH17_NOT_USED
 void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple)
 {
   GList *list;
@@ -1339,7 +1340,7 @@ void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFe
 
   return ;
 }
-
+#endif
 
 /*
  *    A set of accessor functions.

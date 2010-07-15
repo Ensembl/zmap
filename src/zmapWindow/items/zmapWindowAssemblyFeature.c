@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAssemblyFeature.c,v 1.7 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAssemblyFeature.c,v 1.8 2010-07-15 10:49:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,7 +127,8 @@ static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem   assem
 						    FooCanvasItem         *interval,
 						    ZMapFeatureSubPartSpan sub_feature,
 						    ZMapStyleColourType    colour_type,
-						    GdkColor              *default_fill)
+						    GdkColor              *default_fill,
+                                        GdkColor              *border)
 {
   GdkColor *background, *foreground, *outline, *fill;
   ZMapFeatureTypeStyle style;
@@ -156,8 +157,13 @@ static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem   assem
   if((zMapStyleGetColours(style, colour_target, colour_type,
 			  &background, &foreground, &outline)))
     {
-      if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
-	background = default_fill;
+      if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+      {
+            if(default_fill)
+	            background = default_fill;
+            if(border)
+                  outline = border;
+      }
 
       foo_canvas_item_set(interval,
 			  "fill_color_gdk",    background,

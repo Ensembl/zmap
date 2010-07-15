@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 13:51 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.332 2010-07-12 12:20:57 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.333 2010-07-15 10:49:00 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1759,7 +1759,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->feature_show_windows = g_ptr_array_new() ;
 
   /* Init focus item/column stuff. */
-  window->focus = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_FOCUS) ;
+  window->focus = zmapWindowFocusCreate(window) ;
 
   /* Init mark stuff. */
   window->mark = zmapWindowMarkCreate(window) ;
@@ -2121,7 +2121,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 
   /* Recreate focus object. */
 //  zmapWindowFocusDestroy(window->focus) ;
-  window->focus = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_FOCUS) ;
+  window->focus = zmapWindowFocusCreate(window) ;
 
   return ;
 }
@@ -4080,16 +4080,15 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		GList *hidden_items = NULL ;
 
-//		zmapWindowFocusForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
             zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
 
 		zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
 
 		/* This all feels really clumsy...we have the focus/highlight stuff the wrong way
 		   round, we should be dealing with focus, not with highlight at this level... */
-		zMapWindowUnHighlightFocusItems(window) ;
-		zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
-		zmapHighlightColumn(window, focus_column) ;
+//		zMapWindowUnHighlightFocusItems(window) ;                   // done by hide function
+//		zmapWindowFocusSetHotColumn(window->focus, focus_column) ;  //not needed
+//		zmapWindowFocusHighlightHotColumn(window->focus) ;          // done by sethotcol
 	      }
 
 	    curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(focus_container) ;
@@ -4231,6 +4230,31 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_D:
 //      { extern int mh_debug; mh_debug = 1; }
       break;
+
+    case GDK_e:
+      if(zmap_development_G)
+        {
+            // this is test code to exercise the focus functions
+            // it only affects the current window and callbacks to the view are not used
+          zmapWindowFocusAddItemsType(window->focus,
+                  zmapWindowFocusGetFocusItemsType(window->focus,WINDOW_FOCUS_GROUP_FOCUS),
+                  zmapWindowFocusGetHotItem(window->focus),
+                  WINDOW_FOCUS_GROUP_EVIDENCE);
+          zmapWindowFocusReset(window->focus);
+        }
+      break;
+    case GDK_E:   // can only rub out one at a time :-(
+      if(zmap_development_G)
+        {
+            // this is test code to exercise the focus functions
+            // it only affects the current window and callbacks to the view are not used
+          zmapWindowFocusRemoveFocusItemType(window->focus,
+                  zmapWindowFocusGetHotItem(window->focus),
+                  WINDOW_FOCUS_GROUP_EVIDENCE);
+          zmapWindowFocusReset(window->focus);
+        }
+      break;
+
     case GDK_h:
       {
 	/* Flip flop highlighting.... */
@@ -4246,7 +4270,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
 
-	    zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
+	    zmapWindowFocusHighlightHotColumn(window->focus) ;
 	  }
 
         break;
@@ -4729,7 +4753,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
 
-      zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
+      zmapWindowFocusHighlightHotColumn(window->focus) ;
 
       zmapWindowScrollToItem(window, FOO_CANVAS_ITEM(focus_column)) ;
 

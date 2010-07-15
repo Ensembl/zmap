@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar  3 13:40 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.175 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.176 2010-07-15 10:48:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -459,11 +459,14 @@ typedef struct
   {
     /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
      * alignment with allowance for a style specified slop factor. */
-    unsigned int perfect : 1 ;
+    gboolean perfect;
 
-    unsigned int has_sequence : 1 ;			    /* This homology has sequence in the database. */
+    gboolean has_sequence;			    /* This homology has sequence in the database. */
 
-    unsigned int has_clone_id : 1 ;			    /* This homol feature is matched to this clone. */
+    gboolean has_clone_id;			    /* This homol feature is matched to this clone. */
+
+    gboolean masked;                          /* for an EST - is it covered completely by an mRNA */
+    gboolean displayed;                       /* is it in the foo canvas right now ? */
 
   } flags ;
 

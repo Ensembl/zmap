@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 30 11:00 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.21 2010-07-12 12:20:57 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.22 2010-07-15 10:49:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,40 +56,47 @@
  * Normal focus operations require a  global focus column and these are preserved as was
  *
  * evidence features (or other lists of features) may come from many columns.
- * Each item in the list is stored with its featureset and column.
- * changes to focus only affect item in the same column (ie the previous and new one if different)
  */
 typedef struct _ZMapWindowFocusStruct
 {
+  ZMapWindow window;     // retrograde pointer, we need it for highlighting
+
   /* the selected/focused items. Interesting operations on these should be possible... */
   GList *focus_item_set ;
 
-  ZMapWindowFocusType type;
-
-  int hot_item_orig_index ;				    /* Record where hot_item was in its list. */
 
   ZMapWindowContainerFeatureSet focus_column ;
+  FooCanvasItem *hot_item;           // current hot focus item or NULL
+  int hot_item_orig_index ;          /* Record where hot_item was in its list. */
+// mh17: this is of limited use as it works only for single items
 
   GList *overlay_managers;
 } ZMapWindowFocusStruct ;
 
 
-typedef struct _ZMapFocusListStruct
+typedef struct _ZMapWindowFocusItemStruct
 {
-      ZMapWindowCanvasItem item;
-      ZMapWindowContainerFeatureSet item_column ;     // column if on display: interacts w/ focus_column
-      ZMapFeatureSet featureset;                      // featureset it lives in (esp if not displayed)
-      void *groups[N_FOCUS_GROUPS];
-} ZMapFocusListStruct, *ZMapFocusList;
+      FooCanvasItem *item;
 
+      // next two not used
+      ZMapWindowContainerFeatureSet item_column ;   // column if on display: interacts w/ focus_column
+      ZMapFeatureSet featureset;                    // featureset it lives in (esp if not displayed)
 
+      int flags;                                    // a bitmap of focus tyoes and misc data
+      int display_state;
+            // selected flags if any
+            // all states need to be kept as more than one may be visible
+            // as some use fill and some use border
 
-typedef struct _ZMapWindowFocusItemAreaStruct
-{
-  FooCanvasItem  *focus_item;
-//  gboolean        highlighted;
-//  gpointer        associated;
-} ZMapWindowFocusItemAreaStruct,  *ZMapWindowFocusItemArea;
+// if needed add this for data structs for any group
+//      void *data[N_FOCUS_GROUPS];
+
+// from the previous ZMapWindowFocusItemAreaStruct
+//  gboolean        highlighted;    // this was used but never unset
+//  gpointer        associated;     // this had set values preserved but never set
+
+} ZMapWindowFocusItemStruct, *ZMapWindowFocusItem;
+
 
 
 typedef struct
@@ -99,23 +106,21 @@ typedef struct
 }MatchFrameStruct, *MatchFrame;
 
 
-ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item);
-void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area);
+ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item);
+void zmapWindowFocusItemDestroy(ZMapWindowFocusItem list_item);
 
 
-static gint find_item(gconstpointer list_data, gconstpointer user_data);
-static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus,
-                                             FooCanvasItem *item);
-static void addFocusItemCB(gpointer data, gpointer user_data) ;
-static void freeFocusItems(ZMapWindowFocus focus) ;
+
+static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,FooCanvasItem *item,
+      ZMapWindowFocusType type);
+
+static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type);
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 
-static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
-static void rehighlightCB(gpointer list_data, gpointer user_data);
+
 
 static void highlightCB(gpointer data, gpointer user_data) ;
-static void unhighlightCB(gpointer data, gpointer user_data) ;
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
+static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item) ;
 
 
 
@@ -135,11 +140,12 @@ static gboolean overlay_manager_list_debug_G = FALSE;
 
 /*
  *              Set of routines to handle focus items.
+ *    extended by mh17 to handle evidence features highlgihting too.
  *
  * Holds a list of items that are highlighted/focussed, one of these is the "hot" item
  * which is the last one selected by the user.
  *
- * The first item in the list is always the "hot" item.
+ * The hot item is in the list but is alos pointed at directly.
  *
  * The "add" functions just append item(s) to the list, they do not remove any items from it.
  *
@@ -147,20 +153,40 @@ static gboolean overlay_manager_list_debug_G = FALSE;
  *
  * To replace the list you need to free it first then add new item(s).
  *
+ * Items appear in the list once only and have flags to indicate which group(s)
+ *
  * Note that these routines do not handle highlighting of items, that must be done with
  * a separate call.
  *
+ * NOTE removal of previous focus items is done by
+ * zmapWindowItem,c/zMapWindowUnHighlightFocusItems()
+ * which is called via zmapWindowHighlightObject()
+ * and not the SetHotItem function in this file which had code to do this that was never run
  */
+
+int focus_group_mask[] = { 1,2,4,8,16,32,64,128,258 };
+// indexed by ZMapWindowFocusType enum
+// item flags can be stored in higher bits - define here
+#define WINDOW_FOCUS_GROUP_ALL 0xff
+
+#if N_FOCUS_GROUPS > 8
+#warning array too short: FIX THIS
+// (right now there are only 3)
+#endif
+
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 {
       GList *l;
-      ZMapFocusList fl;
+      ZMapWindowFocusItem fl;
+
+      if(type == WINDOW_FOCUS_GROUP_ALL)
+            return(focus->focus_item_set != NULL);
 
       for(l = focus->focus_item_set;l;l = l->next)
       {
-            fl  = (ZMapFocusList) l->data;
-            if(fl->groups[type])
+            fl  = (ZMapWindowFocusItem) l->data;
+            if(fl->flags & focus_group_mask[type])
                   return(TRUE);
       }
 
@@ -168,43 +194,45 @@ gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 }
 
 
-ZMapWindowFocus zmapWindowFocusCreate(ZMapWindowFocusType type)
+ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window)
 {
   ZMapWindowFocus focus ;
 
   focus = g_new0(ZMapWindowFocusStruct, 1) ;
-  focus->type = type;
+  focus->window = window;
 
   return focus ;
 }
 
 /* N.B. unless there are no items, then item is added to end of list,
  * it is _not_ the new hot item so we do not reset the focus column for instance. */
-void zmapWindowFocusAddItem(ZMapWindowFocus focus, FooCanvasItem *item)
+void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type)
 {
+  if(item)  // in case we add GetHotItem() which could return NULL
+    {
+      add_unique(focus,item,type);
 
-  if (!focus->focus_item_set)
-    zmapWindowFocusSetHotItem(focus, item, TRUE) ;
-  else
-    addFocusItemCB((gpointer)item, (gpointer)focus) ;
+      if (!focus->hot_item && type == WINDOW_FOCUS_GROUP_FOCUS)
+        zmapWindowFocusSetHotItem(focus, item) ;
+     }
 
   return ;
 }
 
 /* Same remark applies to this routine as to zmapWindowFocusAddItem() */
-void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list)
+void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot, ZMapWindowFocusType type)
 {
+  FooCanvasItem *first = NULL;
 
-  /* If there is no focus item, make the first item in the list the hot focus item and
-   * move the list on one. */
-  if (!focus->focus_item_set)
-    {
-      zmapWindowFocusSetHotItem(focus, FOO_CANVAS_ITEM(item_list->data), TRUE) ;
-      item_list = g_list_next(item_list) ;
-    }
+  if(list)
+      first = FOO_CANVAS_ITEM (list->data);
 
-  if (item_list)
-    g_list_foreach(item_list, addFocusItemCB, focus) ;
+  for(;list;list = list->next)
+      add_unique(focus,FOO_CANVAS_ITEM(list->data),type);
+
+  if (!focus->hot_item && first && type == WINDOW_FOCUS_GROUP_FOCUS)
+      zmapWindowFocusSetHotItem(focus, first) ;
+
 
   return ;
 }
@@ -223,7 +251,7 @@ gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *
       column_container = (ZMapWindowContainerGroup)focus->focus_column;
 
       if (column_container == zmapWindowContainerCanvasItemGetContainer(item))
-	result = TRUE ;
+        result = TRUE ;
     }
 
   return result ;
@@ -231,25 +259,14 @@ gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *
 
 
 
-void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gboolean remove_hot_item)
+// set the hot item, which is already in the focus set
+// NB: this is only called from this file
+// previously this function removed existing focus but only if was never set
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item)
 {
-  FooCanvasItem *curr_focus_item ;
-  ZMapWindowFocusItemArea item_area ;
   FooCanvasGroup *column ;
 
-  if (remove_hot_item)
-    {
-      /* We should be returning items to their original position here.... */
-      if ((curr_focus_item = zmapWindowFocusGetHotItem(focus)))
-	{
-	  zmapWindowFocusRemoveFocusItem(focus, curr_focus_item) ;
-	}
-    }
-
-  item_area = ensure_unique(focus, item);
-
-  /* Stick the item on the front. */
-  focus->focus_item_set = g_list_prepend(focus->focus_item_set, item_area) ;
+  focus->hot_item = item;
 
   /* Set the focus items column as the focus column. */
   column = (FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;
@@ -270,42 +287,67 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gbool
  * need to get rid of the old items. */
 void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
 {
-  freeFocusItems(focus) ;
+  freeFocusItems(focus,WINDOW_FOCUS_GROUP_FOCUS) ;
 
+  focus->hot_item = NULL;
   setFocusColumn(focus, column) ;
 
   return ;
 }
 
 
+/* highlight/unhiglight cols. */
+void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
+{
+  FooCanvasGroup *hot_column;
+
+  if ((hot_column = zmapWindowFocusGetHotColumn(focus)))
+  {
+    zmapWindowContainerGroupSetBackgroundColour(ZMAP_CONTAINER_GROUP(hot_column),
+             &(focus->window->colour_column_highlight)) ;
+  }
+
+  return ;
+}
+
+
+void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
+{
+  FooCanvasGroup *hot_column;
+
+  if ((hot_column = zmapWindowFocusGetHotColumn(focus)))
+      zmapWindowContainerGroupResetBackgroundColour(ZMAP_CONTAINER_GROUP(hot_column)) ;
+
+  return ;
+}
+
+
+
+
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
 {
-  FooCanvasItem *item = NULL ;
-  ZMapWindowFocusItemArea item_area;
-  GList *first ;
+  FooCanvasItem *item;
 
-  if (focus->focus_item_set && (first = g_list_first(focus->focus_item_set)))
-    {
-      item_area = (ZMapWindowFocusItemArea)(first->data) ;
-      item = item_area->focus_item;
-    }
+  item = focus->hot_item;
 
   return item ;
 }
 
-GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus)
+GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 {
-  GList *areas = NULL, *items = NULL;
-  ZMapWindowFocusItemArea area = NULL;
+  GList *lists = NULL, *items = NULL;
+  ZMapWindowFocusItem list = NULL;
+  int mask = focus_group_mask[type];
 
   if (focus->focus_item_set)
     {
-      areas = g_list_first(focus->focus_item_set) ;
-      while(areas)
+      lists = g_list_first(focus->focus_item_set) ;
+      while(lists)
         {
-          area = (ZMapWindowFocusItemArea)(areas->data);
-          items = g_list_append(items, area->focus_item);
-          areas = areas->next;
+          list = (ZMapWindowFocusItem)(lists->data);
+          if((list->flags & mask))
+            items = g_list_append(items, list->item);
+          lists = lists->next;
         }
     }
 
@@ -326,36 +368,38 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus)
  * zmapWindowFocusForEachFocusItem
  *
  * Call given user function for all highlighted items.
- * The data passed to the function will be a ZMapWindowFocusItemArea
+ * The data passed to the function will be a ZMapWindowFocusItem
  *
- * void callback(gpointer item_area_data, gpointer user_data);
+ * void callback(gpointer list_item_data, gpointer user_data);
  *
  */
-void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data)
+void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type,
+            GFunc callback, gpointer user_data)
 {
-  if (focus->focus_item_set)
-    g_list_foreach(focus->focus_item_set, callback, user_data) ;
+  GList *l;
+  ZMapWindowFocusItem list_item;
+
+  for(l = focus->focus_item_set;l;l = l->next)
+    {
+      list_item = (ZMapWindowFocusItem) l->data;
+      if(type == WINDOW_FOCUS_GROUP_ALL || (list_item->flags & focus_group_mask[type]))
+            callback((gpointer) list_item,user_data);
+    }
 
   return ;
 }
 
 
-void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList *hidden_items)
-{
-      zmapWindowFocusForEachFocusItem(focus, hideItemsCB, hidden_items) ;
-}
-
 
 /* GFunc() to hide the given item and record it in the user hidden list. */
-static void hideItemsCB(gpointer data, gpointer user_data)
+static void hideFocusItemsCB(gpointer data, gpointer user_data)
 {
-  ZMapWindowFocusItemArea item_area = (ZMapWindowFocusItemArea)data;
-  FooCanvasItem *item = (FooCanvasItem *)item_area->focus_item ;
+  ZMapWindowFocusItem list_item = (ZMapWindowFocusItem)data;
+  FooCanvasItem *item = (FooCanvasItem *)list_item->item ;
   GList **list_ptr = (GList **)user_data ;
   GList *user_hidden_items = *list_ptr ;
 
   zMapAssert(FOO_IS_CANVAS_ITEM(item));
-
 
   foo_canvas_item_hide(item) ;
 
@@ -366,16 +410,17 @@ static void hideItemsCB(gpointer data, gpointer user_data)
   return ;
 }
 
-// NB: never called
-void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
+
+void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
 {
-      zmapWindowFocusForEachFocusItem(focus, rehighlightCB, window) ;
+      zmapWindowFocusForEachFocusItemType(focus,WINDOW_FOCUS_GROUP_FOCUS, hideFocusItemsCB, hidden_items) ;
 }
 
-static void rehighlightCB(gpointer list_data, gpointer user_data)
+
+static void rehighlightFocusCB(gpointer list_data, gpointer user_data)
 {
-  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
-  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
+  ZMapWindowFocusItem data = (ZMapWindowFocusItem)list_data;
+  FooCanvasItem *item = (FooCanvasItem *)data->item ;
   ZMapWindow window = (ZMapWindow)user_data ;
   GdkColor *highlight = NULL;
 
@@ -387,122 +432,151 @@ static void rehighlightCB(gpointer list_data, gpointer user_data)
   return ;
 }
 
-
-
-/* Do the right thing with groups and items */
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
+// NB: never called
+void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
 {
-  GdkColor green = {}, blue = {};
-  gdk_color_parse("green", &green);
-  gdk_color_parse("blue", &blue);
+      zmapWindowFocusForEachFocusItemType(focus,WINDOW_FOCUS_GROUP_FOCUS, rehighlightFocusCB, window) ;
+}
 
-  if(highlight)
+
+
+/* Do the right thing with groups and items
+ * also does unhighlight and is called on free
+ */
+static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
+{
+  GdkColor *fill = NULL, *border = NULL;
+
+  if((item->flags & WINDOW_FOCUS_GROUP_ALL) == item->display_state)
+    return;
+
+  if((item->flags & WINDOW_FOCUS_GROUP_ALL))
     {
-      if(window->highlights_set.item)
-      zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                     &(window->colour_item_highlight));
-      else
-      zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_SELECTED, NULL);
+      if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
+      {
+            if(window->highlights_set.item)
+                  fill = &(window->colour_item_highlight);
+
+      }
+      else if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_EVIDENCE]))
+      {
+         if(window->highlights_set.evidence)
+           {
+             fill = &(window->colour_evidence_fill);
+             border = &(window->colour_evidence_border);
+           }
+      }
+
+      zMapWindowCanvasItemSetIntervalColours(item->item, ZMAPSTYLE_COLOURTYPE_SELECTED, fill, border);
     }
   else
-    zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL);
+    {
+      zMapWindowCanvasItemSetIntervalColours(item->item, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL,NULL);
+    }
+
+   item->display_state = item->flags & WINDOW_FOCUS_GROUP_ALL;
 
   return ;
 }
 
 
+// handle highlighting for all groups
+// maintain current state to avoid repeat highlighting
+// which should not be a problem for features, but possibly so for overlay mamagers??
 static void highlightCB(gpointer list_data, gpointer user_data)
 {
-  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
-  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
+  ZMapWindowFocusItem data = (ZMapWindowFocusItem)list_data;
+  FooCanvasItem *item = (FooCanvasItem *)data->item ;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-//  if(!data->highlighted)    // this is never unset\ !
-    {
-      GdkColor *highlight = NULL;
+  GdkColor *highlight = NULL;
 
-      highlightItem(window, item, TRUE) ;
+  highlightItem(window, data) ;
 
-      if(window->highlights_set.item)
-        highlight = &(window->colour_item_highlight);
+  if(window->highlights_set.item)
+    highlight = &(window->colour_item_highlight);
 
-      zmapWindowFocusMaskOverlay(window->focus, item, highlight);
-
- //     data->highlighted = TRUE;
-    }
+  zmapWindowFocusMaskOverlay(window->focus, item, highlight);
 
   return ;
 }
 
 void zmapWindowFocusHighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
 {
-    zmapWindowFocusForEachFocusItem(focus, highlightCB, window) ;
+    zmapWindowFocusForEachFocusItemType(focus, WINDOW_FOCUS_GROUP_FOCUS, highlightCB, window) ;
 }
 
-static void unhighlightCB(gpointer list_data, gpointer user_data)
+
+void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
 {
-  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
-  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
-  ZMapWindow window = (ZMapWindow)user_data ;
+      // this unhighlights on free
+    freeFocusItems(focus,WINDOW_FOCUS_GROUP_FOCUS);
+}
 
-  highlightItem(window, item, FALSE) ;
 
-  zmapWindowFocusRemoveFocusItem(window->focus, item);
+
+
+/* Remove single item, a side effect is that if this is the hot item
+ * then we find the first one in the list
+ * so no point in replacing the item in its original position
+ * esp w/ shift select being possible, previous code only handled one item
+ *
+ * NOTE need to replace the item back where it was to handle feature tabbing
+ * this means we need to handle many items moving around not just one focus item
+ */
+void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type)
+{
+  ZMapWindowFocusItem gonner,data;
+  GList *remove,*l;
+
+  /* always try to remove, if item is not in list then list is unchanged. */
+  if (focus->focus_item_set && item)
+    {
+      for(remove = focus->focus_item_set;remove; remove = remove->next)
+      {
+            gonner = (ZMapWindowFocusItem) remove->data;
+            if(gonner->item == item)
+            {
+                  if(type == WINDOW_FOCUS_GROUP_ALL)
+                        gonner->flags &= ~WINDOW_FOCUS_GROUP_ALL;        // zap the lot
+                  else
+                        gonner->flags &= ~focus_group_mask[type];        // remove from this group
+
+                  highlightItem(focus->window,gonner);
+
+                  FocusUnmaskOverlay(focus) ;   // (not sure what this is for)
+
+                  if(!(gonner->flags & WINDOW_FOCUS_GROUP_ALL))   // no groups: remove from list
+                  {
+                        zmapWindowFocusItemDestroy(gonner);
+                        focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
+                  }
+                  break;
+            }
+      }
+
+      if(item == focus->hot_item && type == WINDOW_FOCUS_GROUP_FOCUS)
+      {
+            focus->hot_item = NULL;
+            for(l = focus->focus_item_set;l;l = l->next)
+            {
+                  data = (ZMapWindowFocusItem) l->data;
+                  if((data->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
+                  {
+                        focus->hot_item = data->item;
+                        break;
+                  }
+            }
+      }
+    }
 
   return ;
 }
 
-void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
+
+void zmapWindowFocusResetType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 {
-    zmapWindowFocusForEachFocusItem(focus, unhighlightCB, window) ;
-}
-
-
-
-
-/* Remove single item, a side effect is that if this is the hot item then we simply
- * make the next item in the list a hot item. */
-void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
-{
-  ZMapWindowFocusItemArea gonner;
-  GList *remove;
-
-  /* always try to remove, if item is not in list then list is unchanged. */
-  if (focus->focus_item_set)
-    {
-      FooCanvasGroup  *container_parent ;
-
-      int curr_index, position ;
-
-
-      if ((remove = g_list_find_custom(focus->focus_item_set, item, find_item)))
-        {
-          gonner = (ZMapWindowFocusItemArea)(remove->data) ;
-
-          focus->focus_item_set = g_list_remove(focus->focus_item_set, gonner) ;
-
-          FocusUnmaskOverlay(focus) ;
-
-          zmapWindowFocusItemAreaDestroy(gonner) ;
-
-
-	  /* Try to put it back in its original position, note if this function is called during destroy
-	   * the features list may already have gone so we cannot put it back.... */
-	  container_parent = FOO_CANVAS_GROUP(zmapWindowContainerCanvasItemGetContainer(item)) ;
-
-	  if ((curr_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(container_parent), item)) != -1)
-	    {
-	      position = curr_index - focus->hot_item_orig_index ;
-
-	      if ((zmapWindowContainerSetItemPosition(ZMAP_CONTAINER_GROUP(container_parent),
-						      item, focus->hot_item_orig_index)) == -1)
-		zMapLogWarning("%s", "zmapWindowContainerSetItemPosition() could not find item in container_parent.") ;
-
-	      focus->hot_item_orig_index = 0 ;
-	    }
-
-        }
-    }
+  freeFocusItems(focus,type) ;
 
   return ;
 }
@@ -510,14 +584,18 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 
 void zmapWindowFocusReset(ZMapWindowFocus focus)
 {
-  freeFocusItems(focus) ;
+  zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_FOCUS);
+
+  zmapWindowFocusUnHighlightHotColumn(focus);
 
   focus->focus_column = NULL ;
+  focus->hot_item = NULL;
 
   zmapWindowFocusClearOverlayManagers(focus);
 
   return ;
 }
+
 
 /* We pass in the default from the window->colour_item_highlight in case there's no other default */
 /* Actually I've now put one in the zmapFeatureTypes.c file, so this is probably useless and confusing */
@@ -574,7 +652,7 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 {
   zMapAssert(focus) ;
 
-  freeFocusItems(focus) ;
+  freeFocusItems(focus,WINDOW_FOCUS_GROUP_ALL) ;
 
   focus->focus_column = NULL ;
 
@@ -583,28 +661,28 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
   return ;
 }
 
-ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item)
+ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item)
 {
-  ZMapWindowFocusItemArea item_area;
+  ZMapWindowFocusItem list_item;
 
-  if(!(item_area = g_new0(ZMapWindowFocusItemAreaStruct, 1)))
+  if(!(list_item = g_new0(ZMapWindowFocusItemStruct, 1)))
     {
       zMapAssertNotReached();
     }
   else
-    item_area->focus_item = item;
+    list_item->item = item;
 
-  return item_area;
+  return list_item;
 }
 
-void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area)
+void zmapWindowFocusItemDestroy(ZMapWindowFocusItem list_item)
 {
-  item_area->focus_item = NULL;
+  list_item->item = NULL;
 
-//  if(item_area->associated)
-//    zmapWindowOverlayDestroy(item_area->associated);
+//  if(list_item->associated)
+//    zmapWindowOverlayDestroy(list_item->associated);
 
-  g_free(item_area);
+  g_free(list_item);
 
   return ;
 }
@@ -612,73 +690,65 @@ void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area)
 
 /* INTERNAL */
 
-static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, FooCanvasItem *item)
-{
-  ZMapWindowFocusItemArea item_area;
-//  gpointer associated = NULL;
-  GList *remove;
 
-  /* always try to remove, if item is not in list then list is unchanged. */
-  if (focus->focus_item_set)
+
+
+// add a struct to the list, no duplicates
+// return the list and a pointer to the struct
+static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
+            FooCanvasItem *item,
+            ZMapWindowFocusType type)
+{
+      GList *gl;
+      ZMapWindowFocusItem list_item = NULL;
+
+      for(gl = focus->focus_item_set;gl;gl = gl->next)
+      {
+            list_item = (ZMapWindowFocusItem) gl->data;
+            if(list_item->item == item)
+                  break;
+      }
+      if(!gl)     // didn't find it
+      {
+            list_item = g_new0(ZMapWindowFocusItemStruct,1);
+            focus->focus_item_set = g_list_prepend(focus->focus_item_set,list_item);
+      }
+
+      list_item->flags |= focus_group_mask[type];
+      list_item->item = item;
+      // need to fill in featureset and column
+
+      highlightItem(focus->window,list_item);
+      return list_item;
+}
+
+
+
+
+
+static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type)
+{
+  GList *l,*del;
+  ZMapWindowFocusItem li;
+
+  for(l = focus->focus_item_set; l;)
     {
-      if((remove = g_list_find_custom(focus->focus_item_set, item, find_item)))
-        {
-          item_area = remove->data;
-          focus->focus_item_set = g_list_remove(focus->focus_item_set,
-                                                remove->data);
-//          associated = item_area->associated;
-//          item_area->associated = NULL;
-          zmapWindowFocusItemAreaDestroy(item_area);
-        }
-    }
+      li = (ZMapWindowFocusItem) l->data;
+      del = l;
+      l = l->next;
 
-  item_area = zmapWindowFocusItemAreaCreate(item);
-  zMapAssert(item_area);
+      if(type == WINDOW_FOCUS_GROUP_ALL)
+            li->flags &= ~WINDOW_FOCUS_GROUP_ALL;
+      else
+            li->flags &= ~focus_group_mask[type];
 
-//  if(associated != NULL)
-//    item_area->associated = associated;
+      highlightItem(focus->window,li);
 
-  return item_area;
-}
-
-static gint find_item(gconstpointer list_data, gconstpointer user_data)
-{
-  ZMapWindowFocusItemArea area = (ZMapWindowFocusItemArea)list_data;
-  gint result = -1;
-
-  if(user_data == (gconstpointer)(area->focus_item))
-    result = 0;
-
-  return result;
-}
-
-/* A GFunc() to add all items in a list to the windows focus item list. We don't want duplicates
- * so we try to remove an item first and then append it. This is a potential performance
- * problem if there is a _huge_ list of focus items....
- * NB: append requires processing the whole list
- *  */
-static void addFocusItemCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  ZMapWindowFocus focus = (ZMapWindowFocus)user_data ;
-  ZMapWindowFocusItemArea item_area;
-
-  item_area = ensure_unique(focus, item);
-
-  focus->focus_item_set = g_list_append(focus->focus_item_set, item_area) ;
-
-  return ;
-}
-
-
-
-static void freeFocusItems(ZMapWindowFocus focus)
-{
-  if (focus->focus_item_set)
-    {
-      g_list_free(focus->focus_item_set) ;
-
-      focus->focus_item_set = NULL ;
+      if(!(li->flags & WINDOW_FOCUS_GROUP_ALL))
+      {
+            zmapWindowFocusItemDestroy(del->data);
+            focus->focus_item_set = g_list_delete_link(focus->focus_item_set,del) ;
+      }
     }
 
   return ;
@@ -824,8 +894,12 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
 
   if(ZMAP_IS_CONTAINER_FEATURESET(column))
     {
-      focus->focus_column =container = (ZMapWindowContainerFeatureSet)column ;
+      if(focus->focus_column)
+            zmapWindowFocusUnHighlightHotColumn(focus);
 
+      focus->focus_column = container = (ZMapWindowContainerFeatureSet)column ;
+
+      zmapWindowFocusHighlightHotColumn(focus);
 
       if (!container->sorted)
 	{

@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.33 2010-07-08 08:40:42 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.34 2010-07-15 10:48:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -673,8 +673,8 @@
 #define ZMAPSTANZA_WINDOW_FRAME_0      "colour-frame-0"
 #define ZMAPSTANZA_WINDOW_FRAME_1      "colour-frame-1"
 #define ZMAPSTANZA_WINDOW_FRAME_2      "colour-frame-2"
-#define ZMAPSTANZA_WINDOW_EVIDENCE_HIGH     "colour-evidence-highlight"
-#define ZMAPSTANZA_WINDOW_TRANSCRIPT_HIGH   "colour-transcript-highlight"
+#define ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_BORDER "colour-evidence-border"
+#define ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_FILL   "colour-evidence-fill"
 
 /*! @addtogroup config_stanzas
  *

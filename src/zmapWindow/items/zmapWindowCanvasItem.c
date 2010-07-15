@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 13:13 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.29 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.30 2010-07-15 10:49:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,6 +74,7 @@ typedef struct
   ZMapFeature          feature;
   ZMapStyleColourType  style_colour_type;
   GdkColor            *default_fill_colour;
+  GdkColor            *border_colour;
   ZMapWindowCanvasItemClass klass;
 }EachIntervalDataStruct, *EachIntervalData;
 
@@ -96,7 +97,9 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 					       FooCanvasItem         *interval,
 					       ZMapFeatureSubPartSpan unused,
 					       ZMapStyleColourType    colour_type,
-					       GdkColor              *default_fill);
+					       GdkColor              *default_fill,
+                                     GdkColor              *border);
+
 static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item);
 
 /* FooCanvasItem interface methods */
@@ -460,7 +463,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
 	  if(canvas_item_class->set_colour)
 	    {
 	      (* canvas_item_class->set_colour)(canvas_item, interval, sub_feature,
-						colour_type, NULL);
+						colour_type, NULL,NULL);
 	    }
 
 	}
@@ -858,7 +861,9 @@ GList *zMapWindowCanvasItemGetChildren(ZMapWindowCanvasItem *parent)
 /* If item is the parent item then the whole feature is coloured, otherwise just the sub-item
  * is coloured... */
 void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
-					    ZMapStyleColourType colour_type, GdkColor *default_fill_colour)
+					    ZMapStyleColourType colour_type,
+                                  GdkColor *default_fill_colour,
+                                  GdkColor *border_colour)
 {
   ZMapWindowCanvasItem canvas_item ;
   GList *item_list, dummy_item = {NULL} ;
@@ -889,6 +894,7 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
   interval_data.feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
   interval_data.style_colour_type = colour_type ;
   interval_data.default_fill_colour = default_fill_colour ;
+  interval_data.border_colour = border_colour ;
   interval_data.klass = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
   g_list_foreach(item_list, window_canvas_invoke_set_colours, &interval_data) ;
@@ -2172,10 +2178,12 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 					       FooCanvasItem         *interval,
 					       ZMapFeatureSubPartSpan unused,
 					       ZMapStyleColourType    colour_type,
-					       GdkColor              *default_fill)
+					       GdkColor              *default_fill,
+                                     GdkColor              *border)
+
 {
   ZMapFeatureTypeStyle style;
-  GdkColor *draw = NULL, *fill = NULL, *border = NULL;
+  GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
   GType interval_type;
 
   zMapLogReturnIfFail(canvas_item != NULL);
@@ -2210,7 +2218,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 	    }
 
 	  zMapStyleGetColours(style, colour_target, colour_type,
-			      &fill, &draw, &border);
+			      &fill, &draw, &outline);
 	}
 
       if (feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
@@ -2218,13 +2226,18 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 	  colour_target = STYLE_PROP_REV_COLOURS;
 	}
 
-      if (fill == NULL && draw == NULL && border == NULL)
+      if (fill == NULL && draw == NULL && outline == NULL)
 	zMapStyleGetColours(style, colour_target, colour_type,
-			    &fill, &draw, &border);
+			    &fill, &draw, &outline);
     }
 
-  if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
-    fill = default_fill;
+  if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+    {
+      if(default_fill)
+            fill = default_fill;
+      if(border)
+            outline = border;
+    }
 
   interval_type = G_OBJECT_TYPE(interval);
 
@@ -2260,9 +2273,9 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 			  "fill_color_gdk", fill,
 			  NULL);
 
-      if (border)
+      if (outline)
 	foo_canvas_item_set(interval,
-			    "outline_color_gdk", border,
+			    "outline_color_gdk", outline,
 			    NULL);
     }
   else
@@ -2524,7 +2537,8 @@ static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_d
       if(interval_data->klass->set_colour)
 	interval_data->klass->set_colour(interval_data->parent, interval, sub_feature,
 					 interval_data->style_colour_type,
-					 interval_data->default_fill_colour);
+					 interval_data->default_fill_colour,
+                               interval_data->border_colour);
     }
 
   return ;

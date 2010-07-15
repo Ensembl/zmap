@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 30 12:28 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.191 2010-07-12 09:05:30 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.192 2010-07-15 10:49:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1279,15 +1279,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     case ITEM_MENU_SHOW_EVIDENCE:
       {
- //           menu_data->window->evidence = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_EVIDENCE);
-            // request data related to this feature
       }
       break;
 
     case ITEM_MENU_SHOW_TRANSCRIPT:
       {
-//            menu_data->window->evidence = zmapWindowFocusCreate(WINDOW_FOCUS_GROUP_EVIDENCE);
-            // request data related to this feature
       }
       break;
 

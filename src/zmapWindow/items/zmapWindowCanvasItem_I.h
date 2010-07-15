@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 10:29 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.11 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.12 2010-07-15 10:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,7 +92,8 @@ typedef struct _zmapWindowCanvasItemClassStruct
 		      FooCanvasItem         *interval,
 		      ZMapFeatureSubPartSpan sub_feature,
 		      ZMapStyleColourType    colour_type,
-		      GdkColor              *default_fill_gdk) ;
+		      GdkColor              *default_fill_gdk,
+                  GdkColor              *border_gdk) ;
 
   /*   ????????????????? is this just a predeclared struct type problem ???? if so we can solve it... */
 #ifdef CATCH_22
@@ -112,7 +113,7 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
 /* Note that all feature items are now derived from this....and what is not good about this
  * is that every single one now has a FooCanvasGroup struct in it....agh....
- * 
+ *
  *  */
 typedef struct _zmapWindowCanvasItemStruct
 {

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 12:58 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.9 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.10 2010-07-15 10:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,8 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
 						      FooCanvasItem         *interval,
 						      ZMapFeatureSubPartSpan sub_feature,
 						      ZMapStyleColourType    colour_type,
-						      GdkColor              *default_fill);
+						      GdkColor              *default_fill,
+                                          GdkColor              *border);
 static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanvasItem   transcript,
 								  ZMapFeatureSubPartSpan sub_feature,
 								  double top,  double bottom,
@@ -253,7 +254,8 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
 						      FooCanvasItem         *interval,
 						      ZMapFeatureSubPartSpan sub_feature,
 						      ZMapStyleColourType    colour_type,
-						      GdkColor              *default_fill)
+						      GdkColor              *default_fill,
+                                          GdkColor              *border)
 {
   ZMapFeatureTypeStyle style;
   gboolean make_clickable_req = FALSE;
@@ -300,6 +302,9 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
 	  {
 	    if(default_fill)
 	      xon_fill = default_fill;
+          if(border)
+            xon_border = border;
+
 #ifdef POSSIBLY_CORRECT
 	    if(!xon_border)
 #endif

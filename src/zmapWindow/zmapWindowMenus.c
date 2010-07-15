@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  5 17:27 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.72 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.73 2010-07-15 10:49:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -131,6 +131,8 @@ typedef struct
   GArray **array;
 }AlignBlockMenuStruct, *AlignBlockMenu;
 
+static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
+static void evidenceMenuCB(int menu_item_id, gpointer callback_data);
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
@@ -186,6 +188,13 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
  * There is some mucky stuff for setting buttons etc but it's a bit unavoidable....
  *
  *  */
+
+// mh17 somehow we need this number to be unique but many of the id's are enums and will overlap
+// the callbacks are specified per item so that cure one problem (one func per enum)
+// but for menu init here's a bodge up:
+#define ZMAPWINDOWCOLUMN_MASK 5678
+#define ZMAPWINDOW_HIDE_EVIDENCE 5679
+
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleBumpMode curr_bump)
@@ -196,6 +205,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     {
       {ZMAPGUI_MENU_TOGGLE, "Column Bump",                            ZMAPBUMP_UNBUMP,  bumpToggleMenuCB, NULL, "B"},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",                            ZMAPWINDOWCOLUMN_HIDE, configureMenuCB,  NULL},
+#if MH17_NOT_YET
+//is this the wrong place anyway? No: this is a column menu option
+      {ZMAPGUI_MENU_TOGGLE, "Show Masked Features",                   ZMAPWINDOWCOLUMN_MASK,  maskToggleMenuCB, NULL, "M"},
+#endif
       {ZMAPGUI_MENU_BRANCH, "Column Configure",                       0,                              NULL,            NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column", ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns", ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
@@ -214,13 +227,20 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_UNBUMP,                bumpMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",                     0,                              unbumpAllCB, NULL},
 //      {ZMAPGUI_MENU_NORMAL, "Bump All Columns to Default",            0,                              bumpToInitialCB, NULL},
+
       {ZMAPGUI_MENU_NORMAL, "Compress Columns",                       ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
       {ZMAPGUI_MENU_NORMAL, "UnCompress Columns",                     ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
-      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
+
+      {ZMAPGUI_MENU_NONE, "Hide Evidence",                     ZMAPWINDOW_HIDE_EVIDENCE, evidenceMenuCB,  NULL },
+      // must be at the end so that it's optionally displayed
+
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
     } ;
   static gboolean menu_set = FALSE ;
+  static int ind_evidence = 0;
+  static int ind_mask = 0;
   ZMapGUIMenuItem item ;
-
+  ItemMenuCBData menu_data = (ItemMenuCBData) callback_data;
 
   /* Dynamically set the bump option menu text. */
   if (!menu_set)
@@ -234,6 +254,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
 	  tmp++ ;
 	}
+      if(tmp->id == ZMAPWINDOW_HIDE_EVIDENCE)
+            ind_evidence = tmp - menu;
 
       menu_set = TRUE ;
     }
@@ -252,6 +274,36 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     {
       item->type = ZMAPGUI_MENU_TOGGLE ;
       item->id = ZMAPBUMP_UNBUMP ;
+    }
+
+
+      // set toggle state of masked features for this column
+#if MH17_NOT_YET
+  if(ind_mask)
+    {
+      item = &(menu[ind_mask]) ;
+
+      // set toggle state of masked features for this column
+      item->type = ZMAPGUI_MENU_TOGGLE ;
+//    if(col is masked)
+//        item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
+
+    }
+#endif
+
+
+  if(ind_evidence)
+    {
+      item = &menu[ind_evidence];
+      if(zmapWindowFocusHasType(menu_data->window->focus,WINDOW_FOCUS_GROUP_EVIDENCE))
+      {
+            item->type = ZMAPGUI_MENU_TOGGLEACTIVE;
+            item->name = "Highlight Evidence";
+      }
+      else
+      {
+            item->type = ZMAPGUI_MENU_NONE;
+      }
     }
 
 
@@ -872,6 +924,55 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  FooCanvasGroup *column_group = NULL;
+
+  column_group = menuDataItemToColumn(menu_data->item);
+
+  if (column_group)
+    {
+      ZMapWindowContainerFeatureSet container;
+      gboolean mask_state ;
+
+      container = (ZMapWindowContainerFeatureSet)column_group;
+
+// need to write this function
+//      mask_state = zmapWindowContainerFeatureSetGetMaskState(container);
+
+// if we are removing features we may need to compress and/or rebump
+//      zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), bump_mode, compress_mode) ;
+
+//      zmapWindowFullReposition(menu_data->window) ;
+
+      zMapWarning("toggle mask features not implemented","");
+
+    }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+// unhighlight the evidence features
+static void evidenceMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowFocus focus = menu_data->window->focus;
+
+  if(focus)
+  {
+      zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_EVIDENCE);
+  }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
 
 ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,

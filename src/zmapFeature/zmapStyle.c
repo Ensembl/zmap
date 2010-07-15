@@ -29,7 +29,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.55 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.56 2010-07-15 10:48:57 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <zmapStyle_I.h>
 
 #include <ZMap/zmapConfigIni.h>   // for zMapConfigLegacyStyles() only can remove when system has moved on
@@ -285,6 +286,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR, STYLE_PARAM_TYPE_COLDISP, ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
             "paint colinear lines when unmarked", "paint colinear lines when unmarked ?",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unmarked_colinear), ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_MASK_SETS, STYLE_PARAM_TYPE_QUARK_LIST_ID, ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,
+            "mask featureset against others", "mask featureset against others",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_TRANSCRIPT_CDS_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,
@@ -493,9 +497,18 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
                 gchar **srcstr, **dststr;
 
                 srcstr = (gchar **) (((void *) src) + param->offset);
-                dststr = (gchar **) (((void *) src) + param->offset);
+                dststr = (gchar **) (((void *) dest) + param->offset);
 
                 *dststr = g_strdup(*srcstr);
+                break;
+              }
+            case STYLE_PARAM_TYPE_QUARK_LIST_ID:
+              {
+                GList **sl,**dl;
+
+                sl = (GList **) (((void *) src) + param->offset);
+                dl = (GList **) (((void *) dest) + param->offset);
+                *dl = g_list_copy(*sl);   // ok as the list is shallow
                 break;
               }
             case STYLE_PARAM_TYPE_COLOUR:
@@ -536,6 +549,13 @@ void zMapStyleDestroy(ZMapFeatureTypeStyle style)
 static void zmap_feature_type_style_dispose (GObject *object)
 {
   GObjectClass *parent_class = G_OBJECT_CLASS(style_parent_class_G);
+  ZMapFeatureTypeStyle style = ZMAP_FEATURE_STYLE(object);
+
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_ALIGNMENT_MASK_SETS) && style->mode_data.alignment.mask_sets)
+    {
+      g_list_free(style->mode_data.alignment.mask_sets);
+      style->mode_data.alignment.mask_sets = NULL;
+    }
 
   if (parent_class->dispose)
     (*parent_class->dispose)(object);
@@ -1477,10 +1497,12 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 
                   g_object_set(G_OBJECT(s_3frame),
                         ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "dn-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>"),
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "up-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>"),
+                        // these have been swapped from the original
+                        // GeneFinder uses 5' and 3' as Intron-centric
+                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-hook",
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-hook",
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>"),
 
                         ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
@@ -1567,6 +1589,8 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
   case STYLE_PARAM_TYPE_GLYPH_SHAPE: return(sizeof(ZMapStyleGlyphShapeStruct)); break;
   case STYLE_PARAM_TYPE_SUB_FEATURES:return(sizeof(GQuark) * ZMAPSTYLE_SUB_FEATURE_MAX); break;
 
+  case STYLE_PARAM_TYPE_QUARK_LIST_ID: return(sizeof (GList *)); break;
+
   case STYLE_PARAM_TYPE_INVALID:
   default:
     zMapAssertNotReached();
@@ -1614,6 +1638,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
 
     case STYLE_PARAM_TYPE_COLOUR:              // ZMapStyleFullColourStruct
     case STYLE_PARAM_TYPE_SUB_FEATURES:        // GQuark[]
+    case STYLE_PARAM_TYPE_QUARK_LIST_ID:       // GList * of GQuark
       gps = g_param_spec_string(param->name, param->nick,param->blurb,
                   "", ZMAP_PARAM_STATIC_RW);
       break;
@@ -1887,6 +1912,10 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       result = parseSubFeatures(style, (gchar *) g_value_get_string(value) );
       break;
 
+    case STYLE_PARAM_TYPE_QUARK_LIST_ID:
+      * (GList **) (((void *) style) + param->offset)   = zMapConfigString2QuarkList( (gchar *) g_value_get_string(value) );
+      break;
+
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:          // copy structure into ours
       memcpy((((void *) style) + param->offset),g_value_get_boxed(value),sizeof(ZMapStyleGlyphShapeStruct));
       break;
@@ -2052,7 +2081,8 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       colour = zmapStyleValueColour((ZMapStyleFullColour) (((void *) style) + param->offset));
       if(colour)
         {
-           g_value_set_string(value, strdup(colour));
+//           g_value_set_string(value, strdup(colour));
+           g_value_set_string(value, colour);
            g_free(colour);
         }
       else
@@ -2065,13 +2095,23 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       subs = zmapStyleValueSubFeatures((GQuark *)(((void *) style) + param->offset));
       if(subs)
         {
-           g_value_set_string(value, strdup(subs));
+//           g_value_set_string(value, strdup(subs));
+           g_value_set_string(value, subs);
            g_free(colour);
         }
       else
         {
            result = FALSE;
         }
+      break;
+
+    case STYLE_PARAM_TYPE_QUARK_LIST_ID:
+      {
+        gchar *str;
+        str = zMap_g_list_quark_to_string(* (GList **) (((void *) style) + param->offset));
+        g_value_set_string(value, str);
+        g_free(str);
+      }
       break;
 
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:

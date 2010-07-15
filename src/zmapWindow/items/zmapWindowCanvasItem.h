@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 15 17:45 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.13 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.14 2010-07-15 10:49:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_ITEM_H
@@ -121,7 +121,8 @@ ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
 void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item,
 					    ZMapStyleColourType colour_type,
-					    GdkColor *default_fill_colour) ;
+					    GdkColor *default_fill_colour,
+                                  GdkColor *border_colour) ;
 void zMapWindowCanvasItemUnmark(ZMapWindowCanvasItem canvas_item);
 void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
 			      GdkColor            *colour,

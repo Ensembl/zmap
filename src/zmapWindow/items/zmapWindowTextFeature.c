@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Oct 21 16:13 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.11 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.12 2010-07-15 10:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,7 @@ typedef struct
   ZMapWindowCanvasItem parent;
   ZMapStyleColourType  colour_type;
   GdkColor            *default_fill;
+  GdkColor            *border;
 } EachItemDataStruct, *EachItemData;
 
 
@@ -82,7 +83,8 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text,
 						FooCanvasItem         *interval,
 						ZMapFeatureSubPartSpan sub_feature,
 						ZMapStyleColourType    colour_type,
-						GdkColor              *default_fill);
+						GdkColor              *default_fill,
+                                    GdkColor              *border);
 static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem   text,
 							    ZMapFeatureSubPartSpan sub_feature,
 							    double top,  double bottom,
@@ -239,7 +241,8 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_it
 						FooCanvasItem         *interval,
 						ZMapFeatureSubPartSpan unused,
 						ZMapStyleColourType    colour_type,
-						GdkColor              *default_fill)
+                                    GdkColor              *default_fill,
+                                    GdkColor              *border)
 {
   ZMapFeatureTypeStyle style;
   GdkColor *fill = NULL, *outline = NULL;
@@ -253,8 +256,13 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_it
 			  &fill, NULL, &outline);
     }
 
-  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
-    fill = default_fill;
+  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+  {
+      if(default_fill)
+            fill = default_fill;
+      if(border)
+            outline = border;
+  }
 
   if(FOO_IS_CANVAS_LINE(interval)
      || FOO_IS_CANVAS_LINE_GLYPH(interval)
@@ -291,7 +299,7 @@ static void invoke_item_set_colour(gpointer item_data, gpointer user_data)
 
   window_text_feature_item_set_colour(each_item_data->parent, interval, NULL,
 				      each_item_data->colour_type,
-				      each_item_data->default_fill);
+				      each_item_data->default_fill,each_item_data->border);
 
   return ;
 }
@@ -300,7 +308,8 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 						FooCanvasItem         *interval,
 						ZMapFeatureSubPartSpan sub_feature,
 						ZMapStyleColourType    colour_type,
-						GdkColor              *default_fill)
+						GdkColor              *default_fill,
+                                    GdkColor              *border)
 {
   ZMapFeatureTypeStyle style;
   FooCanvasItem *bg_item, *underlay ;
@@ -397,7 +406,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
     }
   else
     {
-      window_text_feature_item_set_colour(text_item, interval, sub_feature, colour_type, default_fill) ;
+      window_text_feature_item_set_colour(text_item, interval, sub_feature, colour_type, default_fill,border) ;
     }
 
   if ((underlay = text_item->items[WINDOW_ITEM_UNDERLAY]))
@@ -408,6 +417,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
       each_item_data.parent       = text_item;
       each_item_data.colour_type  = colour_type;
       each_item_data.default_fill = default_fill;
+      each_item_data.default_fill = border;
 
       if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
 	{

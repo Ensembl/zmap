@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.12 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.13 2010-07-15 10:49:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,7 +87,8 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alig
 						     FooCanvasItem         *interval,
 						     ZMapFeatureSubPartSpan sub_feature_in,
 						     ZMapStyleColourType    colour_type,
-						     GdkColor              *default_fill);
+						     GdkColor              *default_fill,
+                                         GdkColor              *border);
 static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanvasItem   alignment,
 								 ZMapFeatureSubPartSpan sub_feature,
 								 double top,  double bottom,
@@ -321,7 +322,8 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alig
 						     FooCanvasItem         *interval,
 						     ZMapFeatureSubPartSpan sub_feature,
 						     ZMapStyleColourType    colour_type,
-						     GdkColor              *default_fill)
+						     GdkColor              *default_fill,
+                                         GdkColor              *border)
 {
   GdkColor *background, *foreground, *outline, *fill;
   ZMapFeatureTypeStyle style;
@@ -336,8 +338,13 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alig
   if((zMapStyleGetColours(style, STYLE_PROP_COLOURS, colour_type,
 			  &background, &foreground, &outline)))
     {
-      if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
-	background = default_fill;
+      if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+      {
+            if(default_fill)
+	            background = default_fill;
+            if(border)
+                  outline = border;
+      }
 
       switch(sub_feature->subpart)
 	{

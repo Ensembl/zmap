@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 30 11:01 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.133 2010-07-12 12:20:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.134 2010-07-15 10:49:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -361,10 +361,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	      zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	    zmapWindowFocusAddItems(window->focus, set_items);
-
-	    /* We set FALSE here so that the hot item is _not_ unfocussed as before. */
-	    zmapWindowFocusSetHotItem(window->focus, item, FALSE) ;
+	    zmapWindowFocusAddItems(window->focus, set_items, item);      // item is the hot one
 	  }
 	else
 	  zmapWindowFocusAddItem(window->focus, item);
@@ -411,10 +408,9 @@ void zMapWindowHighlightFocusItems(ZMapWindow window)
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
   if ((hot_column = zmapWindowFocusGetHotColumn(window->focus)))
-    zmapHighlightColumn(window, hot_column) ;
+    zmapWindowFocusHighlightHotColumn(window->focus) ;
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
-//    zmapWindowFocusForEachFocusItem(window->focus, highlightCB, window) ;
     zmapWindowFocusHighlightFocusItems(window->focus, window) ;
 
   return ;
@@ -428,11 +424,9 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
   FooCanvasGroup *hot_column ;
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
-  if ((hot_column = zmapWindowFocusGetHotColumn(window->focus)))
-    zmapUnHighlightColumn(window, hot_column) ;
+//  zmapWindowFocusUnHighlightHotColumn(window) ;     // done by reset
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
-//    zmapWindowFocusForEachFocusItem(window->focus, unhighlightCB, window) ;
     zmapWindowFocusUnhighlightFocusItems(window->focus, window) ;
 
   if (hot_column || hot_item)
@@ -441,24 +435,6 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
   return ;
 }
 
-
-
-
-/* highlight/unhiglight cols. */
-void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
-{
-  zmapWindowContainerGroupSetBackgroundColour(ZMAP_CONTAINER_GROUP(column), &(window->colour_column_highlight)) ;
-
-  return ;
-}
-
-
-void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
-{
-  zmapWindowContainerGroupResetBackgroundColour(ZMAP_CONTAINER_GROUP(column)) ;
-
-  return ;
-}
 
 
 

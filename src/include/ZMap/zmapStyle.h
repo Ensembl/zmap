@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.58 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.59 2010-07-15 10:48:55 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -171,6 +171,7 @@ typedef enum
     STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR,
+    STYLE_PROP_ALIGNMENT_MASK_SETS,
 
     STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
 
@@ -268,7 +269,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS     "alignment-perfect-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR    "alignment-unmarked-colinear"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
 
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
@@ -612,12 +614,16 @@ typedef struct
    ZMapStyleFullColourStruct perfect ;
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
+
    ZMapStyleColumnDisplayState unmarked_colinear;         /* paint colinear lines even if not marked */
 
    /* Options for processing gapped aligns. */
    gboolean parse_gaps ;                            /* TRUE means parse gaps from input data,  */
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
+
+   GList *mask_sets;          // list of featureset Id's to mask this set against
+                              // NOTE: whitespace is normalised but upper/lower case not
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
 

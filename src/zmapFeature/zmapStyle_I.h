@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 14 13:46 2010 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.27 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.28 2010-07-15 10:48:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,9 @@ typedef enum
     STYLE_PARAM_TYPE_GLYPH_ALIGN,         // ZMapStyleGlyphAlign
 
     STYLE_PARAM_TYPE_GLYPH_SHAPE,         // ZMapStyleGlyphShapeStruct, external = string
-    STYLE_PARAM_TYPE_SUB_FEATURES         // GQuark[ZMAPSTYLE_SUB_FEATURE_MAX], external = string
+    STYLE_PARAM_TYPE_SUB_FEATURES,        // GQuark[ZMAPSTYLE_SUB_FEATURE_MAX], external = string
+
+    STYLE_PARAM_TYPE_QUARK_LIST_ID        // GList of canonicalised GQuark
 
     /* If you add a new one then please review the following functions:
      *

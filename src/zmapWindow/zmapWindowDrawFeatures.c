@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:20 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.284 2010-06-28 14:09:48 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.285 2010-07-15 10:49:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2245,7 +2245,6 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  zMapWindowUnHighlightFocusItems(window) ;
 
 	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
-	  zmapHighlightColumn(window, (FooCanvasGroup *)container_parent) ;
 
 	  if (feature_set)
 	    feature_set_id = feature_set->original_id ;
@@ -2457,9 +2456,15 @@ static void setColours(ZMapWindow window)
   gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
   gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
   window->highlights_set.column = TRUE ;
+  gdk_color_parse(ZMAP_WINDOW_ITEM_HIGHLIGHT, &(window->colour_item_highlight)) ;
+  window->highlights_set.item = TRUE ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
+
+  gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_BORDER, &(window->colour_evidence_border)) ;
+  gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_FILL, &(window->colour_evidence_fill)) ;
+  window->highlights_set.evidence = TRUE ;
 
   if ((context = zMapConfigIniContextProvide()))
     {
@@ -2542,6 +2547,20 @@ static void setColours(ZMapWindow window)
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				       ZMAPSTANZA_WINDOW_FRAME_2, &colour))
 	gdk_color_parse(colour, &window->colour_frame_2) ;
+
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                               ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_BORDER, &colour))
+      {
+        gdk_color_parse(colour, &window->colour_evidence_border) ;
+        window->highlights_set.evidence = TRUE ;
+      }
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                               ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_FILL, &colour))
+      {
+        gdk_color_parse(colour, &window->colour_evidence_fill) ;
+        window->highlights_set.evidence = TRUE ;
+      }
 
       zMapConfigIniContextDestroy(context);
     }

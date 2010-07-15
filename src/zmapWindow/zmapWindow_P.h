@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 24 13:37 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.264 2010-07-12 12:20:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.265 2010-07-15 10:49:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -382,6 +382,7 @@ typedef enum
 
 /* Colour for highlighting a whole columns background. */
 #define ZMAP_WINDOW_COLUMN_HIGHLIGHT "grey"
+#define ZMAP_WINDOW_ITEM_HIGHLIGHT "dark grey"
 
 /* Colours for highlighting 3 frame data */
 #define ZMAP_WINDOW_FRAME_0 "red"
@@ -440,13 +441,14 @@ typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
 
 typedef enum
 {
-// these are just lists of features
-      WINDOW_FOCUS_GROUP_INVALID,
-      WINDOW_FOCUS_GROUP_FOCUS,      // the original one
+      // types of groups of features, used to index an array
+      WINDOW_FOCUS_GROUP_FOCUS,
       WINDOW_FOCUS_GROUP_EVIDENCE,
       WINDOW_FOCUS_GROUP_TEXT,
       N_FOCUS_GROUPS
 } ZMapWindowFocusType;
+
+
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 
@@ -1172,15 +1174,25 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
  *!-------------------------------------------------------------------!*/
 // also used for evidence highlight lists
 
-ZMapWindowFocus zmapWindowFocusCreate(ZMapWindowFocusType type) ;
-void zmapWindowFocusAddItem(ZMapWindowFocus focus, FooCanvasItem *item);
-void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list);
-void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
+ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
+void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type);
+#define zmapWindowFocusAddItem(focus, item_list) \
+      zmapWindowFocusAddItemType(focus, item_list,WINDOW_FOCUS_GROUP_FOCUS);
+void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot,ZMapWindowFocusType type);
+#define zmapWindowFocusAddItems(focus, item_list, hot) \
+      zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);
+void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type, GFunc callback, gpointer user_data) ;
+void zmapWindowFocusResetType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 void zmapWindowFocusReset(ZMapWindowFocus focus) ;
-void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
-void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gboolean remove_hot_item) ;
+void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type);
+#define zmapWindowFocusRemoveFocusItem(focus, item) \
+      zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS)
+
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
-GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus) ;
+GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type) ;
+#define zmapWindowFocusGetFocusItems(focus) \
+    zmapWindowFocusGetFocusItemsType(focus, WINDOW_FOCUS_GROUP_FOCUS)
 gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
@@ -1192,7 +1204,7 @@ void zmapWindowFocusRemoveOverlayManager(ZMapWindowFocus focus, ZMapWindowOverla
 void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus);
 
 
-void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList *hidden_items);
+void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);
 void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
 void zmapWindowFocusHighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
 void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
@@ -1204,8 +1216,8 @@ GList *zmapWindowItemListToFeatureList(GList *item_list);
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
-void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
-void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
+void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
+void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
 
 void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
 
