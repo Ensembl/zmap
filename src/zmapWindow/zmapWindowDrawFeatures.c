@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 24 15:20 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.285 2010-07-15 10:49:01 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.286 2010-07-16 14:49:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2456,8 +2456,8 @@ static void setColours(ZMapWindow window)
   gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
   gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
   window->highlights_set.column = TRUE ;
-  gdk_color_parse(ZMAP_WINDOW_ITEM_HIGHLIGHT, &(window->colour_item_highlight)) ;
-  window->highlights_set.item = TRUE ;
+//  gdk_color_parse(ZMAP_WINDOW_ITEM_HIGHLIGHT, &(window->colour_item_highlight)) ;
+//  window->highlights_set.item = TRUE ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
