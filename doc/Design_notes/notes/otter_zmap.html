@@ -6,6 +6,9 @@
 A common theme is the selection of features from a (marked) region and displaying or highlighting relevant ones according to variable criteria. The intention is to perform the necessary analysis in Otterlace as with a scripting interface more rapid development is possible.
 Similar functions may already exist in ZMap (eg colinear lines and homology markers on bumped alignments). Some of these could possibly be implemented in ZMap and this point is open to discussion.
 </p>
+<h3>Interface to Otterlace</h3>
+<p>Some notes are available <a href="Design_notes/notes/otter_zmap.shtml#otterface">below</a>.
+</p>
 
 </fieldset>
 
@@ -203,8 +206,53 @@ Both requests could be responded to by similar messages using unique action code
 </fieldset>
 
 
-<fieldset><legend></legend>
-<p>
+<a name="otterface"></a>
+<fieldset><legend>Interface to Otterlace</legend>
+<h3>Strategy</h3>
+<p>There is a need for ZMap to operate on it s own and some advanced features can be implemented in several ways.  If Otterlace is connected then we wish to have the option of alternate behaviour and a mechanism for this exists in the current 'Feature Show' requests.
+</p>
+<p>ZMap will make requests to Otterlace informing Otterlace what it is about to do and Otterlace will respond this a message like the following:
+<pre>
+&lt;response handled="false"&gt;&lt;/response<&gt;
+
+&lt;response handled="true"&gt; ... extra data ... &lt;/response&gt;
+</pre>
+In the first example ZMap will use default values and implement the fucntiobn itself; in the second ZMap will overwrite its default values with data given by otterlace and process any requests or commands included.
+</p>
+<p>Otterlace will have to choice of replying with a request for ZMap to do nothing and later follow up with a request to parform various actions.  This may be important if we wish to perform some extensive analysis of data in ZMap by default (eg masking ESTs by mRNAs) - it allows a quick decision to be made without having to wait for data.
+</p>
+
+<h3>Requests/ Commands needed</h3>
+<p>NB: All the following is subject to implementation - user requirements and time available.
+</p>
+<p>As most of the data will no longer be stored in ACEDB it becomes necessary for ZMap to provide Otterlace with information about what features are present and this will include:
+<ul>
+<li> what features are present in a range and featureset
+<li> what features are present in a range and column
+<li> what is highlighted
+<li> what is hidden
+<li> what is visible
+<li> column bump state
+</ul>
+</p>
+<p>Actions that Otterlace can request from ZMap will include:
+<ul>
+<li> un/highlight specified features or sub-features
+<li> hide/show features
+<li> un/bump colum
+<li> scroll to feature
+</ul>
+</p>
+<h4>Featuresets and Columns</h4>
+<p>There is possible confusion over the use of the words Featureset and Column. To avoid ambiguity we shall state the following:
+<ul>
+<li> A Featureset is a collection of features all of the same type and all from the same source. For technical/ historical reasons the name of the featureset and source are not necessarily the same but in most cases they are.
+<li> A Column is an area on the ZMap display where one or more featuresets can be displayed.
+<li> A featureset can contain data from both strands and several frames. Depending on configuration and use it is possible for all these features to be displayed in in column or several.
+</ul>
+</p>
+<h5>An example</h5>
+<p>The Column 'Repeats' is typically used to display the featuresets 'Repeatmasker_LINE' and 'Repeatmasker_SINE'.  Usually all these features are displayed in one column (not strand sensitive).
 </p>
 </fieldset>
 

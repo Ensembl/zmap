@@ -44,7 +44,8 @@ Another option would be to overlay the features with a stipple (similar to the m
 <ul>
 <li> the focus 'hot column' is kept as is
 <li> one list of items is maintained and this includes one entry for each item even if it is in more than one group (eg an evidence feature that has focus)
-<li> each item in the focus list will be a data structure containing a pointer to the feature/item, it's column/ featureset and a pointer to a data structure for each group implemented.  If an item is not in a group then that pointer will be NULL and if no data is needed the value 1 can be used to indicate inclusion. The list of pointers will be implemented as an array indexed by an enum specifying the different groups implemented. eg:
+<li> each item in the focus list will be a data structure containing a pointer to the feature/item, it's column/ featureset and some flags defining which list(s) the fetaure is in and, if implemented, a pointer to a data structure for each group.
+An enum will be used to specifying the different groups implemented. eg:
 <pre>
 typedef enum
 {
@@ -59,7 +60,10 @@ typedef struct _zmapFocusList
 {
       ZMapWindowCanvasItem item;
       ZMapFeatureSet featureset;
-      void * group[N_FOCUS_GROUPS];
+      int flags;           // which groups the item belongs to
+      int display_state;   // currently displayed state (prior copy of flags)
+
+      void * group[N_FOCUS_GROUPS]; // not needed at present
 };
 </pre>
 <li> Currently there is a need for focus, evidence (+transcript?), text (DNA and peptide), as more groups become needed they can be added to the focus structure.  We expect the number of items will be relatively small and data volumes are not critical here.
@@ -69,8 +73,31 @@ typedef struct _zmapFocusList
 <pre>
 zmapWindowFocusForEachFocusItem(window->focus, highlightCB, window) ;
 </pre>
-would take a further argument such as WINDOW_FOCUS_GROUP_FOCUS, which is an enum and can be used to reference the array of pointers in the focus list structure.
+would take a further argument such as WINDOW_FOCUS_GROUP_FOCUS.
 </ul>
+</p>
+
+</fieldset>
+
+<fieldset><legend>Further notes: use of this code</legend>
+<h3>Multiple windows</h3>
+<p>As implemented the focus functions and data are window specific ie are part of the window, which makes sense in that the user inteaction is via a window.  The user may have multiple windows open for the same data and there are callbacks used to update these other windows when focus items change. eg <b>zmapView.c/viewSelectCB()</b>.
+</p>
+<p>zmapView.c/zMapViewHighlightFeatures() is defined but not used.</p>
+<p><b>zmapWindow.c</b> and <b>zmapWindowList.c</b> call zMapWindowHighlightObject() when a feature is selected via user actions not including mouse.
+</p>
+<p><b>zmapWindowItem.c</b> includes the confusingly named <b>zMapWindowHighlightObjects()</b> <b>zmapWindowHighlightObject()</b> and <b>zMapWindowHighlightObject()</b> which between then handle highlighting groups of features eg those with the same name.</p>
+<p>NB these functions are a focus specific interface and are not relevant to evidence highlighting.
+</p>
+
+<h4>Implications for evidence highlighting</h4>
+<p>The interface to focus highlighting is relatively clean but is specific to one window.  Various actions result in the view callback being called and (some of?) these can be found by searching for <b>caller_cbs->select</b>.  One of these is in <b>zmapWindow.c/zMapWindowUpdateInfoPanel()</b> (NB: the second call) which is called when items are highlighted eg via mouse action and this updates the focus items on other windows. A large data structure is constructed with details of the one feature implicated and this is passed further up the chain of callbacks to allow the feature info panel to be updated.
+</p>
+<p>If we are to highlight evidence features for a transcript then we need to do this for all windows and the interface to this must be via the view.  During development and testing this can be done on the current window but when driven by XML/ otterlace then we need to call a view function directly with a list of features.
+</p>
+
+<h3>Hiding selected features</h3>
+<p>An option is provided to hide the focus items and redisplay them via DEL and shift-DEL.  The features involved are stored in a list external to the focus code when hidden (using the foo canvas) (and removed from the focus data) and redisplayed by the window code. It may make sense to re-implement this as by creating a new focus group such as WINDOW_FOCUS_GROUP_HIDDEN but as the current code is not complicated that has not been done.
 </p>
 
 </fieldset>

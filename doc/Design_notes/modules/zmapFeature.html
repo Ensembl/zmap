@@ -234,6 +234,6 @@ In particular:
 
 <p> Initially only the functions ProcessFeature() and zMapWindowFeatureStrand() will be modified to use this new pointer.</p>
 
-<h3>Some other notes<h3>
-<p>zmapGFF2parser.c/makeNewFeature() also does two style lookups for each feature when it is only necessary to look up one per featureset - it is possible to remove about 200k calls to zMapFindStyle() each of which will search a list of maybe 300 styles.  This should have a significant effect on 'Data Loading' performance.
+<h3>Some other notes</h3>
+<p><b>zmapGFF2parser.c/makeNewFeature()</b> also does two style lookups for each feature when it is only necessary to look up one per featureset - it is possible to remove about 200k calls to zMapFindStyle() each of which will search a list of maybe 300 styles.  This should have a significant effect on 'Data Loading' performance.
 </p>
