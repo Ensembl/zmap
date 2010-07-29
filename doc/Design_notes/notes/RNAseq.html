@@ -1,3 +1,4 @@
+<!-- $Id: RNAseq.html,v 1.2 2010-07-29 08:41:45 mh17 Exp $ -->
 <h2>OTF requests for RNA seq data</h2>
 
 <fieldset><legend>As requested by Laurens</legend>
@@ -10,7 +11,14 @@ For the column chooser window I've created a third tab where we can select which
 In zmap the columns could look like what is displayed in the mock-up. Default for all columns except gene models would be unbumped (compressed/condensed). The coverage bar graph would be on a logarithmic scale. The condensed form of that column, the heat map, wouldn't be sufficient on its own as heat maps are fine for comparing levels between neighbours, but not for comparing medium/long-distance levels as it suffers from the well-known context dependent apparent density level problem (i.e. the same shade surrounded by black neighbours looks much, much lighter than when surrounded by white neighbours).
 </p>
 
+<p>NOTE: these images have been squashed slightly to fit a small monitor, right-click to view full size</p>
 <img src="Design_notes/notes/zmap_rnaseq_column_selection_window.gif" class="img" style="width:800px">
 <img src="Design_notes/notes/zmap_rnaseq_columns.gif" class="img" style="width:800px">
 
+</fieldset>
+
+<fieldset><legend>How to implement</legend>
+<p> Please feel free to update this with your ideas and thoughts</p>
+<h3>Requesting data from a marked region</h3>
+<p>The existing pipe server mechanism could be used to request data as specified in theco9miplicated dialog bewteen the coordinates defined by the marked region - there should be no need to implement an XML driven interface</p>
 </fieldset>
