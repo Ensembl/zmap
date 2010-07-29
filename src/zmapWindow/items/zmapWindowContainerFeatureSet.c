@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 21 17:06 2010 (edgrif)
+ * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.31 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.32 2010-07-29 10:08:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,6 +126,13 @@ static void zmap_g_queue_replace(GQueue *queue, gpointer old, gpointer new);
 static GObjectClass *parent_class_G = NULL;
 static gboolean debug_table_ids_G = FALSE;
 
+
+
+/* 
+ *  YOU MIGHT HOPE THIS DEALT WITH THE HASH AND OTHER STUFF BUT IT DOESN'T AND SOME OF
+ * IT'S FUNCTIONS (E.G. zmapWindowContainerFeatureSetRemoveAllItems()) DO NOT SIT
+ * WELL WITH THE HASH.....IT HASN'T BEEN THOUGHT THROUGH....
+ */
 
 
 
