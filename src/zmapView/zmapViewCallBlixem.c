@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Feb  9 13:24 2010 (edgrif)
+ * Last edited: Jul 29 12:33 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.32 2010-07-12 09:05:31 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.33 2010-07-29 11:40:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1077,10 +1077,13 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
 static void processSetList(gpointer data, gpointer user_data)
 {
   GQuark set_id = GPOINTER_TO_UINT(data) ;
+  GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
 
-  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(set_id))))
+  canon_id = zMapFeatureSetCreateID(g_quark_to_string(set_id)) ;
+
+  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
     {
       zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
 		     (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
