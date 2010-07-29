@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Mar 10 17:18 2010 (edgrif)
+ * Last edited: Jul  7 10:24 2010 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.14 2010-07-08 08:38:05 mh17 Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.15 2010-07-29 09:13:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -317,9 +317,10 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 	  match = g_new0(ZMapDNAMatchStruct, 1) ;
 	  match->match_type = ZMAPSEQUENCE_DNA ;
 	  match->strand = ZMAPSTRAND_FORWARD ;
-	  match->frame = ZMAPFRAME_0 ;
 	  match->start = start - dna ;
 	  match->end = end - dna ;
+	  match->frame = zMapSequenceGetFrame(match->start + 1) ;
+
 	  if (return_matches)
 	    match->match = *match_ptr ;
 
@@ -361,12 +362,12 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 	  match = g_new0(ZMapDNAMatchStruct, 1) ;
 	  match->match_type = ZMAPSEQUENCE_DNA ;
 	  match->strand = ZMAPSTRAND_REVERSE ;
-	  match->frame = ZMAPFRAME_0 ;
 	  match->start = (length - (start - revcomp_dna)) + offset - 1 ;
 	  match->end = (length - (end - revcomp_dna)) + offset - 1 ;
 	  tmp = match->start ;
 	  match->start = match->end ;
 	  match->end = tmp ;
+	  match->frame = zMapSequenceGetFrame(match->start + 1) ;
 	  if (return_matches)
 	    match->match = *match_ptr ;
 
