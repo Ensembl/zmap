@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: May 24 13:37 2010 (edgrif)
+ * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.265 2010-07-15 10:49:07 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.266 2010-07-29 10:06:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -76,6 +76,32 @@
 /* All Align/Block/Column/Feature FooCanvas containers have stats blocks attached to them
  * via this key, below structs show data collected for each. */
 #define ITEM_FEATURE_STATS        ZMAP_WINDOW_P_H "item_feature_stats"
+
+
+/* 3 frame mode flags and tests. */
+typedef enum
+  {
+    DISPLAY_3FRAME_NONE     = 0x0U,			    /* No 3 frame at all. */
+    DISPLAY_3FRAME_ON       = 0x1U,			    /* 3 frame display is on. */
+    DISPLAY_3FRAME_TRANS    = 0x2U,			    /* Translations displayed when 3 frame on. */
+    DISPLAY_3FRAME_TRANS_ON = 0x3U,
+    DISPLAY_3FRAME_COLS     = 0x4U,			    /* All other cols displayed when 3 frame on. */
+    DISPLAY_3FRAME_COLS_ON  = 0x5U,
+    DISPLAY_3FRAME_ALL      = 0x6U,			    /* Everything on. */
+    DISPLAY_3FRAME_ALL_ON   = 0x7U
+  } Display3FrameMode ;
+
+#define IS_3FRAME_TRANS(FRAME_MODE) \
+  ((FRAME_MODE) & DISPLAY_3FRAME_TRANS)
+
+#define IS_3FRAME_COLS(FRAME_MODE) \
+  ((FRAME_MODE) & DISPLAY_3FRAME_COLS)
+
+#define IS_3FRAME(FRAME_MODE) \
+  ((FRAME_MODE) & DISPLAY_3FRAME_ON)
+
+
+
 
 /* All feature stats structs must have these common fields at their start. */
 typedef struct
@@ -666,10 +692,13 @@ typedef struct _ZMapWindowStruct
   int origin ;
 
 
-  /* Are the "3 frame" columns displayed currently ? If show_3_frame_reverse == TRUE then
-   * they are displayed on forward and reverse strands. */
-  gboolean display_3_frame ;
-  gboolean show_3_frame_reverse ;
+  /* 3 frame display:
+   * Use IS_3FRAME_XXXX macros to test these flags for whether 3 frame mode
+   * is on and what is currently displayed. etc etc. */
+  Display3FrameMode display_3_frame ;
+  gboolean show_3_frame_reverse ;			  /* 3 frame displayed on reverse col ? */
+
+
 
   GdkCursor *busy_cursor ;
 
@@ -678,6 +707,7 @@ typedef struct _ZMapWindowStruct
 } ZMapWindowStruct ;
 
 
+/* NEEDS TO GO......IS IT EVEN USED.... */
 /* Used in our event communication.... */
 #define ZMAP_ATOM  "ZMap_Atom"
 
@@ -906,11 +936,28 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
 FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item);
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *any_item, int region_start, int region_end);
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
-FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, FooCanvasItem *item, ZMapFrame frame);
+
+
+void zmapWindowHighlightSequenceItems(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
+				       ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
+				       gboolean centre_on_region) ;
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight,
+				      FooCanvasItem *any_item, ZMapFrame required_frame,
+				      ZMapSequenceType coords_type, int region_start, int region_end) ;
+void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
+					       FooCanvasItem *item, 
+					       ZMapSequenceType coords_type, int region_start, int region_end) ;
+void zmapWindowItemHighlightTranslationRegion(ZMapWindow window,  gboolean item_highlight, FooCanvasItem *item,
+					      ZMapFrame required_frame,
+					      ZMapSequenceType coords_type, int region_start, int region_end) ;
+void zmapWindowItemUnHighlightTranslation(ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame) ;
+
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
 #define zmapWindowItemGetFeatureAlign(ITEM)   (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_ALIGN)
@@ -920,17 +967,6 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, 
 #define zmapWindowItemGetFeatureAny(ITEM)     zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), -1)
 ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-ZMapFeatureSet zmapWindowItemFeatureSetRecoverFeatureSet(ZMapWindowItemFeatureSetData set_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem *item,
-					       int region_start, int region_end);
-void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item,
-					      ZMapFrame required_frame,
-					      int region_start, int region_end) ;
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
 void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item);
@@ -992,8 +1028,9 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       GArray *origArray, GArray *modArray,
 			       gboolean isExon);
 
-void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       FooCanvasItem *item, FooCanvasItem *highlight_item,
+void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
+			       FooCanvasItem *sub_item, FooCanvasItem *full_item,
+			       int sub_start, int sub_end,
 			       char *alternative_clipboard_text,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 
@@ -1013,9 +1050,12 @@ void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_parent);
 void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
 gboolean zmapWindowColumnIsVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
+
 gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
+gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window) ;
 void zmapWindowDraw3FrameFeatures(ZMapWindow window) ;
+
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
@@ -1121,8 +1161,6 @@ void zmapWindowFeatureGetSetTxt(ZMapFeature feature, char **set_name_out, char *
 void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, char **source_description_out) ;
 char *zmapWindowFeatureDescription(ZMapFeature feature) ;
 
-void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item);
-
 char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only);
 /*
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
@@ -1131,24 +1169,10 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
 
-
 void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
 
-/*!-------------------------------------------------------------------!
- *| Checks to see if the item really is visible.  In order to do this |
- *| all the item's parent groups need to be examined.                 |
- *!-------------------------------------------------------------------!*/
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
-/*!-------------------------------------------------------------------!
- *| Checks to see if the item is shown.  An item may still not be     |
- *| visible as any one of its parents might be hidden. If this        |
- *| definitive answer is required, use zmapWindowItemIsVisible        |
- *| instead.                                                          |
- *!-------------------------------------------------------------------!*/
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
-
-
-
 void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
                                 gboolean alterScrollRegionSize,
                                 double boundaryAroundItem) ;
@@ -1184,9 +1208,14 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
 void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type, GFunc callback, gpointer user_data) ;
 void zmapWindowFocusResetType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 void zmapWindowFocusReset(ZMapWindowFocus focus) ;
-void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type);
+
+void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
+					FooCanvasItem *item, ZMapWindowFocusType type, gboolean unhighlight);
 #define zmapWindowFocusRemoveFocusItem(focus, item) \
-      zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS)
+  zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS, TRUE)
+#define zmapWindowFocusRemoveOnlyFocusItem(focus, item) \
+  zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS, FALSE)
+
 
 void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
@@ -1259,7 +1288,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col,
                               FooCanvasGroup *reverse_col,
-                              ZMapFrame frame) ;
+                              ZMapFrame frame, gboolean frame_mode_change) ;
 void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group) ;
