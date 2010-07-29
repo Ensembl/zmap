@@ -26,18 +26,13 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  3 12:27 2008 (rds)
+ * Last edited: Jul 29 10:24 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.58 2010-06-28 08:30:31 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.59 2010-07-29 09:25:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
@@ -53,7 +48,7 @@ typedef struct
 /* fMap has 1/10/100/1000 bp per line and whole, here we replicate + ALL DNA */
 enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_100, ZOOM_1000, ZOOM_MIN} ;
 
-enum{ SHOW_DNA, HIDE_DNA, SHOW_3FT, HIDE_3FT };
+enum{ SHOW_DNA, HIDE_DNA, SHOW_3FEATURES, SHOW_3FT, HIDE_3FT, SHOW_3ALL };
 
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
@@ -76,6 +71,24 @@ static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
                                        ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data) ;
 static void zoomMenuCB(int menu_item_id, gpointer callback_data) ;
+
+static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window) ;
+static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
+                                           GList **all_menus,
+                                           int *start_index_inout,
+                                           ZMapGUIMenuItemCallbackFunc callback_func, gpointer callback_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Will be needed if we go back to complicated align/dna for each block menu system. */
+static void fixSubMenuData(gpointer list_data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+static void seqMenuCB(int menu_item_id, gpointer callback_data) ;
+
+
+
+
+
 
 
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
@@ -104,6 +117,15 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_button_set_focus_on_click(GTK_BUTTON(reload_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), reload_button, FALSE, FALSE, 0) ;
 
+  zmap->back_button = back_button  = gtk_button_new_with_label("Back");
+  gtk_signal_connect(GTK_OBJECT(back_button), "clicked",
+		     GTK_SIGNAL_FUNC(backButtonCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(back_button), FALSE);
+  gtk_box_pack_start(GTK_BOX(hbox), back_button, FALSE, FALSE, 0) ;
+
+  separator = gtk_vseparator_new();
+  gtk_box_pack_start(GTK_BOX(hbox), separator, FALSE, FALSE, 10) ;
+
   zmap->hsplit_button = hsplit_button = gtk_button_new_with_label("H-Split");
   gtk_signal_connect(GTK_OBJECT(hsplit_button), "clicked",
 		     GTK_SIGNAL_FUNC(horizSplitPaneCB), (gpointer)zmap) ;
@@ -128,6 +150,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_button_set_focus_on_click(GTK_BUTTON(unlock_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
 
+  separator = gtk_vseparator_new();
+  gtk_box_pack_start(GTK_BOX(hbox), separator, FALSE, FALSE, 10) ;
+
   zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
   gtk_signal_connect(GTK_OBJECT(revcomp_button), "clicked",
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
@@ -145,8 +170,11 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   zmap->dna_but = dna_button = gtk_button_new_with_label("DNA");
   gtk_signal_connect(GTK_OBJECT(dna_button), "clicked",
 		     GTK_SIGNAL_FUNC(dnaCB), (gpointer)zmap);
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* PLEASE SEE COMMENTS AT END OF FILE, FOR NOW I'M REMOVING THE MENU FOR DNA. */
   g_signal_connect(G_OBJECT(dna_button), "event",
                    G_CALLBACK(sequenceEventCB), (gpointer)zmap);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   gtk_button_set_focus_on_click(GTK_BUTTON(dna_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), dna_button, FALSE, FALSE, 0) ;
 
@@ -174,15 +202,6 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
                    G_CALLBACK(zoomEventCB), (gpointer)zmap);
   gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
-
-  separator = gtk_vseparator_new();
-  gtk_box_pack_start(GTK_BOX(hbox), separator, FALSE, FALSE, 10) ;
-
-  zmap->back_button = back_button  = gtk_button_new_with_label("Back");
-  gtk_signal_connect(GTK_OBJECT(back_button), "clicked",
-		     GTK_SIGNAL_FUNC(backButtonCB), (gpointer)zmap);
-  gtk_button_set_focus_on_click(GTK_BUTTON(back_button), FALSE);
-  gtk_box_pack_start(GTK_BOX(hbox), back_button, FALSE, FALSE, 0) ;
 
 
   /* Make Stop button the default, its the only thing the user can initially click ! */
@@ -257,7 +276,11 @@ void zmapControlButtonTooltips(ZMap zmap)
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->dna_but,
 		       "Toggle display of DNA"
-                       " (right click for more options)",
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		       /* See comments at end of file. */
+                       " (right click for more options)"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		       ,
 		       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->unsplit_but,
@@ -472,7 +495,7 @@ static void frame3CB(GtkWidget *wigdet, gpointer cb_data)
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-  zMapWindowToggle3Frame(window) ;
+  zMapWindow3FrameToggle(window) ;
 
   return ;
 }
@@ -614,10 +637,25 @@ static void columnConfigCB(GtkWidget *widget, gpointer data)
 }
 
 
+static void backButtonCB(GtkWidget *wigdet, gpointer data)
+{
+  ZMap zmap = (ZMap)data;
+  ZMapWindow window = NULL;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow);
+
+  zMapWindowBack(window);
+
+  return ;
+}
 
 
 
-/* Zoom menu stuff.... */
+
+/*
+ *   Zoom menu stuff....
+ */
+
 static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window)
 {
   char *menu_title = "Zoom menu" ;
@@ -722,18 +760,112 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+
+
+/* 
+ *    Sequence menu stuff (currently this is for translation only).
+ */
+
+static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+  gboolean handled = FALSE;
+
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *button_ev = (GdkEventButton *)event ;
+
+        switch(button_ev->button)
+          {
+          case 3:
+	    {
+	      ZMap zmap = (ZMap)data ;
+	      ZMapWindow window ;
+
+	      zMapAssert(zmap->focus_viewwindow) ;
+
+	      window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+	      makeSequenceMenu(button_ev, window) ;
+
+	      handled = TRUE;
+	      break ;
+	    }
+          default:
+            break;
+          }
+	break;
+      }
+    default:
+      break;
+    }
+
+  return handled;
+}
+
+static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window)
+{
+  char *menu_title = "" ;
+  GList *menu_sets = NULL ;
+  static ZMapGUIMenuSubMenuData sub_data = NULL;
+
+  menu_title = "3 Frame menu" ;
+
+  /* Set up the data so we pass in the correct window to our seqMenuCB
+   * The issue of sub menu data is here as we have to dynamically generate
+   * the quarks for the aligns and blocks... i.e. the contents of the
+   * ZMapGUIMenuSubMenuData ...
+   */
+  if(!sub_data)
+    {
+      sub_data = g_new0(ZMapGUIMenuSubMenuDataStruct, 1);
+      sub_data->original_data = window;
+    }
+  else
+    {
+      sub_data->original_data = window;
+    }
+
+  /* Make up the menu. */
+  makeMenuSequenceOps(window, &menu_sets, NULL, NULL, sub_data) ;
+
+  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
+
+
+static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
+                                           GList **all_menus,
+                                           int *start_index_inout,
+                                           ZMapGUIMenuItemCallbackFunc callback_func,
+                                           gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct aa_menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Features",                       SHOW_3FEATURES, seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation",            SHOW_3FT,       seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "Features + 3 Frame Translation", SHOW_3ALL,      seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                             0,              NULL,           NULL}
+    };
+
+  zMapGUIPopulateMenu(aa_menu, start_index_inout, callback_func, callback_data);
+  *all_menus = g_list_append(*all_menus, aa_menu);
+
+  return NULL ;
+}
+
+
 static void seqMenuCB(int menu_item_id, gpointer callback_data)
 {
-  ZMapGUIMenuSubMenuData data = (ZMapGUIMenuSubMenuData)callback_data;
-  ZMapWindow window = NULL;
-  GQuark align_id = 0, block_id = 0;
-  gboolean force = TRUE,
-    force_to     = FALSE,
-    do_dna       = FALSE,
-    do_aa        = FALSE;
+  ZMapGUIMenuSubMenuData data = (ZMapGUIMenuSubMenuData)callback_data ;
+  ZMapWindow window = NULL ;
+  GQuark align_id = 0, block_id = 0 ;
+  gboolean force = TRUE, force_to = FALSE, do_dna = FALSE, do_aa = FALSE ;
 
-  align_id = data->align_unique_id;
-  block_id = data->block_unique_id;
+  align_id = data->align_unique_id ;
+  block_id = data->block_unique_id ;
 
   switch(menu_item_id)
     {
@@ -744,6 +876,9 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
     case HIDE_DNA:
       do_dna   = TRUE;
       break;
+    case SHOW_3FEATURES:
+    case SHOW_3ALL:
+      break ;
     case SHOW_3FT:
       force_to  = TRUE;
       do_aa     = TRUE;
@@ -755,14 +890,148 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
       break;
     }
 
-  if((window = data->original_data))
+  /* What on earth is this test about ????? */
+  if ((window = data->original_data))
     {
-      if(menu_item_id == SHOW_3FT)
-        zmapWindowSet3Frame(window);      // force 3 frame display before showing translation, else layout is screwed
-      zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force);
+      if (menu_item_id == SHOW_3FEATURES
+	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3FT
+	  || menu_item_id == SHOW_3ALL)
+	{
+	  gboolean display = TRUE ;
+	  ZMapWindow3FrameMode frame_mode ;
+
+	  switch(menu_item_id)
+	    {
+	    case SHOW_3FEATURES:
+	      frame_mode = ZMAP_WINDOW_3FRAME_COLS ;
+	      break ;
+	    case SHOW_3FT:
+	      frame_mode = ZMAP_WINDOW_3FRAME_TRANS ;
+	      force_to  = TRUE;
+	      do_aa     = TRUE;
+	      break;
+	    case HIDE_3FT:
+	      frame_mode = ZMAP_WINDOW_3FRAME_TRANS ;
+	      display = FALSE ;
+	      do_aa     = TRUE;
+	      break;
+	    case SHOW_3ALL:
+	      frame_mode = ZMAP_WINDOW_3FRAME_ALL ;
+	      break ;
+	    default:
+	      zMapAssertNotReached() ;
+	      break;
+	    }
+
+	  zMapWindow3FrameToggleMode(window, frame_mode, display) ;
+	}
+      else
+	{
+	  /* DNA... */
+	  zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force) ;
+	}
     }
+
   return ;
 }
+
+
+
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* 
+ * The following functions implement cascading menus that allow the user to select
+ * any of the aligns -> blocks to turn on/off dna or translations.
+ * 
+ * I've commented this all out for now for a couple of reasons:
+ * 
+ * 1) We don't have any users of the align/block stuff currently so what's the point.
+ * 
+ * 2) I'm not even sure if this is the way to do it. Surely a better way would be
+ *    for the user to click on the block that they wanted to see the dna or translation
+ *    for ?? The menus are confusing and it's not at clear that the user would easily
+ *    be able to choose the right one.
+ * 
+ */
+
+static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
+                                           GList **all_menus,
+                                           int *start_index_inout,
+                                           ZMapGUIMenuItemCallbackFunc callback_func,
+                                           gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct aa_menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Features",                       SHOW_3FEATURES, seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation",            SHOW_3FT,       seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "Features + 3 Frame Translation", SHOW_3ALL,      seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                             0,              NULL,           NULL}
+    };
+  static GArray *dna_d_menus = NULL, *aa_d_menus = NULL;
+
+  if (dna && !dna_d_menus)
+    {
+      ZMapGUIMenuItemStruct each_level_menu[] = {
+        {ZMAPGUI_MENU_NORMAL, "Show All", SHOW_DNA, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NORMAL, "Hide All", HIDE_DNA, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NONE,   NULL,       0,        NULL,      NULL}
+      };
+
+      dna_d_menus = g_array_new(TRUE, TRUE, sizeof(ZMapGUIMenuItemStruct));
+      zMapWindowMenuAlignBlockSubMenus(window,
+                                       each_level_menu, each_level_menu,
+                                       "DNA", &dna_d_menus);
+    }
+
+  if (protein && !aa_d_menus)
+    {
+      ZMapGUIMenuItemStruct each_level_menu[] = {
+        {ZMAPGUI_MENU_NORMAL, "Show All", SHOW_3FT, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NORMAL, "Hide All", HIDE_3FT, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NONE,   NULL,       0,        NULL,      NULL}
+      };
+
+      aa_d_menus = g_array_new(TRUE, TRUE, sizeof(ZMapGUIMenuItemStruct));
+      zMapWindowMenuAlignBlockSubMenus(window,
+                                       each_level_menu, each_level_menu,
+                                       "3 Frame Translation", &aa_d_menus);
+    }
+
+  if (all_menus)
+    {
+      if (dna)
+	{
+	  zMapGUIPopulateMenu(dna_menu, start_index_inout, callback_func, callback_data);
+	  *all_menus = g_list_append(*all_menus, dna_menu);
+
+	  *all_menus = g_list_append(*all_menus, dna_d_menus->data);
+	}
+
+      if (protein)
+	{
+	  zMapGUIPopulateMenu(aa_menu, start_index_inout, callback_func, callback_data);
+	  *all_menus = g_list_append(*all_menus, aa_menu);
+
+	  *all_menus = g_list_append(*all_menus, aa_d_menus->data);
+	}
+    }
+
+  /* Here we have to fix up the data for the callbacks
+   * We do this so that we get the correct window passed in.
+   */
+  g_list_foreach(*all_menus, fixSubMenuData, callback_data);
+
+  zMapGUIPopulateMenu(aa_menu, start_index_inout, callback_func, callback_data);
+  *all_menus = g_list_append(*all_menus, aa_menu);
+
+  return NULL ;
+}
+
 
 static void fixSubMenuData(gpointer list_data, gpointer user_data)
 {
@@ -783,6 +1052,87 @@ static void fixSubMenuData(gpointer list_data, gpointer user_data)
   return ;
 }
 
+static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+  gboolean handled = FALSE;
+
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *button_ev = (GdkEventButton *)event ;
+
+        switch(button_ev->button)
+          {
+          case 3:
+	    {
+	      ZMap zmap = (ZMap)data ;
+	      ZMapWindow window ;
+	      gboolean dna = FALSE, protein = FALSE ;
+
+	      zMapAssert(zmap->focus_viewwindow) ;
+
+	      window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+	      if (widget == zmap->frame3_but)
+		  protein = TRUE ;
+	      else if (widget == zmap->dna_but)
+		  dna = TRUE ;
+
+	      if (dna || protein)
+		makeSequenceMenu(button_ev, window, dna, protein) ;
+
+            handled = TRUE;
+            break ;
+	    }
+          default:
+            break;
+          }
+	break;
+      }
+    default:
+      break;
+    }
+
+  return handled;
+}
+
+/* We expect dna or protein to be TRUE. */
+static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window, gboolean dna, gboolean protein)
+{
+  char *menu_title = "" ;
+  GList *menu_sets = NULL ;
+  static ZMapGUIMenuSubMenuData sub_data = NULL;
+
+  if (dna && protein)
+    menu_title = "Sequence menu" ;
+  else if (dna)
+    menu_title = "DNA menu" ;
+  else if (protein)
+    menu_title = "3 Frame menu" ;
+
+  /* Set up the data so we pass in the correct window to our seqMenuCB
+   * The issue of sub menu data is here as we have to dynamically generate
+   * the quarks for the aligns and blocks... i.e. the contents of the
+   * ZMapGUIMenuSubMenuData ...
+   */
+  if(!sub_data)
+    {
+      sub_data = g_new0(ZMapGUIMenuSubMenuDataStruct, 1);
+      sub_data->original_data = window;
+    }
+  else
+    {
+      sub_data->original_data = window;
+    }
+
+  /* Make up the menu. */
+  makeMenuSequenceOps(window, &menu_sets, NULL, NULL, sub_data, dna, protein) ;
+
+  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
 
 static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
                                            GList **all_menus,
@@ -800,10 +1150,12 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 
   static ZMapGUIMenuItemStruct aa_menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "3 Frame Translation",          0,        NULL,      NULL},
-      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Show All", SHOW_3FT, seqMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Hide All", HIDE_3FT, seqMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,   NULL,                           0,        NULL,      NULL}
+      {ZMAPGUI_MENU_NORMAL, "Features",                       SHOW_3FEATURES, seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_BRANCH, "3 Frame Translation",            0,        NULL,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "Features + 3 Frame Translation", SHOW_3ALL, seqMenuCB,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Show All",   SHOW_3FT, seqMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Hide All",   HIDE_3FT, seqMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                             0,        NULL,      NULL}
     };
   static GArray *dna_d_menus = NULL, *aa_d_menus = NULL;
 
@@ -862,96 +1214,102 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
   return NULL ;
 }
 
-/* We expect dna or protein to be TRUE. */
-static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window, gboolean dna, gboolean protein)
+static void fixSubMenuData(gpointer list_data, gpointer user_data)
 {
-  char *menu_title = "" ;
-  GList *menu_sets = NULL ;
-  static ZMapGUIMenuSubMenuData sub_data = NULL;
+  ZMapGUIMenuItem item = (ZMapGUIMenuItem)list_data, tmp_data = NULL;
+  ZMapGUIMenuSubMenuData sub_data = (ZMapGUIMenuSubMenuData)user_data,
+    item_data = NULL;
 
-  if (dna && protein)
-    menu_title = "Sequence menu" ;
-  else if (dna)
-    menu_title = "DNA menu" ;
-  else if (protein)
-    menu_title = "Translation menu" ;
+  tmp_data = item;
 
-  /* Set up the data so we pass in the correct window to our seqMenuCB
-   * The issue of sub menu data is here as we have to dynamically generate
-   * the quarks for the aligns and blocks... i.e. the contents of the
-   * ZMapGUIMenuSubMenuData ...
-   */
-  if(!sub_data)
+  /* Step through the array of items, fixing up the data as we go */
+  while(tmp_data && tmp_data->name)
     {
-      sub_data = g_new0(ZMapGUIMenuSubMenuDataStruct, 1);
-      sub_data->original_data = window;
+      if((item_data = tmp_data->callback_data))
+        item_data->original_data = sub_data->original_data;
+      tmp_data++;
     }
-  else
-    sub_data->original_data = window;
-
-  /* Make up the menu. */
-  makeMenuSequenceOps(window, &menu_sets, NULL, NULL, sub_data, dna, protein) ;
-
-  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
   return ;
 }
 
-static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
+static void seqMenuCB(int menu_item_id, gpointer callback_data)
 {
-  gboolean handled = FALSE;
+  ZMapGUIMenuSubMenuData data = (ZMapGUIMenuSubMenuData)callback_data ;
+  ZMapWindow window = NULL ;
+  GQuark align_id = 0, block_id = 0 ;
+  gboolean force = TRUE, force_to = FALSE, do_dna = FALSE, do_aa = FALSE ;
 
-  switch(event->type)
+  align_id = data->align_unique_id ;
+  block_id = data->block_unique_id ;
+
+  switch(menu_item_id)
     {
-    case GDK_BUTTON_PRESS:
-      {
-	GdkEventButton *button_ev = (GdkEventButton *)event ;
-
-        switch(button_ev->button)
-          {
-          case 3:
-	    {
-	      ZMap zmap = (ZMap)data ;
-	      ZMapWindow window ;
-	      gboolean dna = FALSE, protein = FALSE ;
-
-	      zMapAssert(zmap->focus_viewwindow) ;
-
-	      window = zMapViewGetWindow(zmap->focus_viewwindow) ;
-
-	      if (widget == zmap->frame3_but)
-		  protein = TRUE ;
-	      else if (widget == zmap->dna_but)
-		  dna = TRUE ;
-
-	      if (dna || protein)
-		makeSequenceMenu(button_ev, window, dna, protein) ;
-
-            handled = TRUE;
-            break ;
-	    }
-          default:
-            break;
-          }
-	break;
-      }
+    case SHOW_DNA:
+      force_to = TRUE;
+      do_dna   = TRUE;
+      break;
+    case HIDE_DNA:
+      do_dna   = TRUE;
+      break;
+    case SHOW_3FEATURES:
+    case SHOW_3ALL:
+      break ;
+    case SHOW_3FT:
+      force_to  = TRUE;
+      do_aa     = TRUE;
+      break;
+    case HIDE_3FT:
+      do_aa     = TRUE;
+      break;
     default:
       break;
     }
 
-  return handled;
-}
+  /* What on earth is this test about ????? */
+  if ((window = data->original_data))
+    {
+      if (menu_item_id == SHOW_3FEATURES
+	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3FT
+	  || menu_item_id == SHOW_3ALL)
+	{
+	  gboolean display = TRUE ;
+	  ZMapWindow3FrameMode frame_mode ;
 
+	  switch(menu_item_id)
+	    {
+	    case SHOW_3FEATURES:
+	      frame_mode = ZMAP_WINDOW_3FRAME_COLS ;
+	      break ;
+	    case SHOW_3FT:
+	      frame_mode = ZMAP_WINDOW_3FRAME_TRANS ;
+	      force_to  = TRUE;
+	      do_aa     = TRUE;
+	      break;
+	    case HIDE_3FT:
+	      frame_mode = ZMAP_WINDOW_3FRAME_TRANS ;
+	      display = FALSE ;
+	      do_aa     = TRUE;
+	      break;
+	    case SHOW_3ALL:
+	      frame_mode = ZMAP_WINDOW_3FRAME_ALL ;
+	      break ;
+	    default:
+	      zMapAssertNotReached() ;
+	      break;
+	    }
 
-static void backButtonCB(GtkWidget *wigdet, gpointer data)
-{
-  ZMap zmap = (ZMap)data;
-  ZMapWindow window = NULL;
-
-  window = zMapViewGetWindow(zmap->focus_viewwindow);
-
-  zMapWindowBack(window);
+	  zMapWindow3FrameToggleMode(window, frame_mode, display) ;
+	}
+      else
+	{
+	  /* DNA... */
+	  zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force) ;
+	}
+    }
 
   return ;
 }
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
