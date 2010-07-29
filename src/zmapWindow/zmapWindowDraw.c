@@ -29,23 +29,19 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 15 11:52 2010 (edgrif)
+ * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.127 2010-06-28 08:30:32 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.128 2010-07-29 09:44:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <math.h>
 #include <glib.h>
+
+#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapUtilsLogical.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerBlock.h>
@@ -129,6 +125,10 @@ typedef struct
 }SeparatorCanvasDataStruct, *SeparatorCanvasData;
 
 
+static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
+					 GQuark align_id, GQuark block_id,
+					 gboolean force_to, gboolean force) ;
+
 static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data) ;
 static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -142,61 +142,89 @@ static void printChild(gpointer data, gpointer user_data) ;
 static void printQuarks(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
 static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 		       ZMapContainerLevelType level, gpointer user_data) ;
 static void featureInViewCB(void *data, void *user_data) ;
 static void showColsCB(void *data, void *user_data) ;
 static void rebumpColsCB(void *data, void *user_data) ;
-
 static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 							       gpointer feature_data,
 							       gpointer user_data,
 							       char **error_out);
 static void drawSeparatorFeatures(SeparatorCanvasData canvas_data, ZMapFeatureContext context);
 
+static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ; ;
+static void myWindowToggle3Frame(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
 
 
-/*! @addtogroup zmapwindow
- * @{
- *  */
+
+/* Turn on/off 3 frame cols. */
+void zMapWindow3FrameToggle(ZMapWindow window)
+{
+  myWindowToggle3Frame(window, ZMAP_WINDOW_3FRAME_INVALID) ;
+
+  return ;
+}
+
+
+
+/* Turn on/off 3 frame cols. */
+void zMapWindow3FrameToggleMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode, gboolean display)
+{
+  myWindowToggle3Frame(window, frame_mode) ;
+
+  return ;
+}
+
+
+
 
 
 /*!
  * Toggles the display of the Reading Frame columns, these columns show frame senstive
  * features in separate sets of columns according to their reading frame.
  *
- * @param window     The zmap window to display the reading frame in.
- * @return  <nothing>
  *  */
-void zMapWindowToggle3Frame(ZMapWindow window)
+static void myWindowToggle3Frame(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 {
   gpointer three_frame_id = NULL;
   gpointer three_frame_Id = NULL;   // capitalised!
 
   zMapWindowBusy(window, TRUE) ;
 
-  zMapStartTimer("3Frame" ,window->display_3_frame ? "off" : "on");
-      // yuk...
+  zMapStartTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
+
+  // yuk...
   three_frame_id = GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME));
   three_frame_Id = GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME));
 
-  if(g_list_find(window->feature_set_names, three_frame_id) ||
-      g_list_find(window->feature_set_names, three_frame_Id))
+  if (g_list_find(window->feature_set_names, three_frame_id)
+      || g_list_find(window->feature_set_names, three_frame_Id))
     {
 #ifndef RDS_REMOVED_STATS
+
+      /* OK...SOMETHING'S NOT WORKING HERE...I DON'T SEE THE DYNAMIC RELOAD STUFF.... */
+
       /* Remove all col. configuration windows as columns will be destroyed/recreated and the column
        * list will be out of date. */
       zmapWindowColumnConfigureDestroy(window) ;
       /* The column configure widget can reload itself now. */
 #endif
 
+      zmapWindowFocusReset(window->focus) ;
+
+
+      /* THIS NEEDS CHANGING SO WE DON'T REDRAW ALL THE COLUMNS WHEN WE ARE JUST ADDING
+       * THE TRANSLATION COLUMN OR WHATEVER.....AND THE FOCUS REMOVE WILL NEED REDOING. */
       // remove always columns or 3-frame depending on mode
       zmapWindowDrawRemove3FrameFeatures(window);
       zMapStopTimer("3FrameRemove","");
 
-      window->display_3_frame = !window->display_3_frame;
+
+
+
+      /* Set up the frame state. */
+      set3FrameState(window, frame_mode) ;
 
       // draw always columns or 3-frame depending on mode
       zmapWindowDraw3FrameFeatures(window);
@@ -210,9 +238,11 @@ void zMapWindowToggle3Frame(ZMapWindow window)
 
     }
   else
-    zMapWarning("%s", "No '" ZMAP_FIXED_STYLE_3FRAME "' column in config file.");
+    {
+      zMapWarning("%s", "No '" ZMAP_FIXED_STYLE_3FRAME "' column in config file.");
+    }
 
-  zMapStopTimer("3Frame" ,window->display_3_frame ? "off" : "on");
+  zMapStopTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
 
   zMapWindowBusy(window, FALSE) ;
 
@@ -220,16 +250,29 @@ void zMapWindowToggle3Frame(ZMapWindow window)
 }
 
 
-// we need this ot make the 3F translation display properly
-void zmapWindowSet3Frame(ZMapWindow window)
+
+void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
+                                       GQuark align_id,   GQuark block_id,
+                                       gboolean dna,      gboolean protein,
+                                       gboolean force_to, gboolean force)
 {
-  if(!window->display_3_frame)
-    zMapWindowToggle3Frame(window);
+
+  zMapWindowBusy(window, TRUE) ;
+
+  if (dna)
+    toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME,
+				 align_id, block_id, force_to, force);
+
+  if (protein)
+    toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME,
+				 align_id, block_id, force_to, force);
+
+  zmapWindowFullReposition(window) ;
+
+  zMapWindowBusy(window, FALSE) ;
+
+  return ;
 }
-
-
-/*! @} end of zmapwindow docs. */
-
 
 
 
@@ -263,22 +306,25 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
  * this may be easy (off or on) or may depend on current mag state/mark, frame state or compress
  * state. If !new_col_state then the current column state is used to set the show/hide state,
  * need this for setting up initial state of columns.
- *
+ * 
+ * new_col_state = NULL if new (empty) column
  *  */
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
-                        // new_col_state = NULL if new (empty) column
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
   ZMapWindowContainerFeatureSet container;
   ZMapStyleColumnDisplayState curr_col_state ;
+  ZMapStyle3FrameMode frame_mode ;
 //  gboolean test_mag = TRUE;
+  gboolean frame_sensitive ;
 
   container = (ZMapWindowContainerFeatureSet)column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+  frame_sensitive = zmapWindowContainerFeatureSetIsFrameSpecific(container, &frame_mode) ;
 
   /* Do we need a redraw....not every time..... */
-  if (!new_col_state || new_col_state != curr_col_state)
+  if (!new_col_state || new_col_state != curr_col_state || redraw_if_needed)
     {
       gboolean redraw = FALSE ;
 
@@ -291,7 +337,8 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
 	    new_col_state = curr_col_state ;
         }
-      switch(new_col_state)
+
+      switch (new_col_state)
 	{
 	case ZMAPSTYLE_COLDISPLAY_HIDE:
 	  {
@@ -303,25 +350,27 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  }
 	case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
 	  {
-	    gboolean mag_visible, frame_visible ;
+	    gboolean mag_visible, frame_visible, frame_displayed = TRUE ;
 
 // ha ha ... this runs nearly 2x slower and we get blank columns
 //	    mag_visible = test_mag ? zmapWindowColumnIsMagVisible(window, column_group) : TRUE ;
-          mag_visible = zmapWindowColumnIsMagVisible(window, column_group);;
+	    mag_visible = zmapWindowColumnIsMagVisible(window, column_group);;
 
 	    frame_visible = zmapWindowColumnIs3frameVisible(window, column_group) ;
 
+	    if (IS_3FRAME(window->display_3_frame) && frame_sensitive)
+	      frame_displayed = zmapWindowColumnIs3frameDisplayed(window, column_group) ;
 
 	    /* Check mag, mark, compress etc. etc....probably need some funcs in compress/mark/mag
 	     * packages to return whether a column should be hidden.... */
 	    if ((curr_col_state == ZMAPSTYLE_COLDISPLAY_HIDE || curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-		&& mag_visible && frame_visible)
+		&& mag_visible && frame_visible && (!frame_sensitive || frame_displayed))
 	      {
 		zmapWindowContainerSetVisibility(column_group, TRUE) ;
 		redraw = TRUE ;
 	      }
 	    else if ((curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW || curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-		     && (!mag_visible || !frame_visible))
+		     && (!mag_visible || !frame_visible || (frame_sensitive && !frame_displayed)))
 	      {
 		zmapWindowContainerSetVisibility(column_group, FALSE) ;
 		redraw = TRUE ;
@@ -339,13 +388,13 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  }
 	}
       zMapStopTimer("DrawFeatureSet","SetVis");
+
       /* Set the new display for the column _and_ all styles within the column. */
       zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
 
-
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
-            zmapWindowFullReposition(window) ;
+	zmapWindowFullReposition(window) ;
     }
 
 
@@ -371,8 +420,8 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
    * (as happens now). I'm not sure we have a record of this.
    */
 
-  if (zmapWindowContainerFeatureSetGetDisplay(container) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE &&
-      zmapWindowColumnIs3frameVisible(window, col_group))
+  if (zmapWindowContainerFeatureSetGetDisplay(container) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE
+      && zmapWindowColumnIs3frameVisible(window, col_group))
     {
       gboolean visible_at_this_mag = FALSE;
 
@@ -383,6 +432,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 #ifdef DEBUG_COLUMN_MAG
 	  printf("Column '%s' being shown\n", g_quark_to_string(container->unique_id));
 #endif /* DEBUG_COLUMN_MAG */
+
 	  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), TRUE) ;
 	}
       else
@@ -390,6 +440,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 #ifdef DEBUG_COLUMN_MAG
 	  printf("Column '%s' being hidden\n", g_quark_to_string(container->unique_id));
 #endif /* DEBUG_COLUMN_MAG */
+
 	  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
 	}
     }
@@ -420,12 +471,12 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
   set_frame  = zmapWindowContainerFeatureSetGetFrame(container);
 
 
-  if(frame_specific)
+  if (frame_specific)
     {
       gboolean display, show_on_reverse;
 
-      display         = window->display_3_frame;
-      show_on_reverse = window->show_3_frame_reverse;
+      display = IS_3FRAME(window->display_3_frame) ;
+      show_on_reverse = window->show_3_frame_reverse ;
 
       /*
 	 | WINDOW->...      | REVERSE STRAND | FORWARD STRAND |
@@ -500,6 +551,46 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
   return visible ;
 }
 
+
+
+/* checks to see if a column has been set by user to be displayed in 3 frame mode. */
+gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *col_group)
+{
+  gboolean displayed = FALSE ;
+  ZMapWindowContainerFeatureSet container;
+  ZMapStyle3FrameMode frame_mode;
+  ZMapFrame set_frame;
+  ZMapStrand set_strand;
+  gboolean frame_specific ;
+  ZMapFeatureSet feature_set ;
+
+  zMapAssert(window) ;
+  zMapAssert(ZMAP_IS_CONTAINER_FEATURESET(col_group)) ;
+
+  container = (ZMapWindowContainerFeatureSet)col_group ;
+
+  frame_specific = zmapWindowContainerFeatureSetIsFrameSpecific(container, &frame_mode) ;
+
+  if (frame_specific)
+    {
+      set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
+      set_frame  = zmapWindowContainerFeatureSetGetFrame(container) ;
+
+      feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
+
+      if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+	{
+	  if (IS_3FRAME_TRANS(window->display_3_frame))
+	    displayed = TRUE ;
+	}
+      else if (IS_3FRAME_COLS(window->display_3_frame))
+	{
+	  displayed = TRUE ;
+	}
+    }
+
+  return displayed ;
+}
 
 
 /* Checks to see if column would be visible according to current mag state.
@@ -869,6 +960,106 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
 
 
+
+/* Translate window 3 frame requests into 3 frame state.
+ * If frame mode is ZMAP_WINDOW_3FRAME_INVALID then toggle 3 frame _display_,
+ * otherwise toggle the supplied frame mode.
+ * 
+ * Note that there modes/display get toggled to ensure that there is a logical
+ * display/undisplay of at least some 3 frame data.
+ */
+static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
+{
+  Display3FrameMode curr_display = DISPLAY_3FRAME_NONE ;
+
+  switch (frame_mode)
+    {
+    case ZMAP_WINDOW_3FRAME_INVALID:
+      {
+	break ;
+      }
+    case ZMAP_WINDOW_3FRAME_TRANS:
+      {
+	curr_display = DISPLAY_3FRAME_TRANS ;
+
+	if (IS_3FRAME_TRANS(window->display_3_frame))
+	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+	else
+	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+
+	break ;
+      }
+    case ZMAP_WINDOW_3FRAME_COLS:
+      {
+	curr_display = DISPLAY_3FRAME_COLS ;
+
+	if (IS_3FRAME_COLS(window->display_3_frame))
+	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+	else
+	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+ 
+	break ;
+      }
+    case ZMAP_WINDOW_3FRAME_ALL:
+      {
+	curr_display = DISPLAY_3FRAME_ALL ;
+
+	if (IS_3FRAME_TRANS(window->display_3_frame) && IS_3FRAME_COLS(window->display_3_frame))
+	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ALL) ;
+	else
+	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ALL) ;
+
+	break ;
+      }
+    default:
+      {
+	zMapAssertNotReached() ;
+      }
+    }
+
+
+  /* Tidy up state:
+   *   - If 3 frame is turned on but neither cols or translation are selected then
+   * default to show cols only.
+   *   - If the mode was changed and everything was turned off then turn off 3 frame display
+   * as well, otherwise if the mode was changed but 3 frame is off then turn it on with
+   * the mode that was toggled. */
+  if (frame_mode == ZMAP_WINDOW_3FRAME_INVALID)
+    {
+      if (IS_3FRAME(window->display_3_frame))
+	{
+	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+	}
+      else
+	{
+	  if (!IS_3FRAME_TRANS(window->display_3_frame) && !IS_3FRAME_COLS(window->display_3_frame))
+	    ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+
+	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+	}
+    }
+  else
+    {
+      if (IS_3FRAME(window->display_3_frame))
+	{
+	  if (!(IS_3FRAME_TRANS(window->display_3_frame) || IS_3FRAME_COLS(window->display_3_frame)))
+	    ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+	}
+      else
+	{
+	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+
+	  ZMAP_FLAG_ON(window->display_3_frame, curr_display) ;
+	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+	}
+    }
+
+  return ;
+}
+
+
+
 /*
  *                Internal routines.
  */
@@ -1044,6 +1235,111 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
  * recreating them etc.
  *
  */
+
+
+static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
+					 GQuark align_id, GQuark block_id,
+					 gboolean force_to, gboolean force)
+{
+  GList *blocks = NULL;
+  const char *wildcard = "*";
+  GQuark feature_set_unique  = 0;
+  ZMapStyleColumnDisplayState show_hide_state ;
+
+  feature_set_unique = zMapStyleCreateID(name);
+
+  if (align_id == 0)
+    align_id = g_quark_from_string(wildcard);
+  if (block_id == 0)
+    block_id = g_quark_from_string(wildcard);
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#warning "Test doesn't find 3 frame column, work out why after annotation test."
+
+  /* check we have the style... */
+  if (!(zmapWindowFToIFindItemFull(window->context_to_item,
+				   align_id, block_id,
+				   feature_set_unique,
+				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
+    {
+      zMapWarning("Column with name \"%s\" does not exist."
+                  " Check that you specified \"%s\" in your ZMap config file.",
+		  name, name) ;
+    }
+  else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    {
+      FooCanvasItem *frame_column ;
+
+      blocks = zmapWindowFToIFindItemSetFull(window->context_to_item,
+					     align_id, block_id, 0,
+					     NULL, NULL, 0, NULL, NULL) ;
+
+      /* Foreach of the blocks, toggle the display of the DNA */
+      while (blocks)                 /* I cant bear to create ANOTHER struct! */
+	{
+	  ZMapFeatureBlock feature_block = NULL ;
+
+	  int first, last, i ;
+
+	  feature_block = zmapWindowItemGetFeatureBlock(blocks->data) ;
+
+	  if (g_ascii_strcasecmp(name, ZMAP_FIXED_STYLE_3FT_NAME) == 0)
+	    {
+	      if (IS_3FRAME(window->display_3_frame))
+		{
+		  first = ZMAPFRAME_0 ;
+		  last = ZMAPFRAME_2 ;
+		}
+	      else
+		{
+		  first = last = ZMAPFRAME_NONE ;
+		}
+	    }
+	  else
+	    {
+	      first = last = ZMAPFRAME_NONE ;
+	    }
+
+	  for (i = first ; i <= last ; i++)
+	    {
+	      ZMapFrame frame = (ZMapFrame)i ;
+
+	      frame_column = zmapWindowFToIFindItemFull(window->context_to_item,
+							feature_block->parent->unique_id,
+							feature_block->unique_id,
+							feature_set_unique,
+							ZMAPSTRAND_FORWARD, frame, 0) ;
+
+	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
+		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
+		{
+		  if (force && force_to)
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+		  else if (force && !force_to)
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+		  else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(frame_column)))
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+		  else
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+
+		  zmapWindowColumnSetState(window,
+					   FOO_CANVAS_GROUP(frame_column),
+					   show_hide_state,
+					   FALSE) ;
+		}
+	    }
+
+	  blocks = blocks->next ;
+	}
+    }
+
+  return ;
+}
+
 
 
 /*
@@ -1324,7 +1620,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
 
 	    zmapWindowDrawFeatureSet(window,  canvas_data->styles, (ZMapFeatureSet)feature_any,
-				     NULL, separator, ZMAPFRAME_NONE);
+				     NULL, separator, ZMAPFRAME_NONE, FALSE) ;
 
 	    if (tmp_forward)
 	      zmapWindowRemoveIfEmptyCol(&tmp_forward);
