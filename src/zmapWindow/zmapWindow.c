@@ -27,18 +27,13 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 24 13:51 2010 (edgrif)
+ * Last edited: Jul 29 09:19 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.333 2010-07-15 10:49:00 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.334 2010-07-29 09:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <math.h>
 #include <string.h>
@@ -46,8 +41,11 @@
 #include <glib.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapFASTA.h>
+#include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
@@ -736,7 +734,9 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   state = zmapWindowStateCreate();
 
   /* Note that currently we lose the 3 frame state and other state such as columns */
-  window->display_3_frame = FALSE ;
+  window->display_3_frame = DISPLAY_3FRAME_NONE ;
+  window->show_3_frame_reverse = FALSE ;
+
 
   /* We need to hold on to some state and also to report the revcomp change to our callers
    * _before_ we reset everything. */
@@ -749,7 +749,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, TRUE, FALSE) ;
+      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, NULL, TRUE, FALSE) ;
 
       if (state_saves_position)
 	{
@@ -1142,6 +1142,7 @@ void zMapWindowDestroy(ZMapWindow window)
 
   if (window->read_only_styles)
     zMapStyleDestroyStyles(window->read_only_styles) ;
+
   if (window->display_styles)
     zMapStyleDestroyStyles(window->display_styles) ;
 
@@ -1169,7 +1170,14 @@ void zMapWindowDestroy(ZMapWindow window)
 
   /* Do this before the toplevel destroy as we need refer to canvas items for the destroy. */
   zmapWindowMarkDestroy(window->mark) ;
-  window->mark = zmapWindowMarkCreate(window) ;
+  window->mark = zmapWindowMarkCreate(window) ;		    /* ??? why do we recreate it ?? */
+
+  /* Destroy to avoid items trying to remove themselves from the focus as they are destroyed. */
+  if (window->focus)
+    {
+      zmapWindowFocusDestroy(window->focus) ;
+      window->focus = NULL ;
+    }
 
   gtk_widget_destroy(window->toplevel) ;
 
@@ -1247,6 +1255,9 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
   return ;
 }
 
+
+
+
 /* Sets up data that is passed back to our caller to give them information about the feature
  * the user has selected, perhaps by clicking on it in the zmap window.
  *
@@ -1256,15 +1267,18 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
  * then the original item is passed back instead.
  *
  * To Reset the panel pass in a NULL pointer as feature_arg
+ * 
+ * Where a sub-part of a feature was selected either sub_item will be non-NULL or
+ * sub_start/end will be > 0.
+ * 
  *
  *  */
-void zMapWindowUpdateInfoPanel(ZMapWindow window,
+void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                ZMapFeature feature_arg,
-			       FooCanvasItem *sub_item,
-			       FooCanvasItem *full_item,
+			       FooCanvasItem *sub_item, FooCanvasItem *full_item,
+			       int sub_start, int sub_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item,
-                               gboolean highlight_same_names)
+			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {
   ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
@@ -1278,6 +1292,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
   int feature_total_length, feature_start, feature_end, feature_length, query_start, query_end ;
   int sub_feature_index, sub_feature_start, sub_feature_end, sub_feature_length;
   int query_length ;
+  int dna_start, dna_end ;
+  int display_start, display_end ;
+  int start, end ;      
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
@@ -1297,200 +1314,351 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
     g_type_class_ref(ZMAP_TYPE_FEATURE_DATA);
 
 
-  sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
-  feature = zMapWindowCanvasItemGetFeature(sub_item);
-  zMapAssert(feature_arg == feature);
-
-  top_canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(sub_item);
-
-  feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
-
-  style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)feature_group,
-						   feature->style_id) ;
-
-  select.feature_desc.struct_type = feature->struct_type ;
-  select.feature_desc.type        = feature->type ;
-
-  select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
-
-  zmapWindowFeatureGetSetTxt(feature,
-			     &(select.feature_desc.feature_set),
-			     &(select.feature_desc.feature_set_description)) ;
-
-  zmapWindowFeatureGetSourceTxt(feature,
-				&(select.feature_desc.feature_source),
-				&(select.feature_desc.feature_source_description)) ;
-
-  /* zero all of this. */
-  feature_total_length = feature_start = feature_end = feature_length
-    = query_start = query_end
-    = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
-
-  feature_term = sub_feature_term = NULL;
-
-
-  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			 "total-length", &feature_total_length,
-			 "start", &feature_start,
-			 "end", &feature_end,
-			 "length", &feature_length,
-			 "term", &feature_term,
-			 NULL))
+  if (feature_arg->type == ZMAPSTYLE_MODE_RAW_SEQUENCE || feature_arg->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
-      if (feature_total_length)
-	select.feature_desc.feature_total_length = g_strdup_printf("%d", feature_total_length) ;
+      ZMapWindowSequenceFeature sequence_feature = NULL;
+      int origin_index = sub_start;
+      int current_index = sub_end;
+      char *seq_term = "";
 
-      if (window->display_forward_coords)
+      sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(sub_item);
+
+      feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
+
+      if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
 	{
-	  feature_start = zmapWindowCoordToDisplay(window, feature_start) ;
-	  feature_end   = zmapWindowCoordToDisplay(window, feature_end) ;
+	  start = origin_index ;
+	  end   = current_index ;
+
+	  seq_term = "DNA" ;
+
 	}
-
-      select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
-      select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
-
-      if (feature_length)
-	select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
-
-      select.feature_desc.feature_term   = feature_term;
-    }
-
-
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-    {
-      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			     "query-start",  &query_start,
-			     "query-end",    &query_end,
-			     "query-length", &query_length,
-			     "query-strand", &query_strand,
-			     NULL))
-	{
-	  select.feature_desc.feature_query_start  = g_strdup_printf("%d", query_start) ;
-	  select.feature_desc.feature_query_end    = g_strdup_printf("%d", query_end) ;
-	  select.feature_desc.feature_query_length = g_strdup_printf("%d", query_length) ;
-	  select.feature_desc.feature_query_strand = zMapFeatureStrand2Str(query_strand) ;
-	}
-
-      if (feature_arg->feature.homol.align)
-	select.feature_desc.sub_feature_none_txt = g_strdup("<GAPS NOT SHOWN>") ;
       else
-	select.feature_desc.sub_feature_none_txt = g_strdup("<UNGAPPED ALIGNMENT>") ;
+	{
+	  ZMapFrame frame ;
+	  int window_origin ;
+
+	  frame = zMapFeatureFrame(feature) ;
+
+	  start = origin_index ;
+	  end = current_index ;
+
+
+	  /* I'm guessing we should be using zMapSequencePep2DNA */
+	  /* Do some monkeying to get the dna coords */
+	  origin_index-- ;
+	  origin_index *= 3 ;
+	  origin_index += frame ;
+	  current_index = origin_index + ((end - start + 1) * 3) - 1;
+
+	  dna_start = origin_index ;
+	  dna_end = current_index ;
+
+
+	  /* zmapWindowCoordToDisplay() doesn't work for protein coord space,
+	   * whether this is useful though.... */
+	  if (window->origin == window->min_coord)
+	    {
+	      window_origin = window->min_coord;
+	    }
+	  else
+	    {
+	      /* calculation for window->origin uses + 2 */
+	      /* CHECK THIS OUT! TEST THE + 4 is required */
+	      window_origin = (window->origin + 4 ) / 3;
+	    }
+
+	  start = start - (window_origin - 1);
+	  end   = end   - (window_origin - 1);
+
+	  seq_term = "Protein" ;
+
+	  select.feature_desc.sub_feature_term   =  g_strdup("DNA") ;
+	  select.feature_desc.sub_feature_index  =  g_strdup(zMapFeatureFrame2Str(frame)) ;
+	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", dna_start);
+	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", dna_end);
+	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", dna_end - dna_start + 1);
+	}
+
+      display_start = zmapWindowCoordToDisplay(window, origin_index);
+      display_end   = zmapWindowCoordToDisplay(window, current_index);
+
+      select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id) ;
+      select.feature_desc.feature_term   = g_strdup_printf("%s", seq_term) ;
+      select.feature_desc.feature_start  = g_strdup_printf("%d", start) ;
+      select.feature_desc.feature_end    = g_strdup_printf("%d", end) ;
+      select.feature_desc.feature_length = g_strdup_printf("%d", end  - start + 1) ;
+
+      /* update the info panel */
+      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+
+      /* Update the highlighting, note that for peptides we highlight the
+       * corresponding dna sequence as well as the peptide. */
+      if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+	{
+	  g_free(select.feature_desc.sub_feature_start);
+	  g_free(select.feature_desc.sub_feature_end);
+	  g_free(select.feature_desc.sub_feature_length);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zmapWindowItemHighlightDNARegion(window, FALSE, sub_item, feature->feature.sequence.frame,
+					   feature->feature.sequence.type, origin_index, current_index);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      else
+	{
+	  zmapWindowItemHighlightTranslationRegions(window, FALSE, sub_item,
+						    feature->feature.sequence.type, origin_index, current_index) ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      g_free(select.feature_desc.feature_start);
+      g_free(select.feature_desc.feature_end);
+      g_free(select.feature_desc.feature_length);
     }
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  else
     {
-      select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
-    }
+      sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
+      feature = zMapWindowCanvasItemGetFeature(sub_item);
+      zMapAssert(feature_arg == feature);
+
+      top_canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(sub_item);
+
+      feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
+
+      style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)feature_group,
+						       feature->style_id) ;
+
+      select.feature_desc.struct_type = feature->struct_type ;
+      select.feature_desc.type        = feature->type ;
+
+      select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
+
+      zmapWindowFeatureGetSetTxt(feature,
+				 &(select.feature_desc.feature_set),
+				 &(select.feature_desc.feature_set_description)) ;
+
+      zmapWindowFeatureGetSourceTxt(feature,
+				    &(select.feature_desc.feature_source),
+				    &(select.feature_desc.feature_source_description)) ;
+
+      /* zero all of this. */
+      feature_total_length = feature_start = feature_end = feature_length
+	= query_start = query_end
+	= sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
+
+      feature_term = sub_feature_term = NULL;
 
 
-
-  if (sub_feature)		/* If sub_feature == NULL we'll only get the same as previous! */
-    {
-      feature_start = feature_end = feature_length = query_start = query_end =
-	sub_feature_index = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
-
-      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
-			     "index",  &sub_feature_index,
-			     "start",  &sub_feature_start,
-			     "end",    &sub_feature_end,
-			     "length", &sub_feature_length,
-			     "term",   &sub_feature_term,
+      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
+			     "total-length", &feature_total_length,
+			     "start", &feature_start,
+			     "end", &feature_end,
+			     "length", &feature_length,
+			     "term", &feature_term,
 			     NULL))
 	{
+	  if (feature_total_length)
+	    select.feature_desc.feature_total_length = g_strdup_printf("%d", feature_total_length) ;
 
 	  if (window->display_forward_coords)
 	    {
-	      sub_feature_start = zmapWindowCoordToDisplay(window, sub_feature_start) ;
-	      sub_feature_end   = zmapWindowCoordToDisplay(window, sub_feature_end) ;
+	      feature_start = zmapWindowCoordToDisplay(window, feature_start) ;
+	      feature_end   = zmapWindowCoordToDisplay(window, feature_end) ;
 	    }
 
+	  select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
+	  select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
 
-	  select.feature_desc.sub_feature_index  = g_strdup_printf("%d", sub_feature_index) ;
-	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
-	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", sub_feature_end) ;
-	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;
-	  select.feature_desc.sub_feature_term   = sub_feature_term ;
+	  if (feature_length)
+	    select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
+
+	  select.feature_desc.feature_term   = feature_term;
 	}
+
 
       if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-	  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+	  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 				 "query-start",  &query_start,
 				 "query-end",    &query_end,
 				 "query-length", &query_length,
+				 "query-strand", &query_strand,
 				 NULL))
 	    {
-	      select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
-	      select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
+	      select.feature_desc.feature_query_start  = g_strdup_printf("%d", query_start) ;
+	      select.feature_desc.feature_query_end    = g_strdup_printf("%d", query_end) ;
+	      select.feature_desc.feature_query_length = g_strdup_printf("%d", query_length) ;
+	      select.feature_desc.feature_query_strand = zMapFeatureStrand2Str(query_strand) ;
+	    }
+
+	  if (feature_arg->feature.homol.align)
+	    select.feature_desc.sub_feature_none_txt = g_strdup("<GAPS NOT SHOWN>") ;
+	  else
+	    select.feature_desc.sub_feature_none_txt = g_strdup("<UNGAPPED ALIGNMENT>") ;
+	}
+      else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+	{
+	  select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
+	}
+
+
+
+      if (sub_feature)		/* If sub_feature == NULL we'll only get the same as previous! */
+	{
+	  feature_start = feature_end = feature_length = query_start = query_end =
+	    sub_feature_index = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
+
+	  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+				 "index",  &sub_feature_index,
+				 "start",  &sub_feature_start,
+				 "end",    &sub_feature_end,
+				 "length", &sub_feature_length,
+				 "term",   &sub_feature_term,
+				 NULL))
+	    {
+
+	      if (window->display_forward_coords)
+		{
+		  sub_feature_start = zmapWindowCoordToDisplay(window, sub_feature_start) ;
+		  sub_feature_end   = zmapWindowCoordToDisplay(window, sub_feature_end) ;
+		}
+
+
+	      select.feature_desc.sub_feature_index  = g_strdup_printf("%d", sub_feature_index) ;
+	      select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
+	      select.feature_desc.sub_feature_end    = g_strdup_printf("%d", sub_feature_end) ;
+	      select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;
+	      select.feature_desc.sub_feature_term   = sub_feature_term ;
+	    }
+
+	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    {
+	      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+				     "query-start",  &query_start,
+				     "query-end",    &query_end,
+				     "query-length", &query_length,
+				     NULL))
+		{
+		  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
+		  select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
+		}
 	    }
 	}
+      else
+	{
+	  select.feature_desc.sub_feature_term = "-";
+	}
+
+      zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
+			 "locus", &(select.feature_desc.feature_locus),
+			 NULL);
+
+      /* Need to replicate this ... */
+      /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
+
+      select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
+
+      if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
+	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
+      else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
+	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
+
+
+      select.feature_desc.feature_strand = zMapFeatureStrand2Str(zmapWindowStrandToDisplay(window, feature->strand)) ;
+
+      if (zMapStyleIsFrameSpecific(style))
+	select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
+
+      if (feature->flags.has_score)
+	select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
+
+      select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
+
+      if ((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
+	select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
+
+      if (full_item)
+	select.highlight_item = full_item ;
+      else
+	select.highlight_item = sub_item ;
+
+      select.replace_highlight_item = replace_highlight_item ;
+
+      select.highlight_same_names = highlight_same_names ;
+
+      /* We've set up the select data so now callback to the layer above with this data. */
+      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+      /* Clear up.... */
+      g_free(select.feature_desc.sub_feature_start) ;
+      g_free(select.feature_desc.sub_feature_end) ;
+      g_free(select.feature_desc.sub_feature_query_start) ;
+      g_free(select.feature_desc.sub_feature_query_end) ;
+      g_free(select.feature_desc.feature_set_description) ;
+      g_free(select.feature_desc.feature_start) ;
+      g_free(select.feature_desc.feature_end) ;
+      g_free(select.feature_desc.feature_query_start) ;
+      g_free(select.feature_desc.feature_query_end) ;
+      g_free(select.feature_desc.feature_query_length) ;
+      g_free(select.feature_desc.feature_length) ;
+      g_free(select.feature_desc.feature_description) ;
     }
-  else
-    {
-      select.feature_desc.sub_feature_term = "-";
-    }
 
-  zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-		     "locus", &(select.feature_desc.feature_locus),
-		     NULL);
-
-  /* Need to replicate this ... */
-  /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
-
-  select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
-
-  if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
-    select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
-    select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
-
-
-  select.feature_desc.feature_strand = zMapFeatureStrand2Str(zmapWindowStrandToDisplay(window, feature->strand)) ;
-
-  if (zMapStyleIsFrameSpecific(style))
-    select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
-
-  if (feature->flags.has_score)
-    select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
-
-  select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
-
-  if ((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
-    select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
-
-  if (full_item)
-    select.highlight_item = full_item ;
-  else
-    select.highlight_item = sub_item ;
-
-  select.replace_highlight_item = replace_highlight_item ;
-
-  select.highlight_same_names = highlight_same_names ;
-
-  /* We've set up the select data so now callback to the layer above with this data. */
-  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
-  /* Clear up.... */
-  g_free(select.feature_desc.sub_feature_start) ;
-  g_free(select.feature_desc.sub_feature_end) ;
-  g_free(select.feature_desc.sub_feature_query_start) ;
-  g_free(select.feature_desc.sub_feature_query_end) ;
-  g_free(select.feature_desc.feature_set_description) ;
-  g_free(select.feature_desc.feature_start) ;
-  g_free(select.feature_desc.feature_end) ;
-  g_free(select.feature_desc.feature_query_start) ;
-  g_free(select.feature_desc.feature_query_end) ;
-  g_free(select.feature_desc.feature_query_length) ;
-  g_free(select.feature_desc.feature_length) ;
-  g_free(select.feature_desc.feature_description) ;
 
 
   /* We wait until here to do this so we are only setting the
    * clipboard text once. i.e. for this window. And so that we have
    * updated the focus object correctly. */
   if (alternative_clipboard_text)
-    select.secondary_text = alternative_clipboard_text ;
+    {
+      select.secondary_text = alternative_clipboard_text ;
+    }
+  else if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+    {
+      char *dna_string, *seq_name;
+
+      dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+
+      seq_name = g_strdup_printf("%d-%d", display_start, display_end);
+
+      select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA,
+					      seq_name, "DNA", NULL,
+					      end - start + 1,
+					      dna_string);
+      g_free(seq_name);
+    }
+  else if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    {
+      ZMapPeptide translation;
+      char *dna_string, *seq_name;
+#ifdef UNUSED
+      int frame = zmapWindowFeatureFrame(feature);
+#endif
+
+      /* Get peptide by translating the corresponding dna, necessary because
+       * there might be trailing part codons etc. */
+      dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, dna_start, dna_end, FALSE) ;
+      seq_name    = g_strdup_printf("%d-%d (%d-%d)", start, end, dna_start, dna_end) ;
+      translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE) ;
+      select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
+					      seq_name, "Protein", NULL,
+					      zMapPeptideLength(translation),
+					      zMapPeptideSequence(translation)) ;
+
+      g_free(seq_name);
+      zMapPeptideDestroy(translation);
+    }
   else
-    select.secondary_text = makePrimarySelectionText(window, full_item) ;
+    {
+      select.secondary_text = makePrimarySelectionText(window, full_item) ;
+    }
 
   zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
 
@@ -1718,12 +1886,14 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->pane     = gtk_hpaned_new();
 
   gtk_container_set_border_width(GTK_CONTAINER(window->pane), 2);
+
   {                             /* A quick experiment with resource files */
     char *widget_name = NULL;
     widget_name = g_strdup_printf("zmap-view-%s", window->sequence);
     gtk_widget_set_name(GTK_WIDGET(window->toplevel), widget_name);
     g_free(widget_name);
   }
+
   g_signal_connect(GTK_OBJECT(window->toplevel), "event",
 		   GTK_SIGNAL_FUNC(windowGeneralEventCB), (gpointer)window) ;
 
@@ -2628,10 +2798,10 @@ static gboolean getConfiguration(ZMapWindow window)
   gboolean result = FALSE ;
 
   /* Set default values */
-  window->canvas_maxwin_size     = ZMAP_WINDOW_MAX_WINDOW;
-  window->keep_empty_cols        = FALSE;
+  window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW;
+  window->keep_empty_cols = FALSE;
   window->display_forward_coords = TRUE;
-  window->show_3_frame_reverse   = FALSE;
+  window->show_3_frame_reverse = FALSE;
 
   if((context = zMapConfigIniContextProvide()))
     {
@@ -2654,8 +2824,8 @@ static gboolean getConfiguration(ZMapWindow window)
 					ZMAPSTANZA_WINDOW_FWD_COORDS, &tmp_bool))
 	window->display_forward_coords = tmp_bool;
 
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-					ZMAPSTANZA_WINDOW_SHOW_3F_REV, &tmp_bool))
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+					 ZMAPSTANZA_WINDOW_SHOW_3F_REV, &tmp_bool))
 	window->show_3_frame_reverse = tmp_bool;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
@@ -4080,7 +4250,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		GList *hidden_items = NULL ;
 
-            zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
+		zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
 
 		zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
 
@@ -4246,11 +4416,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_E:   // can only rub out one at a time :-(
       if(zmap_development_G)
         {
-            // this is test code to exercise the focus functions
-            // it only affects the current window and callbacks to the view are not used
+	  // this is test code to exercise the focus functions
+	  // it only affects the current window and callbacks to the view are not used
           zmapWindowFocusRemoveFocusItemType(window->focus,
-                  zmapWindowFocusGetHotItem(window->focus),
-                  WINDOW_FOCUS_GROUP_EVIDENCE);
+					     zmapWindowFocusGetHotItem(window->focus),
+					     WINDOW_FOCUS_GROUP_EVIDENCE, TRUE) ;
           zmapWindowFocusReset(window->focus);
         }
       break;
@@ -4641,8 +4811,8 @@ static void jumpFeature(ZMapWindow window, guint keyval)
       feature = zmapWindowItemGetFeature(focus_item);
 
       /* Pass information about the object clicked on back to the application. */
-      zMapWindowUpdateInfoPanel(window, feature, focus_item, focus_item, NULL,
-				replace_highlight, highlight_same_names) ;
+      zmapWindowUpdateInfoPanel(window, feature, focus_item, focus_item, 0, 0,
+				NULL, replace_highlight, highlight_same_names) ;
     }
 
 
