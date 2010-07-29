@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.17 2010-07-16 09:14:35 mh17 Exp $ -->
+<!-- $Id: index.html,v 1.18 2010-07-29 08:35:43 mh17 Exp $ -->
 
 <h2>ZMap Design Documentation</h2>
 
@@ -14,6 +14,8 @@
 </fieldset>
 
 <fieldset><legend>Index</legend>
+<div class="left">
+<fieldset><legend>How it works</legend>
 <a href="Design_notes/misc/about.shtml">About these pages</a><br />
 <br />
 <a href="Design_notes/modules/zmapConfig.shtml">Configuration files</a><br />
@@ -26,20 +28,32 @@ Coordinate systems<br />
 <a href="Design_notes/notes/focus_list.shtml">Focus/ highlight items</a>
 <br />
 
-<a href="Design_notes/notes/performance.shtml">Performance</a>
-<a href="Design_notes/notes/profile.shtml">Profiling</a>
-<a href="Design_notes/notes/optimise.shtml">Optimising</a>
-<br />
-<a href="Design_notes/notes/otter_zmap.shtml#otterface">Otterlace interface</a>
-<a href="Design_notes/notes/EST_mRNA.shtml">Masking EST's with mRNA's</a>
-<a href="Design_notes/notes/otter_zmap.shtml#evidence">Show Evidence</a><br />
 
 <a href="Design_notes/modules/pipeServer.shtml">pipeServer Config</a><br />
 <a href="Design_notes/modules/zmapFeature.shtml">Styles</a>
 <a href="Design_notes/notes/glyph_style.shtml">and Glyphs</a><br>
 <a href="Design_notes/notes/slaveThread.shtml">Threads</a><br>
 <a href="Design_notes/modules/zmapView.shtml">All about Views</a><br />
+</fieldset>
+</div>
+<div  class="left">
+<fieldset><legend>Requests</legend>
+<a href="Design_notes/notes/EST_mRNA.shtml">Masking EST's with mRNA's</a><br />
+<a href="Design_notes/notes/otter_zmap.shtml#otterface">Otterlace interface</a>
+<a href="Design_notes/notes/otter_zmap.shtml#evidence">Show Evidence</a><br />
+<a href="Design_notes/notes/RNAseq.shtml">RNAseq</a><br />
+</fieldset>
+</div>
 
+<div class="left">
+<fieldset><legend>Performance</legend>
+
+<a href="Design_notes/notes/performance.shtml">Performance</a> <br />
+<a href="Design_notes/notes/profile.shtml">Profiling</a> <br />
+<a href="Design_notes/notes/optimise.shtml">Optimising</a> <br />
+
+</fieldset>
+</div>
 </fieldset>
 
 <fieldset><legend>Thought for food</legend>
@@ -85,6 +99,7 @@ and zmapfeature.c:
 </pre>
 appear to give alternative opinions. The problem is that 'featureset' is used to describe a set of sets of features and that the concept of 'a set of features of the same type' only occurs as a limiting case in the data structures.  Structurally as the main ZMap handles display the GFFparser is the wrong place to assign features to display columns, especially if we consider that zmapWindow/zmapWindowDrawFeatures() executes code to do just that.
 <li><b>zMapViewLoadFeatures()</b> is called for <b>OTF data requests</b> after the initial load, and featuresets etc are concatentated not merged. The server interface has some loose ends relating to whether or not the report all supported featuresets of just those requested, and currently the return all styles not just those needed. Needs a tidy up.
+<li> ZMapView->columns needs to be a new struct. This should handle column ordering and also column bump state. zmapWindow->feature_set_names is currently used for this and need to be replaced - it's left as is right now as support for old ACE connectuons needs it.
 </ul>
 </p>
 
