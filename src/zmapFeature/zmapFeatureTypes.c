@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 26 12:02 2010 (edgrif)
+ * Last edited: Jul 13 17:08 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.100 2010-07-15 10:48:57 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.101 2010-07-29 09:26:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1154,7 +1154,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_ALL,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
-		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_AS_WELL,
+		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_ONLY_3,
 
 		 /* This seems unsupported actually.... */
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
