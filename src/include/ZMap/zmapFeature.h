@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Mar  3 13:40 2010 (edgrif)
+ * Last edited: Jul 22 15:32 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.176 2010-07-15 10:48:54 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.177 2010-07-29 09:11:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -154,6 +154,8 @@ typedef struct ZMapSequenceStruct_
 {
   GQuark name ;						    /* optional name (zero if no name). */
   ZMapSequenceType type ;				    /* dna or peptide. */
+  ZMapFrame frame ;					    /* Where possible dna frame from which
+							     * peptide translated. */
   int length ;						    /* length of sequence in bases or peptides. */
   char *sequence ;					    /* Actual sequence." */
 } ZMapSequenceStruct, *ZMapSequence ;
