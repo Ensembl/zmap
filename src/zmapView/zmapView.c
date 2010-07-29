@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 24 15:48 2010 (edgrif)
+ * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.210 2010-07-15 10:48:59 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.211 2010-07-29 09:21:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2314,12 +2314,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
 	  gboolean thread_has_died = FALSE ;
-        ConnectionData cd;
-        LoadFeaturesDataStruct lfd;
+	  ConnectionData cd;
+	  LoadFeaturesDataStruct lfd;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
-        cd = (ConnectionData) view_con->request_data;
+	  cd = (ConnectionData) view_con->request_data;
 
 	  /* NOTE HOW THE FACT THAT WE KNOW NOTHING ABOUT WHERE THIS DATA CAME FROM
 	   * MEANS THAT WE SHOULD BE PASSING A HEADER WITH THE DATA SO WE CAN SAY WHERE
@@ -2328,15 +2328,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  data = NULL ;
 	  err_msg = NULL ;
-        thread_status = 0;
+	  thread_status = 0;
 
-        // need to copy this info in case of thread death which clears it up
+	  // need to copy this info in case of thread death which clears it up
 
-        if(cd)
-          {
-            lfd.feature_sets = cd->feature_sets;
-            lfd.xwid = zmap_view->xwid;
-          }
+	  if(cd)
+	    {
+	      lfd.feature_sets = cd->feature_sets;
+	      lfd.xwid = zmap_view->xwid;
+	    }
 
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
 	    {
@@ -2553,19 +2553,19 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		}
 	    }
 
-        if(thread_status)     // tell otterlace
-          {
-            if(cd)      // ie was valid at the start of the loop
-            {
-              if(thread_status < 0 && !err_msg)
-                err_msg = "Failed";
+	  if (thread_status)     // tell otterlace
+	    {
+	      if (cd)      // ie was valid at the start of the loop
+		{
+		  if (thread_status < 0 && !err_msg)
+		    err_msg = g_strdup("Failed") ;
 
-              lfd.status = thread_status > 0 ? TRUE : FALSE;
-              lfd.err_msg = err_msg;
+		  lfd.status = thread_status > 0 ? TRUE : FALSE ;
+		  lfd.err_msg = err_msg ;
 
-             (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data,&lfd);
-            }
-          }
+		  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, &lfd) ;
+		}
+	    }
 
 	  if (err_msg)
 	    g_free(err_msg) ;
