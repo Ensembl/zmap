@@ -21,27 +21,21 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code implementing the menus for sequence display.
  *
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: May  5 17:27 2010 (edgrif)
+ * Last edited: Jul 29 10:18 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.73 2010-07-15 10:49:07 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.74 2010-07-29 09:20:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <string.h>
+#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h> /* zMap_g_hash_table_nth */
 #include <ZMap/zmapFASTA.h>
@@ -131,11 +125,19 @@ typedef struct
   GArray **array;
 }AlignBlockMenuStruct, *AlignBlockMenu;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void evidenceMenuCB(int menu_item_id, gpointer callback_data);
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void unbumpAllCB(int menu_item_id, gpointer callback_data);
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -238,7 +240,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     } ;
   static gboolean menu_set = FALSE ;
   static int ind_evidence = 0;
-  static int ind_mask = 0;
   ZMapGUIMenuItem item ;
   ItemMenuCBData menu_data = (ItemMenuCBData) callback_data;
 
@@ -823,6 +824,8 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data) // menu item commented out
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -838,6 +841,8 @@ static void bumpToInitialCB(int menu_item_id, gpointer callback_data) // menu it
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void unbumpAllCB(int menu_item_id, gpointer callback_data)
 {
@@ -925,6 +930,8 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -935,7 +942,6 @@ static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
   if (column_group)
     {
       ZMapWindowContainerFeatureSet container;
-      gboolean mask_state ;
 
       container = (ZMapWindowContainerFeatureSet)column_group;
 
@@ -955,6 +961,8 @@ static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 // unhighlight the evidence features
