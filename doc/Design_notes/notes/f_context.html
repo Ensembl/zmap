@@ -73,7 +73,7 @@ It may be wise to review the columns dialog in terms of 'available columns', and
 </p>
 
 <h3>Merging data from server in to the view</h3>
-<p>This is still not perfect, there are a few areas where memory is possibly not being freed, and the merge strategy is ad-hoc in places.
+<p>This is still not perfect, there are a few areas where memory is possibly not being freed, and the merge strategy is ad-hoc in places.  There are also some unexpected side effects to be had while changing code - adding columns to the requested featuresets caused the featuresets_2_styles data to be lost.  This is probably not code spontaneously breaking but more likely being used in new ways.
 </p>
 
 </fieldset>
