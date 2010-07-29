@@ -29,23 +29,17 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Apr 28 09:49 2010 (edgrif)
+ * Last edited: Jul 29 10:15 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.83 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.84 2010-07-29 09:17:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
-
 
 #include <math.h>
 #include <string.h>
 #include <gtk/gtk.h>
+
+#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapStyle.h>
 #include <zmapWindow_P.h>
@@ -1533,19 +1527,16 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
                                      double x1, double y1, double x2, double y2,
                                      ZMapFeatureTypeStyle style)
 {
-  ZMapFeatureBlock feature_block = run_data->block;
-  FooCanvasItem  *text_item_parent = NULL;
+  FooCanvasItem  *text_item_parent = NULL ;
+  ZMapFeatureBlock feature_block = run_data->block ;
 
-  if(!feature_block->sequence.sequence)
-    {
-      zMapLogWarning("%s", "Trying to draw a seq feature, but there's no sequence!");
-      return NULL;
-    }
+  if (!feature_block->sequence.sequence)
+    zMapLogWarning("%s", "Trying to draw a seq feature, but there's no sequence!");
+  else
+    text_item_parent = drawFullColumnTextFeature(run_data, feature, feature_offset,
+						 x1, y1, x2, y2, style);
 
-  text_item_parent = drawFullColumnTextFeature(run_data, feature, feature_offset,
-                                               x1, y1, x2, y2, style);
-
-  return text_item_parent;
+  return text_item_parent ;
 }
 
 static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
@@ -1805,41 +1796,48 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
                                                 double x1, double y1, double x2, double y2,
                                                 ZMapFeatureTypeStyle style)
 {
+  ZMapWindowCanvasItem canvas_item = NULL ;
   FooCanvasGroup *parent = run_data->container;
-  double feature_start, feature_end;
+  double text_start, text_end;
   FooCanvasItem *item;
   FooCanvasZMapAllocateCB allocate_func_cb = NULL;
   FooCanvasZMapFetchTextCB fetch_text_func_cb = NULL;
-  ZMapWindowCanvasItem canvas_item;
 
-  feature_start  = feature->x1;
-  feature_end    = feature->x2;
 
-  zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
+  text_start  = feature->x1;
+  text_end    = feature->x2;
 
-  canvas_item = zMapWindowCanvasItemCreate(parent, feature_start, feature, style) ;
+  zmapWindowSeq2CanOffset(&text_start, &text_end, feature_offset) ;
 
-  if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  /* Create the "parent" canvas item for the text item itself. */
+  canvas_item = zMapWindowCanvasItemCreate(parent, text_start, feature, style) ;
+
+  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
     {
       allocate_func_cb   = canvas_allocate_dna_cb;
       fetch_text_func_cb = canvas_fetch_feature_text_cb;
     }
-  else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  else if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
       allocate_func_cb   = canvas_allocate_protein_cb;
       fetch_text_func_cb = canvas_fetch_feature_text_cb;
     }
 
+  /* Create the text item which actually holds the text. */
   item = zMapWindowCanvasItemAddInterval(canvas_item, NULL,
-					 feature_start, feature_end,
-					 x1, x2);
-  foo_canvas_item_set(item,
-		      "allocate_func",   allocate_func_cb,
-		      "fetch_text_func", fetch_text_func_cb,
-		      "callback_data",   feature,
-		      NULL);
+					 text_start, text_end,
+					 x1, x2) ;
 
-  return (FooCanvasItem *)canvas_item;
+  foo_canvas_item_set(item,
+		      PROP_REFSEQ_START_STR,    feature->x1,
+		      PROP_REFSEQ_END_STR,      feature->x2,
+		      PROP_TEXT_LENGTH_STR,     feature->feature.sequence.length,
+		      PROP_TEXT_ALLOCATE_FUNC_STR,   allocate_func_cb,
+		      PROP_TEXT_FETCH_TEXT_FUNC_STR, fetch_text_func_cb,
+		      PROP_TEXT_CALLBACK_DATA_STR,   feature,
+		      NULL) ;
+
+  return (FooCanvasItem *)canvas_item ;
 }
 
 static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature feature,
