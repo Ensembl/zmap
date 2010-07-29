@@ -1,0 +1,16 @@
+<h2>OTF requests for RNA seq data</h2>
+
+<fieldset><legend>As requested by Laurens</legend>
+
+<p>
+For displaying on-demand rna-seq data, i.e. only data for the marked region, we propose interfaces and map displays as in the two attached mock-ups.
+</p>
+<p>
+For the column chooser window I've created a third tab where we can select which of the four types of displays (gene models, introns, coverage and reads) for each of the four different data sets (tissue, cell type and developmental stage, and other) we want to display. The "Display All" buttons of course operate on the column or row they align with (forgive me the awkward spacing of the columns).
+In zmap the columns could look like what is displayed in the mock-up. Default for all columns except gene models would be unbumped (compressed/condensed). The coverage bar graph would be on a logarithmic scale. The condensed form of that column, the heat map, wouldn't be sufficient on its own as heat maps are fine for comparing levels between neighbours, but not for comparing medium/long-distance levels as it suffers from the well-known context dependent apparent density level problem (i.e. the same shade surrounded by black neighbours looks much, much lighter than when surrounded by white neighbours).
+</p>
+
+<img src="Design_notes/notes/zmap_rnaseq_column_selection_window.gif" class="img" style="width:800px">
+<img src="Design_notes/notes/zmap_rnaseq_columns.gif" class="img" style="width:800px">
+
+</fieldset>
