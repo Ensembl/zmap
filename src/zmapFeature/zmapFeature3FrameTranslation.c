@@ -22,25 +22,20 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description: Functions supporting 3 frame translation objects derived
+ *              dna sequence feature.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  1 19:01 2009 (rds)
+ * Last edited: Jul 29 10:29 2010 (edgrif)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.4 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.5 2010-07-29 09:30:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapFeature_P.h>
@@ -57,6 +52,24 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
 				     ZMapFeatureTypeStyle style,
 				     char *seq_name, 
 				     char *seq);
+
+
+
+
+gboolean zMapFeatureAddFrame(ZMapFeature feature, ZMapFrame frame)
+{
+  gboolean result = FALSE ;
+
+  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    {
+      feature->feature.sequence.frame = frame ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) 
 {
@@ -279,14 +292,17 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
                                      x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
 
+	  zMapFeatureAddFrame(translation, i) ;
+
           zMapFeatureSetAddFeature(feature_set, translation);
         }
 
-      peptide_str    = zMapPeptideSequence(pep);
+      peptide_str = zMapPeptideSequence(pep) ;
 
-      peptide_str    = g_strdup(peptide_str);
+      peptide_str = g_strdup(peptide_str) ;
 
-      peptide_length = zMapPeptideLength(pep);
+      /* Get the peptide length in complete codons. */
+      peptide_length = zMapPeptideFullCodonAALength(pep) ;
 
       zMapFeature3FrameTranslationAddSequenceData(translation, peptide_str, peptide_length);
       
