@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 08:58 2009 (rds)
+ * Last edited: Jul 14 14:03 2010 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.44 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.45 2010-07-29 09:34:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -465,7 +465,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
 
   /* Frame is only possible if we are in 3 frame mode. */
-  if (!(search_data->window->display_3_frame))
+  if (!(IS_3FRAME(search_data->window->display_3_frame)))
     gtk_widget_set_sensitive(search_data->frame_entry, FALSE) ;
 
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 19 18:35 2010 (edgrif)
+ * Last edited: Jul 14 12:06 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.39 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.40 2010-07-29 09:30:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1937,7 +1937,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 
 	      window = configure_data->window;
 
-	      if(window->display_3_frame)
+	      if (IS_3FRAME(window->display_3_frame))
 		{
 		  ZMapWindowContainerFeatureSet container;
 		  ZMapFeatureSet feature_set;
