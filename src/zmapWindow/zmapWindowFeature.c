@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions that manipulate displayed features, they
  *              encapsulate handling of the feature context, the
@@ -29,21 +29,16 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 30 12:28 2010 (edgrif)
+ * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.192 2010-07-15 10:49:05 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.193 2010-07-29 09:56:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <string.h>
 #include <math.h>
+
+#include <ZMap/zmap.h>
 #include <ZMap/zmapFASTA.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapPeptide.h>
@@ -55,8 +50,8 @@
 #include <zmapWindowFeatures.h>
 #include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-
 #include <zmapWindowFeatures.h>
+
 
 #include <ZMap/zmapThreads.h> // for ForkLock functions
 
@@ -421,12 +416,10 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
       if(zMapFeatureSetFindFeature(feature_set, feature))
         {
           double x1, x2, y1, y2;
-          /* remove the item from the focus items list. */
-          zmapWindowFocusRemoveFocusItem(zmap_window->focus, feature_item);
 
-          if(zmapWindowMarkIsSet(zmap_window->mark) &&
-             feature_item == zmapWindowMarkGetItem(zmap_window->mark) &&
-             zmapWindowMarkGetWorldRange(zmap_window->mark, &x1, &y1, &x2, &y2))
+          if (zmapWindowMarkIsSet(zmap_window->mark)
+	      && feature_item == zmapWindowMarkGetItem(zmap_window->mark)
+	      && zmapWindowMarkGetWorldRange(zmap_window->mark, &x1, &y1, &x2, &y2))
             {
               zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
             }
@@ -756,8 +749,8 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
 
-  if(window->focus)
-      zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
+  if (window->focus)
+    zmapWindowFocusRemoveOnlyFocusItem(window->focus, feature_item) ;
 
   return event_handled ;
 }
@@ -921,18 +914,18 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 {
   gboolean event_handled = FALSE ;
   GdkModifierType shift_mask = GDK_SHIFT_MASK,
-    control_mask             = GDK_CONTROL_MASK,
-    shift_control_mask       = GDK_SHIFT_MASK | GDK_CONTROL_MASK,
-    unwanted_masks           = GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
-                               | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
-                               | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK,
+    control_mask = GDK_CONTROL_MASK,
+    shift_control_mask = (GDK_SHIFT_MASK | GDK_CONTROL_MASK),
+    unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+		      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+		      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
     locks_mask ;
 
   /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
    * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
    * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
    * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
-  if((locks_mask = (but_event->state & unwanted_masks)))
+  if ((locks_mask = (but_event->state & unwanted_masks)))
     {
       shift_mask         |= locks_mask;
       control_mask       |= locks_mask;
@@ -1030,8 +1023,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
       /* Pass information about the object clicked on back to the application. */
-      zMapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, NULL,
-				replace_highlight, highlight_same_names) ;
+      zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0,
+				NULL, replace_highlight, highlight_same_names) ;
     }
 
 
@@ -1869,145 +1862,38 @@ static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin
 
 static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpointer user_data)
 {
-  ZMapWindowSequenceFeature sequence_feature = NULL;
-  ZMapWindow window = (ZMapWindow)user_data;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapWindowSequenceFeature sequence_feature ;
   ZMapFeature feature;
-  int origin_index = start;
-  int current_index = end;
-  ZMapWindowSelectStruct select = {0};
-  int display_start, display_end;
-  char *coords_text = "";
-  int dna_start, dna_end ;
 
   sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
 
   feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
 
-  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  if (feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
     {
-      start = origin_index;
-      end   = current_index;
+      zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
+						feature->feature.sequence.type, start, end) ;
     }
   else
     {
-      ZMapFrame frame;
-      int window_origin;
+      zmapWindowItemHighlightDNARegion(window, FALSE, item, feature->feature.sequence.frame,
+				       feature->feature.sequence.type, start, end) ;
 
-      frame = zMapFeatureFrame(feature) ;
-
-      start = origin_index ;
-      end = current_index ;
-
-      /* Do some monkeying to get the dna coords */
-      origin_index-- ;
-      origin_index *= 3 ;
-      origin_index += frame ;
-      current_index = origin_index + ((end - start + 1) * 3) - 1;
-
-      dna_start = origin_index ;
-      dna_end = current_index ;
-
-      /* zmapWindowCoordToDisplay() doesn't work for protein coord space,
-       * whether this is useful though.... */
-      if (window->origin == window->min_coord)
-	{
-	  window_origin = window->min_coord;
-	}
-      else
-	{
-	  /* calculation for window->origin uses + 2 */
-	  /* CHECK THIS OUT! TEST THE + 4 is required */
-	  window_origin = (window->origin + 4 ) / 3;
-	}
-
-      start = start - (window_origin - 1);
-      end   = end   - (window_origin - 1);
-
-      coords_text = "Protein Coords: ";
-
-      select.feature_desc.sub_feature_start  = g_strdup_printf("%s%d", coords_text, start);
-      select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
-      select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
-
-      coords_text = "DNA Coords: ";			    /* reset */
+      /* We want to highlight the peptides correctly but really we need to take the frame of
+       * the selected peptide column, get the corresponding dna, then for the remaining frames
+       * clip their translations to this section of dna..... */
+      zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
+						feature->feature.sequence.type, start, end) ;
     }
 
-
-  display_start = zmapWindowCoordToDisplay(window, origin_index);
-  display_end   = zmapWindowCoordToDisplay(window, current_index);
-
-  select.feature_desc.feature_start  = g_strdup_printf("%s%d", coords_text, display_start);
-  select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
-  select.feature_desc.feature_length = g_strdup_printf("%d", current_index - origin_index + 1);
-  select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
-
-
-  /* update the info panel */
-  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
-
-  /* Update the highlighting, note that for peptides we highlight the
-   * corresponding dna sequence as well as the peptide. */
-  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-    {
-      g_free(select.feature_desc.sub_feature_start);
-      g_free(select.feature_desc.sub_feature_end);
-      g_free(select.feature_desc.sub_feature_length);
-
-      zmapWindowItemHighlightDNARegion(window, item, origin_index, current_index);
-    }
-  else
-    {
-      zmapWindowItemHighlightRegionTranslations(window, item, origin_index, current_index);
-    }
-
-  g_free(select.feature_desc.feature_start);
-  g_free(select.feature_desc.feature_end);
-  g_free(select.feature_desc.feature_length);
-
-
-  /* We wait until here to do this so we are only setting the
-   * clipboard text once. i.e. for this window. And so that we have
-   * updated the focus object correctly. */
-  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
-    {
-      char *dna_string, *seq_name;
-
-      dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-
-      seq_name = g_strdup_printf("%d-%d", display_start, display_end);
-
-      select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA,
-					      seq_name, "DNA", NULL,
-					      end - start + 1,
-					      dna_string);
-      g_free(seq_name);
-    }
-  else
-    {
-      ZMapPeptide translation;
-      char *dna_string, *seq_name;
-#ifdef UNUSED
-      int frame = zmapWindowFeatureFrame(feature);
-#endif
-      /* Get peptide by translating the corresponding dna, necessary because
-       * there might be trailing part codons etc. */
-      dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, dna_start, dna_end, FALSE) ;
-      seq_name    = g_strdup_printf("%d-%d (%d-%d)", start, end, dna_start, dna_end) ;
-      translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE) ;
-      select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
-					      seq_name, "Protein", NULL,
-					      zMapPeptideLength(translation),
-					      zMapPeptideSequence(translation)) ;
-      g_free(seq_name);
-      zMapPeptideDestroy(translation);
-    }
-
-  zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
-  g_free(select.secondary_text) ;
+  /* Pass information about the object clicked on back to the application. */
+  zmapWindowUpdateInfoPanel(window, feature, item, item, start, end, NULL, FALSE, FALSE) ;
 
   return FALSE ;
 }
+
+
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapFeatureContext context,
@@ -2020,6 +1906,21 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
   g_signal_connect(GTK_OBJECT(top_item), "destroy",
 		   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
 
+
+  /* the problem with doing this kind of thing is that we also need the canvasItemEventCB to be
+   *  attached as there are general things we need to do as well...
+   * 
+   * REVISIT THE WHOLE EVENT DELIVERY ORDER STUFF.....
+   * 
+   *  */
+
+  /* ummmmm....I don't like this....suggests that all is not fully implemented in the new
+   * feature item stuff..... */
+  if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
+    g_signal_connect(G_OBJECT(top_item), "sequence-selected",
+		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
+
+
   switch(feature->type)
     {
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
@@ -2029,6 +1930,8 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
     case ZMAPSTYLE_MODE_TEXT:
     case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
       g_signal_connect(G_OBJECT(top_item), "event", G_CALLBACK(canvasItemEventCB), handler_data);
       break;
 
@@ -2036,14 +1939,24 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
+
+  /* the problem with doing this kind of thing is that we also need the canvasItemEventCB to be
+   *  attached as there are general things we need to do as well... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* ummmmm....I don't like this....suggests that all is not fully implemented in the new
    * feature item stuff..... */
   if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
     g_signal_connect(G_OBJECT(top_item), "sequence-selected",
 		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return TRUE ;
 }
+
+
+
 
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
@@ -2138,8 +2051,4 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
   return new_feature ;
 }
-
-
-
-
 
