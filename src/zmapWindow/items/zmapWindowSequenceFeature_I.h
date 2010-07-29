@@ -24,27 +24,32 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description: Internal header for object representing either a
+ *              DNA or a Peptide sequence. Handles display, coords,
+ *              highlighting.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 09:58 2010 (edgrif)
+ * Last edited: Jul 22 14:47 2010 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.6 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.7 2010-07-29 10:17:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_SEQUENCE_FEATURE_I_H
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_I_H
 
 #include <zmapWindowSequenceFeature.h>
 #include <zmapWindowCanvasItem_I.h>
 
+
+/* OH GOSH....WHAT IS SO WRONG WITH ADDING A FEW COMMENTS...THIS IS SO TEDIOUS NOW....Ed */
+
+
 typedef enum
   {
     SEQUENCE_SELECTED_SIGNAL,
     SEQUENCE_LAST_SIGNAL,
   } ZMapWindowSequenceFeatureSignalType ;
+
 
 typedef struct _zmapWindowSequenceFeatureClassStruct
 {
@@ -55,16 +60,22 @@ typedef struct _zmapWindowSequenceFeatureClassStruct
   guint signals[SEQUENCE_LAST_SIGNAL];
 } zmapWindowSequenceFeatureClassStruct;
 
+
+
 typedef struct _zmapWindowSequenceFeatureStruct
 {
   zmapWindowCanvasItem __parent__;
+
+  /* Frame is needed for 3 frame translation objects which display peptides in 3 frames. We need
+   * to know which frame we are !! */
+  ZMapFrame frame ;
 
   struct
   {
     double zoom_x, zoom_y;
     /* world coords scroll region, also sets min/max x/y positions */
     double scr_x1, scr_y1, scr_x2, scr_y2;
-  }float_settings;
+  } float_settings;
 
   struct
   {
@@ -74,9 +85,9 @@ typedef struct _zmapWindowSequenceFeatureStruct
     unsigned int max_y_set : 1;
     
     unsigned int float_axis : 2;
-  }float_flags;
+  } float_flags;
 
-} zmapWindowSequenceFeatureStruct;
+} zmapWindowSequenceFeatureStruct ;
 
 
 #endif /* ZMAP_WINDOW_SEQUENCE_FEATURE_I_H */
