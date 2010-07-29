@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements a zmap foocanvas text item that displays
  *              dna or peptide sequence including highlighting, selecting
@@ -30,23 +30,17 @@
  *
  * Exported functions: See zmapWindowTextItem.h
  * HISTORY:
- * Last edited: Apr 20 09:52 2010 (edgrif)
+ * Last edited: Jul 29 11:21 2010 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.11 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.12 2010-07-29 10:22:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <config.h>
 #include <math.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include <ZMap/zmap.h>
 #include <ZMap/zmapUtilsLogical.h>
 #include <ZMap/zmapUtilsDebug.h>
 #include <zmapWindowTextItem_I.h>
@@ -58,14 +52,14 @@ enum
  {
    PROP_0,
 
+   PROP_REFSEQ_START,
+   PROP_REFSEQ_END,
+   PROP_TEXT_LENGTH,
    PROP_WRAP_MODE,
-
    PROP_TEXT_ALLOCATE_FUNC,
    PROP_TEXT_FETCH_TEXT_FUNC,
    PROP_TEXT_CALLBACK_DATA,
-
    PROP_TEXT_SELECT_COLOR_GDK,
-
    PROP_TEXT_REQUESTED_WIDTH,
    PROP_TEXT_REQUESTED_HEIGHT
  };
@@ -76,7 +70,6 @@ enum
     ZOOM_NOTIFY_MASK          = 1,
     SCROLL_REGION_NOTIFY_MASK = 2,
     KEEP_WITHIN_SCROLL_REGION = 4,
-    
   };
 
 
@@ -92,7 +85,6 @@ static void zmap_window_text_item_get_property (GObject            *object,
 						 guint               param_id,
 						 GValue             *value,
 						 GParamSpec         *pspec);
-
 static void   zmap_window_text_item_update     (FooCanvasItem  *item,
 						 double            i2w_dx,
 						 double            i2w_dy,
@@ -120,13 +112,14 @@ static void   zmap_window_text_item_bounds     (FooCanvasItem  *item,
 						 double           *y1,
 						 double           *x2,
 						 double           *y2);
-
+static gboolean text_item_text_index2item(ZMapWindowTextItem text_item, 
+					  int index, int *index_out,
+					  double *item_coords_out) ;
 
 static void zmap_window_text_item_select(ZMapWindowTextItem text_item, 
 					 int index1, int index2, 
 					 gboolean deselect,
 					 gboolean signal);
-
 static void zmap_window_text_item_deselect(ZMapWindowTextItem text_item,
 					   gboolean signal);
 
@@ -178,7 +171,7 @@ static void text_item_pango2item(FooCanvas *canvas, int px, int py, double *ix, 
 static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
 					     int              line_count);
 static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
-				     ItemEvent       dna_item_event,
+				     ItemEvent       seq_item_event,
 				     PangoLayoutIter   *iter,
 				     PangoLayoutLine   *line,
 				     PangoRectangle    *logical_rect,
@@ -186,7 +179,7 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 				     double             i2w_dx,
 				     double             i2w_dy);
 static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
-					  ItemEvent       dna_item_event);
+					  ItemEvent       seq_item_event);
 
 static int text_item_world2text_index(FooCanvasItem *item, double x, double y);
 static int text_item_item2text_index(FooCanvasItem *item, double x, double y);
@@ -253,7 +246,8 @@ GType zMapWindowTextItemGetType (void)
   return text_type;
 }
 
-void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end, 
+void zMapWindowTextItemSelect(ZMapWindowTextItem text_item,
+			      int start, int end, 
 			      gboolean deselect_first, gboolean emit_signal)
 {
   ZMapWindowTextItemClass text_class;
@@ -277,8 +271,38 @@ void zMapWindowTextItemDeselect(ZMapWindowTextItem text_item, gboolean emit_sign
   if(text_class->deselect)
     (text_class->deselect)(text_item, emit_signal);
 
+  text_item_request_update_no_vis_change(text_item);
+
   return;
 }
+
+
+
+
+/* Given start and end positions in the text (i.e. character positions
+ * in the text string), returns the bounding box of that text in text item coords. */
+gboolean zMapWindowTextItemText2WorldCoords(ZMapWindowTextItem text_item,
+					    int text_start, int text_end,
+					    double *x1, double *y1, double *x2, double *y2)
+{
+  gboolean result = FALSE ;
+  gboolean first_found, last_found ;
+  double start_bounds[4] = {0.0} ;
+  double end_bounds[4] = {0.0} ;
+  int new_start_index, new_end_index ;
+
+  first_found = text_item_text_index2item(text_item,
+					  text_start, &new_start_index,
+					  &start_bounds[0]);
+
+  last_found  = text_item_text_index2item(text_item,
+					  text_end, &new_end_index,
+					  &end_bounds[0]);
+
+  return result ;
+}
+
+
 
 
 int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
@@ -393,21 +417,27 @@ int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
 
 
 
-static gboolean text_item_text_index2item(FooCanvasItem *item, 
+static gboolean text_item_text_index2item(ZMapWindowTextItem zmap, 
 					  int index, 
 					  int *index_out,
 					  double *item_coords_out)
 {
   gboolean index_found = FALSE ;
-  ZMapWindowTextItem zmap ;
+  FooCanvasItem *item ;
 
   zMapDebugPrint(debug_functions, "%s", "- start") ;
 
+  item = FOO_CANVAS_ITEM(zmap) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (ZMAP_IS_WINDOW_TEXT_ITEM(item) && (zmap = ZMAP_WINDOW_TEXT_ITEM(item)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     {
       FooCanvasGroup *parent_group;
       ZMapTextItemDrawData draw_data;
-      ItemEvent dna_item_event;
+      ItemEvent seq_item_event;
       double w, h;
       int row_idx, row, width;
       double x1, x2, y1, y2;
@@ -416,15 +446,41 @@ static gboolean text_item_text_index2item(FooCanvasItem *item,
       
       parent_group = FOO_CANVAS_GROUP(item->parent);
 
-      if ((dna_item_event = &(zmap->item_event)))
+      if ((seq_item_event = &(zmap->item_event)))
 	{
 	  int group_ypos, last_ypos, diff ;
+	  int divisor ;
+
+
+	  /* text position needs to be corrected for the number of text characters per
+	   * codon, e.g. for peptides there is only one character very 3 bases whereas
+	   * for dna there is one character per base. */
+	  divisor = ((zmap->refseq_end - zmap->refseq_start) + 1) / zmap->text_length ;
 
 	  group_ypos = parent_group->ypos ;
+	  group_ypos = group_ypos / divisor ;
+
 	  last_ypos = zmap->last_selected_ypos ;
+	  last_ypos = last_ypos / divisor ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("index: %d\tgroup_ypos: %d\tlast_ypos: %d",
+		 index, group_ypos, last_ypos) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	  diff = (last_ypos - group_ypos) ;
 
 	  index += diff ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("\tdiff: %d\tindex: %d\n", diff, index) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  
 	}
 
       zmap = zmap;
@@ -518,51 +574,85 @@ static void zmap_window_text_item_class_init (ZMapWindowTextItemClass zmap_class
   gobject_class->set_property = zmap_window_text_item_set_property;
   gobject_class->get_property = zmap_window_text_item_get_property;
   
+
+  g_object_class_install_property(gobject_class,
+				  PROP_REFSEQ_START,
+				  g_param_spec_int(PROP_REFSEQ_START_STR,
+						   "text start position",
+						   "Reference sequence position where text starts.",
+						   1,
+						   G_MAXINT32,
+						   1,
+						   G_PARAM_READWRITE)) ;
+
+  g_object_class_install_property(gobject_class,
+				  PROP_REFSEQ_END,
+				  g_param_spec_int(PROP_REFSEQ_END_STR,
+						   "text end position",
+						   "Reference sequence position where text ends.",
+						   1,
+						   G_MAXINT32,
+						   1,
+						   G_PARAM_READWRITE)) ;
+
+  g_object_class_install_property(gobject_class,
+				  PROP_TEXT_LENGTH,
+				  g_param_spec_int(PROP_TEXT_LENGTH_STR,
+						   "text length",
+						   "Length of text string in characters.",
+						   1,
+						   G_MAXINT32,
+						   1,
+						   G_PARAM_READWRITE)) ;
+
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT_ALLOCATE_FUNC,
-				  g_param_spec_pointer("allocate-func",
+				  g_param_spec_pointer(PROP_TEXT_ALLOCATE_FUNC_STR,
 						       "Size Allocate text area.",
 						       "User function to allocate the correct table cell dimensions (not-implemented)",
 						       G_PARAM_READWRITE));
 
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT_FETCH_TEXT_FUNC,
-				  g_param_spec_pointer("fetch-text-func",
+				  g_param_spec_pointer(PROP_TEXT_FETCH_TEXT_FUNC_STR,
 						       "Get Text Function",
 						       "User function to copy text to buffer",
 						       G_PARAM_READWRITE));
   
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT_CALLBACK_DATA,
-				  g_param_spec_pointer("callback-data",
+				  g_param_spec_pointer(PROP_TEXT_CALLBACK_DATA_STR,
 						       "Get Text Function Data",
 						       "User function data to use to copy text to buffer",
 						       G_PARAM_READWRITE));
   
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT_SELECT_COLOR_GDK,
-				  g_param_spec_boxed ("select-color-gdk", NULL, NULL,
+				  g_param_spec_boxed (PROP_TEXT_SELECT_COLOR_GDK_STR,
+						      NULL, NULL,
 						      GDK_TYPE_COLOR,
 						      G_PARAM_READWRITE));
 
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT_REQUESTED_WIDTH,
-				  g_param_spec_double("full-width",
+				  g_param_spec_double(PROP_TEXT_REQUESTED_WIDTH_STR,
 						      NULL, NULL,
 						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0,
 						      G_PARAM_READWRITE));
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT_REQUESTED_HEIGHT,
-				  g_param_spec_double("full-height",
+				  g_param_spec_double(PROP_TEXT_REQUESTED_HEIGHT_STR,
 						      NULL, NULL,
 						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0,
 						      G_PARAM_READWRITE));
   g_object_class_install_property(gobject_class,
 				  PROP_WRAP_MODE,
-				  g_param_spec_enum ("wrap-mode", NULL, NULL,
-						     PANGO_TYPE_WRAP_MODE, PANGO_WRAP_WORD,
-						     G_PARAM_READWRITE));
+				  g_param_spec_enum(PROP_WRAP_MODE_STR,
+						    NULL, NULL,
+						    PANGO_TYPE_WRAP_MODE, PANGO_WRAP_WORD,
+						    G_PARAM_READWRITE));
   
+
   object_class->destroy = zmap_window_text_item_destroy;
   
   item_class->map       = zmap_window_text_item_map;
@@ -599,7 +689,7 @@ static void zmap_window_text_item_class_init (ZMapWindowTextItemClass zmap_class
 /* Currently the item_event that comes in here is _always_ the one in zmapWindowTextItemStruct */
 static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, gpointer data)
 {
-  ItemEvent dna_item_event = (ItemEvent)data;
+  ItemEvent seq_item_event = (ItemEvent)data;
   gboolean handled = FALSE;
 
   zMapDebugPrint(debug_functions, "%s", "- start") ;
@@ -620,71 +710,71 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 
 	    if (event->type == GDK_BUTTON_PRESS)
 	      {
-		printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "start press") ;
+		printSelectedState(seq_item_event, (char *) __PRETTY_FUNCTION__, "start press") ;
 
-		dna_item_event->origin_index = 0;
-		ZMAP_FLAG_ON(dna_item_event->selected_state, TEXT_ITEM_SELECT_EVENT) ;
-		dna_item_event->index_bounds[3] = 0.0;
+		seq_item_event->origin_index = 0;
+		ZMAP_FLAG_ON(seq_item_event->selected_state, TEXT_ITEM_SELECT_EVENT) ;
+		seq_item_event->index_bounds[3] = 0.0;
 
-		dna_item_event->origin_x = button->x;
-		dna_item_event->origin_y = button->y;
-		dna_item_event->event_x  = button->x;
-		dna_item_event->event_y  = button->y;
+		seq_item_event->origin_x = button->x;
+		seq_item_event->origin_y = button->y;
+		seq_item_event->event_x  = button->x;
+		seq_item_event->event_y  = button->y;
 
 		if (text_class->deselect)
 		  (text_class->deselect)(text, TRUE);
 
 		handled = TRUE;
 
-		printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "end press") ;
+		printSelectedState(seq_item_event, (char *) __PRETTY_FUNCTION__, "end press") ;
 	      }
 	    else if (event->type == GDK_BUTTON_RELEASE)
 	      {
-		if (ZMAP_FLAG_IS_ON(dna_item_event->selected_state, TEXT_ITEM_SELECT_EVENT))
+		if (ZMAP_FLAG_IS_ON(seq_item_event->selected_state, TEXT_ITEM_SELECT_EVENT))
 		  {
 		    FooCanvasItem *item;
 		    int start_index, end_index;
 
-		    printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "start release") ;
+		    printSelectedState(seq_item_event, (char *) __PRETTY_FUNCTION__, "start release") ;
 		
 		    item = FOO_CANVAS_ITEM(text);
 
 		    start_index = text_item_world2text_index(item, 
-							     dna_item_event->origin_x,
-							     dna_item_event->origin_y);
+							     seq_item_event->origin_x,
+							     seq_item_event->origin_y);
 		
 		    end_index = text_item_world2text_index(item, 
-							   dna_item_event->event_x,
-							   dna_item_event->event_y);
+							   seq_item_event->event_x,
+							   seq_item_event->event_y);
 		    if (start_index > end_index)
 		      {
-			dna_item_event->start_index = end_index;
-			dna_item_event->end_index   = start_index;
+			seq_item_event->start_index = end_index;
+			seq_item_event->end_index   = start_index;
 		      }
 		    else
 		      {
-			dna_item_event->start_index = start_index;
-			dna_item_event->end_index   = end_index;
+			seq_item_event->start_index = start_index;
+			seq_item_event->end_index   = end_index;
 		      }
 
 		    /* Turn on signalling */
-		    dna_item_event->selected_state |= TEXT_ITEM_SELECT_SIGNAL;
+		    seq_item_event->selected_state |= TEXT_ITEM_SELECT_SIGNAL;
 
 		    emit_signal(text, text_class->signals[TEXT_ITEM_SELECTED_SIGNAL], 0);
 
 		    /* Turn off event handling */
-		    dna_item_event->selected_state &= ~(TEXT_ITEM_SELECT_EVENT);
+		    seq_item_event->selected_state &= ~(TEXT_ITEM_SELECT_EVENT);
 
 		    /* and makethe highlight endure */
-		    dna_item_event->selected_state |= TEXT_ITEM_SELECT_ENDURE;
+		    seq_item_event->selected_state |= TEXT_ITEM_SELECT_ENDURE;
 
 
-		    dna_item_event->origin_index = 0;
+		    seq_item_event->origin_index = 0;
 
 
 #ifdef RDS_DONT_INCLUDE
-		    if(dna_item_event->event_x == dna_item_event->origin_x &&
-		       dna_item_event->event_y == dna_item_event->origin_y)
+		    if(seq_item_event->event_x == seq_item_event->origin_x &&
+		       seq_item_event->event_y == seq_item_event->origin_y)
 		      {
 #endif /* RDS_DONT_INCLUDE */
 
@@ -699,14 +789,14 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 			/* as we're async w.r.t update this needs to happen, but I think there's a 
 			 * case for calling the ->update method here, but I guess it would annoy
 			 * the canvas' event handling, so we only request update and live with it. */
-			dna_item_event->selected_state &= ~(TEXT_ITEM_SELECT_SIGNAL);
+			seq_item_event->selected_state &= ~(TEXT_ITEM_SELECT_SIGNAL);
 		      }
 #endif /* RDS_DONT_INCLUDE */
 
 
 		    handled = TRUE;
 
-		    printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "end release") ;
+		    printSelectedState(seq_item_event, (char *) __PRETTY_FUNCTION__, "end release") ;
 		  }
 	      }
 	  }
@@ -719,10 +809,10 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 	ZMapWindowTextItem text = ZMAP_WINDOW_TEXT_ITEM(text_widget);
 	GdkEventMotion *motion = (GdkEventMotion *)event ;
 
-        if(dna_item_event->selected_state & TEXT_ITEM_SELECT_EVENT)
+        if(seq_item_event->selected_state & TEXT_ITEM_SELECT_EVENT)
           {
-	    dna_item_event->event_x  = motion->x;
-	    dna_item_event->event_y  = motion->y;
+	    seq_item_event->event_x  = motion->x;
+	    seq_item_event->event_y  = motion->y;
 
 	    foo_canvas_item_request_update((FooCanvasItem *)text);
 	    handled = TRUE;
@@ -904,6 +994,22 @@ static void zmap_window_text_item_set_property (GObject            *object,
   
   switch (param_id) 
     {
+    case PROP_REFSEQ_START:
+      text->refseq_start = g_value_get_int(value);
+      break ;
+    case PROP_REFSEQ_END:
+      text->refseq_end = g_value_get_int(value);
+      break ;
+    case PROP_TEXT_LENGTH:
+      text->text_length = g_value_get_int(value);
+      break ;
+    case PROP_WRAP_MODE:
+      {
+	int mode = g_value_get_enum(value);
+
+	pango_layout_set_wrap(parent_text->layout, mode);
+      }	
+      break;
     case PROP_TEXT_ALLOCATE_FUNC:
       text->allocate_func    = g_value_get_pointer(value);
       break;
@@ -918,13 +1024,6 @@ static void zmap_window_text_item_set_property (GObject            *object,
       break;
     case PROP_TEXT_REQUESTED_HEIGHT:
       text->requested_height = g_value_get_double(value);
-      break;
-    case PROP_WRAP_MODE:
-      {
-	int mode = g_value_get_enum(value);
-
-	pango_layout_set_wrap(parent_text->layout, mode);
-      }	
       break;
     case PROP_TEXT_SELECT_COLOR_GDK:
       {
@@ -948,10 +1047,8 @@ static void zmap_window_text_item_set_property (GObject            *object,
 }
 
 /* Get_arg handler for the text item */
-static void zmap_window_text_item_get_property (GObject            *object,
-						 guint               param_id,
-						 GValue             *value,
-						 GParamSpec         *pspec)
+static void zmap_window_text_item_get_property(GObject *object,
+					       guint param_id, GValue *value, GParamSpec *pspec)
 {
   ZMapWindowTextItem text;
   
@@ -962,6 +1059,15 @@ static void zmap_window_text_item_get_property (GObject            *object,
   
   switch (param_id) 
     {
+    case PROP_REFSEQ_START:
+      g_value_set_int(value, text->refseq_start) ;
+      break ;
+    case PROP_REFSEQ_END:
+      g_value_set_int(value, text->refseq_end) ;
+      break ;
+    case PROP_TEXT_LENGTH:
+      g_value_set_int(value, text->text_length) ;
+      break ;
     case PROP_TEXT_ALLOCATE_FUNC:
       g_value_set_pointer(value, text->allocate_func);
       break;
@@ -1066,15 +1172,23 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
 	  /* calculate the highlight region based on index coords... */
 	  /* Why not always do it this way! It's less reliable. */
 	  
-	  first_found = text_item_text_index2item(zmap_item, item_event->start_index, 
-						  &new_start_index, &start_bounds[0]);
-	  last_found  = text_item_text_index2item(zmap_item, item_event->end_index, 
-						  &new_end_index, &end_bounds[0]);
+	  first_found = text_item_text_index2item(zmap,
+						  item_event->start_index, &new_start_index,
+						  &start_bounds[0]);
+
+
+
+	  last_found  = text_item_text_index2item(zmap,
+						  item_event->end_index, &new_end_index,
+						  &end_bounds[0]);
+
+
 	  
 	  if (first_found && last_found)
 	    {
 	      item_event->start_index = new_start_index;
 	      item_event->end_index   = new_end_index;
+
 	      foo_canvas_item_get_bounds(zmap_item, 
 					 &item_bounds[0], &item_bounds[1],
 					 &item_bounds[2], &item_bounds[3]);
@@ -1182,6 +1296,7 @@ static void zmap_window_text_item_update(FooCanvasItem *item, double i2w_dx, dou
   /* ypos needs to be updated....often.... */
   parent_group = FOO_CANVAS_GROUP(item->parent);
   zmap->last_selected_ypos = parent_group->ypos ;
+
 
   printSelectedState(&(zmap->item_event), (char *) __PRETTY_FUNCTION__, "end") ;
 
@@ -2110,7 +2225,7 @@ static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
 
 
 static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
-				     ItemEvent       dna_item_event,
+				     ItemEvent       seq_item_event,
 				     PangoLayoutIter   *iter,
 				     PangoLayoutLine   *line,
 				     PangoRectangle    *logical_rect,
@@ -2126,8 +2241,8 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 
   item = (FooCanvasItem *)zmap_text;
 
-  ewx = dna_item_event->event_x;
-  ewy = dna_item_event->event_y;
+  ewx = seq_item_event->event_x;
+  ewy = seq_item_event->event_y;
   
   text_item_pango2item(item->canvas, logical_rect->x, logical_rect->y, &x1, &y1);
   text_item_pango2item(item->canvas, 
@@ -2226,36 +2341,36 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 	  double minx, maxx;
 	  double *bounds1, *bounds2;
 	  
-	  if(dna_item_event->origin_index == 0 && dna_item_event->index_bounds[3] == 0.0)
+	  if(seq_item_event->origin_index == 0 && seq_item_event->index_bounds[3] == 0.0)
 	    {
-	      dna_item_event->origin_index = index;
-	      memcpy(&(dna_item_event->index_bounds[0]), &this_bounds[0], sizeof(this_bounds));
+	      seq_item_event->origin_index = index;
+	      memcpy(&(seq_item_event->index_bounds[0]), &this_bounds[0], sizeof(this_bounds));
 	    }
 	  
-	  if(dna_item_event->origin_index < index)
+	  if(seq_item_event->origin_index < index)
 	    {
-	      index1  = dna_item_event->origin_index;
+	      index1  = seq_item_event->origin_index;
 	      index2  = index;
-	      bounds1 = &(dna_item_event->index_bounds[0]);
+	      bounds1 = &(seq_item_event->index_bounds[0]);
 	      bounds2 = &this_bounds[0];
 	    }
 	  else
 	    {
-	      index2  = dna_item_event->origin_index;
+	      index2  = seq_item_event->origin_index;
 	      index1  = index;
 	      bounds1 = &this_bounds[0];
-	      bounds2 = &(dna_item_event->index_bounds[0]);
+	      bounds2 = &(seq_item_event->index_bounds[0]);
 	    }
 	  
 	  minx = x1 - i2w_dx;
 	  maxx = x2 - i2w_dx;
 	  
-	  highlight_coords_from_cell_bounds(dna_item_event->points, 
+	  highlight_coords_from_cell_bounds(seq_item_event->points, 
 					    bounds1, bounds2, 
 					    minx, maxx);
-	  dna_item_event->result = TRUE;
+	  seq_item_event->result = TRUE;
 	}
-      finished = dna_item_event->result;
+      finished = seq_item_event->result;
       
     }
 
@@ -2263,7 +2378,7 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 }
 
 static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
-					  ItemEvent       dna_item_event)
+					  ItemEvent       seq_item_event)
 {
   PangoLayoutIter *iterator;
   FooCanvasText *text;
@@ -2272,14 +2387,14 @@ static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
   double eix, eiy;
   gboolean set = FALSE;
   
-  dna_item_event->result = set;
+  seq_item_event->result = set;
   
   text = FOO_CANVAS_TEXT(zmap_text);
   item = FOO_CANVAS_ITEM(zmap_text);
   
   /* itemise world event coords ... */
-  eix = ewx = dna_item_event->event_x; /* copy from event */
-  eiy = ewy = dna_item_event->event_y; /* copy from event */
+  eix = ewx = seq_item_event->event_x; /* copy from event */
+  eiy = ewy = seq_item_event->event_y; /* copy from event */
   
   /* ... and itemise */
   foo_canvas_item_w2i(item, &eix, &eiy);
@@ -2351,18 +2466,18 @@ static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
       
 
       /* from logical rect */
-      pick_line_get_bounds(zmap_text, dna_item_event,
+      pick_line_get_bounds(zmap_text, seq_item_event,
 			   iterator, line, 
 			   &logical_rect, current_line,
 			   i2w_dx, i2w_dy);
       
-      if(debug_text_highlight_G && !(dna_item_event->result))
+      if(debug_text_highlight_G && !(seq_item_event->result))
 	printf("miss (rounding?)\n");
       
       pango_layout_iter_free(iterator);
     }
   
-  set = dna_item_event->result;
+  set = seq_item_event->result;
   
   if(debug_text_highlight_G && !set)
     printf("not set miss\n");
@@ -2386,20 +2501,22 @@ static int text_item_item2text_index(FooCanvasItem *item, double x, double y)
   ZMapWindowTextItem zmap;
   int index = -1;
 
-  if(ZMAP_IS_WINDOW_TEXT_ITEM(item) && 
-     (zmap = ZMAP_WINDOW_TEXT_ITEM(item)))
+  if (ZMAP_IS_WINDOW_TEXT_ITEM(item) && (zmap = ZMAP_WINDOW_TEXT_ITEM(item)))
     {
       double x1, x2, y1, y2;
       gboolean min = FALSE, max = FALSE;
+
       foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
       
       min = (x < x1);
       max = (x > x2);
 
-      if(y < y1)      { y = y1 + 0.5; }
-      else if(y > y2) { y = y2 - 0.5; }
+      if (y < y1)
+	y = y1 + 0.5 ;
+      else if (y > y2)
+	y = y2 - 0.5 ;
 	
-      if(!(y < y1 || y > y2))
+      if (!(y < y1 || y > y2))
 	{
 	  ZMapTextItemDrawData draw_data;
 	  double ix, iy, w, h;
@@ -2408,7 +2525,8 @@ static int text_item_item2text_index(FooCanvasItem *item, double x, double y)
 	  ix = x - x1;
 	  iy = y - y1;
 
-	  zmap = zmap;
+	  zmap = zmap;					    /* ?????????? !!!!!!!!!!!!! WHAT !!!!!! */
+
 	  draw_data = &(zmap->update_cache);
 
 	  if(draw_data->table.truncated)
@@ -2422,10 +2540,13 @@ static int text_item_item2text_index(FooCanvasItem *item, double x, double y)
 	  row_idx = (int)(ix / w);
 	  row     = (int)(iy / h);
 
-	  if(min){ row_idx = 0; }
-	  if(max){ row_idx = width - 1; }
+	  if (min)
+	    row_idx = 0 ;
 
-	  index   = row * width + row_idx;
+	  if (max)
+	    row_idx = width - 1 ;
+
+	  index = row * width + row_idx ;
 	}
       else
 	{
@@ -2456,34 +2577,34 @@ static gboolean emit_signal(ZMapWindowTextItem text_item,
 {
 #define SIGNAL_N_PARAMS 7
   GValue instance_params[SIGNAL_N_PARAMS] = {{0}}, sig_return = {0};
-  ItemEvent dna_item_event;
+  ItemEvent seq_item_event;
   int i;  gboolean result = FALSE;
   
 
   zMapDebugPrint(debug_functions, "%s", "- start") ;
 
-  dna_item_event = &(text_item->item_event);
+  seq_item_event = &(text_item->item_event);
 
   g_value_init(instance_params, ZMAP_TYPE_WINDOW_TEXT_ITEM);
   g_value_set_object(instance_params, text_item);
 
   g_value_init(instance_params + 1, G_TYPE_DOUBLE);
-  g_value_set_double(instance_params + 1, dna_item_event->origin_x);
+  g_value_set_double(instance_params + 1, seq_item_event->origin_x);
       
   g_value_init(instance_params + 2, G_TYPE_DOUBLE);
-  g_value_set_double(instance_params + 2, dna_item_event->origin_y);
+  g_value_set_double(instance_params + 2, seq_item_event->origin_y);
 
   g_value_init(instance_params + 3, G_TYPE_DOUBLE);
-  g_value_set_double(instance_params + 3, dna_item_event->event_x);
+  g_value_set_double(instance_params + 3, seq_item_event->event_x);
       
   g_value_init(instance_params + 4, G_TYPE_DOUBLE);
-  g_value_set_double(instance_params + 4, dna_item_event->event_y);
+  g_value_set_double(instance_params + 4, seq_item_event->event_y);
 
   g_value_init(instance_params + 5, G_TYPE_INT);
-  g_value_set_int(instance_params + 5, dna_item_event->start_index);
+  g_value_set_int(instance_params + 5, seq_item_event->start_index);
       
   g_value_init(instance_params + 6, G_TYPE_INT);
-  g_value_set_int(instance_params + 6, dna_item_event->end_index);
+  g_value_set_int(instance_params + 6, seq_item_event->end_index);
   
   g_value_init(&sig_return, G_TYPE_BOOLEAN);
   g_value_set_boolean(&sig_return, result);

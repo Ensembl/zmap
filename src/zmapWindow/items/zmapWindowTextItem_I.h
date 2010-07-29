@@ -28,9 +28,9 @@
  *              to implement dna/peptide sequence display.
  *
  * HISTORY:
- * Last edited: Apr 19 16:23 2010 (edgrif)
+ * Last edited: Jul 29 11:18 2010 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.8 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.9 2010-07-29 10:22:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_TEXT_ITEM_I_H
@@ -69,13 +69,15 @@ typedef enum
   } SelectState;
 
 
-typedef struct
+/* Used for highlighting etc etc. */
+typedef struct ItemEventStructType
 {
   int              origin_index;
   double           origin_x, origin_y;
   double           event_x, event_y;
 
-  int start_index, end_index;
+  /* I think these are meant to be the start/end within the text.... */
+  int start_index, end_index ;
 
   SelectState      selected_state;
 
@@ -84,7 +86,7 @@ typedef struct
   FooCanvasPoints *points;
   double           index_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
 
-}ItemEventStruct, *ItemEvent ;
+} ItemEventStruct, *ItemEvent ;
 
 
 typedef struct
@@ -126,6 +128,13 @@ typedef struct _zmapWindowTextItemStruct
   GList                 *selections;
 
   GdkColor               select_colour;
+
+  /* We actually need to know the ratio of chars to sequence coords otherwise we cannot correctly
+   * calculate offsets for sequences that do not have one base/coord (e.g. peptides) for when the
+   * scrolled region is less than the whole sequence. */
+  int refseq_start, refseq_end ;
+  int text_length ;
+  int bases2coords ;
 
   /* a fixed size array buffer_size long */
   char                     *buffer;

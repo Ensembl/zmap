@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 18 15:01 2009 (rds)
+ * Last edited: Jul 26 17:24 2010 (edgrif)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.h,v 1.5 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextItem.h,v 1.6 2010-07-29 10:22:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,18 @@
 #define ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_TEXT_ITEM, zmapWindowTextItemClass))
 
 
+/* Property names. */
+#define PROP_REFSEQ_START_STR           "refseq-start"
+#define PROP_REFSEQ_END_STR             "refseq-end"
+#define PROP_TEXT_LENGTH_STR            "text-length"
+#define PROP_TEXT_ALLOCATE_FUNC_STR     "allocate-func"
+#define PROP_TEXT_FETCH_TEXT_FUNC_STR   "fetch-text-func"
+#define PROP_TEXT_CALLBACK_DATA_STR     "callback-data"
+#define PROP_TEXT_SELECT_COLOR_GDK_STR  "select-color-gdk"
+#define PROP_TEXT_REQUESTED_WIDTH_STR   "full-width"
+#define PROP_TEXT_REQUESTED_HEIGHT_STR  "full-height"
+#define PROP_WRAP_MODE_STR              "wrap-mode"
+
 
 /* Instance */
 typedef struct _zmapWindowTextItemStruct  zmapWindowTextItem, *ZMapWindowTextItem ;
@@ -72,7 +84,8 @@ typedef struct
   int width, height;		/* table dimensions in number of cells */
   int untruncated_width;
   gboolean truncated;
-}ZMapTextItemTableStruct, *ZMapTextItemTable;
+}ZMapTextItemTableStruct, *ZMapTextItemTable ;
+
 
 typedef struct _ZMapTextItemDrawDataStruct
 {
@@ -102,17 +115,15 @@ typedef gboolean (* ZMapWindowTextItemSelectionCB)(ZMapWindowTextItem text_item,
 						   int start, int end);
 
 /* Public funcs */
-GType zMapWindowTextItemGetType(void);
-
-
-void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end,
-			      gboolean deselect_first, gboolean emit_signal);
-void zMapWindowTextItemDeselect(ZMapWindowTextItem text_item,
-				gboolean emit_signal);
-
+GType zMapWindowTextItemGetType(void) ;
+gboolean zMapWindowTextItemText2WorldCoords(ZMapWindowTextItem text_item,
+					    int text_start, int text_end,
+					    double *x1, double *y1, double *x2, double *y2) ;
+void zMapWindowTextItemSelect(ZMapWindowTextItem text_item,
+			      int start, int end, gboolean deselect_first, gboolean emit_signal) ;
+void zMapWindowTextItemDeselect(ZMapWindowTextItem text_item, gboolean emit_signal) ;
 int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
-					      ZMapTextItemDrawData draw_data,
-					      int              max_buffer_size);
+					      ZMapTextItemDrawData draw_data, int max_buffer_size) ;
 
 
 
