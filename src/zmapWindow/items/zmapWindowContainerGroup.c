@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 24 15:23 2010 (edgrif)
+ * Last edited: Jul  2 15:31 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.15 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.16 2010-07-29 10:07:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -337,12 +337,12 @@ void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
 
 
 /*!
- * \brief Simple, Set the vertical dimension for the background of the container.
+ * Simple, set/get the vertical dimension for the background of the container.
  *
- * \param container  The container that needs its size set.
- * \param height     The height the container needs to be.
+ * container  The container that needs its size set.
+ * height     The height the container needs to be.
  *
- * \return void
+ * void
  */
 
 void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height)
@@ -351,6 +351,14 @@ void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, 
 
   return ;
 }
+
+
+double zmapWindowContainerGroupGetBackgroundSize(ZMapWindowContainerGroup container)
+{
+  return container->height ;
+}
+
+
 
 /*!
  * \brief A ZMapWindowContainerGroup may need to redraw it's children.

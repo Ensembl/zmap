@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 11:13 2010 (edgrif)
+ * Last edited: Jul  2 15:30 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.11 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.12 2010-07-29 10:07:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_H
@@ -153,7 +153,8 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 							       GdkColor *background_border_colour);
 gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible);
 void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container);
-void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height);
+void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height) ;
+double zmapWindowContainerGroupGetBackgroundSize(ZMapWindowContainerGroup container) ;
 void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container,
 						 gboolean redraw_required);
 void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup container,
