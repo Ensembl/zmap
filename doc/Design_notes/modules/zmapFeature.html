@@ -1,3 +1,4 @@
+<!-- $Id $ -->
 <h2> zmapFeature - Feature Context - the model part of MVC </h2>
 <fieldset> <legend>Index</legend>
 
@@ -7,7 +8,8 @@
 <a href="Design_notes/modules/zmapFeature.shtml#styles">Styles</a>
 <a href="Design_notes/modules/zmapFeature.shtml#styles_impl"> -implementation</a>
 <a href="Design_notes/modules/zmapFeature.shtml#terminology">Terminology</a>
-<a href="Design_notes/modules/zmapFeature.shtml#display">Display</a>
+<a href="Design_notes/modules/zmapFeature.shtml#display">Display</a><br />
+<a href="Design_notes/notes/f_context.shtml">Restructuring the Feature Context</a>: teasing apart featuiresets and columns.<br />
 
 </fieldset>
 
@@ -89,7 +91,7 @@ A featureset has a original_id and a unique_id (see zmapFeature.h) - the origina
 </pre>
 These are hash tables that map a featureset unique_id to another data structure.</p>
 <p>According to zmapViewRemoteReceive.c/xml_featureset_start_cb() <b>zmapView->source_2_featureset</b> is a hash table of <b>ZMapGFFSet</b> and <b>zmapView->source_2_sourcedata</b> is a hash table of <b>ZMapGFFSource</b>.  We presume that the id fields relate to unique_id rather than original_id (styles have both, as for featuresets).</p>
-<p><b>NOTE</b>:In the ACEDB interface, ACE provides the source to featureset data. The View should merge these data together if there is more than one such server bit at present only the first one is used (see <b>zmapView.c/processDataRequests()</b>, search for 'needs sorting').  This data is used by the X-Remote interface when requesting certain data sources (eg on-the-fly (OTF) alignments). The ZMap config file lists featuresets supported by ACE and the source to featureset daat from ACE specified how further un-configured data sources mapp onto the known featuresets. This is particularly relevant when searching for which server to request data from.
+<p><b>NOTE</b>:In the ACEDB interface, ACE provides the source to featureset data. The View should merge these data together if there is more than one such server bit at present only the first one is used (see <b>zmapView.c/processDataRequests()</b>, search for 'needs sorting').  This data is used by the X-Remote interface when requesting certain data sources (eg on-the-fly (OTF) alignments). The ZMap config file lists featuresets supported by ACE and the source to featureset data from ACE specifies how further un-configured data sources map onto the known featuresets. This is particularly relevant when searching for which server to request data from.
 </p>
 <pre>
 /* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
