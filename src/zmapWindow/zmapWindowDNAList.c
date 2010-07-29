@@ -21,27 +21,21 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Shows a list of dna locations that can be selected
  *              causing the zmapwindow to scroll to that location.
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 16 15:19 2008 (rds)
+ * Last edited: Jul 29 10:33 2010 (edgrif)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.15 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.16 2010-07-29 09:34:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <glib.h>
+#include <ZMap/zmap.h>
 #include <ZMap/zmapBase.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSequence.h>
@@ -102,10 +96,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  * and the selected item highlighted.
  *
  */
-void zmapWindowDNAListCreate(ZMapWindow zmap_window,
-                       GList     *dna_list,
-                       char      *title,
-                       ZMapFeatureBlock block)
+void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list, char *title, ZMapFeatureBlock block)
 {
   DNAWindowListData window_list ;
 
@@ -238,104 +229,67 @@ GtkWidget *makeMenuBar(DNAWindowListData wlist)
 
 
 
-/* Finds dna selected and scrolls to it. */
+/* The list created by the calling code can be either of dna or peptide hits.
+ * When the user selects a hit this function scrolls to the dna or peptide
+ * in the dna and peptide columns _if_ they are visible, highlights the
+ * matching sequence and scrolls to it.
+ * 
+ * The code is slightly complex because it may be passed either a dna or a
+ * peptide match and has to highlight in either dna or peptide columns.
+ */
 static gboolean selectionFuncCB(GtkTreeSelection *selection,
                                 GtkTreeModel     *model,
                                 GtkTreePath      *path,
                                 gboolean          path_currently_selected,
                                 gpointer          user_data)
 {
-  DNAWindowListData window_list = (DNAWindowListData)user_data;
-  gint rows_selected = 0;
-  GtkTreeIter iter;
+  DNAWindowListData window_list = (DNAWindowListData)user_data ;
+  gint rows_selected = 0 ;
+  GtkTreeIter iter ;
 
-  if(((rows_selected = gtk_tree_selection_count_selected_rows(selection)) < 1)
-     && gtk_tree_model_get_iter(model, &iter, path))
+  if (((rows_selected = gtk_tree_selection_count_selected_rows(selection)) < 1)
+      && gtk_tree_model_get_iter(model, &iter, path))
     {
       int start = 0, end = 0 ;
       ZMapFrame frame ;
       ZMapStrand strand ;
       ZMapSequenceType seq_type ;
-      int start_index, end_index, seq_type_index, strand_index, frame_index;
-      ZMapGUITreeView zmap_tree_view;
+      int start_index, end_index, seq_type_index, strand_index, frame_index ;
+      ZMapGUITreeView zmap_tree_view ;
 
-      zmap_tree_view = ZMAP_GUITREEVIEW(window_list->dna_list);
+      zmap_tree_view = ZMAP_GUITREEVIEW(window_list->dna_list) ;
 
       /* Get the column indices */
-      start_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
-      end_index      = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
-      strand_index   = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME);
-      frame_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME);
-      seq_type_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
+      start_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_START_COLUMN_NAME) ;
+      end_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_END_COLUMN_NAME) ;
+      strand_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME) ;
+      frame_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME) ;
+      seq_type_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME) ;
 
       /* Get the column data */
       gtk_tree_model_get(model, &iter,
-                   start_index,    &start,
-                   end_index,      &end,
-                   seq_type_index, &seq_type,
-                   strand_index,   &strand,
-                   frame_index,    &frame,
+			 start_index,    &start,
+			 end_index,      &end,
+			 seq_type_index, &seq_type,
+			 strand_index,   &strand,
+			 frame_index,    &frame,
                          -1) ;
 
       if (!path_currently_selected)
         {
-        GtkTreeView *tree_view = NULL;
-        double grp_start, grp_end ;
-          ZMapWindow window = window_list->window;
-        FooCanvasItem *item ;
-        ZMapFeatureBlock block = NULL ;
-        GQuark set_id ;
-        ZMapFrame tmp_frame ;
-        ZMapStrand tmp_strand ;
-        int tmp_start = start, tmp_end = end ;
+	  GtkTreeView *tree_view = NULL;
+	  ZMapWindow window = window_list->window;
+	  ZMapFeatureBlock block = NULL ;
 
-        block = window_list->block;
-        zMapAssert(block) ;
 
-        tree_view = gtk_tree_selection_get_tree_view(selection);
+	  block = window_list->block ;
+	  zMapAssert(block) ;
+	
+	  tree_view = gtk_tree_selection_get_tree_view(selection) ;
 
-          gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0);
+	  gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0) ;
 
-        /* conv to dna sequence coords for centering correctly. */
-        if (seq_type == ZMAPSEQUENCE_PEPTIDE)
-          zMapSequencePep2DNA(&tmp_start, &tmp_end, frame) ;
-
-        grp_start = (double)tmp_start ;
-        grp_end = (double)tmp_end ;
-
-        zmapWindowSeq2CanOffset(&grp_start, &grp_end, block->block_to_sequence.q1) ;
-
-        if (seq_type == ZMAPSEQUENCE_DNA)
-          {
-            set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
-            tmp_strand = ZMAPSTRAND_NONE ;
-            tmp_frame = ZMAPFRAME_NONE ;
-          }
-        else
-          {
-            set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
-            tmp_strand = ZMAPSTRAND_NONE ;
-            tmp_frame = frame ;
-          }
-
-        if ((item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                     block->parent->unique_id, block->unique_id,
-                                     set_id, tmp_strand, tmp_frame, 0)))
-          {
-            zmapWindowItemCentreOnItemSubPart(window, item,
-                                    FALSE,
-                                    0.0,
-                                    grp_start, grp_end) ;
-
-            if (seq_type == ZMAPSEQUENCE_PEPTIDE)
-            {
-              zmapWindowItemHighlightRegionTranslations(window, item, start, end) ;
-
-              zMapSequencePep2DNA(&start, &end, frame) ;
-            }
-
-            zmapWindowItemHighlightDNARegion(window, item, start, end) ;
-          }
+	  zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, TRUE) ;
         }
     }
 
@@ -511,6 +465,11 @@ void zMapWindowDNAListAddMatches(ZMapWindowDNAList dna_list,
   zMapGUITreeViewAddTuples(ZMAP_GUITREEVIEW(dna_list), list_of_matches);
   return ;
 }
+
+
+
+
+
 
 /* Object Implementation */
 
