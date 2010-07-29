@@ -1,3 +1,4 @@
+<!-- $Id $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 <h3>Warning</h3>
 <p> This was once intended to be an interactive process w/ otterlace- see <a href="Design_notes/notes/otter_zmap.shtml">here</a>. However, reading the text and a quick chat w/ the requestor suggest that an interactive process was not wanted.
@@ -29,7 +30,7 @@ and recently (after the latest annotation test) we were requested to see how eas
 </ul>
 </p>
 <h3>How to choose features to compare?</h3>
-<p>As features are effectively blank data and thier names are 'user-defined' we cannot hard code these and one obvious way to mark featuresets for 'clustering' and non-display would be via styles. EG:
+<p>As features are effectively blank data and thier names are 'user-defined' we cannot hard code these and one obvious way to mark featuresets for 'clustering' and non-display would be via styles eg:
 <pre>
 [EST-Human]
 # list of featuresets to compare this featureset with
@@ -38,9 +39,13 @@ alignment-mask-sets = vertebrate_mRNA ; cDNA
 </p>
 <h3>Display Options</h3>
 <p>
-By default masked data will just not be displayed.
+Masked data can be not displayed, or displayed in grey (for example). The grey colour can be specified as a window colour in the ZMap config file. An RC menu option will be provided to show masked data per column and if selected this will be displayed in grey (if configured) or as normal (if not).
+<pre>
+[ZMapWindow]
+colour-masked-feature = light grey
+</pre>
 </p>
-If styles cause data to be hidden from the annotators it may be advisable to allow this to be switched off and to display all features on demand. A new option can be added to the RC menu to toggle display of masked features independantly of existing bump options.  This option will apply to the column whether bumped or not.  Note that this flag must be stored in the featureset struct and is distinct from flags per feature whcih say whether or not each feature is displayed.
+If styles cause data to be hidden from the annotators it may be advisable to allow this to be switched off and to display all features on demand. A new option can be added to the RC menu to toggle display of masked features independantly of existing bump options; although the non-display fucntion is only useful to the user in bumped columns it will result in much faster display of non-bumped columns.  This option will apply to the column whether bumped or not.  Note that this flag must be stored in the featureset struct and is distinct from flags per feature which say whether or not each feature is displayed.
 </p>
 </fieldset>
 
@@ -54,7 +59,7 @@ But as features may arrive at any time (via pipeservers or via delayed loading) 
 <p>
 The fact that we expect featuresets to be displayed separately (esp w/ pipe servers) implies that we must be able to mask each EST featureset independantly against each mRNA featureset, although if several mRNA featuresets are available when an EST column is displayed then these could be processed together.
 </p>
-<p>In the interests of simplicity masking shall be performed on the feature context.  For an initial column display masking will be performed before display and then only those features not flagged as masked will be added to the canvas.  For a display update (eg when the masking column (mRNA) arrives after the EST) the features context will be masked and features being masked will be removed from the foo canvas on the fly.
+<p>In the interests of simplicity masking shall be performed on the feature context - flags will be maintained in the feature context to decide which features are masked and how this is presented to the user can be indeependant of this.  For an initial column display masking will be performed before display and then only those features not flagged as masked will be added to the canvas.  For a display update (eg when the masking column (mRNA) arrives after the EST) the feature context will be masked and features being masked will be removed from the foo canvas on the fly.
 </p>
 Note that canvas items refer to features and not vice versa, but a canvas item can be found relatively quickly via its hash table.
 </p>
@@ -64,7 +69,9 @@ Note that canvas items refer to features and not vice versa, but a canvas item c
 <li>The list of featureset quarks stored in the styles is non canonicalised as for featureset or style ID's, but is whitespace normalised.  See zMapConfigString2QuarkList().
 <li>On merging styles we do not merge quark lists but instead just overwrite. (zMapStyleMerge())
 <li>The style parameter for the list of quarks is a string, which is how the data is input and output.
-<li>A featureset to be masked has a list of featuersets to mask with, which correspond to the styles config. As we mask against a featureset and not a style this list can only be used one-way. Whenever a featureset completes loading then before displaying it (and only if has a masker list) it is masked. If there is not masker list then all other existing featuresets are scanned and if relevent masked with it. (this will be done by an execute function that operates on the feature context).
+<li>A featureset to be masked has a list of featuresets to mask with, which correspond to the styles config. As we mask against a featureset and not a style this list can only be used one-way. Whenever a featureset completes loading then before displaying it (and only if has a masker list) it is masked. If there is no masker list then all other existing featuresets are scanned and if relevant masked with it. (this will be done by an execute function that operates on the feature context). As this only happens once per featureset load it is not a performance problem.
+<li>Masking of featuresets is performed immediately after the merge featureset operation - this involves setting flags in the feature context, and when featuresets are loaded it is possible that they have to be RevComped.  See <b>zmapView/getFeatures()</b> though to <b>justMergeContext()</b> and <b>justDrawContext()</b>.  BTW <b>zMapFeatureContextMerge()</b> is in <b>zmapFeature.c</b> not <b>zmapFeatureContext.c</b>.
+<li> Updatang of the non/displayed features must be performed after the conext merge, in line with existing practice.
 </ul>
 </p>
 </p>
@@ -88,7 +95,7 @@ There may be a combinatorial problem to solve.  A sample session from human chr-
 </p>
 <p>
 <h3>Data Structures</h3>
-<p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment Extra flags will be added to these to handle masking status.
+<p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment. Extra flags will be added to these to handle masking status.
 </p>
 
 

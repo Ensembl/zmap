@@ -125,80 +125,53 @@ When do they get un-highlit? a) if another feature is used to request related da
 <h3>XML interface</h3>
 <p>
 Here's some sample requests from ZMap. <i>These are are an early stage of specification and suggested improvements/ corrections are welcomed.</i>
+</p>
+<p><b>NOTE</b>: the XML protocol is to be changed soon to simplify it and provide a single window interface and to allow responses to be matched to requests.  Currently they are assumed to be in order and not missing!  The following examples show the message content that will be include in the improved protocol.
+</p>
 
 <h4>ZMap requests features to highlight</h4>
 <pre>
-&lt;zmap>
-  &lt;request action="get_related_transcript"&gt;
-      &lt;client xwid="0xC0004356" /&gt;
-      &lt;featureset name="EST_human"&gt;
-        &lt;feature name="Em:AW977565.1" /&gt;
-      &lt;/featureset&gt;
+&lt;zmap&gt;
+  &lt;request action="evidence_features"&gt;
+    &lt;align name="chr4-04_210623-364887_master"&gt;
+      &lt;block name="1.0.+_1.0.+"&gt;
+        &lt;featureset&gt;
+          &lt;feature name="Z95704.2-001" strand="-" style="havana_tsct" start="53842" end="88488"&gt;
+            &lt;subfeature start="53842" end="55797" ontology="exon"/&gt;
+            &lt;subfeature start="78605" end="78700" ontology="exon"/&gt;
+            &lt;subfeature start="79196" end="79322" ontology="exon"/&gt;
+            &lt;subfeature start="88475" end="88488" ontology="exon"/&gt;
+            &lt;subfeature start="55798" end="78604" ontology="intron"/&gt;
+            &lt;subfeature start="78701" end="79195" ontology="intron"/&gt;
+            &lt;subfeature start="79323" end="88474" ontology="intron"/&gt;
+          &lt;/feature&gt;
+        &lt;/featureset&gt;
+      &lt;/block&gt;
+    &lt;/align&gt;
   &lt;/request&gt;
 &lt;/zmap&gt;
 </pre>
 <pre>
-&lt;zmap>
-  &lt;request  action="get_evidence"&gt;
-      &lt;client xwid="0xC0004356" /&gt;
-      &lt;featureset name="Coding"&gt;
-        &lt;feature name="CCDS00123.1" /&gt;
-      &lt;/featureset&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
+(get transcript from evidence feature)
 </pre>
 
-<h4>Otterlace rreplies with lists of features</h4>
+<h4>Otterlace replies with lists of features</h4>
 Both requests could be responded to by similar messages using unique action codes eg 'evidence_from_transcript' and 'transcript_from_evidence'.
 
 <pre>
 &lt;zmap&gt;
-  &lt;request action="transcript_from_evidence"&gt;
-    &lt;evidence&gt;
-      &lt;featureset name="EST_human"&gt;
-        &lt;feature name="Em:AW977565.1" /&gt;
-      &lt;/featureset&gt;
-    &lt;/evidence&gt;
-
-    &lt;transcript&gt;
-      &lt;align&gt;
-        &lt;block&gt;
-          &lt;featureset name="Coding"&gt;
-            &lt;feature name="RP11-478C6.7-001"&gt;
-            &lt;/feature&gt;
-          &lt;/featureset&gt;
-        &lt;/block&gt;
-      &lt;/align&gt;
-    &lt;/transcript&gt;
-
-  &lt;/request&gt;
-&lt;/zmap&gt;
-</pre>
-
-<pre>
-&lt;zmap&gt;
-  &lt;request action="evidence_from_transcript"&gt;
-    &lt;transcript&gt;
-      &lt;featureset name="Coding"&gt;
-        &lt;feature name="RP11-478C6.7-001"&gt;
-        &lt;/feature&gt;
-      &lt;/featureset&gt;
-    &lt;/transcript&gt;
-
-    &lt;evidence&gt;
-      &lt;align&gt;
-        &lt;block&gt;
-          &lt;featureset name="EST_human"&gt;
-           &lt;feature  name="Em:DB343297.1" /&gt;
-           &lt;feature  name="Em:AW977565.1" /&gt;
-          &lt;/featureset&gt;
-          &lt;featureset name="Vertebrate_mRNA"&gt;
-           &lt;feature  name="Em:AK127067.1" /&gt;
-          &lt;/featureset&gt;
-        &lt;/block&gt;
-      &lt;/align&gt;
-    &lt;/evidence&gt;
-  &lt;/request&gt;
+  &lt;response handled="true"&gt;
+    &lt;align name="chr4-04_210623-364887_master"&gt;
+      &lt;block name="1.0.+_1.0.+"&gt;
+        &lt;featureset name="ens_cdna"&gt;
+          &lt;feature name="Em:NM_001137608.1" strand="-" style="ens_cdna" start="88475" end="88488"/&gt;
+        &lt;/featureset name-"EST_Human"&gt;
+       &lt;featureset&gt;
+          &lt;feature name="Em:DC397567.1" strand="-" style="est_align" start="55459" end="55797"/&gt;
+        &lt;/featureset&gt;
+      &lt;/block&gt;
+   .&lt;/align&gt;
+ &lt;/response&gt;
 &lt;/zmap&gt;
 </pre>
 
