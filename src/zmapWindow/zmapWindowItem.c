@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 29 08:30 2010 (edgrif)
+ * Last edited: Jul 29 11:30 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.135 2010-07-29 10:04:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.136 2010-07-29 10:30:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -601,10 +601,6 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
     {
       int dna_start, dna_end ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapWindowItemTrueTypePrint(item) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       dna_start = start ;
       dna_end = end ;
 
@@ -797,8 +793,6 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 	{
 	  ZMapWindowSequenceFeature sequence_feature ;
 	  ZMapFeature feature ;
-
-	  zmapWindowItemTrueTypePrint(translation_item) ;
 
 	  sequence_feature = (ZMapWindowSequenceFeature)translation_item ;
 

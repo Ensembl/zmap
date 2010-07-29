@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapSequence.h
  * HISTORY:
- * Last edited: Jul  7 15:02 2010 (edgrif)
+ * Last edited: Jul 29 11:29 2010 (edgrif)
  * Created: Thu Sep 27 10:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapSequence.c,v 1.4 2010-07-29 09:13:10 edgrif Exp $
+ * CVS info:   $Id: zmapSequence.c,v 1.5 2010-07-29 10:30:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,8 +95,6 @@ void zMapSequenceDNA2Pep(int *start_inout, int *end_inout, ZMapFrame frame)
   curr_frame = dna_start % 3 ;
 
   curr_frame = 3 - ((3 - curr_frame) % 3) ;
-
-  printf("Start frame: %d\n", curr_frame) ;
 
   dna_offset = 3 - (curr_frame - frame) ;
 

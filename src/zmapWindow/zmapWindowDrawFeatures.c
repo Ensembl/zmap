@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Jul 29 10:47 2010 (edgrif)
+ * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.287 2010-07-29 09:50:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.288 2010-07-29 10:30:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1539,10 +1539,6 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
       {
         FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
 	int frame_start, frame_end;
-
-	printf("Feature set: %s\n", g_quark_to_string(feature_any->unique_id)) ;
-
-
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
