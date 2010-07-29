@@ -29,9 +29,9 @@
  *              zmapPeptide.c to do the actual work.
  *
  * HISTORY:
- * Last edited: Sep 27 11:23 2007 (edgrif)
+ * Last edited: Jul  7 10:21 2010 (edgrif)
  * Created: Thu Sep 27 10:37:20 2007 (edgrif)
- * CVS info:   $Id: zmapSequence.h,v 1.2 2010-03-04 15:15:12 mh17 Exp $
+ * CVS info:   $Id: zmapSequence.h,v 1.3 2010-07-29 09:13:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SEQMATCH_H
@@ -39,11 +39,8 @@
 
 #include <ZMap/zmapFeature.h>
 
-/*! @addtogroup zmaputils
- * @{
- *  */
 
-/*!
+/*
  * Holds information about any sequence matches found by the match functions.
  * 
  * start/end are absolute sequence coords (1-based), length of match can
@@ -63,12 +60,10 @@ typedef struct
 } ZMapDNAMatchStruct, *ZMapDNAMatch ;
 
 
-/*! @} end of zmaputils docs. */
 
-
-
+ZMapFrame zMapSequenceGetFrame(int position) ;
 void zMapSequencePep2DNA(int *start_inout, int *end_inout, ZMapFrame frame) ;
-
+void zMapSequenceDNA2Pep(int *start_inout, int *end_inout, ZMapFrame frame) ;
 
 
 

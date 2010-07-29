@@ -28,24 +28,38 @@
  *
  * Exported functions: See ZMap/zmapSequence.h
  * HISTORY:
- * Last edited: Sep 27 14:07 2007 (edgrif)
+ * Last edited: Jul  7 15:02 2010 (edgrif)
  * Created: Thu Sep 27 10:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapSequence.c,v 1.3 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapSequence.c,v 1.4 2010-07-29 09:13:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSequence.h>
+#include <ZMap/zmapFeature.h>
+
+/* MAYBE ALL THIS SHOULD BE IN THE DNA OR PEPTIDE FILES ???? */
 
 
-/* Map peptide coords to corresponding sequence coords. */
+ZMapFrame zMapSequenceGetFrame(int position)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE ;
+  int curr_frame ;
+
+  curr_frame = position % 3 ;
+
+  curr_frame = 3 - ((3 - curr_frame) % 3) ;
+
+  frame = curr_frame ;
+
+  return frame ;
+}
+
+
+
+/* Map peptide coords to corresponding sequence coords, no bounds checking is done,
+ * it's purely a coords based thing. */
 void zMapSequencePep2DNA(int *start_inout, int *end_inout, ZMapFrame frame)
 {
   int frame_num ;
@@ -60,6 +74,62 @@ void zMapSequencePep2DNA(int *start_inout, int *end_inout, ZMapFrame frame)
   *start_inout = ((*start_inout * 3) - 2) + frame_num ;
   *end_inout = (*end_inout * 3) + frame_num ;
 
+
+  return ;
+}
+
+
+/* Map dna coords to corresponding peptide coords, you may need to clip the end
+ * coord to lie within the peptide. */
+void zMapSequenceDNA2Pep(int *start_inout, int *end_inout, ZMapFrame frame)
+{
+  int dna_start, dna_end, pep_start, pep_end ;
+  int dna_offset ;
+  int curr_frame ;
+
+  zMapAssert(start_inout && end_inout && frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2) ;
+
+  dna_start = *start_inout ;
+  dna_end = *end_inout ;
+
+  curr_frame = dna_start % 3 ;
+
+  curr_frame = 3 - ((3 - curr_frame) % 3) ;
+
+  printf("Start frame: %d\n", curr_frame) ;
+
+  dna_offset = 3 - (curr_frame - frame) ;
+
+  dna_offset = dna_offset % 3 ;
+
+  dna_start = (dna_start + dna_offset)  ;
+
+
+  curr_frame = dna_end % 3 ;
+
+  curr_frame = 3 - ((3 - curr_frame) % 3) ;
+
+
+  /* HACK UNTIL I SORT THIS OUT....HATEFUL...I'M BEING STUPID.... */
+  /* This doesn't quite work for all combinations...agh....so close.... */
+  if (curr_frame - frame == -2)
+    dna_offset = 2 ;
+  else
+    dna_offset = (curr_frame - frame) + 1 ;
+
+
+  dna_offset = dna_offset % 3 ;
+
+
+
+  dna_end = (dna_end - dna_offset)  ;
+
+  pep_start = ((dna_start - 1) + 3) / 3 ;
+
+  pep_end = pep_start + ((dna_end - dna_start) / 3 ) ;
+
+  *start_inout = pep_start ;
+  *end_inout = pep_end ;
 
   return ;
 }
