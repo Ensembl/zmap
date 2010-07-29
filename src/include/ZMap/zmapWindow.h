@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: May  5 17:27 2010 (edgrif)
+ * Last edited: Jul 20 10:28 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.112 2010-06-28 08:30:31 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.113 2010-07-29 09:38:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -48,13 +48,11 @@
 
 
 
-/*! @addtogroup zmapwindow
- * @{
- *  */
 
 
 /*! Opaque type, represents an individual ZMap window. */
 typedef struct _ZMapWindowStruct *ZMapWindow ;
+
 
 
 /*! opaque */
@@ -72,6 +70,15 @@ typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
  * or horizontal means locking of zoom as well. */
 typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL} ZMapWindowLockType ;
 
+
+/* Controls display of 3 frame translations and/or 3 frame columns when 3 frame mode is selected. */
+typedef enum
+  {
+    ZMAP_WINDOW_3FRAME_INVALID,
+    ZMAP_WINDOW_3FRAME_TRANS,				    /* 3 frame translation display. */
+    ZMAP_WINDOW_3FRAME_COLS,				    /* 3 frame other cols display. */
+    ZMAP_WINDOW_3FRAME_ALL				    /* All 3 frame cols. */
+  } ZMapWindow3FrameMode ;
 
 
 /*! ZMap Window has various callbacks which will return different types of data for various actions. */
@@ -220,7 +227,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc drawn_data ;
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
-/*! @} end of zmapwindow docs. */
+
 
 
 
@@ -273,8 +280,11 @@ gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
-void zMapWindowToggle3Frame(ZMapWindow window) ;
-void zmapWindowSet3Frame(ZMapWindow window);
+
+void zMapWindow3FrameToggle(ZMapWindow window) ;
+void zMapWindow3FrameToggleMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode, gboolean tmp_display) ;
+
+/* should become internal to zmapwindow..... */
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
                                        gboolean dna,      gboolean protein,
