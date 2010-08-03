@@ -1,0 +1,52 @@
+<!-- $Id: canvas_tweaks.html,v 1.1 2010-08-03 08:08:49 mh17 Exp $ -->
+
+<h2>Speeding up the use of the Foo Canvas</h2>
+
+<fieldset><legend>Basic Features made simple again</legend>
+<h3>The problem: Basic features have been made complex</h3>
+<p>
+All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of features for background underlay feature and overlay and changing these to be simple FooCanvasItems may offer a significant performance improvement and simplify a lot of code and free up a lot of memory.  The initial display of ZMap is dominated by alignments (eg SwissProt and TrEMBL) which typically contain 90% of all features on display.
+</p>
+<h3>Caveats</h3>
+<h4>Complexity is not used? </h4>
+<p>Despite each basic feature consisting of several lists of canvas items these lists are empty and may not cause a significant delay.
+</p>
+<h4>Side effects</h4>
+<p>When alignments get bumped theier x-coordiate is changed and extra  lines and glyphs are drawn on the canvas.  Use of the complex ZMapWindowCanvasItem structure may be necessary to do this.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Summarise Columns</legend>
+<p>See also RT #177032, where this text orginated.</p>
+<h3>Displaying invisible features slows ZMap down</h3>
+<p>
+Display time in ZMap is dominated by a few heavily populated columns eg trembl may have 50k features but the majority of these features are obscured by others and cannot be seen. As operating the foo canvas takes 90% of the display time and a complete feature context can be scanned very quickly (eg 50ms to reverse complement all features, compared with 10sec to display) it may be possible to speed up this display by not adding invisible features to the canvas.
+</p>
+<p>
+This is a similar process to the idea of a summary display as to be provided by otterlace on request, but the difference is that ZMap would still have all the data and only real features will be used. The argument for having ZMap perform the necessary calculations is that ZMap knows when features become obscured at different zoom levels as it knows about pixel coordinates.
+</p>
+<p>
+This process only applies to un-bumped columns and to implement this a column with a 'summarise=1000' style parameter would be processed before display at the current zoom level.  This parameter defines the minimum zoom level at which to apply the summarising algorithm.
+</p>
+<h4>Algorithm</h4>
+<p>
+<ul>
+<li> sort the featureset into vertical order (already done)
+<li> express features in canvas (pixel) coordinates (top, height, width)
+<li> as features are displayed add their rectangles to a list in order of upper vertical coordinate
+<li> if two features next to each other have the same width combine them
+<li> if a feature in the list is covered by the new/ combined one remove it
+<li> when processing a feature if its width is &le; the min width of listed rectangles over the whole vertical distance do not display
+<li> as features are processed remove rectangles from the list when they are out of range
+</ul>
+
+This uses little extra memory and comparisons are fairly quick as there is almost no searching involved.
+Visibility is computed exactly and we can choose whether to display the items at the top of bottom of the foo canvas heap by sorting in reverse order.
+</p>
+<h4>Caveats</h4>
+<p>
+BumpCol would have to be changed to display the hidden features rather than moving thier x-coordinate. However bumping already includes adding lines and glyph to the canvas and this should not be a significant problem.
+</p>
+</fieldset>
+
