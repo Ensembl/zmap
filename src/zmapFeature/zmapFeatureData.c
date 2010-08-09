@@ -22,28 +22,22 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 17 11:04 2009 (edgrif)
+ * Last edited: Aug  6 13:14 2010 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.7 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.8 2010-08-09 09:07:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <glib-object.h>
 #include <gobject/gvaluecollector.h>
+#include <ZMap/zmap.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
 
@@ -207,9 +201,9 @@ static void apply(GParamSpecPool *pool, const char *name,
 
       for(i = 0; i < max; i++, apply_to++)
 	{
-	  if(g_type == G_TYPE_UINT)
+	  if(g_type == G_TYPE_INT)
 	    {
-	      pspec = g_param_spec_uint(name, nick, blurb, 0, G_MAXUINT, 0, G_PARAM_READABLE);
+	      pspec = g_param_spec_int(name, nick, blurb, 0, G_MAXINT, 0, G_PARAM_READABLE);
 	    }
 	  else if(g_type == G_TYPE_STRING)
 	    {
@@ -267,22 +261,22 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct term        = { PROP_DATA_TERM,      G_TYPE_STRING, apply_to_all };
       DataTypeForFeaturesStruct so_term     = { PROP_DATA_SOFA_TERM, G_TYPE_STRING, apply_to_all };
 
-      DataTypeForFeaturesStruct total_length = { PROP_DATA_TOTAL_LENGTH, G_TYPE_UINT, apply_to_all };
-      DataTypeForFeaturesStruct index       = { PROP_DATA_INDEX,  G_TYPE_UINT, apply_to_all };
-      DataTypeForFeaturesStruct start       = { PROP_DATA_START,  G_TYPE_UINT, apply_to_all };
-      DataTypeForFeaturesStruct end         = { PROP_DATA_END,    G_TYPE_UINT, apply_to_all };
-      DataTypeForFeaturesStruct length      = { PROP_DATA_LENGTH, G_TYPE_UINT, apply_to_all };
-      DataTypeForFeaturesStruct strand      = { PROP_DATA_STRAND, G_TYPE_UINT, apply_to_all };
+      DataTypeForFeaturesStruct total_length = { PROP_DATA_TOTAL_LENGTH, G_TYPE_INT, apply_to_all };
+      DataTypeForFeaturesStruct index       = { PROP_DATA_INDEX,  G_TYPE_INT, apply_to_all };
+      DataTypeForFeaturesStruct start       = { PROP_DATA_START,  G_TYPE_INT, apply_to_all };
+      DataTypeForFeaturesStruct end         = { PROP_DATA_END,    G_TYPE_INT, apply_to_all };
+      DataTypeForFeaturesStruct length      = { PROP_DATA_LENGTH, G_TYPE_INT, apply_to_all };
+      DataTypeForFeaturesStruct strand      = { PROP_DATA_STRAND, G_TYPE_INT, apply_to_all };
       
-      DataTypeForFeaturesStruct cds_length  = { PROP_DATA_CDS_LENGTH,   G_TYPE_UINT, apply_to_transcripts };
-      DataTypeForFeaturesStruct utr5_length = { PROP_DATA_5_UTR_LENGTH, G_TYPE_UINT, apply_to_transcripts };
-      DataTypeForFeaturesStruct utr3_length = { PROP_DATA_3_UTR_LENGTH, G_TYPE_UINT, apply_to_transcripts };
+      DataTypeForFeaturesStruct cds_length  = { PROP_DATA_CDS_LENGTH,   G_TYPE_INT, apply_to_transcripts };
+      DataTypeForFeaturesStruct utr5_length = { PROP_DATA_5_UTR_LENGTH, G_TYPE_INT, apply_to_transcripts };
+      DataTypeForFeaturesStruct utr3_length = { PROP_DATA_3_UTR_LENGTH, G_TYPE_INT, apply_to_transcripts };
       DataTypeForFeaturesStruct locus       = { PROP_DATA_LOCUS,      G_TYPE_STRING, apply_to_transcripts };
       
-      DataTypeForFeaturesStruct query_start  = { PROP_DATA_QUERY_START,  G_TYPE_UINT, apply_to_alignments };
-      DataTypeForFeaturesStruct query_end    = { PROP_DATA_QUERY_END,    G_TYPE_UINT, apply_to_alignments };
-      DataTypeForFeaturesStruct query_length = { PROP_DATA_QUERY_LENGTH, G_TYPE_UINT, apply_to_alignments };
-      DataTypeForFeaturesStruct query_strand = { PROP_DATA_QUERY_STRAND, G_TYPE_UINT, apply_to_alignments };
+      DataTypeForFeaturesStruct query_start  = { PROP_DATA_QUERY_START,  G_TYPE_INT, apply_to_alignments };
+      DataTypeForFeaturesStruct query_end    = { PROP_DATA_QUERY_END,    G_TYPE_INT, apply_to_alignments };
+      DataTypeForFeaturesStruct query_length = { PROP_DATA_QUERY_LENGTH, G_TYPE_INT, apply_to_alignments };
+      DataTypeForFeaturesStruct query_strand = { PROP_DATA_QUERY_STRAND, G_TYPE_INT, apply_to_alignments };
       /* now make the table */
       DataTypeForFeatures full_table[PROP_DATA_FINAL+1] =
 	{
@@ -378,7 +372,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
     case PROP_DATA_TOTAL_LENGTH:
       if (feature->feature.homol.length)
 	{
-	  g_value_set_uint(value, feature->feature.homol.length) ;
+	  g_value_set_int(value, feature->feature.homol.length) ;
 	  result = TRUE ;
 	}
       break;
@@ -404,11 +398,11 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
 		       align_block->t2 == sub_feature->end)
 		      {
 			if(param_spec_id == PROP_DATA_QUERY_START)
-			  g_value_set_uint(value, align_block->q1);
+			  g_value_set_int(value, align_block->q1);
 			else if(param_spec_id == PROP_DATA_QUERY_END)
-			  g_value_set_uint(value, align_block->q2);
+			  g_value_set_int(value, align_block->q2);
 			else
-			  g_value_set_uint(value, align_block->q2 - align_block->q1 + 1);
+			  g_value_set_int(value, align_block->q2 - align_block->q1 + 1);
 		      }
 		  }
 		result = TRUE;
@@ -422,17 +416,17 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
 	  {
 	    result = TRUE;
 	    if(param_spec_id == PROP_DATA_QUERY_START)
-	      g_value_set_uint(value, feature->feature.homol.y1);
+	      g_value_set_int(value, feature->feature.homol.y1);
 	    else if(param_spec_id == PROP_DATA_QUERY_END)
-	      g_value_set_uint(value, feature->feature.homol.y2);
+	      g_value_set_int(value, feature->feature.homol.y2);
 	    else
-	      g_value_set_uint(value, feature->feature.homol.y2 - feature->feature.homol.y1 + 1);
+	      g_value_set_int(value, feature->feature.homol.y2 - feature->feature.homol.y1 + 1);
 	  }
       }
       break;
     case PROP_DATA_QUERY_STRAND:
       {
-	g_value_set_uint(value, feature->feature.homol.strand);
+	g_value_set_int(value, feature->feature.homol.strand);
 
 	result = TRUE;
       }
@@ -504,22 +498,22 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 	if (feature_data->sub_feature == NULL)
 	  {
 	    if(param_spec_id == PROP_DATA_START)
-	      g_value_set_uint(value, feature->x1);
+	      g_value_set_int(value, feature->x1);
 	    else if(param_spec_id == PROP_DATA_END)
-	      g_value_set_uint(value, feature->x2);
+	      g_value_set_int(value, feature->x2);
 	    else
-	      g_value_set_uint(value, feature->x2 - feature->x1 + 1);
+	      g_value_set_int(value, feature->x2 - feature->x1 + 1);
 	  }
 	else
 	  {
 	    if (param_spec_id == PROP_DATA_INDEX)
-	      g_value_set_uint(value, feature_data->sub_feature->index) ;
+	      g_value_set_int(value, feature_data->sub_feature->index) ;
 	    else if (param_spec_id == PROP_DATA_START)
-	      g_value_set_uint(value, feature_data->sub_feature->start);
+	      g_value_set_int(value, feature_data->sub_feature->start);
 	    else if (param_spec_id == PROP_DATA_END)
-	      g_value_set_uint(value, feature_data->sub_feature->end);
+	      g_value_set_int(value, feature_data->sub_feature->end);
 	    else
-	      g_value_set_uint(value, feature_data->sub_feature->end - feature_data->sub_feature->start + 1);
+	      g_value_set_int(value, feature_data->sub_feature->end - feature_data->sub_feature->start + 1);
 	  }
 
 	result = TRUE;
