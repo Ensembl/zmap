@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  1 14:51 2008 (rds)
+ * Last edited: Jul 30 21:18 2010 (edgrif)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowPrint.c,v 1.9 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowPrint.c,v 1.10 2010-08-09 09:04:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -590,18 +590,18 @@ static gboolean getConfiguration(PrintCBData print_cb)
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				       ZMAPSTANZA_APP_PRINTER, &tmp_string))
 	print_cb->default_printer = tmp_string;
-      else if((print_cb->default_printer = getenv("PRINTER")) || 
-              (print_cb->default_printer = getenv("XPRINTER")))
-        print_cb->default_printer = g_strdup_printf(print_cb->default_printer);
+      else if ((print_cb->default_printer = getenv("PRINTER"))
+	       || (print_cb->default_printer = getenv("XPRINTER")))
+        print_cb->default_printer = g_strdup_printf("%s", print_cb->default_printer) ;
       else
 	result = FALSE;
 
       zMapConfigIniContextDestroy(context);
     }
-  else if((print_cb->default_printer = getenv("PRINTER")) || 
-	  (print_cb->default_printer = getenv("XPRINTER")))
+  else if ((print_cb->default_printer = getenv("PRINTER")) || 
+	   (print_cb->default_printer = getenv("XPRINTER")))
     {
-      print_cb->default_printer = g_strdup_printf(print_cb->default_printer);
+      print_cb->default_printer = g_strdup_printf("%s", print_cb->default_printer);
       result = TRUE;
     }
   else

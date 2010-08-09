@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun  9 10:05 2010 (edgrif)
+ * Last edited: Jul 30 21:16 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.72 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.73 2010-08-09 09:04:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -687,7 +687,7 @@ static void infoSetCB(void *app_data, void *zmap_data)
 
   zmap_xml = zMapControlRemoteReceiveAccepts(zmap);
 
-  app_context->info = g_error_new(domain, 200, zmap_xml);
+  app_context->info = g_error_new(domain, 200, "%s", zmap_xml) ;
 
   if(zmap_xml)
     g_free(zmap_xml);

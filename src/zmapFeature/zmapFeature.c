@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec 14 11:20 2009 (edgrif)
+ * Last edited: Aug  5 15:01 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.131 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.132 2010-08-09 09:04:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -864,7 +864,7 @@ gboolean zMapFeatureAddURL(ZMapFeature feature, char *url)
 
   zMapAssert(feature && url && *url) ;
 
-  feature->url = g_strdup_printf(url) ;
+  feature->url = g_strdup(url) ;
 
   return result ;
 }

@@ -27,9 +27,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb  1 15:12 2010 (edgrif)
+ * Last edited: Aug  5 14:59 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.101 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.102 2010-08-09 09:04:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1039,10 +1039,8 @@ void zmapControlInfoOverwrite(void *data, int code, char *format, ...)
   callInfo = g_strdup_vprintf(format, args);
   va_end(args);
 
-  zmap->info = g_error_new(g_quark_from_string(__FILE__),
-                           code,
-                           callInfo
-                           );
+  zmap->info = g_error_new(g_quark_from_string(__FILE__), code,
+                           "%s", callInfo) ;
   g_free(callInfo);
 
   return ;

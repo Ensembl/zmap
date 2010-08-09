@@ -26,9 +26,9 @@
  * Description:
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jan 14 10:26 2010 (edgrif)
+ * Last edited: Aug  5 15:07 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.62 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.63 2010-08-09 09:04:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -383,7 +383,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 					  create->url, create->format, create->timeout, create->version))
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
 	    thread_rc = ZMAPTHREAD_RETURNCODE_SERVERDIED ;
 	  }
@@ -404,7 +404,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 
 	  if ((request->response = zMapServerOpenConnection(server,open->sequence_server)) != ZMAP_SERVERRESPONSE_OK)
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
 	    thread_rc = ZMAPTHREAD_RETURNCODE_SERVERDIED ;
 	  }
@@ -419,7 +419,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	if ((request->response
 	     = zMapServerGetServerInfo(server, &info)) != ZMAP_SERVERRESPONSE_OK)
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	  }
 	else
@@ -454,7 +454,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
         }
         else if(request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	  }
 	break ;
@@ -477,7 +477,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    && (request->response = zMapServerSetContext(server, context->context)
 		!= ZMAP_SERVERRESPONSE_OK))
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	  }
 	else
@@ -512,7 +512,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	if ((request->response = zMapServerGetFeatures(server, features->styles, features->context))
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	  }
 
@@ -530,7 +530,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 
 	    if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
 	      {
-		*err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+		*err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 		thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	      }
 	  }
@@ -703,7 +703,7 @@ static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSeque
       if ((request->response = zMapServerGetSequence(server, request->sequences))
 	  != ZMAP_SERVERRESPONSE_OK)
 	{
-	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
       else
@@ -727,7 +727,7 @@ static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_o
     }
   else
     {
-      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(*server)) ;
+      *err_msg_out = g_strdup(zMapServerLastErrorMsg(*server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
 
@@ -833,7 +833,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
             // unsupported eg for PIPE or FILE - zmapView will have loaded these anyway
         if(styles->response != ZMAP_SERVERRESPONSE_OK && styles->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
         }
 	}
@@ -932,7 +932,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
             if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
 	      != ZMAP_SERVERRESPONSE_OK)
 	      {
-	      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	      *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	      }
       }
