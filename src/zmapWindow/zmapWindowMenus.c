@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Jul 29 10:18 2010 (edgrif)
+ * Last edited: Aug 10 15:40 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.74 2010-07-29 09:20:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.75 2010-08-10 15:03:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1380,7 +1380,8 @@ static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny
   /* Find the block from whatever pointer we are sent...  */
   feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
 
-  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Feature Dump filename ?", NULL, "gff"))
+  if (!(filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel),
+				      "Feature Dump filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
       || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, window->read_only_styles, region_span, file, &error))
     {
