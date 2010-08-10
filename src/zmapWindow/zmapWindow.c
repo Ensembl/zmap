@@ -20,20 +20,18 @@
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
  *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Provides interface functions for controlling a data
  *              display window.
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 29 09:19 2010 (edgrif)
+ * Last edited: Aug 10 13:48 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.334 2010-07-29 09:37:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.335 2010-08-10 13:53:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
 
 #include <math.h>
 #include <string.h>
@@ -42,6 +40,7 @@
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
 
+#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapFASTA.h>
@@ -55,8 +54,6 @@
 #include <zmapWindowFeatures.h>
 #include <zmapWindow_P.h>
 
-
-ZMapFeature FEATURE_GLOBAL_G = NULL ;
 
 
 
@@ -91,15 +88,17 @@ typedef struct
 
 
 /* Used for showing ruler on all windows that are in a vertically locked group. */
-typedef enum {
-  ZMAP_LOCKED_RULER_SETUP,
-  ZMAP_LOCKED_RULER_MOVING,
-  ZMAP_LOCKED_RULER_REMOVE,
+typedef enum
+  {
+    ZMAP_LOCKED_RULER_SETUP,
+    ZMAP_LOCKED_RULER_MOVING,
+    ZMAP_LOCKED_RULER_REMOVE,
+    
+    ZMAP_LOCKED_MARK_GUIDE_SETUP,
+    ZMAP_LOCKED_MARK_GUIDE_MOVING,
+    ZMAP_LOCKED_MARK_GUIDE_REMOVE,
+  } ZMapWindowLockRulerActionType ;
 
-  ZMAP_LOCKED_MARK_GUIDE_SETUP,
-  ZMAP_LOCKED_MARK_GUIDE_MOVING,
-  ZMAP_LOCKED_MARK_GUIDE_REMOVE,
-} ZMapWindowLockRulerActionType ;
 typedef struct
 {
   ZMapWindowLockRulerActionType action ;
@@ -279,6 +278,8 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
 
 
 
+/* WHAT'S THIS !!! */
+ZMapFeature FEATURE_GLOBAL_G = NULL ;
 
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -4227,6 +4228,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Delete:
     case GDK_BackSpace:					    /* Good for Macs which have no delete key. */
       {
+	/* Hide/Show features, Delete will hide any highlighted features, shift-delete shows them
+	 * again. */
         FooCanvasGroup *focus_column ;
 
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
@@ -4252,21 +4255,19 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 		zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
 
-		zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
+		/* NOTE that this does not delete any lines joining homols etc...that
+		 * would require a callback into the alignment object code I think... */
 
-		/* This all feels really clumsy...we have the focus/highlight stuff the wrong way
-		   round, we should be dealing with focus, not with highlight at this level... */
-//		zMapWindowUnHighlightFocusItems(window) ;                   // done by hide function
-//		zmapWindowFocusSetHotColumn(window->focus, focus_column) ;  //not needed
-//		zmapWindowFocusHighlightHotColumn(window->focus) ;          // done by sethotcol
+		zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
 	      }
 
-	    curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(focus_container) ;
+	    /* We don't bump here because user may be deleting a series of features so it
+	     * be irritating to keep bumping. */
 
-	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_bump_mode) ;
-
+	    /* Make sure selected features are shown or hidden. */
 	    zmapWindowFullReposition(window) ;
 	  }
+
 	event_handled = TRUE ;
 
 	break ;
@@ -4327,6 +4328,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_b:
     case GDK_B:
       {
+	/* Toggle bumping for selected column, if column is unbumped it will be 
+	 * bumped in default mode for column. */
 	FooCanvasGroup *focus_column ;
 
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
@@ -4365,43 +4368,48 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
-      case GDK_c:
-      case GDK_C:
-	{
-	  FooCanvasGroup *focus_column ;
+    case GDK_c:
+    case GDK_C:
+      {
+	/* Compress visible columns so that any not showing features are hidden. */
+	FooCanvasGroup *focus_column ;
 
-	  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-	    {
-	      ZMapWindowCompressMode compress_mode ;
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	  {
+	    ZMapWindowCompressMode compress_mode ;
 
-	      if (key_event->keyval == GDK_C)
-		compress_mode = ZMAPWINDOW_COMPRESS_VISIBLE ;
-	      else
-		{
-		  if (zmapWindowMarkIsSet(window->mark))
-		    compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
-		  else
-		    compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
-		}
+	    if (key_event->keyval == GDK_C)
+	      compress_mode = ZMAPWINDOW_COMPRESS_VISIBLE ;
+	    else
+	      {
+		if (zmapWindowMarkIsSet(window->mark))
+		  compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+		else
+		  compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+	      }
 
-	      zmapWindowColumnsCompress(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
-	    }
+	    zmapWindowColumnsCompress(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
+	  }
 
-	  event_handled = TRUE ;
+	event_handled = TRUE ;
 
-	  break ;
-	}
+	break ;
+      }
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
       /*  need implementing...can work on a window basis... .... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     case GDK_d:
     case GDK_D:
 //      { extern int mh_debug; mh_debug = 1; }
       break;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     case GDK_e:
+
       if(zmap_development_G)
         {
             // this is test code to exercise the focus functions
@@ -4477,6 +4485,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	zmapWindowToggleMark(window, key_event->keyval);
       }
       break;
+
     case GDK_o:
     case GDK_O:
       {
@@ -4497,7 +4506,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_p:
     case GDK_P:
       {
-	/* Use the current focus item */
+	/* Use the current focus item and display translation of it. */
 	FooCanvasItem *focus_item ;
 
 	/* If there is a focus item use that.  */
@@ -4538,13 +4547,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
     case GDK_r:
       {
+	/* Reverse complement. */
 	revCompRequest(window) ;
 
 	break ;
       }
+
     case GDK_t:
     case GDK_T:
       {
+	/* Show translation of an item. */
 	FooCanvasItem *focus_item ;
 
 	/* If there is a focus item use that.  */
@@ -4555,8 +4567,38 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    else
 	      zmapWindowItemShowTranslationRemove(window, focus_item);
 	  }
+
+	break;
       }
-      break;
+
+
+    case GDK_u:
+    case GDK_U:
+      {
+	/* 'u' for update....rebumps a column. */
+        FooCanvasGroup *focus_column ;
+
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	  {
+	    ZMapWindowContainerFeatureSet focus_container;
+	    ZMapStyleBumpMode curr_bump_mode ;
+
+	    focus_container = (ZMapWindowContainerFeatureSet)focus_column;
+
+	    curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(focus_container) ;
+
+	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), ZMAPBUMP_UNBUMP) ;
+
+	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_bump_mode) ;
+
+	    zmapWindowFullReposition(window) ;
+	  }
+
+	event_handled = TRUE ;
+
+	break ;
+      }
+
     case GDK_w:
     case GDK_W:
       {
@@ -4572,6 +4614,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
+
     case GDK_Z:
     case GDK_z:
       {
