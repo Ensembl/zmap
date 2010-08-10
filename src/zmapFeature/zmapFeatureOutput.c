@@ -22,28 +22,22 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  9 09:41 2010 (edgrif)
+ * Last edited: Aug 10 16:04 2010 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.14 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.15 2010-08-10 15:05:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <unistd.h>		/* STDOUT_FILENO */
 #include <string.h>
 
+#include <ZMap/zmap.h>
 #include <ZMap/zmapFeature.h>
 
 typedef enum
@@ -332,8 +326,9 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
   dump_data.dump_data   = &dump_any ;
   dump_data.dump_string = g_string_sized_new(2000);
 
-  zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURESET,
+  zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
 				  dump_features_cb, &dump_data);
+
 
   g_string_free(dump_data.dump_string, TRUE);
 
