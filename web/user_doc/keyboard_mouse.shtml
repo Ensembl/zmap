@@ -107,6 +107,11 @@
     <td><b>t</b>ranslate highlighted item, <b>T</b> hides translation.</td>
   </tr>
   <tr>
+    <td><b>u or U</b></td>
+    <td><b>u</b>pdate a column, when you've deleted/reshown some items use this
+	short cut to rebump the column.</td>
+  </tr>
+  <tr>
     <td><b>w or W</b></td>
     <td>zoom out to show <b>w</b>hole sequence</td>
   </tr>
