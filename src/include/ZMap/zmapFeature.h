@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Jul 22 15:32 2010 (edgrif)
+ * Last edited: Aug 11 09:47 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.177 2010-07-29 09:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.178 2010-08-11 08:47:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -567,6 +567,9 @@ typedef struct ZMapFeatureStruct_
 
   ZMapBoundaryType boundary_type ;			    /* splice, clone end ? */
 
+
+  /* THIS IS WRONG...we shouldn't have phase in here...it only applies to translated features,
+   * i.e. transcripts...which have a start_phase field, remove this one.... */
   ZMapPhase phase ;
 
   float score ;
