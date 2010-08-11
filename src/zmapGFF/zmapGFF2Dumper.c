@@ -21,25 +21,19 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Dumps the features within a given block as GFF v2
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 22 14:46 2010 (edgrif)
+ * Last edited: Aug 11 09:09 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.21 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.22 2010-08-11 08:26:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapGFF.h>
@@ -54,7 +48,7 @@
 #define GFF_END        "%d"
 #define GFF_SCORE      "%g"
 #define GFF_STRAND     "%c"
-#define GFF_FRAME      "%c"
+#define GFF_PHASE      "%c"
 #define GFF_ATTRIBUTES "%s"
 #define GFF_ATTRIBUTE_SEPARATOR ';'
 
@@ -69,12 +63,13 @@ GFF_SOURCE GFF_SEPARATOR  \
 GFF_FEATURE GFF_SEPARATOR \
 GFF_START GFF_SEPARATOR   \
 GFF_END
-#define GFF_SEP_SCORE      GFF_SEPARATOR GFF_SCORE
-#define GFF_SEP_NOSCORE    GFF_SEPARATOR "%c"
-#define GFF_STRAND_FRAME   GFF_SEPARATOR GFF_STRAND GFF_SEPARATOR GFF_FRAME
+#define GFF_SEP_SCORE GFF_SEPARATOR GFF_SCORE
+#define GFF_SEP_NOSCORE GFF_SEPARATOR "%c"
+#define GFF_SEP_STRAND GFF_SEPARATOR GFF_STRAND
+#define GFF_SEP_PHASE GFF_SEPARATOR GFF_PHASE
 #define GFF_SEP_ATTRIBUTES GFF_SEPARATOR GFF_ATTRIBUTES
-#define GFF_OBLIGATORY         GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_SCORE GFF_STRAND_FRAME
-#define GFF_OBLIGATORY_NOSCORE GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_NOSCORE GFF_STRAND_FRAME
+#define GFF_OBLIGATORY GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_SCORE GFF_STRAND_FRAME
+#define GFF_OBLIGATORY_NOSCORE GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_NOSCORE GFF_SEP_STRAND GFF_SEP_PHASE
 #define GFF_FULL_LINE GFF_SEQ_SOURCE_FEAT_START_END GFF_SEP_SCORE GFF_STRAND_FRAME GFF_SEP_ATTRIBUTES
 
 typedef struct _GFFDumpDataStruct *GFFDumpData;
@@ -322,14 +317,14 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
 
       if ((result = dump_full_header(first_feature, file, error_out, &int_sequence)))
 	{
-	  GFFDumpData gff_data = NULL;
+	  GFFDumpData gff_data ;
 
-	  gff_data             = g_new0(GFFDumpDataStruct, 1);
-
-	  gff_data->basic      = basic_funcs_G;
-	  gff_data->transcript = transcript_funcs_G;
-	  gff_data->homol      = homol_funcs_G;
-	  gff_data->text       = text_funcs_G;
+	  gff_data = g_new0(GFFDumpDataStruct, 1);
+	  gff_data->basic = basic_funcs_G ;
+	  gff_data->transcript = transcript_funcs_G ;
+	  gff_data->homol = homol_funcs_G ;
+	  gff_data->text = text_funcs_G ;
+	  gff_data->styles = styles ;
 
 	  /* This might get overwritten later, but as DumpToFile uses
 	   * Subset, there's a chance it wouldn't get set at all */
@@ -338,6 +333,8 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
 	  result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data, g_free,
 						      file,          error_out,
 						      list_func_out, list_data_out) ;
+	  
+
 	}
     }
 
@@ -489,30 +486,42 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 
 	style = zMapFindStyle(gff_data->styles, feature->style_id) ;
 
-	/* Output a record for the whole feature, fields are:
-	 *      <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
-	if(!(gff_data->gff_source  = (char *)zMapStyleGetGFFSource(style)))
-	  gff_data->gff_source = (char *)zMapStyleGetName(style);
-	if(!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
-	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology);
 
-	/* Obligatory fields. */
+	/* Output a GFFv2 record for the whole feature, fields are:
+	 * 
+	 * <seqname> <source> <feature> <start> <end> <score> <strand> <phase> [attributes]
+	 * 
+	 * i.e. all but [attributes] are mandatory.
+	 */
+
+	/* Mandatory fields. */
+
+	if (!(gff_data->gff_source  = (char *)zMapStyleGetGFFSource(style)))
+	  gff_data->gff_source = (char *)zMapStyleGetName(style) ;
+
+	if (!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
+	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology) ;
+
 	g_string_append_printf(gff_string,
 			       GFF_SEQ_SOURCE_FEAT_START_END,
 			       gff_data->gff_sequence, /* saves feature->parent->parent->parent->original_id */
 			       gff_data->gff_source,
 			       gff_data->gff_feature,
 			       feature->x1,
-			       feature->x2);
+			       feature->x2) ;
 
 	if (feature->flags.has_score)
 	  g_string_append_printf(gff_string, GFF_SEP_SCORE, feature->score) ;
 	else
 	  g_string_append_printf(gff_string, GFF_SEP_NOSCORE, '.') ;
 
-	g_string_append_printf(gff_string, GFF_STRAND_FRAME,
-			       strand2Char(feature->strand),
-			       phase2Char(feature->phase)) ;
+	g_string_append_printf(gff_string, GFF_SEP_STRAND, strand2Char(feature->strand)) ;
+
+	g_string_append_printf(gff_string, GFF_SEP_PHASE,
+			       ((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
+				? phase2Char(feature->feature.transcript.start_phase)
+				: '.')) ;
+
 
 	/* Now to the attribute fields, and any subparts... */
 
@@ -699,7 +708,7 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
 			     transcript->cds_end,
 			     '.',
 			     strand2Char(feature->strand),
-			     phase2Char(feature->phase)) ;
+			     phase2Char(transcript->start_phase)) ;
 
       result = dump_transcript_identifier(feature, transcript,
 					  gff_string, error,
