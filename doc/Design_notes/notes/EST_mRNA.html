@@ -1,8 +1,5 @@
 <!-- $Id $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
-<h3>Warning</h3>
-<p> This was once intended to be an interactive process w/ otterlace- see <a href="Design_notes/notes/otter_zmap.shtml">here</a>. However, reading the text and a quick chat w/ the requestor suggest that an interactive process was not wanted.
-</p>
 
 <fieldset><legend>Background</legend>
 <p>In 2008 ticket 69060 was created requesting this:
@@ -18,34 +15,41 @@ lot fewer boxes.
 </pre>
 and recently (after the latest annotation test) we were requested to see how easy this would be to implement.
 </p>
+<h3>Please Note</h3>
+<h4>Design issues</h4>
+<p> This was once intended to be an interactive process w/ otterlace- see <a href="Design_notes/notes/otter_zmap.shtml">here</a>. However, reading the text and a quick chat w/ the requestor suggest that an interactive process was not wanted.
+</p>
+<h4>Implementation issues</h4>
+<p>Please refer to <a href="Design_notes/notes/f_context.shtml">this page</a> for some notes on loose ends that need attention.</p>
 </fieldset>
 
 <fieldset><legend>Things to define/ solve</legend>
 <h3>How to decide when to not display a feature?</h3>
 <p>
-<ul>
-<li> the feature must be an EST
-<li> the EST is covered completely by a same species mRNA ?
-<li> the EST is completely covered by any mRNA (eg EST_Other x vertebrate_mRNA) ?
-</ul>
+An EST feature (ie group of ESTs with the same name) will be masked if each feature is covered by an mRNA feature (ie group of mRNAs with the same name).
+Optionally we can mask an EST column against itself and also do the same with mRNA data, but in this case we must only mask data that has the same number of 'exons' to avoid masking alternate splicing events.
 </p>
 <h3>How to choose features to compare?</h3>
 <p>As features are effectively blank data and thier names are 'user-defined' we cannot hard code these and one obvious way to mark featuresets for 'clustering' and non-display would be via styles eg:
 <pre>
-[EST-Human]
+[EST_Human]
 # list of featuresets to compare this featureset with
-alignment-mask-sets = vertebrate_mRNA ; cDNA
+alignment-mask-sets = self ; vertebrate_mRNA ; cDNA
 </pre>
+If we wish to mask a featureset against itself then we include its own name on the mask-sets list or the key word 'self'. It will be more efficient to include a featureset's self reference first.
+The 'self' keyword is necessary to allow a common style to be used for a number of EST columns.
 </p>
+
 <h3>Display Options</h3>
 <p>
-Masked data can be not displayed, or displayed in grey (for example). The grey colour can be specified as a window colour in the ZMap config file. An RC menu option will be provided to show masked data per column and if selected this will be displayed in grey (if configured) or as normal (if not).
+Masked data can be not displayed, or displayed in grey (for example). The grey colour can be specified as a window colour in the ZMap config file.
 <pre>
 [ZMapWindow]
-colour-masked-feature = light grey
+colour-masked-feature-border = light grey
+colour-masked-feature-fill = dark grey
 </pre>
 </p>
-If styles cause data to be hidden from the annotators it may be advisable to allow this to be switched off and to display all features on demand. A new option can be added to the RC menu to toggle display of masked features independantly of existing bump options; although the non-display fucntion is only useful to the user in bumped columns it will result in much faster display of non-bumped columns.  This option will apply to the column whether bumped or not.  Note that this flag must be stored in the featureset struct and is distinct from flags per feature which say whether or not each feature is displayed.
+If styles cause data to be hidden from the annotators it may be advisable to allow this to be switched off and to display all features on demand. A new option can be added to the RC menu to toggle display of masked features independantly of existing bump options; although the non-display function is only useful to the user in bumped columns it will result in much faster display of non-bumped columns.  This option will apply to the column whether bumped or not.  Note that this flag must be stored in the featureset struct and is distinct from flags per feature which say whether or not each feature is displayed.  If no colour are defined as above or the column is not maskable then the menu option will not be visible and the masked features will never be displayed.
 </p>
 </fieldset>
 
@@ -59,38 +63,37 @@ But as features may arrive at any time (via pipeservers or via delayed loading) 
 <p>
 The fact that we expect featuresets to be displayed separately (esp w/ pipe servers) implies that we must be able to mask each EST featureset independantly against each mRNA featureset, although if several mRNA featuresets are available when an EST column is displayed then these could be processed together.
 </p>
-<p>In the interests of simplicity masking shall be performed on the feature context - flags will be maintained in the feature context to decide which features are masked and how this is presented to the user can be indeependant of this.  For an initial column display masking will be performed before display and then only those features not flagged as masked will be added to the canvas.  For a display update (eg when the masking column (mRNA) arrives after the EST) the feature context will be masked and features being masked will be removed from the foo canvas on the fly.
+<p>In the interests of simplicity masking shall be performed on the feature context - flags will be maintained in the feature context to decide which features are masked and how this is presented to the user can be independant of this.
 </p>
-Note that canvas items refer to features and not vice versa, but a canvas item can be found relatively quickly via its hash table.
+Note that canvas items refer to features and not vice versa, but a canvas item can be found relatively quickly via a hash table in the ZMapWindow structure.
 </p>
 <h4>Implementation README</h4>
 <p>
 <ul>
-<li>The list of featureset quarks stored in the styles is non canonicalised as for featureset or style ID's, but is whitespace normalised.  See zMapConfigString2QuarkList().
+<li>The list of featureset quarks stored in the styles is canonicalised as for featureset or style ID's, and is whitespace normalised.  See zMapConfigString2QuarkList().
 <li>On merging styles we do not merge quark lists but instead just overwrite. (zMapStyleMerge())
 <li>The style parameter for the list of quarks is a string, which is how the data is input and output.
 <li>A featureset to be masked has a list of featuresets to mask with, which correspond to the styles config. As we mask against a featureset and not a style this list can only be used one-way. Whenever a featureset completes loading then before displaying it (and only if has a masker list) it is masked. If there is no masker list then all other existing featuresets are scanned and if relevant masked with it. (this will be done by an execute function that operates on the feature context). As this only happens once per featureset load it is not a performance problem.
-<li>Masking of featuresets is performed immediately after the merge featureset operation - this involves setting flags in the feature context, and when featuresets are loaded it is possible that they have to be RevComped.  See <b>zmapView/getFeatures()</b> though to <b>justMergeContext()</b> and <b>justDrawContext()</b>.  BTW <b>zMapFeatureContextMerge()</b> is in <b>zmapFeature.c</b> not <b>zmapFeatureContext.c</b>.
-<li> Updatang of the non/displayed features must be performed after the conext merge, in line with existing practice.
+<li>Masking of featuresets is performed immediately after the merge featureset operation - this involves setting flags in the feature context, and when featuresets are loaded it is possible that they have to be RevComped.  See <b>zmapView/getFeatures()</b> through to <b>justMergeContext()</b> and <b>justDrawContext()</b>.  BTW <b>zMapFeatureContextMerge()</b> is in <b>zmapFeature.c</b> not <b>zmapFeatureContext.c</b>.
+<li> Updating of the non/displayed features must be performed after the context merge, in line with existing practice.
 </ul>
 </p>
 </p>
 </fieldset>
 
-<fieldset><legend>Masking algorithms</legend>
+</fieldset>
+<fieldset><legend>Masking algorithm</legend>
 <p>
 There may be a combinatorial problem to solve.  A sample session from human chr-4-04 presented about 4-500 vertebrate mRNA features and 2-3000 EST_Human and given that each feature may contain many parts a naive algorithm could get quite slow.
 </p>
 <p>The following is proposed:
 <ul>
 <li> sort the mRNA's into start coordinate order, then end coordinate reversed
-<li> remove or flag mRNAs that are covered by another one - this will be easy as they are in order
-<li> sort the ESTs into order as for the mRNAs and hide EST's that are covered by others
-<li> scan through EST's and for each one:
-<li> scan all the mRNA's until the start coordinate means no cover
-<li> skip over mRNA's whose end coord means no cover - this can be optimised by including a pointer to the next feature with a different start coordinate - many features have the same start coordinate.
-<li> express both featuresets as integer arrays or lists defining exon and intron like sections.
+<li> sort the ESTs into order as for the mRNAs
+<li> scan through EST's and mRNAs together, advancing each one till mRNA end coord &gt;= EST start and then EST start &gt;= mRNA start
+<li> if neither is masked express both features as lists defining exon and intron like sections.
 <li> use a simple function to determine if one covers the other completely and if so hide that EST and quit.
+<li> stop when the start coordinates mean cover is no longer possible
 </ul>
 </p>
 <p>
@@ -98,5 +101,99 @@ There may be a combinatorial problem to solve.  A sample session from human chr-
 <p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment. Extra flags will be added to these to handle masking status.
 </p>
 
+</fieldset>
 
+<fieldset><legend>Sorted access to the feature context</legend>
+<h3>Existing practice</h3>
+<p>The Feature Context has features referenced by a hash table which provides random unsorted access.
+<b>NB</b> Tests have revealed that creating a hash table of 100k items will fail: the function does not return, although 90K appears to work quite quickly.
+The FooCanvas stores data in a GList (which is quite slow) and the Window items code maintains a hash table to map features to canvas items. The canvas items refer back to thier features directly.
+</p>
+<p>To avoid disturbing existing code we will add data to the feature context to provide sorted access - it would be better to replace the hash table with a B-tree or similar but not very practical in the short term.
+</p>
+<p>A quick glance at GLib show that they provide binary trees and n-way trees but neither of these are ideal. The n-way trees just provide more lists but obviously would be slow with our data on random access. The binary trees are an opaque structre and while they provide lookup and traverse functions do not implement next or previous functions.
+</p>
+<h3>Relating feature context data to canvas items: alignments</h3>
+<p>Alignment features correspond to features in EnsEMBl and represent gapped alignments.  Each feature is represented by a feature.homol structure which includes a GArray to specify the gaps if present; these gaps are small and are displayed as lines accross the feature.  Several distinct features of the same name can be joined up with vertical lines.
+When displayed each part (alignment feature) is expressed as a separate canvas item, and these can be re-arranged in different ways according to the choice of bump mode.  In Ensembl the data is represented as several distinct items with the same name.
+</p>
+<p> This implies that we have to connect features of the same name together and then sort these composite objects into start coordinate order.  Column bumping already does a similar task, but for canvas items - we need lists of features of the same name.  To make the sorting and comparison algorithm run faster we will prepend each list with 'whole alignment' entry which will hold the start and end coordinates of each set of alignments.
+</p>
+<h3>Sorting and maintaining data</h3>
+<p>We expect EST data and mRNA data to be static within a ZMap session - once sorted there is no requirement to repeat the process. Additional data supplied by servers will be stored in distinct context featuresets regardless of whether they are to be displayed in the same column.  <i>Note that this requires ZMap configuration to specify unique featureset names</i> - this is possible even if the ultimate source of two data sets are named, via the </b>[featureset-source]</b> stanza.  If in future we request features for subsets of the region being used then we will need to re-sort a featureset as new data arrives.  Data will be sorted into a GList of pointers to the features which will be stored in the featureset structure. If new data arrives the set will be flagged as unsorted by freeing the list.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Choosing to hide or display masked features in grey</legend>
+
+<h3>Motivation </h3>
+<p>We wish to hide (ie not display at all) features that are masked a) to unclutter the display and b) to run faster and this option is chosen by not specifying a 'masked features colour' for the window.
+</p>
+<p>For testing and also as an option to show all the data but direct the user's attention to important features we wish to display masked features in grey, and this colour choice will logically apply to the window rather than a column.  If a masked features colour is specified then these features will be displayed but initially hidden - display speed will be faster if they are not displayed but typically the difference will be minimal as we are dealing with only 1000 features, and display speed is dominated by protien alignments where volumes are more like 50k+.
+</p>
+
+<h3>How is this done?</h3>
+<p>
+In <b>zmapWindowFeature.c/zmapWindowFeatureDraw()</b>, called from <b>zmapWindowDrawFeatures.c/ProcessFeature()</b> we test to see if the window colour has been set and if not just don't draw masked features, in which case we never have to consider what colour to use.
+</p>
+<p>
+If the window colour is set then when we draw the features we have to access this colour by a process which is a little obscure.  In <b>zmapWindowCanvasItem.c/zMapWindowCanvasItemAddInterval()</b> we call <b>zmapWindowAlignmentFeature.c/zmap_window_alignment_feature_set_colour()</b> via the over-ridden class structure function set_colour() for alignment features.  This has no direct access to the colour data but we can access the canvas featureset group (aka column) via the canvas item parent references. This <b>ZMapWindowContainerFeatureSet</b> object has a reference to the window which is opaque, and we have to impelement a ZMapWindow function to access the colour spec. Unfortunately we have to write two of these functions to get past two levels of scope incompatability, one to get to the featureset and one to reach the window.
+</p>
+
+<h3>Controlling the display and column menus</h3>
+<p>
+Each featureset in the view's context has a <b>masker_sorted_features</b> GList which is non-NULL if the column has been masked ie if masking has been configured.  Each feature has flags to specify masked and displayed.</p>
+<p> The featureset will be displayed in a column (or more in case of strand and frame) and when it is displayed in a column flags in the <b>ZMapWindowContainerFeatureset</b> will be set to say if the column is maskable (contains one or more featuresets that are masked) and masked (mask data is not displayed).  These flags will drive the column menu.</p>
+<p>Currently there are no plans to select display of individual featuresets in a column, if so it may be wise to add a list of contained featuresets to the ZMapWindowContainerFeatureset structure. </p>
+
+<h3>Toggling display of masked items</h3>
+<p>By default masked data will not be displayed and if we select 'Show Maksed Features' then we will scan all ZMapWindowCanvasItems in that column and display the masked data.  Deselecting this will remove the masked items from the FooCanvas.  Each canvas item refers to it's feature and when the display status of a feature is changed the flag in the feature structure that says 'displayed' will be updated.
+</p>
+<p>
+<b>NOTE</b>: We assume that each feature is displayed in one column only, but the situation where multiple windows have been opened is more complex.  In line with existing practice each window in a view reflects the same display state and changes in one occur in the others. To accomodate this we must display or hide features according to menu choice rather than feature state.  Each time we show or hide a feature we set the flags in the feature accordingly.
+</p>
+<p>
+<b>NOTE</b>: If a featureset is loaded into a columm we must also check the display state of the column.
+As per normal we mask the new column and display unmasked features, but if the column state requires masked features to be shown then we unmask the new features.
+</p>
+
+<h3>Where to put the show/hide function and implementation</h3>
+<p><b>zmapWindowContainerFeatureset.c/zMapWindowContainerFeatureSetShowHideMaskedFeatures()</b>
+</p>
+<p>Hidden features were originally intended to be not displayed ans we would have added or removed items from the canvas according to display state.  However this is a relatively complicated process due to the item factory... and also the fact that featuresets can appear in several columns (not particularly releveant for current practice with ESTs and mRNAs but we have to code it properly).
+Instead we display as normal and use foo_canvas_item_show/hide().  Data volumes in this case are not huge, typically 1000 features total, so performance will not be affected much, and operating the show/hide menu will be quicker.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Results</legend>
+<p>Using [chr11-03_2098831-2266877] and 3 EST columns and vertebrate_mRNA (and each set masking itself) we get:
+<pre>
+masked = vertebrate_mrna;est_other;est_mouse;est_human
+masker = est_human;est_mouse;vertebrate_mrna;est_other
+
+mask set vertebrate_mRNA with set vertebrate_mRNA
+masked 51, failed 705, tried 125 of 125 composite features
+
+mask set EST_Other with set EST_Other
+masked 199, failed 1327, tried 322 of 322 composite features
+mask set EST_Other with set vertebrate_mRNA
+masked 80, failed 580, tried 322 of 322 composite features
+
+mask set EST_Mouse with set EST_Mouse
+masked 57, failed 106, tried 87 of 87 composite features
+mask set EST_Mouse with set vertebrate_mRNA
+masked 21, failed 113, tried 87 of 87 composite features
+
+mask set EST_Human with set EST_Human
+masked 338, failed 2274, tried 528 of 528 composite features
+mask set EST_Human with set vertebrate_mRNA
+masked 105, failed 742, tried 514 of 528 composite features
+mask old by new
+</pre>
+Which in rough terms gives us 50% of vertebrate mRNA's and between 10%-25% of ESTs displayed.
+</p>
+<p>The algortihm appears to run effciently: # failed is the number of comparisons used with no effect. The worst case is quadratic (like the obvious naive algorithm) but we are a long way from that.
+</p>
 </fieldset>
