@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 12:58 2010 (edgrif)
+ * Last edited: Aug 17 09:36 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.10 2010-07-15 10:49:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.11 2010-08-18 09:23:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,7 +87,9 @@ static gboolean create_locus_text_G = FALSE ;
 
 
 
-
+/* 
+ *                     External routines.
+ */
 
 
 GType zMapWindowTranscriptFeatureGetType(void)
@@ -117,6 +119,12 @@ GType zMapWindowTranscriptFeatureGetType(void)
 
   return group_type;
 }
+
+
+
+/* 
+ *                  Internal routines.
+ */
 
 
 /* object impl */
