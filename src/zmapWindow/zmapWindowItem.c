@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 29 11:30 2010 (edgrif)
+ * Last edited: Aug 18 10:21 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.136 2010-07-29 10:30:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.137 2010-08-18 09:22:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -364,6 +364,9 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
   ZMapWindowCanvasItem feature_item ;
 
 
+
+  /* THE FIRST AND SECOND if's SHOULD BE MOVED TO THE items subdirectory which should have a
+   * function that returns the feature given an item or a subitem... */
   if (ZMAP_IS_CONTAINER_GROUP(item))
     {
       zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)item, &feature_any);
@@ -710,7 +713,7 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight,
 	{
 	  if (item_highlight && (feature = zmapWindowItemGetFeature(item)))
 	    {
-	      zMapWindowSequenceFeatureSelectByFeature(sequence_feature, feature) ;
+	      zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, feature) ;
 	    }
 	  else
 	    {
@@ -800,7 +803,7 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 	    {
 	      if (item_highlight && (feature = zmapWindowItemGetFeature(item)))
 		{
-		  zMapWindowSequenceFeatureSelectByFeature(sequence_feature, feature) ;
+		  zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, feature) ;
 		}
 	      else
 		{
