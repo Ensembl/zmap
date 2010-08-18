@@ -1,0 +1,17 @@
+#
+# A collection of any scrips we use for RT
+#
+
+
+
+my $cf_urgency = RT::CustomField->new( $RT::SystemUser );
+$cf_urgency->LoadByName( Name => 'Urgency' );
+
+my $cf_import = RT::CustomField->new( $RT::SystemUser );
+$cf_import->LoadByName( Name => 'Importance' );
+
+$self->TicketObj->AddCustomFieldValue( Field => $cf_urgency, Value => 'Urgent' );
+
+$self->TicketObj->AddCustomFieldValue( Field => $cf_import, Value => 'Important' );
+
+return 1;
