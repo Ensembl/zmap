@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 13 17:08 2010 (edgrif)
+ * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.101 2010-07-29 09:26:09 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.102 2010-08-18 09:17:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1143,7 +1143,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
   /* Despite seeming to be frame specific, they all get drawn in the
    * same column at the moment so it's not frame specific! */
   {
-    char *colours = "normal fill white ; normal draw black ;" ;
+    char *colours = "normal fill white ; normal draw black ; selected fill red" ;
 
     /* we need draw colour here as well.... */
     g_object_set(G_OBJECT(curr),
