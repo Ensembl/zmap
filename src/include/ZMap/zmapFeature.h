@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Aug 17 08:35 2010 (edgrif)
+ * Last edited: Aug 18 12:30 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.179 2010-08-18 09:16:53 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.180 2010-08-18 11:31:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -995,6 +995,11 @@ ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord);
 gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 			      int exon1, int exon2,
 			      int *cds1, int *cds2);
+gboolean zMapFeatureExon2CDS(ZMapFeature feature,
+			     int exon_start, int exon_end,
+			     int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
+
+
 
 /* ================================================================= */
 /* functions in zmapFeatureFormatInput.c */

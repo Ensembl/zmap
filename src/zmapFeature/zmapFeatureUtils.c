@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep  2 09:42 2009 (edgrif)
+ * Last edited: Aug 16 14:39 2010 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.72 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.73 2010-08-18 11:31:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,9 @@ static void addTypeQuark(gpointer style_id, gpointer data, gpointer user_data) ;
 static void map_parent2child(gpointer exon_data, gpointer user_data);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 
+static int findExon(ZMapFeature feature, int exon_start, int exon_end) ;
+static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
+			      int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
 
 /*!
  * Function to do some validity checking on a ZMapFeatureAny struct. Always more you
@@ -740,6 +743,71 @@ gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, in
   return done;
 }
 
+
+
+GArray *zMapFeatureWorld2TranscriptArray(ZMapFeature feature)
+{
+  GArray *t_array = NULL, *exon_array;
+
+  if(ZMAPFEATURE_HAS_EXONS(feature))
+    {
+      ZMapSpanStruct span;
+      int i;
+
+      t_array    = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
+      exon_array = feature->feature.transcript.exons;
+
+      for(i = 0; i < exon_array->len; i++)
+	{
+	  span = g_array_index(exon_array, ZMapSpanStruct, i);
+	  zMapFeatureWorld2Transcript(feature, span.x1, span.x2, &(span.x1), &(span.x2));
+	  t_array = g_array_append_val(t_array, span);
+	}
+    }
+
+  return t_array;
+}
+
+
+gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
+				     int w1, int w2,
+				     int *t1, int *t2)
+{
+  gboolean is_transcript = FALSE;
+
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if(feature->x1 > w2 || feature->x2 < w1)
+	is_transcript = FALSE;
+      else
+	{
+	  SimpleParent2ChildDataStruct parent_data = { NULL };
+	  ZMapMapBlockStruct map_data = { 0 };
+	  map_data.p1 = w1;
+	  map_data.p2 = w2;
+
+	  parent_data.map         = &map_data;
+	  parent_data.limit_start = feature->x1;
+	  parent_data.limit_end   = feature->x2;
+	  parent_data.counter     = 0;
+
+	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
+					   &parent_data);
+	  if(t1)
+	    *t1 = map_data.c1;
+	  if(t2)
+	    *t2 = map_data.c2;
+
+	  is_transcript = TRUE;
+	}
+    }
+  else
+    is_transcript = FALSE;
+
+  return is_transcript;
+}
+
+
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data)
 {
   GArray *exons;
@@ -785,94 +853,16 @@ void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpoin
   return ;
 }
 
-gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
-				     int w1, int w2,
-				     int *t1, int *t2)
-{
-  gboolean is_transcript = FALSE;
 
-  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      if(feature->x1 > w2 || feature->x2 < w1)
-	is_transcript = FALSE;
-      else
-	{
-	  SimpleParent2ChildDataStruct parent_data = { NULL };
-	  ZMapMapBlockStruct map_data = { 0 };
-	  map_data.p1 = w1;
-	  map_data.p2 = w2;
 
-	  parent_data.map         = &map_data;
-	  parent_data.limit_start = feature->x1;
-	  parent_data.limit_end   = feature->x2;
-	  parent_data.counter     = 0;
-
-	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
-					   &parent_data);
-	  if(t1)
-	    *t1 = map_data.c1;
-	  if(t2)
-	    *t2 = map_data.c2;
-
-	  is_transcript = TRUE;
-	}
-    }
-  else
-    is_transcript = FALSE;
-
-  return is_transcript;
-}
-
-gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
-			      int exon1, int exon2,
-			      int *cds1, int *cds2)
-{
-  gboolean cds_exon = FALSE;
-
-  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
-     feature->feature.transcript.flags.cds)
-    {
-      int cds_start, cds_end;
-
-      cds_start = feature->feature.transcript.cds_start;
-      cds_end   = feature->feature.transcript.cds_end;
-
-      if(cds_start > exon2 || cds_end < exon1)
-	cds_exon = FALSE;
-      else
-	{
-	  SimpleParent2ChildDataStruct exon_cds_data = { NULL };
-	  ZMapMapBlockStruct map_data = { 0 };
-	  map_data.p1 = exon1;
-	  map_data.p2 = exon2;
-
-	  exon_cds_data.map         = &map_data;
-	  exon_cds_data.limit_start = cds_start;
-	  exon_cds_data.limit_end   = cds_end;
-	  exon_cds_data.counter     = 0;
-
-	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
-					   &exon_cds_data);
-	  if(cds1)
-	    *cds1 = map_data.c1;
-	  if(cds2)
-	    *cds2 = map_data.c2;
-
-	  cds_exon = TRUE;
-	}
-    }
-  else
-    cds_exon = FALSE;
-
-  return cds_exon;
-}
 
 GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
 {
-  GArray *cds_array = NULL, *exon_array;
+  GArray *cds_array = NULL ;
 
-  if(ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_HAS_EXONS(feature))
+  if (ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_HAS_EXONS(feature))
     {
+      GArray *exon_array ;
       ZMapSpanStruct span;
       int i;
 
@@ -886,31 +876,101 @@ GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
 	  cds_array = g_array_append_val(cds_array, span);
 	}
     }
-  return cds_array;
+
+  return cds_array ;
 }
 
-GArray *zMapFeatureWorld2TranscriptArray(ZMapFeature feature)
+
+
+gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
+			      int exon1, int exon2, int *cds1, int *cds2)
 {
-  GArray *t_array = NULL, *exon_array;
+  gboolean cds_exon = FALSE;
 
-  if(ZMAPFEATURE_HAS_EXONS(feature))
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
     {
-      ZMapSpanStruct span;
-      int i;
+      int cds_start, cds_end;
 
-      t_array    = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
-      exon_array = feature->feature.transcript.exons;
+      cds_start = feature->feature.transcript.cds_start;
+      cds_end   = feature->feature.transcript.cds_end;
 
-      for(i = 0; i < exon_array->len; i++)
+      if (cds_start > exon2 || cds_end < exon1)
 	{
-	  span = g_array_index(exon_array, ZMapSpanStruct, i);
-	  zMapFeatureWorld2Transcript(feature, span.x1, span.x2, &(span.x1), &(span.x2));
-	  t_array = g_array_append_val(t_array, span);
+	  cds_exon = FALSE;
+	}
+      else
+	{
+	  SimpleParent2ChildDataStruct exon_cds_data = { NULL };
+	  ZMapMapBlockStruct map_data = { 0 };
+
+	  map_data.p1 = exon1;
+	  map_data.p2 = exon2;
+
+	  exon_cds_data.map         = &map_data;
+	  exon_cds_data.limit_start = cds_start;
+	  exon_cds_data.limit_end   = cds_end;
+	  exon_cds_data.counter     = 0;
+
+	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
+					   &exon_cds_data);
+	  if (cds1)
+	    *cds1 = map_data.c1;
+	  if (cds2)
+	    *cds2 = map_data.c2;
+
+	  cds_exon = TRUE;
 	}
     }
 
-  return t_array;
+  return cds_exon;
 }
+
+
+/* Given a transcript feature and the start/end of an exon within that transcript feature,
+ * returns TRUE and gives the coords (in reference sequence space) of the CDS section
+ * of the exon and also it's phase. Returns FALSE if the exon is not in the transcript
+ * or if the exon has no cds section. */
+gboolean zMapFeatureExon2CDS(ZMapFeature feature,
+			     int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, int *phase_out)
+{
+  gboolean is_cds_exon = FALSE ;
+  int exon_index ;
+
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds
+      && (exon_index = findExon(feature, exon_start, exon_end)) > -1)
+    {
+      int cds_start, cds_end ;
+
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+
+      if (cds_start > exon_end || cds_end < exon_start)
+	{
+	  ;
+	}
+      else
+	{
+	  /* Exon has a cds section so calculate it and find the exons phase. */
+	  int start, end, phase ;
+
+	  if (calcExonPhase(feature, exon_index, &start, &end, &phase))
+	    {
+	      *exon_cds_start = start ;
+	      *exon_cds_end = end ;
+	      *phase_out = phase ;
+
+	      is_cds_exon = TRUE ;
+	    }
+	}
+    }
+
+  return is_cds_exon ;
+}
+
+
+
+
+
 
 ZMapFrame zMapFeatureFrame(ZMapFeature feature)
 {
@@ -1132,3 +1192,107 @@ static int sortGapsByTarget(gconstpointer a, gconstpointer b)
   return (alignA->t1 == alignB->t1 ? 0 : (alignA->t1 > alignB->t1 ? 1 : -1));
 }
 
+
+/* Find an exon in a features list given it's start/end coords, returns -1
+ * if exon not found, otherwise returns index of exon in exon array. */
+static int findExon(ZMapFeature feature, int exon_start, int exon_end)
+{
+  int exon_index = -1 ;
+  GArray *exons ;
+  int i ;
+  
+  exons = feature->feature.transcript.exons ;
+
+  for (i = 0 ; i < exons->len ; i++)
+    {
+      ZMapSpan next_exon ;
+
+      next_exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+
+      if (next_exon->x1 == exon_start && next_exon->x2 == exon_end)
+	{
+	  exon_index = i ;
+	  break ;
+	}
+    }
+
+  return exon_index ;
+}
+
+
+/* Returns the coords (in reference coords) of the cds section of the given exon
+ * and also it's phase. */
+static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
+			      int *exon_cds_start_out, int *exon_cds_end_out, int *phase_out)
+{
+  gboolean result = FALSE ;
+  int cds_start, cds_end ;
+  GArray *exons ;
+  int i ;
+  int cds_bases ;
+
+  cds_start = feature->feature.transcript.cds_start ;
+  cds_end = feature->feature.transcript.cds_end ;
+
+  exons = feature->feature.transcript.exons ;
+  cds_bases = 0 ;
+  for (i = 0 ; i < exons->len && i <= exon_index ; i++)
+    {
+      ZMapSpan next_exon ;
+
+      next_exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+
+      if (cds_start > next_exon->x2 || cds_end < next_exon->x1)
+	{
+	  continue ;
+	}
+      else
+	{
+	  int start, end, phase ;
+	  gboolean first_exon = FALSE ;
+
+	  start = next_exon->x1 ;
+	  end = next_exon->x2 ;
+
+	  if (cds_start >= start && cds_start <= end)
+	    {
+	      start = cds_start ;
+	      first_exon = TRUE ;
+	    }
+
+	  if (cds_end >= start && cds_end <= end)
+	    end = cds_end ;
+
+	  if (i == exon_index)
+	    {
+	      if (first_exon)
+		{
+		  /* The first exon must have phase 0 unless it has been annotated as
+		   * starting with a different phase. */
+		  if (feature->feature.transcript.flags.start_not_found)
+		    phase = feature->feature.transcript.start_phase ;
+		  else
+		    phase = 0 ;
+		}
+	      else
+		{
+		  phase = cds_bases % 3 ;
+		}
+
+	      *exon_cds_start_out = start ;
+	      *exon_cds_end_out = end ;
+	      *phase_out = phase ;
+
+	      result = TRUE ;
+
+	      break ;
+	    }
+
+	  /* Keep a running count of bases so far, caculate phase of next exon from this. */
+	  cds_bases += (end - start) + 1 ;
+	}
+
+    }
+
+  return result ;
+}
