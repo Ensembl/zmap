@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 10 13:48 2010 (edgrif)
+ * Last edited: Aug 17 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.335 2010-08-10 13:53:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.336 2010-08-18 09:20:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1500,13 +1500,21 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	    }
 
 	  if (feature_arg->feature.homol.align)
-	    select.feature_desc.sub_feature_none_txt = g_strdup("<GAPS NOT SHOWN>") ;
+	    {
+	      select.feature_desc.sub_feature_none_txt = g_strdup("GAPPED - NOT DISPLAYED") ;
+	    }
 	  else
-	    select.feature_desc.sub_feature_none_txt = g_strdup("<UNGAPPED ALIGNMENT>") ;
+	    {
+	      if (zMapFeatureAlignmentIsGapped(feature_arg))
+		select.feature_desc.sub_feature_none_txt = g_strdup("GAPPED - NO DATA") ;
+	      else
+		select.feature_desc.sub_feature_none_txt = g_strdup("UNGAPPED") ;
+
+	    }
 	}
       else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
-	  select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
+	  select.feature_desc.sub_feature_none_txt = g_strdup("NO INTRONS") ;
 	}
 
 
