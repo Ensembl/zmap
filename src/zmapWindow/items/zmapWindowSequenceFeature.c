@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowSequenceFeature.h
  * HISTORY:
- * Last edited: Jul 29 11:15 2010 (edgrif)
+ * Last edited: Aug 18 10:05 2010 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.13 2010-07-29 10:17:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.14 2010-08-18 09:24:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -192,17 +192,22 @@ GType zMapWindowSequenceFeatureGetType(void)
 
 /* Highlight sequence corresponding to supplied feature, frame is needed for  */
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
-						  ZMapFeature seed_feature)
+						  FooCanvasItem *item, ZMapFeature seed_feature)
 {
   FooCanvasGroup *sequence_group;
   GList *list;
   gboolean result = TRUE;
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
+  gboolean sub_part ;
 
   sequence_group = FOO_CANVAS_GROUP(sequence_feature) ;
   canvas_item = ZMAP_CANVAS_ITEM(sequence_feature) ;
   feature = canvas_item->feature ;
+
+  /* Is the given item a sub-part of a feature or the whole feature ? */
+  sub_part = zMapWindowCanvasItemIsSubPart(item) ;
+
 
   if ((list = sequence_group->item_list))
     {
@@ -219,18 +224,20 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		ZMapFullExon current_exon ;
 		gboolean deselect, event ;
 
-		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list);
-
-		deselect = TRUE ;			    /* 1st time deselect any existing
-							       highlight. */
+		deselect = TRUE ;			    /* 1st time deselect any existing highlight. */
 		event = FALSE ;
 
-		exon_list_member = g_list_first(exon_list);
-		do
+		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list) ;
+
+
+		if (sub_part)
 		  {
+		    ZMapFeatureSubPartSpan span ;
 		    int start, end ;
 
-		    current_exon = (ZMapFullExon)(exon_list_member->data) ;
+		    span = zMapWindowCanvasItemIntervalGetData(item) ;
+
+		    current_exon = (ZMapFullExon)(g_list_nth_data(exon_list, span->index - 1)) ;
 
 		    start = current_exon->exon_span.x1 ;
 		    end = current_exon->exon_span.x2 ;
@@ -241,15 +248,37 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		    zMapWindowTextItemSelect(text_item,
 					     start, end,
 					     deselect, deselect) ;
-
-		    deselect = FALSE ;
 		  }
-		while((exon_list_member = g_list_next(exon_list_member)));
+		else
+		  {
+		    exon_list_member = g_list_first(exon_list);
 
-		/* Free exons...?? */
+		    do
+		      {
+			int start, end ;
+
+			current_exon = (ZMapFullExon)(exon_list_member->data) ;
+
+			start = current_exon->exon_span.x1 ;
+			end = current_exon->exon_span.x2 ;
+
+			if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+			  coordsDNA2Pep(feature, &start, &end) ;
+
+			zMapWindowTextItemSelect(text_item,
+						 start, end,
+						 deselect, deselect) ;
+
+			deselect = FALSE ;
+		      }
+		    while((exon_list_member = g_list_next(exon_list_member)));
+
+		  }
+
+
+		/* Tidy up. */
 		g_list_foreach(exon_list, exonListFree, NULL) ;
 		g_list_free(exon_list) ;
-
 
 		break ;
 	      }

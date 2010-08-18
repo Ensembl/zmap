@@ -29,9 +29,9 @@
  *              highlighting.
  *
  * HISTORY:
- * Last edited: Jul 27 09:10 2010 (edgrif)
+ * Last edited: Aug 17 13:55 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.10 2010-07-29 10:17:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.11 2010-08-18 09:24:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,9 @@
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_H
 
 #include <glib-object.h>
+#include <libfoocanvas/libfoocanvas.h>
+
+
 
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_NAME "ZMapWindowSequenceFeature"
 
@@ -82,7 +85,7 @@ GType zMapWindowSequenceFeatureGetType(void);
 gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature sequence_feature,
 						 ZMapSequenceType coord_type, int region_start, int region_end) ;
 
-gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
+gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature, FooCanvasItem *item,
 						  ZMapFeature seed_feature) ;
 
 gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature) ;
