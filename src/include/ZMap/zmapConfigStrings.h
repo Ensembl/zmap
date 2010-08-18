@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Mar  2 14:19 2010 (edgrif)
+ * Last edited: Aug 18 12:04 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.34 2010-07-15 10:48:53 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.35 2010-08-18 11:30:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -870,11 +870,15 @@
 #define ZMAPSTANZA_BLIXEM_CONF_FILE  "config-file"
 #define ZMAPSTANZA_BLIXEM_SCOPE      "scope"
 #define ZMAPSTANZA_BLIXEM_MAX        "homol-max"
+#define ZMAPSTANZA_BLIXEM_FILE_FORMAT "file-format"
 #define ZMAPSTANZA_BLIXEM_KEEP_TEMP  "keep-tempfiles"
 #define ZMAPSTANZA_BLIXEM_KILL_EXIT  "kill-on-exit"
 #define ZMAPSTANZA_BLIXEM_DNA_FS     "dna-featuresets"
 #define ZMAPSTANZA_BLIXEM_PROT_FS    "protein-featuresets"
-#define ZMAPSTANZA_BLIXEM_TRANS_FS   "transcript-featuresets"
+#define ZMAPSTANZA_BLIXEM_FS         "transcript-featuresets"
+
+#define ZMAPSTANZA_BLIXEM_FILE_OPT_GFF   "gffv3"
+#define ZMAPSTANZA_BLIXEM_FILE_OPT_EXBLX "exblx"
 
 
 

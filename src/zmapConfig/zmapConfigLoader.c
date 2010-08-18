@@ -30,9 +30,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
  * HISTORY:
- * Last edited: Mar  2 14:47 2010 (edgrif)
+ * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.26 2010-07-15 10:48:55 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.27 2010-08-18 11:30:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1559,12 +1559,13 @@ static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, ch
     { ZMAPSTANZA_BLIXEM_SCRIPT,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_CONF_FILE,  G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_SCOPE,      G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_FILE_FORMAT,  G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_MAX,        G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_KEEP_TEMP,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_KILL_EXIT,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_DNA_FS,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_PROT_FS,    G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_TRANS_FS,   G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_FS,         G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_BLIXEM_CONFIG;
