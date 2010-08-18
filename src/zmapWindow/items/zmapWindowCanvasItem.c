@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 13:13 2010 (edgrif)
+ * Last edited: Aug 17 10:14 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.30 2010-07-15 10:49:08 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.31 2010-08-18 09:23:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,6 +354,18 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
   return feature ;
 }
 
+/* Returns TRUE if any_item is a subpart of a canvas_item, FALSE if the
+ * item _is_ the canvas_item. */
+gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item)
+{
+  gboolean is_subpart = FALSE ;
+  ZMapWindowCanvasItem canvas_item ;
+
+  if (!ZMAP_IS_CANVAS_ITEM(any_item) && (zMapWindowCanvasItemIntervalGetObject(any_item)))
+    is_subpart = TRUE ;
+
+  return is_subpart ;
+}
 
 
 /*!
