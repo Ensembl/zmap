@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 10 10:47 2010 (edgrif)
+ * Last edited: Aug 18 10:19 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.115 2010-06-21 14:41:18 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.116 2010-08-18 09:47:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2184,15 +2184,16 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
       attr_fields = sscanf(tag_pos, "Class " VALUE_FORMAT_STR, &homol_type_str[0]) ;
 
       if (attr_fields == 1)
-
 	{
+	  /* NOTE that we assume that Motifs are dna but some are not...need a fix from
+	   * otterlace in the end.... */
+
 	  if (g_ascii_strncasecmp(homol_type_str, "Sequence", 8) == 0)
 	    homol_type = ZMAPHOMOL_N_HOMOL ;
 	  else if (g_ascii_strncasecmp(homol_type_str, "Protein", 7) == 0)
 	    homol_type = ZMAPHOMOL_X_HOMOL ;
 	  else if (g_ascii_strncasecmp(homol_type_str, "Motif", 5) == 0)
-	    homol_type = ZMAPHOMOL_X_HOMOL ;
-
+	    homol_type = ZMAPHOMOL_N_HOMOL ;
 	}
       else
 	{
@@ -2212,9 +2213,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 
 
 	  if ((attr_fields = sscanf(tag_pos, attr_format_str, &start, &end, &strand)) == 3)
-
 	    {
-
 	      if (start > 0 && end > 0)
 		{
 		  *homol_type_out = homol_type ;
@@ -2239,7 +2238,6 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 		    *query_strand = ZMAPSTRAND_REVERSE ;
 
 		  result = TRUE ;
-
 		}
 	      else
 		{
