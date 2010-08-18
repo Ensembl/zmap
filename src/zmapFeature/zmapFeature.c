@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Aug  5 15:01 2010 (edgrif)
+ * Last edited: Aug 17 08:42 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.132 2010-08-09 09:04:30 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.133 2010-08-18 09:16:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -831,6 +831,35 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 
   return result ;
 }
+
+/* Returns TRUE if alignment is gapped, FALSE otherwise. NOTE that sometimes
+ * we are passed data for an alignment feature which must represent a gapped
+ * alignment but we are not passed the gap data. This test all this. */
+gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zMapFeatureIsValidFull(feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+      int ref_length, match_length ;
+
+      ref_length = (feature->x2 - feature->x1) + 1 ;
+
+      match_length = (feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
+      if (feature->feature.homol.type != ZMAPHOMOL_N_HOMOL)
+	match_length *= 3 ;
+
+      if (ref_length != match_length)
+	result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 
 /*!
  * Adds assembly path data to a feature.

@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Aug 11 09:47 2010 (edgrif)
+ * Last edited: Aug 17 08:35 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.178 2010-08-11 08:47:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.179 2010-08-18 09:16:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -782,6 +782,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence) ;
+gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 					int length, ZMapStrand strand, GArray *path) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
