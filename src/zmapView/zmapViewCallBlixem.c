@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: prepares input files in FASTA, seqbl and exblx format
  *              and then passes them to blixem for display.
@@ -30,18 +30,11 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jul 29 12:33 2010 (edgrif)
+ * Last edited: Aug 18 11:55 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.33 2010-07-29 11:40:35 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.34 2010-08-18 11:40:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <unistd.h>					    /* for getlogin() */
 #include <string.h>					    /* for memcpy */
@@ -49,13 +42,16 @@
 #include <sys/stat.h>					    /* for chmod() */
 #include <glib.h>
 
+#include <ZMap/zmap.h>
 #include <zmapView_P.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
 #include <ZMap/zmapThreads.h>       // for thread lock functions
+
+
+
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
 
@@ -87,7 +83,24 @@ enum
     BLX_ARGV_FASTA_FILE,        /* [fasta file] */
     BLX_ARGV_EXBLX_FILE,        /* [exblx file] */
     BLX_ARGV_ARGC               /* argc ;) */
-  };
+  } ;
+
+
+typedef enum {BLX_FILE_FORMAT_INVALID, BLX_FILE_FORMAT_EXBLX, BLX_FILE_FORMAT_GFF} BlixemFileFormat ;
+
+
+
+/* Data needed by GFF formatting routines. */
+typedef struct GFFFormatDataStructType
+{
+  gboolean use_SO_ids ;					    /* TRUE => use accession ids. */
+  gboolean maximise_ids ;				    /* Give every feature an id. */
+
+  int alignment_count ;
+  int transcript_count ;
+  int exon_count ;
+} GFFFormatDataStruct,  *GFFFormatData ;
+
 
 
 /* Control block for preparing data to call blixem. */
@@ -97,26 +110,27 @@ typedef struct BlixemDataStruct
   gboolean kill_on_exit ;				    /* TRUE => remove this blixem on
 							       program exit (default). */
 
-  gchar         *script;                              /* script to call blixem standalone */
+  gchar         *script;				    /* script to call blixem standalone */
 
   char          *config_file ;				    /* Contains blixem config. information. */
 
-  gchar         *netid;                               /* eg pubseq */
-  int            port;                                /* eg 22100  */
+  gchar         *netid;					    /* eg pubseq */
+  int            port;					    /* eg 22100  */
 
-  int            scope;                               /* defaults to 40000 */
-  int            homol_max;                            /* score cutoff point */
+  int            scope;					    /* defaults to 40000 */
+  int            homol_max;				    /* score cutoff point */
 
   char          *opts;
 
+  void          *format_data ;				    /* Some formats need "callback" data. */
+  BlixemFileFormat file_format ;
   char          *tmpDir ;
   gboolean      keep_tmpfiles ;
-
-  GIOChannel    *curr_channel;
 
   char          *fastAFile ;
   GIOChannel    *fasta_channel;
   char          *errorMsg;
+
   char          *exblxFile ;
   GIOChannel    *exblx_channel;
   char          *exblx_errorMsg;
@@ -124,9 +138,11 @@ typedef struct BlixemDataStruct
   GIOChannel    *seqbl_channel ;
   char          *seqbl_errorMsg ;
 
+  char          *gff_file ;
+  GIOChannel    *gff_channel ;
+  char          *gff_errorMsg ;
 
   ZMapView     view;
-
 
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
@@ -179,6 +195,8 @@ typedef struct
 							       collected to send to blixem, defaults to 40000 */
   int           homol_max ;				    /* defines max. number of aligns sent
 							       to blixem. */
+
+  BlixemFileFormat file_format ;
   gboolean      keep_tmpfiles ;
 
   /* Not user configurable */
@@ -194,7 +212,7 @@ typedef struct
 static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData blixem_data, char **err_msg) ;
 static gboolean addFeatureDetails(blixemData blixem_data) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
-static void     freeBlixemData   (blixemData blixem_data);
+static void freeBlixemData(blixemData blixem_data);
 
 static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data) ;
 static gboolean getUserPrefs(BlixemConfigData prefs) ;
@@ -210,15 +228,41 @@ static void writeHashEntry(gpointer key, gpointer data, gpointer user_data) ;
 static void writeListEntry(gpointer data, gpointer user_data) ;
 
 static gboolean writeFastAFile(blixemData blixem_data);
+static gboolean writeFeatureFiles(blixemData blixem_data);
+static gboolean initFeatureFile(char *filename, char *file_header, GString *buffer,
+				 GIOChannel **gio_channel_out, blixemData blixem_data) ;
 
-static gboolean writeExblxSeqblFiles(blixemData blixem_data);
-
-static void writeExblxSeqblLine(ZMapFeature feature, blixemData  blixem_data) ;
-
+static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data) ;
+static gboolean formatAlignmentExbl(GString *line,
+				    int min_range, int max_range,
+				    char *match_name,
+				    int qstart, int qend, ZMapStrand q_strand, int qframe,
+				    int sstart, int send, ZMapStrand s_strand, int sframe,
+				    float score, GArray *gaps, char *sequence, char *description) ;
+static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
+				   int min_range, int max_range,
+				   char *ref_name, char *match_name, char *source_name, ZMapHomolType homol_type,
+				   int qstart, int qend, ZMapStrand q_strand,
+				   int sstart, int send, ZMapStrand s_strand,
+				   float score, GArray *gaps, char *sequence, char *description) ;
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
-static gboolean printLine(blixemData blixem_data, char *line) ;
 static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only) ;
+static gboolean formatTranscriptExblx(GString *line, int min, int max,
+				      char *transcript_name,
+				      float score,
+				      int exon_base, int exon_start, int exon_end,
+				      int qstart, int qend, int qstrand,
+				      int sstart, int send) ;
+static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int min, int max,
+				    char *ref_name, char *source_name,
+				    ZMapFeature feature, char *transcript_name,
+				    int exon_start, int exon_end,
+				    int qstart, int qend, int qstrand,
+				    int sstart, int send) ;
+static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only) ;
+
+static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, char *line) ;
 
 static int findFeature(gconstpointer a, gconstpointer b) ;
 static void freeSequences(gpointer data, gpointer user_data_unused) ;
@@ -234,49 +278,22 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
 
+/* 
+ *                Globals
+ */
 
 /* Global for hanging on to current configuration. */
 static BlixemConfigDataStruct blixem_config_curr_G = {FALSE} ;
-
 
 static gboolean debug_G = TRUE ;
 
 
 
-/* Returns a ZMapGuiNotebookChapter containing all user settable blixem resources. */
-ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_parent)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-  gboolean status = TRUE ;
 
+/*
+ *                External routines
+ */
 
-  /* If the current configuration has not been set yet then read stuff from the config file. */
-  if (!blixem_config_curr_G.init)
-    {
-      status = getUserPrefs(&blixem_config_curr_G);
-      if(!status)
-      {
-            /* ensure data struct is safe
-             * -> if read fails then options are zero
-             * -> if option not configured likewise
-             * make the dialog even if options not set so that they can fix it
-             */
-
-             // null values for strings should be ok, they are programmed by low level cGUINotebook functions
-
-      }
-    }
-
-  chapter = makeChapter(note_book_parent) ; // mh17: this uses blixen_config_curr_G
-  return chapter ;
-}
-
-gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
-					  gpointer *apply_func, gpointer save_func, gpointer *data)
-{
-
-  return TRUE;
-}
 
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out)
 {
@@ -363,6 +380,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
 {
   gboolean status = TRUE ;
   char *argv[BLX_ARGV_ARGC + 1] = {NULL} ;
+  GFFFormatDataStruct gff_data = {FALSE} ;
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
@@ -370,6 +388,9 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
   zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature) && child_pid) ;
 
   status = initBlixemData(view, feature, &blixem_data, &err_msg) ;
+
+  if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
+    blixem_data.format_data = &gff_data ;
 
   blixem_data.local_sequences = local_sequences ;
 
@@ -384,7 +405,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
     }
 
   if (status)
-    status = writeExblxSeqblFiles(&blixem_data);
+    status = writeFeatureFiles(&blixem_data);
 
   if (status)
     status = writeFastAFile(&blixem_data);
@@ -419,15 +440,16 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
 	  printf("\n") ;
 	}
 
-      zMapThreadForkLock();
 
-      if(!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
+      if (!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
         {
           status = FALSE;
           err_msg = error->message;
         }
       else
-        zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
+	{
+	  zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
+	}
 
       zMapThreadForkUnlock();
 
@@ -444,6 +466,44 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
     zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
 
   return status ;
+}
+
+
+
+/* Returns a ZMapGuiNotebookChapter containing all user settable blixem resources. */
+ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_parent)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+  gboolean status = TRUE ;
+
+
+  /* If the current configuration has not been set yet then read stuff from the config file. */
+  if (!blixem_config_curr_G.init)
+    {
+      status = getUserPrefs(&blixem_config_curr_G);
+      if (!status)
+      {
+            /* ensure data struct is safe
+             * -> if read fails then options are zero
+             * -> if option not configured likewise
+             * make the dialog even if options not set so that they can fix it
+             */
+
+             // null values for strings should be ok, they are programmed by low level cGUINotebook functions
+
+      }
+    }
+
+  chapter = makeChapter(note_book_parent) ; // mh17: this uses blixen_config_curr_G
+
+  return chapter ;
+}
+
+gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
+					  gpointer *apply_func, gpointer save_func, gpointer *data)
+{
+
+  return TRUE;
 }
 
 
@@ -466,6 +526,8 @@ static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData bl
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
   zMapAssert(block) ;
   blixem_data->block = block ;
+
+  blixem_data->file_format = BLX_FILE_FORMAT_EXBLX ;
 
   if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
@@ -493,11 +555,11 @@ static void freeBlixemData(blixemData blixem_data)
   g_free(blixem_data->fastAFile);
   g_free(blixem_data->exblxFile);
   g_free(blixem_data->seqbl_file);
+  g_free(blixem_data->gff_file);
 
   g_free(blixem_data->netid);
   g_free(blixem_data->script);
   g_free(blixem_data->config_file);
-
 
   if (blixem_data->dna_sets)
     g_list_free(blixem_data->dna_sets) ;
@@ -533,8 +595,13 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
     blixem_data->scope = curr_prefs->scope ;
   if (curr_prefs->homol_max > 0)
     blixem_data->homol_max = curr_prefs->homol_max ;
+
   blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
+
   blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
+
+  if (curr_prefs->file_format)
+    blixem_data->file_format = curr_prefs->file_format ;
 
   if (blixem_data->dna_sets)
     g_list_free(blixem_data->dna_sets) ;
@@ -559,60 +626,74 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
   ZMapConfigIniContext context = NULL;
   gboolean status = FALSE;
 
-  if((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide()))
     {
       char *tmp_string = NULL;
       int tmp_int;
       gboolean tmp_bool;
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_NETID, &tmp_string))
 	prefs->netid = tmp_string;
 
-      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				    ZMAPSTANZA_BLIXEM_PORT, &tmp_int))
 	prefs->port = tmp_int;
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_SCRIPT, &tmp_string))
 	prefs->script = tmp_string;
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_CONF_FILE, &tmp_string))
 	prefs->config_file = tmp_string;
 
-      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				    ZMAPSTANZA_BLIXEM_SCOPE, &tmp_int))
 	prefs->scope = tmp_int;
 
-      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				    ZMAPSTANZA_BLIXEM_MAX, &tmp_int))
 	prefs->homol_max = tmp_int;
 
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_FILE_FORMAT, &tmp_string))
+	{
+	  g_strstrip(tmp_string) ; 
+
+	  if (g_ascii_strcasecmp(tmp_string, "exblx") == 0)
+	    prefs->file_format = BLX_FILE_FORMAT_EXBLX ;
+	  else if (g_ascii_strcasecmp(tmp_string, "gffv3") == 0)
+	    prefs->file_format = BLX_FILE_FORMAT_GFF ;
+
+	  g_free(tmp_string) ;
+	}
+
+
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 					ZMAPSTANZA_BLIXEM_KEEP_TEMP, &tmp_bool))
 	prefs->keep_tmpfiles = tmp_bool;
 
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 					ZMAPSTANZA_BLIXEM_KILL_EXIT, &tmp_bool))
 	prefs->kill_on_exit = tmp_bool;
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
 	{
 	  prefs->dna_sets = zMapConfigString2QuarkList(tmp_string);
 	  g_free(tmp_string);
 	}
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
 	{
 	  prefs->protein_sets = zMapConfigString2QuarkList(tmp_string);
 	  g_free(tmp_string);
 	}
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-				       ZMAPSTANZA_BLIXEM_TRANS_FS, &tmp_string))
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_FS, &tmp_string))
 	{
 	  prefs->transcript_sets = zMapConfigString2QuarkList(tmp_string);
 	  g_free(tmp_string);
@@ -620,9 +701,7 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
       zMapConfigIniContextDestroy(context);
     }
 
-  if((prefs->script) &&
-     ((prefs->config_file) ||
-      (prefs->netid && prefs->port)))
+  if ((prefs->script) && ((prefs->config_file) || (prefs->netid && prefs->port)))
     {
       char *tmp;
       tmp = prefs->script;
@@ -639,10 +718,12 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
 		    prefs->config_file) ;
     }
   else
-    zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
-		"(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
+		  "(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
+    }
 
-  if(prefs->script && prefs->config_file)
+  if (prefs->script && prefs->config_file)
      status = TRUE;
 
   prefs->init = TRUE;
@@ -672,8 +753,10 @@ static gboolean addFeatureDetails(blixemData blixem_data)
   blixem_data->max = x2 + (scope / 2) ;
   if (blixem_data->min < 1)
     blixem_data->min = 1 ;
+
 //  if (blixem_data->max > blixem_data->view->features->length)
 //    blixem_data->max = blixem_data->view->features->length ;
+
   length = blixem_data->block->block_to_sequence.t2 - blixem_data->block->block_to_sequence.t1 + 1;
   if (blixem_data->max > length)
     blixem_data->max = length ;
@@ -768,19 +851,34 @@ static gboolean makeTmpfiles(blixemData blixem_data)
 	status = setTmpPerms(blixem_data->fastAFile, FALSE) ;
     }
 
-  /* Create the file to hold the features in exblx format. */
+  /* Create file(s) to hold features. */
   if (status)
     {
-      if ((status = makeTmpfile(blixem_data->tmpDir, "exblx_x", &(blixem_data->exblxFile))))
-	status = setTmpPerms(blixem_data->exblxFile, FALSE) ;
+      if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
+	{
+	  /* Create the file to hold the features in exblx format. */
+	  if (status)
+	    {
+	      if ((status = makeTmpfile(blixem_data->tmpDir, "exblx_x", &(blixem_data->exblxFile))))
+		status = setTmpPerms(blixem_data->exblxFile, FALSE) ;
+	    }
+
+	  /* Create the file to hold the features in seqbl format. */
+	  if (status)
+	    {
+	      if ((status = makeTmpfile(blixem_data->tmpDir, "seqbl_x", &(blixem_data->seqbl_file))))
+		status = setTmpPerms(blixem_data->seqbl_file, FALSE) ;
+	    }
+	}
+      else
+	{
+	  {
+	    if ((status = makeTmpfile(blixem_data->tmpDir, "gff", &(blixem_data->gff_file))))
+	      status = setTmpPerms(blixem_data->gff_file, FALSE) ;
+	  }
+	}
     }
 
-  /* Create the file to hold the features in seqbl format. */
-  if (status)
-    {
-      if ((status = makeTmpfile(blixem_data->tmpDir, "seqbl_x", &(blixem_data->seqbl_file))))
-	status = setTmpPerms(blixem_data->seqbl_file, FALSE) ;
-    }
 
   return status ;
 }
@@ -834,7 +932,9 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 	 paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
        }
      else
-       missed += 2;
+       {
+	 missed += 2;
+       }
 
      /* For testing purposes remove the "-r" flag to leave the temporary files.
       * (keep_tempfiles = true in blixem stanza of ZMap file) */
@@ -849,7 +949,9 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
          paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start);
        }
      else
-       missed += 2;
+       {
+	 missed += 2;
+       }
 
      if (blixem_data->offset)
        {
@@ -857,7 +959,9 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
          paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", blixem_data->offset);
        }
      else
-       missed += 2;
+       {
+	 missed += 2;
+       }
 
      if (blixem_data->opts)
        {
@@ -865,74 +969,77 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
          paramString[BLX_ARGV_OPTIONS - missed]      = g_strdup_printf("%s", blixem_data->opts);
        }
      else
-       missed += 2;
-
-     if (blixem_data->seqbl_file)
        {
-         paramString[BLX_ARGV_SEQBL_FLAG - missed] = g_strdup("-x");
+	 missed += 2;
+       }
+
+     if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX
+	 && blixem_data->seqbl_file)
+       {
+	 paramString[BLX_ARGV_SEQBL_FLAG - missed] = g_strdup("-x");
 	 paramString[BLX_ARGV_SEQBL - missed] = g_strdup_printf("%s", blixem_data->seqbl_file);
        }
      else
-       missed += 2;
+       {
+	 missed += 2;
+       }
 
      paramString[BLX_ARGV_FASTA_FILE - missed] = g_strdup_printf("%s", blixem_data->fastAFile);
-     paramString[BLX_ARGV_EXBLX_FILE - missed] = g_strdup_printf("%s", blixem_data->exblxFile);
+
+     if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
+       {
+	 paramString[BLX_ARGV_EXBLX_FILE - missed] = g_strdup_printf("%s", blixem_data->exblxFile);
+       }
+     else
+       {
+	 paramString[BLX_ARGV_EXBLX_FILE - missed] = g_strdup_printf("%s", blixem_data->gff_file) ;
+       }
    }
 
   return status ;
 }
 
 
-static gboolean writeExblxSeqblFiles(blixemData blixem_data)
+static gboolean writeFeatureFiles(blixemData blixem_data)
 {
-  GError  *channel_error = NULL ;
   gboolean status = TRUE ;
+  GError  *channel_error = NULL ;
   gboolean seqbl_file = FALSE ;
+  char *header ;
 
-  if (blixem_data->local_sequences)
-    seqbl_file = TRUE ;
-
-  /* We just use the one gstring as a reusable buffer to format all output. */
+   /* We just use the one gstring as a reusable buffer to format all output. */
   blixem_data->line = g_string_new("") ;
 
-  /* Open the exblx file, always needed. */
-  if ((blixem_data->exblx_channel = g_io_channel_new_file(blixem_data->exblxFile, "w", &channel_error)))
+  if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
     {
-      g_string_printf(blixem_data->line, "# exblx_x\n# blast%c\n", *blixem_data->opts) ;
-      blixem_data->curr_channel = blixem_data->exblx_channel ;
-      status = printLine(blixem_data, blixem_data->line->str) ;
-      blixem_data->line = g_string_truncate(blixem_data->line, 0) ;
+      /* Open the exblx file, always needed. */
+      header = g_strdup_printf("# exblx_x\n# blast%c\n", *blixem_data->opts) ;
+      status = initFeatureFile(blixem_data->exblxFile, header, blixem_data->line,
+				&(blixem_data->exblx_channel), blixem_data) ;
+      g_free(header) ;
+
+      /* Open the seqbl file, if needed. */
+      if (status)
+	{
+	  if (blixem_data->local_sequences)
+	    seqbl_file = TRUE ;
+
+	  if (seqbl_file)
+	    {
+	      header = g_strdup_printf("# seqbl_x\n# blast%c\n", *blixem_data->opts) ;
+	      status = initFeatureFile(blixem_data->seqbl_file, header, blixem_data->line,
+					&(blixem_data->seqbl_channel), blixem_data) ;
+	      g_free(header) ;
+	    }
+	}
     }
   else
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open exblx file: %s",
-		  channel_error->message) ;
-      g_error_free(channel_error) ;
-      channel_error = NULL;
-      status = FALSE ;
-    }
-
-  /* Open the seqbl file, if needed. */
-  if (status)
-    {
-      if (seqbl_file)
-	{
-	  if ((blixem_data->seqbl_channel = g_io_channel_new_file(blixem_data->seqbl_file, "w", &channel_error)))
-	    {
-	      g_string_printf(blixem_data->line, "# seqbl_x\n# blast%c\n", *blixem_data->opts) ;
-	      blixem_data->curr_channel = blixem_data->seqbl_channel ;
-	      status = printLine(blixem_data, blixem_data->line->str) ;
-	      blixem_data->line = g_string_truncate(blixem_data->line, 0) ;
-	    }
-	  else
-	    {
-	      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open seqbl file: %s",
-			  channel_error->message) ;
-	      g_error_free(channel_error) ;
-	      channel_error = NULL;
-	      status = FALSE ;
-	    }
-	}
+      header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
+			       g_quark_to_string(blixem_data->block->original_id), blixem_data->min, blixem_data->max) ;
+      status = initFeatureFile(blixem_data->gff_file, header, blixem_data->line,
+				&(blixem_data->gff_channel), blixem_data) ;
+      g_free(header) ;
     }
 
   if (status)
@@ -1071,6 +1178,34 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
   return status ;
 }
 
+/* HACK...try to get rid of blixem_data param...needs curr_channel to go... */
+/* Open and initially format a feature file. */
+static gboolean initFeatureFile(char *filename, char *file_header, GString *buffer,
+				GIOChannel **gio_channel_out, blixemData blixem_data)
+{
+  gboolean status = TRUE ;
+  GError  *channel_error = NULL ;
+ 
+  /* Open the exblx file, always needed. */
+  if ((*gio_channel_out = g_io_channel_new_file(filename, "w", &channel_error)))
+    {
+      g_string_printf(buffer, "%s", file_header) ;
+
+      status = printLine(*gio_channel_out, &(blixem_data->errorMsg), buffer->str) ;
+
+      buffer = g_string_truncate(buffer, 0) ;
+    }
+  else
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open file: %s", channel_error->message) ;
+      g_error_free(channel_error) ;
+      status = FALSE ;
+    }
+
+  return status ;
+}
+
+
 
 /* A GFunc() to step through the named feature sets and write them out for passing
  * to blixem. */
@@ -1081,7 +1216,7 @@ static void processSetList(gpointer data, gpointer user_data)
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
 
-  canon_id = zMapFeatureSetCreateID(g_quark_to_string(set_id)) ;
+  canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
   if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
     {
@@ -1106,7 +1241,7 @@ static void writeHashEntry(gpointer key, gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data ;
   blixemData  blixem_data = (blixemData)user_data ;
 
-  writeExblxSeqblLine(feature, blixem_data) ;
+  writeFeatureLine(feature, blixem_data) ;
 
   return ;
 }
@@ -1116,20 +1251,19 @@ static void writeListEntry(gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data ;
   blixemData  blixem_data = (blixemData)user_data ;
 
-  writeExblxSeqblLine(feature, blixem_data) ;
+  writeFeatureLine(feature, blixem_data) ;
 
   return ;
 }
 
 
-
-static void writeExblxSeqblLine(ZMapFeature feature, blixemData  blixem_data)
+static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data)
 {
 
   /* There is no way to interrupt g_hash_table_foreach() so instead if errorMsg is set
    * then it means there was an error in processing so we don't process any
    * more records, displaying the error when we return. */
-  if (!blixem_data->errorMsg)
+  if (!(blixem_data->errorMsg))
     {
       /* Only process features we want to dump. We then filter those features according to the
        * following rules (inherited from acedb): alignment features must be wholly within the
@@ -1175,9 +1309,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 {
   gboolean status = TRUE ;
   int min, max ;
-  int score = 0 ;
   int qstart, qend, sstart, send ;
-  char qframe_strand, sframe_strand ;
   int qframe = 0, sframe = 0 ;
   GString *line ;
   int x1, x2 ;
@@ -1209,12 +1341,10 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
    * bases if that distance is not a whole number of codons. */
   if (feature->strand == ZMAPSTRAND_REVERSE)
     {
-      qframe_strand = '-' ;
       qframe = 1 + (((max - min + 1) - qstart) % 3) ;
     }
   else
     {
-      qframe_strand = '+' ;
       qframe = 1 + ((qstart - 1) % 3) ;
     }
 
@@ -1224,15 +1354,11 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
   if (feature->feature.homol.strand == ZMAPSTRAND_REVERSE)
     {
-      sframe_strand = '-' ;
-
       if (feature->feature.homol.length)
 	sframe = (1 + ((feature->feature.homol.length) - sstart) % 3) ;
     }
   else
     {
-      sframe_strand = '+' ;
-
       if (feature->feature.homol.length)
 	sframe = (1 + (sstart-1) % 3) ;
     }
@@ -1253,102 +1379,627 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
     }
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+   if (score)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  score = feature->score + 0.5 ;			    /* round up to integer ????????? */
-
-  /* Is this test correct ? no I don't think so...test later.................. */
-  if (score)
     {
       char *seq_str = NULL ;
       char *description = NULL ;			    /* Unsupported currently. */
       GList *list_ptr ;
+      char *match_name ;
+      char *source_name ;
+      GIOChannel *curr_channel ;
 
-      if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+      match_name = (char *)g_quark_to_string(feature->original_id) ;
+      source_name = (char *)g_quark_to_string(feature->source_id) ;
+
+
+      /* Phase out stupid curr_channel                    */
+
+      /* need to put this choice for seqbl into the exblx routine below... */
+      if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
 	{
-	  ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+	  if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+	    {
+	      ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
 
-	  seq_str = sequence->sequence ;
-	  blixem_data->curr_channel = blixem_data->seqbl_channel ;
+	      seq_str = sequence->sequence ;
+	      curr_channel = blixem_data->seqbl_channel ;
+	    }
+	  else
+	    {
+	      /* In theory we should be checking for a description for non-local sequences,
+	       * see acedb code in doShowAlign...don't know how important this is..... */
+	      seq_str = "" ;
+	      curr_channel = blixem_data->exblx_channel ;
+	    }
+
+	  status = formatAlignmentExbl(line,
+				       min, max,
+				       match_name,
+				       qstart, qend, feature->strand, qframe,
+				       sstart, send, feature->feature.homol.strand, sframe,
+				       feature->score, feature->feature.homol.align, seq_str, description) ;
 	}
       else
 	{
-	  /* In theory we should be checking for a description for non-local sequences,
-	   * see acedb code in doShowAlign...don't know how important this is..... */
-	  seq_str = "" ;
-	  blixem_data->curr_channel = blixem_data->exblx_channel ;
-	}
-
-      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t(%c%d)\t%d\t%d\t%s",
-		      score,
-		      qframe_strand, qframe,
-		      qstart, qend,
-		      sframe_strand, sframe,
-		      sstart, send,
-		      g_quark_to_string(feature->original_id)) ;
-
-      if (feature->feature.homol.align)
-	{
-	  int k, index, incr ;
-
-	  g_string_append_printf(line, "%s", "\tGaps ") ;
-
+	  int tmp ;
 
 	  if (feature->strand == ZMAPSTRAND_REVERSE)
-	    {
-	      index = feature->feature.homol.align->len - 1 ;
-	      incr = -1 ;
-	    }
-	  else
-	    {
-	      index = 0 ;
-	      incr = 1 ;
-	    }
+	    tmp = qstart, qstart = qend, qend = tmp ;
 
-	  for (k = 0 ; k < feature->feature.homol.align->len ; k++, index += incr)
-	    {
-	      ZMapAlignBlockStruct gap ;
+	  curr_channel = blixem_data->gff_channel ;
 
-	      gap = g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, index) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* DUH...WHAT IS THIS.... */
+	  sstart = sstart - feature->feature.homol.length + 1 ;
+	  send = sstart - feature->feature.homol.length + 1 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	      if (qstart > qend)
-		zMapUtilsSwop(int, gap.t1, gap.t2) ;
 
-	      g_string_append_printf(line, " %d %d %d %d", gap.q1, gap.q2,
-				     (gap.t1 - min + 1), (gap.t2 - min + 1)) ;
-	    }
-
-	  g_string_append_printf(line, "%s", " ;") ;
+	  status = formatAlignmentGFF(blixem_data->format_data, line,
+				      min, max,
+				      (char *)g_quark_to_string(blixem_data->block->original_id),
+				      match_name, source_name, feature->feature.homol.type,
+				      qstart, qend, feature->strand,
+				      sstart, send, feature->feature.homol.strand,
+				      feature->score, feature->feature.homol.align, seq_str, description) ;
 	}
 
-      /* In theory we should be outputting description for some files.... */
-      if ((seq_str && *seq_str) || (description && *description))
+      if (status)
+	line = g_string_append(line, "\n") ;
+
+      status = printLine(curr_channel, &(blixem_data->errorMsg), line->str) ;
+    }
+
+  return status ;
+}
+
+static gboolean formatAlignmentExbl(GString *line,
+				    int min_range, int max_range,
+				    char *match_name,
+				    int qstart, int qend, ZMapStrand q_strand, int qframe,
+				    int sstart, int send, ZMapStrand s_strand, int sframe,
+				    float score, GArray *gaps, char *sequence, char *description)
+{
+  gboolean status = TRUE ;
+  char qframe_strand, sframe_strand ;
+  int score_int ;
+
+  if (q_strand == ZMAPSTRAND_REVERSE)
+    qframe_strand = '-' ;
+  else
+    qframe_strand = '+' ;
+
+  if (s_strand == ZMAPSTRAND_REVERSE)
+    sframe_strand = '-' ;
+  else
+    sframe_strand = '+' ;
+
+  score_int = (int)(score + 0.5) ;
+
+  g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t(%c%d)\t%d\t%d\t%s",
+		  score_int,
+		  qframe_strand, qframe,
+		  qstart, qend,
+		  sframe_strand, sframe,
+		  sstart, send,
+		  match_name) ;
+
+  if (gaps)
+    {
+      int k, index, incr ;
+
+      g_string_append_printf(line, "%s", "\tGaps ") ;
+
+      if (q_strand == ZMAPSTRAND_REVERSE)
 	{
-	  char *tag, *text ;
-
-	  if (seq_str)
-	    {
-	      tag = "Sequence" ;
-	      text = seq_str ;
-	    }
-	  else
-	    {
-	      tag = "Description" ;
-	      text = description ;
-	    }
-
-	  g_string_append_printf(line, "\t%s %s ;", tag, text) ;
+	  index = gaps->len - 1 ;
+	  incr = -1 ;
+	}
+      else
+	{
+	  index = 0 ;
+	  incr = 1 ;
 	}
 
-      line = g_string_append(line, "\n") ;
+      for (k = 0 ; k < gaps->len ; k++, index += incr)
+	{
+	  ZMapAlignBlockStruct gap ;
 
-      status = printLine(blixem_data, line->str) ;
+	  gap = g_array_index(gaps, ZMapAlignBlockStruct, index) ;
+
+	  if (qstart > qend)
+	    zMapUtilsSwop(int, gap.t1, gap.t2) ;
+
+	  g_string_append_printf(line, " %d %d %d %d", gap.q1, gap.q2,
+				 (gap.t1 - min_range + 1), (gap.t2 - min_range + 1)) ;
+	}
+
+      g_string_append_printf(line, "%s", " ;") ;
+    }
+
+  /* In theory we should be outputting description for some files.... */
+  if ((sequence && *sequence) || (description && *description))
+    {
+      char *tag, *text ;
+
+      if (sequence)
+	{
+	  tag = "Sequence" ;
+	  text = sequence ;
+	}
+      else
+	{
+	  tag = "Description" ;
+	  text = description ;
+	}
+
+      g_string_append_printf(line, "\t%s %s ;", tag, text) ;
+    }
+
+
+
+
+  return status ;
+}
+
+
+static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
+				   int min_range, int max_range,
+				   char *ref_name, char *match_name, char *source_name, ZMapHomolType homol_type,
+				   int qstart, int qend, ZMapStrand q_strand,
+				   int sstart, int send, ZMapStrand s_strand,
+				   float score, GArray *gaps, char *sequence, char *description)
+{
+  gboolean status = TRUE ;
+  char *id_str = NULL ;
+
+  if (gff_data->maximise_ids)
+    {
+      gff_data->alignment_count++ ;
+
+      id_str = g_strdup_printf("ID=match%d;", gff_data->alignment_count) ;
+    }
+
+
+  /* ctg123 . cDNA_match 1050  1500  5.8e-42  +  . ID=match00001;Target=cdna0123 12 462 */
+  g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t%f\t%c\t.\t%sTarget=%s %d %d %c",
+		  ref_name, source_name,
+		  (homol_type == ZMAPHOMOL_N_HOMOL ? "nucleotide_match" : "protein_match"),
+		  qstart, qend,
+		  score,
+		  (q_strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+		  (id_str ? id_str : ""),
+		  match_name,
+		  sstart, send,
+		  (s_strand == ZMAPSTRAND_REVERSE ? '-' : '+')) ;
+
+  if (gaps)
+    {
+      int k, index, incr ;
+      GString *align_str ;
+
+      align_str = g_string_sized_new(2000) ;
+
+      /* Gap=M8 D3 M6 I1 M6 */
+
+      /* correct, needed ?? */
+      if (q_strand == ZMAPSTRAND_REVERSE)
+	{
+	  index = gaps->len - 1 ;
+	  incr = -1 ;
+	}
+      else
+	{
+	  index = 0 ;
+	  incr = 1 ;
+	}
+
+      for (k = 0 ; k < gaps->len ; k++, index += incr)
+	{
+	  ZMapAlignBlock gap ;
+
+	  gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index)) ;
+
+	  g_string_append_printf(align_str, "M%d ", (gap->t2 - gap->t1) + 1) ;
+
+	  if (k < gaps->len - 1)
+	    {
+	      ZMapAlignBlock next_gap ;
+	      int curr_match, next_match, curr_ref, next_ref ;
+
+	      next_gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index + incr)) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      if (gap->q_strand == ZMAPSTRAND_FORWARD && gap->t_strand == ZMAPSTRAND_FORWARD)
+		printf("forwards - forwards\n") ;
+	      else if (gap->q_strand == ZMAPSTRAND_FORWARD && gap->t_strand == ZMAPSTRAND_REVERSE)
+		printf("forwards - backwards\n") ;
+	      else if (gap->q_strand == ZMAPSTRAND_REVERSE && gap->t_strand == ZMAPSTRAND_FORWARD)
+		printf("backwards - forwards\n") ;
+	      else if (gap->q_strand == ZMAPSTRAND_REVERSE && gap->t_strand == ZMAPSTRAND_REVERSE)
+		printf("backwards - backwards\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	      if (gap->q_strand == ZMAPSTRAND_FORWARD)
+		{
+		  curr_match = gap->q2 ;
+		  next_match = next_gap->q1 ;
+		}
+	      else
+		{
+		  curr_match = next_gap->q2 ;
+		  next_match = gap->q1 ;
+		}
+
+	      if (gap->t_strand == ZMAPSTRAND_FORWARD)
+		{
+		  curr_ref = gap->t2 ;
+		  next_ref = next_gap->t1 ;
+		}
+	      else
+		{
+		  curr_ref = next_gap->t2 ;
+		  next_ref = gap->t1 ;
+		}
+
+	      if (next_match > curr_match + 1)
+		g_string_append_printf(align_str, "I%d ", (next_match - curr_match) - 1) ;
+	      else if (next_ref > curr_ref + 1)
+		g_string_append_printf(align_str, "D%d ", (next_ref - curr_ref) - 1) ;
+	      else
+		zMapLogWarning("Bad coords in GFFv3 writer: gap %d,%d -> %d, %d, next_gap %d, %d -> %d, %d",
+			       gap->t1, gap->t2, gap->q1, gap->q2,
+			       next_gap->t1, next_gap->t2, next_gap->q1, next_gap->q2) ;
+	    }
+	}
+
+      g_string_append_printf(line, ";Gaps=%s", align_str->str) ;
+
+      g_string_free(align_str, TRUE) ;
+    }
+
+
+  if (sequence)
+    {
+      g_string_append_printf(line, ";Sequence=%s", sequence) ;
+    }
+
+
+  if (id_str)
+    g_free(id_str) ;
+
+  return status ;
+}
+
+
+
+static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
+{
+  gboolean status = TRUE;
+  gboolean cds_only = TRUE ;
+
+  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+    cds_only = FALSE ;
+
+  if (!cds_only || feature->feature.transcript.flags.cds)
+    {
+      /* Do the exons... */
+      status = processExons(blixem_data, feature, cds_only) ;
+
+      /* Now do extra's for each file format. */
+      if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
+	{
+	  printTranscriptExtrasExblx(feature, blixem_data, cds_only) ;
+	}
     }
 
   return status ;
 }
 
 
-static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
+/* Print out the exons taking account of the extent of the CDS within the transcript. */
+static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only)
+{
+  gboolean status = TRUE ;
+  GIOChannel *channel ;
+  int i ;
+  ZMapSpan span = NULL ;
+  int score = -1, qstart, qend, sstart, send ;
+  int min, max ;
+  int exon_base ;
+  int cds_start, cds_end ;				    /* Only used if cds_only == TRUE. */
+  GString *line ;
+  char *ref_name ;
+  char *transcript_name ;
+  char *source_name ;
+
+
+
+  if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
+    channel = blixem_data->exblx_channel ;
+  else
+    channel = blixem_data->gff_channel ;
+
+
+  line = blixem_data->line ;
+
+  min = blixem_data->min ;
+  max = blixem_data->max ;
+
+  ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
+  transcript_name = (char *)g_quark_to_string(feature->original_id) ;
+  source_name = (char *)g_quark_to_string(feature->source_id) ;
+
+  if (cds_only)
+    {
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+    }
+
+  exon_base = 0 ;
+
+  /* We need to record how far we are along the exons in CDS relative coords, i.e. for the
+   * reverse strand we need to calculate from the other end of the transcript. */
+  if (feature->strand == ZMAPSTRAND_REVERSE)
+    {
+      for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+	{
+	  int start, end ;
+
+	  span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
+
+	  if (cds_only && (span->x1 > cds_end || span->x2 < cds_start))
+	    {
+	      continue ;
+	    }
+	  else
+	    {
+	      start = span->x1 ;
+	      end = span->x2 ;
+
+	      /* Truncate to CDS start/end in transcript. */
+	      if (cds_only)
+		{
+		  if (cds_start >= span->x1 && cds_start <= span->x2)
+		    start = cds_start ;
+		  if (cds_end >= span->x1 && cds_end <= span->x2)
+		    end = cds_end ;
+		}
+
+	      exon_base += end - start + 1 ;
+	    }
+	}
+    }
+
+
+  for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+    {
+      span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
+
+      /* We are only interested in the cds section of the transcript. */
+      if (cds_only && (span->x1 > cds_end || span->x2 < cds_start))
+	{
+	  continue ;
+	}
+      else
+	{
+	  int exon_start, exon_end ;
+
+	  exon_start = span->x1 ;
+	  exon_end = span->x2 ;
+
+	  /* Truncate to CDS start/end in transcript. */
+	  if (cds_only)
+	    {
+	      if (cds_start >= span->x1 && cds_start <= span->x2)
+		exon_start = cds_start ;
+	      if (cds_end >= span->x1 && cds_end <= span->x2)
+		exon_end = cds_end ;
+	    }
+
+	  /* NEED TO REVISIT THIS FOR GFFv3... */
+	  /* We only export exons that fit completely within the blixem scope. */
+	  if (exon_start >= min && exon_end <= max)
+	    {
+	      /* Note that sframe is meaningless so is set to an invalid value. */
+	      if (feature->strand == ZMAPSTRAND_REVERSE)
+		{
+		  qstart = exon_end - min + 1;
+		  qend   = exon_start - min + 1;
+		  sstart = ((exon_base - (exon_end - exon_start + 1)) + 3) / 3 ;
+		  send = (exon_base - 1) / 3 ;
+		}
+	      else
+		{
+		  qstart = exon_start - min + 1;
+		  qend   = exon_end - min + 1;
+		  sstart = (exon_base + 3) / 3 ;
+		  send   = (exon_base + (exon_end - exon_start)) / 3 ;
+		}
+
+	      if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
+		{
+		  formatTranscriptExblx(line, min, max,
+					transcript_name,
+					score,
+					exon_base, exon_start, exon_end,
+					qstart, qend, feature->strand,
+					sstart, send) ;
+		}
+	      else
+		{
+		  int tmp ;
+
+		  if (feature->strand == ZMAPSTRAND_REVERSE)
+		    tmp = qstart, qstart = qend, qend = tmp ;
+
+		  formatTranscriptGFF(blixem_data->format_data, line, min, max,
+				      ref_name, source_name,
+				      feature, transcript_name,
+				      exon_start, exon_end,
+				      qstart, qend, feature->strand,
+				      sstart, send) ;
+		}
+
+
+	      status = printLine(channel, &(blixem_data->errorMsg), line->str) ;
+
+	      status = printLine(channel, &(blixem_data->errorMsg), "\n") ;
+
+	      blixem_data->line = g_string_truncate(blixem_data->line, 0) ; /* Reset string buffer. */
+	    }
+
+	  if (feature->strand == ZMAPSTRAND_REVERSE)
+	    {
+	      exon_base -= (exon_end - exon_start + 1);
+	    }
+	  else
+	    {
+	      exon_base += (exon_end - exon_start + 1) ;
+	    }
+	}
+    }
+
+
+  return status ;
+}
+
+
+static gboolean formatTranscriptExblx(GString *line, int min, int max,
+				      char *transcript_name,
+				      float score_unused,
+				      int exon_base, int exon_start, int exon_end,
+				      int qstart, int qend, int qstrand,
+				      int sstart, int send)
+{
+  gboolean status = TRUE;
+  char qframe_strand ;
+  int qframe ;
+  char *sframe_str ;
+
+
+  /* Note that sframe is meaningless so is set to an invalid value. */
+  if (qstrand == ZMAPSTRAND_REVERSE)
+    {
+      qframe_strand = '-' ;
+      qframe = ( (((max - min + 1) - qstart) - (exon_base - (exon_end - exon_start + 1))) % 3) + 1 ;
+
+      sframe_str = "(-0)" ;
+    }
+  else
+    {
+      qframe_strand = '+' ;
+      qframe = ((qstart - 1 - exon_base) % 3) + 1 ;
+
+      sframe_str = "(+0)" ;
+    }
+
+  g_string_printf(line, "-1\t(%c%d)\t%d\t%d\t%s\t%d\t%d\t%sx",
+		  qframe_strand, qframe, qstart, qend,
+		  sframe_str, sstart, send,
+		  transcript_name) ;
+
+  return status ;
+}
+
+
+static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int min, int max,
+				    char *ref_name, char *source_name,
+				    ZMapFeature feature, char *transcript_name,
+				    int exon_start, int exon_end,
+				    int qstart, int qend, int qstrand,
+				    int sstart, int send)
+{
+  gboolean status = TRUE ;
+  static char *curr_transcript = NULL ;
+  char *SO_rna_id = "mRNA" ;
+  char *SO_exon_id = "exon" ;
+  char *SO_CDS_id = "CDS" ;
+  char *id_str = NULL ;
+
+  /* If it's a new transcript then write the transcript record with a new ID. */
+  if (!curr_transcript || strcmp(curr_transcript, transcript_name) != 0)
+    {
+      gff_data->transcript_count++ ;
+
+      /* ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00001;Name=EDEN.1 */
+      g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\tID=transcript%d;Name=%s\n",
+		      ref_name, source_name, SO_rna_id,
+		      feature->x1, feature->x2,
+		      (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+		      gff_data->transcript_count,
+		      transcript_name) ;
+
+      curr_transcript = transcript_name ;
+    }
+
+  if (gff_data->maximise_ids)
+    {
+      gff_data->exon_count++ ;
+
+      id_str = g_strdup_printf("ID=exon%d;", gff_data->exon_count) ;
+    }
+
+
+  /* ctg123 . exon            1300  1500  .  +  .  Parent=mRNA00003 */
+  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\t%sParent=transcript%d",
+			 ref_name, source_name, SO_exon_id,
+			 qstart, qend,
+			 (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+			 (id_str ? id_str : ""),
+			 gff_data->transcript_count) ;
+
+
+  if (feature->feature.transcript.flags.cds)
+    {
+      int cds_start, cds_end ;
+
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+
+      if (exon_start > cds_end || exon_end < cds_start)
+	{
+	  ;
+	}
+      else
+	{
+	  int tmp_cds1, tmp_cds2, phase ;
+
+	  if (cds_start >= exon_start && cds_start <= exon_end)
+	    qstart += cds_start - exon_start ;
+	  if (cds_end >= qstart && cds_end <= qend)
+	    qend -= exon_end - cds_end ;
+
+
+
+	  /* ctg123 . CDS 1201 1500 . + 0 Parent=mRNA00001 */
+	  if (zMapFeatureExon2CDS(feature,
+				  exon_start, exon_end, &tmp_cds1, &tmp_cds2, &phase))
+	    {
+	      /* Only print if exon has cds section. */
+	      g_string_append_printf(line, "\n%s\t%s\t%s\t%d\t%d\t.\t%c\t%d\t%sParent=transcript%d",
+				     ref_name, source_name, SO_CDS_id,
+				     qstart, qend,
+				     (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+				     phase,
+				     (id_str ? id_str : ""),
+				     gff_data->transcript_count) ;
+	    }
+	}
+    }
+
+  if (id_str)
+    g_free(id_str) ;
+
+  return status ;
+}
+
+
+
+static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only)
 {
   gboolean status = TRUE;
   int min, max ;
@@ -1356,83 +2007,68 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
   int score = 0, qstart, qend, sstart, send;
   ZMapSpan span = NULL;
   char *qframe, *sframe ;
-  gboolean cds_only = TRUE ;
 
 
-  /* For nucleotide alignments we do all transcripts, for proteins we only do those with a cds. */
-  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
-    cds_only = FALSE ;
-
-
-  if (!cds_only || feature->feature.transcript.flags.cds)
+  /* Do the introns... */
+  if (feature->feature.transcript.introns)
     {
-      blixem_data->curr_channel = blixem_data->exblx_channel ;
+      int i ;
 
-      /* Do the exons... */
-      status = processExons(blixem_data, feature, cds_only) ;
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+      min = blixem_data->min ;
+      max = blixem_data->max ;
 
-
-      /* Do the introns... */
-      if (status && feature->feature.transcript.introns)
+      for (i = 0; i < feature->feature.transcript.introns->len && status; i++)
 	{
-	  int i ;
+	  span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i);
 
-	  cds_start = feature->feature.transcript.cds_start ;
-	  cds_end = feature->feature.transcript.cds_end ;
-	  min = blixem_data->min ;
-	  max = blixem_data->max ;
-
-	  for (i = 0; i < feature->feature.transcript.introns->len && status; i++)
+	  /* Only print introns that are within the cds section of the transcript and
+	   * within the blixem scope. */
+	  if ((span->x1 < min || span->x2 > max)
+	      || (cds_only && (span->x1 > cds_end || span->x2 < cds_start)))
 	    {
-	      span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i);
+	      continue ;
+	    }
+	  else
+	    {
+	      GString *line ;
 
-	      /* Only print introns that are within the cds section of the transcript and
-	       * within the blixem scope. */
-	      if ((span->x1 < min || span->x2 > max)
-		  || (cds_only && (span->x1 > cds_end || span->x2 < cds_start)))
+	      line = blixem_data->line ;
+
+	      if (feature->strand == ZMAPSTRAND_REVERSE)
 		{
-		  continue ;
+		  qstart = span->x2 - min + 1;
+		  qend   = span->x1 - min + 1;
 		}
 	      else
 		{
-		  GString *line ;
-
-		  line = blixem_data->line ;
-
-		  if (feature->strand == ZMAPSTRAND_REVERSE)
-		    {
-		      qstart = span->x2 - min + 1;
-		      qend   = span->x1 - min + 1;
-		    }
-		  else
-		    {
-		      qstart = span->x1 - min + 1;
-		      qend   = span->x2 - min + 1;
-		    }
-
-		  sstart = send = 0 ;
-		  score  = -2 ;
-
-		  /* Note that sframe is meaningless so is set to an invalid value. */
-		  if (feature->strand == ZMAPSTRAND_REVERSE)
-		    {
-		      qframe = "(-1)" ;
-		      sframe = "(-0)" ;
-		    }
-		  else
-		    {
-		      qframe = "(+1)" ;
-		      sframe = "(-1)" ;
-		    }
-
-		  g_string_printf(line, "%d\t%s\t%d\t%d\t%s\t%d\t%d\t%si\n",
-				  score,
-				  qframe, qstart, qend,
-				  sframe, sstart, send,
-				  g_quark_to_string(feature->original_id)) ;
-
-		  status = printLine(blixem_data, line->str) ;
+		  qstart = span->x1 - min + 1;
+		  qend   = span->x2 - min + 1;
 		}
+
+	      sstart = send = 0 ;
+	      score  = -2 ;
+
+	      /* Note that sframe is meaningless so is set to an invalid value. */
+	      if (feature->strand == ZMAPSTRAND_REVERSE)
+		{
+		  qframe = "(-1)" ;
+		  sframe = "(-0)" ;
+		}
+	      else
+		{
+		  qframe = "(+1)" ;
+		  sframe = "(-1)" ;
+		}
+
+	      g_string_printf(line, "%d\t%s\t%d\t%d\t%s\t%d\t%d\t%si\n",
+			      score,
+			      qframe, qstart, qend,
+			      sframe, sstart, send,
+			      g_quark_to_string(feature->original_id)) ;
+
+	      status = printLine(blixem_data->exblx_channel, &(blixem_data->errorMsg), line->str) ;
 	    }
 	}
     }
@@ -1441,19 +2077,21 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 }
 
 
-static gboolean printLine(blixemData blixem_data, char *line)
+
+
+/* Output a line to file, returns FALSE if write fails and sets err_msg_out with
+ * the reason. */
+static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, char *line)
 {
   gboolean status = TRUE ;
   GError *channel_error = NULL ;
   gsize bytes_written ;
 
-  if (g_io_channel_write_chars(blixem_data->curr_channel, line, -1,
+  if (g_io_channel_write_chars(gio_channel, line, -1,
 			       &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
     {
-      /* don't display an error at this point, just write it to blixem_data for later.
-       * Set and return status to prevent further processing. */
-      blixem_data->errorMsg = g_strdup_printf("Error writing data to exblx file: %50s... : %s",
-					      line, channel_error->message) ;
+      *err_msg_out = g_strdup_printf("Could not write to file, error \"%s\" for line \"%50s...\"",
+				     channel_error->message, line) ;
       g_error_free(channel_error) ;
       channel_error = NULL;
       status = FALSE ;
@@ -1468,10 +2106,13 @@ static gboolean printLine(blixemData blixem_data, char *line)
 static void getSetList(gpointer data, gpointer user_data)
 {
   GQuark set_id = GPOINTER_TO_UINT(data) ;
+  GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
 
-  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(set_id))))
+  canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
+
+  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
     {
       zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
 		     (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
@@ -1667,151 +2308,6 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 
 
-/* Print out the exons taking account of the extent of the CDS within the transcript. */
-static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only)
-{
-  gboolean status = TRUE ;
-  int i ;
-  ZMapSpan span = NULL ;
-  int score = -1, qstart, qend, sstart, send ;
-  int min, max ;
-  int exon_base ;
-  int cds_start, cds_end ;				    /* Only used if cds_only == TRUE. */
-  GString *line ;
-
-  line = blixem_data->line ;
-
-  min = blixem_data->min ;
-  max = blixem_data->max ;
-
-  if (cds_only)
-    {
-      cds_start = feature->feature.transcript.cds_start ;
-      cds_end = feature->feature.transcript.cds_end ;
-    }
-
-  exon_base = 0 ;
-
-
-  /* We need to record how far we are along the exons in CDS relative coords, i.e. for the
-   * reverse strand we need to calculate from the other end of the transcript. */
-  if (feature->strand == ZMAPSTRAND_REVERSE)
-    {
-      for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
-	{
-	  int start, end ;
-
-	  span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
-
-	  if (cds_only && (span->x1 > cds_end || span->x2 < cds_start))
-	    {
-	      continue ;
-	    }
-	  else
-	    {
-	      start = span->x1 ;
-	      end = span->x2 ;
-
-	      /* Truncate to CDS start/end in transcript. */
-	      if (cds_only)
-		{
-		  if (cds_start >= span->x1 && cds_start <= span->x2)
-		    start = cds_start ;
-		  if (cds_end >= span->x1 && cds_end <= span->x2)
-		    end = cds_end ;
-		}
-
-	      exon_base += end - start + 1 ;
-	    }
-	}
-    }
-
-
-  for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
-    {
-      span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
-
-      /* We are only interested in the cds section of the transcript. */
-      if (cds_only && (span->x1 > cds_end || span->x2 < cds_start))
-	{
-	  continue ;
-	}
-      else
-	{
-	  char qframe_strand ;
-	  int qframe ;
-	  int start, end ;
-
-	  start = span->x1 ;
-	  end = span->x2 ;
-
-	  /* Truncate to CDS start/end in transcript. */
-	  if (cds_only)
-	    {
-	      if (cds_start >= span->x1 && cds_start <= span->x2)
-		start = cds_start ;
-	      if (cds_end >= span->x1 && cds_end <= span->x2)
-		end = cds_end ;
-	    }
-
-	  /* We only export exons that fit completely within the blixem scope. */
-	  if (start >= min && end <= max)
-	    {
-	      char *sframe ;
-
-	      /* Note that sframe is meaningless so is set to an invalid value. */
-	      if (feature->strand == ZMAPSTRAND_REVERSE)
-		{
-		  qstart = end - min + 1;
-		  qend   = start - min + 1;
-
-		  qframe_strand = '-' ;
-		  qframe = ( (((max - min + 1) - qstart) - (exon_base - (end - start + 1))) % 3) + 1 ;
-
-		  sframe = "(-0)" ;
-		  sstart = ((exon_base - (end - start + 1)) + 3) / 3 ;
-		  send = (exon_base - 1) / 3 ;
-		}
-	      else
-		{
-		  qstart = start - min + 1;
-		  qend   = end - min + 1;
-
-		  qframe_strand = '+' ;
-		  qframe = ((qstart - 1 - exon_base) % 3) + 1 ;
-
-		  sframe = "(+0)" ;
-		  sstart = (exon_base + 3) / 3 ;
-		  send   = (exon_base + (end - start)) / 3 ;
-		}
-
-	      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%s\t%d\t%d\t%sx\n",
-			      score,
-			      qframe_strand, qframe, qstart, qend,
-			      sframe, sstart, send,
-			      g_quark_to_string(feature->original_id)) ;
-
-	      status = printLine(blixem_data, line->str) ;
-
-	      blixem_data->line = g_string_truncate(blixem_data->line, 0) ; /* Reset string buffer. */
-	    }
-
-	  if (feature->strand == ZMAPSTRAND_REVERSE)
-	    {
-	      exon_base -= (end - start + 1);
-	    }
-	  else
-	    {
-	      exon_base += (end - start + 1) ;
-	    }
-	}
-    }
-
-
-  return status ;
-}
-
-
 gboolean makeTmpfile(char *tmp_dir, char *file_prefix, char **tmp_file_name_out)
 {
   gboolean status = FALSE ;
@@ -1933,27 +2429,27 @@ static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *ent
   char *text = (char *)entry_text;
   gboolean allowed = TRUE;
 
-  if(!text || (text && !*text))
+  if (!text || (text && !*text))
     allowed = FALSE;
-  else if(note_any->name == g_quark_from_string("Launch script"))
+  else if (note_any->name == g_quark_from_string("Launch script"))
     {
-      if(!(allowed = zMapFileAccess(text, "x")))
+      if (!(allowed = zMapFileAccess(text, "x")))
 	zMapWarning("%s is not executable.", text);
       allowed = TRUE;		/* just warn for now */
     }
-  else if(note_any->name == g_quark_from_string("Config File"))
+  else if (note_any->name == g_quark_from_string("Config File"))
     {
-      if(!(allowed = zMapFileAccess(text, "r")))
+      if (!(allowed = zMapFileAccess(text, "r")))
 	zMapWarning("%s is not readable.", text);
       allowed = TRUE;		/* just warn for now */
     }
-  else if(note_any->name == g_quark_from_string("Port"))
+  else if (note_any->name == g_quark_from_string("Port"))
     {
       int tmp = 0;
-      if(zMapStr2Int(text, &tmp))
+      if (zMapStr2Int(text, &tmp))
 	{
 	  int min = 1024, max = 65535;
-	  if(tmp < min || tmp > max)
+	  if (tmp < min || tmp > max)
 	    {
 	      allowed = FALSE;
 	      zMapWarning("Port should be in range of %d to %d", min, max);
@@ -2132,9 +2628,9 @@ static void saveUserPrefs(BlixemConfigData prefs)
 {
   ZMapConfigIniContext context = NULL;
 
-  if((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide()))
     {
-      if(prefs->netid)
+      if (prefs->netid)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				      ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
 
@@ -2153,27 +2649,27 @@ static void saveUserPrefs(BlixemConfigData prefs)
       zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				     ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
 
-      if(prefs->script)
+      if (prefs->script)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				      ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
 
-      if(prefs->config_file)
+      if (prefs->config_file)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				      ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
 
 
 #ifdef RDS_DONT_INCLUDE
-      if(prefs->dna_sets)
+      if (prefs->dna_sets)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				      ZMAPSTANZA_BLIXEM_DNA_FS, prefs->dna_sets);
 
-      if(prefs->protein_sets)
+      if (prefs->protein_sets)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				      ZMAPSTANZA_BLIXEM_PROT_FS, prefs->protein_sets);
 
-      if(prefs->transcript_sets)
+      if (prefs->transcript_sets)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-				      ZMAPSTANZA_BLIXEM_TRANS_FS, prefs->transcript_sets);
+				      ZMAPSTANZA_BLIXEM_FS, prefs->transcript_sets);
 #endif
 
       zMapConfigIniContextSave(context);
