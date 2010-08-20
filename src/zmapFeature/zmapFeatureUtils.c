@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug 16 14:39 2010 (edgrif)
+ * Last edited: Aug 20 17:25 2010 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.73 2010-08-18 11:31:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.74 2010-08-20 16:25:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -943,12 +943,8 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 
       cds_start = feature->feature.transcript.cds_start ;
       cds_end = feature->feature.transcript.cds_end ;
-
-      if (cds_start > exon_end || cds_end < exon_start)
-	{
-	  ;
-	}
-      else
+      
+      if (!(cds_start > exon_end || cds_end < exon_start))
 	{
 	  /* Exon has a cds section so calculate it and find the exons phase. */
 	  int start, end, phase ;
@@ -958,7 +954,7 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 	      *exon_cds_start = start ;
 	      *exon_cds_end = end ;
 	      *phase_out = phase ;
-
+	      
 	      is_cds_exon = TRUE ;
 	    }
 	}
@@ -1220,7 +1216,7 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
 }
 
 
-/* Returns the coords (in reference coords) of the cds section of the given exon
+/* Returns the coords (in reference sequence coords) of the cds section of the given exon
  * and also it's phase. */
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 			      int *exon_cds_start_out, int *exon_cds_end_out, int *phase_out)
@@ -1228,15 +1224,34 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
   gboolean result = FALSE ;
   int cds_start, cds_end ;
   GArray *exons ;
-  int i ;
+  int i, incr, end ;
   int cds_bases ;
+  gboolean first_exon ;
 
   cds_start = feature->feature.transcript.cds_start ;
   cds_end = feature->feature.transcript.cds_end ;
+  cds_bases = 0 ;
 
   exons = feature->feature.transcript.exons ;
-  cds_bases = 0 ;
-  for (i = 0 ; i < exons->len && i <= exon_index ; i++)
+  first_exon = FALSE ;
+
+
+  /* Go forwards through exons for forward strand genes and backwards for
+   * reverse strand genes. */
+  if (feature->strand == ZMAPSTRAND_FORWARD)
+    {
+      i = 0 ;
+      end = feature->feature.transcript.exons->len - 1 ;
+      incr = 1 ;
+    }
+  else
+    {
+      i = exons->len - 1 ;
+      end = 0 ;
+      incr = -1 ;
+    }
+
+  for ( ; i != end ; i += incr)
     {
       ZMapSpan next_exon ;
 
@@ -1249,7 +1264,6 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
       else
 	{
 	  int start, end, phase ;
-	  gboolean first_exon = FALSE ;
 
 	  start = next_exon->x1 ;
 	  end = next_exon->x2 ;
@@ -1257,18 +1271,27 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 	  if (cds_start >= start && cds_start <= end)
 	    {
 	      start = cds_start ;
-	      first_exon = TRUE ;
+
+	      if (feature->strand == ZMAPSTRAND_FORWARD)
+		first_exon = TRUE ;
 	    }
 
 	  if (cds_end >= start && cds_end <= end)
-	    end = cds_end ;
+	    {
+	      end = cds_end ;
+
+	      if (feature->strand == ZMAPSTRAND_REVERSE)
+		first_exon = TRUE ;
+	    }
 
 	  if (i == exon_index)
 	    {
+	      /* The first exon must have phase 0 unless it has been annotated as
+	       * starting with a different phase, all others are calculated from
+	       * CDS bases so far. */
+
 	      if (first_exon)
 		{
-		  /* The first exon must have phase 0 unless it has been annotated as
-		   * starting with a different phase. */
 		  if (feature->feature.transcript.flags.start_not_found)
 		    phase = feature->feature.transcript.start_phase ;
 		  else
@@ -1276,7 +1299,7 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 		}
 	      else
 		{
-		  phase = cds_bases % 3 ;
+		  phase = (3 - (cds_bases % 3)) % 3 ;
 		}
 
 	      *exon_cds_start_out = start ;
@@ -1290,6 +1313,8 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 
 	  /* Keep a running count of bases so far, caculate phase of next exon from this. */
 	  cds_bases += (end - start) + 1 ;
+
+	  first_exon = FALSE ;
 	}
 
     }

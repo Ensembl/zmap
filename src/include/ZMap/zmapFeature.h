@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Aug 18 12:30 2010 (edgrif)
+ * Last edited: Aug 18 12:52 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.180 2010-08-18 11:31:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.181 2010-08-20 16:25:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -544,7 +544,6 @@ typedef struct ZMapFeatureStruct_
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
 
-  /* THIS NEEDS TO GO.....AND ONLY BE HELD IN THE STYLE... */
   ZMapStyleMode type ;					    /* Basic, transcript, alignment. */
 
 
@@ -553,7 +552,7 @@ typedef struct ZMapFeatureStruct_
 							       "trans_splice_acceptor_site", this
 							       might be recognised SO term or not. */
 
-      // style id tp be removed when style fully working
+  // style id tp be removed when style fully working
   GQuark style_id ;					    /* Style defining how this feature is processed.
 							       (use Styles _unique_ id.) */
 
