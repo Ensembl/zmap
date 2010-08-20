@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Aug 18 11:55 2010 (edgrif)
+ * Last edited: Aug 20 17:32 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.34 2010-08-18 11:40:16 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.35 2010-08-20 16:41:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,6 +99,7 @@ typedef struct GFFFormatDataStructType
   int alignment_count ;
   int transcript_count ;
   int exon_count ;
+  int feature_count ;
 } GFFFormatDataStruct,  *GFFFormatData ;
 
 
@@ -233,6 +234,7 @@ static gboolean initFeatureFile(char *filename, char *file_header, GString *buff
 				 GIOChannel **gio_channel_out, blixemData blixem_data) ;
 
 static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data) ;
+
 static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean formatAlignmentExbl(GString *line,
 				    int min_range, int max_range,
@@ -246,6 +248,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 				   int qstart, int qend, ZMapStrand q_strand,
 				   int sstart, int send, ZMapStrand s_strand,
 				   float score, GArray *gaps, char *sequence, char *description) ;
+
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only) ;
 static gboolean formatTranscriptExblx(GString *line, int min, int max,
@@ -261,6 +264,12 @@ static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int m
 				    int qstart, int qend, int qstrand,
 				    int sstart, int send) ;
 static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only) ;
+
+static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data) ;
+static gboolean formatPolyA(GFFFormatData gff_data, GString *line,
+			    char *ref_name, char *source_name, ZMapFeature feature) ;
+static gboolean formatSNP(GFFFormatData gff_data, GString *line,
+			  char *ref_name, char *source_name, ZMapFeature feature) ;
 
 static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, char *line) ;
 
@@ -1133,7 +1142,11 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
       /*
        * Now do transcripts (may need to filter further...)
        */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       blixem_data->required_feature_type = ZMAPSTYLE_MODE_TRANSCRIPT ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       if (blixem_data->transcript_sets)
 	{
 	  g_list_foreach(blixem_data->transcript_sets, processSetList, blixem_data) ;
@@ -1265,10 +1278,15 @@ static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data)
    * more records, displaying the error when we return. */
   if (!(blixem_data->errorMsg))
     {
+
       /* Only process features we want to dump. We then filter those features according to the
        * following rules (inherited from acedb): alignment features must be wholly within the
        * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (feature->type == blixem_data->required_feature_type)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	{
 	  gboolean status = TRUE ;
 
@@ -1291,10 +1309,20 @@ static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data)
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      {
 		status = printTranscript(feature, blixem_data) ;
+
+		break ;
+	      }
+	    case ZMAPSTYLE_MODE_BASIC:
+	      {
+		if (blixem_data->file_format == BLX_FILE_FORMAT_GFF)
+		  status = printBasic(feature, blixem_data) ;
+		
 		break ;
 	      }
 	    default:
-	      break ;
+	      {
+		break ;
+	      }
 	    }
 
 	  blixem_data->line = g_string_truncate(blixem_data->line, 0) ;	/* Reset string buffer. */
@@ -1447,9 +1475,6 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 				      feature->score, feature->feature.homol.align, seq_str, description) ;
 	}
 
-      if (status)
-	line = g_string_append(line, "\n") ;
-
       status = printLine(curr_channel, &(blixem_data->errorMsg), line->str) ;
     }
 
@@ -1539,8 +1564,7 @@ static gboolean formatAlignmentExbl(GString *line,
       g_string_append_printf(line, "\t%s %s ;", tag, text) ;
     }
 
-
-
+  g_string_append_c(line, '\n') ;
 
   return status ;
 }
@@ -1667,6 +1691,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
       g_string_append_printf(line, ";Sequence=%s", sequence) ;
     }
 
+  g_string_append_c(line, '\n') ;
 
   if (id_str)
     g_free(id_str) ;
@@ -1847,8 +1872,6 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 
 	      status = printLine(channel, &(blixem_data->errorMsg), line->str) ;
 
-	      status = printLine(channel, &(blixem_data->errorMsg), "\n") ;
-
 	      blixem_data->line = g_string_truncate(blixem_data->line, 0) ; /* Reset string buffer. */
 	    }
 
@@ -1897,7 +1920,7 @@ static gboolean formatTranscriptExblx(GString *line, int min, int max,
       sframe_str = "(+0)" ;
     }
 
-  g_string_printf(line, "-1\t(%c%d)\t%d\t%d\t%s\t%d\t%d\t%sx",
+  g_string_printf(line, "-1\t(%c%d)\t%d\t%d\t%s\t%d\t%d\t%sx\n",
 		  qframe_strand, qframe, qstart, qend,
 		  sframe_str, sstart, send,
 		  transcript_name) ;
@@ -1945,7 +1968,7 @@ static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int m
 
 
   /* ctg123 . exon            1300  1500  .  +  .  Parent=mRNA00003 */
-  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\t%sParent=transcript%d",
+  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\t%sParent=transcript%d\n",
 			 ref_name, source_name, SO_exon_id,
 			 qstart, qend,
 			 (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
@@ -1980,7 +2003,7 @@ static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int m
 				  exon_start, exon_end, &tmp_cds1, &tmp_cds2, &phase))
 	    {
 	      /* Only print if exon has cds section. */
-	      g_string_append_printf(line, "\n%s\t%s\t%s\t%d\t%d\t.\t%c\t%d\t%sParent=transcript%d",
+	      g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t%d\t%sParent=transcript%d\n",
 				     ref_name, source_name, SO_CDS_id,
 				     qstart, qend,
 				     (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
@@ -2075,6 +2098,93 @@ static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blix
 
   return status ;
 }
+
+
+
+static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
+{
+  gboolean status = TRUE;
+  char *ref_name ;
+  char *source_name ;
+
+  ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
+  source_name = (char *)g_quark_to_string(feature->source_id) ;
+
+  if (g_ascii_strcasecmp(g_quark_to_string(feature->source_id), "polya_site") == 0
+      || g_ascii_strcasecmp(g_quark_to_string(feature->source_id), "polya_signal") == 0)
+    {
+      status = formatPolyA(blixem_data->format_data, blixem_data->line, ref_name, source_name, feature) ;
+    }
+  else if (g_ascii_strcasecmp(g_quark_to_string(feature->source_id), "snp") == 0)
+    {
+      status = formatSNP(blixem_data->format_data, blixem_data->line, ref_name, source_name, feature) ;
+    }
+
+  if (status)
+    status = printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
+
+  return status ;
+}
+
+
+static gboolean formatPolyA(GFFFormatData gff_data, GString *line,
+			    char *ref_name, char *source_name, ZMapFeature feature)
+{
+  gboolean status = TRUE ;
+  char *SO_polyA_site_id = "polyA_site" ;
+  char *SO_polyA_sig_id = "polyA_signal_sequence" ;
+  char *SO_id ;
+  char *id_str = NULL ;
+
+
+  if (gff_data->maximise_ids)
+    {
+      gff_data->feature_count++ ;
+
+      id_str = g_strdup_printf("ID=feature%d;", gff_data->feature_count) ;
+    }
+
+  if (g_ascii_strcasecmp(g_quark_to_string(feature->source_id), "polya_site") == 0)
+    SO_id = SO_polyA_site_id ;
+  else
+    SO_id = SO_polyA_sig_id ;
+
+  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.%s%s\n",
+			 ref_name, source_name, SO_id,
+			 feature->x1, feature->x2,
+			 (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+			 (id_str ? "\t" : ""), 
+			 (id_str ? id_str : "")) ;
+
+  return status ;
+}
+
+
+static gboolean formatSNP(GFFFormatData gff_data, GString *line,
+			  char *ref_name, char *source_name, ZMapFeature feature)
+{
+  gboolean status = TRUE ;
+  char *SO_snp_id = "SNP" ;
+  char *id_str = NULL ;
+
+
+  if (gff_data->maximise_ids)
+    {
+      gff_data->feature_count++ ;
+
+      id_str = g_strdup_printf("ID=feature%d;", gff_data->feature_count) ;
+    }
+
+  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.%s%s\n",
+			 ref_name, source_name, SO_snp_id,
+			 feature->x1, feature->x2,
+			 (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+			 (id_str ? "\t" : ""), 
+			 (id_str ? id_str : "")) ;
+
+  return status ;
+}
+
 
 
 
