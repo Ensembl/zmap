@@ -1,4 +1,4 @@
-<!-- $Id $ -->
+<!-- $Id: EST_mRNA.html,v 1.5 2010-08-23 13:18:48 mh17 Exp $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 
 <fieldset><legend>Background</legend>
@@ -120,7 +120,7 @@ When displayed each part (alignment feature) is expressed as a separate canvas i
 <p> This implies that we have to connect features of the same name together and then sort these composite objects into start coordinate order.  Column bumping already does a similar task, but for canvas items - we need lists of features of the same name.  To make the sorting and comparison algorithm run faster we will prepend each list with 'whole alignment' entry which will hold the start and end coordinates of each set of alignments.
 </p>
 <h3>Sorting and maintaining data</h3>
-<p>We expect EST data and mRNA data to be static within a ZMap session - once sorted there is no requirement to repeat the process. Additional data supplied by servers will be stored in distinct context featuresets regardless of whether they are to be displayed in the same column.  <i>Note that this requires ZMap configuration to specify unique featureset names</i> - this is possible even if the ultimate source of two data sets are named, via the </b>[featureset-source]</b> stanza.  If in future we request features for subsets of the region being used then we will need to re-sort a featureset as new data arrives.  Data will be sorted into a GList of pointers to the features which will be stored in the featureset structure. If new data arrives the set will be flagged as unsorted by freeing the list.
+<p>We expect EST data and mRNA data to be static within a ZMap session - once sorted there is no requirement to repeat the process. Additional featuresets supplied by servers will be stored in distinct context featuresets regardless of whether they are to be displayed in the same column.  <i>Note that this requires ZMap configuration to specify unique featureset names</i> - this is possible even if the ultimate source of two data sets are named, via the </b>[featureset-source]</b> stanza.  If in future we request features for subsets of the region being used then we will need to re-sort a featureset as new data arrives.  Data will be sorted into a GList of pointers to the features which are stored in the featureset structure. If new data arrives the set will be flagged as unsorted by freeing the list.
 </p>
 
 </fieldset>
@@ -151,7 +151,7 @@ Each featureset in the view's context has a <b>masker_sorted_features</b> GList 
 <p>By default masked data will not be displayed and if we select 'Show Maksed Features' then we will scan all ZMapWindowCanvasItems in that column and display the masked data.  Deselecting this will remove the masked items from the FooCanvas.  Each canvas item refers to it's feature and when the display status of a feature is changed the flag in the feature structure that says 'displayed' will be updated.
 </p>
 <p>
-<b>NOTE</b>: We assume that each feature is displayed in one column only, but the situation where multiple windows have been opened is more complex.  In line with existing practice each window in a view reflects the same display state and changes in one occur in the others. To accomodate this we must display or hide features according to menu choice rather than feature state.  Each time we show or hide a feature we set the flags in the feature accordingly.
+<b>NOTE</b>: We assume that each feature is displayed in one column only, but the situation where multiple windows have been opened is more complex.  In line with existing practice each window in a view reflects the same display state and changes in one occur in the others. To accomodate this we must display or hide features according to menu choice (or column state) rather than feature state.  Each time we show or hide a feature we set the flags in the feature accordingly.
 </p>
 <p>
 <b>NOTE</b>: If a featureset is loaded into a columm we must also check the display state of the column.
@@ -166,6 +166,35 @@ Instead we display as normal and use foo_canvas_item_show/hide().  Data volumes 
 </p>
 
 </fieldset>
+
+<fieldset><legend>Displaying in multiple windows and updating as new masker sets arrive</legend>
+<p>There may be some value in displaying masked columns in different windows independantly - this would allow user to compare them - in which case we can operate using each column's state without difficulty. (NB: column bumping operates this way).
+</p>
+<p>As data arrives via pipes in no particular order we have to mask data that is already displayed, and depending on the column stat this will mean hiding it or changing the colour.  This process must be applied to all open windows.
+</p>
+<p>
+As we perform the masking in the View's feature context not the window we cannot easily hide features as they are masked and therefore we are require to post process the windows via a for-all-windows function.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Displaying new features</legend>
+<p>There is a logical possibility that we may receive a new feature from otterlace via XML, although we don't expect this to happen for EST or mRNA types (transcripts are more likely).  It's not immediately obvious from the code what would happen if this arose - it looks like we get a context with just the new features in to draw which refers to the merged context, in which case we would need to free the <b>masker_sorted_features</b> list for the affected featureset and re-mask.  As this is unlikely to occur this has not been done.
+</p>
+<p>Much more likely is requesting data for sub-regions and which case we can get large updates to a context featureset. On receiving any data for an existing featureset we will free the masker_sorted_features list, which implies a re-sort. adn all data in that featureset will be processed for masking.  Each feature has a masked and displayed flag and the masked flag will be reset before processsing.  Masking is performed from the <b>justMergeContext()</b> function in <b>zmapView.c</b> and display from <b>justDisplayContext()</b>.  It is valid to only mask with the new data.
+</p>
+<h3>Displaying new data in an existing featureset</h3>
+<p>Using existing code the new data will be drawn via the 'diff_context' data structure, which contains references to all the new features in the merged context. These can be drawn as-is.
+</p>
+
+<h3>Masking existing data</h3>
+<p>
+<b>zMapFeatureMaskFeatureSets()</b> can return a list of featuresets masked and this can be processed to re-display or modify existing columns (excluding new ones which display as normal). As we draw the context after masking we know that the feature context is in the correct state at this time. We will never need to draw existing features adn will only ever have to set features as masked, not the reverse.  We can scan each window's canvas tree and process only displayed items (new ones will not be displayed yet, so this will run at maximum efficiency, and as we process the window context not the features context there will be no errors matching active columns via a parallel set of code to the display functions.
+</p>
+<p><b>NOTE</b>: If masked colours are not defined then we never show masked features, and if a featureset is masked after loading then we remove the features from the Canvas.
+</p>
+</fieldset>
+
 
 <fieldset><legend>Results</legend>
 <p>Using [chr11-03_2098831-2266877] and 3 EST columns and vertebrate_mRNA (and each set masking itself) we get:
