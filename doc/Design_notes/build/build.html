@@ -5,6 +5,47 @@
 </p>
 </fieldset>
 
+<fieldset><legend>How to make a release</legend>
+<h3>Some advice from Ed</h3>
+<p>
+Instructions are in ZMap/scripts/README; go to section "How to build a new release" which says:
+<pre>
+ssh into tviewsrv as user zmap, then:
+
+> cd ~/prefix/scripts
+> ./zmap_do_build.sh
+</pre>
+
+It takes a while and you should get emailed with the result which will fail but only on the final test step which you can ignore for now.
+</p>
+<p>
+If the build worked the results will be in:
+<pre>
+~zmap/BUILD.DEVELOPMENT
+</pre>
+which is a link into the BUILDS directory.
+</p>
+
+<p>
+In there you will see the results of the build:
+<pre>
+Darwin_i386
+Linux_i686
+Linux_x86_64
+</pre>
+
+The dist file which James needs is in
+
+<pre>
+Dist
+</pre>
+
+and the log files are also there.
+
+The build script copies acedb binaries so it should provide everything that Anacode need.
+</p>
+</fieldset>
+
 <fieldset><legend>Developer controlled build options</legend>
 <h3 Options not available</h3>
 <p> There appears to be no provison for this kind of thing.  To create a new build with some experimental code it is necessary to check out a new copy of ZMap and modify the build script for the relevant target machine.
