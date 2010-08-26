@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 09:06 2009 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.19 2010-06-28 14:09:48 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.20 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -231,13 +231,19 @@ static int columnFSNListPosition(gconstpointer col_data, GList *feature_set_name
 
 static GQuark columnFSNid(gconstpointer col_data)
 {
+  GQuark id = 0;
+
+#if MH17_COL_ID_WAS_FEATURE_ID
   FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data);
   ZMapFeatureAny feature_any;
-  GQuark id = 0;
 
   if((feature_any = zmapWindowItemGetFeatureAny(col_group)))
       id = feature_any->unique_id;
+#else
+  ZMapWindowContainerFeatureSet container  = (ZMapWindowContainerFeatureSet) col_data;
 
+  id = zmapWindowContainerFeatureSetGetColumnId(container);
+#endif
   return id;
 }
 
@@ -273,7 +279,7 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
       pos_a = idA;
       pos_b = idB;
     }
-    // else put unknown columsn at the end
+    // else put unknown columns at the end
   else if(!pos_a)
       pos_a = order_data->n_names + 1;
   else if(!pos_b)

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.336 2010-08-18 09:20:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.337 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,6 +54,7 @@
 #include <zmapWindowFeatures.h>
 #include <zmapWindow_P.h>
 
+#include <ZMap/zmapGFF.h>     // for featureset structs
 
 
 
@@ -67,6 +68,9 @@ typedef struct
   GHashTable *all_styles ;
   GHashTable *new_styles ;
   GHashTable *featuresets_2_stylelist ;
+  GHashTable *featureset_2_column;
+  GHashTable *columns;
+  GList *masked;
   ZMapWindowState state ;	/* Can be NULL! */
 } FeatureSetsStateStruct, *FeatureSetsState ;
 
@@ -93,7 +97,7 @@ typedef enum
     ZMAP_LOCKED_RULER_SETUP,
     ZMAP_LOCKED_RULER_MOVING,
     ZMAP_LOCKED_RULER_REMOVE,
-    
+
     ZMAP_LOCKED_MARK_GUIDE_SETUP,
     ZMAP_LOCKED_MARK_GUIDE_MOVING,
     ZMAP_LOCKED_MARK_GUIDE_REMOVE,
@@ -381,6 +385,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   int x, y ;
   GHashTable *featureset_2_styles ;
+  GHashTable *featureset_2_column ;
+  GHashTable *columns ;
 
   zMapWindowBusy(original_window, TRUE) ;
 
@@ -457,7 +463,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
 
   /* Copy styles etc. */
+  /* mh17: historically style have to be copies as they are not static */
   featureset_2_styles = zMap_g_hashlist_copy(original_window->featureset_2_styles) ;
+
+  /* but these lists are not copied as they are supplied by the view */
+  featureset_2_column = original_window->featureset_2_column ;
+  columns = original_window->columns ;
 
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
@@ -476,7 +487,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
     /* should we be passing in a copy of the full set of original styles ? */
     zMapWindowDisplayData(new_window, state, feature_context, feature_context,
-			  read_only_styles, display_styles, featureset_2_styles) ;
+			  read_only_styles, display_styles, featureset_2_styles, featureset_2_column, columns,NULL) ;
   }
 
   zMapWindowBusy(new_window, FALSE) ;
@@ -518,7 +529,9 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 			   GHashTable *all_styles, GHashTable *new_styles,
-			   GHashTable *new_featuresets_2_stylelist)
+			   GHashTable *new_featuresets_2_stylelist,
+                     GHashTable *new_featureset_2_column,
+                     GHashTable *new_columns,GList *masked)
 {
   FeatureSetsState feature_sets ;
 
@@ -533,6 +546,9 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   zMapStyleCopyAllStyles(new_styles, &(feature_sets->new_styles)) ;
 
   feature_sets->featuresets_2_stylelist = new_featuresets_2_stylelist ;
+  feature_sets->featureset_2_column = new_featureset_2_column;
+  feature_sets->columns = new_columns;
+  feature_sets->masked = masked;
 
 //  printf("\nzMapWindowDisplay data:\n");
 //        zMap_g_hashlist_print(new_featuresets_2_stylelist) ;
@@ -814,7 +830,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   zMapWindowDisplayData(window, state, feature_context, feature_context,
-			all_styles, new_styles, window->featureset_2_styles) ;
+			all_styles, new_styles, window->featureset_2_styles,
+                  window->featureset_2_column, window->columns,NULL) ;
 
   zMapStopTimer("WindowFeatureRedraw","Display");
 
@@ -1129,7 +1146,6 @@ void zMapWindowMergeInFeatureSetNames(ZMapWindow window, GList *feature_set_name
 
   window->feature_set_names = g_list_concat(window->feature_set_names, feature_set_names);
 
-  // zMap_g_list_quark_print(window->feature_set_names, "Window cols", TRUE);
   return ;
 }
 
@@ -1268,10 +1284,10 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
  * then the original item is passed back instead.
  *
  * To Reset the panel pass in a NULL pointer as feature_arg
- * 
+ *
  * Where a sub-part of a feature was selected either sub_item will be non-NULL or
  * sub_start/end will be > 0.
- * 
+ *
  *
  *  */
 void zmapWindowUpdateInfoPanel(ZMapWindow window,
@@ -1285,7 +1301,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
-  ZMapFeatureSet set;
+//  ZMapFeatureSet set;
   FooCanvasGroup *feature_group;
   ZMapFeatureSubPartSpan sub_feature;
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
@@ -1295,7 +1311,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   int query_length ;
   int dna_start, dna_end ;
   int display_start, display_end ;
-  int start, end ;      
+  int start, end ;
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
@@ -1441,9 +1457,42 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
 
+
+#if !MH17_FEATURE_SET_NAME_IS_COLUMN_NAME
+        {
+            ZMapGFFSet gffset;
+            ZMapFeatureSet feature_set = (ZMapFeatureSet)
+                  zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET);
+
+            if(feature_set)
+            {
+                  select.feature_desc.feature_set =
+                        g_strdup(g_quark_to_string(feature_set->original_id)) ;
+
+                  gffset = g_hash_table_lookup(window->featureset_2_column,
+                        GUINT_TO_POINTER(feature_set->unique_id));
+                  if(gffset)
+                  {
+                        // got the featureset_2_column mapping, look up the column
+                        gffset  = g_hash_table_lookup(window->columns,
+                              GUINT_TO_POINTER(gffset->feature_set_id));
+                        if(gffset)
+                        {
+                              select.feature_desc.feature_set =
+                                    g_strdup(g_quark_to_string(gffset->feature_set_ID));
+                        }
+                  }
+
+                  if (feature_set->description)
+                        select.feature_desc.feature_set_description = g_strdup(feature_set->description) ;
+            }
+        }
+#else
       zmapWindowFeatureGetSetTxt(feature,
-				 &(select.feature_desc.feature_set),
-				 &(select.feature_desc.feature_set_description)) ;
+                       &(select.feature_desc.feature_set),
+                       &(select.feature_desc.feature_set_description)) ;
+#endif
+
 
       zmapWindowFeatureGetSourceTxt(feature,
 				    &(select.feature_desc.feature_source),
@@ -1590,13 +1639,11 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
-      if ((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
-	select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
-
       if (full_item)
 	select.highlight_item = full_item ;
       else
 	select.highlight_item = sub_item ;
+
 
       select.replace_highlight_item = replace_highlight_item ;
 
@@ -1610,7 +1657,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       g_free(select.feature_desc.sub_feature_end) ;
       g_free(select.feature_desc.sub_feature_query_start) ;
       g_free(select.feature_desc.sub_feature_query_end) ;
-      g_free(select.feature_desc.feature_set_description) ;
+      g_free(select.feature_desc.feature_set) ;     // mh17 was missing
+      if(select.feature_desc.feature_set_description)     // mh17: can be null
+            g_free(select.feature_desc.feature_set_description) ;
       g_free(select.feature_desc.feature_start) ;
       g_free(select.feature_desc.feature_end) ;
       g_free(select.feature_desc.feature_query_start) ;
@@ -1618,9 +1667,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       g_free(select.feature_desc.feature_query_length) ;
       g_free(select.feature_desc.feature_length) ;
       g_free(select.feature_desc.feature_description) ;
+
     }
-
-
 
   /* We wait until here to do this so we are only setting the
    * clipboard text once. i.e. for this window. And so that we have
@@ -2647,12 +2695,14 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets)
     memmove(&(event.data.b[0]), dummy, sizeof(void *)) ;
   }
 
+#if MH17_NOT_NEEDED
   zMapLogWarning("%s", "About to do event sending");
-
+#endif
   gdk_event_put((GdkEvent *)&event);
 
+#if MH17_NOT_NEEDED
   zMapLogWarning("%s", "Got back from sending event");
-
+#endif
   return ;
 }
 
@@ -2701,12 +2751,14 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       /* Redo the hash ??? or should this be once only ????? */
       window->featureset_2_styles = feature_sets->featuresets_2_stylelist ;
+      window->featureset_2_column = feature_sets->featureset_2_column;
+      window->columns = feature_sets->columns;
 
 //      printf("\ndataEventCB (window):\n");
 //      zMap_g_hashlist_print(window->featureset_2_styles) ;
 
       /* Draw the features on the canvas */
-      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context) ;
+      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context, feature_sets->masked) ;
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
 
@@ -4243,7 +4295,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowContainerFeatureSet focus_container;
-	    ZMapStyleBumpMode curr_bump_mode ;
 
 	    focus_container = (ZMapWindowContainerFeatureSet)focus_column;
 
@@ -4336,7 +4387,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_b:
     case GDK_B:
       {
-	/* Toggle bumping for selected column, if column is unbumped it will be 
+	/* Toggle bumping for selected column, if column is unbumped it will be
 	 * bumped in default mode for column. */
 	FooCanvasGroup *focus_column ;
 
@@ -4435,8 +4486,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  // this is test code to exercise the focus functions
 	  // it only affects the current window and callbacks to the view are not used
           zmapWindowFocusRemoveFocusItemType(window->focus,
-					     zmapWindowFocusGetHotItem(window->focus),
-					     WINDOW_FOCUS_GROUP_EVIDENCE, TRUE) ;
+                  zmapWindowFocusGetHotItem(window->focus),
+                  WINDOW_FOCUS_GROUP_EVIDENCE, TRUE) ;
           zmapWindowFocusReset(window->focus);
         }
       break;
@@ -4560,6 +4611,13 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	break ;
       }
+
+    case GDK_s:
+    case GDK_S:
+      {
+            /* show/hide masked features (not implemented - use the RC menu) */
+      }
+      break;
 
     case GDK_t:
     case GDK_T:
@@ -5535,19 +5593,17 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 
       /* Now call appropriate menu routine. */
+      /* focus item is either a CanvasItem or a column ie a windowconatinerfeatureset */
       if (is_feature)
 	{
 	  zmapMakeItemMenu(&button_event, window, focus_item) ;
 	}
       else
 	{
-	  ZMapFeatureSet feature_set = NULL ;
+        ZMapWindowContainerFeatureSet container_set =
+            (ZMapWindowContainerFeatureSet) focus_item;
 
-	  if ((feature_set = zmapWindowContainerGetFeatureSet((ZMapWindowContainerGroup)focus_item)))
-	    {
-	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, NULL) ;
-	    }
-
+        zmapMakeColumnMenu(&button_event, window, focus_item, container_set, NULL) ;
 	}
     }
 

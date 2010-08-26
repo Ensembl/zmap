@@ -30,7 +30,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.57 2010-07-29 09:27:29 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.58 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1907,7 +1907,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       break;
 
     case STYLE_PARAM_TYPE_QUARK_LIST_ID:
-      * (GList **) (((void *) style) + param->offset)   = zMapConfigString2QuarkList( (gchar *) g_value_get_string(value) );
+      * (GList **) (((void *) style) + param->offset)   = zMapConfigString2QuarkList( (gchar *) g_value_get_string(value) ,TRUE);
       break;
 
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:          // copy structure into ours

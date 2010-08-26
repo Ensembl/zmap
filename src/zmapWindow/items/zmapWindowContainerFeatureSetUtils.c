@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.5 2010-07-08 08:41:42 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.6 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -258,13 +258,15 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
 							x_coord, prev_feature->x2, 0, FALSE) ;
 
 		      /* Record the item so we can delete it later. */
-		      feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
+                  if(glyph)
+		            feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
 
 		      glyph = zMapWindowGlyphItemCreate(parent, style, 5,
 							x_coord, curr_feature->x1 - 1, 0, FALSE) ;
 
 		      /* Record the item so we can delete it later. */
-		      feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
+                  if(glyph)
+		            feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
 		    }
 		}
 	    }
@@ -531,7 +533,8 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 							  x_coord,y_coord,diff, FALSE));
 
 	  /* Record the item so we can delete it later. */
-	  feature_set->incomplete_markers = g_list_append(feature_set->incomplete_markers, foo) ;
+        if(foo)
+	      feature_set->incomplete_markers = g_list_append(feature_set->incomplete_markers, foo) ;
 
 	  /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
 	   * can't find any definition anywhere of what map and realize signify,

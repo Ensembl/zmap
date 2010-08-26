@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 21 18:23 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.24 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.25 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -73,6 +73,10 @@ typedef struct
 
 
 /* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
+/* NOTE: this is re-used for columns, and the order has been added
+ * This really does need to be split into featureset and column structs
+ * but there's too much code to chnage in one go.
+ */
 typedef struct
 {
       // really need to change feature_set to column: it's confusing
@@ -84,7 +88,10 @@ typedef struct
 //  char *description ;		      /* Description. */
   char *feature_set_text;           // renamed so we can search for this
 
+  int order;                        // column ordering
+
 } ZMapGFFSetStruct, *ZMapGFFSet ;
+
 
 
 
@@ -121,6 +128,7 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end) ;
 ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser) ;
 void zMapGFFFreeHeader(ZMapGFFHeader header) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
+GList *zMapGFFGetFeaturesets(ZMapGFFParser parser);
 int zMapGFFGetVersion(ZMapGFFParser parser) ;
 int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
 GError *zMapGFFGetError(ZMapGFFParser parser) ;

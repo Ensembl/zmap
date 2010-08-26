@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.27 2010-07-09 15:07:21 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.28 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -677,7 +677,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
     /* DEBUG.... */
     GList *style_names ;
 
-    zMap_g_quark_list_print(feature_context->feature_set_names) ;
+    zMap_g_quark_list_print(feature_context->req_feature_set_names) ;
 
     style_names = zMapStylesGetNames(feature_context->styles) ;
     zMap_g_quark_list_print(style_names) ;
@@ -705,9 +705,11 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
       /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
        * we would have to parse and reparse the stream....can be done but not needed this second. */
-      // can only have one alignment and one block ??
+      /* can only have one alignment and one block ?? */
       g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)server) ;
 
+      /* get the list if source featuresets */
+      feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       {
@@ -732,7 +734,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
 
 
-// "GFF doesnlt understand multiple blocks" therefore there can only be one DNA sequence
+// "GFF doesn't understand multiple blocks" therefore there can only be one DNA sequence
 // so we expect one alignment and one block
 static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 {
@@ -784,7 +786,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 								  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 	  /* I'm going to create the three frame translation up front! */
-	  if (zMap_g_list_find_quark(context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+	  if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	    {
 	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	      {

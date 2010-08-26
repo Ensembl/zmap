@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 10:14 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.31 2010-08-18 09:23:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.32 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -359,7 +359,6 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
 gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item)
 {
   gboolean is_subpart = FALSE ;
-  ZMapWindowCanvasItem canvas_item ;
 
   if (!ZMAP_IS_CANVAS_ITEM(any_item) && (zMapWindowCanvasItemIntervalGetObject(any_item)))
     is_subpart = TRUE ;
@@ -869,6 +868,24 @@ GList *zMapWindowCanvasItemGetChildren(ZMapWindowCanvasItem *parent)
   return children ;
 }
 
+gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden)
+{
+      ZMapFeature feature;
+      ZMapFeatureTypeStyle style;
+
+      feature = item->feature;
+      style = feature->style;
+
+      if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
+      {
+            if(andHidden && feature->feature.homol.flags.displayed)
+                  return FALSE;
+            return TRUE;
+      }
+      return FALSE;
+}
+
+
 
 /* If item is the parent item then the whole feature is coloured, otherwise just the sub-item
  * is coloured... */
@@ -897,10 +914,20 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
     }
 
   /* Oh gosh...why is this code in here....it isn't up to the object to decide if its raised..... */
+  /* mh17: i move this code into zmapWindowFocus.c
+   * which is where stuff should be raised/lowered
+   * here is caused a bug scanning through the list and using SELECTED rather than NORMAL
+   * raise/lower re-orders the list
+   * it would be better to copy to the overlay list for items on top
+   * Given that the old focus code remembered an item's place so as to be able to put it back
+   * this is all very odd.
+   */
+  /*
   if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
     foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(canvas_item)) ;
   else
     foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(canvas_item)) ;
+   */
 
   interval_data.parent = canvas_item ;
   interval_data.feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
@@ -1575,6 +1602,12 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
   zMapLogReturnValIfFail(canvas_item != NULL, NULL);
   zMapLogReturnValIfFail(canvas_item->feature != NULL, NULL);
 
+  style = canvas_item->feature->style;
+
+  if(!style)
+  {
+  zMapLogWarning("%s","legacy get_style() code called");
+
   canvas_item_parent = zMapWindowCanvasItemIntervalGetTopLevelObject((FooCanvasItem *)canvas_item);
 
   item = FOO_CANVAS_ITEM(canvas_item_parent);
@@ -1586,7 +1619,7 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
       style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)container_parent,
 						       canvas_item->feature->style_id);
     }
-
+  }
   return style;
 }
 

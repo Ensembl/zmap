@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.27 2010-08-18 11:30:08 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.28 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -724,7 +724,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GH
 /* strip leading and trailing spaces and squash internal ones to one only */
 /* operates in situ - call with g_strdup() if needed */
 /* do not free the returned string */
-char *zMapConfigNormaliseWhitespace(char *str)
+char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
 {
       char *p,*q;
 
@@ -734,7 +734,7 @@ char *zMapConfigNormaliseWhitespace(char *str)
       for(p = str;*q;)
       {
             while(*q > ' ')
-                  *p++ = *q++;
+                  *p++ = cannonical ? g_ascii_tolower(*q++) : *q++;
             while(*q && *q <= ' ')
                   q++;
              if(*q)
@@ -756,7 +756,7 @@ char *zMapConfigNormaliseWhitespace(char *str)
  * however it seems to run
  */
 
-GList *zMapConfigString2QuarkList(char *string_list)
+GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
 {
   GList *list = NULL;
   gchar **str_array,**strv;
@@ -766,7 +766,7 @@ GList *zMapConfigString2QuarkList(char *string_list)
 
   if(str_array) for(strv = str_array;*strv;strv++)
     {
-      name = zMapConfigNormaliseWhitespace(*strv);
+      name = zMapConfigNormaliseWhitespace(*strv, cannonical);
       if(*name)
             list = g_list_prepend(list,GUINT_TO_POINTER(g_quark_from_string(name)));
     }
@@ -802,12 +802,12 @@ GList *zMapConfigString2QuarkList(char *string_list)
  * So instead we have to use GLib directly.
  * the strings need to be quarked first
  */
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *hdesc)
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash)
 {
       GKeyFile *gkf;
       gchar ** keys,**freethis;
       GList *sources;
-      ZMapGFFSet GFFset,oldGFF;
+      ZMapGFFSet GFFset;
       char *desc;
       GQuark column,column_id;
       char *names;
@@ -826,11 +826,26 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   if(!names || !*names)
                         continue;
 
-                  normalkey = zMapConfigNormaliseWhitespace(*keys); // changes in situ: get names first
+                  normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); // changes in situ: get names first
                   column = g_quark_from_string(normalkey);
                   column_id = zMapFeatureSetCreateID(normalkey);
 
-                  sources = zMapConfigString2QuarkList(names);
+
+                        // add self ref to allow column lookup
+                  GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(column_id));
+                  if(!GFFset)
+                        GFFset = g_new0(ZMapGFFSetStruct,1);
+
+                  GFFset->feature_set_id = column_id;        // lower cased name
+                  GFFset->feature_set_ID = column;           // display name
+                  GFFset->feature_src_ID = column;           // display name
+
+                  // add description if present
+                  desc = normalkey;
+                  GFFset->feature_set_text = g_strdup(desc);
+                  g_hash_table_replace(hash,GUINT_TO_POINTER(column_id),GFFset);
+
+                  sources = zMapConfigString2QuarkList(names,FALSE);
                   g_free(names);
 
                   while(sources)
@@ -838,7 +853,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                         // get featureset if present
                         GQuark key = zMapFeatureSetCreateID((char *)
                               g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
-                        oldGFF = GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
+                        GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
 
                         if(!GFFset)
                               GFFset = g_new0(ZMapGFFSetStruct,1);
@@ -847,16 +862,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                         GFFset->feature_set_ID = column;           // display name
                         GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
-                        // add description if present
-                        if(hdesc)         // column-description
-                        {
-                              desc = g_hash_table_lookup(hdesc,GUINT_TO_POINTER(GFFset->feature_set_id));
-                              if(desc)
-                                    GFFset->feature_set_text = desc;
-                        }
-
-                        if(!oldGFF)
-                              g_hash_table_insert(hash,GUINT_TO_POINTER(sources->data),GFFset);
+                        g_hash_table_replace(hash,GUINT_TO_POINTER(sources->data),GFFset);
 
                         sources = g_list_delete_link(sources,sources);
                   }
@@ -871,21 +877,60 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
-GList *zMapConfigIniGetColumns(ZMapConfigIniContext context)
+
+/*
+ * NOTE: really we ought to invent another struct for columns
+ * as zmapGFFSet is one re-used from featureset_2_column
+ */
+
+GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
       GKeyFile *gkf;
-      GList *columns = NULL;
+      GList *columns = NULL,*col;
       gchar *colstr;
+      ZMapGFFSet gff;
+      GHashTable *hash = NULL;
+      int i = 0;
+      GHashTable *col_desc;
+      char *desc;
+
+      hash = g_hash_table_new(NULL,NULL);
+
+      // nb there is a small memory leak if we config description for non-existant columns
+      col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
+
 
       if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_APP_CONFIG,&gkf))
       {
             colstr = g_key_file_get_string(gkf, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
 
             if(colstr && *colstr)
-                  columns = zMapConfigString2QuarkList(colstr);
+                  columns = zMapConfigString2QuarkList(colstr,FALSE);
+
+
+            for(col = columns; col;col = col->next)
+            {
+                  gff = g_new0(ZMapGFFSetStruct,1);
+                  gff->feature_src_ID =
+                  gff->feature_set_ID = GPOINTER_TO_UINT(col->data);
+
+                  desc = (char *) g_quark_to_string(gff->feature_set_ID);
+                  gff->feature_set_id = zMapFeatureSetCreateID(desc);
+
+                  gff->feature_set_text = g_hash_table_lookup(col_desc,
+                        GUINT_TO_POINTER(gff->feature_set_id));
+                  if(!gff->feature_set_text)
+                        gff->feature_set_text = desc;
+
+                  gff->order = ++i;
+                  g_hash_table_insert(hash,GUINT_TO_POINTER(gff->feature_set_id),gff);
+            }
       }
 
-      return(columns);
+      if(col_desc)
+            g_hash_table_destroy(col_desc);
+
+      return(hash);
 }
 
 /*
@@ -906,9 +951,10 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, in
       gsize len;
       gchar *value,*strval;
 
+      hash = g_hash_table_new(NULL,NULL);
+
       if(zMapConfigIniHasStanza(context->config,stanza,&gkf))
       {
-            hash = g_hash_table_new(NULL,NULL);
 
             keys = g_key_file_get_keys(gkf,stanza,&len,NULL);
 
@@ -921,7 +967,7 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, in
                         gpointer kval;
 
                               // strips leading spaces by skipping
-                        strval = zMapConfigNormaliseWhitespace(value);
+                        strval = zMapConfigNormaliseWhitespace(value,FALSE);
 
                         if(how == QQ_STRING)
                               gval = g_strdup(strval);
@@ -1031,6 +1077,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
 //    { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_REPORT_THREAD,G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
   static char *name = ZMAPSTANZA_APP_CONFIG;
@@ -1172,6 +1219,7 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
@@ -1296,6 +1344,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,   G_TYPE_STRING, style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  G_TYPE_STRING, style_set_property, FALSE },
 
@@ -1536,6 +1585,8 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, ch
     { ZMAPSTANZA_WINDOW_FRAME_2,      G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_BORDER, G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_FILL,   G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_WINDOW_MASKED_FEATURE_FILL,   G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_WINDOW_MASKED_FEATURE_BORDER,   G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_WINDOW_CONFIG;

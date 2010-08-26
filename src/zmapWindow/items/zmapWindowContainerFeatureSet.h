@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.14 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.15 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,6 +101,7 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContaine
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container_set,
 							   ZMapFeature                  feature);
 GQuark               zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeatureSet container_set);
+GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set);
 
 /* style properties for the whole column,  */
 ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet container_set);
@@ -120,6 +121,13 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
 void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet container_set,
 					  ZMapStyleColumnDisplayState state);
 
+
+ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set);
+
+void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean set_colour);
+gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
+
+ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowContainerFeatureSet container_set);
 
 gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSet container_set);
 ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContainerFeatureSet container_set);

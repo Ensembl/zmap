@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Aug  5 15:07 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.63 2010-08-09 09:04:30 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.64 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -524,7 +524,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 
 	/* If DNA is one of the requested cols and there is an error report it, but not if its
 	 * just unsupported. */
-	if (zMap_g_list_find_quark(features->context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+	if (zMap_g_list_find_quark(features->context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
 	  {
 	    request->response = zMapServerGetContextSequences(server, features->styles, features->context) ;
 

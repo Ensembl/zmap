@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.266 2010-07-29 10:06:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.267 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -438,10 +438,16 @@ typedef struct
 							       FALSE => column callback. */
 
   ZMapWindow window ;
+
+  /* this is sometimes a containerfeatureset
+   * eg in zmapWindowDarwFeatures.c/columnMenuCB()
+   */
   FooCanvasItem *item ;
 
-  ZMapFeature feature;                    // only used in item callbacks
+  ZMapFeature feature;                    /* only used in item callbacks */
   ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
+  ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
+                                                /* be good to loose the featureset member */
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
 
@@ -621,6 +627,11 @@ typedef struct _ZMapWindowStruct
   GHashTable *featureset_2_styles ;			    /* Links column names to the styles
 							       for that column. */
 
+  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapGFFSet
+                                           * NB: this contains data from ZMap config
+                                           * sections [columns] [Column_description] _and_ ACEDB
+                                           */
+  GHashTable *columns;                    /* the display columns. These are not featuresets */
 
   GHashTable *context_to_item ;				    /* Links parts of a feature context to
 							       the canvas groups/items that
@@ -668,6 +679,7 @@ typedef struct _ZMapWindowStruct
     unsigned int item : 1 ;
     unsigned int column : 1 ;
     unsigned int evidence : 1 ;
+    unsigned int masked: 1;
 
   } highlights_set ;
 
@@ -677,6 +689,8 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_evidence_border ;
   GdkColor colour_evidence_fill ;
 
+  GdkColor colour_masked_feature_fill ;  /* masked features normally not displayed but this is optional */
+  GdkColor colour_masked_feature_border ;  /* if not set display as normal */
 
   /* Holds the marked region or item. */
   ZMapWindowMark mark ;
@@ -821,7 +835,7 @@ void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window,
-			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
+			    ZMapFeatureContext current_context, ZMapFeatureContext new_context, GList *masked) ;
 void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 				      ZMapContainerUtilsExecFunc enter_cb,
 				      gpointer                   enter_data);
@@ -951,7 +965,7 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight
 				      ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
-					       FooCanvasItem *item, 
+					       FooCanvasItem *item,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemHighlightTranslationRegion(ZMapWindow window,  gboolean item_highlight, FooCanvasItem *item,
 					      ZMapFrame required_frame,
@@ -1059,7 +1073,7 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window) ;
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
-			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+			ZMapWindowContainerFeatureSet container, ZMapFeatureTypeStyle style) ;
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_required) ;
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
@@ -1208,9 +1222,9 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
 void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type, GFunc callback, gpointer user_data) ;
 void zmapWindowFocusResetType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 void zmapWindowFocusReset(ZMapWindowFocus focus) ;
-
 void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 					FooCanvasItem *item, ZMapWindowFocusType type, gboolean unhighlight);
+
 #define zmapWindowFocusRemoveFocusItem(focus, item) \
   zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS, TRUE)
 #define zmapWindowFocusRemoveOnlyFocusItem(focus, item) \

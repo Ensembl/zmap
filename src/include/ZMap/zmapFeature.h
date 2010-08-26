@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:52 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.181 2010-08-20 16:25:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.182 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -332,10 +332,14 @@ typedef struct ZMapFeatureContextStruct_
 							       ultimate parent. */
 
 
-  GList *feature_set_names ;				    /* Global list of _names_ of all requested
+  GList *req_feature_set_names ;	              /* Global list of _names_ of all requested
 							       feature sets for the context,
 							       _only_ these sets are loaded into
 							       the context. */
+  GList *src_feature_set_names ;                  /* Global list of _names_ of all source
+                                                 feature sets for the context,
+                                                 _only_ these sets are loaded into
+                                                 the context. */
 
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
@@ -414,6 +418,8 @@ typedef struct ZMapFeatureSetStruct_
 
   ZMapFeatureTypeStyle style;
 
+  GList *masker_sorted_features;                 /* or NULL if not sorted */
+
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -467,7 +473,9 @@ typedef struct
 
     gboolean has_clone_id;			    /* This homol feature is matched to this clone. */
 
-    gboolean masked;                          /* for an EST - is it covered completely by an mRNA */
+    gboolean masked;                          /* flagged for no-display
+                                               * for an EST - is it covered completely by an mRNA
+                                               */
     gboolean displayed;                       /* is it in the foo canvas right now ? */
 
   } flags ;
@@ -923,6 +931,8 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
 					ZMapGDataRecurseFunc start_callback,
 					ZMapGDataRecurseFunc end_callback,
 					gpointer data);
+
+
 
 
 

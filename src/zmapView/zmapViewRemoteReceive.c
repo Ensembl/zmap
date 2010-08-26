@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.50 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.51 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1264,8 +1264,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
       if (result)
 	{
-	  request_data->edit_context->feature_set_names
-	    = g_list_append(request_data->edit_context->feature_set_names, GINT_TO_POINTER(featureset_id)) ;
+	  request_data->edit_context->req_feature_set_names
+	    = g_list_append(request_data->edit_context->req_feature_set_names, GINT_TO_POINTER(featureset_id)) ;
 
 	  switch (xml_data->common.action)
 	    {
@@ -1884,19 +1884,21 @@ static void reportWindowMark(ZMapView view, RequestData input_data, ResponseData
 static void loadFeatures(ZMapView view, RequestData input_data, ResponseData output_data)
 {
   gboolean use_mark = FALSE ;
-  ZMapViewWindow view_window ;
-  ZMapWindow window ;
   int start = 0, end = 0 ;
 
   output_data->code = ZMAPXREMOTE_OK ;
 
-  /* Hack, just grab first window...work out what to do about this.... */
-  view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
-  window = view_window->window ;
-
   /* If mark then get mark, otherwise get big start/end. */
   if (input_data->use_mark)
     {
+      ZMapViewWindow view_window ;
+      ZMapWindow window ;
+
+      /* mh17: did this used to cause a problem by being outside this if? */
+        /* Hack, just grab first window...work out what to do about this.... */
+      view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
+      window = view_window->window ;
+
       if ((zMapWindowGetMark(window, &start, &end)))
 	{
 	  use_mark = TRUE ;

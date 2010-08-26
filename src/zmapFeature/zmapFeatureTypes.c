@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.102 2010-08-18 09:17:28 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.103 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -348,10 +348,11 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
             case STYLE_PARAM_TYPE_QUARK_LIST_ID:
               {
                   GList **l = (GList **) (((void *) curr_style) + param->offset);
+                  GList **ln = (GList **) (((void *) new_style) + param->offset);
 
                   // free old list before overwriting
                   g_list_free( *l);
-                  *l = NULL;
+                  *l = g_list_copy(*ln);
                   break;
               }
 

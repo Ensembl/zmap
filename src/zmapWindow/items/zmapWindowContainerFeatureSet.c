@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.32 2010-07-29 10:08:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.33 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,7 +128,7 @@ static gboolean debug_table_ids_G = FALSE;
 
 
 
-/* 
+/*
  *  YOU MIGHT HOPE THIS DEALT WITH THE HASH AND OTHER STUFF BUT IT DOESN'T AND SOME OF
  * IT'S FUNCTIONS (E.G. zmapWindowContainerFeatureSetRemoveAllItems()) DO NOT SIT
  * WELL WITH THE HASH.....IT HASN'T BEEN THOUGHT THROUGH....
@@ -188,7 +188,7 @@ GType zmapWindowContainerFeatureSetGetType(void)
  * \return ZMapWindowContainerFeatureSet that was edited.
  */
 
-// this is only called on column creation
+/* this is only called on column creation */
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
 								   GQuark     align_id,
@@ -225,10 +225,6 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 	    }
 	  while((list = g_list_next(list)));
 	}
-
-      // try to guess the intended visibility mode to avoid extra foo_canvas activity
-//      zmapWindowColumnSetState(window, FOO_CANVAS_GROUP(container_set),
-//                        ZMAPSTYLE_COLDISPLAY_INVALID, FALSE);
 
       zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
     }
@@ -400,9 +396,8 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContaine
 /*!
  * \brief  The display name for the column.
  *
- * Warning! This is dynamic and will pick the original id over unique id.
- * Not all containers have feature sets.  A feature set might not have been downloaded yet.
- * Usage should be limited to times when you can keep a cache of container <-> display name.
+ * This is not indepenadant of the featureset(s) attached/ in the column
+ * but defaults to the name of the featureset if there is only one
  *
  * \param container  The container to interrogate.
  *
@@ -411,29 +406,20 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContaine
 
 GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeatureSet container_set)
 {
-  ZMapFeatureSet feature_set;
   GQuark display_id = 0;
 
-  /* The purpose of this function needs clarifying and then it needs to be implemented more
-   * deterministically. */
-
-  if((feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set)))
-    {
-      display_id = feature_set->original_id;
-    }
-  else
-    {
-      display_id = container_set->original_id;
-      if(!display_id)   // cluck cluck
-            display_id = container_set->unique_id;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapLogWarning("Container had no feature set so using '%s' instead", g_quark_to_string(display_id));
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    }
+  display_id = container_set->original_id;
+  if(!display_id)
+    display_id = container_set->unique_id;
 
   return display_id;
 }
+
+GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set)
+{
+  return container_set->unique_id;
+}
+
 
 /*!
  * \brief Access the strand of a column.
@@ -792,6 +778,7 @@ gboolean zmapWindowContainerFeatureSetIsStrandShown(ZMapWindowContainerFeatureSe
 }
 
 
+
 /*!
  * \brief Access the bump mode of a column.
  *
@@ -812,6 +799,7 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpMode(ZMapWindowContainerFe
 
   return mode;
 }
+
 
 /*!
  * \brief Access the _default_ bump mode of a column.
@@ -1055,6 +1043,117 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
   return ;
 }
 
+ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set)
+{
+      return container_set->window;
+}
+
+
+
+
+/* show or hide all the masked features in this column */
+void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean set_colour)
+{
+  ZMapWindowContainerFeatures container_features ;
+  ZMapStyleBumpMode bump_mode;      /* = container->settings.bump_mode; */
+  gboolean show = !container->masked;
+
+  bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container);
+
+  if(bump_mode > ZMAPBUMP_UNBUMP)
+    {
+       zmapWindowColumnBump(FOO_CANVAS_ITEM(container),ZMAPBUMP_UNBUMP);
+    }
+
+
+  if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
+    {
+      FooCanvasGroup *group ;
+      GList *list,*del;
+      gboolean delete = FALSE;
+
+      group = FOO_CANVAS_GROUP(container_features) ;
+
+      for(list = group->item_list;list;)
+        {
+            ZMapWindowCanvasItem item;
+            ZMapFeature feature;
+            ZMapFeatureTypeStyle style;
+
+            item = ZMAP_CANVAS_ITEM(list->data);
+            feature = item->feature;
+            style = feature->style;
+            del = list;
+            list = list->next;
+            delete = FALSE;
+
+            if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
+              {
+                if(set_colour)
+                {
+                      GdkColor *fill,*outline;
+
+                      delete = !zMapWindowGetMaskedColour(container->window,&fill,&outline);
+
+                      if(!delete)
+                        {
+                          zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item),
+                              ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
+                              fill,outline);
+                        }
+                }
+
+                if(delete)
+                  {
+                    /* if colours are not defined we should remove the item from the canvas here */
+                    group->item_list = g_list_delete_link(group->item_list,del);
+                    gtk_object_destroy(GTK_OBJECT(item)) ;
+                    feature->feature.homol.flags.displayed = FALSE;
+                  }
+                else if(show)
+                  {
+                    foo_canvas_item_show(FOO_CANVAS_ITEM(item));
+                    feature->feature.homol.flags.displayed = TRUE;
+                  }
+                else
+                  {
+                    foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
+                    feature->feature.homol.flags.displayed = FALSE;
+                  }
+              }
+        }
+    }
+            /* if we are adding/ removing features we may need to compress and/or rebump */
+    if(bump_mode > ZMAPBUMP_UNBUMP)
+    {
+      zmapWindowColumnBump(FOO_CANVAS_ITEM(container),bump_mode);
+    }
+}
+
+
+/* MH17: got fed up trying to make the gobject calls work */
+gboolean zMapWindowContainerFeatureSetSetContainerBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode)
+{
+      gboolean result = FALSE;
+      if(bump_mode >=ZMAPBUMP_INVALID && bump_mode <= ZMAPBUMP_END)
+        {
+            container_set->bump_mode = bump_mode;
+            result = TRUE;
+        }
+        return(result);
+}
+
+ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowContainerFeatureSet container_set)
+{
+  ZMapStyleBumpMode mode = container_set->bump_mode;
+
+  if(mode == ZMAPBUMP_INVALID)
+      mode = zmapWindowContainerFeatureSetGetBumpMode(container_set) ;      /* from style tables */
+
+  return(mode);
+}
+
+
 /*!
  * \brief Unset the sorted flag for the featureset to force a re-sort on display eg after adding a feature
  *
@@ -1083,6 +1182,11 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
 {
   g_object_unref(G_OBJECT(item_feature_set));
 
+  if(item_feature_set->featuresets)
+  {
+      g_list_free(item_feature_set->featuresets);
+      item_feature_set->featuresets = NULL;
+  }
   item_feature_set = NULL;
 
   return item_feature_set;

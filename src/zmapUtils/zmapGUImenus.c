@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  3 14:39 2008 (rds)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.13 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.14 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,26 +48,26 @@
 
 
 /* READ THIS:
- * 
+ *
  * There seem to be 3 choices for implementing menus in gtk:
- * 
+ *
  * 1) roll your own using Menu and MenuItem: but I can't see how to specify
  *    callback functions/data in the description of either of these widgets....
- * 
+ *
  * 2) use itemfactories which specify all the stuff you need for each menu
  *    item: but these have been deprecated since GTK 2.4
- * 
+ *
  * 3) Use gtks new xml based UIManager system which is meant to replace 1) and 2):
  *    this just seems COMPLETE overkill for small menus, there seem to be no
  *    examples, talk about throwing the baby out with the bath water...sigh....
- * 
+ *
  * I have decided to go for option 2) as it seems to be the quickest way to get
  * a working menu system. We may have to revisit this if they decide to remove
  * item factories.
- * 
+ *
  * Do not get confused by the different callback prototypes specified for itemfactories,
  * we must use the GtkItemFactoryCallback1 prototype.
- * 
+ *
  * Here is the typedef for the item factory struct:
  *
  * typedef struct {
@@ -94,6 +94,7 @@ typedef struct
   ZMapGUIMenuItem callers_menu_copy ;
   GtkItemFactoryEntry *factory_items ;
   int num_factory_items ;
+  int num_hide;
 } CallbackDataStruct, *CallbackData ;
 
 
@@ -124,18 +125,18 @@ static void deToggleButCB(gpointer data, gpointer user_data) ;
  * for that item will be called with the specified identifier and data.
  * The identifier can be used to select which menu item was chosen when more
  * than one menu item specifies the same callback function.
- * 
+ *
  * The caller's menu is converted into a GTK itemfactory struct which is then
  * use to build the GTK menu. This has several advantages:
- * 
+ *
  * - it avoids duplicating the tedious GTK menu code everywhere.
- * 
+ *
  * - the caller does not have to understand the slightly arcance GTK rules
  *   for the GTK item factory.
  *
  * - its possible to specify different callback data for each menu item,
  *   something which cannot be done with the item factory code.
- * 
+ *
  * @param menu_title    Title string for this menu instance.
  * @param menu_items    Array of window items.
  * @param button_event  The button event that triggered the menu to be popped up.
@@ -151,7 +152,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   char *radio_title = NULL ;
   GList *active_radio_buttons = NULL, *deactive_radio_buttons = NULL ;
   GList *active_toggle_buttons = NULL, *deactive_toggle_buttons = NULL ;
-
+  int num_hide = 0;
 
   /* Make a single menu item list out of the supplied menu_item sets. */
   menu_items = makeSingleMenu(menu_item_sets, &num_menu_items) ;
@@ -168,7 +169,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   our_cb_data->num_factory_items = num_factory_items = num_menu_items + 2 ;
 							    /* + 2 for title + separator items. */
   our_cb_data->factory_items = item = factory_items = g_new0(GtkItemFactoryEntry, num_factory_items) ;
-				
+
 
   /* Do title/separator, the title needs to have any '_' or '/' chars escaped to stop them being
    * interpretted as keyboard shortcuts or submenu indicators. */
@@ -185,9 +186,11 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
    * menu to its vital that i starts at zero. */
   for (i = 0 ; i < num_menu_items ; i++)
     {
-      ZMapGUIMenuItem menu ;
-
-      menu = &(menu_items[i]) ;
+      if(menu_items[i].type == ZMAPGUI_MENU_HIDE)
+      {
+            num_hide++;
+            continue;
+      }
 
       /* User does not have to set a name for a separator but to make our code more uniform
        * we add one. */
@@ -251,7 +254,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 	      active_toggle_buttons = g_list_append(active_toggle_buttons, item->path) ;
 	    else
 	      deactive_toggle_buttons = g_list_append(deactive_toggle_buttons, item->path) ;
-	    
+
 	    break ;
 	  }
 	default:					    /* ZMAPGUI_MENU_NORMAL */
@@ -260,7 +263,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 	    break ;
 	  }
 	}
-      
+
       /* Reset radio button indicator if we have moved out of the radio button group. */
       if (radio_title
 	  && (menu_items[i].type != ZMAPGUI_MENU_RADIO
@@ -276,7 +279,8 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   /* Construct the menu. */
   item_factory = gtk_item_factory_new(GTK_TYPE_MENU, ITEM_FACTORY_NAME, NULL) ;
 
-  gtk_item_factory_create_items(item_factory, num_factory_items, factory_items, our_cb_data) ;
+  our_cb_data->num_hide = num_hide;
+  gtk_item_factory_create_items(item_factory, num_factory_items - num_hide, factory_items, our_cb_data) ;
 
 
   {
@@ -398,19 +402,19 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 
 
       /* What this is trying to do is make sure that menu gets destroyed. It is popped down
-       * automatically by the button release but the docs don't detail if it is destroyed. 
+       * automatically by the button release but the docs don't detail if it is destroyed.
        * You seem to have to set both the item_factory path and the widget path to the
        * same thing otherwise it moans.... */
       gtk_item_factories_path_delete(ITEM_FACTORY_NAME, ITEM_FACTORY_NAME) ;
 
       /* Get rid of our copy of the callers original menu. */
       destroyMenu(our_data->callers_menu_copy) ;
-  
+
       /* Now we have got rid of the factory, clean up the item factory input data we created
        * when we made the menu. NOTE that we do this here because on some systems if we delete
        * this before the menu is popped up the GTK menu code segfaults...this is poor because
        * it should be taking its own copy of our data....sigh... */
-      for (i = 0, item = our_data->factory_items ; i < our_data->num_factory_items ; i++)
+      for (i = 0, item = our_data->factory_items ; i < our_data->num_factory_items - our_data->num_hide ; i++)
 	{
 	  g_free(item->path) ;
 	  item++ ;
@@ -426,7 +430,7 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 }
 
 
-/* 
+/*
  * The menu item/path stuff is complicated by the fact that some of the menu titles we wish
  * to set have embedded '_' or '/' chars which have a special meaning to the item factory
  * ...sigh...
@@ -438,7 +442,7 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 /* Normal Menu Item Name strings must have the format "/item_name". */
 static char *makeMenuItemName(char *string)
 {
-  char *item_string ; 
+  char *item_string ;
 
   zMapAssert(string && *string) ;
 
@@ -451,13 +455,13 @@ static char *makeMenuItemName(char *string)
 /* Menu titles are just like Item Name strings and must have the format "/menu_title",
  * but quite often there are embedded '_' chars which will erroneously be interpretted
  * as keyboard short cuts and so must be escaped by turning them into "__".
- * 
+ *
  * For DAS there are also embedded '/' which must be escaped as well as "\/"
- * 
+ *
  */
 static char *makeMenuTitleName(char *string, char *escape_chars)
 {
-  char *item_string ; 
+  char *item_string ;
   GString *tmp ;
   char *cp ;
   gssize pos ;
@@ -608,7 +612,7 @@ static int itemsInMenu(ZMapGUIMenuItem menu)
  * proper widget calls (gtk_check_menu_item_set_active) as these will cause
  * the code to think the user has already selected an item and the menu
  * gets popped up/down without them being able to do anything.
- * 
+ *
  * Hence the need to poke directly into the widget struct. */
 static void activeButCB(gpointer data, gpointer user_data)
 {
@@ -645,7 +649,7 @@ static void deActiveButCB(gpointer data, gpointer user_data)
  * proper widget calls (gtk_check_menu_item_set_active) as these will cause
  * the code to think the user has already selected an item and the menu
  * gets popped up/down without them being able to do anything.
- * 
+ *
  * Hence the need to poke directly into the widget struct. */
 static void toggleButCB(gpointer data, gpointer user_data)
 {

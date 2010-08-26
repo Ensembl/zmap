@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 20 17:32 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.35 2010-08-20 16:41:02 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.36 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -287,7 +287,7 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
 
-/* 
+/*
  *                Globals
  */
 
@@ -668,7 +668,7 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_FILE_FORMAT, &tmp_string))
 	{
-	  g_strstrip(tmp_string) ; 
+	  g_strstrip(tmp_string) ;
 
 	  if (g_ascii_strcasecmp(tmp_string, "exblx") == 0)
 	    prefs->file_format = BLX_FILE_FORMAT_EXBLX ;
@@ -690,21 +690,21 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
 	{
-	  prefs->dna_sets = zMapConfigString2QuarkList(tmp_string);
+	  prefs->dna_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
 	  g_free(tmp_string);
 	}
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
 	{
-	  prefs->protein_sets = zMapConfigString2QuarkList(tmp_string);
+	  prefs->protein_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
 	  g_free(tmp_string);
 	}
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				       ZMAPSTANZA_BLIXEM_FS, &tmp_string))
 	{
-	  prefs->transcript_sets = zMapConfigString2QuarkList(tmp_string);
+	  prefs->transcript_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
 	  g_free(tmp_string);
 	}
       zMapConfigIniContextDestroy(context);
@@ -1198,7 +1198,7 @@ static gboolean initFeatureFile(char *filename, char *file_header, GString *buff
 {
   gboolean status = TRUE ;
   GError  *channel_error = NULL ;
- 
+
   /* Open the exblx file, always needed. */
   if ((*gio_channel_out = g_io_channel_new_file(filename, "w", &channel_error)))
     {
@@ -1229,7 +1229,7 @@ static void processSetList(gpointer data, gpointer user_data)
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
 
-  canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
+  canon_id = zMapFeatureSetCreateID((char *) g_quark_to_string(set_id)) ;
 
   if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
     {
@@ -1316,7 +1316,7 @@ static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data)
 	      {
 		if (blixem_data->file_format == BLX_FILE_FORMAT_GFF)
 		  status = printBasic(feature, blixem_data) ;
-		
+
 		break ;
 	      }
 	    default:
@@ -2153,7 +2153,7 @@ static gboolean formatPolyA(GFFFormatData gff_data, GString *line,
 			 ref_name, source_name, SO_id,
 			 feature->x1, feature->x2,
 			 (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
-			 (id_str ? "\t" : ""), 
+			 (id_str ? "\t" : ""),
 			 (id_str ? id_str : "")) ;
 
   return status ;
@@ -2179,7 +2179,7 @@ static gboolean formatSNP(GFFFormatData gff_data, GString *line,
 			 ref_name, source_name, SO_snp_id,
 			 feature->x1, feature->x2,
 			 (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
-			 (id_str ? "\t" : ""), 
+			 (id_str ? "\t" : ""),
 			 (id_str ? id_str : "")) ;
 
   return status ;

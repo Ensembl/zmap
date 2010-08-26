@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.193 2010-07-29 09:56:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.194 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -377,6 +377,14 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 	{
 	  replaced_feature = addNewCanvasItem(zmap_window, set_group, new_feature, FALSE) ;
 	}
+      else
+      {
+            printf("Could not remove feature\n");
+      }
+    }
+    else
+    {
+            printf("Could not find feature\n");
     }
 
   return replaced_feature ;
@@ -525,6 +533,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
   ZMapFeatureSet set ;
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) set_group;
+  gboolean masked;
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
@@ -538,6 +548,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
     {
       return NULL ;
     }
+
 #ifdef MH17_REVCOMP_DEBUG
       printf("FeatureDraw %d-%d\n",feature->x1,feature->x2);
 #endif
@@ -546,6 +557,16 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   /* These should be parameters, rather than continually fetch them, caller will almost certainly know these! */
   set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
 							ZMAPFEATURE_STRUCT_FEATURESET) ;
+
+  masked = (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT &&  feature->feature.homol.flags.masked);
+  if(masked)
+    {
+      if(container->masked && !window->highlights_set.masked)
+      {
+        return NULL;
+      }
+    }
+
   block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set,
 							  ZMAPFEATURE_STRUCT_BLOCK) ;
   alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block,
@@ -561,6 +582,13 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
                                                block,
                                                set,
                                                feature);
+  if(masked && container->masked && new_feature)
+      foo_canvas_item_hide(new_feature);
+
+#if MH17_TIME_IT_WITH_ALL_FEATRUES_HIDDEN
+  else if(container->unique_id == g_quark_from_string("trembl"))
+      foo_canvas_item_hide(new_feature);
+#endif
 
   return new_feature;
 }
@@ -580,6 +608,8 @@ char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
 }
 
 
+#if MH17_NOT_USED
+// see zmapWindow/zMapWindowUpdateInfoPanel()
 void zmapWindowFeatureGetSetTxt(ZMapFeature feature, char **set_name_out, char **set_description_out)
 {
   if (feature->parent)
@@ -594,7 +624,7 @@ void zmapWindowFeatureGetSetTxt(ZMapFeature feature, char **set_name_out, char *
 
   return ;
 }
-
+#endif
 
 
 
@@ -1048,6 +1078,8 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
   ZMapFeatureTypeStyle style ;
+  ZMapFeatureSet feature_set;
+  ZMapWindowContainerFeatureSet container_set;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
@@ -1056,13 +1088,15 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   zMapAssert(feature);
 
   column_group  = zmapWindowContainerCanvasItemGetContainer(item) ;
+  container_set = (ZMapWindowContainerFeatureSet) column_group;
 
   style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)column_group,
 						   feature->style_id);
 
 
+  feature_set = (ZMapFeatureSet)(feature->parent);
   menu_title = g_strdup_printf("%s (%s)", zMapFeatureName((ZMapFeatureAny)feature),
-			       zMapFeatureSetGetName((ZMapFeatureSet)(feature->parent))) ;
+			       zMapFeatureSetGetName(feature_set)) ;
 
   /* Call back stuff.... */
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
@@ -1070,6 +1104,10 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_data->window = window ;
   menu_data->item = item ;
   menu_data->feature = feature;
+
+  /* get the featreset and container for the feature, needed for Show Masked Features */
+  menu_data->feature_set = feature_set;
+  menu_data->container_set = container_set;
 
   /* Make up the menu. */
 
@@ -1909,9 +1947,9 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
 
   /* the problem with doing this kind of thing is that we also need the canvasItemEventCB to be
    *  attached as there are general things we need to do as well...
-   * 
+   *
    * REVISIT THE WHOLE EVENT DELIVERY ORDER STUFF.....
-   * 
+   *
    *  */
 
   /* ummmmm....I don't like this....suggests that all is not fully implemented in the new

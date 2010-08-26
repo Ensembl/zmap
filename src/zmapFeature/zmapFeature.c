@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:42 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.133 2010-08-18 09:16:53 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.134 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -413,7 +413,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 
 	new_context->elements_to_destroy = NULL ;
 
-	new_context->feature_set_names = NULL ;
+	new_context->req_feature_set_names = NULL ;
 
 	new_context->master_align = NULL ;
 
@@ -1469,7 +1469,7 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, 
       feature_context->sequence_to_parent.c2 = end ;
     }
 
-  feature_context->feature_set_names = set_names ;
+  feature_context->req_feature_set_names = set_names ;
 
   return feature_context ;
 }
@@ -1594,7 +1594,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       diff_context = (ZMapFeatureContext)zmapFeatureAnyCopy((ZMapFeatureAny)new_context, NULL) ;
       diff_context->diff_context = TRUE ;
       diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
-      diff_context->feature_set_names = g_list_copy(new_context->feature_set_names) ;
+      diff_context->req_feature_set_names = g_list_copy(new_context->req_feature_set_names) ;
 
       merge_data.view_context      = current_context;
       merge_data.iteration_context = new_context;
@@ -1604,8 +1604,8 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 
 
       /* THIS LOOKS SUSPECT...WHY ISN'T THE NAMES LIST COPIED FROM NEW_CONTEXT....*/
-      copy_features = g_list_copy(new_context->feature_set_names) ;
-      current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
+      copy_features = g_list_copy(new_context->req_feature_set_names) ;
+      current_context->req_feature_set_names = g_list_concat(current_context->req_feature_set_names,
                                                          copy_features) ;
 
       if (merge_debug_G)
@@ -1621,7 +1621,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       if (merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
 	{
 	  /* Set these to NULL as diff_context references them. */
-	  new_context->feature_set_names = NULL ;
+	  new_context->req_feature_set_names = NULL ;
 
 	  current_context = merge_data.view_context ;
 	  new_context     = merge_data.iteration_context ;
@@ -1719,7 +1719,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   /* WHY IS THIS DONE TWICE....??? */
 
   /* TRY COPYING THE LIST.... */
-  diff_context->feature_set_names = g_list_copy(remove_context->feature_set_names) ;
+  diff_context->req_feature_set_names = g_list_copy(remove_context->req_feature_set_names) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -1730,10 +1730,10 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 
 
   /* LOOKS SUSPECT...SHOULD BE COPIED....*/
-  diff_context->feature_set_names = g_list_copy(remove_context->feature_set_names) ;
+  diff_context->req_feature_set_names = g_list_copy(remove_context->req_feature_set_names) ;
 
-  copy_list = g_list_copy(remove_context->feature_set_names) ;
-  current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
+  copy_list = g_list_copy(remove_context->req_feature_set_names) ;
+  current_context->req_feature_set_names = g_list_concat(current_context->req_feature_set_names,
                                                      copy_list) ;
 
   /* Set the original and unique ids so that the context passes the feature validity checks */
@@ -1821,10 +1821,10 @@ static void destroyContextSubparts(ZMapFeatureContext context)
     }
 
 
-  if (context->feature_set_names)
+  if (context->req_feature_set_names)
     {
-      g_list_free(context->feature_set_names) ;
-      context->feature_set_names = NULL ;
+      g_list_free(context->req_feature_set_names) ;
+      context->req_feature_set_names = NULL ;
     }
 
   return ;

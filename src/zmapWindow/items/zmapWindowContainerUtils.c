@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 15:27 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.18 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.19 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -556,7 +556,7 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 }
 
 
-static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group, 
+static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group,
 					 FooCanvasItem *orig_item,
 					 ZMapContainerItemDirection direction, gboolean wrap,
 					 zmapWindowContainerItemTestCallback item_test_func_cb,
@@ -802,7 +802,7 @@ void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_g
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
-  GList *list;
+  GList *list,*l;
 
   if((list = g_list_first(group->item_list)))
     {
@@ -812,13 +812,16 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 
 	  gtk_item_object = GTK_OBJECT(list->data);
 
+        l = list;
 	  list = list->next;
+        g_free(l);      /* mh17: oddly this was not done */
 
 	  gtk_object_destroy(gtk_item_object);
 	}
       while((list));
     }
 
+  group->item_list = NULL; /* nor this */
   return ;
 }
 

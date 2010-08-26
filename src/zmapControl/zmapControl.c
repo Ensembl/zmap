@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug  5 14:59 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.102 2010-08-09 09:04:30 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.103 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -651,7 +651,6 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
             "</request></zmap>",
             lfd->xwid, featurelist,(int) lfd->status,lfd->err_msg ? lfd->err_msg : "OK") ;
 
-zMapLogMessage("X-remote: sending %s",request);
     if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
       {
         response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
@@ -661,10 +660,6 @@ zMapLogMessage("X-remote: sending %s",request);
     g_free(request);
     g_free(featurelist);
 
-    }
-    else
-    {
-      zMapLogWarning("load finished: no x-client","");
     }
 
   }

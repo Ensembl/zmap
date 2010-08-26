@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:19 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.116 2010-08-18 09:47:23 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.117 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1218,6 +1218,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
   /* If the parser was given a source -> column group mapping then use that as the feature set
    * otherwise use the source itself. */
+#if MH17_DONT_MAP_TO_COLUMN
+  /*
+   * to process featuresets (data sources) before displaying (or afterwards)
+   * we need to have featuresets as separate data items
+   * combining them here confused the model/ data with the view/ display layout
+   * so it breaks MVC and also ISO 7-layer protocols
+   * we do the mapping in zmapWindowDrawFeatures() instead.
+   */
   if (parser->source_2_feature_set)
     {
       ZMapGFFSet set_data ;
@@ -1237,6 +1245,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	}
     }
   else
+#endif
     {
       feature_set_name = source ;
     }
@@ -1253,6 +1262,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
                         feature_set_name, parser_feature_set, destroyFeatureArray) ;
 
       feature_set = parser_feature_set->feature_set = zMapFeatureSetCreate(feature_set_name , NULL) ;
+
+      parser->src_feature_sets =
+            g_list_prepend(parser->src_feature_sets,GUINT_TO_POINTER(feature_set->unique_id));
 
       // we need to copy as these may be re-used.
       // styles have already been inherited by this point by zmapView code and passed back to us
@@ -1523,6 +1535,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   return result ;
 }
 
+
+/* servers have a list of columns in/out as provided by ACEDB and later used by pipes
+ * here we privide a list of (single) featuresets as put into the context
+ */
+GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
+{
+      return (parser->src_feature_sets);
+}
 
 /* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are
  * presented as space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is

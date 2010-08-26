@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Apr  7 13:48 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.63 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.64 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -203,6 +203,7 @@ typedef struct _ZMapViewStruct
 
   gboolean busy ;					    /* Records when we are busy so can
 							       block user interaction. */
+  gboolean thread_fail_silent;                /* don't report failures on screen */
 
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
@@ -278,8 +279,8 @@ typedef struct _ZMapViewStruct
                                            * the hash table is indexed by the featureset name quark
                                            */
 
-  GList *columns;                         /* All the columns that ZMap will display
-                                           * stored as quarks
+  GHashTable *columns;                    /* All the columns that ZMap will display
+                                           * stored as ZMapGFFSet
                                            * These may contain several featuresets each
                                            * They are in display order left to right
                                            */
@@ -374,6 +375,10 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
+
+/* zmapViewFeatureMask.c */
+GList *zMapFeatureMaskFeatureSets(ZMapView view, GList *feature_set_names);
+
 
 
 #ifdef LOTS_OF_EXONS

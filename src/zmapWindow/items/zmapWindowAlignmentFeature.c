@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.13 2010-07-15 10:49:08 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.14 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -318,6 +318,26 @@ static void zmap_window_alignment_feature_destroy     (GObject *object)
 #endif /* ALIGN_REQUIRES_DESTROY */
 
 
+static ZMapWindowContainerFeatureSet zmap_window_canvas_item_get_featureset(ZMapWindowCanvasItem canvas_item)
+{
+  FooCanvasItem *item;
+  ZMapWindowContainerGroup container_parent = NULL;
+  ZMapWindowCanvasItem canvas_item_parent = NULL;
+
+  zMapLogReturnValIfFail(canvas_item != NULL, NULL);
+  zMapLogReturnValIfFail(canvas_item->feature != NULL, NULL);
+
+  canvas_item_parent = zMapWindowCanvasItemIntervalGetTopLevelObject((FooCanvasItem *)canvas_item);
+
+  item = FOO_CANVAS_ITEM(canvas_item_parent);
+
+  if(item->parent && item->parent->parent)
+      container_parent = zmapWindowContainerCanvasItemGetContainer(item);
+
+  return (ZMapWindowContainerFeatureSet)container_parent;
+}
+
+
 static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alignment,
 						     FooCanvasItem         *interval,
 						     ZMapFeatureSubPartSpan sub_feature,
@@ -344,6 +364,20 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alig
 	            background = default_fill;
             if(border)
                   outline = border;
+      }
+      else
+      {
+            ZMapWindow window;
+            ZMapWindowContainerFeatureSet fset;
+
+            if(alignment->feature->feature.homol.flags.masked)
+            {
+                  /* if being chicken first get the container group and test for level is featureset */
+                  fset = zmap_window_canvas_item_get_featureset(alignment);
+                  /* this colour must be set or else we don't get here */
+                  window = zMapWindowContainerFeatureSetGetWindow(fset);
+                  zMapWindowGetMaskedColour(window,&background,&outline);
+            }
       }
 
       switch(sub_feature->subpart)

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Sep  8 08:51 2009 (edgrif)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.14 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.15 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -286,6 +286,8 @@ static ZMapFeatureContextExecuteStatus zoomToFeatureCB(GQuark key,
   return status;
 }
 
+
+#if ED_G_NEVER_INCLUDE_THIS_CODE
 static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, ResponseData output_data)
 {
   GList *list;
@@ -337,6 +339,7 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
 
   return ;
 }
+#endif
 
 static void reportWindowMark(ZMapWindow window, RequestData input_data, ResponseData output_data)
 {

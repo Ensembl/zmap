@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 20 10:28 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.113 2010-07-29 09:38:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.114 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -252,7 +252,9 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 			   GHashTable *all_styles, GHashTable *new_styles,
-			   GHashTable *new_featuresets_2_stylelist) ;
+			   GHashTable *new_featuresets_2_stylelist,
+                     GHashTable *new_featureset_2_column,
+                     GHashTable *new_columns,GList *masked) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
@@ -325,6 +327,8 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 					ZMapFeature new_feature, gboolean destroy_orig_feature) ;
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, gboolean destroy_feature) ;
 
+
+gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,

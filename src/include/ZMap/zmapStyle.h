@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.59 2010-07-15 10:48:55 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.60 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -1021,6 +1021,8 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 //gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsShowGaps(style)   (style->mode_data.alignment.show_gaps)
 
+#define zMapStyleGetMaskList(style) \
+      (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)
 
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;

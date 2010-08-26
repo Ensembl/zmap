@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.76 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.77 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -348,6 +348,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
   zMapAssert(window) ;
 
+//  historic_bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container) ;
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
   if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
     bump_mode = historic_bump_mode ;
@@ -396,10 +397,14 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
       zmapWindowContainerFeatureSetJoinAligns(container, &(bump_properties.match_threshold));
 
+//      zMapWindowContainerFeatureSetSetContainerBumpMode(container,bump_mode);
+      /*g_object_set(G_OBJECT(container),ZMAPSTYLE_PROPERTY_BUMP_MODE,bump_mode,NULL); // complains */
+
       g_object_get(G_OBJECT(container),
 		   "style-table", &style_table,
 		   NULL) ;
       zmapWindowStyleTableForEach(style_table, setStyleBumpCB, GINT_TO_POINTER(bump_mode)) ;
+
     }
   else
     {
@@ -416,6 +421,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       g_object_get(G_OBJECT(container),
 		   "style-table", &style_table,
 		   NULL) ;
+
       if ((style = zmapWindowStyleTableFind(style_table, feature->style_id)))
 	{
 	  g_object_get(G_OBJECT(style),
@@ -425,6 +431,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 //	  zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
         bump_properties.match_threshold = zMapStyleGetWithinAlignError(style);
 
+//        zMapWindowContainerFeatureSetSetContainerBumpMode(container,bump_mode);
+        /* g_object_set(G_OBJECT(container),ZMAPSTYLE_PROPERTY_BUMP_MODE,bump_mode,NULL);// complains */
 	  zMapStyleSetBumpMode(style, bump_mode);
 	}
       else
@@ -1503,12 +1511,17 @@ static void showItems(gpointer data, gpointer user_data)
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)user_data ;
   GList *found_item = NULL ;
   GQueue *user_hidden_items = NULL ;
+  ZMapWindowCanvasItem canvas_item = ZMAP_CANVAS_ITEM(item);
 
   g_object_get(G_OBJECT(container),
 	       "user-hidden-items", &user_hidden_items,
 	       NULL) ;
-  if (!(found_item = g_queue_find_custom(user_hidden_items, item, findItemInQueueCB)))
-    foo_canvas_item_show(item) ;
+
+  if(!zMapWindowCanvasItemIsMasked(canvas_item,TRUE))  /* don't display masked features if hidden */
+  {
+      if (!(found_item = g_queue_find_custom(user_hidden_items, item, findItemInQueueCB)))
+            foo_canvas_item_show(item) ;
+  }
 
   return ;
 }

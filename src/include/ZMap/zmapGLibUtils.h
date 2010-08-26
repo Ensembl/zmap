@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 11 15:52 2009 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.26 2010-07-08 08:48:35 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.27 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -81,6 +81,7 @@ GList *zMap_g_list_raise(GList *move, int positions);
 GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
 
 gchar *zMap_g_list_quark_to_string(GList *l);
+GList *zMap_g_list_merge(GList *a, GList *b);
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
 
@@ -107,6 +108,7 @@ void zMap_g_hash_table_iter_init(GList **iter, GHashTable *h);
 gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value);
 void zMap_g_hash_table_iter_free(GList **list);       // not implemented
 void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h);
+void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h);
 
 /* Returns a pointer to an element of the array instead of the element itself. */
 #define zMap_g_array_index_ptr(a, t, i)      (&(((t*) (a)->data) [(i)]))

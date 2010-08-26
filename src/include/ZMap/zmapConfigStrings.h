@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:04 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.35 2010-08-18 11:30:08 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.36 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -194,6 +194,7 @@
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
 #define ZMAPSTANZA_APP_COLUMNS           "columns"
+#define ZMAPSTANZA_APP_REPORT_THREAD     "thread-fail-silent"
 
 
 /*! @addtogroup config_stanzas
@@ -675,6 +676,9 @@
 #define ZMAPSTANZA_WINDOW_FRAME_2      "colour-frame-2"
 #define ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_BORDER "colour-evidence-border"
 #define ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_FILL   "colour-evidence-fill"
+#define ZMAPSTANZA_WINDOW_MASKED_FEATURE_FILL   "colour-masked-feature-fill"
+#define ZMAPSTANZA_WINDOW_MASKED_FEATURE_BORDER   "colour-masked-feature-border"
+
 
 /*! @addtogroup config_stanzas
  *

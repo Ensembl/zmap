@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Dec 17 11:15 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.26 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.27 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,15 +96,15 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
 
 /* Add text/tooltips to info panel labels. If feature_desc == NULL then info panel
  * is reset.
- * 
+ *
  * Current panel for a feature is:
- * 
+ *
  *  name [strand] [start end] [subpart_start subpart_end] [frame] [score] [type] [feature_set] [feature_style]
  *
  * or for a column is:
- * 
+ *
  *                                     column name
- * 
+ *
  *  */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc)
 {
@@ -141,12 +141,14 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     {
       if (feature_desc->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	{
-	  if (feature_desc->feature_set_description)
+        text[0] = g_strdup(feature_desc->feature_set) ;
+        if (feature_desc->feature_set_description)
 	    {
-	      text[0] = g_strdup(feature_desc->feature_set) ;
 	      tooltip[0] = g_strdup_printf("Description  -  \"%s\"",
 					   feature_desc->feature_set_description) ;
 	    }
+        else
+            tooltip[0] = g_strdup_printf("Description  -  \"%s\"",text[0]);
 	}
       else
 	{
@@ -308,7 +310,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    case 0:
 	    case 3:
 	      /* some tooltips need freeing! */
-	      g_free(tooltip[i]);
+            if(tooltip[i])
+	            g_free(tooltip[i]);
 	      break;
 	    default:
 	      /* no freeing */
@@ -325,6 +328,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   if (feature_desc)
     {
       g_free(text[0]) ;
+      g_free(text[1]) ;
       g_free(text[2]) ;
       g_free(text[3]) ;
     }

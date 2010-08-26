@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.64 2010-06-22 12:19:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.65 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,8 @@
 #include <ZMap/zmapConfigStrings.h>
 
 #include <zmapWindowCanvasItem.h>
+
+#include <ZMap/zmapGFF.h>
 
 
 /* Struct for style table callbacks. */
@@ -376,6 +378,14 @@ gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 
 
 
+gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill)
+{
+      *fill = &(window->colour_masked_feature_fill);
+      *border = &(window->colour_masked_feature_border);
+      return window->highlights_set.masked;
+}
+
+
 
 /*
  *                      Style table functions
@@ -472,6 +482,14 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQu
   GList *styles_list = NULL;
   GList *styles_quark_list = NULL;
   int i;
+  ZMapGFFSet gff;
+
+  /* MH17: the column has the list of style not an individual featureset */
+
+  gff = g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(feature_set_id));
+  if(gff)
+      feature_set_id = gff->feature_set_id;
+
 
   if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles,
 					       GUINT_TO_POINTER(feature_set_id))))

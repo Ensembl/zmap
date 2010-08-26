@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.23 2010-07-29 09:59:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.24 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@
  *
  * MH17: subverted to handle lists of evidence features from several columns
  * which are to be highlit on a semi-permanent basis
- * Normal focus operations require a  global focus column and these are preserved as was
+ * Normal focus operations require a global focus column and these are preserved as was
  *
  * evidence features (or other lists of features) may come from many columns.
  */
@@ -64,7 +64,11 @@ typedef struct _ZMapWindowFocusStruct
   ZMapWindowContainerFeatureSet focus_column ;
   FooCanvasItem *hot_item;           // current hot focus item or NULL
   int hot_item_orig_index ;          /* Record where hot_item was in its list. */
-// mh17: this is of limited use as it works only for single items
+  /* mh17: this is of limited use as it works only for single items; not used
+   * and not comapatble with raising focus item to the top and loweiring previous to the bottom
+   * (see zMapWindowCanvasItemSetIntervalColours())
+   */
+
 
   GList *overlay_managers;
 } ZMapWindowFocusStruct ;
@@ -421,7 +425,15 @@ void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow wind
  * NOTE need to replace the item back where it was to handle feature tabbing
  * this means we need to handle many items moving around not just one focus item
  */
-void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus, 
+
+/* MH17: this may be called from a destroy object callback in which case the canvas is not in a safe state
+ * the assumption in this code if that the focus is removed from an object while it still exists
+ * but alignments appear to call this whenthioer parent has dissappeared causing a crash
+ * wghich is a bug in the canvas item code not here
+ * The fix is to add another option 'destroy' which means 'don't highlight it because it's not there'
+ */
+
+void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 					FooCanvasItem *item, ZMapWindowFocusType type, gboolean unhighlight)
 {
   ZMapWindowFocusItem gonner,data;
@@ -435,6 +447,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 	  gonner = (ZMapWindowFocusItem) remove->data;
 	  if (gonner->item == item)
             {
+
 	      if(type == WINDOW_FOCUS_GROUP_ALL)
 		gonner->flags &= ~WINDOW_FOCUS_GROUP_ALL;        // zap the lot
 	      else
@@ -451,6 +464,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 		  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
 		}
 	      break;
+
             }
 	}
 
@@ -591,7 +605,7 @@ void zmapWindowFocusItemDestroy(ZMapWindowFocusItem list_item)
 
 
 
-/* 
+/*
  *                           Internal routines.
  */
 
@@ -666,10 +680,13 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
       }
 
       zMapWindowCanvasItemSetIntervalColours(item->item, ZMAPSTYLE_COLOURTYPE_SELECTED, fill, border);
+      foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(item->item)) ;
+
     }
   else
     {
       zMapWindowCanvasItemSetIntervalColours(item->item, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL,NULL);
+      foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;
     }
 
    item->display_state = item->flags & WINDOW_FOCUS_GROUP_ALL;

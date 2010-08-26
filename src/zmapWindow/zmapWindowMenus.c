@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 10 15:40 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.75 2010-08-10 15:03:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.76 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,9 +126,9 @@ typedef struct
 }AlignBlockMenuStruct, *AlignBlockMenu;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void evidenceMenuCB(int menu_item_id, gpointer callback_data);
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
@@ -189,11 +189,13 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
  *
  * There is some mucky stuff for setting buttons etc but it's a bit unavoidable....
  *
- *  */
+ */
 
-// mh17 somehow we need this number to be unique but many of the id's are enums and will overlap
-// the callbacks are specified per item so that cure one problem (one func per enum)
-// but for menu init here's a bodge up:
+/* mh17 somehow we need this number to be unique but many of the id's
+ * are enums and will overlap
+ * the callbacks are specified per item so that cures one problem (one func per enum)
+ * but for menu init here's a bodge up:
+ */
 #define ZMAPWINDOWCOLUMN_MASK 5678
 #define ZMAPWINDOW_HIDE_EVIDENCE 5679
 
@@ -207,10 +209,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     {
       {ZMAPGUI_MENU_TOGGLE, "Column Bump",                            ZMAPBUMP_UNBUMP,  bumpToggleMenuCB, NULL, "B"},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",                            ZMAPWINDOWCOLUMN_HIDE, configureMenuCB,  NULL},
-#if MH17_NOT_YET
-//is this the wrong place anyway? No: this is a column menu option
-      {ZMAPGUI_MENU_TOGGLE, "Show Masked Features",                   ZMAPWINDOWCOLUMN_MASK,  maskToggleMenuCB, NULL, "M"},
-#endif
+
+      {ZMAPGUI_MENU_TOGGLE, "Show Masked Features",                   ZMAPWINDOWCOLUMN_MASK,  maskToggleMenuCB, NULL, NULL},
+
       {ZMAPGUI_MENU_BRANCH, "Column Configure",                       0,                              NULL,            NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column", ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns", ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
@@ -233,13 +234,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Compress Columns",                       ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
       {ZMAPGUI_MENU_NORMAL, "UnCompress Columns",                     ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
 
-      {ZMAPGUI_MENU_NONE, "Hide Evidence",                     ZMAPWINDOW_HIDE_EVIDENCE, evidenceMenuCB,  NULL },
-      // must be at the end so that it's optionally displayed
+      {ZMAPGUI_MENU_HIDE, "Hide Evidence",                     ZMAPWINDOW_HIDE_EVIDENCE, evidenceMenuCB,  NULL },
 
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
     } ;
   static gboolean menu_set = FALSE ;
-  static int ind_evidence = 0;
+  static int ind_evidence = -1;
+  static int ind_mask = -1;
   ZMapGUIMenuItem item ;
   ItemMenuCBData menu_data = (ItemMenuCBData) callback_data;
 
@@ -253,10 +254,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 	  if (tmp->type == ZMAPGUI_MENU_RADIO)
 	    tmp->name = g_strdup_printf("%s/%s", MORE_OPTS, zmapStyleBumpMode2ShortText(tmp->id)) ;
 
+        if(tmp->id == ZMAPWINDOW_HIDE_EVIDENCE)
+          ind_evidence = tmp - menu;
+        if(tmp->id == ZMAPWINDOWCOLUMN_MASK)
+          ind_mask = tmp - menu;
+
 	  tmp++ ;
 	}
-      if(tmp->id == ZMAPWINDOW_HIDE_EVIDENCE)
-            ind_evidence = tmp - menu;
 
       menu_set = TRUE ;
     }
@@ -270,6 +274,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
       item->id = curr_bump ;
+
     }
   else
     {
@@ -279,21 +284,23 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
 
       // set toggle state of masked features for this column
-#if MH17_NOT_YET
-  if(ind_mask)
+  if(ind_mask >= 0)
     {
       item = &(menu[ind_mask]) ;
 
       // set toggle state of masked features for this column
+      // hide the menu item if it's not maskable
       item->type = ZMAPGUI_MENU_TOGGLE ;
-//    if(col is masked)
-//        item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
 
+      if(!menu_data->container_set->maskable || !menu_data->window->highlights_set.masked)
+        item->type = ZMAPGUI_MENU_HIDE;
+      else if(!menu_data->container_set->masked)
+        item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
     }
-#endif
 
 
-  if(ind_evidence)
+
+  if(ind_evidence >= 0)
     {
       item = &menu[ind_evidence];
       if(zmapWindowFocusHasType(menu_data->window->focus,WINDOW_FOCUS_GROUP_EVIDENCE))
@@ -303,7 +310,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       }
       else
       {
-            item->type = ZMAPGUI_MENU_NONE;
+            item->type = ZMAPGUI_MENU_HIDE;
       }
     }
 
@@ -931,37 +938,23 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  FooCanvasGroup *column_group = NULL;
+  ZMapWindowContainerFeatureSet container = menu_data->container_set;
 
-  column_group = menuDataItemToColumn(menu_data->item);
+  container->masked = !container->masked;
+  zMapWindowContainerFeatureSetShowHideMaskedFeatures(container,FALSE);
 
-  if (column_group)
-    {
-      ZMapWindowContainerFeatureSet container;
-
-      container = (ZMapWindowContainerFeatureSet)column_group;
-
-// need to write this function
-//      mask_state = zmapWindowContainerFeatureSetGetMaskState(container);
-
-// if we are removing features we may need to compress and/or rebump
-//      zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), bump_mode, compress_mode) ;
-
-//      zmapWindowFullReposition(menu_data->window) ;
-
-      zMapWarning("toggle mask features not implemented","");
-
-    }
+      /* un/bumped features might be wider */
+  zmapWindowFullReposition(menu_data->window) ;
 
   g_free(menu_data) ;
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

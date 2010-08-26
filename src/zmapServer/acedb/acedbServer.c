@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun  9 13:34 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.159 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.160 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,6 +105,7 @@ typedef struct
   ZMapServerResponseType result ;
   AcedbServer server ;
   GHashTable *styles ;
+  GList *src_feature_set_names;
   GHFunc eachBlock ;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
@@ -192,7 +193,7 @@ static void loadableCB(gpointer data, gpointer user_data) ;
 static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean find_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
-static gboolean sequenceRequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block) ;
+static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock feature_block) ;
 static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block) ;
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
 			      int *dna_length_out, char **dna_sequence_out) ;
@@ -450,8 +451,10 @@ void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
 
       if(source_data)
       {
-            method_src->style_id = source_data->style_id;
-            method_src->source_id = source_data->source_id;
+            if(source_data->style_id)
+                  method_src->style_id = source_data->style_id;
+            if(source_data->source_id)
+                  method_src->source_id = source_data->source_id;
             if(source_data->source_text)
                   method_src->source_text = source_data->source_text;
       }
@@ -769,6 +772,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   get_features.server = (AcedbServer)server_in ;
   get_features.server->last_err_status = ACECONN_OK ;
   get_features.styles = styles ;
+  get_features.src_feature_set_names = NULL;
   get_features.eachBlock = eachBlockSequenceRequest;
 
 
@@ -777,6 +781,9 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
   /* Fetch all the alignment blocks for all the sequences. */
   g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_features) ;
+
+      /* get the list of source featuresets */
+  feature_context->src_feature_set_names = get_features.src_feature_set_names;
 
   zMapPrintTimer(NULL, "In thread, got features") ;
 
@@ -806,6 +813,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *st
   get_sequence.result = ZMAP_SERVERRESPONSE_OK;
   get_sequence.server = server ;
   get_sequence.styles = styles ;
+  get_sequence.src_feature_set_names = NULL;
   get_sequence.server->last_err_status = ACECONN_OK;
   get_sequence.eachBlock = eachBlockDNARequest;
 
@@ -1224,8 +1232,10 @@ static void addTypeName(gpointer data, gpointer user_data)
  * I guess the best thing is to shove the errors out to the log and look for the gff start...
  *
  */
-static gboolean sequenceRequest(AcedbServer server, GHashTable *styles, ZMapFeatureBlock feature_block)
+static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock feature_block)
 {
+  AcedbServer server = get_features->server;
+  GHashTable *styles = get_features->styles;
   gboolean result = FALSE ;
   char *gene_finder_cmds = "seqactions -gf_features no_draw ;" ;
   char *acedb_request = NULL ;
@@ -1460,8 +1470,15 @@ static gboolean sequenceRequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	    {
 	      if (zMapGFFGetFeatures(parser, feature_block))
 		{
-		  free_on_destroy = FALSE ;			    /* Make sure parser does _not_ free our
-								       data. ! */
+              GList *src_names;
+		  free_on_destroy = FALSE ;	/* Make sure parser does _not_ free our data. ! */
+
+              /* get the featuresets actually put in the block
+               * and pass upstream, retruning a list of featuresets in all blocks
+               */
+              src_names = zMapGFFGetFeaturesets(parser);
+              get_features->src_feature_set_names =
+                  zMap_g_list_merge(get_features->src_feature_set_names,src_names);
 		}
 	      else
 		result = FALSE ;
@@ -1586,7 +1603,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	}
 
       /* I'm going to create the three frame translation up front! */
-      if (zMap_g_list_find_quark(context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+      if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	{
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	    {
@@ -3993,7 +4010,7 @@ static void eachBlockSequenceRequest(gpointer key_id, gpointer data, gpointer us
 
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
     {
-      if (!sequenceRequest(get_features->server, get_features->styles, feature_block))
+      if (!sequenceRequest(get_features, feature_block))
 	{
 	  /* If the call failed it may be that the connection failed or that the data coming
 	   * back had a problem. */

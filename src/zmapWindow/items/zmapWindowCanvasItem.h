@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 15 17:45 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.14 2010-07-15 10:49:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.15 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_ITEM_H
@@ -93,6 +93,8 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
 
 ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
+gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item);
+
 void zMapWindowCanvasItemGetBounds(ZMapWindowCanvasItem canvas_item) ;
 
 void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item);
@@ -119,6 +121,9 @@ ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
 GList *zMapWindowCanvasItemIntervalGetChildren(ZMapWindowCanvasItem *parent) ;
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item);
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
+
+gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden);
+
 void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item,
 					    ZMapStyleColourType colour_type,
 					    GdkColor *default_fill_colour,

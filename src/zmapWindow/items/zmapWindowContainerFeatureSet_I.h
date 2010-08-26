@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 15:41 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.12 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.13 2010-08-26 08:04:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
@@ -71,7 +71,17 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   GQuark      original_id;
 
   /* We keep the features sorted by position and size so we can cursor through them... */
-  gboolean    sorted ;
+  gboolean    sorted;
+
+  /* does the column contain featuresets that are maskable? */
+  gboolean    maskable;
+  /* does the column contain masked featuresets that have been masked (not displayed)? (default) */
+  gboolean    masked;
+  /* which featuresets are displayed in this column */
+  GList *     featuresets;
+
+  /* this is a column setting, the settings struct below is an amalgamation of styles */
+  ZMapStyleBumpMode bump_mode;
 
   /* Extra items used for displaying colinearity lines and markers, note that we can end up
    * with the colinear markers becoming long items so we need to record them too. */

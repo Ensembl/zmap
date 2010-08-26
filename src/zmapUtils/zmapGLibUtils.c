@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 12 08:44 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.36 2010-07-08 08:48:35 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.37 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -511,7 +511,7 @@ gchar *zMap_g_list_quark_to_string(GList *l)
       {
             q = g_quark_to_string(GPOINTER_TO_UINT(l->data));
             if(str)
-                  str = g_strconcat(str,q,NULL);
+                  str = g_strconcat(str,";",q,NULL);
             else
                   str = g_strdup(q);
             l = l->next;
@@ -521,6 +521,16 @@ gchar *zMap_g_list_quark_to_string(GList *l)
 }
 
 
+// merge lists giving list of unique items
+GList *zMap_g_list_merge(GList *a, GList *b)
+{
+      for(;b;b = b->next)
+      {
+            if(!g_list_find(a,b->data))
+                  a = g_list_prepend(a,b->data);
+      }
+      return(a);
+}
 
 /*!
  *                Additions to GHash
@@ -689,6 +699,22 @@ void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
       *iter = NULL;
       if(h)
             g_hash_table_foreach(h,get_hash_key,iter);
+}
+
+
+static void get_hash_val(gpointer key, gpointer value, gpointer user)
+{
+      GList **list = (GList **) user;
+
+
+      *list = g_list_prepend(*list,value); // faster than append
+}
+
+void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h)
+{
+      *iter = NULL;
+      if(h)
+            g_hash_table_foreach(h,get_hash_val,iter);
 }
 
 

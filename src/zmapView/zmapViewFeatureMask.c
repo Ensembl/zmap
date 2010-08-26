@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.1 2010-07-23 14:48:25 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.2 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,7 @@
 #include <glib.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGFF.h>
 #include <zmapView_P.h>
 
 
@@ -58,35 +59,32 @@
  * masking code just works on the merged context and a list of featuresets
  */
 
-/*
-- identify new masking (mRNA) and new masked featuresets (EST) (as  configured)
-  - new masker featuresets are applied to old masked data
-  - new masked featuresets are masked by all relevant ones
-
-- sort the mRNA's into start coordinate order, then end coordinate reversed
-- remove or flag mRNAs that are covered by another one - this will be easy as they are in order
-- sort the ESTs into order as for the mRNAs and hide ESTs that are covered by others
-
-- scan through EST's and for each one:
-- scan all the mRNA's until the start coordinate means no cover
-- skip over mRNA's whose end coord means no cover
-  - this can be optimised by including a pointer to the next feature with a different start coordinate
-  - many features have the same start coordinate.
-
-- express both featuresets as integer arrays or lists defining exon and intron like sections.
-- use a simple function to determine if one covers the other completely and if so hide that EST and quit.
+/*!
+ *     NOTE: See Design_notes/notes/EST_mRNA.shtml for the write up
  */
 
+#define FILE_DEBUG      0     /* can use this for performance stats, coould add it to the log? */
+#define PDEBUG          printf      /* zMapLogWarning */
 
+
+/* header of list of features of the same name */
+typedef struct _align_set
+{
+      GQuark id;
+      Coord x1,x2;
+      gboolean masked;  /* by self */
+
+} ZMapViewAlignSetStruct, *ZMapViewAlignSet;
 
 
 typedef struct _ZMapMaskFeatureSetData
 {
       GList *masker;
       GList *masked;
-      ZMapFeatureAny block;   // that contains the current featureset
-      ZMapView *view;
-      GQuark mask_me;         // current new featureset for masking
+      ZMapFeatureBlock block; /* that contains the current featureset */
+      ZMapView view;
+      GQuark mask_me;         /* current new featureset for masking */
+      GList *redisplay;       /* existing columns that get masked */
 }
 ZMapMaskFeatureSetDataStruct, *ZMapMaskFeatureSetData;
 
@@ -94,50 +92,82 @@ ZMapMaskFeatureSetDataStruct, *ZMapMaskFeatureSetData;
 static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
                                                          gpointer data,
                                                          gpointer user_data,
-                                                         char **error_out)
+                                                         char **error_out);
 static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
                                                          gpointer data,
                                                          gpointer user_data,
-                                                         char **error_out)
+                                                         char **error_out);
 
-void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker);
+static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker);
 
+static GList *sortFeatureset(ZMapFeatureSet fset);
 
-
-// mask ESTs with mRNAs if configured
-// all new features are already in view->context
-// logically we can only mask features in the same block
-//NOTE even tho' masker sets are configure that does not mean we have the data yet
-
-void zMapFeatureMaskFeatureSets(ZMapView view, GList *feature_set_names)
+/* mask ESTs with mRNAs if configured
+ * all new features are already in view->context
+ * logically we can only mask features in the same block
+ * NOTE even tho' masker sets are configured that does not mean we have the data yet
+ *
+ * returns a lists of previously displayed featureset id's that have been masked
+ */
+GList *zMapFeatureMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 {
-      ZMapMaskFeatureSetData data = { NULL };
+      ZMapMaskFeatureSetDataStruct _data = { NULL };
+      ZMapMaskFeatureSetData data = &_data;
       GList *fset;
       ZMapGFFSource src2src;
       ZMapFeatureTypeStyle style;
       GList *masked_by;
 
-      for(fset = feature_set_names;fset;fset = fset->next)
+      data->view = view;
+
+            /* this is the featuresets from the context not the display columns */
+      for(fset = new_feature_set_names;fset;fset = fset->next)
       {
             src2src = (ZMapGFFSource) g_hash_table_lookup(view->source_2_sourcedata,fset->data);
             if(!src2src)
             {
-                  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data));
+                  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style id for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
                   continue;
             }
-            style = src2src->style;
-
-            if((masked_by = zMapStyleGetMaskList(style))
+            style =  zMapFindStyle(view->orig_styles,src2src->style_id);
+            if(!style)
             {
-                  data->masked = g_list_prepend(data->masked,fset->data);
+                  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
+                  continue;
             }
-            else
+
+
+            if((masked_by = zMapStyleGetMaskList(style)))
             {
-                  data->masker = g_list_prepend(data->masker,fset->data);
+                  GList *l;
+                  GQuark self = g_quark_from_string("self");
+                  GQuark set_id = GPOINTER_TO_UINT(fset->data);
+                  gboolean self_only = TRUE;
+
+                  for(l = masked_by;l;l = l->next)
+                  {
+                        set_id = GPOINTER_TO_UINT(l->data);
+
+                        if(set_id == self)
+                              set_id = GPOINTER_TO_UINT(fset->data);
+                        else
+                              self_only = FALSE;
+
+                        if(!g_list_find(data->masker,GUINT_TO_POINTER(set_id)))
+                              data->masker = g_list_prepend(data->masker,GUINT_TO_POINTER(set_id));
+                  }
+                  if(self_only)     // prioritise these, likely they'll mask others
+                        data->masked = g_list_prepend(data->masked,fset->data);
+                  else
+                        data->masked = g_list_append(data->masked,fset->data);
             }
       }
 
-      if(fset = masked;fset;fset = fset->next)      // mask new featuresets by all
+#if FILE_DEBUG
+      if(data->masked) PDEBUG("masked = %s\n",zMap_g_list_quark_to_string(data->masked));
+      if(data->masker) PDEBUG("masker = %s\n",zMap_g_list_quark_to_string(data->masker));
+#endif
+      for(fset = data->masked;fset;fset = fset->next)      // mask new featuresets by all
       {
             // with pipes we expect 1 featureset at a time but from ACE all 40 or so at once
             // so we do one ContextExecute for each one
@@ -145,26 +175,36 @@ void zMapFeatureMaskFeatureSets(ZMapView view, GList *feature_set_names)
             // and then the masker featuresets are found in the block's hash table
             // so really it's quite speedy
 
-            data->mask_me = fset->data;
-            zMapFeatureContextExecuteFull((ZMapFeatureAny) view->context
+            data->mask_me = GPOINTER_TO_UINT(fset->data);
+            zMapFeatureContextExecute((ZMapFeatureAny) view->features,
                                    ZMAPFEATURE_STRUCT_BLOCK,
                                    maskNewFeaturesetByAll,
                                    (gpointer) data);
       }
 
-      if(masker)                                    // mask old featuresets by new data
+
+      if(data->masker)                                    // mask old featuresets by new data
       {
-            zMapFeatureContextExecuteFull((ZMapFeatureAny) view->context
+#if FILE_DEBUG
+PDEBUG("%s","mask old by new\n");
+#endif
+            zMapFeatureContextExecute((ZMapFeatureAny) view->features,
                                    ZMAPFEATURE_STRUCT_FEATURESET,
                                    maskOldFeaturesetByNew,
                                    (gpointer) data);
       }
+#if FILE_DEBUG
+PDEBUG("%s","Completed\n");
+#endif
+      return(data->redisplay);
 }
 
 
 
-// only mask old featureset with new data in same block
-static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
+
+
+// mask new featureset with all (old+new) data in same block
+static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
                                                          gpointer data,
                                                          gpointer user_data,
                                                          char **error_out)
@@ -189,6 +229,384 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
+        ZMapFeatureSet feature_set = NULL;
+        ZMapFeatureSet masker_set = NULL;
+
+            /* do we have our target featureset in this block? */
+        feature_set = (ZMapFeatureSet) g_hash_table_lookup(feature_any->children, GUINT_TO_POINTER(cb_data->mask_me));
+        if(!feature_set)
+            break;
+
+        src2src = (ZMapGFFSource) g_hash_table_lookup(cb_data->view->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
+        if(!src2src)    // assert looks more natural but we get locus w/out any mapping from ACE
+            break;
+
+        style =  zMapFindStyle(cb_data->view->orig_styles,src2src->style_id);
+        masked_by = zMapStyleGetMaskList(style);            /* all the masker featuresets */
+#if FILE_DEBUG
+PDEBUG("mask new by all: fset, style, masked by = %s, %s, %s\n", g_quark_to_string(feature_set->unique_id), g_quark_to_string(src2src->style_id), zMap_g_list_quark_to_string(masked_by));
+#endif
+        for(fset = masked_by;fset;fset = fset->next)
+        {
+            GQuark set_id = GPOINTER_TO_UINT(fset->data);
+
+            if(set_id == g_quark_from_string("self"))
+                  set_id = cb_data->mask_me;
+
+            masker_set = (ZMapFeatureSet) g_hash_table_lookup(feature_any->children, GUINT_TO_POINTER(set_id));
+
+            // has new data, must need sorting
+            feature_set->masker_sorted_features = sortFeatureset(feature_set);
+
+
+            if(masker_set)
+                  mask_set_with_set(feature_set, masker_set);
+        }
+      }
+      break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+        ZMapFeatureSet feature_set = NULL;
+        feature_set = (ZMapFeatureSet)feature_any;
+      }
+      /* fall through */
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      {
+      zMapAssertNotReached();
+      break;
+      }
+    }
+
+  return status;
+}
+
+int twitter = 0;
+
+/* order features by start coord then end coord reversed */
+/* regardless of strand this still works */
+gint fsetListOrderCB(gconstpointer a, gconstpointer b)
+{
+      GList *la = (GList *) a;
+      GList *lb = (GList *) b;
+      ZMapViewAlignSet sa = (ZMapViewAlignSet) la->data;
+      ZMapViewAlignSet sb = (ZMapViewAlignSet) lb->data;
+
+      if(sa->x1 < sb->x1)
+            return(-1);
+      if(sa->x1 > sb->x1)
+            return(1);
+
+      if(sa->x2 > sb->x2)
+            return(-1);
+      if(sa->x2 < sb->x2)
+            return(1);
+      return(0);
+}
+
+
+/* order feature by start coord */
+gint fsetStartOrderCB(gconstpointer a, gconstpointer b)
+{
+      ZMapFeature fa = (ZMapFeature) a;
+      ZMapFeature fb = (ZMapFeature) b;
+
+      if(fa->x1 < fb->x1)
+            return(-1);
+      if(fa->x1 > fb->x1)
+            return(1);
+      return(0);
+}
+
+
+
+/* sort features in random name order using thier id quarks
+ * we just want features with the same name to be together
+ */
+gint nameOrderCB(gconstpointer a, gconstpointer b)
+{
+      ZMapFeature fa = (ZMapFeature) a;
+      ZMapFeature fb = (ZMapFeature) b;
+
+      return ((gint) fa->original_id - (gint) fb->original_id);
+}
+
+
+/* related alignments have the same name but are distinct features
+ * so we sort by name  and make lists of these
+ * then we prepend an item to hold the start and end coord for the whole list
+ *   using a noddy structure (can't get at the list end thanks to glib)
+ * then we sort these into start coord then end coord reversed order
+ */
+static GList *sortFeatureset(ZMapFeatureSet fset)
+{
+      GList *l = NULL,*l_out = NULL;
+      GList *gl_start, *gl_end;
+      ZMapViewAlignSet align_set;
+      ZMapFeature f_start,f_end,f;
+
+      if(fset->masker_sorted_features)    /* free existing list of lists */
+      {
+            for(l = fset->masker_sorted_features;l;l = l->next)
+            {
+                  g_list_free((GList *) l->data);
+            }
+            g_list_free(fset->masker_sorted_features);
+            fset->masker_sorted_features = NULL;
+      }
+      /* get pointers to all the features grouped according to name */
+      zMap_g_hash_table_get_data(&l, fset->features);
+      l = g_list_sort(l,nameOrderCB);
+
+      /* chop this list into lists per name group
+       * sorted by start coordinate
+       * with a little header struct at the front
+       * then add to another list,
+       */
+
+      for(gl_start = l;gl_start;)
+      {
+            f_start = (ZMapFeature) gl_start->data;
+
+            for(gl_end = gl_start;gl_end;gl_end = gl_end->next)
+            {
+                  f_end = (ZMapFeature) gl_end->data;
+                  if(f_end->original_id != f_start->original_id)
+                        break;
+            }
+
+            if(gl_end)
+            {
+                  gl_end->prev->next = NULL;
+                  gl_end->prev = NULL;
+            }
+
+            gl_start = g_list_sort(gl_start,fsetStartOrderCB);
+
+            align_set = g_new0(ZMapViewAlignSetStruct,1);
+            f = (ZMapFeature) gl_start->data;
+            align_set->id = f->original_id;
+            align_set->x1 = f->x1;
+
+            l_out = g_list_prepend(l_out, g_list_prepend(gl_start,align_set));
+            for(;gl_start;gl_start = gl_start->next)
+            {
+                  f = (ZMapFeature) gl_start->data;
+                  align_set->x2 = f->x2;
+            }
+
+            gl_start = gl_end;
+      }
+
+      /* order these lists by start coord and end coord reversed */
+      l_out = g_list_sort(l_out,fsetListOrderCB);
+      return(l_out);
+}
+
+static gboolean maskOne(GList *f, GList *mask, gboolean exact)
+{
+      GList *l;
+      ZMapFeature f_feat,m_feat;
+
+      /* assuming strand data is not relevant and coordinates are always on fwd strand ...
+       * see zmapFeature.h/ ZMapFeatureStruct.x1
+       * now match each alignment in the list to the mask
+       */
+      for(l = mask;f;f = f->next)
+      {
+            f_feat = (ZMapFeature) f->data;
+#if FILE_DEBUG
+if(twitter) PDEBUG("fa %d-%d:",f_feat->x1,f_feat->x2);
+#endif
+            for(;l;l = l->next)
+            {
+                  m_feat = (ZMapFeature) l->data;
+#if FILE_DEBUG
+if(twitter) PDEBUG(" ma %d-%d",m_feat->x1,m_feat->x2);
+#endif
+                  if(m_feat->x1 <= f_feat->x1 && m_feat->x2 >= f_feat->x2)
+                  {
+                        /* matched this one */
+
+                        if(exact)   /* must match splice junctions */
+                        {
+                              if(f->prev && m_feat->x1 != f_feat->x1)
+                                    return(FALSE);
+                              if(f->next && m_feat->x2 != f_feat->x2)
+                                    return(FALSE);
+                        }
+                        break;
+                  }
+
+                  if(m_feat->x1 > f_feat->x1)
+                        return(FALSE);    /* can't match this block so fail */
+
+                  if(exact)
+                        return(FALSE);    /* each block must match in turn */
+            }
+            if(!l)
+                  return(FALSE);
+            if(exact)                     /* set up for next block */
+                  l = l->next;
+#if FILE_DEBUG
+if(twitter) PDEBUG("%s","\n");
+#endif
+      }
+      return(TRUE);
+}
+
+static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker)
+{
+      GList *ESTset,*mRNAset;
+      GList *EST,*mRNA;
+      ZMapViewAlignSet est,mrna;
+      GList *m;
+      gboolean exact = FALSE;
+
+      int n_masked = 0;
+      int n_failed = 0;
+      int n_tried = 0;
+
+
+      if(masked == masker)
+      {
+            /* each exon must correspond, no alt-splicing allowed
+             * we sort into biggest first order (start then end coord reversed)
+             * so masking against self should work easily
+             */
+            exact = TRUE;
+      }
+
+#if FILE_DEBUG
+PDEBUG("mask set %s with set %s\n",
+            g_quark_to_string(masked->original_id),
+            g_quark_to_string(masker->original_id));
+#endif
+
+      /* for clarity we pretend we are masking an EST with an mRNA
+       * but it could be EST x EST ro mRNA x mRNA
+       */
+      if(!masked->masker_sorted_features)
+            masked->masker_sorted_features = sortFeatureset(masked);
+      ESTset = masked->masker_sorted_features;
+
+      if(!masker->masker_sorted_features)
+            masker->masker_sorted_features = sortFeatureset(masker);
+      mRNAset = masker->masker_sorted_features;
+
+            /* is an EST completely covered by an mRNA?? */
+      for(;ESTset;ESTset = ESTset->next)
+      {
+            n_tried++;
+
+            EST = (GList *) ESTset->data;
+            est = (ZMapViewAlignSet) EST->data;
+
+            while(mRNAset)
+            {
+                  mRNA = (GList *) mRNAset->data;
+                  mrna = (ZMapViewAlignSet) mRNA->data;
+                  if(mrna->x2 > est->x1) // && mrna->x2 >= est->x2)
+                        break;
+                  mRNAset = mRNAset->next;
+            }
+            if(!mRNAset)                        /* no more masking possible */
+                  break;
+
+            if(est->x1 < mrna->x1)              /* is not covered */
+                  continue;
+
+
+            /* now the mRNA starts at or before the EST and ends after the EST starts */
+            for(m = mRNAset;m && mrna->x1 <= est->x1;m = m->next)
+            {
+                  mRNA = (GList *) m->data;
+                  mrna = (ZMapViewAlignSet) mRNA->data;
+
+                  if(mrna == est)                     /* matching feature against self */
+                        continue;
+
+#if FILE_DEBUG
+if(twitter) PDEBUG("EST %s = %d-%d (%d), mRNA = %s %d-%d (%d)\n",
+      g_quark_to_string(est->id), est->x1,est->x2,g_list_length(EST) - 1,
+      g_quark_to_string(mrna->id),mrna->x1,mrna->x2, g_list_length(mRNA) - 1);
+#endif
+                  if(!mrna->masked && !est->masked && mrna->x2 >= est->x2)
+                  {
+                        if(maskOne(EST->next,mRNA->next,exact))
+                        {     /* this EST is covered by this mRNA */
+                              GList *l;
+                              ZMapFeature f;
+                              n_masked++;
+#if FILE_DEBUG
+if(twitter) PDEBUG("%s"," masked\n");
+#endif
+                              for(l = EST->next;l;l = l->next)
+                              {
+                                    f = (ZMapFeature) l->data;
+                                    f->feature.homol.flags.masked = TRUE;
+
+                                    /* cannot un-display here as we have no windows */
+                                    /* must post-process from the view */
+                              }
+
+                              /* ideally we'd like to remove this EST from the list
+                               * but as we can have two copies of this list active (mask self)
+                               * it would be a risky procedure
+                               */
+                              est->masked = TRUE;
+                              break;
+                        }
+                        else
+                        {
+                              n_failed++;
+#if FILE_DEBUG
+if(twitter) PDEBUG("%s"," failed\n");
+#endif
+                        }
+                  }
+
+                  /* for exact (mask against self) it would be nice to break here
+                   * but we have to consider alternate splicing
+                   * biggest first is just the range not what's in the middle
+                   */
+            }
+      }
+#if FILE_DEBUG
+PDEBUG("masked %d, failed %d, tried %d of %d composite features\n", n_masked,n_failed,n_tried,g_list_length(masked->masker_sorted_features));
+#endif
+}
+
+
+/* mask old featureset with new data in same block */
+/*NOTE for a self maskling featureset we do not process, as it's done by maskNewFeaturesetByAll() */
+static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
+                                                         gpointer data,
+                                                         gpointer user_data,
+                                                         char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapMaskFeatureSetData cb_data = (ZMapMaskFeatureSetData) user_data;
+  GList *fset;
+  GList *masked_by = NULL;
+  ZMapGFFSource src2src;
+  ZMapFeatureTypeStyle style = NULL;
+
+  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+        ZMapFeatureAlignment feature_align = NULL;
+        feature_align = (ZMapFeatureAlignment)feature_any;
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
         ZMapFeatureBlock feature_block = NULL;
         feature_block  = (ZMapFeatureBlock)feature_any;
         cb_data->block = feature_block;
@@ -200,31 +618,63 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
         ZMapFeatureSet masker_set = NULL;
         feature_set = (ZMapFeatureSet)feature_any;          // old featuresset
 
-        src2src = (ZMapGFFSource) g_hash_table_lookup(cb_data->view->source_2_sourcedata, feature_any->unique_id);
-        zMapAssert(src2src);
+            /* this has to work or else this featureset could not be in the list */
+        src2src = (ZMapGFFSource) g_hash_table_lookup(cb_data->view->source_2_sourcedata,
+                        GUINT_TO_POINTER(feature_any->unique_id));
+        if(!(src2src))
+        {
+            /* could be a featuresset invented by ace and not having a src2src mapping
+             * in which case we don't want to mask it anyway
+             */
+            break;
+        }
 
-        style = src2src->style;
-        masked_by = zMapStyleGetMaskList(style);            // all the masker featuresets
-
+        style =  zMapFindStyle(cb_data->view->orig_styles,src2src->style_id);
+        if(style)
+            masked_by = zMapStyleGetMaskList(style);        // all the maskers for this featuresets
+#if FILE_DEBUG
+//PDEBUG("mask old %s: %x %x\n",g_quark_to_string(feature_set->unique_id),(guint) style,(guint) masked_by);
+#endif
         for(fset = masked_by;fset;fset = fset->next)
         {
-            // with pipes we expect one featureset at a time in which case this is trivial
-            // with 40 featuresets from ACE we could have a large worst case
-            // but realistically we expect only 2-3 masker featuresets
-            // so it's not a performance problem despite the naive code
+            /* with pipes we expect one featureset at a time in which case this is trivial
+             * with 40 featuresets from ACE we could have a large worst case
+             * but realistically we expect only 2-3 masker featuresets
+             * so it's not a performance problem despite the naive code
+             */
+            GQuark set_id = GPOINTER_TO_UINT(fset->data);
+            GList *masker;
 
-            GList *masker = g_list_find(cb_data->masker,fset->data);
+            if(set_id == g_quark_from_string("self"))
+                  continue;   /* self maskers done by maskNewFeaturesetByAll() */
 
-            if(masker)                                      // only mask if new masker
+            masker = g_list_find(cb_data->masker,GUINT_TO_POINTER(set_id));
+
+            if(masker)                                      /* only mask if new masker */
             {
-                  GList *new = g_list_find(cb_data->masked,fset->data);
+                  GList *new;
+#if FILE_DEBUG
+PDEBUG("mask old %s with new %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(set_id));
+#endif
 
-                  if(!new)                                  // only mask if data was old
+                  new = g_list_find(cb_data->masked,GUINT_TO_POINTER(feature_set->unique_id));
+                  if(!new)                                  /* only mask if featureset is old */
                   {
+#if FILE_DEBUG
+//PDEBUG("%s","is old\n");
+#endif
                         masker_set = (ZMapFeatureSet)
-                               g_hash_table_lookup(cb_data->block->feature_sets,fset->data);
+                               g_hash_table_lookup(cb_data->block->feature_sets,masker->data);
+
                         if(masker_set)
+                        {
+#if FILE_DEBUG
+//PDEBUG("%s","has masker in block\n");
+#endif
                               mask_set_with_set(feature_set,masker_set);
+                              cb_data->redisplay = g_list_prepend(cb_data->redisplay,
+                                    GUINT_TO_POINTER(feature_set->unique_id));
+                        }
                   }
             }
         }
@@ -242,80 +692,3 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
   return status;
 }
 
-
-
-// mask new featureset with all (old+new) data in same block
-static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
-                                                         gpointer data,
-                                                         gpointer user_data,
-                                                         char **error_out)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  ZMapMaskFeatureSetData cb_data = (ZMapMaskFeatureSetData) user_data;
-  GList *fset;
-  GList *masked_by;
-  ZMapGFFSource src2src;
-
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      {
-        ZMapFeatureAlignment feature_align = NULL;
-        feature_align = (ZMapFeatureAlignment)feature_any;
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-        ZMapFeatureBlock feature_block = NULL;
-        ZMapFeatureSet feature_set = NULL;
-        ZMapFeatureSet masker_set = NULL;
-//        feature_block  = (ZMapFeatureBlock)feature_any;
-//        cb_data->block = feature_block;
-
-            // do we have our target featureset in this block?
-        feature_set = (ZMapFeatureSet) g_hash_table_lookup(feature_any->children, GUINT_TO_POINTER(cb_data->mask_me));
-        if(!feature_set)
-            break;
-
-        src2src = (ZMapGFFSource) g_hash_table_lookup(cb_data->view->source_2_sourcedata, feature_any->unique_id);
-        zMapAssert(src2src);
-
-        style = src2src->style;
-        masked_by = zMapStyleGetMaskList(style);            // all the masker featuresets
-
-        for(fset = masked_by;fset;fset = fset->next)
-        {
-            masker_set = (ZMapFeatureSet) g_hash_table_lookup(feature_any->children, fset->data);
-
-            if(masker_set)
-                  mask_set_with_set(feature_set, masker_set);
-        }
-      }
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-        ZMapFeatureSet feature_set = NULL;
-        feature_set = (ZMapFeatureSet)feature_any;
-      }
-      // fall through
-    case ZMAPFEATURE_STRUCT_FEATURE:
-    case ZMAPFEATURE_STRUCT_INVALID:
-    default:
-      {
-      zMapAssertNotReached();
-      break;
-      }
-    }
-
-  return status;
-}
-
-
-void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker)
-{
-      printf("mask %s with new %s\n", g_quark_to_string(masked->original_id), g_quark_to_string(masker->original_id));
-}

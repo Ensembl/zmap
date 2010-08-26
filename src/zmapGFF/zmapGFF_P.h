@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 22 14:26 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.25 2010-06-21 14:41:18 mh17 Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.26 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -166,6 +166,8 @@ typedef struct ZMapGFFParserStruct_
 							       "source". The struct contains among
 							       other things an array of all
 							       features for that source. */
+
+  GList *src_feature_sets;                      /* list of quarks of actual feature sets in the context */
 
   /* Parsing buffers, since lines can be long we allocate these dynamically from the
    * known line length and construct a format string for the scanf using this length. */

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun  8 10:11 2009 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.40 2010-03-04 15:15:22 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.41 2010-08-26 08:04:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -84,7 +84,7 @@ typedef void (*ZMapGUIRadioButtonCBFunc)(GtkWidget *button, gpointer data, gbool
 typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 	      ZMAPGUI_MENU_TOGGLE, ZMAPGUI_MENU_TOGGLEACTIVE,
 	      ZMAPGUI_MENU_RADIO, ZMAPGUI_MENU_RADIOACTIVE,
-	      ZMAPGUI_MENU_NORMAL} ZMapGUIMenuType ;
+	      ZMAPGUI_MENU_NORMAL, ZMAPGUI_MENU_HIDE } ZMapGUIMenuType ;
 
 
 /*! Types of help page that can be displayed. */
@@ -96,7 +96,7 @@ typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_ALIGNMENT_DISPLAY,
  * I changed my mind and we now have an array of structs which contain all the information required.
  * This includes which window to split (original or new) and which orientation to split!
  */
-typedef enum 
+typedef enum
 {
   ZMAPSPLIT_NONE,
   ZMAPSPLIT_ORIGINAL,
@@ -142,7 +142,7 @@ typedef struct
 
 /* A wrongly named (makes it look too general) data struct to hold
  * info for align/block information plus the original data that may
- * have been set in the GUIMenuItem. Code currently does a swap 
+ * have been set in the GUIMenuItem. Code currently does a swap
  *
  * tmp = item->callback_data;
  * sub->original = tmp;
@@ -162,12 +162,12 @@ typedef struct
 
 
 /* A couple of macros to correctly test keyboard modifiers for events that include them:
- * 
+ *
  *       zMapGUITestModifiers() will return TRUE even if other modifiers are on (e.g. caps lock).
  *   zMapGUITestModifiersOnly() the second will return TRUE _only_ if no other modifiers are on.
- * 
+ *
  * Use them like this:
- * 
+ *
  * if (zMapGUITestModifiers(but_event, (GDK_CONTROL_MASK | GDK_MOD1_MASK)))
  *   {
  *      doSomething() ;
@@ -265,7 +265,7 @@ typedef struct _ZMapGuiNotebookTagValueStruct *ZMapGuiNotebookTagValue ;
 /*! Prototype for "Cancel", "OK" and "Save" callbacks.  */
 typedef void (*ZMapGUINotebookCallbackFunc)(ZMapGuiNotebookAny any_section, gpointer user_data) ;
 /*! Prototype for "Edit" callbacks  */
-typedef gboolean (*ZMapGUINotebookEditCallbackFunc)(ZMapGuiNotebookAny any_section, 
+typedef gboolean (*ZMapGUINotebookEditCallbackFunc)(ZMapGuiNotebookAny any_section,
 						    const char *entry_text, gpointer user_data);
 
 /*! Creating a notebook requires this struct with callback functions for when
@@ -296,7 +296,7 @@ typedef struct _ZMapGuiNotebookAnyStruct
 
 
 /*! Notebooks contain sets of chapters. */
-typedef struct _ZMapGuiNotebookStruct 
+typedef struct _ZMapGuiNotebookStruct
 {
   ZMapGuiNotebookType type ;
   GQuark name ;
@@ -424,7 +424,7 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
 			 int *start_index_inout,
 			 ZMapGUIMenuItemCallbackFunc callback_func,
 			 gpointer callback_data) ;
-gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget, 
+gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
                                   GList *prefFamilies, gint points, PangoWeight weight,
 				  PangoFont **font_out, PangoFontDescription **desc_out) ;
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
@@ -452,14 +452,14 @@ char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char
 char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory, char *file_suffix,
 			     ZMapFileChooserContentAreaCB content_func, gpointer content_data) ;
 
-void zMapGUICreateRadioGroup(GtkWidget *gtkbox, 
+void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
                              ZMapGUIRadioButton all_buttons,
                              int default_button, int *value_out,
                              ZMapGUIRadioButtonCBFunc clickedCB, gpointer clickedData);
 
-ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot_limit, 
+ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot_limit,
                                                   double *top_inout, double *bot_inout);
-ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit, 
+ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit,
                                             double *top_inout, double *bot_inout);
 
 void zMapGUISetClipboard(GtkWidget *widget, char *contents);

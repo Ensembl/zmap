@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.128 2010-07-29 09:44:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.129 2010-08-26 08:04:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -306,7 +306,7 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
  * this may be easy (off or on) or may depend on current mag state/mark, frame state or compress
  * state. If !new_col_state then the current column state is used to set the show/hide state,
  * need this for setting up initial state of columns.
- * 
+ *
  * new_col_state = NULL if new (empty) column
  *  */
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
@@ -321,6 +321,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
   container = (ZMapWindowContainerFeatureSet)column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+
   frame_sensitive = zmapWindowContainerFeatureSetIsFrameSpecific(container, &frame_mode) ;
 
   /* Do we need a redraw....not every time..... */
@@ -964,7 +965,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 /* Translate window 3 frame requests into 3 frame state.
  * If frame mode is ZMAP_WINDOW_3FRAME_INVALID then toggle 3 frame _display_,
  * otherwise toggle the supplied frame mode.
- * 
+ *
  * Note that there modes/display get toggled to ensure that there is a logical
  * display/undisplay of at least some 3 frame data.
  */
@@ -997,7 +998,7 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
 	else
 	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
- 
+
 	break ;
       }
     case ZMAP_WINDOW_3FRAME_ALL:
