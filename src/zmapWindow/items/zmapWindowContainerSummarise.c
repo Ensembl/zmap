@@ -26,7 +26,7 @@
  * Description:   avoids displaying features that cannot be seen at the current zoom level
  *                NOTE see Design_notes/notes/canvas_tweaks.html
  *
- * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.2 2010-09-01 09:50:19 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.3 2010-09-01 13:09:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -229,6 +229,7 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset)
       GList *l;
 
       /* debugging/ stats */
+#if MH17_DONT_INLCUDE
       if(window->n_col_cover_show)
       {
             printf("summarise %s: %d+%d/%d, max was %d\n",g_quark_to_string(fset->unique_id),
@@ -236,6 +237,7 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset)
                   window->n_col_cover_show + window->n_col_cover_hide,
                   window->n_col_cover_list);
       }
+#endif
       window->n_col_cover_show = 0;
       window->n_col_cover_hide = 0;
       window->n_col_cover_list = 0;

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.29 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.30 2010-09-01 13:09:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -700,10 +700,6 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GH
               zMapLogWarning("Styles file \"%s\", stanza %s could not be added.",
                          styles_file, curr_config_style->name) ;
             }
-if(new_style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-{
-printf("%s: %f\n", g_quark_to_string(new_style->unique_id),new_style->mode_data.alignment.summarise);
-}
           }
 
       } while((settings_list = g_list_next(settings_list)));
