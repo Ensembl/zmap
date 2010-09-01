@@ -1,4 +1,4 @@
-<!-- $Id: EST_mRNA.html,v 1.5 2010-08-23 13:18:48 mh17 Exp $ -->
+<!-- $Id: EST_mRNA.html,v 1.6 2010-09-01 09:47:27 mh17 Exp $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 
 <fieldset><legend>Background</legend>
@@ -97,6 +97,9 @@ There may be a combinatorial problem to solve.  A sample session from human chr-
 </ul>
 </p>
 <p>
+<h3>Masking a set with itself</h3>
+<p>The same procedure as above is followed but with the restriction that each exon must be matched (no gaps are allowed) and splice junctions must be the same. (which means that only the 5' and 3' coordinates may differ).
+</p>
 <h3>Data Structures</h3>
 <p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment. Extra flags will be added to these to handle masking status.
 </p>
@@ -199,30 +202,30 @@ As we perform the masking in the View's feature context not the window we cannot
 <fieldset><legend>Results</legend>
 <p>Using [chr11-03_2098831-2266877] and 3 EST columns and vertebrate_mRNA (and each set masking itself) we get:
 <pre>
-masked = vertebrate_mrna;est_other;est_mouse;est_human
-masker = est_human;est_mouse;vertebrate_mrna;est_other
-
 mask set vertebrate_mRNA with set vertebrate_mRNA
-masked 51, failed 705, tried 125 of 125 composite features
+masked 15, failed 1099, tried 125 of 125 composite features
 
 mask set EST_Other with set EST_Other
-masked 199, failed 1327, tried 322 of 322 composite features
+masked 68, failed 3066, tried 322 of 322 composite features
 mask set EST_Other with set vertebrate_mRNA
-masked 80, failed 580, tried 322 of 322 composite features
+masked 260, failed 1401, tried 322 of 322 composite features
 
 mask set EST_Mouse with set EST_Mouse
-masked 57, failed 106, tried 87 of 87 composite features
+masked 27, failed 350, tried 87 of 87 composite features
 mask set EST_Mouse with set vertebrate_mRNA
-masked 21, failed 113, tried 87 of 87 composite features
+masked 69, failed 365, tried 87 of 87 composite features
 
 mask set EST_Human with set EST_Human
-masked 338, failed 2274, tried 528 of 528 composite features
+masked 109, failed 6279, tried 528 of 528 composite features
 mask set EST_Human with set vertebrate_mRNA
-masked 105, failed 742, tried 514 of 528 composite features
-mask old by new
+masked 346, failed 1812, tried 514 of 528 composite features
 </pre>
-Which in rough terms gives us 50% of vertebrate mRNA's and between 10%-25% of ESTs displayed.
+Which in rough terms gives us 70&pct; of ESTs filtered off the display.
 </p>
 <p>The algortihm appears to run effciently: # failed is the number of comparisons used with no effect. The worst case is quadratic (like the obvious naive algorithm) but we are a long way from that.
 </p>
 </fieldset>
+
+
+
+
