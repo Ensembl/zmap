@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.212 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.213 2010-09-01 09:50:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3610,7 +3610,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       merge_result = TRUE ;
 
       // mask ESTs with mRNAs if configured
-      l = zMapFeatureMaskFeatureSets(view, diff_context->src_feature_set_names);
+      l = zMapViewMaskFeatureSets(view, diff_context->src_feature_set_names);
       if(masked)
             *masked = l;
     }

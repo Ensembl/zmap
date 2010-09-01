@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.267 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.268 2010-09-01 09:50:19 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -668,6 +668,11 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowRulerCanvas ruler ;
 
+  /* stuff for column summarise */
+  GList *col_cover;     /* temp. data structs */
+  gint n_col_cover_show;      /* stats for my own curiosity/ to justify the code */
+  gint n_col_cover_hide;
+  gint n_col_cover_list;
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
@@ -1081,6 +1086,13 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
 ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
+
+/* summarise busy column by not displaying invisible features */
+gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1,double dy1,double dx2, double dy2);
+void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset);
+gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle style);
+GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset);
+
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
 GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,

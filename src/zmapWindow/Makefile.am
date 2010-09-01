@@ -107,6 +107,7 @@ items/zmapWindowContainerGroup_I.h \
 items/zmapWindowContainerStrand.c \
 items/zmapWindowContainerStrand.h \
 items/zmapWindowContainerStrand_I.h \
+items/zmapWindowContainerSummarise.c \
 items/zmapWindowContainerUtils.c \
 items/zmapWindowContainerUtils.h \
 items/zmapWindowContainerUtils_P.h \

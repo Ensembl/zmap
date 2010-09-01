@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.289 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.290 2010-09-01 09:50:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,7 +114,8 @@ typedef struct
 {
   ZMapWindow window ;
   GHashTable *styles ;
-  GHashTable *feature_hash ;
+/*  GHashTable *feature_hash ;   not used */
+  GList *feature_list;
   int feature_count;
   ZMapWindowContainerFeatures curr_forward_col ;
   ZMapWindowContainerFeatures curr_reverse_col ;
@@ -168,6 +169,7 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
 				    gboolean             is_separator_col,
 				    double width, double top, double bot);
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data) ;
+static void ProcessListFeature(gpointer data, gpointer user_data) ;
 
 static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 					      ZMapContainerLevelType level, gpointer user_data) ;
@@ -677,7 +679,6 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   ZMapFeatureSet view_feature_set = NULL;
   gboolean bump_required = TRUE;
 
-
   /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
   zMapAssert(forward_col_wcp || reverse_col_wcp) ;
 
@@ -749,12 +750,28 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.styles        = styles ;
   featureset_data.feature_count = 0;
 
-//printf("draw featureset %s\n",g_quark_to_string(feature_set->unique_id));
 
   /* Now draw all the features in the column. */
   zMapStartTimer("DrawFeatureSet","ProcessFeature");
 
-  g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+  if(zMapWindowContainerSummarise(window,feature_set->style))
+  {
+      printf("summarise %s zoom: %f,%f\n", g_quark_to_string(feature_set->unique_id),
+            zMapStyleGetSummarise(feature_set->style),zMapWindowGetZoomFactor(window));
+
+      featureset_data.feature_list = zMapWindowContainerSummariseSortFeatureSet(feature_set);
+
+      g_list_foreach(featureset_data.feature_list, ProcessListFeature, &featureset_data) ;
+
+      g_list_free(featureset_data.feature_list);
+      featureset_data.feature_list = NULL;
+
+      zMapWindowContainerSummariseClear(window,feature_set);
+  }
+  else
+  {
+      g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+  }
 
   zMapStopTimer("DrawFeatureSet","ProcessFeature");
 
@@ -2070,8 +2087,13 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 /* Called to draw each individual feature. */
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 {
-  ZMapFeature feature = (ZMapFeature)data ;
-  CreateFeatureSetData featureset_data = (CreateFeatureSetData)user_data ;
+      ProcessListFeature(data,user_data);
+}
+
+static void ProcessListFeature(gpointer data, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature) data ;
+  CreateFeatureSetData featureset_data = (CreateFeatureSetData) user_data ;
   ZMapWindow window = featureset_data->window ;
   ZMapWindowContainerGroup column_group ;
   ZMapStrand display_strand ;

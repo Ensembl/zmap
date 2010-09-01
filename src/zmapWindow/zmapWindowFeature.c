@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.194 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.195 2010-09-01 09:50:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -262,6 +262,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 }
 
 
+#if MH17_NOT_CALLED
 /* N.B. This function creates TWO columns.  One Forward (returned) and One Reverse.
  * To get hold of the reverse one you'll need to use a FToI call.
  * Also to note. If the feature_set_name is NOT in the window feature_set_names list
@@ -337,6 +338,8 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 
   return new_canvas_item ;
 }
+#endif
+
 
 /* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
  * AND DRAW A NEW ONE, THIS WILL INVALIDATE ANY CODE THAT IS CACHING THE ITEM.
@@ -584,11 +587,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
                                                feature);
   if(masked && container->masked && new_feature)
       foo_canvas_item_hide(new_feature);
-
-#if MH17_TIME_IT_WITH_ALL_FEATRUES_HIDDEN
-  else if(container->unique_id == g_quark_from_string("trembl"))
-      foo_canvas_item_hide(new_feature);
-#endif
 
   return new_feature;
 }

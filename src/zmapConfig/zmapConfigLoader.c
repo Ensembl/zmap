@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.28 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.29 2010-09-01 09:50:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -700,6 +700,10 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GH
               zMapLogWarning("Styles file \"%s\", stanza %s could not be added.",
                          styles_file, curr_config_style->name) ;
             }
+if(new_style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+{
+printf("%s: %f\n", g_quark_to_string(new_style->unique_id),new_style->mode_data.alignment.summarise);
+}
           }
 
       } while((settings_list = g_list_next(settings_list)));
@@ -1220,6 +1224,7 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE, FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
@@ -1345,6 +1350,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE,   G_TYPE_DOUBLE, style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  G_TYPE_STRING, style_set_property, FALSE },
 

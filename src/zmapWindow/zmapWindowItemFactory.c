@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:15 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.84 2010-07-29 09:17:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.85 2010-09-01 09:50:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,6 +288,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   ZMapFeatureTypeStyle style = NULL;
   ZMapStyleMode style_mode = ZMAPSTYLE_MODE_INVALID ;
   gboolean no_points_in_block = TRUE;
+  double summarise = 0.0;     /* 0.0 means don't */
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) parent_container;
+  ZMapWindow window;
 
 #if MH17_REVCOMP_DEBUG
         printf("run_single ");
@@ -310,7 +313,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 
   /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)parent_container, feature->style_id)))
+  if (!(style = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id)))
     {
       zMapAssertNotReached();
     }
@@ -530,22 +533,35 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  break;
 	}
 
+      summarise = zMapStyleGetSummarise(style);
 
-      run_data.factory   = factory;
-      run_data.container = features_container;
-      run_data.context   = context;
-      run_data.align     = align;
-      run_data.block     = block;
-      run_data.set       = set;
+      /* NOTE: temporarily accept any non zero zoom level
+       * need to compare style config with window zoom level
+       * but need to find out how first
+       */
 
-      run_data.canvas_item = current_item;
+     window = zMapWindowContainerFeatureSetGetWindow(container);
 
-      item   = ((method)->method)(&run_data, feature, limits[1],
+     if(!zMapWindowContainerSummarise(window,style) || zmapWindowContainerSummariseIsItemVisible(
+            window, points[0], points[1],points[2], points[3]))
+      {
+
+            run_data.factory   = factory;
+            run_data.container = features_container;
+            run_data.context   = context;
+            run_data.align     = align;
+            run_data.block     = block;
+            run_data.set       = set;
+
+            run_data.canvas_item = current_item;
+
+            item   = ((method)->method)(&run_data, feature, limits[1],
 				  points[0], points[1],
 				  points[2], points[3],
 				  style);
-      /* if(!run_data.item_in && item) */
+      }
 
+      /* if(!run_data.item_in && item) */
       if (item)
         {
           gboolean status = FALSE;

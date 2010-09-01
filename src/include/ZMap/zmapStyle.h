@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.60 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.61 2010-09-01 09:50:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -172,6 +172,7 @@ typedef enum
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
+    STYLE_PROP_ALIGNMENT_SUMMARISE,
 
     STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
 
@@ -271,6 +272,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE           "alignment-summarise"
 
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
@@ -622,8 +624,9 @@ typedef struct
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
 
-   GList *mask_sets;          // list of featureset Id's to mask this set against
-                              // NOTE: whitespace is normalised but upper/lower case not
+   double summarise;          /* only display visible features up this zoom level */
+
+   GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
 
@@ -1023,6 +1026,10 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)
+
+#define zMapStyleGetSummarise(style) \
+     (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.summarise : 0.0)
+
 
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;

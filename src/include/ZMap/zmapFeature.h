@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:52 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.182 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.183 2010-09-01 09:50:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -418,7 +418,8 @@ typedef struct ZMapFeatureSetStruct_
 
   ZMapFeatureTypeStyle style;
 
-  GList *masker_sorted_features;                 /* or NULL if not sorted */
+      /* NB we donlt expect to use both these on the same featureset but play safe... */
+  GList *masker_sorted_features;    /* or NULL if not sorted */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 

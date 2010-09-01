@@ -26,7 +26,7 @@
  * Description:   avoids displaying features that cannot be seen at the current zoom level
  *                NOTE see Design_notes/notes/canvas_tweaks.html
  *
- * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.1 2010-08-31 08:54:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.2 2010-09-01 09:50:19 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,6 +35,7 @@
 #include <math.h>
 #include <glib.h>
 
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindow_P.h>
 
@@ -52,11 +53,16 @@
     current 2D covered region, trimmed as it goes out of scope.
 
   - we also assume that the rectangles are left justified (as they are by the calling code)
+
+  Results: we end up with 3k/ 28k features drawn. An alternaitve would be to compute the cover
+  and draw that instead which would divide that by 3 or more
+  .... this was without converting to canvas coords (oops!)
+
  */
 
 typedef struct
 {
-     gint32 x1,y1,x2,y2;
+     int x1,y1,x2,y2;
 } pixrect, *PixRect;    /* think of a name not used elsewhere */
 
 
@@ -71,10 +77,14 @@ gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1
       gboolean covered = FALSE;
       gint len;
 
-      feature->x1 = (gint32) floor(dx1);
-      start = feature->y1 = (gint32) floor(dy1);
-      feature->x2 = (gint32) floor(dx2);
-      end = feature->y2 = (gint32) floor(dy2);
+      /* convert these coords to pixels at current zoom level */
+      /* we don't care about the actual coordinates just the relative values */
+      /* but we do care that the canvas coords are accurate in pixels */
+
+      foo_canvas_w2c (window->canvas, dx1, dy1, &feature->x1, &feature->y1);
+      foo_canvas_w2c (window->canvas, dx2, dy2, &feature->x2, &feature->y2);
+      start = feature->y1;
+      end = feature->y2;
 
       /* col_cover is in order of y1
          and consists of non overlapping rectangles in pixel coordinates
@@ -154,7 +164,8 @@ gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1
 
                               /* start = feature->y1;  we are already here */
                         }
-                        else if(cover->y2 > feature->y2)
+
+                        if(cover->y2 > feature->y2)
                               /* there is a gap at the end: split cover into two */
                         {
                               PixRect new = g_new0(pixrect,1);
@@ -185,7 +196,7 @@ gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1
                         break;
             }
 
-            if(start < end)
+            if(start <= end)
             {
                   PixRect new = g_new0(pixrect,1);
 
@@ -212,15 +223,15 @@ gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1
 }
 
 /* tidy up after drawing a featureset: clear stats and free rump of list*/
-/* must call this, it's benign for non summarised featuresets */
-void zMapWindowContainerSummariseClear(ZMapWindow window,GQuark fset)
+
+void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset)
 {
       GList *l;
 
       /* debugging/ stats */
       if(window->n_col_cover_show)
       {
-            zMapLogMessage("summarise %s: %d+%d/%d, max was %d",g_quark_to_string(fset),
+            printf("summarise %s: %d+%d/%d, max was %d\n",g_quark_to_string(fset->unique_id),
                   window->n_col_cover_show,window->n_col_cover_hide,
                   window->n_col_cover_show + window->n_col_cover_hide,
                   window->n_col_cover_list);
@@ -236,3 +247,51 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,GQuark fset)
       g_list_free(window->col_cover);
       window->col_cover = NULL;
 }
+
+
+gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle style)
+{
+  gboolean result = FALSE;
+  double summ = 0.0;
+
+  if(style)       /* there might be no features and therefore no style */
+    {
+      if((summ = zMapStyleGetSummarise(style) > zMapWindowGetZoomFactor(window) ))
+      {
+        result = TRUE;
+      }
+    }
+
+  return result;
+}
+
+
+
+
+/* sort features by start coord then by size (biggest first)
+ * i tried this with canvas coords but it was 30-40% slower
+ */
+gint startOrderCB(gconstpointer a, gconstpointer b)
+{
+      ZMapFeature fa = (ZMapFeature) a;
+      ZMapFeature fb = (ZMapFeature) b;
+
+      /* yes: features have x coordinates that canvas items express as y */
+
+      if(fa->x1 == fb->x1)
+            return((gint) (fb->x2 - fa->x2));
+      return ((gint) (fa->x1 - fb->x1));
+}
+
+
+
+/* extract features from the hash table into a list and sort it */
+GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset)
+{
+      GList *features;
+
+      zMap_g_hash_table_get_data(&features, fset->features);
+      features = g_list_sort(features,startOrderCB);
+      return features;
+}
+

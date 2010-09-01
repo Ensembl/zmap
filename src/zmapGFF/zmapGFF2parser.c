@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:19 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.117 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.118 2010-09-01 09:50:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1293,8 +1293,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
         }
         g_hash_table_insert(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
 //printf("using feature style %s\n",g_quark_to_string(feature_style->unique_id));
+
     }
 
+      /* with one type of feature in a featureset this should be ok */
+  parser_feature_set->feature_set->style = feature_style;
 
   /* I'M NOT HAPPY WITH THIS, IT DOESN'T WORK AS A CONCEPT....NEED TYPES IN FEATURE STRUCT
    * AND IN STYLE...BUT THEY HAVE DIFFERENT PURPOSE.... */

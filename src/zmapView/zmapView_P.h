@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Apr  7 13:48 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.64 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.65 2010-09-01 09:50:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -377,7 +377,7 @@ GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name)
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
 
 /* zmapViewFeatureMask.c */
-GList *zMapFeatureMaskFeatureSets(ZMapView view, GList *feature_set_names);
+GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 
 
 

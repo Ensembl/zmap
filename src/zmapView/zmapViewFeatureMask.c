@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.2 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.3 2010-09-01 09:50:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,7 @@ static GList *sortFeatureset(ZMapFeatureSet fset);
  *
  * returns a lists of previously displayed featureset id's that have been masked
  */
-GList *zMapFeatureMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
+GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 {
       ZMapMaskFeatureSetDataStruct _data = { NULL };
       ZMapMaskFeatureSetData data = &_data;
