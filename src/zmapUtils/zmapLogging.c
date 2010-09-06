@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.26 2010-09-06 15:20:08 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.27 2010-09-06 15:55:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -707,10 +707,10 @@ static gboolean getLogConf(ZMapLog log)
       else
       log->show_time = TRUE;
 
-      /* ctahc GLib errors, else they stay on stdout */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CATCH_GLIB,
+      /* catch GLib errors, else they stay on stdout */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
                               ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+                              ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
       log->catch_glib = tmp_bool;
       else
       log->catch_glib = FALSE;
