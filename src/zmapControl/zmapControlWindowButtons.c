@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:24 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.59 2010-07-29 09:25:10 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.60 2010-09-06 08:48:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -329,6 +329,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	switch(view_state)
 	  {
 	  case ZMAPVIEW_INIT:
+        case ZMAPVIEW_MAPPED:
 	    reload = TRUE ;
 	    break ;
 	  case ZMAPVIEW_CONNECTING:
@@ -762,7 +763,7 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
 
 
 
-/* 
+/*
  *    Sequence menu stuff (currently this is for translation only).
  */
 
@@ -944,19 +945,19 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
-/* 
+/*
  * The following functions implement cascading menus that allow the user to select
  * any of the aligns -> blocks to turn on/off dna or translations.
- * 
+ *
  * I've commented this all out for now for a couple of reasons:
- * 
+ *
  * 1) We don't have any users of the align/block stuff currently so what's the point.
- * 
+ *
  * 2) I'm not even sure if this is the way to do it. Surely a better way would be
  *    for the user to click on the block that they wanted to see the dna or translation
  *    for ?? The menus are confusing and it's not at clear that the user would easily
  *    be able to choose the right one.
- * 
+ *
  */
 
 static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,

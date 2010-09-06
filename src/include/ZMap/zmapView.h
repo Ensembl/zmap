@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.59 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.60 2010-09-06 08:48:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -75,6 +75,26 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
+/* The overall state of the zmapView, we need this because both the zmap window and the its threads
+ * will die asynchronously so we need to block further operations while they are in this state. */
+typedef enum {
+
+  ZMAPVIEW_INIT,
+  ZMAPVIEW_MAPPED,                                  /* Window(s), but no threads: can talk to otterlace */
+
+  ZMAPVIEW_CONNECTING,                              /* Connecting threads. */
+  ZMAPVIEW_CONNECTED,                               /* Threads connected, no data yet. */
+
+  ZMAPVIEW_LOADING,                                 /* Loading data. */
+  ZMAPVIEW_LOADED,                                  /* Full view. */
+  ZMAPVIEW_UPDATING,                                /* after LOADED we can request more data */
+
+  ZMAPVIEW_RESETTING,                               /* Returning to ZMAPVIEW_NOT_CONNECTED. */
+
+  ZMAPVIEW_DYING                              /* View is dying for some reason,
+                                                 cannot do anything in this state. */
+} ZMapViewState ;
+
 
 /* data passed back from view for destroy callback. */
 typedef struct
@@ -82,6 +102,12 @@ typedef struct
   unsigned long xwid ;
 } ZMapViewCallbackDestroyDataStruct, *ZMapViewCallbackDestroyData ;
 
+
+typedef struct
+{
+  unsigned long xwid ;
+  ZMapViewState state;
+} ZMapViewCallbackFubarStruct, *ZMapViewCallbackFubar ;
 
 
 // tried to put these into ConnectionData but as ever there's scope issues
@@ -132,26 +158,6 @@ typedef struct _ZMapViewSplittingStruct
   GArray *split_patterns;
   GList *touched_window_list;   /* A list of view_windows affected by the split */
 }ZMapViewSplittingStruct, *ZMapViewSplitting;
-
-/* The overall state of the zmapView, we need this because both the zmap window and the its threads
- * will die asynchronously so we need to block further operations while they are in this state. */
-typedef enum {
-
-  /* do we need both of these...check.... */
-  ZMAPVIEW_INIT,					    /* Window(s), but no threads. */
-
-  ZMAPVIEW_CONNECTING,					    /* Connecting threads. */
-  ZMAPVIEW_CONNECTED,					    /* Threads connected, no data yet. */
-
-  ZMAPVIEW_LOADING,					    /* Loading data. */
-  ZMAPVIEW_LOADED,					    /* Full view. */
-  ZMAPVIEW_UPDATING,                                /* after LOADED we can request more data */
-
-  ZMAPVIEW_RESETTING,					    /* Returning to ZMAPVIEW_NOT_CONNECTED. */
-
-  ZMAPVIEW_DYING					    /* View is dying for some reason,
-							       cannot do anything in this state. */
-} ZMapViewState ;
 
 
 

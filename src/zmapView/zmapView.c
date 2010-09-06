@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.213 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.214 2010-09-06 08:48:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -753,12 +753,12 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
   gboolean result = TRUE ;
   char *stylesfile = NULL;
 
-  if (zmap_view->state != ZMAPVIEW_INIT)        // && zmap_view->state != ZMAPVIEW_LOADED)
+  if (zmap_view->state > ZMAPVIEW_MAPPED)        // && zmap_view->state != ZMAPVIEW_LOADED)
 
     {
       /* Probably we should indicate to caller what the problem was here....
        * e.g. if we are resetting then say we are resetting etc.....again we need g_error here. */
-      zMapLogCritical("GUI: %s", "cannot connect because not in init state.") ;
+      zMapLogCritical("GUI: %s", "cannot connect because not in initial state.") ;
 
       result = FALSE ;
     }
@@ -967,7 +967,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
       if (!result)
 	{
-	  zmap_view->state = ZMAPVIEW_INIT ;
+	  zmap_view->state = ZMAPVIEW_LOADED ;    /* no initial servers just pretend they've loaded */
 	}
 
 
@@ -1487,7 +1487,7 @@ ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
 char *zMapViewGetStatusStr(ZMapViewState state)
 {
   /* Array must be kept in synch with ZmapState enum in zmapView.h */
-  static char *zmapStates[] = {"",
+  static char *zmapStates[] = {"Initialising", "Mapped",
 			       "Connecting", "Connected",
 			       "Data loading", "Data loaded","Columns loading",
 			       "Resetting", "Dying"} ;
@@ -1603,7 +1603,7 @@ void zMapViewDestroy(ZMapView zmap_view)
       /* All states have GUI components which need to be destroyed. */
       killGUI(zmap_view) ;
 
-      if (zmap_view->state == ZMAPVIEW_INIT)
+      if (zmap_view->state <= ZMAPVIEW_MAPPED)
 	{
 	  /* For init we simply need to signal to our parent layer that we have died,
 	   * we will then be cleaned up immediately. */
@@ -1645,7 +1645,7 @@ void zMapViewDestroy(ZMapView zmap_view)
 char *zmapViewGetStatusAsStr(ZMapViewState state)
 {
   /* Array must be kept in synch with ZmapState enum in ZMap.h */
-  static char *zmapStates[] = {"ZMAPVIEW_INIT",
+  static char *zmapStates[] = {"ZMAPVIEW_INIT","ZMAPVIEW_MAPPED",
 //			       "ZMAPVIEW_NOT_CONNECTED", "ZMAPVIEW_NO_WINDOW",
 			       "ZMAPVIEW_CONNECTING", "ZMAPVIEW_CONNECTED",
 			       "ZMAPVIEW_LOADING", "ZMAPVIEW_LOADED", "ZMAPVIEW_UPDATING",
@@ -4170,8 +4170,9 @@ static gboolean checkContinue(ZMapView zmap_view)
 
   switch (zmap_view->state)
     {
-    case ZMAPVIEW_INIT:
-    case ZMAPVIEW_LOADED:           // delayed servers get cleared up, we do not need connections to run
+    case ZMAPVIEW_INIT:       /* shouldn't be here! */
+    case ZMAPVIEW_MAPPED:
+    case ZMAPVIEW_LOADED:           /*delayed servers get cleared up, we do not need connections to run */
 
       {
 	/* Nothing to do here I think.... */
@@ -4232,7 +4233,7 @@ static gboolean checkContinue(ZMapView zmap_view)
       {
 	/* zmap is ok but user has reset it and all threads have died so we need to stop
 	 * checking.... */
-	zmap_view->state = ZMAPVIEW_INIT ;
+	zmap_view->state = ZMAPVIEW_MAPPED;       /* ZMAPVIEW_INIT */
 
 	/* Signal layer above us because the view has reset. */
 	(*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
@@ -4381,8 +4382,31 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 {
   gboolean handled = FALSE ;				    /* Allow others to handle. */
   ZMapView zmap_view = (ZMapView)user_data ;
+  ZMapViewCallbackFubarStruct fubar;
 
   zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
+zMapLogWarning("in mapEventCB: %x %d",zmap_view->xwid,zmap_view->state);
+
+//  if(zmap_view->state == ZMAPVIEW_INIT)
+  {
+    if(zmap_view->state < ZMAPVIEW_MAPPED)
+      zmap_view->state = ZMAPVIEW_MAPPED;
+
+    fubar.xwid  = zmap_view->xwid;
+    fubar.state = ZMAPVIEW_MAPPED;
+      /* force this state to make the view_ready message only appear once from the following callback */
+
+
+      /* this is really quite confused:
+       * we have to use a fubar to pass data in the view that we also pass to this callback in the view
+       * on account of private and public headers. The callback cannot use the view data on account of scope.
+       * view->app_data is a blank pointer given to the view containing something unknown
+       * in the calling module there is a ZMap struct that contains a blank pointer called app_data
+       * and there is code that cast the ZMap->app_data into a ZMap
+       * the callback cannot access the view->app_data.
+       */
+    (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, &fubar) ;
+  }
 
   g_signal_handler_disconnect(zmap_view->xremote_widget, zmap_view->map_event_handler) ;
 

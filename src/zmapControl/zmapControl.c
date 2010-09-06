@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug  5 14:59 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.103 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.104 2010-09-06 08:48:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -482,7 +482,7 @@ void zmapControlLoadCB(ZMap zmap)
 
       curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
-      if (zMapViewGetStatus(curr_view) != ZMAPVIEW_INIT)
+      if (zMapViewGetStatus(curr_view) != ZMAPVIEW_MAPPED)    /* ZMAPVIEW_INIT */
 	{
 	  zMapWarning("%s", "ZMap not ready to load, please retry when ready.") ;
 	}
@@ -654,7 +654,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
     if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
       {
         response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
-        zMapLogWarning("Notify of view closing failed: \"%s\"", response) ;
+        zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
       }
 
     g_free(request);
@@ -871,9 +871,33 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
+  ZMapViewCallbackFubar fubar = (ZMapViewCallbackFubar) view_data;
 
   if (zmap->state != ZMAP_DYING)
     zmapControlWindowSetGUIState(zmap) ;
+
+#if 1
+  if(zmap->xremote_client)
+    {
+      if(fubar && fubar->state == ZMAPVIEW_MAPPED)
+      {
+        gchar *request,*response = NULL;
+        request = g_strdup_printf(
+            "<zmap> <request action=\"view_ready\">"
+            " <client xwid=\"0x%lx\" />"
+              "</request></zmap>",
+            fubar->xwid) ;
+
+        if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+          {
+            response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
+            zMapLogWarning("Notify of view mapped failed: \"%s\"", response) ;
+          }
+
+        g_free(request);
+      }
+    }
+#endif
 
   return ;
 }

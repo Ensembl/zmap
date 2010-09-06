@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.51 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.52 2010-09-06 08:48:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -525,7 +525,7 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
 static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseData output_data)
 {
 
-  if(view->state != ZMAPVIEW_LOADED)
+  if(view->state < ZMAPVIEW_LOADED)
     {
       output_data->code = ZMAPXREMOTE_PRECOND;
       g_string_append_printf(output_data->messages, "%s",

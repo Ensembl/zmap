@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.290 2010-09-01 09:50:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.291 2010-09-06 08:48:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -756,9 +756,10 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
   if(zMapWindowContainerSummarise(window,feature_set->style))
   {
+#if MH17_DONT_INCLUDE
       printf("summarise %s zoom: %f,%f\n", g_quark_to_string(feature_set->unique_id),
             zMapStyleGetSummarise(feature_set->style),zMapWindowGetZoomFactor(window));
-
+#endif
       featureset_data.feature_list = zMapWindowContainerSummariseSortFeatureSet(feature_set);
 
       g_list_foreach(featureset_data.feature_list, ProcessListFeature, &featureset_data) ;
