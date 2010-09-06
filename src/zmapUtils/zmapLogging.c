@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.25 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.26 2010-09-06 15:20:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,6 +105,8 @@ typedef struct  _ZMapLogStruct
 							       line are displayed for every message. */
   gboolean show_time;                                 /* if TRUE the the time is included */
 
+  gboolean catch_glib;
+
 } ZMapLogStruct ;
 
 
@@ -132,7 +134,7 @@ static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd);
 
 
 /* We only ever have one log so its kept internally here. */
-static ZMapLog log_G = NULL ; 
+static ZMapLog log_G = NULL ;
 
 static gboolean enable_core_dumping_G = TRUE;
 
@@ -167,7 +169,7 @@ gboolean zMapLogCreate(char *logname)
 
 
 /* The log and Start and Stop routines write out a record to the log to show start and stop
- * of the log but there is a window where a thread could get in and write to the log 
+ * of the log but there is a window where a thread could get in and write to the log
  * before/after they do. We'll just have to live with this... */
 gboolean zMapLogStart()
 {
@@ -236,7 +238,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       struct timeval time;
       struct timezone tz = {0,0};
       char tbuf[32];
-      
+
       gettimeofday(&time,&tz);
       strftime(tbuf,32,"%H:%M:%S",&time);
       g_string_append_printf(format_str, "%s",tbuf);
@@ -245,7 +247,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
   /* If code details are wanted then output them in the log. */
   if (log->show_code_details)
-    g_string_append_printf(format_str, "\t%s:%s:%s:%d", 
+    g_string_append_printf(format_str, "\t%s:%s:%s:%d",
 			   ZMAPLOG_CODE_TUPLE, file, (function ? function : ""), line) ;
 
 
@@ -310,7 +312,7 @@ void zMapLogStack(void)
   zMapLogMessage("%s (static symbol names _not_ available):", "Logging Stack");
 
   g_mutex_lock(log->log_lock);
-  
+
   zMapAssert(log->logging);
 
   if(log->active_handler.logfile &&
@@ -323,7 +325,7 @@ void zMapLogStack(void)
 
   if(!logged)
     zMapLogWarning("Failed to log stack trace to fd %d. "
-		   "Check availability of function backtrace()", 
+		   "Check availability of function backtrace()",
 		   log_fd);
 
   return ;
@@ -383,7 +385,7 @@ void zMapSignalHandler(int sig_no)
     default:
       break;
     }
-  
+
   /* Only do stuff segv, abrt & bus signals */
   switch(sig_no)
     {
@@ -407,7 +409,7 @@ void zMapSignalHandler(int sig_no)
     default:
       break;
     }
-  
+
   return ;
 }
 
@@ -457,7 +459,7 @@ void zMapLogDestroy(void)
 
 
 
-/* 
+/*
  *                Internal routines.
  */
 
@@ -545,9 +547,13 @@ static gboolean startLogging(ZMapLog log)
 	    {
 	      log->active_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
 							    G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-							    | G_LOG_FLAG_RECURSION, 
+							    | G_LOG_FLAG_RECURSION,
 							    log->active_handler.log_cb,
 							    (gpointer)log) ;
+
+            /* try to get the glib critical errors handled */
+            if(log->catch_glib)
+              g_log_set_default_handler(log->active_handler.log_cb, (gpointer) log);
 	      result = TRUE ;
 	    }
 	}
@@ -573,7 +579,11 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
 	{
 	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->active_handler.cb_id) ;
 	  log->active_handler.cb_id = 0 ;
-	  
+
+            /* try to get the glib critical errors handled */
+        if(log->catch_glib)
+          g_log_set_default_handler(g_log_default_handler, NULL);
+
 	  /* Need to close the log file here. */
 	  if (!closeLogFile(log))
 	    result = FALSE ;
@@ -584,14 +594,20 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
        * nothing, hence logging stops. If we want to stop all our logging then we do not install
        * our null handler. */
       if (!remove_all_handlers)
-	log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
+      {
+      	log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
 							G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-							| G_LOG_FLAG_RECURSION, 
+							| G_LOG_FLAG_RECURSION,
 							log->inactive_handler.log_cb,
 							(gpointer)log) ;
 
+            /* try to get the glib critical errors handled */
+            if(log->catch_glib)
+                  g_log_set_default_handler(g_log_default_handler, NULL);
+      }
+
       if (result)
-	log->logging = FALSE ;
+	      log->logging = FALSE ;
     }
   else
     {
@@ -599,6 +615,11 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
 	{
 	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
 	  log->inactive_handler.cb_id = 0 ;
+            /* try to get the glib critical errors handled */
+
+        if(log->catch_glib)
+          g_log_set_default_handler(g_log_default_handler, NULL);
+
 	}
     }
 
@@ -655,8 +676,8 @@ static gboolean getLogConf(ZMapLog log)
       char *full_dir, *log_name;
 
       /* logging at all */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG, 
-					ZMAPSTANZA_LOG_CONFIG, 
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
 	log->logging = tmp_bool;
       else
@@ -678,13 +699,21 @@ static gboolean getLogConf(ZMapLog log)
       else
 	log->show_code_details = TRUE;
 
-      /* how much detail to show...code... */
+      /* how much detail to show...time... */
       if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
                               ZMAPSTANZA_LOG_CONFIG,
                               ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
       log->show_time = tmp_bool;
       else
       log->show_time = TRUE;
+
+      /* ctahc GLib errors, else they stay on stdout */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CATCH_GLIB,
+                              ZMAPSTANZA_LOG_CONFIG,
+                              ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+      log->catch_glib = tmp_bool;
+      else
+      log->catch_glib = FALSE;
 
       /* user specified dir, default to config dir */
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
@@ -775,7 +804,7 @@ static void writeStartOrStopMessage(gboolean start)
   time_str = zMapGetTimeString(ZMAPTIME_STANDARD, NULL) ;
 
   zMapLogMessage("****  %s  Session %s %s  ****", zMapGetAppTitle(), (start ? "started" : "stopped"), time_str) ;
-  
+
   g_free(time_str) ;
 
   return ;
@@ -837,14 +866,14 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 }
 
 
-static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd) 
+static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd)
 {
 #ifdef HAVE_GNUC_BACKTRACE
   void *stack[ZMAPLOG_MAX_TRACE_SIZE];
   size_t size, first = 0;
 #endif /* HAVE_GNUC_BACKTRACE */
   gboolean traced = FALSE;
-  
+
   /* zero on most machines... */
   zMapAssert(fd != STDIN_FILENO);
 
@@ -860,7 +889,7 @@ static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd)
   /* remove this function from the stack. */
   if(size > 1)
     {
-      size--; 
+      size--;
       first++;
     }
   backtrace_symbols_fd(&stack[first], size, fd);
