@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.27 2010-09-06 15:55:20 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.28 2010-09-07 08:58:46 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,6 +130,8 @@ static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 		       gpointer user_data) ;
 static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
 		       gpointer user_data) ;
+static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
+                   gpointer user_data);
 static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd);
 
 
@@ -309,7 +311,8 @@ void zMapLogStack(void)
 
   zMapAssert(log);
 
-  zMapLogMessage("%s (static symbol names _not_ available):", "Logging Stack");
+/* we get recurstion aborts */
+/*  zMapLogMessage("%s (static symbol names _not_ available):", "Logging Stack");*/
 
   g_mutex_lock(log->log_lock);
 
@@ -323,11 +326,11 @@ void zMapLogStack(void)
 
   g_mutex_unlock(log->log_lock);
 
-  if(!logged)
+/*  if(!logged)
     zMapLogWarning("Failed to log stack trace to fd %d. "
 		   "Check availability of function backtrace()",
 		   log_fd);
-
+*/
   return ;
 }
 
@@ -553,7 +556,7 @@ static gboolean startLogging(ZMapLog log)
 
             /* try to get the glib critical errors handled */
             if(log->catch_glib)
-              g_log_set_default_handler(log->active_handler.log_cb, (gpointer) log);
+              g_log_set_default_handler(glibLogger, (gpointer) log);
 	      result = TRUE ;
 	    }
 	}
@@ -865,6 +868,16 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
   return ;
 }
 
+
+static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
+                   gpointer user_data)
+{
+      log_G->active_handler.log_cb(log_domain,log_level,message,user_data);
+
+      if(log_level <= G_LOG_LEVEL_WARNING)
+            zMapLogStack();   /* we really do want to know where these come from */
+
+}
 
 static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd)
 {
