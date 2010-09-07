@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.28 2010-09-07 08:58:46 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.29 2010-09-07 09:25:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,7 @@ typedef struct  _ZMapLogStruct
   gboolean show_time;                                 /* if TRUE the the time is included */
 
   gboolean catch_glib;
+  gboolean echo_glib;   /* to stdout if caught */
 
 } ZMapLogStruct ;
 
@@ -716,7 +717,14 @@ static gboolean getLogConf(ZMapLog log)
                               ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
       log->catch_glib = tmp_bool;
       else
-      log->catch_glib = FALSE;
+      log->catch_glib = TRUE;
+      /* catch GLib errors, else they stay on stdout */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                              ZMAPSTANZA_LOG_CONFIG,
+                              ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
+      log->echo_glib = tmp_bool;
+      else
+      log->echo_glib = TRUE;
 
       /* user specified dir, default to config dir */
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
@@ -873,6 +881,8 @@ static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
                    gpointer user_data)
 {
       log_G->active_handler.log_cb(log_domain,log_level,message,user_data);
+      if(log_G->echo_glib)
+            printf("**** %s ****\n",message);
 
       if(log_level <= G_LOG_LEVEL_WARNING)
             zMapLogStack();   /* we really do want to know where these come from */

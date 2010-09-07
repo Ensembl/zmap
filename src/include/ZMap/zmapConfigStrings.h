@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:04 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.37 2010-09-06 15:21:20 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.38 2010-09-07 09:25:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -250,6 +250,7 @@
 #define ZMAPSTANZA_LOG_SHOW_CODE "show-code"
 #define ZMAPSTANZA_LOG_SHOW_TIME "show-time"    // mgh: didn't complete this so didn't put it in the help
 #define ZMAPSTANZA_LOG_CATCH_GLIB "catch-glib"
+#define ZMAPSTANZA_LOG_ECHO_GLIB  "echo-glib"
 
 
 /*! @addtogroup config_stanzas

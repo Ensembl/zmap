@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.31 2010-09-06 15:55:20 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.32 2010-09-07 09:25:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1101,6 +1101,7 @@ static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, c
     { ZMAPSTANZA_LOG_FILENAME,  G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_LOG_SHOW_TIME, G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_LOG_CATCH_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_ECHO_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
     {NULL}
   };
   static char *name = ZMAPSTANZA_LOG_CONFIG;
