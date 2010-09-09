@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:19 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.118 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.119 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1171,6 +1171,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
+  GQuark column_id = 0;
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
@@ -1218,7 +1219,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
   /* If the parser was given a source -> column group mapping then use that as the feature set
    * otherwise use the source itself. */
-#if MH17_DONT_MAP_TO_COLUMN
+#if MH17_MAP_TO_COLUMN
   /*
    * to process featuresets (data sources) before displaying (or afterwards)
    * we need to have featuresets as separate data items
@@ -1231,24 +1232,43 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       ZMapGFFSet set_data ;
 
       if (!(set_data = g_hash_table_lookup(parser->source_2_feature_set,
-					   GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
-//                                 GINT_TO_POINTER(g_quark_from_string(source)))))
-	{
-	  *err_text = g_strdup_printf("feature ignored, could not find column for source \"%s\".", source) ;
-	  result = FALSE ;
+                                 GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
 
-	  return result ;
-	}
+      {
+        *err_text = g_strdup_printf("feature ignored, could not find column for source \"%s\".", source) ;
+        result = FALSE ;
+
+        return result ;
+      }
       else
-	{
-	  feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
-	}
+      {
+        feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
+        column_id = set_data->feature_set_id;
+      }
     }
   else
-#endif
     {
       feature_set_name = source ;
+      column_id = zMapStyleCreateID(source);
     }
+#else
+      /* don't map to column but instead make a note of the column id for later */
+      /* this turns put to be needed for FToI hash functions */
+
+    feature_set_name = source ;
+    column_id = zMapStyleCreateID(source);
+
+    if (parser->source_2_feature_set)
+    {
+      ZMapGFFSet set_data ;
+
+      if ((set_data = g_hash_table_lookup(parser->source_2_feature_set,
+                                 GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
+      {
+        column_id = set_data->feature_set_id;
+      }
+    }
+#endif
 
       // get the feature set so that we can find the style for the feature;
   parser_feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
@@ -1269,6 +1289,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       // we need to copy as these may be re-used.
       // styles have already been inherited by this point by zmapView code and passed back to us
       parser_feature_set->feature_styles = g_hash_table_new(NULL,NULL);
+
+      feature_set->column_id = column_id;
 
       parser_feature_set->multiline_features = NULL ;
       g_datalist_init(&(parser_feature_set->multiline_features)) ;

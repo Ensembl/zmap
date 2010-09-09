@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:52 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.183 2010-09-01 09:50:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.184 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -412,6 +412,7 @@ typedef struct ZMapFeatureSetStruct_
   GQuark unique_id ;					    /* Unique id of this feature set. */
   GQuark original_id ;					    /* Original name,
 							       e.g. "Genewise predictions" */
+
   GHashTable *features ; 				    /* The features for this set as a
 							       set of ZMapFeatureStruct. */
   char *description ;					    /* As it says... */
@@ -420,6 +421,17 @@ typedef struct ZMapFeatureSetStruct_
 
       /* NB we donlt expect to use both these on the same featureset but play safe... */
   GList *masker_sorted_features;    /* or NULL if not sorted */
+
+  GQuark column_id;                                /* as mapped in view/window featuresset_2_column
+                                                    * as this is a view wide setting this is safe
+                                                    * despite maybe having several windows
+                                                    * NOTE: this is the column name canonicalised
+                                                    * and the cols themselves are munged with strand and frame
+                                                    * if we have two aligns, then the blocks are diff
+                                                    * and the featuresets likewise so diff mappings are possible
+                                                    */
+
+
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 

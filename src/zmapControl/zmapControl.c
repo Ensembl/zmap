@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug  5 14:59 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.104 2010-09-06 08:48:09 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.105 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -876,7 +876,7 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
   if (zmap->state != ZMAP_DYING)
     zmapControlWindowSetGUIState(zmap) ;
 
-#if 1
+#if 0
   if(zmap->xremote_client)
     {
       if(fubar && fubar->state == ZMAPVIEW_MAPPED)

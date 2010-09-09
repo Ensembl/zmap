@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.129 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.130 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -790,7 +790,7 @@ void zmapWindowFullReposition(ZMapWindow window)
 
 
   super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
-							   0,0,0,
+                                             0,0,0,
 							   ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
 							   0)) ;
   zMapAssert(super_root) ;
@@ -1261,7 +1261,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
   /* check we have the style... */
   if (!(zmapWindowFToIFindItemFull(window->context_to_item,
-				   align_id, block_id,
+                           align_id, block_id,
 				   feature_set_unique,
 				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
     {
@@ -1310,7 +1310,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 	      ZMapFrame frame = (ZMapFrame)i ;
 
 	      frame_column = zmapWindowFToIFindItemFull(window->context_to_item,
-							feature_block->parent->unique_id,
+                                          feature_block->parent->unique_id,
 							feature_block->unique_id,
 							feature_set_unique,
 							ZMAPSTRAND_FORWARD, frame, 0) ;
@@ -1557,7 +1557,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 	  zMapFeatureContextGetAlignmentByID(canvas_data->full_context,
 					     feature_any->unique_id);
 	if((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
-							 feature_any->unique_id,
+                                           feature_any->unique_id,
 							 0, 0, ZMAPSTRAND_NONE,
 							 ZMAPFRAME_NONE, 0)))
 	  {
@@ -1581,7 +1581,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 					   feature_any->unique_id);
 
 	if((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
-							 canvas_data->curr_alignment->unique_id,
+                                           canvas_data->curr_alignment->unique_id,
 							 feature_any->unique_id, 0,
 							 ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
 	  {

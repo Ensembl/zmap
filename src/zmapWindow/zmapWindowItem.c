@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:21 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.137 2010-08-18 09:22:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.138 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -332,7 +332,7 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
 }
 
 
-/* 
+/*
  *                         Functions to get hold of items in various ways.
  */
 
@@ -542,7 +542,7 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 
 
 
-/* 
+/*
  * Sequence highlighting functions, these feel like they should be in the
  * sequence item class objects.
  */
@@ -582,7 +582,7 @@ void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block
 
 
 static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
-				   FooCanvasItem *focus_item, 
+				   FooCanvasItem *focus_item,
 				   ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
 				   gboolean centre_on_region)
 {
@@ -663,7 +663,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 	}
 
       if (centre_on_region && !done_centring)
-	zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;		
+	zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
     }
 
 
@@ -1068,7 +1068,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 }
 
 
-/* 
+/*
  *                  Testing items visibility and scrolling to those items.
  */
 
@@ -1244,7 +1244,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
   if (zmapWindowItemIsShown(item))
     {
       /* THIS CODE IS NOT GREAT AND POINTS TO SOME FUNDAMENTAL ROUTINES/UNDERSTANDING THAT IS
-       * MISSING.....WE NEED TO SORT OUT WHAT SIZE WE NEED TO CALCULATE FROM AS OPPOSED TO 
+       * MISSING.....WE NEED TO SORT OUT WHAT SIZE WE NEED TO CALCULATE FROM AS OPPOSED TO
        * WHAT THE CURRENTLY DISPLAYED OBJECT SIZE IS, THIS MAY HAVE BEEN TRUNCATED BY THE
        * THE LONG ITEM CLIP CODE OR JUST BY CHANGING THE SCROLLED REGION. */
 
@@ -1460,7 +1460,7 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-/* 
+/*
  *              some coord printing funcs.
  */
 
@@ -2094,8 +2094,8 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
           replace_highlight = !(highlight_data->multiple_select);
 
           if((feature_item = zmapWindowFToIFindFeatureItem(highlight_data->window->context_to_item,
-                                                           feature_in->strand, ZMAPFRAME_NONE,
-                                                           feature_in)))
+                              feature_in->strand, ZMAPFRAME_NONE,
+                              feature_in)))
             {
               if(highlight_data->multiple_select)
                 replace_highlight = !(zmapWindowFocusIsItemInHotColumn(highlight_data->window->focus, feature_item));

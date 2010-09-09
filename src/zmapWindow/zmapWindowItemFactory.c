@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:15 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.85 2010-09-01 09:50:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.86 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -581,7 +581,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
 						align->unique_id,
 						block->unique_id,
-						set->unique_id,
+						zMapWindowGetFeaturesetContainerID(window,set->unique_id),
 						strand, frame,
 						feature->unique_id, item) ;
 	    }

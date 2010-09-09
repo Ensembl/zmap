@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: May  5 16:13 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.52 2010-09-06 08:48:09 mh17 Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.53 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -778,7 +778,7 @@ char *zMapXRemoteGetResponse(ZMapXRemoteObj object)
   char *response = NULL;
 
 
-#if 1 //def ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   REMOTELOGMSG(Warning,"%s\n", "just a message to say we're in zMapXRemoteGetResponse");
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -821,7 +821,7 @@ char *zMapXRemoteGetRequest(ZMapXRemoteObj object)
   int size;
 
 
-#if 1 //def ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   REMOTELOGMSG(Warning,"%s\n", "just a message to say we're in zMapXRemoteGetRequest");
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -847,7 +847,9 @@ int zMapXRemoteSetReply(ZMapXRemoteObj object, char *content)
   if(object->is_server == FALSE)
     return result;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   REMOTELOGMSG(Warning,"%s: %s\n", "just a message to say we're in zMapXRemoteSetReply",content);
+#endif
 
   result = zmapXRemoteChangeProperty(object, object->response_atom, content);
 
@@ -1508,7 +1510,7 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
       g_free(zmapXRemoteRawErrorText);
     zmapXRemoteRawErrorText = g_strdup(errorText);
 
-    REMOTELOGMSG(Warning, "**** X Error: %s ***", errorText);
+    REMOTELOGMSG(Warning, "**** X11 Error: %s ****", errorText);
 
     return 1;                   /* This is ignored by the server */
 }

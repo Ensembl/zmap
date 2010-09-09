@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.195 2010-09-01 09:50:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.196 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1210,6 +1210,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	ZMapStrand set_strand ;
 	ZMapFrame set_frame ;
 	gboolean result ;
+      ZMapFeatureSet fset = (ZMapFeatureSet) feature->parent;
 
 	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
 	zMapAssert(result) ;
@@ -1217,7 +1218,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
-						    feature->parent->unique_id,
+						    fset->column_id,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(set_strand),
 						    zMapFeatureFrame2Str(set_frame));
@@ -1429,6 +1430,8 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+/* this is identical or very nearly with columnMenuCB in zmapWindowDrawFeatures.c and should be combined */
+
       {ZMAPGUI_MENU_NORMAL, "List All Column Features",       ITEM_MENU_LIST_ALL_FEATURES,   itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", ITEM_MENU_LIST_NAMED_FEATURES, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          ITEM_MENU_SEARCH,              itemMenuCB, NULL},

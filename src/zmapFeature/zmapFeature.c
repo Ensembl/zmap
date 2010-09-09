@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:42 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.134 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.135 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -839,7 +839,7 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull(feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
 
   if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {

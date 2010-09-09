@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.268 2010-09-01 09:50:19 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.269 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -863,7 +863,7 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 void zmapHideUnhideColumns(ZMapWindow window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
@@ -927,8 +927,8 @@ void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data);
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;
-FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapStrand set_strand,
-					     ZMapFrame set_frame, ZMapFeature feature) ;
+FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash,
+                               ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 					   ZMapStrand set_strand, ZMapFrame set_frame,
 					   ZMapFeature feature, int child_start, int child_end) ;

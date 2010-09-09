@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 20 10:15 2010 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.35 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.36 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -887,7 +887,7 @@ typedef struct
 {
   GQuark align_id,
     block_id,
-    set_id,
+    column_id,    /*    set_id,  renamed to catch all and to stress that it's canvas column we're using */
     feature_id;
 } SerialisedFeatureSearchStruct, *SerialisedFeatureSearch;
 
@@ -1085,7 +1085,7 @@ FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_t
       item = zmapWindowFToIFindItemFull(context_to_item,
                               feature_data->align_id,
                               feature_data->block_id,
-                              feature_data->set_id,
+                              feature_data->column_id,
                               set_strand, set_frame,
                               feature_data->feature_id);
     }
@@ -1574,7 +1574,10 @@ static void feature_pointer_serialised_to_value (GValue *value, gpointer feature
 
       if(feature->parent)
       {
-        feature_data->set_id = feature->parent->unique_id;
+        ZMapFeatureSet fset = (ZMapFeatureSet) feature->parent;
+
+        feature_data->column_id = fset->column_id;
+/*        feature_data->set_id = feature->parent->unique_id;*/
         if(feature->parent->parent)
           {
             feature_data->block_id = feature->parent->parent->unique_id;
@@ -1710,7 +1713,7 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
       /* If above fails then use this data to ensure no item
        * found and the row gets removed. */
       fail_data.align_id = fail_data.block_id = 1;
-      fail_data.set_id = fail_data.feature_id = 1;
+      fail_data.column_id = fail_data.feature_id = 1;
       feature_data = &fail_data;
     }
 
@@ -1721,14 +1724,14 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
   if(!(item = zmapWindowFToIFindItemFull(full_data->context_to_item,
                                feature_data->align_id,
                                feature_data->block_id,
-                               feature_data->set_id,
+                               feature_data->column_id,
                                strand, frame,
                                feature_data->feature_id)))
     {
       item = zmapWindowFToIFindItemFull(full_data->context_to_item,
                               feature_data->align_id,
                               feature_data->block_id,
-                              feature_data->set_id,
+                              feature_data->column_id,
                               (strand == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD),
                               frame,
                               feature_data->feature_id);

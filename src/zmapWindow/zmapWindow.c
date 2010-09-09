@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.337 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.338 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -796,6 +796,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 	  scroll_y1 = scroll_y2 ;
 	  scroll_y2 = tmp ;
 	}
+
+      zmapWindowStateSaveFocusItems(state,window);
 
       if (window_rev_comp_save_state_G)
 	{
@@ -4456,13 +4458,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case GDK_d:
-      /*  need implementing...can work on a window basis... .... */
-
+#if 1 // def ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
     case GDK_D:
-//      { extern int mh_debug; mh_debug = 1; }
+      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
       break;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

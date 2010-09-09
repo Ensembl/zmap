@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.291 2010-09-06 08:48:11 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.292 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1182,6 +1182,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   gboolean valid_strand = FALSE ;
   gboolean valid_frame  = FALSE ;
   GQuark display_id = feature_set_id;
+  GQuark orig_set_id = feature_set_id;
 
   zMapAssert(canvas_data && strand_container) ;
 
@@ -1226,10 +1227,10 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
       zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
 #if MH17_PRINT_CREATE_COL
-// now only a sensible number created.
+/* now only a sensible number created. */
       printf("create column %s -> %s S-%d F-%d\n",
             g_quark_to_string(orig_set_id),
-            g_quark_to_string(display_id),
+            g_quark_to_string(feature_set_id),
             column_strand,column_frame);
 #endif
       /* need to create the column */
@@ -1891,6 +1892,18 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
 }
 
 
+GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id)
+{
+  ZMapGFFSet gffset;
+  GQuark container_id = featureset_id;
+
+  gffset = (ZMapGFFSet) g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(featureset_id));
+  if(gffset)
+      container_id = gffset->feature_set_id;    /* this is the column id, due to historical naming. */
+
+  return container_id;
+}
+
 /*
  * Create a Single Column.
  * This column is a Container, is created for one of the 6 possibilities of STRAND and FRAME.
@@ -2400,13 +2413,14 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
 /* this is in the general menu and needs to be handled separately perhaps as the index is a global
  * one shared amongst all general menu functions... */
+
 static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 					 ZMapGUIMenuItemCallbackFunc callback_func,
 					 gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Feature List",     1, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "List All Column Features",     1, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Feature Search Window", 2, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "DNA Search Window",     5, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Peptide Search Window", 6, columnMenuCB, NULL},
@@ -2443,7 +2457,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature_set->parent->parent->unique_id,
 						    feature_set->parent->unique_id,
-						    feature_set->unique_id,
+						    feature_set->column_id,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(zmapWindowContainerFeatureSetGetStrand(container_set)),
 						    zMapFeatureFrame2Str(zmapWindowContainerFeatureSetGetFrame(container_set)));

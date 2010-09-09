@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.214 2010-09-06 08:48:10 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.215 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2031,6 +2031,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
   /* Check we've got a window_select! */
   if(!window_select)
     return ;                    /* !!! RETURN !!! */
+
 
   if((view_select.type = window_select->type) == ZMAPWINDOW_SELECT_SINGLE)
     {

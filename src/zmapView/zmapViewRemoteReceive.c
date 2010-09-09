@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.52 2010-09-06 08:48:11 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.53 2010-09-09 10:33:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -358,10 +358,12 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 
         case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	  {
+zMapLogMessage("%s","view_execute_command 1\n");
 	    if (sanityCheckContext(view, &input_data, &output_data))
 	      {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		ZMapFeatureAny feature ;
+zMapLogMessage("%s","view_execute_command 2\n");
 
 		if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
 									 input_data.feature)))
@@ -374,9 +376,11 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 		else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+zMapLogMessage("%s","view_execute_command 3\n");
 		  if (drawNewFeatures(view, &input_data, &output_data)
 		      && (view->xremote_widget && input_data.edit_context))
 		  {
+zMapLogMessage("%s","view_execute_command 4\n");
 		    /* slice the input_data into the post_data to make the view_post_execute happy. */
 		    PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
 
@@ -390,6 +394,7 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 
 		input_data.edit_context = NULL;
 	      }
+zMapLogMessage("%s","view_execute_command 5\n");
           break;
 	  }
         case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
@@ -466,6 +471,7 @@ static char *view_post_execute(char *command_text, gpointer user_data, int *stat
 	{
 	case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	  {
+zMapLogMessage("%s","view_post_execute_1\n");
 	    status = zmapViewDrawDiffContext(view, &(post_data->edit_context));
 
 	    if(!status)
@@ -473,6 +479,7 @@ static char *view_post_execute(char *command_text, gpointer user_data, int *stat
 
 	    if(post_data->edit_context)
 	      zMapFeatureContextDestroy(post_data->edit_context, TRUE);
+zMapLogMessage("%s","view_post_execute_2\n");
 	  }
 	  break;
 	default:
@@ -923,6 +930,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
     case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
       {
         RequestData request_data = (RequestData)(xml_data->user_data);
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_request_start_cb_1\n");
 
         populate_data_from_view(request_data->view, request_data);
 
@@ -947,6 +955,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 		    result = FALSE ;
 		  }
 	      }
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_request_start_cb_2\n");
 	  }
 
 	result = TRUE ;
@@ -1395,6 +1404,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
       {
 	result = TRUE ;
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_1\n");
 
         zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
                                             parser,
@@ -1486,6 +1496,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	      }
 	  }
 
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_2\n");
         if (result && !zMapXMLParserLastErrorMsg(parser))
           {
             feature_name = (char *)g_quark_to_string(feature_name_q);
@@ -1510,6 +1521,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		    zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
 						     start_phase, end_not_found);
 		  }
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_3\n");
 
 		if ((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
 		  {
@@ -1550,6 +1562,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			   ...
 			   i.e. deleting the locus name it's creating!
 			*/
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_4\n");
 
 			old_feature =
 			  (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
@@ -1633,6 +1646,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		      }
 		  }
 
+if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_5\n");
 
 		/* THIS DOESN'T DO A DEEP ENOUGH COPY, WE FAIL LATER FOR SOME ACTIONS
 		 * BECAUSE STUFF LIKE THE HOMOL DATA IS NOT COPIED SO WE CAN'T FIND
