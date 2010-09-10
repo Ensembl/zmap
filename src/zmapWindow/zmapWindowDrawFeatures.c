@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.292 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.293 2010-09-10 18:22:47 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -697,7 +697,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       if(feature_set->masker_sorted_features)
         {
             if(!container->maskable)      /* cannot have been unset */
-                  container->masked = TRUE;
+                  container->masked = FALSE;
             container->maskable = TRUE;
         }
 
@@ -726,7 +726,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       if(feature_set->masker_sorted_features)
         {
             if(!container->maskable)      /* cannot have been unset */
-                  container->masked = TRUE;
+                  container->masked = FALSE;
             container->maskable = TRUE;
         }
 
@@ -1051,6 +1051,9 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
                        g_quark_to_string(container_set->unique_id),
                        zMapFeatureStrand2Str(column_strand)) ;
 #endif
+#if 1 //def MH17_NEVER_INCLUDE_THIS_CODE
+              zMapLogMessage("3F1: hiding %s", g_quark_to_string(container_set->unique_id)) ;
+#endif
 //	      if (window->display_3_frame)
 		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
 	    }
@@ -1067,7 +1070,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 	      if ((column_strand != ZMAPSTRAND_REVERSE)
 		  || (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
 		{
-#ifdef MH17_NEVER_INCLUDE_THIS_CODE
+#if 1 //def MH17_NEVER_INCLUDE_THIS_CODE
 		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
@@ -1264,7 +1267,11 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
       if (valid_frame && valid_strand)
       	column = tmp_column ;
     }
-
+#if MH17_DEBUG
+printf("create %s: %p %p, v=%d %d\n",
+            g_quark_to_string(feature_set_id),
+            column,tmp_column,valid_strand,valid_frame);
+#endif
   return column ;
 }
 
@@ -1848,7 +1855,9 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
       if (frame_end_out)
 	*frame_end_out = frame_end ;
     }
-
+#if MH17_DEBUG
+printf("%s: matched = %d, %d-%d\n", g_quark_to_string(feature_set->unique_id),matched,frame_start,frame_end) ;
+#endif
   return matched ;
 }
 
@@ -2007,7 +2016,16 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	      ZMapFeatureTypeStyle style;
 	      style = ZMAP_FEATURE_STYLE(list->data);
 	      if(!zMapStyleIsDisplayable(style))
-		proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
+            {
+                  printf("style %s for %s is not displayable\n", g_quark_to_string(style->unique_id),g_quark_to_string(feature_set_unique_id));
+		      proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
+            }
+#if MH17_DEBUG
+if(feature_set_unique_id == g_quark_from_string("trembl"))
+{
+printf("trembl style %s = %d\n",g_quark_to_string(style->unique_id),style->frame_mode);
+}
+#endif
 	    }
 	  while(proceed && (list = g_list_next(list)));
 	}

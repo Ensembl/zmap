@@ -30,7 +30,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.59 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.60 2010-09-10 18:22:47 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -999,9 +999,10 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
 
       if (!zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_DEFAULT) && style->mode != ZMAPSTYLE_MODE_GLYPH)
       {
-        // MH17: as glyphs are sub-features we can't bump
-        // this would break 'column default bump mode'
-        // feature type glyphs can have default-bump-mode' set explicitly in the style
+        /* MH17: as glyphs are sub-features we can't bump
+         * this would break 'column default bump mode'
+         * feature type glyphs can have default-bump-mode' set explicitly in the style
+         */
         zmapStyleSetIsSet(style,STYLE_PROP_BUMP_DEFAULT);
         style->default_bump_mode = ZMAPBUMP_UNBUMP ;
       }
@@ -1012,7 +1013,10 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
         style->width = 1.0 ;
       }
 
-      if (!zMapStyleIsPropertySetId(style,STYLE_PROP_FRAME_MODE))
+      /* hash table lookup of styles from a container featureset is random and the first non zero is chosen
+       * so a glyph attached to a pep-align can set the main style be not 3 frame
+      */
+      if (!zMapStyleIsPropertySetId(style,STYLE_PROP_FRAME_MODE) && style->mode != ZMAPSTYLE_MODE_GLYPH)
       {
         zmapStyleSetIsSet(style,STYLE_PROP_FRAME_MODE);
         style->frame_mode = ZMAPSTYLE_3_FRAME_NEVER ;

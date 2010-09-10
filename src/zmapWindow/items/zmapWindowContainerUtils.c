@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 15:27 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.19 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.20 2010-09-10 18:22:47 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -814,14 +814,13 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 
         l = list;
 	  list = list->next;
-        g_free(l);      /* mh17: oddly this was not done */
+//        g_free(l);      /* mh17: oddly this was not done */
 
 	  gtk_object_destroy(gtk_item_object);
 	}
       while((list));
     }
-
-  group->item_list = NULL; /* nor this */
+//  group->item_list = NULL; /* nor this */
   return ;
 }
 

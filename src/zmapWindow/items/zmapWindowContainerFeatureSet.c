@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.33 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.34 2010-09-10 18:22:47 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -739,7 +739,6 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
 
   if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
     {
-      zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(container_set->unique_id));
       container_set->settings.frame_specific = FALSE;
     }
 
@@ -747,7 +746,6 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
 
   if(frame_mode_out)
     *frame_mode_out = frame_mode;
-
   return frame_specific;
 }
 

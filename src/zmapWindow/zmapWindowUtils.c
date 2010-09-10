@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.65 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.66 2010-09-10 18:22:47 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -488,8 +488,9 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQu
 
   gff = g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(feature_set_id));
   if(gff)
+  {
       feature_set_id = gff->feature_set_id;
-
+  }
 
   if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles,
 					       GUINT_TO_POINTER(feature_set_id))))
