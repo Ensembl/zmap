@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.293 2010-09-10 18:22:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.294 2010-09-15 09:48:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1051,7 +1051,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
                        g_quark_to_string(container_set->unique_id),
                        zMapFeatureStrand2Str(column_strand)) ;
 #endif
-#if 1 //def MH17_NEVER_INCLUDE_THIS_CODE
+#ifdef MH17_NEVER_INCLUDE_THIS_CODE
               zMapLogMessage("3F1: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 //	      if (window->display_3_frame)
@@ -1070,7 +1070,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 	      if ((column_strand != ZMAPSTRAND_REVERSE)
 		  || (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
 		{
-#if 1 //def MH17_NEVER_INCLUDE_THIS_CODE
+#ifdef MH17_NEVER_INCLUDE_THIS_CODE
 		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
@@ -2020,12 +2020,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
                   printf("style %s for %s is not displayable\n", g_quark_to_string(style->unique_id),g_quark_to_string(feature_set_unique_id));
 		      proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
             }
-#if MH17_DEBUG
-if(feature_set_unique_id == g_quark_from_string("trembl"))
-{
-printf("trembl style %s = %d\n",g_quark_to_string(style->unique_id),style->frame_mode);
-}
-#endif
 	    }
 	  while(proceed && (list = g_list_next(list)));
 	}

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 10:14 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.32 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.33 2010-09-15 09:48:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2234,6 +2234,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
   zMapLogReturnIfFail(canvas_item != NULL);
   zMapLogReturnIfFail(interval    != NULL);
 
+
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
       ZMapStyleParamId colour_target = STYLE_PROP_COLOURS;
@@ -2266,6 +2267,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 			      &fill, &draw, &outline);
 	}
 
+      colour_target = STYLE_PROP_COLOURS;
       if (feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
 	{
 	  colour_target = STYLE_PROP_REV_COLOURS;
