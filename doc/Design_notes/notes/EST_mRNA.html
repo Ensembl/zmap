@@ -1,4 +1,4 @@
-<!-- $Id: EST_mRNA.html,v 1.6 2010-09-01 09:47:27 mh17 Exp $ -->
+<!-- $Id: EST_mRNA.html,v 1.7 2010-09-15 10:43:14 mh17 Exp $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 
 <fieldset><legend>Background</legend>
@@ -133,7 +133,7 @@ When displayed each part (alignment feature) is expressed as a separate canvas i
 <h3>Motivation </h3>
 <p>We wish to hide (ie not display at all) features that are masked a) to unclutter the display and b) to run faster and this option is chosen by not specifying a 'masked features colour' for the window.
 </p>
-<p>For testing and also as an option to show all the data but direct the user's attention to important features we wish to display masked features in grey, and this colour choice will logically apply to the window rather than a column.  If a masked features colour is specified then these features will be displayed but initially hidden - display speed will be faster if they are not displayed but typically the difference will be minimal as we are dealing with only 1000 features, and display speed is dominated by protien alignments where volumes are more like 50k+.
+<p>For testing and also as an option to show all the data but direct the user's attention to important features we wish to display masked features in grey, and this colour choice will logically apply to the window rather than a column.  If a masked features colour is specified then these features will be displayed but initially hidden - display speed will be faster if they are not displayed but typically the difference will not be extreme as we are dealing in some cases with only 1000 features, and display speed is dominated by protien alignments where volumes are more like 50k+.  But NB: volumes of 10-20K are not rare.
 </p>
 
 <h3>How is this done?</h3>
@@ -220,8 +220,31 @@ masked 109, failed 6279, tried 528 of 528 composite features
 mask set EST_Human with set vertebrate_mRNA
 masked 346, failed 1812, tried 514 of 528 composite features
 </pre>
-Which in rough terms gives us 70&pct; of ESTs filtered off the display.
+Which in rough terms gives us 70% of ESTs filtered off the display.
 </p>
+
+<p>Using chr11-03_71088949-71922184, which has more EST features we have much higher failed comparisons, but the high figure of 221163 compare to a worst case of 11417641 or 2% of that required by the naive algorithm.  EST human is masked only at a level of 68%
+<pre>
+mask set vertebrate_mRNA with set vertebrate_mRNA
+masked 134, failed 11271, tried 577 of 577 composite features
+
+mask set EST_Human with set EST_Human
+masked 439, failed 221163, tried 3379 of 3379 composite features
+mask set EST_Human with set vertebrate_mRNA
+masked 1861, failed 70075, tried 3379 of 3379 composite features
+
+mask set EST_Other with set EST_Other
+masked 256, failed 11421, tried 1023 of 1023 composite features
+mask set EST_Other with set vertebrate_mRNA
+masked 687, failed 11129, tried 1023 of 1023 composite features
+
+mask set EST_Mouse with set EST_Mouse
+masked 113, failed 1870, tried 457 of 457 composite features
+mask set EST_Mouse with set vertebrate_mRNA
+masked 339, failed 4171, tried 457 of 457 composite features
+</pre>
+</p>
+
 <p>The algortihm appears to run effciently: # failed is the number of comparisons used with no effect. The worst case is quadratic (like the obvious naive algorithm) but we are a long way from that.
 </p>
 </fieldset>

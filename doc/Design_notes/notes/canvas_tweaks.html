@@ -1,4 +1,4 @@
-<!-- $Id: canvas_tweaks.html,v 1.3 2010-09-01 09:56:37 mh17 Exp $ -->
+<!-- $Id: canvas_tweaks.html,v 1.4 2010-09-15 10:43:14 mh17 Exp $ -->
 
 <h2>Speeding up the use of the Foo Canvas</h2>
 
@@ -21,7 +21,7 @@ All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of fea
 <p>See also RT #177032, where this text orginated.</p>
 <h3>Displaying invisible features slows ZMap down</h3>
 <p>
-Display time in ZMap is dominated by a few heavily populated columns eg trembl may have 50k features but the majority of these features are obscured by others and cannot be seen. As operating the foo canvas takes 90% of the display time and a complete feature context can be scanned very quickly (eg 50ms to reverse complement all features, compared with 10sec to display) it may be possible to speed up this display by not adding invisible features to the canvas.  Note that due to the display format of alignments (centered rectangles) we can resonably expect to loose 98% of features off the display for a column like TrEMBL - if the column is 1000 pixels deep we cannot need to display more than 1000 to give the same visual appearance.  However there may still be some overlap caused by the simple scan algorithm but this is limited by the pixel width of the column.
+Display time in ZMap is dominated by a few heavily populated columns eg trembl may have 50k features but the majority of these features are obscured by others and cannot be seen. As operating the foo canvas takes 90% of the display time and a complete feature context can be scanned very quickly (eg 50ms to reverse complement all features, compared with 10sec to display) it may be possible to speed up this display by not adding invisible features to the canvas.  Note that due to the display format of alignments (centered rectangles) we can resonably expect to loose up to 98% of features off the display for a column like TrEMBL - if the column is 1000 pixels deep we cannot need to display more than 1000 features to give the same visual appearance.  There may still be some overlap caused by the simple scan algorithm.
 </p>
 <p>
 This is a similar process to the idea of a summary display as to be provided by otterlace on request, but the difference is that ZMap would still have all the data and only real features will be used. The argument for having ZMap perform the necessary calculations is that ZMap knows when features become obscured at different zoom levels as it knows about pixel coordinates.
