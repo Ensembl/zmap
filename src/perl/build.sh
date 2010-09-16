@@ -10,7 +10,8 @@ cd $HERE
 HERE=`pwd`
  SRC=$HERE/..
 ZMAP_INC="$SRC/include"
-ZMAP_LIB="$SRC/build/linux/lib"
+# oddly we need a .libs directory that contains symlinks to it's parent. Why?
+ZMAP_LIB="$SRC/build/linux/.libs"
 
 #==========================================
 # chose a perl version

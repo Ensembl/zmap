@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,11 +27,11 @@
  * Description: Interface functions for xremote API to zmap control window.
  *
  * Exported functions: See zmapControl_P.h
- *              
+ *
  * HISTORY:
  * Last edited: Mar 25 14:42 2010 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.12 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.13 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,29 +102,29 @@ typedef struct
 
 
 /* ZMAPXREMOTE_CALLBACK */
-static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode);
+static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data);
 static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data) ;
 static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
 static void findView(gpointer data, gpointer user_data) ;
 
-static gboolean xml_zmap_start_cb(gpointer user_data, 
+static gboolean xml_zmap_start_cb(gpointer user_data,
                                   ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser);
-static gboolean xml_request_start_cb(gpointer user_data, 
+static gboolean xml_request_start_cb(gpointer user_data,
 				     ZMapXMLElement zmap_element,
 				     ZMapXMLParser parser);
-static gboolean xml_segment_end_cb(gpointer user_data, 
-                                   ZMapXMLElement segment, 
+static gboolean xml_segment_end_cb(gpointer user_data,
+                                   ZMapXMLElement segment,
                                    ZMapXMLParser parser);
-static gboolean xml_location_end_cb(gpointer user_data, 
-                                    ZMapXMLElement segment, 
+static gboolean xml_location_end_cb(gpointer user_data,
+                                    ZMapXMLElement segment,
                                     ZMapXMLParser parser);
-static gboolean xml_style_end_cb(gpointer user_data, 
-                                   ZMapXMLElement segment, 
+static gboolean xml_style_end_cb(gpointer user_data,
+                                   ZMapXMLElement segment,
                                    ZMapXMLParser parser);
-static gboolean xml_return_true_cb(gpointer user_data, 
-                                   ZMapXMLElement zmap_element, 
+static gboolean xml_return_true_cb(gpointer user_data,
+                                   ZMapXMLElement zmap_element,
                                    ZMapXMLParser parser);
 
 static gboolean control_execute_debug_G = FALSE;
@@ -159,7 +159,7 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
 static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
   {
     NULL,
-    "zoom_in", "zoom_out", 
+    "zoom_in", "zoom_out",
     "register_client",
     "new_view", "close_view",
     NULL
@@ -172,8 +172,8 @@ void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer use
 {
   ZMap zmap = (ZMap)user_data ;
 
-  zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME, 
-                              ZMAP_DEFAULT_REQUEST_ATOM_NAME, 
+  zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME,
+                              ZMAP_DEFAULT_REQUEST_ATOM_NAME,
                               ZMAP_DEFAULT_RESPONSE_ATOM_NAME,
                               control_execute_command, zmap) ;
   return ;
@@ -183,8 +183,8 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 {
   char *xml = NULL;
 
-  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(zmap->toplevel), 
-                                           &actions_G[ZMAPCONTROL_REMOTE_INVALID + 1], 
+  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(zmap->toplevel),
+                                           &actions_G[ZMAPCONTROL_REMOTE_INVALID + 1],
                                            ZMAPCONTROL_REMOTE_UNKNOWN - 1);
 
   return xml;
@@ -199,7 +199,7 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 /* Return is string in the style of ZMAP_XREMOTE_REPLY_FORMAT (see ZMap/zmapXRemote.h) */
 /* Building the reply string is a bit arcane in that the xremote reply strings are really format
  * strings...perhaps not ideal...., but best in the cicrumstance I guess */
-static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode)
+static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner)
 {
   ZMapXMLParser parser;
   ZMap zmap = (ZMap)user_data;
@@ -215,6 +215,8 @@ static char *control_execute_command(char *command_text, gpointer user_data, int
   input_data.zmap = zmap;
   input.user_data = &input_data;
 
+  zmap->xremote_server = owner;     /* so we can do a delayed reply */
+
   parser = zMapXMLParserCreate(&input, FALSE, FALSE);
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &control_starts_G[0], &control_ends_G[0]);
@@ -222,10 +224,10 @@ static char *control_execute_command(char *command_text, gpointer user_data, int
   if((zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))) == TRUE)
     {
       ResponseDataStruct output_data = {0};
-      
+
       output_data.code = 0;
       output_data.messages = g_string_sized_new(512);
-      
+
       switch(input.common.action)
         {
         case ZMAPCONTROL_REMOTE_REGISTER_CLIENT:
@@ -246,7 +248,11 @@ static char *control_execute_command(char *command_text, gpointer user_data, int
         }
 
       *statusCode = output_data.code;
-      xml_reply   = g_string_free(output_data.messages, FALSE);
+      if(input.common.action != ZMAPCONTROL_REMOTE_NEW_VIEW)
+        {
+            /* new view has to delay before responding */
+          xml_reply   = g_string_free(output_data.messages, FALSE);
+        }
     }
   else
     {
@@ -267,9 +273,11 @@ static char *control_execute_command(char *command_text, gpointer user_data, int
     {
       zMapLogWarning("%s", xml_reply);
       g_free(xml_reply);
-      xml_reply = g_strdup("Broken code. Check zmap.log file"); 
+      xml_reply = g_strdup("Broken code. Check zmap.log file");
     }
-  if(xml_reply == NULL){ xml_reply = g_strdup("Broken code."); }
+/*  if(xml_reply == NULL){ xml_reply = g_strdup("Broken code."); }
+ not for new view: null resposnse to squelch output
+*/
 
   return xml_reply;
 }
@@ -283,8 +291,8 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
 
   if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
     {
-      if ((view = zMapAddView(zmap, sequence, 
-			      view_params->start, 
+      if ((view = zMapAddView(zmap, sequence,
+			      view_params->start,
 			      view_params->end)))
         {
           zMapViewReadConfigBuffer(view, view_params->config);
@@ -313,7 +321,7 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
           g_string_append_printf(output_data->messages,
                                  "failed to create view");
         }
-        
+
     }
 
   return ;
@@ -454,7 +462,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement zmap_ele
   return FALSE;
 }
 
-static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment, 
+static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
                                    ZMapXMLParser parser)
 {
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
@@ -476,7 +484,7 @@ static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
 
   /* Need to put contents into a source stanza buffer... */
   request_data->view_params.config = zMapXMLElementStealContent(segment);
-  
+
   return TRUE;
 }
 
@@ -533,7 +541,7 @@ static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement element,
                         &(style->outline));
       if((attr = zMapXMLElementGetAttributeByName(element, "description")))
         style->description = (char *)g_quark_to_string( zMapXMLAttributeGetValue(attr) );
-      
+
     }
 #endif
 
@@ -541,8 +549,8 @@ static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 
-static gboolean xml_return_true_cb(gpointer user_data, 
-                                   ZMapXMLElement zmap_element, 
+static gboolean xml_return_true_cb(gpointer user_data,
+                                   ZMapXMLElement zmap_element,
                                    ZMapXMLParser parser)
 {
   return TRUE;

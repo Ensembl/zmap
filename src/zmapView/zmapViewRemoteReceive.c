@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.53 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.54 2010-09-16 11:57:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,8 +163,8 @@ typedef struct
   ZMapFeatureContext edit_context;
 }PostExecuteDataStruct, *PostExecuteData;
 
-static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode);
-static char *view_post_execute(char *command_text, gpointer user_data, int *statusCode);
+static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
+static char *view_post_execute(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
 static void delete_failed_make_message(gpointer list_data, gpointer user_data);
 static gboolean drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
 static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseData output_data);
@@ -274,6 +274,8 @@ void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
 				  view_execute_command,
 				  view_post_execute,
 				  view);
+
+
   return ;
 }
 
@@ -298,7 +300,7 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view)
 
 
 /* The ZMapXRemoteCallback */
-static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode)
+static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode,ZMapXRemoteObj owner)
 {
   ZMapXMLParser parser;
   ZMapXRemoteParseCommandDataStruct input = { NULL };
@@ -358,12 +360,10 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 
         case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	  {
-zMapLogMessage("%s","view_execute_command 1\n");
 	    if (sanityCheckContext(view, &input_data, &output_data))
 	      {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		ZMapFeatureAny feature ;
-zMapLogMessage("%s","view_execute_command 2\n");
 
 		if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
 									 input_data.feature)))
@@ -376,11 +376,9 @@ zMapLogMessage("%s","view_execute_command 2\n");
 		else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-zMapLogMessage("%s","view_execute_command 3\n");
 		  if (drawNewFeatures(view, &input_data, &output_data)
 		      && (view->xremote_widget && input_data.edit_context))
 		  {
-zMapLogMessage("%s","view_execute_command 4\n");
 		    /* slice the input_data into the post_data to make the view_post_execute happy. */
 		    PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
 
@@ -394,7 +392,6 @@ zMapLogMessage("%s","view_execute_command 4\n");
 
 		input_data.edit_context = NULL;
 	      }
-zMapLogMessage("%s","view_execute_command 5\n");
           break;
 	  }
         case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
@@ -455,7 +452,7 @@ zMapLogMessage("%s","view_execute_command 5\n");
 }
 
 
-static char *view_post_execute(char *command_text, gpointer user_data, int *statusCode)
+static char *view_post_execute(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner)
 {
   ZMapView view = (ZMapView)user_data;
   PostExecuteData post_data;
@@ -471,7 +468,6 @@ static char *view_post_execute(char *command_text, gpointer user_data, int *stat
 	{
 	case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	  {
-zMapLogMessage("%s","view_post_execute_1\n");
 	    status = zmapViewDrawDiffContext(view, &(post_data->edit_context));
 
 	    if(!status)
@@ -479,7 +475,6 @@ zMapLogMessage("%s","view_post_execute_1\n");
 
 	    if(post_data->edit_context)
 	      zMapFeatureContextDestroy(post_data->edit_context, TRUE);
-zMapLogMessage("%s","view_post_execute_2\n");
 	  }
 	  break;
 	default:

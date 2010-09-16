@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: May  5 16:13 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.53 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.54 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,11 +72,14 @@ typedef struct
  *  */
 #define REMOTELOGMSG(SEVERITY, FORMAT_STR, ...)	     \
   do                                                 \
-    {				                     \
-      if (externalPerl)                              \
-	fprintf(stderr, FORMAT_STR, __VA_ARGS__) ;   \
-      else                                           \
-	zMapLog##SEVERITY(FORMAT_STR, __VA_ARGS__) ; \
+    {	\
+      if(debug_G)			                     \
+      { \
+        if (externalPerl)                              \
+	    fprintf(stderr, FORMAT_STR, __VA_ARGS__) ;   \
+        else                                           \
+	    zMapLog##SEVERITY(FORMAT_STR, __VA_ARGS__) ; \
+     } \
     } while (0)
 
 
@@ -93,7 +96,7 @@ static ZMapXRemoteSendCommandError zmapXRemoteCheckWindow(ZMapXRemoteObj object)
 static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString(ZMapXRemoteObj object, Atom atom, char *expected) ;
 static ZMapXRemoteSendCommandError zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to) ;
 
-static char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output);
+char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output);
 
 static gboolean zmapXRemoteGetPropertyFullString(Display *display,
                                                  Window   window,
@@ -120,7 +123,7 @@ gboolean externalPerl = TRUE ;
 
 
 /* Controls debugging output. */
-static gboolean debug_G = TRUE ;
+static gboolean debug_G = FALSE ;
 
 /* Locking to stop deadlocks, Not thread safe! - But since this is the GUI threads are not a problem. */
 static gboolean xremote_lock = FALSE ;
@@ -275,7 +278,7 @@ void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name)
     }
   else
     {
-      REMOTELOGMSG(Warning,"Set/Check Request atom %s\n", atom_name);
+/*      REMOTELOGMSG(Warning,"Set/Check Request atom %s\n", atom_name); */
 
       g_free(atom_name);
     }
@@ -304,7 +307,7 @@ void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name)
     }
   else
     {
-      REMOTELOGMSG(Warning,"Set/Check Response atom %s\n", atom_name);
+/*      REMOTELOGMSG(Warning,"Set/Check Response atom %s\n", atom_name); */
       g_free(atom_name);
     }
 
@@ -490,7 +493,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
   gboolean check_names = TRUE;
   char *atom_name = "";
 
-REMOTELOGMSG(Warning, "[XRemote] send command: %s", command);
+REMOTELOGMSG(Warning, "[XRemote] send command: %s",command);
 
   if (object->timeout > 0.0)
     {
@@ -534,7 +537,7 @@ REMOTELOGMSG(Warning, "[XRemote] send command: %s", command);
       if ((atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
 	{
 
-#if 1 //def ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  REMOTELOGMSG(Warning,"About to send to %s on 0x%lx:\n'%s'\n",
 		     atom_name, (unsigned long)object->window_id, command) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -924,7 +927,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
            * is pretty certain */
           zmapXRemoteLock();
           /* Get an answer from the callback */
-          xml_stub = (callback)(command_text, cb_data, &statusCode) ;
+          xml_stub = (callback)(command_text, cb_data, &statusCode, xremote) ;
           zmapXRemoteUnLock();
 
 	  /*
@@ -942,22 +945,27 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
 	   */
         }
 
-      zMapAssert(xml_stub); /* Need an answer */
+      /* for new view we wait for the map event from X and return null
+       * and reply from that callback when the view can accept commands
+       * otterlace will wait in a tight loop till we get our window realised and mapped
+         zMapAssert(xml_stub);
+       */
+      if(xml_stub)
+        {
+          /* Do some processing of the answer to make it fit the protocol */
+          xml_text = zMapXRemoteProcessForReply(xremote, statusCode, xml_stub);
+          response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
-      /* Do some processing of the answer to make it fit the protocol */
-      xml_text = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
-      response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
+          REMOTELOGMSG(Warning, "[XREMOTE respond] %s", response_text);
 
-      REMOTELOGMSG(Warning, "[XREMOTE respond] %s", response_text);
+          /* actually do the replying */
+          zMapXRemoteSetReply(xremote, response_text);
 
-      /* actually do the replying */
-      zMapXRemoteSetReply(xremote, response_text);
-
-      /* clean up */
-      g_free(response_text) ;
-      g_free(xml_text) ;
-      g_free(xml_stub) ;
-
+          /* clean up */
+          g_free(response_text) ;
+          g_free(xml_text) ;
+          g_free(xml_stub) ;
+        }
       result = TRUE ;
     }
 
@@ -976,8 +984,8 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
  */
 
 /*
-      we change the prorty of the oterh window's request atom and get a notify for that
-      then the set the time
+      we change the property of the otherh window's request atom and get a notify for that
+      then we set the time
       then we should get a notify for the response atom
       and read the reply
 */
@@ -1050,12 +1058,12 @@ static Bool process_property_notify(ZMapXRemoteObj object,
       switch(event.xproperty.state)
 	{
 	case PropertyNewValue:
-	  REMOTELOGMSG(Warning,"We created the request_atom '%s'\n", atom_name);
+/*	  REMOTELOGMSG(Warning,"We created the request_atom '%s'\n", atom_name);*/
 	  predicate->time = event.xproperty.time;
 	  predicate->set  = True;
 	  break;
 	case PropertyDelete:
-	  REMOTELOGMSG(Warning,"Server accepted atom '%s'\n", atom_name);
+/*	  REMOTELOGMSG(Warning,"Server accepted atom '%s'\n", atom_name);*/
 	  break;
 	default:
 	  break;
@@ -1076,7 +1084,7 @@ static Bool process_property_notify(ZMapXRemoteObj object,
   return isDone;
 }
 
-static char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output)
+char *zMapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output)
 {
   char *reply = NULL;
   if(statusCode >= ZMAPXREMOTE_BADREQUEST)
@@ -1100,6 +1108,9 @@ static char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, c
 
   return reply;
 }
+
+
+
 
 static char *zmapXRemoteGetAtomName(Display *display, Atom atom)
 {
@@ -1189,8 +1200,6 @@ static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString (ZMapXRemoteObj obje
       if(error)
         {
           REMOTELOGMSG(Warning,"Warning : window 0x%lx is not a valid remote-controllable window, error = %d/%s.\n",
-                     object->window_id,(int) error->code,error->message);
-          zMapLogWarning("Warning : window 0x%lx is not a valid remote-controllable window, error = %d/%s.\n",
                      object->window_id,(int) error->code,error->message);
 
           switch(error->code)
@@ -1556,7 +1565,7 @@ static XErrorHandler stored_xerror_handler(XErrorHandler e,
  *
  * It should be noted that nested calls to this and untrap will _not_ function correctly!
  */
-static void zmapXTrapErrors(char *where)
+static void zmapXTrapErrors(const char *where)
 {
   XErrorHandler current = NULL;
   windowError = False;
@@ -1571,7 +1580,7 @@ static void zmapXTrapErrors(char *where)
   return ;
 }
 
-static void zmapXUntrapErrors(char *where)
+static void zmapXUntrapErrors(const char *where)
 {
   XErrorHandler restore = NULL;
 

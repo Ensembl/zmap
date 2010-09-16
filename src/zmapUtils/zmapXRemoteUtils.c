@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar 29 11:20 2010 (edgrif)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.12 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.13 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,12 +86,12 @@ static gboolean events_debug_G = FALSE ;
 
 
 
-/* 
+/*
  *                      External functions
  */
 
 
-void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, char *response, 
+void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, char *response,
                                  ZMapXRemoteCallback callback, gpointer user_data)
 {
   zMapXRemoteInitialiseWidgetFull(widget, app, request, response, callback, NULL, user_data);
@@ -100,9 +100,9 @@ void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, ch
 }
 
 
-void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request, char *response, 
-				     ZMapXRemoteCallback callback, 
-				     ZMapXRemoteCallback post_callback, 
+void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request, char *response,
+				     ZMapXRemoteCallback callback,
+				     ZMapXRemoteCallback post_callback,
 				     gpointer user_data)
 {
   ZMapXRemoteNotifyData notify_data ;
@@ -110,13 +110,13 @@ void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request
   notify_data           = g_new0(ZMapXRemoteNotifyDataStruct, 1);
   notify_data->xremote  = NULL;
   notify_data->callback = callback;
-  notify_data->data     = user_data; 
+  notify_data->data     = user_data;
   notify_data->post_cb  = post_callback;
-  
+
   notify_data->app_name = g_strdup(app);
   notify_data->req_name = g_strdup(request);
   notify_data->res_name = g_strdup(response);
-  
+
   /* If the widget and more importantly the window for the widget is on the screen
    * then fine, otherwise we need to attach signal handlers and wait until it is
    * because otherwise we cannot do the property stuff which _must_ have a window. */
@@ -135,7 +135,7 @@ void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request
       g_signal_connect(G_OBJECT(widget), END_EVENT_TYPE,
                        G_CALLBACK(end_handler), notify_data);
       g_signal_connect(G_OBJECT(widget), "destroy-event",
-                       G_CALLBACK(destroy_property_notify_data), 
+                       G_CALLBACK(destroy_property_notify_data),
                        notify_data);
     }
 
@@ -159,7 +159,7 @@ Window zMapXRemoteWidgetGetXID(GtkWidget *widget)
 gboolean zMapXRemoteValidateStatusCode(int *code)
 {
   gboolean valid = FALSE;
-  
+
   switch(*code)
     {
     case ZMAPXREMOTE_OK:
@@ -195,26 +195,26 @@ char *zMapXRemoteClientAcceptsActionsXML(unsigned long xwid, char **actions, int
   int i;
 
   xml = g_string_sized_new(512);
-  
-  g_string_append_printf(xml, "<client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\">", 
-			 xwid, 
+
+  g_string_append_printf(xml, "<client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\">",
+			 xwid,
 			 ZMAP_DEFAULT_REQUEST_ATOM_NAME,
-			 ZMAP_DEFAULT_RESPONSE_ATOM_NAME); 
-  
+			 ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
+
   for(i = 0; i < action_count; i++)
    {
      g_string_append_printf(xml, "<action>%s</action>", actions[i]);
    }
 
   g_string_append_printf(xml, "</client>");
-  
+
   full_xml = g_string_free(xml, FALSE);
 
   return full_xml;
 }
 
 /* user_data _MUST_ == ZMapXRemoteParseCommandData */
-gboolean zMapXRemoteXMLGenericClientStartCB(gpointer user_data, 
+gboolean zMapXRemoteXMLGenericClientStartCB(gpointer user_data,
                                             ZMapXMLElement client_element,
                                             ZMapXMLParser parser)
 {
@@ -256,16 +256,16 @@ static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProper
 
   event_atom = gdk_x11_atom_to_xatom(ev->atom);
 
-  if (zMapXRemoteHandlePropertyNotify(notify_data->xremote, 
-				      event_atom, ev->state, 
-				      notify_data->callback, 
+  if (zMapXRemoteHandlePropertyNotify(notify_data->xremote,
+				      event_atom, ev->state,
+				      notify_data->callback,
 				      notify_data->data))
     {
       char *request = "dummy request";
       int code;
 
       if((ev->state != GDK_PROPERTY_DELETE) && notify_data->post_cb)
-	(notify_data->post_cb)(request, notify_data->data, &code);
+	(notify_data->post_cb)(request, notify_data->data, &code, notify_data->xremote);
 
       result = TRUE;
     }
@@ -329,21 +329,21 @@ static gboolean begin_handler(GtkWidget *widget, GdkEvent  *event, gpointer begi
         {
 	  if (notify_data->property_handler_id)
 	    g_signal_handler_disconnect(widget, notify_data->property_handler_id) ;
-	  
+
           if (notify_data->xremote)
             zMapXRemoteDestroy(notify_data->xremote);
 
           notify_data->xremote = zMapXRemoteNew(GDK_DISPLAY());
-          
-          zMapXRemoteInitServer(notify_data->xremote, id, 
-                                notify_data->app_name, 
-                                notify_data->req_name, 
+
+          zMapXRemoteInitServer(notify_data->xremote, id,
+                                notify_data->app_name,
+                                notify_data->req_name,
                                 notify_data->res_name);
-          
+
           notify_data->xwindow_id = id ;		    /* record this for later */
-          
+
 	  notify_data->property_handler_id = g_signal_connect(G_OBJECT(widget), "property-notify-event",
-							      G_CALLBACK(zmapXRemotePropertyNotifyEvent), 
+							      G_CALLBACK(zmapXRemotePropertyNotifyEvent),
 							      (gpointer)notify_data) ;
         }
       else

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  6 15:57 2010 (edgrif)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.25 2010-09-06 08:48:09 mh17 Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.26 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,8 +93,8 @@ G_STMT_START {                                             \
 /* Xlib error trapping stuff. Needed to stop bombing by X on errors */
 static Bool windowError = False;
 
-static void zmapXTrapErrors(char *);
-static void zmapXUntrapErrors(char *);
+static void zmapXTrapErrors(const char *);
+static void zmapXUntrapErrors(const char *);
 static int  zmapXErrorHandler(Display *dpy, XErrorEvent *e);
 
 /* This is quite nauseating...

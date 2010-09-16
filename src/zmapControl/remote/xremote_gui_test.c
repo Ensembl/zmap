@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,11 +27,11 @@
  * Description: Test program for ZMap Xremote API.
  *
  * Exported functions: None
- *              
+ *
  * HISTORY:
  * Last edited: Mar 26 09:20 2010 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.22 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.23 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,7 +118,7 @@ typedef struct
 
 typedef struct
 {
-  GtkWidget *app_toplevel, *vbox, *menu, *text_area, 
+  GtkWidget *app_toplevel, *vbox, *menu, *text_area,
     *buttons, *sequence, *zmap_path, *client_entry;
 
   GtkWidget *response_text_area ;
@@ -168,7 +168,7 @@ typedef struct
 
 static int zmapXremoteTestSuite(int argc, char *argv[]);
 static void installPropertyNotify(GtkWidget *ignored, GdkEvent *event, XRemoteTestSuiteData suite);
-static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode);
+static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
 static GtkWidget *entry_box_widgets(XRemoteTestSuiteData suite);
 static GtkWidget *menubar(XRemoteTestSuiteData suite);
 static GtkWidget *message_box(XRemoteTestSuiteData suite);
@@ -195,17 +195,17 @@ static gboolean api_request_start_cb(gpointer user_data, ZMapXMLElement zmap_ele
 static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 
 
-static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
                                   ZMapXMLParser parser);
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser);
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
                                     ZMapXMLParser parser);
 static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_element,
 				  ZMapXMLParser parser);
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser);
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
                                 ZMapXMLParser parser);
 
 static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_data);
@@ -228,7 +228,7 @@ static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite);
 static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, char **stanza_type);
 
 enum
-  {  
+  {
     XREMOTE_NEW_ZMAP,
     XREMOTE_NEW_VIEW,
     XREMOTE_REGISTER_CLIENT,
@@ -265,8 +265,8 @@ static gboolean command_debug_G = TRUE ;
 static GtkItemFactoryEntry menu_items_G[] =
   {
     {"/_File",                   NULL,         NULL,       0,                "<Branch>", NULL},
-    {"/File/Read",               NULL,         NULL,       0,                NULL,       NULL},  
-    {"/File/Quit",               "<control>Q", menuQuitCB, 0,                NULL,       NULL},  
+    {"/File/Read",               NULL,         NULL,       0,                NULL,       NULL},
+    {"/File/Quit",               "<control>Q", menuQuitCB, 0,                NULL,       NULL},
     {"/_Commands",               NULL,         NULL,       0,                "<Branch>", NULL},
     {"/Commands/new_zmap",            NULL,         cmdCB,      XREMOTE_NEW_ZMAP,      NULL,       NULL},
     {"/Commands/new_view",            NULL,         cmdCB,      XREMOTE_NEW_VIEW,      NULL,       NULL},
@@ -312,8 +312,8 @@ int main(int argc, char *argv[])
 
 
 /* Is this actually called anywhere ???? */
-gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in, 
-				      gboolean        full_process, 
+gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in,
+				      gboolean        full_process,
 				      char          **action_out,
 				      XRemoteMessage *message_out)
 {
@@ -332,22 +332,22 @@ gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in,
       process_data.xml_parser  = zMapXMLParserCreate(&process_data, FALSE, FALSE);
       process_data.xml_message = message_xml_in;
       process_data.xml_length  = strlen(message_xml_in);
-      
+
       process_data.message_out = g_new0(XRemoteMessageStruct, 1);
 
       zMapXMLParserSetMarkupObjectTagHandlers(process_data.xml_parser,
 					      api_message_starts_G,
 					      api_message_ends_G);
-      
+
       if((success = zMapXMLParserParseBuffer(process_data.xml_parser,
 					     process_data.xml_message,
 					     process_data.xml_length)))
 	{
 	  /* Need to make sure everything is good */
-	  
+
 	  if(action_out)
 	    *action_out = g_strdup(process_data.message_out->action);
-	  
+
 	  if(message_out)
 	    *message_out = process_data.message_out;
 	  else
@@ -363,7 +363,7 @@ gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in,
 
 
 
-/* 
+/*
  *                Internal functions.
  */
 
@@ -395,7 +395,7 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
   /* Only after map-event are we guaranteed that there's a window for us to work with. */
   g_signal_connect(G_OBJECT(toplevel), "map-event",
 		   G_CALLBACK(installPropertyNotify), suite);
-  g_signal_connect(G_OBJECT(toplevel), "destroy", 
+  g_signal_connect(G_OBJECT(toplevel), "destroy",
 		   G_CALLBACK(quitCB), (gpointer)suite) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE);
@@ -423,7 +423,7 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
   gtk_box_pack_start(GTK_BOX(req_hbox), our_vbox, TRUE, TRUE, 5) ;
   gtk_box_pack_start(GTK_BOX(req_hbox), their_vbox, TRUE, TRUE, 5) ;
 
-  
+
   frame = gtk_frame_new("Our Request");
   gtk_box_pack_start(GTK_BOX(our_vbox), frame, TRUE, TRUE, 5);
   gtk_container_add(GTK_CONTAINER(frame), textarea);
@@ -458,8 +458,8 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
 /* install the property notify, receives the requests from zmap, when started with --win_id option */
 static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, XRemoteTestSuiteData suite)
 {
-  zMapXRemoteInitialiseWidget(widget, "xremote_gui_test", 
-                              "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME", 
+  zMapXRemoteInitialiseWidget(widget, "xremote_gui_test",
+                              "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME",
                               handle_register_client, suite);
   externalPerl = TRUE;
 
@@ -469,12 +469,12 @@ static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, XRemoteTes
     }
 
   suite->window_id = g_strdup_printf("0x%lx", GDK_DRAWABLE_XID(suite->app_toplevel->window)) ;
-  
+
   return ;
 }
 
 /* The property notify, receives the requests from zmap, when started with --win_id option */
-static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode)
+static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner )
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
   ZMapXMLObjTagFunctionsStruct starts[] = {
@@ -540,7 +540,7 @@ static GtkWidget *entry_box_widgets(XRemoteTestSuiteData suite)
   label = gtk_label_new("client :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   suite->client_entry = sequence = gtk_entry_new();
-  gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);  
+  gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
 
   return entry_box;
 }
@@ -552,9 +552,9 @@ static GtkWidget *menubar(XRemoteTestSuiteData suite)
   GtkItemFactory *factory;
   GtkAccelGroup *accel;
   gint nmenu_items = sizeof (menu_items_G) / sizeof (menu_items_G[0]);
-  
+
   accel = gtk_accel_group_new();
-  
+
   factory = gtk_item_factory_new(GTK_TYPE_MENU_BAR, "<main>", accel);
 
   gtk_item_factory_create_items(factory, nmenu_items, menu_items_G, suite);
@@ -582,7 +582,7 @@ static GtkWidget *message_box(XRemoteTestSuiteData suite)
 /* All the buttons of the button bar */
 static GtkWidget *button_bar(XRemoteTestSuiteData suite)
 {
-  GtkWidget *button_bar, *run_zmap, *send_command, 
+  GtkWidget *button_bar, *run_zmap, *send_command,
     *clear, *parse, *list_clients, *add_client, *exit;
 
   button_bar   = gtk_hbutton_box_new();
@@ -649,7 +649,7 @@ static void addClientCB(GtkWidget *button, gpointer user_data)
       if ((suite->cmd_line_args->timeout))
 	zMapXRemoteSetTimeout(client, 0.0) ;
     }
-  
+
   return ;
 }
 
@@ -689,11 +689,11 @@ static void quitCB(GtkWidget *unused_button, gpointer user_data)
 static int events_to_text_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data)
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
-  GtkTextIter end; 
+  GtkTextIter end;
   GtkTextBuffer *buffer;
 
   buffer = suite->text_buffer;
-  
+
   gtk_text_buffer_get_end_iter(buffer, &end);
 
   gtk_text_buffer_insert(buffer, &end, xml, len);
@@ -899,7 +899,7 @@ static void parseCB(GtkWidget *button, gpointer user_data)
   char *xml;
 
   parser = zMapXMLParserCreate(user_data, FALSE, FALSE);
-  
+
   xml = getXML(suite, &xml_length);
 
   if((parse_ok = zMapXMLParserParseBuffer(parser, xml, xml_length)) == TRUE)
@@ -927,7 +927,7 @@ static void sendCommandCB(GtkWidget *button, gpointer user_data)
   char *xml;
   int xml_length;
   SendCommandDataStruct send_data = {NULL};
- 
+
   if((xml = getXML(suite, &xml_length)) && xml_length > 0)
     {
       send_data.suite = suite;
@@ -971,7 +971,7 @@ static void listClientsCB(GtkWidget *button, gpointer user_data)
   /* This is a bit simple at the moment, we should really have a list
    * store which does a similar thing to the manager bit of zmap. windows
    * could then be raised on selection and a little more info displayed.
-   * To do this XQueryTree, gdk_window_foreign_new_for_display, 
+   * To do this XQueryTree, gdk_window_foreign_new_for_display,
    * gdk_window_raise or similar should be used.  The id is not neccessarily
    * the toplevel I guess.
    */
@@ -1011,7 +1011,7 @@ static void action_elements_to_list(gpointer list_data, gpointer user_data)
 {
   ZMapXMLElement element = (ZMapXMLElement)list_data;
   GList **list_ptr = (GList **)user_data;
-  
+
   if(list_ptr)
     {
       char *action = NULL;
@@ -1046,12 +1046,12 @@ static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_elem
     }
   else
     zMapXMLParserRaiseParsingError(parser, "id is a required attribute for client.");
-  
+
   if((attr  = zMapXMLElementGetAttributeByName(client_element, "request_atom")) != NULL)
     req = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
   if((attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
     resp = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-  
+
   if(wxid && req && resp && (new_client = zMapXRemoteNew(NULL)))
     {
       GList *actions = NULL;
@@ -1119,13 +1119,13 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
         }
       else
         zMapXMLParserRaiseParsingError(parser, "id is a required attribute for client.");
-      
+
       if((attr  = zMapXMLElementGetAttributeByName(client_element, "request_atom")) != NULL)
         req = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
 
       if((attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
         resp = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-      
+
       if (wxid && req && resp && (new_client = zMapXRemoteNew(NULL)))
         {
 	  GList *actions = NULL;
@@ -1147,19 +1147,19 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
   return FALSE;
 }
 
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
                                 ZMapXMLParser parser)
 {
   return TRUE;
 }
 
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser)
 {
   return TRUE;
 }
 
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
 
@@ -1207,12 +1207,12 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
 
 	      parser = zMapXMLParserCreate(send_data, FALSE, FALSE);
 	      zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
-	      
+
 	      zMapXRemoteResponseSplit(client, full_response, &code, &xml);
-	      
+
 	      if((parse_ok = zMapXMLParserParseBuffer(parser, xml, strlen(xml))))
 		{
-		  
+
 		}
 	      else
 		zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLParserLastErrorMsg(parser));
@@ -1244,16 +1244,16 @@ static void internal_send_command(SendCommandData send_data)
   if(send_data->suite && send_data->xml && !send_data->sent)
     {
       send_data->new_clients = g_hash_table_new_full(NULL, NULL, NULL, destroyHashEntry);
-  
+
       send_data->hash_size   = g_hash_table_size(send_data->suite->xremote_clients);
-  
-      g_hash_table_foreach_remove(send_data->suite->xremote_clients, 
+
+      g_hash_table_foreach_remove(send_data->suite->xremote_clients,
 				  send_command_cb, send_data);
-  
-      g_hash_table_foreach_steal(send_data->new_clients, 
-				 copy_hash_to_hash, 
+
+      g_hash_table_foreach_steal(send_data->new_clients,
+				 copy_hash_to_hash,
 				 send_data->suite->xremote_clients);
-  
+
       g_hash_table_destroy(send_data->new_clients);
     }
 
@@ -1299,8 +1299,8 @@ static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_da
   GHashTable *to = (GHashTable *)user_data;
   Window      id = GPOINTER_TO_INT(key);
 
-  copied_ok = addClientToHash(to, hash_entry->client, 
-                              id, hash_entry->actions, 
+  copied_ok = addClientToHash(to, hash_entry->client,
+                              id, hash_entry->actions,
 			      hash_entry->is_main_window);
 
   return copied_ok;
@@ -1329,7 +1329,7 @@ static gboolean run_command(char **command, int *pid)
   gpointer user_data = NULL;
   GError *error = NULL;
   gboolean success = FALSE;
-  
+
   if(command_debug_G)
     {
       printf("Running command: ");
@@ -1347,8 +1347,8 @@ static gboolean run_command(char **command, int *pid)
   else
     pid_ptr = &child_pid;
 
-  if(!(success = g_spawn_async(cwd, command, envp, 
-			       flags, pre_exec, user_data, 
+  if(!(success = g_spawn_async(cwd, command, envp,
+			       flags, pre_exec, user_data,
 			       pid_ptr, &error)))
     {
       printf("Errror %s\n", error->message);
@@ -1363,12 +1363,12 @@ static char *getXML(XRemoteTestSuiteData suite, int *length_out)
   GtkTextBuffer *buffer;
   GtkTextIter start, end;
   char *xml;
-  
+
   buffer = suite->text_buffer;
 
   gtk_text_buffer_get_start_iter(buffer, &start);
   gtk_text_buffer_get_end_iter(buffer, &end);
-  
+
   xml = gtk_text_buffer_get_text(buffer, &start, &end, TRUE);
 
   if(length_out)
@@ -1398,11 +1398,11 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
 {
   static GOptionEntry entries[] = {
     /* long_name, short_name, flags, arg, arg_data, description, arg_description */
-    { XREMOTEARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, 
+    { XREMOTEARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE,
       NULL, XREMOTEARG_VERSION_DESC, XREMOTEARG_NO_ARG },
-    { XREMOTEARG_CONFIG, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_STRING, 
+    { XREMOTEARG_CONFIG, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_STRING,
       NULL, XREMOTEARG_CONFIG_DESC, XREMOTEARG_FILE_ARG },
-    { XREMOTEARG_COMMAND, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_STRING, 
+    { XREMOTEARG_COMMAND, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_STRING,
       NULL, XREMOTEARG_COMMAND_DESC, XREMOTEARG_FILE_ARG },
     { XREMOTEARG_DEBUGGER, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
       XREMOTEARG_DEBUGGER_DESC, XREMOTEARG_NO_ARG },
@@ -1428,7 +1428,7 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       entries[6].arg_data = &(arg_context->sequence) ;
       entries[7].arg_data = &(arg_context->timeout) ;
     }
-  
+
   return entries;
 }
 
@@ -1443,9 +1443,9 @@ static gboolean makeOptionContext(XRemoteCmdLineArgs arg_context)
 
   g_option_context_add_main_entries(arg_context->opt_context, main_entries, NULL);
 
-  if (g_option_context_parse (arg_context->opt_context, 
-			      &arg_context->argc, 
-			      &arg_context->argv, 
+  if (g_option_context_parse (arg_context->opt_context,
+			      &arg_context->argc,
+			      &arg_context->argv,
 			      &arg_context->error))
     {
       success = TRUE;
@@ -1495,7 +1495,7 @@ static char **build_command(char *params_as_string)
   strip = g_strstrip(copy) ;
 
   split = ptr = g_strsplit(strip, " ", 0);
-  
+
   while(ptr && *ptr != '\0')
     {
       c++;
@@ -1507,7 +1507,7 @@ static char **build_command(char *params_as_string)
   for (i = 0; i < c; i++)
     {
       if (split[i] && *(split[i]))
-	command_out[i] = split[i]; 
+	command_out[i] = split[i];
     }
 
   g_free(copy) ;
@@ -1520,7 +1520,7 @@ static GList *read_command_file(XRemoteTestSuiteData suite, char *file_name)
   GIOChannel *io_channel;
   GError *open_error = NULL;
   GList *commands = NULL;
-  /* do we 
+  /* do we
    * a) parse the file using expat.
    * b) parse line by line expecting empty lines to separate commands.
    * c) something else.
@@ -1533,11 +1533,11 @@ static GList *read_command_file(XRemoteTestSuiteData suite, char *file_name)
       GString *string, *current;
       GError  *io_error = NULL;
       gsize term = 0;
-      
+
       string  = g_string_sized_new(2000);
       current = g_string_sized_new(2000);
 
-      while((status = g_io_channel_read_line_string(io_channel, string, 
+      while((status = g_io_channel_read_line_string(io_channel, string,
 						    &term, &io_error)) == G_IO_STATUS_NORMAL)
 	{
 	  /* separator = __EOC__ (End of Command)*/
@@ -1632,7 +1632,7 @@ static void command_file_run_command_cb(gpointer list_data, gpointer user_data)
       depend_data->runner_done = queue_sent_command_cb;
 
       g_queue_push_tail(suite->queue, depend_data);
-      
+
     }
 
 
@@ -1800,7 +1800,7 @@ static void process_command_file(XRemoteTestSuiteData suite, char *command_file)
   depend_data->runnable    = TRUE;
 
   g_queue_push_tail(suite->queue, depend_data);
-  
+
   /* Start zmap */
   depend_data = g_new0(DependRunnerStruct, 1);
   depend_data->main_runner = start_zmap_cb;
@@ -1853,7 +1853,7 @@ static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, 
 static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite)
 {
   ZMapConfigIniContext context = NULL;
-  
+
   if(suite->cmd_line_args && suite->cmd_line_args->config_file)
     {
       char *dir  = NULL;
@@ -1862,15 +1862,15 @@ static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite)
       dir  = g_path_get_dirname(suite->cmd_line_args->config_file);
       base = g_path_get_basename(suite->cmd_line_args->config_file);
 
-      zMapConfigDirCreate(dir, base); 
+      zMapConfigDirCreate(dir, base);
 
       if((context = zMapConfigIniContextCreate()))
 	{
 	  ZMapConfigIniContextKeyEntry stanza_group = NULL;
 	  char *stanza_name, *stanza_type;
-	  
+
 	  if((stanza_group = get_programs_group_data(&stanza_name, &stanza_type)))
-	    zMapConfigIniContextAddGroup(context, stanza_name, 
+	    zMapConfigIniContextAddGroup(context, stanza_name,
 					 stanza_type, stanza_group);
 	}
       if(dir)

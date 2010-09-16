@@ -30,16 +30,12 @@
  * HISTORY:
  * Last edited: Sep  8 08:51 2009 (edgrif)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.15 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.16 2010-09-16 11:57:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
+
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 
@@ -47,6 +43,7 @@
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapGLibUtils.h> /* zMap_g_hash_table_nth */
 #include <zmapWindow_P.h>
+
 
 /* should be a type.... */
 enum
@@ -69,6 +66,43 @@ enum
     /* ...but above here */
     ZMAPWINDOW_REMOTE_UNKNOWN
   } ZMapViewValidXRemoteActions ;
+
+
+static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] =
+  {
+    NULL,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* moving to view */
+
+    "zoom_to", "get_mark", "load_features",
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    "register_client",
+    NULL
+  };
+
+
+
+char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
+{
+  char *xml = NULL;
+
+  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(window->toplevel),
+                                           &actions_G[ZMAPWINDOW_REMOTE_INVALID + 1],
+                                           ZMAPWINDOW_REMOTE_UNKNOWN - 1);
+
+  return xml;
+}
+
+#if MH17_UNUSED_CODE_FOR_WINDOW_XML
+
+/*
+      all the window code was moved to the view long ago
+*/
+
+
+/* ----------------- old code -------------------------*/
 
 
 /* This struct should most certainly be a union of mutually exclusive fields, it's good
@@ -114,6 +148,19 @@ static void reportWindowMark(ZMapWindow window, RequestData input_data, Response
 static void loadFeatures(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] =
+  {
+    NULL,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* moving to view */
+
+    "zoom_to", "get_mark", "load_features",
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    "register_client",
+    NULL
+  };
 
 static gboolean xml_zmap_start_cb(gpointer user_data,
                                   ZMapXMLElement zmap_element,
@@ -133,19 +180,6 @@ static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLElement zmap_element,
                                    ZMapXMLParser parser);
 
-static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] =
-  {
-    NULL,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* moving to view */
-
-    "zoom_to", "get_mark", "load_features",
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    "register_client",
-    NULL
-  };
 
 static ZMapXMLObjTagFunctionsStruct window_starts_G[] =
   {
@@ -183,16 +217,6 @@ void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget)
   return ;
 }
 
-char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
-{
-  char *xml = NULL;
-
-  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(window->toplevel),
-                                           &actions_G[ZMAPWINDOW_REMOTE_INVALID + 1],
-                                           ZMAPWINDOW_REMOTE_UNKNOWN - 1);
-
-  return xml;
-}
 
 static char *window_execute_command(char *command_text, gpointer user_data, int *statusCode)
 {
@@ -909,3 +933,4 @@ static gboolean xml_return_true_cb(gpointer user_data,
   return TRUE;
 }
 
+#endif

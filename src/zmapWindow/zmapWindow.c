@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.338 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.339 2010-09-16 11:57:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2066,7 +2066,9 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   gtk_widget_show_all(window->parent_widget) ;
 
+#if MH17_NOT_USED_MOVED_TO_VIEW
   zMapWindowSetupXRemote(window, window->toplevel);
+#endif
 
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because

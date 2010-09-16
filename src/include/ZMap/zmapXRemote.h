@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,19 +24,19 @@
  *
  * Description: Defines version, structure and response codes for
  *              the protocol for zmap <-> client program communications.
- *              
+ *
  *              See zmapXRemoteCmds.h for commands/attributes.
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
  * Last edited: Jun 14 15:53 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.29 2010-06-14 14:54:59 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.30 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAPXREMOTE_H
-#define ZMAPXREMOTE_H 
+#define ZMAPXREMOTE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -54,9 +54,9 @@
 /*
  * XRemote interface version number, this _must_ be changed each time the interface code is
  * changed.
- * 
+ *
  * We should do this automatically and I'll need to introduce a mechansim for that.
- * 
+ *
  */
 #define ZMAP_VERSION 1
 #define ZMAP_RELEASE 1
@@ -76,7 +76,7 @@
 
 /* ================================== */
 #ifdef ZMAP_XREMOTE_WITHOUT_XML
-#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "%s" 
+#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "%s"
 #define ZMAP_XREMOTE_SUCCESS_FORMAT "%s"
 #define ZMAP_XREMOTE_ERROR_START    "Error: "
 #define ZMAP_XREMOTE_ERROR_END      ""
@@ -84,7 +84,7 @@
 #define ZMAP_XREMOTE_META_FORMAT    "\n%s 0x%lx %s" ZMAP_XREMOTE_CURRENT_VERSION
 /* ================================== */
 #else
-#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "<zmap>%s</zmap>" 
+#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "<zmap>%s</zmap>"
 #define ZMAP_XREMOTE_SUCCESS_FORMAT "<response>%s</response>"
 #define ZMAP_XREMOTE_ERROR_START    "<error><message>"
 #define ZMAP_XREMOTE_ERROR_END      "</message></error>"
@@ -109,7 +109,7 @@
 
 typedef struct _ZMapXRemoteObjStruct  *ZMapXRemoteObj;
 
-typedef char * (*ZMapXRemoteCallback) (char *command, gpointer user_data, int *statusCode);
+typedef char * (*ZMapXRemoteCallback) (char *command, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
 
 typedef enum
   {
@@ -187,10 +187,10 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 /* SERVER MODE ONLY METHODS */
 /* ================================================ */
 int zMapXRemoteInitServer(ZMapXRemoteObj object, Window id, char *appName, char *requestName, char *responseName);
-gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote, 
-                                     Atom           event_atom, 
-                                     guint          event_state, 
-                                     ZMapXRemoteCallback callback, 
+gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
+                                     Atom           event_atom,
+                                     guint          event_state,
+                                     ZMapXRemoteCallback callback,
                                      gpointer       cb_data);
 
 /* ================================================ */
@@ -200,6 +200,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
 int zMapXRemoteSetReply(ZMapXRemoteObj object, char *content);
 char *zMapXRemoteGetRequest(ZMapXRemoteObj object); /* */
 
+char *zMapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output);
 
 /* Broken Methods */
 #ifdef MULTIPLE_COMMANDS_DONT_WORK
@@ -220,55 +221,55 @@ int  zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object);
 
 These are HTTP1.1 codes, which is what I've based the {1,2,3,4,5}00 codes on
 1xx  Informational
-100  CONTINUE - the client should continue with request.  
-101  SWITCHING PROTOCOLS - the server will switch protocols as necessary.  
+100  CONTINUE - the client should continue with request.
+101  SWITCHING PROTOCOLS - the server will switch protocols as necessary.
 
-2xx  Successful  
-200  OK - the request was fulfilled.  
-201  CREATED - following a POST command.  
-202  ACCEPTED - accepted for processing, but processing is not completed.  
-203  NON-AUTHORITATIVE INFORMATION - the returned metainformation is not the definitive set from the original server.  
-204  NO CONTENT - request received but no information exists to send back.  
-205  RESET CONTENT - the server has fulfilled the request and the user agent should reset the document view.  
-206  PARTIAL CONTENT - the server has fulfilled the partial GET request.  
+2xx  Successful
+200  OK - the request was fulfilled.
+201  CREATED - following a POST command.
+202  ACCEPTED - accepted for processing, but processing is not completed.
+203  NON-AUTHORITATIVE INFORMATION - the returned metainformation is not the definitive set from the original server.
+204  NO CONTENT - request received but no information exists to send back.
+205  RESET CONTENT - the server has fulfilled the request and the user agent should reset the document view.
+206  PARTIAL CONTENT - the server has fulfilled the partial GET request.
 
-3xx  Redirection  
-300  MULTIPLE CHOICES - the requested resource has many representations.  
-301  MOVED PERMANENTLY - the data requested has a new location and the change is permanent.  
-302  FOUND - the data requested has a different URL temporarily.  
-303  SEE OTHER - a suggestion for the client to try another location.  
-304  NOT MODIFIED - the document has not been modified as expected.  
-305  USE PROXY - The requested resource must be accessed through the specified proxy.  
-306  UNUSED  
-307  TEMPORARY REDIRECT - the requested data resides temporarily at a new location.  
+3xx  Redirection
+300  MULTIPLE CHOICES - the requested resource has many representations.
+301  MOVED PERMANENTLY - the data requested has a new location and the change is permanent.
+302  FOUND - the data requested has a different URL temporarily.
+303  SEE OTHER - a suggestion for the client to try another location.
+304  NOT MODIFIED - the document has not been modified as expected.
+305  USE PROXY - The requested resource must be accessed through the specified proxy.
+306  UNUSED
+307  TEMPORARY REDIRECT - the requested data resides temporarily at a new location.
 
-4xx  Client Errors  
-400  BAD REQUEST - syntax problem in the request or it could not be satisfied.  
-401  UNAUTHORIZED - the client is not authorized to access data.  
-402  PAYMENT REQUIRED - indicates a charging scheme is in effect.  
-403  FORBIDDEN - access not required even with authorization. 
-404  NOT FOUND - server could not find the given resource.  
-405  METHOD NOT ALLOWED  
-406  NOT ACCEPTABLE  
-407  PROXY AUTHENTICATION REQUIRED - the client must first authenticate with the proxy for access.  
-408  REQUEST TIMEOUT - the client did not produce a request within the time the server was prepared to wait.  
-409  CONFLICT - the request could not be completed due to a conflict with the current state of the resource.  
-410  GONE - the requested resource is no longer available.  
-411  LENGTH REQUIRED - the server refused to accept the request without a defined Content Length.  
-412  PRECONDITION FAILED  
-413  REQUESTED ENTITY TOO LARGE - the server is refusing to process a request because it is larger than the server is willing or able to process.  
-414  REQUEST-URI TOO LONG - the server is refusing to process a request because the URI is longer than the server is willing or able to process.  
-415  UNSUPPORTED MEDIA TYPE - requested resource format is not supported.  
-416  REQUESTED RANGE NOT SATISFIABLE  
-417  EXPECTATION FAILED  
+4xx  Client Errors
+400  BAD REQUEST - syntax problem in the request or it could not be satisfied.
+401  UNAUTHORIZED - the client is not authorized to access data.
+402  PAYMENT REQUIRED - indicates a charging scheme is in effect.
+403  FORBIDDEN - access not required even with authorization.
+404  NOT FOUND - server could not find the given resource.
+405  METHOD NOT ALLOWED
+406  NOT ACCEPTABLE
+407  PROXY AUTHENTICATION REQUIRED - the client must first authenticate with the proxy for access.
+408  REQUEST TIMEOUT - the client did not produce a request within the time the server was prepared to wait.
+409  CONFLICT - the request could not be completed due to a conflict with the current state of the resource.
+410  GONE - the requested resource is no longer available.
+411  LENGTH REQUIRED - the server refused to accept the request without a defined Content Length.
+412  PRECONDITION FAILED
+413  REQUESTED ENTITY TOO LARGE - the server is refusing to process a request because it is larger than the server is willing or able to process.
+414  REQUEST-URI TOO LONG - the server is refusing to process a request because the URI is longer than the server is willing or able to process.
+415  UNSUPPORTED MEDIA TYPE - requested resource format is not supported.
+416  REQUESTED RANGE NOT SATISFIABLE
+417  EXPECTATION FAILED
 
-5xx  Server Errors  
-500  INTERNAL ERROR - the server could not fulfill the request because of an unexpected condition.  
-501  NOT IMPLEMENTED - the sever does not support the facility requested.  
-502  BAD GATEWAY - received an invalid response from an upstream sever.  
-503  SERVICE UNAVAILABLE - the server is currently unable to handle a request.  
-504  GATEWAY TIMEOUT - The server, acting as a gateway/proxy, did not receive a timely response from an upstream server.  
-505  HTTP VERSION NOT SUPPORTED  
-*/    
+5xx  Server Errors
+500  INTERNAL ERROR - the server could not fulfill the request because of an unexpected condition.
+501  NOT IMPLEMENTED - the sever does not support the facility requested.
+502  BAD GATEWAY - received an invalid response from an upstream sever.
+503  SERVICE UNAVAILABLE - the server is currently unable to handle a request.
+504  GATEWAY TIMEOUT - The server, acting as a gateway/proxy, did not receive a timely response from an upstream server.
+505  HTTP VERSION NOT SUPPORTED
+*/
 
 #endif /* ZMAPXREMOTE_H */

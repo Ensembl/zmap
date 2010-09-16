@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb  8 15:17 2010 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.77 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.78 2010-09-16 11:57:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -105,11 +105,11 @@ typedef struct _ZMapStruct
 
   /* Main control buttons. */
   GtkWidget *stop_button, *load_button,
-    *hsplit_button, *vsplit_button, 
+    *hsplit_button, *vsplit_button,
     *unlock_but, *unsplit_but,
     *zoomin_but, *zoomout_but,
     *revcomp_but, *column_but,
-    *quit_button, *frame3_but, 
+    *quit_button, *frame3_but,
     *dna_but, *back_button;
 
 #ifdef SEE_INFOPANEL_STRUCT
@@ -146,6 +146,7 @@ typedef struct _ZMapStruct
                                          * remote control simple IPC stuff */
 
   ZMapXRemoteObj xremote_client;
+  ZMapXRemoteObj xremote_server;          /* that we reply to */
 
   gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 
@@ -228,10 +229,10 @@ void zmapControlInfoSet(void *data, int code, char *format, ...);
 void zmapControlWindowSetStatus(ZMap zmap) ;
 void zmapControlWindowSetGUIState(ZMap zmap) ;
 void zmapControlWindowSetButtonState(ZMap zmap) ;
-ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap, 
+ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
                                                     ZMapWindow zmap_window,
-                                                    GtkWidget *curr_container, 
+                                                    GtkWidget *curr_container,
                                                     GtkOrientation orientation,
 						    ZMapControlSplitOrder window_order,
                                                     char *view_title);
