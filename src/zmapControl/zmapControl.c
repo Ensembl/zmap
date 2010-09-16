@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug  5 14:59 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.106 2010-09-16 11:57:40 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.107 2010-09-16 14:18:55 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -891,7 +891,7 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
         response = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, ZMAPXREMOTE_OK, xml_text) ;
 
         /* REMOTELOGMSG(Warning, "[XREMOTE respond to new_view] %s", response); */
-        zMapLogWarning( "[XREMOTE respond to new_view] %s", response);
+        /*zMapLogWarning( "[XREMOTE respond to new_view] %s", response); */
 
 
           /* actually do the replying */
