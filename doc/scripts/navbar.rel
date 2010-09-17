@@ -1,6 +1,6 @@
 ,Home,
 index,Documentation Root
-Design_notes/index,Index,
+Design_notes/index,Contents,
 Design_notes/misc/about,About,
 Design_notes/misc/convert,Migration,
 ,ZMap Modules,Design_notes/modules/
@@ -33,5 +33,6 @@ macosx,TheMac,
 ../foocanvas/foocanvas_build,Foo Build,
 ../g2/g2,G2,
 ,User Doc,user_doc/
+standalone,Running Zmap,
 styles,Styles,
 configuration,Config,
