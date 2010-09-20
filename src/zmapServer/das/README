@@ -1,4 +1,26 @@
-================================================================================   
+================================================================================
+This README could get cut & pasted to doc/Design_notes/modules/zmapServer/DASServer.html
+================================================================================
+
+A note from an email  20 Sep 2010
+
+We originally envisaged two uses for zmap supporting das:
+
+1) within the otterlace system we would directly access das servers that otterlace pointed us at
+
+2) zmap could be run standalone against a das source
+
+
+The former has as you point out been superceeded by pipe scripts, the latter while desireable is not straight forward and higher priorities for stand alone operation would be:
+
+1) make zmap run really well off GFF version 2 and 3 files
+
+2) make zmap run off an ensembl database in some way
+
+I think we should leave the code as it is but document in a README file in the das directory that the code needs work.
+
+
+================================================================================
 DAS v2 Server interface
 
 This directory implements for a DAS 2 server the routines required by the
