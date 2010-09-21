@@ -1,0 +1,74 @@
+
+[ZMap]
+pfetch = pfetch
+show-mainwindow = true
+xremote-debug = false
+
+default-sequence=chr4-04_128768-160647
+data-dir=/nfs/users/nfs_m/mh17/zmap/ZMap/demo/
+
+sources = human-chr-4-04-2
+#sources = chr4-04_128768-160647 ; das_GERP_33way_eutherian_mammals ; das_CNIO_MassSpec ; das_phastCons_17way ; Eponine ; das_Exonify ; das_constrained_regions ; solexa_introns ; EST_Other ; das_GERP_16way_amniota_vertebrates ; das_transMap_MRna ; das_transMap_UcscGenes ; GIS_PET_ditags ; SwissProt ; vertebrate_ncRNA ; das_Yale_Pseudogenes ; das_2waycons_Pseudogene ; ensembl_EST_genes ; ChIP_PET_ditags ; das_UCSC_RetroAli3 ; das_Siepel_NovelLoci ; EST_Mouse ; ensembl_solexa_genes ; CCDS_Gene ; vertebrate_mRNA ; das_CRG_U12 ; das_WashU_PASA_human_mRNAs ; das_GenTrack ; trf ; das_ChromSig ; RepeatMasker ; das_phastCons_28way ; das_UCSC_NcIntrons ; Halfwise ; TrEMBL ; ensembl_ncRNA ; ensembl_havana_transcripts ; ensembl_havana_genes ; ensembl_genes ; Augustus ; das_transMap_SplicedEst ; das_WashU_NSCAN1 ; REFSEQ ; ensembl_IG_genes ; das_WashU_PASA_human_ESTs ; ensembl_variation ; das_transMap_RefSeq ; EST_Human ; das_UCSC_YtLuPseudogenes ; das_scripture ; das_phastCons_44way ; Genscan ; GIS_PET_Encode_ditags ; das_CONGO_Exons ; solexa_coverage ; CCDS_Coding ; ensembl_cDNA ; das_Aspic ; CpG ; das_Evigan ; ensembl_solexa_introns
+
+cookie-jar = /nfs/users/nfs_m/mh17/.otter/ns_cookie_jar
+script-dir = /software/anacode/otter/otter_rel53/ensembl-otter/scripts
+
+#columns = NonGolden ; Genomic_canonical ; Gap ; marker ; OTF_X ; OTF_mRNA ; OTF_ncRNA ; OTF_EST ; Unknown_DNA ; Repeats ; Coding Transcripts ; Known CDS Transcripts ; Novel CDS Transcripts ; Putative and NMD ; Curated Transcripts ; curated_features ; ext_curated ; Glean_parent ; NCBI_parent ; 3 Frame Translation ; Show Translation ; GeneFinderFeatures ; 3 Frame ; ATG ; hexExon ; hexIntron ; GF_coding_seg ; GF_ATG ; hexExon_span ; RNA ; SPLICED_cDNA ; GF_splice ; DNA ; Imported_Transcripts ; das_UCSC_NcIntrons_V3 ; das_Exonify ; das_constrained_regions ; solexa_introns ; EST_Other ; das_transMap_MRna ; das_transMap_UcscGenes ; Predicted Regulatory Features ; GIS_PET_ditags ; SwissProt ; vertebrate_ncRNA ; das_Yale_Pseudogenes ; das_2waycons_Pseudogene ; ChIP_PET_ditags ; ensembl_EST_genes ; das_UCSC_RetroAli3 ; das_Siepel_NovelLoci ; EST_Mouse ; ensembl_solexa_genes ; das_CRG_U12 ; vertebrate_mRNA ; das_GenTrack ; das_WashU_PASA_human_mRNAs ; das_GERP_16way_amniota_vertebrates ; das_ChromSig ; das_UCSC_NcIntrons ; CCDS Transcripts ; TrEMBL ; das_GERP_33way_eutherian_mammals ; ensembl_havana_transcripts ; ensembl_ncRNA ; ensembl_genes ; ensembl_havana_genes ; das_transMap_SplicedEst ; das_WashU_NSCAN1 ; REFSEQ ; ensembl_IG_genes ; das_WashU_PASA_human_ESTs ; ensembl_variation ; das_peptide_atlas ; das_transMap_RefSeq ; das_UCSC_YtLuPseudogenes ; EST_Human ; Predicted_Transcripts ; das_CONGO_Exons ; das_scripture ; GIS_PET_Encode_ditags ; solexa_coverage ; das_Aspic ; ensembl_cDNA ; das_Evigan ; ensembl_solexa_introns
+pfetch-mode = pipe
+
+
+[ZMapWindow]
+colour-frame-0 = #ffe6e6
+colour-column-highlight = cornsilk
+colour-frame-2 = #e6e6ff
+canvas-maxsize = 10000
+feature-line-width = 1
+feature-spacing = 4.0
+colour-frame-1 = #e6ffe6
+
+
+[blixem]
+script = blixemh
+dna-featuresets = EST_Human ; EST_Mouse ; EST_Other ; vertebrate_mRNA ; OTF_mRNA ; Unknown_DNA
+config-file = /nfs/users/nfs_m/mh17/.otter/etc/blixemrc
+protein-featuresets = SwissProt ; TrEMBL
+homol-max = 0
+transcript-featuresets = Coding Transcripts ; Known CDS Transcripts ; Novel CDS Transcripts ; Putative and NMD
+scope = 200000
+
+[human-chr-4-04-2]
+url = file:///human-chr-4-04-2.gff
+stylesfile = styles.ini
+writeback = false
+#sequence = true
+navigatorsets = scale ; genomic_canonical ; locus
+featuresets = NonGolden ; Genomic_canonical ; Locus ; Gap ; marker ; OTF_X ; OTF_mRNA ; OTF_ncRNA ; OTF_EST ; Unknown_DNA ;  Coding Transcripts ; Known CDS Transcripts ; Novel CDS Transcripts ; Putative and NMD ; Curated Transcripts ; curated_features ; ext_curated ; Glean_parent ; NCBI_parent ; 3 Frame Translation ; Show Translation ; GeneFinderFeatures ; 3 Frame ; ATG ; hexExon ; hexIntron ; GF_coding_seg ; GF_ATG ; hexExon_span ; RNA ; SPLICED_cDNA ; GF_splice ; DNA ; Imported_Transcripts ; das_CNIO_MassSpec; das_phastCons_17way; Eponine; solexa_introns; EST_Other; SwissProt ; EST_Mouse; vertebrate_mRNA ; das_WashU_PASA_human_mRNAs ;trf ;RepeatMasker ; RepeatMasker_LINE ; RepeatMasker_SINE ; Halfwise ;TrEMBL ; Augustus; REFSEQ ; das_WashU_PASA_human_ESTs ; ensembl_variation ; EST_Human ; GIS_PET_Encode_ditags ; solexa_coverage ; CpG ;  Transcript_trunc ; PolyA_signal; PolyA_site; havana_tsct_trunc ; Putative_trunc
+
+
+
+[columns]
+Predicted Regulatory Features = Eponine ; CpG
+Predicted_Transcripts = Halfwise ; Augustus ; Genscan
+Repeats = trf ; RepeatMasker ; RepeatMasker_LINE ; RepeatMasker_SINE
+CCDS Transcripts = CCDS_Gene ; CCDS_Coding
+solexa_introns = solexa_introns
+Curated Transcripts = Transcript_trunc ; havana_tsct_trunc ; Putative_trunc
+
+[featureset-style]
+Putative_trunc = havana_tsct_trunc
+Transcript_trunc = havana_tsct_trunc
+vertebrate_ncRNA = ncRNA_align
+ensembl_variation = feat
+EST_Human = EST_align
+EST_Mouse = EST_align
+EST_Other = EST_align
+solexa_coverage = solexa_coverage
+ensembl_genes = ensembl_havana_transcripts
+CCDS_Gene = CCDS_Coding
+vertebrate_mRNA = mRNA_align
+ensembl_IG_genes = ensembl_havana_transcripts
+
+[glyphs]
+dn-tri = <0,4; -4,0 ;4,0; 0,4>
+up-tri = <0,-4 ;-4,0 ;4,0 ;0,-4>
+
