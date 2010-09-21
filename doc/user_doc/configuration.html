@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
-<!-- $Id: configuration.html,v 1.5 2010-06-18 13:29:24 mh17 Exp $ -->
+<!-- $Id: configuration.html,v 1.6 2010-09-21 12:39:49 mh17 Exp $ -->
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .example{ border-color: #000000 }
@@ -147,10 +147,12 @@ The following stanzas are supported by ZMap:
       stanza(s) controlling display of a named set of features.
   <li><b><a href="user_doc/configuration.shtml#source">Source</a> -</b>
       stanza(s) specifying data sources from which to load a feature view.
-  <li><b><a href="user_doc/configuration.shtml#featuresets">Featuresets</a> -</b>
-      stanza(s) specifying how to map data sources into a feature column.
+  <li><b><a href="user_doc/configuration.shtml#featuresets">Columns</a> -</b>
+      stanza specifying how to map data sources into a feature column.
+  <li><b><a href="user_doc/configuration.shtml#featuresetstyle">featureset-style</a> -</b>
+      stanza specifying which style to use to dispaly a featureset.
   <li><b><a href="user_doc/configuration.shtml#style">Style</a> -</b>
-      stanza(s) specifying styles for displaying feature sets.
+      stanzas specifying styles for displaying feature sets.
   <li><b><a href="user_doc/configuration.shtml#window">Window</a> -</b>
       stanza controlling the ZMap feature display window.
   <li><b><a href="user_doc/configuration.shtml#blixem">Blixem</a> -</b>
@@ -194,12 +196,15 @@ clearly terminated. </td></tr>
 <tr>
 <th>"default_printer" </th><td>String </td><td>"" </td><td>Specify a printer which will be the default printer for screen shots from ZMap.  </td></tr>
 <tr>
-<th>"script-dir" </th><td>String </td><td>"ZMap run-time directory" </td><td>Specify the directory where data retrieval scripts are stored by default.  </td></tr>
+<th>"script-dir" </th><td>String </td><td>ZMap run-time directory</td><td>Specify the directory where data retrieval scripts are stored by default.  </td></tr>
 <tr>
-<th>"data-dir" </th><td>String </td><td>"ZMap run-time directory" </td><td>Specify the directory where GFF data files are stored by default.  </td></tr>
+<th>"data-dir" </th><td>String </td><td>ZMap run-time directory</td><td>Specify the directory where GFF data files are stored by default.  </td></tr>
+<tr>
+<tr>
+<th>"thread-fail-silent" </th><td>Boolean </td><td>False</td><td>Control whether or not to pepper the screen with warning dialogs when Server threads fail. </td></tr>
 <tr>
 </tbody></table>
-<p>Please refer to <a href="Design_notes/notes/featureset_col.shtml">this file</a> for some notes about some other options affectting cplumn and featureset layout and styles etc etc.</p>
+<p>Please refer to <a href="Design_notes/notes/featureset_col.shtml">this file</a> for some notes about some other options affecting column and featureset layout and styles etc etc.</p>
 </fieldset>
 
 <a name="logging"></a>
@@ -220,6 +225,11 @@ in the "logging" stanza.<p>
 <th>"directory" </th><td>String </td><td>"$HOME/.ZMap" </td><td>Absolute or relative directory to hold logfiles (relative is relative to $HOME/.ZMap).  </td></tr>
 <tr>
 <th>"filename" </th><td>String </td><td>"zmap.log" </td><td>Name of logfile, this is combined with "directory" to give the logfile path.  </td></tr>
+
+<th>"catch-glib" </th><td>Boolean </td><td>true </td><td>Catch Glib errors and add to the log.  </td></tr>
+<th>"echo-glib" </th><td>Boolean </td><td>true </td><td>Output caught GLib errors to STDOUT.</td></tr>
+<tr>
+
 </tbody></table>
 </fieldset>
 
@@ -302,14 +312,6 @@ use a style of the same name.<p>
 </ul>
 and these options control how requests for the server's featuresets are grouped. If a bunch of featuresets are requested together then grouping implies that they get combined into the same request from the server and one thread is allocated for the request and the data will be combined.  Otherwise each featureset is allocated its own thread.
  </td></tr>
-<tr>
-<th>"data-dir" </th><td>string </td><td>"./" </td><td><p>If specified in a file-server this will give a path prefix to add to the URL file name given. The URL is treated as being the file containing the GFF2 data to read.  It has no effect in other types of server.
-</p></td></tr>
-<tr>
-<th>"script-dir" </th><td>string </td><td>"./" </td><td><p>If specified in a pipe-server this will give a path prefix to add to the URL file name given. The URL is treated as being the script that fetches the GFF2 data to read.  It has no effect in other types of server.
-</p></td></tr>
-
-<tr>
 
 </tbody></table>
 </fieldset>
@@ -320,13 +322,23 @@ and these options control how requests for the server's featuresets are grouped.
 <p>By default, any feature requested from a pipe or other server that does not support the REQ_FEATURESETS request will be mapped to
 a column of the same name - this will produce a wider than normal display, but the data will at least be visible.</p>
 <p>
-The stanza <b>[featuresets]</b> may be used to override this default mapping and will contain lines of the form:
+The stanza <b>[columns]</b> may be used to override this default mapping and will contain lines of the form:
 <pre>
 column = source1; source2; ... sourceN
 </pre>
 where 'column' is the name of the column that is used to display all the sources and sourceX is the name of a featureset used to request the data as receieved from Otterlace and as sent by a pipeServer or other server.
 </p>
 <p><b>NB:</b> This stanza will only be read in when creating a view and not on requesting a column. To change this mapping it is necessary to update the file ZMap (config) and then create a new ZMap window.</p>
+</fieldset>
+
+<a name="featuresetstyle"></a>
+<fieldset><legend>Specifying display styles for features</legend>
+<p>By default a featureset is assumed to be displayed using a style of the same name but if you would like to use another style (eg to display several featuresets in the same style) the you can specify each one in the [featureset-style] stanza with a command of the form:
+<pre>
+featureset = style
+</pre>
+</p>
+
 </fieldset>
 
 <a name="style"></a>
@@ -353,36 +365,66 @@ but will mean you have less data to scroll over. The default is to
 create close to the maximum window size possible, this is 32k for X
 Windows. </td></tr>
 <tr>
-<th>"canvas_maxbases" </th><td>Integer </td><td>0 </td><td>Set the vertical extent of the feature window using dna bases. Is just an alternative method of setting "canvas_maxsize".  </td></tr>
+<th>"canvas-maxbases" </th><td>Integer </td><td>0 </td><td>Set the vertical extent of the feature window using dna bases. Is just an alternative method of setting "canvas-maxsize".  </td></tr>
 <tr>
-<th>"keep_empty_columns" </th><td>Boolean </td><td>false </td><td>Some
+<th>"keep-empty-columns" </th><td>Boolean </td><td>false </td><td>Some
 requested feature sets may not contain any features, by default these
 will not be displayed. For multiple blocks/alignment display it may be
 clearer to get zmap to display empty "placeholder" columns for these
 sets so that columns in different blocks line up better. </td></tr>
+
+<tr> <th>display-forward-coords </th> <td>string</td> <td> </td> <td> </td> </tr>
+<tr> <th>show-3-frame-reverse </th> <td>string</td> <td> </td> <td> </td> </tr>
+<tr> <th>align-spacing </th> <td>int</td> <td> </td> <td> </td> </tr>
+<tr> <th>block-spacing </th> <td>int</td> <td> </td> <td> </td> </tr>
+<tr> <th>strand-spacing </th> <td>int</td> <td> </td> <td> </td> </tr>
+<tr> <th>column-spacing </th> <td>int</td> <td> </td> <td> </td> </tr>
+<tr> <th>feature-spacing </th> <td>int</td> <td> </td> <td> </td> </tr>
+<tr> <th>feature-line-width </th> <td>int</td> <td> </td> <td> </td> </tr>
+
 <tr>
-<th>"colour_root" </th><td>string </td><td>white" </td><td>Colour for window background, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-root" </th><td>string </td><td>white" </td><td>Colour for window background, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_alignment" </th><td>string </td><td>"white" </td><td>Colour for each alignment background, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-alignment" </th><td>string </td><td>"white" </td><td>Colour for each alignment background, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_block" </th><td>string </td><td>"white" </td><td>Colour for each block background, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-block" </th><td>string </td><td>"white" </td><td>Colour for each block background, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_m_forward" </th><td>string </td><td>"white" </td><td>Colour for forward strand column group background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-m-forward" </th><td>string </td><td>"white" </td><td>Colour for forward strand column group background in master alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_m_reverse" </th><td>string </td><td>"white" </td><td>Colour for reverse strand column group background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-m-reverse" </th><td>string </td><td>"white" </td><td>Colour for reverse strand column group background in master alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_q_forward" </th><td>string </td><td>"light pink" </td><td>Colour for forward strand column group background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-q-forward" </th><td>string </td><td>"light pink" </td><td>Colour for forward strand column group background in matched alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_q_reverse" </th><td>string </td><td>"pink" </td><td>Colour for reverse strand column group background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-q-reverse" </th><td>string </td><td>"pink" </td><td>Colour for reverse strand column group background in matched alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_m_forwardcol" </th><td>string </td><td>"white" </td><td>Colour for forward strand column background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-m-forwardcol" </th><td>string </td><td>"white" </td><td>Colour for forward strand column background in master alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_m_reversecol" </th><td>string </td><td>"white" </td><td>Colour for reverse strand column background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-m-reversecol" </th><td>string </td><td>"white" </td><td>Colour for reverse strand column background in master alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_q_forwardcol" </th><td>string </td><td>"light pink" </td><td>Colour for forward strand column background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-q-forwardcol" </th><td>string </td><td>"light pink" </td><td>Colour for forward strand column background in matched alignment, specified as in the "Type" stanza.  </td></tr>
 <tr>
-<th>"colour_q_reversecol" </th><td>string </td><td>"pink" </td><td>Colour for reverse strand column background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<th>"colour-q-reversecol" </th><td>string </td><td>"pink" </td><td>Colour for reverse strand column background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+
+
+
+
+<tr> <th>colour-separator </th> <td>string</td> <td> </td> <td> </td> </tr>
+<tr> <th>colour-item-mark </th> <td>string</td> <td> light blue</td> <td> </td> </tr>
+
+<tr> <th>colour-column-highlight </th> <td>string</td> <td> grey</td> <td> </td> </tr>
+<tr> <th> colour-item-highlight</th> <td>string</td> <td> light grey</td> <td> </td> </tr>
+<tr> <th> colour-frame-0</th> <td>string</td> <td> red</td> <td> </td> </tr>
+<tr> <th>colour-frame-1 </th> <td>string</td> <td> deep pink</td> <td> </td> </tr>
+<tr> <th>colour-frame-2 </th> <td>string</td> <td> light  pink</td> <td> </td> </tr>
+
+<tr> <th>"colour-masked-feature-fill" </th><td>string </td><td>(none) </td><td>Fill colour for masked feature (nominally an EST). </td></tr>
+<tr> <th>"colour-masked-feature-border" </th><td>string </td><td>(none) </td><td>Border colour for masked feature (nominally an EST). </td></tr>
+
+<tr> <th> colour-evidence-border</th> <td>string</td> <td> darek grey</td> <td>Highlight border colour for evidence features for selected transcript </td> </tr>
+<tr> <th> colour-evidence-fill</th> <td>string</td> <td>light grey </td> <td>Highlight fill colour for evidence features for selected transcript </td> </tr>
+
 </tbody></table>
+
 </fieldset>
 
 <a name="debug"></a>
