@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.103 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.104 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,7 +304,15 @@ gboolean zMapStyleCopyAllStyles(GHashTable *style_set, GHashTable **copy_style_s
   cb_data.error = &result ;
   cb_data.copy_set = g_hash_table_new(NULL,NULL) ;
 
-  g_hash_table_foreach(style_set, copySetCB, &cb_data) ;
+  if(style_set)
+  {
+      /* see zmapView.c zmapViewDrawDiffContext(): "there are no styles"
+       * this would produce a glib warning: how could it ever have worked?
+       * we return an empty hash as the caller expects a data struct
+       * (instead of not calling this func)
+       */
+        g_hash_table_foreach(style_set, copySetCB, &cb_data) ;
+  }
 
   *copy_style_set_out = cb_data.copy_set ;
 

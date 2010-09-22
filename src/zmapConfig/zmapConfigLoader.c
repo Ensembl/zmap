@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.32 2010-09-07 09:25:30 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.33 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -862,7 +862,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                         GFFset->feature_set_ID = column;           // display name
                         GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
-                        g_hash_table_replace(hash,GUINT_TO_POINTER(sources->data),GFFset);
+                        g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
 
                         sources = g_list_delete_link(sources,sources);
                   }

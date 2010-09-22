@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.339 2010-09-16 11:57:41 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.340 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -601,6 +601,8 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
   FooCanvasItem *feature_item;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapStrand column_strand;
+  ZMapGFFSet gffset;
+  ZMapFeatureSet fset;
 
   switch(feature_any->struct_type)
     {
@@ -614,7 +616,29 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	/* which column drawn in depends on style. */
 	column_strand = zmapWindowFeatureStrand(window, feature);
 
-	if ((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+      /* if the feature conetxt is from a request from otterlace then
+       * the display column has not been set, we need to lookup
+       */
+      fset = (ZMapFeatureSet) (feature_any->parent);
+      if(!fset->column_id)
+      {
+            gffset = g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(fset->unique_id));
+            if(gffset)
+                  fset->column_id = gffset->feature_set_id;
+      }
+
+      /* MH17: we get locus features inserted mysteriously if a feature has a locus id
+       * but they don't always appear in zmap in whcih case there is no column id
+       * This is true when otterlace sends a single feature to delete and then we fail to find
+       * the extra locus feature
+       *
+       * regardless of that if we have features that are not displayed due to config this couls also fail
+       * so if not column_id defined log a warnign adn fail silently.
+       *
+       * locus is used in the naviagtor, we hope dealt with via another call.
+       */
+
+	if (fset->column_id && (feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
 							  column_strand,
 							  ZMAPFRAME_NONE,
 							  feature)))
@@ -623,7 +647,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 	  }
 	else
-	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	  zMapLogWarning("Failed to find feature '%s/%s'\n", g_quark_to_string(fset->unique_id), g_quark_to_string(feature->original_id));
 
 	break;
       }

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.215 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.216 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -424,6 +424,17 @@ void print_fset2col(char * str,GHashTable *data)
       }
 }
 
+void print_it(GHashTable *data )
+{
+      ZMapGFFSource gff_source;
+      gff_source = (ZMapGFFSource) g_hash_table_lookup(data,GUINT_TO_POINTER(g_quark_from_string("transcript_trunc")));
+      if(gff_source)
+      {
+            printf("transcript_trunc = %s %s\n",
+                  g_quark_to_string(gff_source->source_id),
+                  g_quark_to_string(gff_source->style_id));
+      }
+}
 
 /* read in rather a lot of stanzas and add the data to a few hash tables and lists
  * This sets up:
@@ -515,7 +526,9 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
                  gffset->feature_set_ID = col;
                  gffset->feature_src_ID = col;
                  gffset->feature_set_text = g_strdup(g_quark_to_string(col));
-                 g_hash_table_insert(fset_col,GUINT_TO_POINTER(fset),gffset);
+
+                  /* replace in case we get one twice */
+                 g_hash_table_replace(fset_col,GUINT_TO_POINTER(fset),gffset);
 
                  featuresets = g_list_delete_link(featuresets,featuresets);
               }
@@ -549,12 +562,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         while(zMap_g_hash_table_iter_next(&iter,&key,&value))
           {
             GQuark q;
-            gboolean set;
 
-            set = FALSE;
-
-            if(!gff_source)
-                  gff_source = g_new0(ZMapGFFSourceStruct,1);
+            gff_source = g_new0(ZMapGFFSourceStruct,1);
 
                   // start with a 1-1 default mapping
             gffset = (ZMapGFFSet) value;
@@ -572,15 +581,12 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
                   q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_src,key));
                   if(q)
                         gff_source->source_id = q;
-                  set = TRUE;
             }
                   // get style defined by featureset name
             if(fset_styles)
             {
-                  q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
                   if(q)
                         gff_source->style_id = q;
-                  set = TRUE;
             }
                   // get description defined by featureset name
             if(gff_desc)
@@ -588,23 +594,16 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
                   q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_desc,key));
                   if(q)
                         gff_source->source_text = q;
-                  set = TRUE;
             }
 
-            //if(set)   // must do all for pipe servers
-            {
-                  // source_2_source data defaults are hard coded in GFF2parser
-                  // but if we set one field then we set them all
-                  g_hash_table_insert(src2src,
-                        GUINT_TO_POINTER(zMapFeatureSetCreateID(
-                              (char *)g_quark_to_string(GPOINTER_TO_UINT(key)))),
-                        gff_source);
-                  gff_source = NULL;
-            }
+            /* source_2_source data defaults are hard coded in GFF2parser
+              but if we set one field then we set them all */
+            g_hash_table_replace(src2src,
+                  GUINT_TO_POINTER(zMapFeatureSetCreateID(
+                        (char *)g_quark_to_string(GPOINTER_TO_UINT(key)))),
+                  gff_source);
           }
 
-        if(gff_source)
-            g_free(gff_source);
 
         if(gff_src)
             g_hash_table_destroy(gff_src);
@@ -615,8 +614,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
         view->source_2_sourcedata = src2src;
 
-//        print_src2src("view ini",view->source_2_sourcedata);
-//        print_fset2col("view ini",view->featureset_2_column);
+//       print_src2src("view ini",view->source_2_sourcedata);
+ //      print_fset2col("view ini",view->featureset_2_column);
 
             /*---------------------------------------------
              * featureset_2_stylelist: hash of Glist of quarks
@@ -2903,10 +2902,13 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
        */
       for(fset = feature_sets->feature_sets_inout;fset;fset = fset->next)
         {
-          if(!g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,fset->data))   // if entry is missing
+            ZMapGFFSource src;
+
+            if(!(src = g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,fset->data)))
             {
+               // if entry is missing
               // allocate a new struct and add to the table
-              ZMapGFFSource src;
+
 
               src = g_new0(ZMapGFFSourceStruct,1);
               zMapAssert(src);
@@ -2915,6 +2917,15 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
               src->style_id = zMapStyleCreateID((char *) g_quark_to_string(src->source_id));
 
               g_hash_table_insert(feature_sets->source_2_sourcedata_inout,fset->data,src);
+            }
+            else
+            {
+                  if(!src->source_id)
+                     src->source_id = GPOINTER_TO_UINT(fset->data);
+                  if(!src->source_text)
+                     src->source_text = src->source_id;
+                  if(!src->style_id)
+                    src->style_id = zMapStyleCreateID((char *) g_quark_to_string(src->source_id));
             }
         }
 
@@ -4386,7 +4397,6 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
   ZMapViewCallbackFubarStruct fubar;
 
   zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
-zMapLogWarning("in mapEventCB: %x %d",zmap_view->xwid,zmap_view->state);
 
 //  if(zmap_view->state == ZMAPVIEW_INIT)
   {

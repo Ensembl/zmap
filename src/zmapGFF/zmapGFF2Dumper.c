@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 11 09:09 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.22 2010-08-11 08:26:12 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.23 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@
 #define GFF_STRAND     "%c"
 #define GFF_PHASE      "%c"
 #define GFF_ATTRIBUTES "%s"
-#define GFF_ATTRIBUTE_SEPARATOR ';'
+#define GFF_ATTRIBUTE_SEPARATOR ";"
 
 #define GFF_ATTRIBUTE_TAB_BEGIN "\t"
 #define GFF_ATTRIBUTE_TAB_END   ""
@@ -150,6 +150,12 @@ static gboolean dump_transcript_locus(ZMapFeature    feature,
 				      GError       **error,
 				      GFFDumpData    gff_data);
 
+static gboolean dump_known_name(ZMapFeature    feature,
+                              gpointer       transcript_data,
+                              GString       *gff_string,
+                              GError       **error,
+                              GFFDumpData    gff_data);
+
 static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
 					      gpointer       transcript_data,
 					      GString       *gff_string,
@@ -186,11 +192,13 @@ static char phase2Char(ZMapPhase phase) ;
 
 static DumpGFFAttrFunc basic_funcs_G[] = {
   dump_text_note,		/* Note "cpg island" */
+/*  dump_known_name,*/
   NULL,
 };
 static DumpGFFAttrFunc transcript_funcs_G[] = {
   dump_transcript_identifier, /* Sequence "AC12345.1-001" */
   dump_transcript_locus,	/* RPC1-2 */
+/*  dump_known_name,*/
   dump_transcript_subpart_lines, /* Not really attributes like alignment subparts are. */
   NULL
 };
@@ -333,7 +341,7 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
 	  result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data, g_free,
 						      file,          error_out,
 						      list_func_out, list_data_out) ;
-	  
+
 
 	}
     }
@@ -465,6 +473,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 {
   GFFDumpData gff_data = (GFFDumpData)user_data;
   gboolean result = TRUE;
+  ZMapFeatureSet fset;
 
   switch(feature_any->struct_type)
     {
@@ -488,17 +497,30 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 
 
 	/* Output a GFFv2 record for the whole feature, fields are:
-	 * 
+	 *
 	 * <seqname> <source> <feature> <start> <end> <score> <strand> <phase> [attributes]
-	 * 
+	 *
 	 * i.e. all but [attributes] are mandatory.
 	 */
 
+
 	/* Mandatory fields. */
 
+#if MH17_DONT_USE_STYLE_FOR_FEATURESET_NAME
 	if (!(gff_data->gff_source  = (char *)zMapStyleGetGFFSource(style)))
 	  gff_data->gff_source = (char *)zMapStyleGetName(style) ;
+#else
+      fset = (ZMapFeatureSet)(feature_any->parent);
 
+      /* this is made up data: do not dump */
+      if(fset->original_id == g_quark_from_string("3 Frame Translation"))
+            break;
+      /* better to dump DNA to a FASTA file */
+      if(fset->original_id == g_quark_from_string("DNA"))
+            break;
+
+      gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
+#endif
 	if (!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
 	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology) ;
 
@@ -596,7 +618,7 @@ static gboolean dump_attributes(DumpGFFAttrFunc func_array[],
     {
       if(need_separator)
 	{
-	  g_string_append_c(gff_string, GFF_ATTRIBUTE_SEPARATOR);
+	  g_string_append(gff_string, GFF_ATTRIBUTE_SEPARATOR);
 	  need_separator = FALSE;
 	}
 
@@ -671,6 +693,35 @@ static gboolean dump_transcript_locus(ZMapFeature    feature,
   return result;
 }
 
+/* this generates an erro about phase...*/
+#if MH17_DONT_USE
+static gboolean dump_known_name(ZMapFeature    feature,
+                              gpointer       transcript_data,
+                              GString       *gff_string,
+                              GError       **error,
+                              GFFDumpData    gff_data)
+{
+  gboolean result = FALSE;
+  GQuark known_id = 0;
+
+  if (feature->type == ZMAPSTYLE_MODE_BASIC)
+    known_id = feature->feature.basic.known_name;
+  else if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    known_id = feature->feature.transcript.known_name;
+
+  if(known_id)
+    {
+      /* To make       Locus "AC12345.1"          */
+      g_string_append_printf(gff_string,
+                       GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
+                       "Known_name",
+                       (char *)g_quark_to_string(known_id));
+      result = TRUE;
+    }
+
+  return result;
+}
+#endif
 
 /* subpart full lines... */
 static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
@@ -762,12 +813,27 @@ static gboolean dump_alignment_target(ZMapFeature feature, gpointer homol_data,
   ZMapHomol homol = (ZMapHomol)homol_data;
   gboolean has_target = TRUE;
 
-  if(feature->original_id)
+  gchar *homol_type = NULL;
+
+  /* reading GFF2 we get Sequence or Motif getting set to DNA
+     and we cannot translate back
+     Ed says this will be resolved in GFF3
+     but right now it's wrong
+   */
+
+  if(feature->feature.homol.type == ZMAPHOMOL_N_HOMOL)
+    homol_type = "Sequence";
+  else if(feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+    homol_type = "Protein";
+
+  if(feature->original_id && homol_type)
     {
       g_string_append_printf(gff_string,
-			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE " %d %d" GFF_ATTRIBUTE_TAB_END,
-			     "Target", g_quark_to_string(feature->original_id),
-			     homol->y1, homol->y2);
+			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_SEPARATOR
+                       GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_SEPARATOR "Align %d %d %s"  GFF_ATTRIBUTE_TAB_END,
+			     "Class", homol_type,
+                       "Name", g_quark_to_string(feature->original_id),
+			     homol->y1, homol->y2, zMapFeatureStrand2Str(homol->strand));
     }
 
   return has_target;

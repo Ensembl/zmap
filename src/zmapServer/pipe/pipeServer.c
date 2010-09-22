@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.28 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.29 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -459,10 +459,11 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   server->source_2_sourcedata = *source_2_sourcedata_inout;
   server->featureset_2_column = *featureset_2_column_inout;
 
+/*
   setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
   ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
 		 "%s", server->last_err_msg) ;
-
+*/
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 
   return result ;

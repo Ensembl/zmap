@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:21 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.138 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.139 2010-09-22 13:45:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -384,8 +384,8 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
     {
       if (feature_any->struct_type != expected_type)
 	{
-	  zMapLogCritical("Unexpected feature type [%d] attached to item [%s]",
-			  feature_any->struct_type, G_OBJECT_TYPE_NAME(item));
+	  zMapLogCritical("Unexpected feature type [%d] (not %d) attached to item [%s]",
+			  feature_any->struct_type, expected_type, G_OBJECT_TYPE_NAME(item));
 	  feature_any = NULL;
 	}
     }

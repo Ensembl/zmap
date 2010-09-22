@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:19 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.119 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.120 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1187,8 +1187,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark clone_id = 0, source_id = 0 ;
 
 
-  /* If the parser was given a source -> data mapping then use that to get the style id and other
-   * data otherwise* use the source itself. */
+  /* If the parser was given a source -> data mapping then
+   * use that to get the style id and other
+   * data otherwise use the source itself.
+   */
   if (parser->source_2_sourcedata)
     {
       ZMapGFFSource source_data ;
@@ -1342,14 +1344,21 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       homol_type = ZMAPHOMOL_NONE ;
 
       if (!(result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end, &query_strand)))
-	return result ;
+      {
+        *err_text = g_strdup_printf("feature ignored, could not get Homol attrs") ;
+	  return result ;
+      }
       else
 	result = getHomolLength(attributes, &query_length) ; /* Not fatal to not have length. */
     }
   else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
       if (!(result = getAssemblyPathAttrs(attributes, NULL, &query_strand, &query_length, &path)))
-	return result ;
+	{
+         *err_text = g_strdup_printf("feature ignored, could not get AssemblyPath attrs");
+
+        return result ;
+      }
     }
 
 

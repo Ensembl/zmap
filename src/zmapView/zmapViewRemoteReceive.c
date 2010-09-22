@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.54 2010-09-16 11:57:41 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.55 2010-09-22 13:45:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -925,7 +925,6 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
     case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
       {
         RequestData request_data = (RequestData)(xml_data->user_data);
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_request_start_cb_1\n");
 
         populate_data_from_view(request_data->view, request_data);
 
@@ -950,7 +949,6 @@ if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s
 		    result = FALSE ;
 		  }
 	      }
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_request_start_cb_2\n");
 	  }
 
 	result = TRUE ;
@@ -1159,7 +1157,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
       if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
 	{
-	  ZMapGFFSet set_data ;
 
 	  result = TRUE ;
 
@@ -1170,15 +1167,14 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 
 	  /* Make sure we have a source name. */
-	  if (xml_data->common.action == ZMAPVIEW_REMOTE_LOAD_FEATURES)
-	    {
-	      /* Bit of a hack...for data loaded from a pipe we just assume this... */
-	      featureset_id = set_id;
-	      featureset_name = set_name;
+        featureset_id = set_id;
+        featureset_name = set_name;
 
-	    }
-	  else
+#if MH17_GET_COLUMN_NOT_FEATURESET___DONT_USE
+	  if (xml_data->common.action != ZMAPVIEW_REMOTE_LOAD_FEATURES)
 	    {
+            ZMapGFFSet set_data ;
+
 	      if (!(set_data = g_hash_table_lookup(request_data->view->featureset_2_column, GINT_TO_POINTER(set_id))))
 		{
 		  char *err_msg ;
@@ -1196,7 +1192,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		  featureset_name = (char *)g_quark_to_string(featureset_id) ;
 		}
 	    }
-
+#endif
 	  /* Processing for featuresets is different, if a featureset is marked to be dynamically
 	   * loaded it will not have been created yet so we shouldn't check for existence. */
 	  if (result)
@@ -1399,7 +1395,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
       {
 	result = TRUE ;
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_1\n");
 
         zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
                                             parser,
@@ -1491,7 +1486,6 @@ if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s
 	      }
 	  }
 
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_2\n");
         if (result && !zMapXMLParserLastErrorMsg(parser))
           {
             feature_name = (char *)g_quark_to_string(feature_name_q);
@@ -1516,7 +1510,6 @@ if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s
 		    zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
 						     start_phase, end_not_found);
 		  }
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_3\n");
 
 		if ((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
 		  {
@@ -1557,7 +1550,6 @@ if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s
 			   ...
 			   i.e. deleting the locus name it's creating!
 			*/
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_4\n");
 
 			old_feature =
 			  (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
@@ -1641,7 +1633,6 @@ if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s
 		      }
 		  }
 
-if(xml_data->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE) zMapLogMessage("%s","xml_feature_start_cb_5\n");
 
 		/* THIS DOESN'T DO A DEEP ENOUGH COPY, WE FAIL LATER FOR SOME ACTIONS
 		 * BECAUSE STUFF LIKE THE HOMOL DATA IS NOT COPIED SO WE CAN'T FIND
