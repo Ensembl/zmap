@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:21 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.139 2010-09-22 13:45:45 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.140 2010-09-22 14:49:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -879,6 +879,8 @@ ZMapFrame zmapWindowItemFeatureFrame(FooCanvasItem *item)
   return frame;
 }
 
+
+#if MH17_NOT_CALLED
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block)
 {
   ZMapFeatureSet feature_set;
@@ -897,7 +899,7 @@ FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, Z
 
   return FOO_CANVAS_GROUP(translation);
 }
-
+#endif
 
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item)
 {
