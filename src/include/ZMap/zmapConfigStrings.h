@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:04 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.38 2010-09-07 09:25:36 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.39 2010-09-22 15:42:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -195,7 +195,7 @@
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
 #define ZMAPSTANZA_APP_COLUMNS           "columns"
 #define ZMAPSTANZA_APP_REPORT_THREAD     "thread-fail-silent"
-
+#define ZMAPSTANZA_APP_NAVIGATOR_SETS    "navigatorsets"
 
 /*! @addtogroup config_stanzas
  *

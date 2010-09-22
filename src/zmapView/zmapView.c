@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.216 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.217 2010-09-22 15:42:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -459,6 +459,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
   ZMapGFFSource gff_source;
   ZMapGFFSet gffset;
   GList *iter;
+  char *str;
 
   gpointer key, value;
 
@@ -482,6 +483,16 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
                               ZMAPSTANZA_APP_CONFIG,
                               ZMAPSTANZA_APP_CONFIG,
                               ZMAPSTANZA_APP_REPORT_THREAD, &view->thread_fail_silent);
+
+      if(zMapConfigIniContextGetString(context,
+                              ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_NAVIGATOR_SETS,&str))
+      {
+            view->navigator_set_names = zMapConfigString2QuarkList(str,FALSE);
+            if(view->navigator_window)
+                zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
+      }
 
             /*-------------------------------------
              * the display columns in L -> R order

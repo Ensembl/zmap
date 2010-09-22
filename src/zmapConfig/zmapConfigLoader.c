@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Aug 18 11:54 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.33 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.34 2010-09-22 15:42:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1078,6 +1078,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_LEGACY_STYLES,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_NAVIGATOR_SETS,  G_TYPE_STRING, NULL, FALSE },
     {NULL}
   };
   static char *name = ZMAPSTANZA_APP_CONFIG;
@@ -1104,6 +1105,7 @@ static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, c
     { ZMAPSTANZA_LOG_ECHO_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
     {NULL}
   };
+
   static char *name = ZMAPSTANZA_LOG_CONFIG;
   static char *type = ZMAPSTANZA_LOG_CONFIG;
 
