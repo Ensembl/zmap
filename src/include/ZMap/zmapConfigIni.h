@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 14:53 2009 (edgrif)
+ * Last edited: Sep 22 16:25 2010 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.16 2010-08-26 08:04:07 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.17 2010-09-22 16:05:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,6 +82,11 @@ gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
 				       char *stanza_type,
 				       char *key_name,
 				       char **value);
+gboolean zMapConfigIniContextGetFilePath(ZMapConfigIniContext context,
+					 char *stanza_name,
+					 char *stanza_type,
+					 char *key_name,
+					 char **value) ;
 gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 					char *stanza_name,
 					char *stanza_type,

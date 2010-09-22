@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 15:30 2009 (edgrif)
+ * Last edited: Sep 22 16:43 2010 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.14 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.15 2010-09-22 16:05:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -336,41 +336,80 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 }
 
 gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
-                              char *stanza_name,
-                              char *stanza_type,
-                              char *key_name,
-                              char **value)
+				       char *stanza_name,
+				       char *stanza_type,
+				       char *key_name,
+				       char **value)
 {
   GValue *value_out = NULL;
   gboolean success = FALSE;
 
   if(zMapConfigIniContextGetValue(context, 
-                          stanza_name, stanza_type, 
-                          key_name,    &value_out))
+				  stanza_name, stanza_type, 
+				  key_name,    &value_out))
     {
       if(value)
-      {
-        if(G_VALUE_HOLDS_STRING(value_out))
-          {
-            *value  = g_value_dup_string(value_out);
-            success = TRUE;
-          }
+	{
+	  if(G_VALUE_HOLDS_STRING(value_out))
+	    {
+	      *value  = g_value_dup_string(value_out);
+	      success = TRUE;
+	    }
 
-        g_value_unset(value_out);
-        g_free(value_out);
-        value_out = NULL;
-      }
+	  g_value_unset(value_out);
+	  g_free(value_out);
+	  value_out = NULL;
+	}
     }
 
   return success;
 }
 
+/* Same as string only expands any tilde in the filepath, if the expansion fails
+ * then this call fails. */
+gboolean zMapConfigIniContextGetFilePath(ZMapConfigIniContext context,
+					 char *stanza_name,
+					 char *stanza_type,
+					 char *key_name,
+					 char **value)
+{
+  GValue *value_out = NULL ;
+  gboolean success = FALSE ;
+
+  if (zMapConfigIniContextGetValue(context, stanza_name, stanza_type, key_name, &value_out))
+    {
+      if (value)
+	{
+	  if (G_VALUE_HOLDS_STRING(value_out))
+	    {
+	      char *value_str ;
+	      char *expanded_value ;
+
+	      value_str = (char *)g_value_get_string(value_out) ;
+
+	      if ((expanded_value = zMapExpandFilePath(value_str)))
+		{
+		  *value  = expanded_value ;
+
+		  success = TRUE ;
+		}
+	    }
+
+	  g_value_unset(value_out) ;
+	  g_free(value_out) ;
+	  value_out = NULL ;
+	}
+    }
+
+  return success ;
+}
+
 
 gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
-                             char *stanza_name,
-                             char *stanza_type,
-                             char *key_name,
-                             int  *value)
+				    char *stanza_name,
+				    char *stanza_type,
+				    char *key_name,
+				    int  *value)
 {
   GValue *value_out = NULL;
   gboolean success = FALSE;
