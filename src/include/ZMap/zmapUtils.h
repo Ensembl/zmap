@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: May  6 15:50 2010 (edgrif)
+ * Last edited: Sep 22 15:52 2010 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.46 2010-05-06 15:20:00 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.47 2010-09-22 16:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -169,6 +169,7 @@ char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) 
 char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(char *path_in) ;
+char *zMapExpandFilePath(char *path_in) ;
 gboolean zMapFileAccess(char *filepath, char *mode) ;
 gboolean zMapFileEmpty(char *filepath) ;
 

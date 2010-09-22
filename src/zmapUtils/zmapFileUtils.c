@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Sep  2 10:54 2009 (edgrif)
+ * Last edited: Sep 22 16:43 2010 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.13 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.14 2010-09-22 16:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <strings.h>
 #include <string.h>
+#include <wordexp.h>
 #include <zmapUtils_P.h>
 
 
@@ -144,6 +145,44 @@ char *zMapGetBasename(char *path_in)
 
   return basename ;
 }
+
+
+/* This function will expand the given path according in the same way that
+ * the shell does including "~" expansion. The underlying wordexp()
+ * function actually does glob style expansion so could return many values
+ * but we assume that the path will be the first one and return that.
+ * 
+ * We could put checks in to make sure that path_in does not contain
+ * wildcard characters but the onus is on the caller to just be sensible.
+ * If no path_in is passed in or path_in contains invalid chars then NULL
+ * is returned otherwise the expanded filepath is returned, this string
+ * should be released with g_free() when no longer needed.
+ */
+char *zMapExpandFilePath(char *path_in)
+{
+  char *filepath = NULL ;
+
+  if (path_in && *path_in)
+    {
+      wordexp_t p ;
+
+      if (wordexp(path_in, &p, 0) == 0)
+	{
+	  char **w ;
+
+	  w = p.we_wordv;
+
+	  filepath = g_strdup(w[0]) ;
+
+	  wordfree(&p) ;
+	}
+    }
+
+  return filepath ;
+}
+
+
+
 
 
 /* Construct file path from directory and filename and check if it can be accessed, if it
