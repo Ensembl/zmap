@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Aug 20 17:32 2010 (edgrif)
+ * Last edited: Sep 22 17:06 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.36 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.37 2010-09-22 16:07:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -649,13 +649,14 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
 				    ZMAPSTANZA_BLIXEM_PORT, &tmp_int))
 	prefs->port = tmp_int;
 
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-				       ZMAPSTANZA_BLIXEM_SCRIPT, &tmp_string))
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+					  ZMAPSTANZA_BLIXEM_SCRIPT, &tmp_string))
 	prefs->script = tmp_string;
 
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-				       ZMAPSTANZA_BLIXEM_CONF_FILE, &tmp_string))
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+					  ZMAPSTANZA_BLIXEM_CONF_FILE, &tmp_string))
 	prefs->config_file = tmp_string;
+
 
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				    ZMAPSTANZA_BLIXEM_SCOPE, &tmp_int))

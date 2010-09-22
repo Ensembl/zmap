@@ -28,22 +28,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  1 14:16 2008 (rds)
+ * Last edited: Sep 22 17:06 2010 (edgrif)
  * Created: Fri Jun  6 12:29:16 2008 (roy)
- * CVS info:   $Id: zmapWindowPreferences.c,v 1.6 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowPreferences.c,v 1.7 2010-09-22 16:07:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
 #include <zmapWindow_P.h>
 
 
@@ -56,13 +49,13 @@ gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch)
     {
       char *tmp_string;
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_PFETCH_LOCATION, &tmp_string))
-	pfetch->location = tmp_string;
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_PFETCH_LOCATION, &tmp_string))
+	pfetch->location = tmp_string ;
 
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_COOKIE_JAR, &tmp_string))
-	pfetch->cookie_jar = tmp_string;
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					  ZMAPSTANZA_APP_COOKIE_JAR, &tmp_string))
+	pfetch->cookie_jar = tmp_string ;
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				       ZMAPSTANZA_APP_PFETCH_MODE, &tmp_string))
