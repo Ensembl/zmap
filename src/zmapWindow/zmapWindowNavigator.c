@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 23 13:59 2010 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.62 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.63 2010-09-22 14:28:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,8 @@
 #include <ZMap/zmapNavigatorStippleG.xbm> /* bitmap... */
 #endif
 #include <zmapWindowContainerFeatureSet_I.h>
+
+#include <ZMap/zmapGFF.h>     /* for ZMapGFFSet */
 
 /* Return the widget! */
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
@@ -848,11 +850,22 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         FooCanvasItem *item = NULL;
         feature_set = (ZMapFeatureSet)feature_any;
 
+
+        if(!feature_set->column_id)
+        {
+            ZMapGFFSet gffset;
+
+            gffset = g_hash_table_lookup(draw_data->navigate->current_window->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+            if(gffset)
+                  feature_set->column_id = gffset->feature_set_id;
+        }
+
         draw_data->current_set = feature_set;
 
         status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
-        if((item = zmapWindowFToIFindSetItem(draw_data->navigate->ftoi_hash, feature_set,
+            /* play safe: only look up the item if it's displayed */
+        if(feature_set->column_id && (item = zmapWindowFToIFindSetItem(draw_data->navigate->ftoi_hash, feature_set,
                                              ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
           {
 	    ZMapWindowContainerFeatureSet container_feature_set;
