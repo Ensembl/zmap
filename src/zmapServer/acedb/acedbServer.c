@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun  9 13:34 2010 (edgrif)
+ * Last edited: Sep 24 10:17 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.160 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.161 2010-09-24 09:18:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1470,18 +1470,21 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	    {
 	      if (zMapGFFGetFeatures(parser, feature_block))
 		{
-              GList *src_names;
+		  GList *src_names;
 		  free_on_destroy = FALSE ;	/* Make sure parser does _not_ free our data. ! */
 
-              /* get the featuresets actually put in the block
-               * and pass upstream, retruning a list of featuresets in all blocks
-               */
-              src_names = zMapGFFGetFeaturesets(parser);
-              get_features->src_feature_set_names =
-                  zMap_g_list_merge(get_features->src_feature_set_names,src_names);
+		  /* get the featuresets actually put in the block
+		   * and pass upstream, returning a list of featuresets in all blocks
+		   */
+		  src_names = zMapGFFGetFeaturesets(parser) ;
+
+		  get_features->src_feature_set_names =
+		    zMap_g_list_merge(get_features->src_feature_set_names, src_names) ;
 		}
 	      else
-		result = FALSE ;
+		{
+		  result = FALSE ;
+		}
 	    }
 
 	  zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
