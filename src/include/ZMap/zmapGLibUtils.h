@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Jun 11 15:52 2009 (edgrif)
+ * Last edited: Sep  7 16:49 2010 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.27 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.28 2010-09-24 09:16:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -85,7 +85,7 @@ GList *zMap_g_list_merge(GList *a, GList *b);
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
 
-void zMap_g_hash_table_print(GHashTable *hash_table);
+void zMap_g_hash_table_print(GHashTable *hash_table, char *data_format_str) ;
 
 gboolean zMap_g_string_replace(GString *string, char *target, char *source) ;
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Jun 12 08:44 2009 (edgrif)
+ * Last edited: Sep  7 17:14 2010 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.37 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.38 2010-09-24 09:16:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -551,9 +551,12 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 }
 
 
-void zMap_g_hash_table_print(GHashTable *hash_table)
+/* Supported values for data_format_str are: "gquark", "pointer"  */
+void zMap_g_hash_table_print(GHashTable *hash_table, char *data_format_str)
 {
-      g_hash_table_foreach(hash_table,hashPrintTableCB,NULL);
+  g_hash_table_foreach(hash_table, hashPrintTableCB, data_format_str) ;
+
+  return ;
 }
 
 /*! A set of functions to handle a hash where each key is a GQuark and each entry is a
@@ -1127,13 +1130,32 @@ static void hashPrintListCB(gpointer key, gpointer value, gpointer user_data_unu
 
 
 /* A GHFunc() to print the quark attached to a hash entry. */
-static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data_unused)
+static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data)
 {
+  char *data_format_str = (char *)user_data ;
+  char *value_str ;
 
-  printf("\"%s\": %s ", g_quark_to_string(GPOINTER_TO_INT(key)), g_quark_to_string(GPOINTER_TO_INT(value))) ;
+  if (!data_format_str || g_ascii_strcasecmp(data_format_str, "pointer") == 0)
+    {
+      value_str = g_strdup_printf("%p", value) ;
+    }
+  else if (g_ascii_strcasecmp(data_format_str, "gquark") == 0)
+    {
+      value_str = g_strdup_printf("%s", g_quark_to_string(GPOINTER_TO_INT(value))) ;
+    }
+  else
+    {
+      value_str = g_strdup("unknown data value") ;
+    }
+
+  printf("\"%s\": %s\n", g_quark_to_string(GPOINTER_TO_INT(key)), value_str) ;
+
+  g_free(value_str) ;
 
   return ;
 }
+
+
 
 /* A GDestroyNotify() to free Glists held as the data in a hash. */
 static void destroyList(gpointer data)
