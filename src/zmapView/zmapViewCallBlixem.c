@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Sep 22 17:06 2010 (edgrif)
+ * Last edited: Sep 24 10:12 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.37 2010-09-22 16:07:34 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.38 2010-09-24 09:12:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -285,6 +285,7 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void getSetList(gpointer data, gpointer user_data) ;
 static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
+static int calcCoord(ZMapSequenceType match_seq_type, int start, int end) ;
 
 
 /*
@@ -535,6 +536,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData bl
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
   zMapAssert(block) ;
   blixem_data->block = block ;
+
 
   blixem_data->file_format = BLX_FILE_FORMAT_EXBLX ;
 
@@ -1230,7 +1232,7 @@ static void processSetList(gpointer data, gpointer user_data)
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
 
-  canon_id = zMapFeatureSetCreateID((char *) g_quark_to_string(set_id)) ;
+  canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
   if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
     {
@@ -1580,6 +1582,14 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 {
   gboolean status = TRUE ;
   char *id_str = NULL ;
+  ZMapSequenceType match_seq_type ;
+
+
+  if (homol_type == ZMAPHOMOL_N_HOMOL)
+    match_seq_type = ZMAPSEQUENCE_DNA ;
+  else
+    match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
+
 
   if (gff_data->maximise_ids)
     {
@@ -1592,7 +1602,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
   /* ctg123 . cDNA_match 1050  1500  5.8e-42  +  . ID=match00001;Target=cdna0123 12 462 */
   g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t%f\t%c\t.\t%sTarget=%s %d %d %c",
 		  ref_name, source_name,
-		  (homol_type == ZMAPHOMOL_N_HOMOL ? "nucleotide_match" : "protein_match"),
+		  (match_seq_type == ZMAPSEQUENCE_DNA ? "nucleotide_match" : "protein_match"),
 		  qstart, qend,
 		  score,
 		  (q_strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
@@ -1625,10 +1635,19 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
       for (k = 0 ; k < gaps->len ; k++, index += incr)
 	{
 	  ZMapAlignBlock gap ;
+	  int coord ;
 
 	  gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index)) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_string_append_printf(align_str, "M%d ", (gap->t2 - gap->t1) + 1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  coord = calcCoord(match_seq_type, gap->t1, gap->t2) ;
+	  g_string_append_printf(align_str, "M%d ", coord) ;
+
 
 	  if (k < gaps->len - 1)
 	    {
@@ -1673,7 +1692,14 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 	      if (next_match > curr_match + 1)
 		g_string_append_printf(align_str, "I%d ", (next_match - curr_match) - 1) ;
 	      else if (next_ref > curr_ref + 1)
-		g_string_append_printf(align_str, "D%d ", (next_ref - curr_ref) - 1) ;
+		{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  g_string_append_printf(align_str, "D%d ", (next_ref - curr_ref) - 1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		  coord = calcCoord(match_seq_type, curr_ref, next_ref) ;
+		  g_string_append_printf(align_str, "D%d ", coord) ;
+		}
 	      else
 		zMapLogWarning("Bad coords in GFFv3 writer: gap %d,%d -> %d, %d, next_gap %d, %d -> %d, %d",
 			       gap->t1, gap->t2, gap->q1, gap->q2,
@@ -1681,7 +1707,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 	    }
 	}
 
-      g_string_append_printf(line, ";Gaps=%s", align_str->str) ;
+      g_string_append_printf(line, ";Gap=%s", align_str->str) ;
 
       g_string_free(align_str, TRUE) ;
     }
@@ -2220,6 +2246,7 @@ static void getSetList(gpointer data, gpointer user_data)
   GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
+
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
@@ -2820,6 +2847,17 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 }
 
 
+static int calcCoord(ZMapSequenceType match_seq_type, int start, int end)
+{
+  int coord ;
+
+  coord = (end - start) + 1 ;
+
+  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
+    coord /= 3 ;
+
+  return coord ;
+}
 
 
 
