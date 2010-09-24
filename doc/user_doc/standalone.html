@@ -13,12 +13,18 @@ Otterlace generates all the configuration files neeeded by ZMap and it is possib
 
 <h3>Installation</h3>
 <p>To install ZMap you should work through the normal process for open source software:
+(NB you need to have the autotools check package installed)
 <br /><b>Caveat: I need to check this!</b><br />
 <ul>
-<li> Obtain the distribution archive (eg zmap-0-1-95.tar.gz)
-<li> Unzip the source
-<li> run ./configure
-<li> run make
+<li> Obtain the distribution archive (eg zmap-0-1-97.tar.gz)
+<li> Unzip the source and build as normal
+<pre>
+> tar -zvzf zmap-0-1-97.tar.gz
+> cd zmap-0-1-97
+> ./configure [--prefix=my_zmap_dir]
+> make
+</pre>
+
 </ul>
 </p>
 
@@ -55,11 +61,11 @@ Please refer to <a href="user_doc/styles.shtml">Styles</a> and <a href="user_doc
 </ul></p>
 
 <h4>Editing data source selection</h4>
-<p>The <code>ZMap</code> configuration file will contain data source definitions for each column that is available to the Otterlace session whether actually loaded or not.   Those not loaded will include an option:
+<p>The <code>ZMap</code> configuration file will contain data source definitions for each column that is available to the Otterlace session whether actually loaded or not.   Those that are not loaded will include an option:
 <pre>
 delayed=true
 </pre>
-and the column may be loaded by setting this to false and restarting ZMap.
+and the column may be removed by setting this to false or commenting out the option and restarting ZMap.
 (In a subsequent release this will be available via the Columns popup in ZMap)
 </p>
 <p>Data sources must be listed in the [ZMap] stanza sources command and also defined in a stanza of the same name in this file.
@@ -86,7 +92,7 @@ and the column may be loaded by setting this to false and restarting ZMap.
 </p>
 <p>DNA sequence data can be saved by selecting 'Export' and then 'DNA' but currently there is no mechanism for ZMap to read in this data.
 </p>
-<p>All the data is stored in one file.  This is much less effort in terms of configuration and assuming you wish to view all the data in your standalone session will operate more efficiently than splittign the data into several files (eg one per column).  (In a live session ZMap will request data from several different sources concurrently and this results in a shorter loading time, but with file access would be slower due to increased disc head movement).
+<p>All the data is stored in one file.  This is much less effort in terms of configuration and assuming you wish to view all the data in your standalone session will operate more efficiently than splitting the data into several files (eg one per column).  (In a live session ZMap will request data from several different sources concurrently and this results in a shorter loading time, but with file access would be slower due to increased disc head movement).
 </p>
 <p><b>NOTE</b>:Currently it is not possible to load files after startup and therefore at present there is no benefit of having several data files, but it is expected that this feature will be implemented in the near future.
 </p>
@@ -103,7 +109,7 @@ and the column may be loaded by setting this to false and restarting ZMap.
 <h3>Configuring file data access</h3>
 <p>In the <code>ZMap</code> configuration file you must define a server for each file that you wish to read.  Please refer to <a href="user_doc/configuration.shtml#source"></a> for details of all configuration option for data servers, but for convenience an example is given below.
 </p>
-<p>Assuming that you have a ZMap runtime directory and a data directory within that then you could set up the ZMap configuration as follows:
+<p>Assuming that you have a ZMap runtime directory and a data directory within that then you could set up the ZMap configuration as follows (with other options and stanzas as in a cloned configuration):
 <pre>
 [ZMap]
 show-main-window=true
@@ -113,8 +119,6 @@ sources = chr4-04_128768-160647
 [chr4-04_128768-160647]
 url=file:///data/chr4-04_128768-160647.gff
 stylesfile = styles.ini
-writeback = false
-navigatorsets = scale ; genomic_canonical ; locus
 featuresets = NonGolden ; Genomic_canonical ; Gap ; marker ; OTF_X ... etc
 </pre>
 With the actual choice of sequence and feature sets depending on your own session.  As above in <a href="user_doc/standalone.shtml#cloning">Cloning an Otterlace ZMap configuration</a> it is much easier to copy this data from an existing configuration file than to enter it by hand.  Note that each data source must be given a stylesfile= option.
@@ -131,6 +135,7 @@ data-dir=/home/my_name/ZMap/data
 </p>
 
 <p>Column layout and other display options can be adjusted as defined in <a href="user_doc/standalone.shtml#user">User Documentation</a> above.
+</p>
 
 </fieldset>
 
