@@ -30,9 +30,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
  * HISTORY:
- * Last edited: Aug 18 11:54 2010 (edgrif)
+ * Last edited: Sep 24 10:19 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.34 2010-09-22 15:42:08 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.35 2010-09-24 09:19:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -764,17 +764,19 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
 
   str_array = g_strsplit(string_list,";",0);
 
-  if(str_array) for(strv = str_array;*strv;strv++)
+  if (str_array)
     {
-      name = zMapConfigNormaliseWhitespace(*strv, cannonical);
-      if(*name)
-            list = g_list_prepend(list,GUINT_TO_POINTER(g_quark_from_string(name)));
+      for (strv = str_array;*strv;strv++)
+	{
+	  if ((name = zMapConfigNormaliseWhitespace(*strv, cannonical)) && *name)
+	    list = g_list_prepend(list,GUINT_TO_POINTER(g_quark_from_string(name))) ;
+	}
     }
 
-  list = g_list_reverse(list);      // see glib doc for g_list_append()
+  list = g_list_reverse(list) ;      // see glib doc for g_list_append()
 
-  if(str_array)
-      g_strfreev(str_array);
+  if (str_array)
+    g_strfreev(str_array);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
