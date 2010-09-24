@@ -136,7 +136,16 @@ AC_LANG(C)
 AC_PATH_XTRA
 X_LIBS="$X_LIBS -lX11"
 
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
+
+# The check libraries are NOT installed by default on most peoples linux
+# machines therefore the configure script included in our autoconf dist file
+# for zmap will nearly always fail. Therefore I've commented out this test
+# until we can resolve this in a better way. Anyone installing zmap will not
+# be affected unless they try "make test" which they should do anyway as we
+# don't currently support any test programs.
+#
+# PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
+
 
 # Leopard and tiger have different versions of X11 installed in different places.
 # Leopard has a softlink for the tiger directory and as the tiger version is older we go 
