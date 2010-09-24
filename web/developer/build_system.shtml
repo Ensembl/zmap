@@ -313,11 +313,53 @@ for darwin added:
 
 > cd ZMap/src
 
-> ./runboostrap
+> ./runbootstrap
+
+
+4) runconfig
+
+cd to the build dir:
+
+> cd build/linux         for linux
+
+
+for the mac
+
+
+> cd build/mac
+
+
+run the config script:
+
+../../runconfig
+
+
+5) In the same directory:
+
+make
 
 
 
+NNN) Using the dist file from the build
 
+Having run 'make dist' to make the tar.gz file...
+
+1) gunzip and untar the file.
+
+2) cd zmap-V-R-U 
+
+3) run ./configure
+
+
+For Sanger linux machines:
+
+
+./configure --prefix=/software/acedb CFLAGS="-I/software/acedb/gtk/include" CPPFLAGS="-I/software/acedb/gtk/include" LDFLAGS="-L/software/acedb/gtk/lib"
+
+
+For Macport Mac machines:
+
+./configure --prefix=/opt/local CFLAGS="-I/opt/local/include"  CPPFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib"
 
 <pre>
 
