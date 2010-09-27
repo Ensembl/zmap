@@ -1,7 +1,7 @@
 <h2>ZMap Standalone Configuration</h2>
 
 <fieldset><legend>Introduction</legend>
-<p><b>NOTE</b> This refers to current practice in Septmeber 2010 and this may change in the near future.
+<p><b>NOTE</b> This refers to current practice in Septmeber 2010 and there may be some changes in the near future.
 </p>
 <h3>Orientation</h3>
 <p>ZMap is most commonly used as part of the Otterlace genome annotation system but can be run on its own.
@@ -12,20 +12,41 @@ Otterlace generates all the configuration files neeeded by ZMap and it is possib
 <p> The first option will retrieve data from the same sources online as when running Otterlace and the second from data files or from sources defined by yourself.
 
 <h3>Installation</h3>
-<p>To install ZMap you should work through the normal process for open source software:
-(NB you need to have the autotools check package installed)
-<br /><b>Caveat: I need to check this!</b><br />
+<p>To install ZMap you should work through the normal process for open source software
 <ul>
 <li> Obtain the distribution archive (eg zmap-0-1-97.tar.gz)
 <li> Unzip the source and build as normal
 <pre>
 > tar -zvzf zmap-0-1-97.tar.gz
 > cd zmap-0-1-97
-> ./configure [--prefix=my_zmap_dir]
+> ./configure [args]
 > make
+> make install
 </pre>
-
 </ul>
+<b>NOTE</b> that it is assumed that certain packages are already available such as GTK, GLib, Pango, Cairo, G2.</p>
+<p>On Sanger Linux PCs you should run the configure command like this:
+<pre>
+#!/bin/bash
+> export PKG_CONFIG_PATH=/software/acedb/gtk/lib/pkgconfig
+>./configure CFLAGS="-I/software/acedb/gtk/include"
+      CPPFLAGS="-I/software/acedb/gtk/include"
+      LDFLAGS="-L/software/acedb/gtk/lib"
+      --prefix=/software/acedb
+</pre>
+and an a Sanger Mac like this:
+<pre>
+./configure CFLAGS="-I/opt/local/include"
+      CPPFLAGS="-I/opt/local/include"
+      LDFLAGS="-L/opt/local/lib"
+      v--prefix=--prefix=/opt/local
+
+</pre>
+The above assumes you have write permission in the install directories and you can install locally with (for example):
+<pre>
+./configure [args] --prefix=`pwd`
+</pre>
+from your source directory.
 </p>
 
 <a name="user"></a><h3>User Dcoumentation</h3>
