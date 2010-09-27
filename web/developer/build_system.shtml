@@ -353,7 +353,7 @@ Having run 'make dist' to make the tar.gz file...
 
 For Sanger linux machines:
 
-
+setenv PKG_CONFIG_PATH /software/acedb/gtk/lib/pkgconfig/
 ./configure --prefix=/software/acedb CFLAGS="-I/software/acedb/gtk/include" CPPFLAGS="-I/software/acedb/gtk/include" LDFLAGS="-L/software/acedb/gtk/lib"
 
 
