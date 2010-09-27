@@ -1,0 +1,50 @@
+<h2>Display columns</h4>
+<fieldset><legend>Orientation</legend>
+<p>All features on display are held in a data structure known as a <b>zmapWindowContainerFeatureset</b> which is a species of FooCanvasGroup (see <a href="Design_notes/modules/zmapindow_items.shtml"> zmapWindow/items</a>). These data structures can contain zero or more featuresets, although they should not be created unless there are features to display.
+</p>
+<p>A featureset may be displayed in one or more columns, for example separate columns for strand and frame.  It has long been assumed that each feature will only be displayed in a single column - each displayed feature's canvas item structure refers directly to the features context and there is a data structure known as the <b>FtoIHash</b> which maps from feature context to <b>ZMapWindowCanvasItem</b>.
+</p>
+
+<h3>Handling display styles</h3>
+<p>Each featureset is displayed with nominally one style but some styles specify sub-feature styles such as homology glyphs.  Several featuresets can use the same style if configured but it is more common for different featuresets in a single column to use different ones.  Each featureset is assigned a pointer to its style by zmapGFF2parser.c and each feature has a pointer to this style.  This data is accessable via the feature context directly from the feature and there is no need for any lookup process when displaying the feature.
+</p>
+<p>Each ContainerFeatureset also has a style table which contains copies of all the styles needed to display its features - this was originally invented a) to cater for state information being held in the style data structures (requiring a copy) and b) to speed up lookup.
+</p>
+
+<p>Styles contain state information: deferred, loaded, and current bump mode.
+</p>
+</fieldset>
+
+
+<fieldset><legend>Problems and solutions</legend>
+
+<h3>The ContainerFeatureset style table is not deterministic</h3>
+<p>Styles are added to this table effectively in random order entirely dependant on the order in whcih features are loaded from servers, and this has become a much more crtitical issue with the advent of pipe servers, one for each featureset - the order of insertion into this table is dependant on the speed of external databases and the amount of data they provide.  In addition to this ther order of styles on lookup is dependant on an open source hash algorithm (they are stored in a hash table) and therefore dependant on the names given to the styles.
+</p>
+<h4>Displaying 3-frame columns</h4>
+<p>Some ZMap functions such as displaying in 3-frame mode look up style information to decide whether of not a column should be displayed and this involves finding the first valid setting in the column's style table for the requried attribute, and if there is more than one style provided the value retrieved depends on the random ordering of styles in the table.
+</p>
+<p>Columns are displayed by zmapWindow.c/windowDrawContextCB() which attempts to create all possible strand and frame combinations for that column.  This involves creating the column (ZMapWindowContainerFeatureset) and copying the style table and then looking up the style table to find out whether or not the column should have been created.
+</p>
+
+<h4>Maintaining the current bump-mode</h4>
+<p>Current bump mode is stored in style data structures and with a style table it is necessary to store this bump mode in every style in the table to ensure that lookup will return the same data.  If another featureset is added to the column then care must ba table to update that set's style appropriately.
+</p>
+<p>There is code in <b>zmapWindowColBump.c</b> that alows for the possibility of bumping eiother the whole column or a single featureset (if the user clicked on a feature) but as things stand it is not possible to control this reliably or in the obvious way (eg unbump one featureset)
+</p>
+
+<h3>Style lookup should not be necessary</h3>
+<p>As features can point to thier style structures there whopuld be no need for lookup.  Currently each feature used its style directly but sub-feature styles are referred to by Id.
+</p>
+</h5>Solution</h5>
+<p>Sub-feature style id should be replaced by pointers to styles, by the style config code and ContainerFeatureset style table lookup removed.
+</p>
+<h3>There is some confusion when more than one featureset is loaded into a column</h3>
+
+<h3>Features may only be displayed in one place</h3>
+
+
+</fieldset>
+
+<fieldset><legend></legend>
+</fieldset>
