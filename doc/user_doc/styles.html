@@ -4,7 +4,7 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <!-- Start of page. -->
-<!-- CVS info:  $Id: styles.html,v 1.2 2010-05-26 12:35:49 mh17 Exp $ -->
+<!-- CVS info:  $Id: styles.html,v 1.3 2010-09-27 11:13:18 mh17 Exp $ -->
 <h2>ZMap Feature Sets and Styles</h2>
 
 
@@ -168,7 +168,7 @@ the properties themselves.
     </tr>
     <tr>
       <td>mode</td>
-      <td>&lt; basic | alignment | transcript | dna | peptide | text | graph | glyph
+      <td>&lt; basic | alignment | transcript | raw-sequence | pep-sequence | text | graph | glyph
 	  | assembly-path &gt; </td>
       <td>Identifies how a feature should be displayed and processed, e.g. a transcript will be displayed
 	  using the accepted block/angle line style.</td>
@@ -270,13 +270,16 @@ the properties themselves.
     </tr>
     <tr>
       <td>score-mode</td>
-      <td>&lt; width | offset | histogram | percent &gt;</td>
+      <td>&lt; width | height | size | alt | offset | histogram | percent &gt;</td>
       <td>For features with scores, controls how they are displayed:
 	  <ul>
-	    <li><b>width:</b> features displayed as blocks, higher the score, wider the block.
+	    <li><b>width:</b> features displayed as blocks or glyphs, higher the score, wider the block.
+          <li><b>height:</b> features displayed as glyphs, higher the score, taller the block.
+          <li><b>size:</b> features displayed as glyphs, higher the score, height and width combined.
 	    <li><b>offset:</b> features displayed as blocks, higher the score, bigger the offset.
 	    <li><b>histogram:</b> features displayed as a graph/histogram.
 	    <li><b>percent:</b> features displayed as graph within certain percentage range.
+          <li><b>alt:</b> features displayed as glyphs - diferent colour depending on glyph-threshold
 	  </ul>
       </td>
     </tr>
@@ -314,6 +317,17 @@ the properties themselves.
       <td>show-text</td>
       <td>boolean</td>
       <td>If true, display any remarks/text relating to the feature.</td>
+    </tr>
+    <tr>
+      <td>sub-features</td>
+      <td>string</td>
+      <td>This is a list of included sub-features and styles associcated with them. The styles are normally glyph mode styles (which must be defined in the styles file). Recognised sub-features are:
+      <ul>
+      <li><b>homology</b>
+      <li><b>non-concensus-splice</b>
+      </ul>
+      The sub-feature and style should be seperated by a ':' and multiple sub-features separated by a ';'.
+      </td>
     </tr>
     <tr>
       <td>strand-specific</td>
@@ -432,6 +446,18 @@ the properties themselves.
       <td>colour type</td>
       <td>Specifies the colour for the bar joining non-colinear alignments.</td>
     </tr>
+     <tr>
+      <td>alignment-unmarked-colinear</td>
+      <td>boolean</td>
+      <td>Allows a column to be bumped when unmarked.</td>
+    </tr>
+     <tr>
+      <td>alignment-mask_sets</td>
+      <td>string</td>
+      <td>Specifies a list of featuresets with which to mask any featureset using this style. This list may include the word 'self' (it is most efficient to place this at the front of the list).  Masked features are not displayed unless selected from the column's Right-Click menu.
+      </td>
+    </tr>
+
     <tr>
       <td>transcript-cds-colours</td>
       <td>colour type</td>
@@ -442,6 +468,50 @@ the properties themselves.
       <td>colour_type</td>
       <td>Colours for the non-assembly section of a clone.</td>
     </tr>
+
+
+    <tr>
+      <td>glyph</td>
+      <td>string</td>
+      <td>The glyph shape to draw as defined in the ZMap config stanza [glyphs]. Unless overriddent this will be drawn at the 5' and 3' ends of a feature wehere relevant.</td>
+    </tr>
+    <tr>
+      <td>glyph-5</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 5' end of a feature.</td>
+    </tr>
+    <tr>
+      <td>glyph-3</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 3' end of a feature.</td>
+    </tr>
+
+
+
+    <tr>
+      <td>glyph-threshold</td>
+      <td>integer</td>
+      <td>Value at which to trigger alternate colours</td>
+    </tr>
+
+    <tr>
+      <td>glyph-strand</td>
+      <td>flip-x flip-y</td>
+      <td>If a feature is in the reverse strand flip the X or Y coordinates.  This specifies which coordinate to flip ie flip-x means inverting around the Y-axis.</td>
+    </tr>
+
+    <tr>
+      <td>glyph-align</td>
+      <td>left centre right</td>
+      <td>By default glyphs are aligned to the centre of a column. If glyph-align is set then the column width must also be set.</td>
+    </tr>
+
+    <tr>
+      <td>glyph-alt-colours</td>
+      <td>colour type</td>
+      <td>Set the colours to be used below the specified threshold when glyph-score-mode is set to alt.</td>
+    </tr>
+
     </tbody>
 </table>
 

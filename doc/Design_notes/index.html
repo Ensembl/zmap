@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.23 2010-09-24 08:59:17 mh17 Exp $ -->
+<!-- $Id: index.html,v 1.24 2010-09-27 11:13:18 mh17 Exp $ -->
 
 <h2>ZMap Design Documentation</h2>
 
@@ -73,6 +73,8 @@ Coordinate systems<br />
 
 <li>Locus features are apparently created via some kludge which causes some problems when deleting features. This and the naviagtor-sets needs a review. see eg <b>zmapViewRemoteRecieve.c #1601</b>.
 
+<li>Migration from ACEDB requires featureset to column and style mappings which can be obscure. it is possible to extract this information by hand from otterlace config but this is not possible for users.
+RC export/config could be used to dump this info to a file but due to scope issues it's really difficult to find that information where the functions get called from. This is tied up with view/window 'modularity' and there is a clear need to restructre some of the v iew and window data so that stuff that is needed by both modules is available. Currently some data (eg featureset_2_column) is copied but this is not ideal.
 </ul>
 </p>
 

@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
-<!-- $Id: configuration.html,v 1.7 2010-09-24 13:37:50 mh17 Exp $ -->
+<!-- $Id: configuration.html,v 1.8 2010-09-27 11:13:18 mh17 Exp $ -->
 <!-- this is for the up to date ZMap -->
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
@@ -48,7 +48,8 @@ Help Options:
 Application Options:
   --version=<none>          Program version.
   --start=coord             Start coord in sequence, must be in range 1 -> seq_length.
-  --end=coord               End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence.
+  --end=coord               End coord in sequence, must be in range start -> seq_length
+                            but end == 0 means show to end of sequence.
   --conf_file=file path     Relative or full path to configuration file.
   --conf_dir=directory      Relative or full path to configuration directory.
   --win_id=0x0000000        Window ID of the controlling application.
