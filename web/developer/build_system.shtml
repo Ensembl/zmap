@@ -4,13 +4,188 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 
-<h2>SSH magic</h2>
+<!-- some colours for our boxes etc. -->
+<style>
 
-<p>
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 
-Well it's  not really magic, just  logging in to each  node, running a
-script, clearing up and logging out.  An example from one of the uses
-follows, and explaination of what's going on.
+.request{ border-color: red;  border-width: medium }
+.response{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
+</style>
+
+
+<h1>Installing ZMap - the gory details</h1>
+
+<p>This document covers the installation of zmap and its dependencies on linux
+and Mac systems. The first part of the document covers building and installing
+ZMap assuming that all of the dependencies have been installed. Later
+sections cover installing the dependencies themselves.</p>
+
+
+
+
+
+<h2>ZMap Install</h2>
+
+
+<h3>Changes Made to our Build System to get it to work</h3>
+
+
+<p>In the scripts directory:</p>
+
+<pre>
+build_config.mac.sh & build_config.mac18480i.sh
+
+altered stuff to point to /opt/local
+
+</pre>
+
+
+<p>In src directory:</p>
+
+<pre>
+Makefile.am
+
+commented out include $(srcdir)/am_doxygen.am until I can find a way to conditionally
+include it.
+
+</pre>
+
+
+<pre>
+configure.ac
+
+- changed:
+
+AC_PREREQ(2.59)
+
+to 
+
+AC_PREREQ(2.65)
+
+
+
+- commented out all of doxygen (lines beginning DX_).
+
+
+- changed:
+
+zmap.pc
+dotZMap:dotZmap.in
+$srcdir/$DX_CONFIG:Doxyfile.in
+])
+
+AC_OUTPUT
+
+to
+
+
+zmap.pc
+dotZMap:dotZmap.in
+])
+
+#$srcdir/$DX_CONFIG:Doxyfile.in
+#
+
+AC_OUTPUT
+
+i.e. commented out the doxyfile bit, this needs to be made configurable...
+
+</pre>
+
+<pre>
+runbootstrap
+
+for darwin added:
+
+
+    export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"
+
+</pre>
+
+
+<h3>Running a build within the ZMap source tree</h3>
+
+<pre>
+
+1) run the script to set up the tree for creating a ./configure script.
+
+> cd ZMap/src
+> ./runbootstrap
+
+
+2) Produce and run the ./configure
+
+then for linux
+> cd build/linux
+
+and for the mac
+> cd build/mac
+
+> ../../runconfig
+
+
+3) Run the make
+
+> make
+
+
+4) create a distribution file
+
+> make dist
+
+</pre>
+
+
+<h3>Using the dist file from the build</h3>
+
+<p>Having run 'make dist' to make the tar.gz file...</p>
+
+<pre>
+1) gunzip and untar the file.
+
+2) cd zmap-V-R-U 
+
+3) run ./configure:
+
+
+For Sanger linux machines:
+
+setenv PKG_CONFIG_PATH /software/acedb/gtk/lib/pkgconfig/
+./configure --prefix=/software/acedb CFLAGS="-I/software/acedb/gtk/include" CPPFLAGS="-I/software/acedb/gtk/include" LDFLAGS="-L/software/acedb/gtk/lib"
+
+
+For Macport Mac machines:
+
+setenv PKG_CONFIG_PATH /opt/local/lib/pkgconfig/
+./configure --prefix=/opt/local CFLAGS="-I/opt/local/include"  CPPFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib"
+
+</pre>
+
+
+
+<h2>Running the ZMap developer build system</h2>
+
+
+<p>Well it's not really magic, just logging in to each node, running a script,
+clearing up and logging out.  An example from one of the uses follows, and
+explanation of what's going on.</p>
 
 </p>
 
@@ -33,11 +208,69 @@ rm -f root_checkout.sh     || exit 1;   \
 "' > output.log 2>&1
 </pre>
 
-<p>
-Note we run bash on the remote host. This explains some of the odd quoting...
+<p>Note we run bash on the remote host. This explains some of the odd quoting.</p>
 
-</p>
 
+
+<h2>Installing Dependencies</h2>
+
+
+<h3>ZMap Foocanvas Install</h3>
+
+<p>The following description assumes that you have the <b>patched</b> version
+of the foocanvas which includes the extensions needed by ZMap.</p>
+
+<pre>
+For a standard /usr or /usr/local system:
+
+> ./autogen.sh
+
+
+For a MacPorts /opt/local system:
+
+> export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"  # NOTE the spaces !!!!!
+
+> ./autogen.sh --prefix=/opt/local
+
+
+and then in either case:
+
+> make
+
+> sudo make install
+
+</pre>
+
+
+<h3>AceConn Instal</h3>
+
+
+<pre>
+For a MacPorts /opt/local system glibtoolize and the path to aclocal
+need to be set as environment variables before bootstrapping and building:
+
+> export LIBTOOLIZE=glibtoolize
+
+> export AC_LOCAL_INC=/opt/local/share/aclocal
+
+
+and then for all systems:
+
+> bootstrap -b
+
+> ./configure --prefix=/opt/local
+
+> make
+
+> sudo make install
+
+</pre>
+
+
+
+
+
+<h2>MacPort Install</h2>
 
 
 <pre>
@@ -192,179 +425,21 @@ and that's it.
 </pre>
 
 
-ZMap Install
-------------
 
-ZMap requires several libraries to be installed, this documents covers
-installation of these libraires in a standard environment and a macports
-environment.
 
 
-1) Installing foocanvas....(this assumes you have a _patched_ foocanvas that
-includes all our extras....).
 
 
-For a standard /usr or /usr/local system:
 
-> ./autogen.sh
 
 
-For a MacPorts /opt/local system:
 
-> export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"  # NOTE the spaces !!!!!
 
-> ./autogen.sh --prefix=/opt/local
 
 
-and then in either case:
 
-> make
-
-> sudo make install
-
-
-
-2) Installing AceConn:
-
-For a MacPorts /opt/local system glibtoolize and the path to aclocal
-need to be set as environment variables before bootstrapping and building:
-
-> export LIBTOOLIZE=glibtoolize
-
-> export AC_LOCAL_INC=/opt/local/share/aclocal
-
-
-and then for all systems:
-
-> bootstrap -b
-
-> ./configure --prefix=/opt/local
-
-> make
-
-> sudo make install
-
-
-
-3) Install ZMap:
-
-
-In scripts
-
-1) build_config.mac.sh & build_config.mac18480i.sh
-
-altered stuff to point to /opt/local
-
-
-
-In src
-
-1) Makefile.am
-
-commented out include $(srcdir)/am_doxygen.am until I can find a way to conditionally
-include it...surely Roy knows how to do this....
-
-2) configure.ac
-
-- changed:
-
-AC_PREREQ(2.59)
-
-to 
-
-AC_PREREQ(2.65)
-
-
-- commented out all of doxygen (lines beginning DX_).
-
-
-- changed:
-
-zmap.pc
-dotZMap:dotZmap.in
-$srcdir/$DX_CONFIG:Doxyfile.in
-])
-
-AC_OUTPUT
-
-to
-
-
-zmap.pc
-dotZMap:dotZmap.in
-])
-
-#$srcdir/$DX_CONFIG:Doxyfile.in
-#
-
-AC_OUTPUT
-
-i.e. commented out the doxyfile bit, this needs to be made configurable...
-
-
-3) runbootstrap
-
-for darwin added:
-
-
-    export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"
-
-
-
-> cd ZMap/src
-
-> ./runbootstrap
-
-
-4) runconfig
-
-cd to the build dir:
-
-> cd build/linux         for linux
-
-
-for the mac
-
-
-> cd build/mac
-
-
-run the config script:
-
-../../runconfig
-
-
-5) In the same directory:
-
-make
-
-
-
-NNN) Using the dist file from the build
-
-Having run 'make dist' to make the tar.gz file...
-
-1) gunzip and untar the file.
-
-2) cd zmap-V-R-U 
-
-3) run ./configure
-
-
-For Sanger linux machines:
-
-setenv PKG_CONFIG_PATH /software/acedb/gtk/lib/pkgconfig/
-./configure --prefix=/software/acedb CFLAGS="-I/software/acedb/gtk/include" CPPFLAGS="-I/software/acedb/gtk/include" LDFLAGS="-L/software/acedb/gtk/lib"
-
-
-For Macport Mac machines:
-
-./configure --prefix=/opt/local CFLAGS="-I/opt/local/include"  CPPFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib"
-
-<pre>
-
-
-</pre>
 
 
 <!--#include virtual="/perl/footer"-->
+
+
