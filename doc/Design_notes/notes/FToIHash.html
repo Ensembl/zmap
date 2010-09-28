@@ -1,0 +1,25 @@
+<!-- $Id: FToIHash.html,v 1.1 2010-09-28 08:20:03 mh17 Exp $ -->
+<h2>Feature Context to Canvas FtoI hash</h2>
+
+<fieldset><legend>Connecting feature context to window canvas</legend>
+
+<h3>Features may only be displayed in one place per window</h3>
+<p>So far the existing mechanisms of canvas items referring to features in the feature context directly, and features referring to canvas items via a hash table have worked.  Each window has its own context to hash table and when the view is split into two then a second hash table is created.  Each container item in the hash table has its own hash table and to look up a feature we need to progress through four levels of hash table.
+</p>
+<p>Some reasons for wanting to display a feature more than once are:
+<ul>
+<li> re-coding <a href="Design_notes/notes/focus_list.shtml">focus/ highlit items</a> using the overlay group of a ContainerFeatureset.  Existing highlight code has problems with canvas item ordering as highlit items must be brought to the front and this mechanism fails with multiple select.  By displaying a second copy in the overlay list we can avoid all such problems.
+<li> Users would like to be able to select a transcript and see it in a new column with all supporting evidence next to it.  Obviously if we could avoid removeing these features from thier respective columns that will require less work and be more reliable.
+</ul>
+<b>Note</b> Separator column items (created by a DNA search for example) do not refer to features in the features context (except perhaps the DNA sequence) and are not relevant here. However this may be an area to be aware of.
+</p>
+<h5>Solutions ?</h5>
+<p> Recode the FtoI hash table as a hash table of lists (yuk) or as a btree with non-unique keys allowed.
+<p>Recode the FtoI hash table as a list of Canvas items stored in the feature context. This seems <i>remarkably simple</i> and we could replace all the FToI hash table with a simple short list of references to canvas items in each item in the feature context.
+This would work quicker as scanning a list of one or two items will be faster than searching four hash tables.
+</p>
+<p>
+NB: Currently we have a featureset to column id mapping in the feature context, which is not ideal and was implemented due to short term expediency.  This was due to scope issues - in the FToI hash code we do not have access to the window data and cannot lookup the featureset_2_column mapping.
+</p>
+
+</fieldset>
