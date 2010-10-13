@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.35 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.36 2010-10-13 15:44:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -412,7 +412,7 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContaine
 /*!
  * \brief  The display name for the column.
  *
- * This is not indepenadant of the featureset(s) attached/ in the column
+ * This is  indepenadant of the featureset(s) attached/ in the column
  * but defaults to the name of the featureset if there is only one
  *
  * \param container  The container to interrogate.

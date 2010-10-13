@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 14 14:03 2010 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.46 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.47 2010-10-13 15:44:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -812,6 +812,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
 	  char *title = NULL;
+        if(!feature_text)
+            feature_text = g_quark_to_string(set_id);
 	  title = g_strdup_printf("Results '%s'", feature_txt);
 	  zmapWindowListWindow(search_data->window,
 			       NULL, title,

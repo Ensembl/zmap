@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.50 2010-10-13 09:31:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.51 2010-10-13 15:44:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -563,10 +563,6 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_c
  *
  * Warning, may return null so result MUST BE TESTED by caller.
  *
- * NOTE this now uses column id not featureset ID
- * the column id relates to the canvas not the feature context
- * some calls are related to fixed names (eg 3FT and DNA) and
- * these featureset and column names are assumed to be identical
  */
 
 
@@ -930,13 +926,17 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
 {
   GList *item_list    = NULL ;
   GQuark same_name_id = 0;
+  ZMapWindowContainerFeatureSet column;
+  GQuark column_id;
 
   same_name_id = feature_same_name_id(feature);
+
+  column_id = zMapWindowGetFeaturesetContainerID(window,feature->parent->unique_id);
 
   item_list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
 					    feature->parent->parent->parent->unique_id,
 					    feature->parent->parent->unique_id,
-					    feature->parent->unique_id,
+					    column_id, /* feature->parent->unique_id,*/
 					    set_strand,
 					    set_frame,
 					    same_name_id, NULL, NULL) ;
