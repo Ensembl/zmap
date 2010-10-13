@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.29 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.30 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -494,15 +494,16 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 }
 
 
-/* GFF stream styles do not include a mode (e.g. transcript etc) so this function
- * always returns unsupported.
+/* pipeServers use files froma ZMap style file and therefore include modes
  */
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   PipeServer server = (PipeServer)server_in ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  have_mode = TRUE;
 
   return result ;
 }

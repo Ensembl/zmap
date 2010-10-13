@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.196 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.197 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -229,7 +229,7 @@ GHashTable *zMapWindowFeatureAllStyles(ZMapWindow window)
 
 
 
-
+#if MH17_NOT_CALLED
 /* Add a new feature to the feature_set given by the set canvas item.
  *
  * Returns the new canvas feature item or NULL if there is some problem, e.g. the feature already
@@ -261,6 +261,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
   return new_feature ;
 }
 
+#endif
 
 #if MH17_NOT_CALLED
 /* N.B. This function creates TWO columns.  One Forward (returned) and One Reverse.
@@ -294,7 +295,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 
   /* Make sure it's somewhere in our list of feature set names.... columns to draw. */
   if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)) &&
-     (style = zMapFindStyle(window->read_only_styles, style_id)))
+     (style = zMapFindStyle(window->context_map->styles, style_id)))
     {
       /* Check feature set does not already exist. */
       if(!(feature_set = zMapFeatureBlockGetSetByID(feature_block, feature_set_id)))
@@ -323,7 +324,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
                                  reverse_features,
                                  feature_block,
                                  feature_set,
-				 window->read_only_styles,
+				 window->context_map->styles,
                                  ZMAPFRAME_NONE,
                                  &new_forward_set,
                                  &new_reverse_set,
@@ -493,7 +494,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   ZMapFeatureTypeStyle style = NULL;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
-//  style = zMapFindStyle(window->read_only_styles, feature->style_id) ;
+//  style = zMapFindStyle(window->context_map.styles, feature->style_id) ;
   style = feature->style;     // safe failure...
 
   g_return_val_if_fail(style != NULL, strand);
@@ -677,7 +678,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   /* check for style too. */
   /* sometimes we don't have a featrue_context ... ODD! */
   if(window->feature_context
-     && zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+     && zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       drawable = zMapFeatureContextGetDNAStatus(window->feature_context);
     }
@@ -1082,19 +1083,30 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
+
+      /* MH17:
+       * if we get here thay clicked on a feature not the column
+       * if the click on the column background the it gets handled in
+       * zmapWindnowDrawFeatures.c/columnMenuCB()
+       */
+
   feature = zMapWindowCanvasItemGetFeature(item);
   zMapAssert(feature);
 
-  column_group  = zmapWindowContainerCanvasItemGetContainer(item) ;
-  container_set = (ZMapWindowContainerFeatureSet) column_group;
 
+#if MH17_NO_MORE_STYLE_TABLES
   style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)column_group,
-						   feature->style_id);
-
+                                       feature->style_id);
+#else
+  style = feature->style;
+#endif
 
   feature_set = (ZMapFeatureSet)(feature->parent);
   menu_title = g_strdup_printf("%s (%s)", zMapFeatureName((ZMapFeatureAny)feature),
-			       zMapFeatureSetGetName(feature_set)) ;
+                         zMapFeatureSetGetName(feature_set)) ;
+
+  column_group  = zmapWindowContainerCanvasItemGetContainer(item) ;
+  container_set = (ZMapWindowContainerFeatureSet) column_group;
 
   /* Call back stuff.... */
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
@@ -1103,7 +1115,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_data->item = item ;
   menu_data->feature = feature;
 
-  /* get the featreset and container for the feature, needed for Show Masked Features */
+  /* get the featureset and container for the feature, needed for Show Masked Features */
   menu_data->feature_set = feature_set;
   menu_data->container_set = container_set;
 
@@ -1160,7 +1172,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
-						   zMapStyleGetBumpMode(style))) ;
+						   zmapWindowContainerFeatureSetGetBumpMode(container_set))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -1210,7 +1222,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	ZMapStrand set_strand ;
 	ZMapFrame set_frame ;
 	gboolean result ;
-      ZMapFeatureSet fset = (ZMapFeatureSet) feature->parent;
 
 	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
 	zMapAssert(result) ;
@@ -1218,7 +1229,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
-						    fset->column_id,
+						    menu_data->container_set->unique_id,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(set_strand),
 						    zMapFeatureFrame2Str(set_frame));
@@ -2060,15 +2071,21 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 {
   FooCanvasItem *new_feature = NULL ;
   ZMapFeatureTypeStyle style ;
-  ZMapFeatureSet feature_set ;
   gboolean column_is_empty = FALSE;
   FooCanvasGroup *container_features;
   ZMapStyleBumpMode bump_mode;
+  ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) feature_group;
 
-  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(ZMAP_CONTAINER_FEATURESET( feature_group ));
+#if MH17_NO_MORE_STYLE_TABLES
+  ZMapFeatureSet feature_set ;
+
+  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
   zMapAssert(feature_set) ;
 
   style = zmapWindowContainerFeatureSetStyleFromID(ZMAP_CONTAINER_FEATURESET( feature_group ), feature->style_id) ;
+#else
+  style = feature->style;
+#endif
 
   container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)feature_group));
   column_is_empty = !(container_features->item_list);
@@ -2078,7 +2095,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
   if (bump_col)
     {
-      if((bump_mode = zMapStyleGetBumpMode(style)) != ZMAPBUMP_UNBUMP)
+      if((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_set)) != ZMAPBUMP_UNBUMP)
 	{
 	  zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
 	}

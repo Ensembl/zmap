@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 10:14 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.33 2010-09-15 09:48:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.34 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1616,8 +1616,13 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
     {
       container_parent = zmapWindowContainerCanvasItemGetContainer(item);
       /* can optimise this a bit, by including the featureset_i header... */
+#if MH17_NO_MORE_STYLE_TABLES
       style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)container_parent,
-						       canvas_item->feature->style_id);
+                                           canvas_item->feature->style_id);
+#else
+      style = canvas_item->feature->style;
+#endif
+
     }
   }
   return style;

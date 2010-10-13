@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:42 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.135 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.136 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,11 +172,14 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                                                   gpointer user_data,
                                                   char **err_out);
 
+#define MH17_ADD_MODES  1
+#if MH17_ADD_MODES
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 gpointer data,
 						 gpointer user_data,
 						 char **error_out) ;
 static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
+#endif
 
 static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
 
@@ -288,6 +291,10 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
 
 
 
+#if MH17_ADD_MODES
+/* legacy code that might just be sued somewhere in the world
+ * should _not_ be called is we  used a styles file
+ */
 
 /* go through all the feature sets in the given AnyFeature (must be at least a feature set)
  * and set the style mode from that...a bit hacky really...think about this....
@@ -315,6 +322,7 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *
 
   return result;
 }
+
 
 
 /* This function is _only_ here for the otterlace -> zmap
@@ -345,7 +353,7 @@ gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable
   return result;
 }
 
-
+#endif
 
 ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb)
 {
@@ -2588,6 +2596,7 @@ static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAn
 }
 
 
+#if MH17_ADD_MODES
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 gpointer data,
 						 gpointer user_data,
@@ -2729,7 +2738,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
   return ;
 }
-
+#endif
 
 gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any)
 {

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:19 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.35 2010-09-24 09:19:29 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.36 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
-#include <ZMap/zmapGFF.h>
+#include <ZMap/zmapFeature.h>
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
@@ -809,7 +809,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
       GKeyFile *gkf;
       gchar ** keys,**freethis;
       GList *sources;
-      ZMapGFFSet GFFset;
+      ZMapFeatureSetDesc GFFset;
       char *desc;
       GQuark column,column_id;
       char *names;
@@ -836,11 +836,11 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                         // add self ref to allow column lookup
                   GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(column_id));
                   if(!GFFset)
-                        GFFset = g_new0(ZMapGFFSetStruct,1);
+                        GFFset = g_new0(ZMapFeatureSetDescStruct,1);
 
-                  GFFset->feature_set_id = column_id;        // lower cased name
-                  GFFset->feature_set_ID = column;           // display name
-                  GFFset->feature_src_ID = column;           // display name
+                  GFFset->column_id = column_id;        // lower cased name
+                  GFFset->column_ID = column;           // display name
+                  GFFset->feature_src_ID = column;      // display name
 
                   // add description if present
                   desc = normalkey;
@@ -858,10 +858,10 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                         GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
 
                         if(!GFFset)
-                              GFFset = g_new0(ZMapGFFSetStruct,1);
+                              GFFset = g_new0(ZMapFeatureSetDescStruct,1);
 
-                        GFFset->feature_set_id = column_id;        // lower cased name
-                        GFFset->feature_set_ID = column;           // display name
+                        GFFset->column_id = column_id;        // lower cased name
+                        GFFset->column_ID = column;           // display name
                         GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
                         g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
@@ -880,17 +880,13 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
 
-/*
- * NOTE: really we ought to invent another struct for columns
- * as zmapGFFSet is one re-used from featureset_2_column
- */
 
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
       GKeyFile *gkf;
       GList *columns = NULL,*col;
       gchar *colstr;
-      ZMapGFFSet gff;
+      ZMapFeatureColumn f_col;
       GHashTable *hash = NULL;
       int i = 0;
       GHashTable *col_desc;
@@ -912,20 +908,18 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 
             for(col = columns; col;col = col->next)
             {
-                  gff = g_new0(ZMapGFFSetStruct,1);
-                  gff->feature_src_ID =
-                  gff->feature_set_ID = GPOINTER_TO_UINT(col->data);
+                  f_col = g_new0(ZMapFeatureColumnStruct,1);
+                  f_col->column_id = GPOINTER_TO_UINT(col->data);
 
-                  desc = (char *) g_quark_to_string(gff->feature_set_ID);
-                  gff->feature_set_id = zMapFeatureSetCreateID(desc);
+                  desc = (char *) g_quark_to_string(f_col->column_id);
+                  f_col->unique_id = zMapFeatureSetCreateID(desc);
 
-                  gff->feature_set_text = g_hash_table_lookup(col_desc,
-                        GUINT_TO_POINTER(gff->feature_set_id));
-                  if(!gff->feature_set_text)
-                        gff->feature_set_text = desc;
-
-                  gff->order = ++i;
-                  g_hash_table_insert(hash,GUINT_TO_POINTER(gff->feature_set_id),gff);
+                  f_col->column_desc = g_hash_table_lookup(col_desc,
+                        GUINT_TO_POINTER(f_col->column_id));
+                  if(!f_col->column_desc)
+                        f_col->column_desc = desc;
+                  f_col->order = ++i;
+                  g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
             }
       }
 
@@ -1193,9 +1187,10 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
+#if MH17_NO_DEFERRED
       { ZMAPSTYLE_PROPERTY_DEFERRED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_LOADED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
-
+#endif
 
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1323,8 +1318,10 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
 
+#if MH17_NO_DEFERRED
     { ZMAPSTYLE_PROPERTY_DEFERRED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_LOADED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+#endif
 
       // these three names relate to 3 more real parameters
       // the names specify a shape string to be extracted from [glyphs]

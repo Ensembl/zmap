@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.61 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.62 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -141,8 +141,10 @@ typedef enum
     STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
     STYLE_PROP_DIRECTIONAL_ENDS,
 
+#if MH17_NO_DEFERRED
     STYLE_PROP_DEFERRED,
     STYLE_PROP_LOADED,
+#endif
 
     // mode dependant data
 
@@ -208,11 +210,11 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_FRAME2_COLOURS         "frame2-colours"
 #define ZMAPSTYLE_PROPERTY_REV_COLOURS            "rev-colours"
 /* ... zoom sensitive display */
-#define ZMAPSTYLE_PROPERTY_DISPLAY_MODE           "display-mode"
+#define ZMAPSTYLE_PROPERTY_DISPLAY_MODE           "display-mode"  /* initial display mode */
 #define ZMAPSTYLE_PROPERTY_MIN_MAG                "min-mag"
 #define ZMAPSTYLE_PROPERTY_MAX_MAG                "max-mag"
 /* ... bumping */
-#define ZMAPSTYLE_PROPERTY_BUMP_MODE              "bump-mode"
+#define ZMAPSTYLE_PROPERTY_BUMP_MODE              "bump-mode"     /* initial bump mode */
 #define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE      "default-bump-mode"
 #define ZMAPSTYLE_PROPERTY_BUMP_FIXED             "bump-fixed"
 #define ZMAPSTYLE_PROPERTY_BUMP_SPACING           "bump-spacing"
@@ -237,8 +239,10 @@ typedef enum
 /* ... frame sensitivity */
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
 /* ... deferred loading */
+#if MH17_NO_DEFERRED
 #define ZMAPSTYLE_PROPERTY_DEFERRED               "deferred"
 #define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
+#endif
 
 
 /* glyph properties - can be for mode glyph or as sub-features */
@@ -660,7 +664,7 @@ typedef struct
  *
  * ZMap Style definition, the style must have a mode which specifies what sort of
  * of feature the style represents. */
-typedef struct //_zmapFeatureTypeStyleStruct
+typedef struct _zmapFeatureTypeStyleStruct
 {
   GObject __parent__;
 
@@ -686,10 +690,12 @@ typedef struct //_zmapFeatureTypeStyleStruct
 
   ZMapStyleMode mode ;                              /*!< Specifies how features that
                                                  reference this style will be processed. */
-                                                 // must be set before setting mode dependant fields
-                                                 // and may not be unset/changed afterwards
+                                                 /* must be set before setting mode dependant fields
+                                                  * and may not be unset/changed afterwards
+                                                  */
 
-  GQuark sub_features[ZMAPSTYLE_SUB_FEATURE_MAX];      // style ID quarks indexed by SUBFEATURE ENUM
+  GQuark sub_features[ZMAPSTYLE_SUB_FEATURE_MAX];      /* style ID quarks indexed by SUBFEATURE ENUM */
+  struct _zmapFeatureTypeStyleStruct *sub_style[ZMAPSTYLE_SUB_FEATURE_MAX];      /* style pointers indexed by SUBFEATURE ENUM */
 
   ZMapStyleFullColourStruct colours ;                     /*!< Main feature colours. */
 
@@ -705,7 +711,7 @@ typedef struct //_zmapFeatureTypeStyleStruct
   ZMapStyleColumnDisplayState col_display_state ;         /* Controls how/when col is displayed. */
 
   ZMapStyleBumpMode default_bump_mode ;             /*!< Allows return to original bump mode. */
-  ZMapStyleBumpMode curr_bump_mode ;                /*!< Controls how features are grouped
+  ZMapStyleBumpMode initial_bump_mode ;                /*!< Controls how features are grouped
                                                  into sub columns within a column. */
   double bump_spacing ;                             /*!< gap between bumped features. */
 
@@ -749,11 +755,12 @@ typedef struct //_zmapFeatureTypeStyleStruct
 
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
 
-  gboolean deferred;          /* flag for to say if this style is deferred loaded */
+#if MH17_NO_DEFERRED
+  gboolean deferred;           /*flag for to say if this style is deferred loaded */
 
-  gboolean loaded;            /* flag to say if we're loaded */
-
-  gboolean inherited;         // style has inherited it's parents
+  gboolean loaded;             /* flag to say if we're loaded */
+#endif
+  gboolean inherited;         /* style has inherited it's parents */
 
   /*! Mode specific fields, see docs for individual structs. */
   union
@@ -883,8 +890,11 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 //ZMapStyleScoreMode zMapStyleGetScoreMode(ZMapFeatureTypeStyle style);
 #define zMapStyleGetScoreMode(style)   (style->score_mode)
 //ZMapStyleBumpMode zMapStyleGetBumpMode(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGetBumpMode(style) (style->curr_bump_mode)
-void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode) ;
+
+
+#define zMapStyleGetInitialBumpMode(style) (style->initial_bump_mode)
+void zMapStyleSetInitialBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode) ;
+
 //const gchar *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetGFFSource(style) g_quark_to_string(style->gff_source)     // NULL quark gives NULL string
 //const gchar *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
@@ -951,8 +961,10 @@ void zMapStyleSetStrandShowReverse(ZMapFeatureTypeStyle type, gboolean show_reve
 void zMapStyleSetFrameMode(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode) ;
 void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature) ;
 void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable) ;
+#if MH17_NO_DEFERRED
 void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred) ;
 void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean loaded) ;
+#endif
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, gboolean show_gaps) ;
@@ -987,12 +999,13 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 //gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDisplayable(style)   (style->displayable)
 
-
+#if MH17_NO_DEFERRED
 //gboolean zMapStyleIsDeferred(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDeferred(style)   (style->deferred)
 
 //gboolean zMapStyleIsLoaded(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsLoaded(style)   (style->loaded)
+#endif
 
 //gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsHidden(style)   (style->col_display_state == ZMAPSTYLE_COLDISPLAY_HIDE)
@@ -1006,6 +1019,7 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 //gboolean zMapStyleIsFrameOneColumn(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsFrameOneColumn(style)   (style->frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
+#define zMapStyleGetFrameMode(style)      (style->frame_mode)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 #define zMapStyleBaseline(style)   (style->mode_data.graph.baseline)
@@ -1039,14 +1053,17 @@ ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 
 void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
 			      ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode) ;
-ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style) ;
 
+#if MH17_NO_STYLE_BUMP
+ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style) ;
+#endif
 
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
 
 
 
+gboolean zMapStyleSetSubStyles(GHashTable *style_set);
 
 
 //gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style);

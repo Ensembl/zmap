@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:19 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.120 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.121 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -525,12 +525,12 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
   /* Locus is an odd one out just now, we need to handle this differently..... */
   if (parser->locus_set_id)
     {
-      ZMapGFFSet set_data ;
-      ZMapGFFSource source_data ;
+      ZMapFeatureSetDesc set_data ;
+      ZMapFeatureSource source_data ;
 
 
-      set_data = g_new0(ZMapGFFSetStruct, 1) ;
-      set_data->feature_set_id = parser->locus_set_id ;
+      set_data = g_new0(ZMapFeatureSetDescStruct, 1) ;
+      set_data->column_id = parser->locus_set_id ;
       set_data->feature_set_text = g_strdup_printf("Locus IDs") ;
 
       g_hash_table_insert(parser->source_2_feature_set,
@@ -538,7 +538,7 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 			  set_data) ;
 
 
-      source_data = g_new0(ZMapGFFSourceStruct, 1) ;
+      source_data = g_new0(ZMapFeatureSourceStruct, 1) ;
       source_data->source_id = parser->locus_set_id ;
       source_data->style_id = parser->locus_set_id ;
       source_data->source_text = g_quark_from_string("Locus IDs") ;
@@ -1171,7 +1171,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
-  GQuark column_id = 0;
+/*  GQuark column_id = 0;*/
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
@@ -1193,7 +1193,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
    */
   if (parser->source_2_sourcedata)
     {
-      ZMapGFFSource source_data ;
+      ZMapFeatureSource source_data ;
 
 
       if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
@@ -1231,7 +1231,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
    */
   if (parser->source_2_feature_set)
     {
-      ZMapGFFSet set_data ;
+      ZMapFeatureSetDesc set_data ;
 
       if (!(set_data = g_hash_table_lookup(parser->source_2_feature_set,
                                  GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
@@ -1244,32 +1244,35 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       }
       else
       {
+            // feature_set_id being the column id... */
         feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
-        column_id = set_data->feature_set_id;
+/*        column_id = set_data->feature_set_id;*/
       }
     }
   else
     {
       feature_set_name = source ;
-      column_id = zMapStyleCreateID(source);
+ /*     column_id = zMapStyleCreateID(source);*/
     }
 #else
       /* don't map to column but instead make a note of the column id for later */
       /* this turns put to be needed for FToI hash functions */
 
     feature_set_name = source ;
+/*
     column_id = zMapStyleCreateID(source);
 
     if (parser->source_2_feature_set)
     {
-      ZMapGFFSet set_data ;
+      ZMapFeatureSetDesc set_data ;
 
       if ((set_data = g_hash_table_lookup(parser->source_2_feature_set,
                                  GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
       {
-        column_id = set_data->feature_set_id;
+        column_id = set_data->column_id;
       }
     }
+*/
 #endif
 
       // get the feature set so that we can find the style for the feature;
@@ -1292,7 +1295,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       // styles have already been inherited by this point by zmapView code and passed back to us
       parser_feature_set->feature_styles = g_hash_table_new(NULL,NULL);
 
-      feature_set->column_id = column_id;
+/*      feature_set->column_id = column_id;*/
 
       parser_feature_set->multiline_features = NULL ;
       g_datalist_init(&(parser_feature_set->multiline_features)) ;

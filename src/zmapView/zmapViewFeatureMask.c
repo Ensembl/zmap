@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.3 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.4 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@
 #include <glib.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapGFF.h>
+//#include <ZMap/zmapGFF.h>
 #include <zmapView_P.h>
 
 
@@ -114,7 +114,7 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
       ZMapMaskFeatureSetDataStruct _data = { NULL };
       ZMapMaskFeatureSetData data = &_data;
       GList *fset;
-      ZMapGFFSource src2src;
+      ZMapFeatureSource src2src;
       ZMapFeatureTypeStyle style;
       GList *masked_by;
 
@@ -123,13 +123,13 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
             /* this is the featuresets from the context not the display columns */
       for(fset = new_feature_set_names;fset;fset = fset->next)
       {
-            src2src = (ZMapGFFSource) g_hash_table_lookup(view->source_2_sourcedata,fset->data);
+            src2src = (ZMapFeatureSource) g_hash_table_lookup(view->context_map.source_2_sourcedata,fset->data);
             if(!src2src)
             {
                   zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style id for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
                   continue;
             }
-            style =  zMapFindStyle(view->orig_styles,src2src->style_id);
+            style =  zMapFindStyle(view->context_map.styles,src2src->style_id);
             if(!style)
             {
                   zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
@@ -214,7 +214,7 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
   ZMapMaskFeatureSetData cb_data = (ZMapMaskFeatureSetData) user_data;
   GList *fset;
   GList *masked_by;
-  ZMapGFFSource src2src;
+  ZMapFeatureSource src2src;
   ZMapFeatureTypeStyle style;
 
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
@@ -237,11 +237,15 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
         if(!feature_set)
             break;
 
-        src2src = (ZMapGFFSource) g_hash_table_lookup(cb_data->view->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
+        src2src = (ZMapFeatureSource) g_hash_table_lookup(cb_data->view->context_map.source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
         if(!src2src)    // assert looks more natural but we get locus w/out any mapping from ACE
             break;
 
-        style =  zMapFindStyle(cb_data->view->orig_styles,src2src->style_id);
+#if MH17_FEATURESET_HAS_NO_STYLE
+        style =  zMapFindStyle(cb_data->view->context_map.styles,src2src->style_id);
+#else
+        style = feature_set->style;
+#endif
         masked_by = zMapStyleGetMaskList(style);            /* all the masker featuresets */
 #if FILE_DEBUG
 PDEBUG("mask new by all: fset, style, masked by = %s, %s, %s\n", g_quark_to_string(feature_set->unique_id), g_quark_to_string(src2src->style_id), zMap_g_list_quark_to_string(masked_by));
@@ -592,7 +596,7 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
   ZMapMaskFeatureSetData cb_data = (ZMapMaskFeatureSetData) user_data;
   GList *fset;
   GList *masked_by = NULL;
-  ZMapGFFSource src2src;
+  ZMapFeatureSource src2src;
   ZMapFeatureTypeStyle style = NULL;
 
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
@@ -619,7 +623,7 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
         feature_set = (ZMapFeatureSet)feature_any;          // old featuresset
 
             /* this has to work or else this featureset could not be in the list */
-        src2src = (ZMapGFFSource) g_hash_table_lookup(cb_data->view->source_2_sourcedata,
+        src2src = (ZMapFeatureSource) g_hash_table_lookup(cb_data->view->context_map.source_2_sourcedata,
                         GUINT_TO_POINTER(feature_any->unique_id));
         if(!(src2src))
         {
@@ -629,7 +633,12 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
             break;
         }
 
-        style =  zMapFindStyle(cb_data->view->orig_styles,src2src->style_id);
+#if MH17_FEATURESET_HAS_NO_STYLE
+        style =  zMapFindStyle(cb_data->view->context_map.styles,src2src->style_id);
+#else
+        style = feature_set->style;
+#endif
+
         if(style)
             masked_by = zMapStyleGetMaskList(style);        // all the maskers for this featuresets
 #if FILE_DEBUG

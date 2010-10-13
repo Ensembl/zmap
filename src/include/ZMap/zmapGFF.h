@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 21 18:23 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.25 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.26 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -71,7 +71,7 @@ typedef struct
 } ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
-
+#if MH17_MOVED_TO_FEATURE_H_AND_RENAMED
 /* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
 /* NOTE: this is re-used for columns, and the order has been added
  * This really does need to be split into featureset and column structs
@@ -107,7 +107,7 @@ typedef struct
 
 } ZMapGFFSourceStruct, *ZMapGFFSource ;
 
-
+#endif
 
 
 ZMapGFFParser zMapGFFCreateParser(void) ;

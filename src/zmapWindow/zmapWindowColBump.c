@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.77 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.78 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -216,7 +216,7 @@ static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
 static void hashDataDestroyCB(gpointer data) ;
 static void listDataDestroyCB(gpointer data, gpointer user_data) ;
 static void getListFromHash(gpointer key, gpointer value, gpointer user_data) ;
-static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
+/*static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data) ;*/
 
 static gint findItemInQueueCB(gconstpointer a, gconstpointer b) ;
 
@@ -386,8 +386,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
    * and features within the column, otherwise we just bump the specific features. */
   if (column)
     {
-      GHashTable *style_table = NULL ;
-
       bump_properties.bump_all      = TRUE ;
       g_object_get(G_OBJECT(container),
 		   "unique-id", &bump_properties.style_id,
@@ -397,18 +395,19 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
       zmapWindowContainerFeatureSetJoinAligns(container, &(bump_properties.match_threshold));
 
-//      zMapWindowContainerFeatureSetSetContainerBumpMode(container,bump_mode);
+      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
       /*g_object_set(G_OBJECT(container),ZMAPSTYLE_PROPERTY_BUMP_MODE,bump_mode,NULL); // complains */
-
+#if MH17_NO_MORE_STYLE_TABLES
+      GHashTable *style_table = NULL ;
       g_object_get(G_OBJECT(container),
 		   "style-table", &style_table,
 		   NULL) ;
       zmapWindowStyleTableForEach(style_table, setStyleBumpCB, GINT_TO_POINTER(bump_mode)) ;
-
+#endif
     }
   else
     {
-      GHashTable *style_table = NULL ;
+
       ZMapFeatureTypeStyle style;
       ZMapFeature feature ;
 
@@ -417,6 +416,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
       bump_properties.bump_all = FALSE;
       bump_properties.style_id = feature->style_id;
+
+#if MH17_NO_MORE_STYLE_TABLES
+      GHashTable *style_table = NULL ;
 
       g_object_get(G_OBJECT(container),
 		   "style-table", &style_table,
@@ -428,15 +430,24 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(bump_properties.display_state),
 		       NULL);
 
-//	  zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
+
+//      zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
         bump_properties.match_threshold = zMapStyleGetWithinAlignError(style);
 
 //        zMapWindowContainerFeatureSetSetContainerBumpMode(container,bump_mode);
         /* g_object_set(G_OBJECT(container),ZMAPSTYLE_PROPERTY_BUMP_MODE,bump_mode,NULL);// complains */
-	  zMapStyleSetBumpMode(style, bump_mode);
-	}
+        zMapStyleSetBumpMode(style, bump_mode);
+      }
       else
-	zMapLogCritical("Missing style '%s'", g_quark_to_string(feature->style_id));
+      zMapLogCritical("Missing style '%s'", g_quark_to_string(feature->style_id));
+#else
+      style = feature->style;       /* if it's displayed it has a style */
+
+//      zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
+      bump_properties.match_threshold = zMapStyleGetWithinAlignError(style);
+
+      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+#endif
     }
 
   /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
@@ -890,7 +901,11 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
       bump_mode = bump_data->bump_prop_data.overlap_mode ;
       container = bump_data->bump_prop_data.container;
+#if MH17_NO_MORE_STYLE_TABLES
       style     = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id) ;
+#else
+      style = feature->style;
+#endif
     }
 
   if(proceed)
@@ -1174,24 +1189,31 @@ static gboolean can_bump_item(FooCanvasItem *item, ComplexBump complex, ZMapFeat
       ZMapWindowContainerFeatureSet container ;
       ZMapFeatureTypeStyle style ;
       ZMapFeature feature ;
-      GHashTable *style_table = NULL ;
 
       feature = zmapWindowItemGetFeature(item);
       zMapAssert(feature) ;
 
       container = complex->bump_properties->container;
-      g_object_get(G_OBJECT(container),
+#if MH17_NO_MORE_STYLE_TABLES
+     {
+     GHashTable *style_table = NULL ;
+
+     g_object_get(G_OBJECT(container),
 		   "style-table", &style_table,
 		   NULL) ;
       style     = zmapWindowStyleTableFind(style_table, feature->style_id) ;
+      }
+#else
+      style = zMapWindowContainerFeatureSetGetStyle(container);
+#endif
 
       if ((!complex->bump_properties->bump_all) && (complex->bump_properties->style_id != feature->style_id))
-	bump_me = FALSE;
+      	bump_me = FALSE;
 
       /* Try doing this here.... */
       if((zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT) &&
 	 (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL))
-	complex->protein = TRUE ;
+	      complex->protein = TRUE ;
 
 
       if(bump_me && feature_out)
@@ -1387,8 +1409,11 @@ static void addGapsCB(gpointer data, gpointer user_data)
 
       /* Get the features active style (the one on the canvas. */
       container = gaps_data->container;
+#if MH17_NO_MORE_STYLE_TABLES
       style     = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id) ;
-
+#else
+      style = feature->style;
+#endif
       /* Only display gaps on bumping and if the alignments have gaps. */
       if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
@@ -2078,7 +2103,11 @@ static void moveItemCB(gpointer data, gpointer user_data)
   zMapAssert(feature) ;
 
   /* Get hold of the style. */
+#if MH17_NO_MORE_STYLE_TABLES
   style = zmapWindowContainerFeatureSetStyleFromID(col_data->bump_properties->container, feature->style_id) ;
+#else
+  style = feature->style;
+#endif
 
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
@@ -2110,6 +2139,7 @@ static void moveItemCB(gpointer data, gpointer user_data)
 }
 
 
+#if MH17_NO_MORE_STYLE_TABLES
 /* Called for styles in a column hash set of styles, just sets bump mode. */
 static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data)
 {
@@ -2119,7 +2149,7 @@ static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data)
 
   return ;
 }
-
+#endif
 
 
 

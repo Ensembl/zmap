@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:52 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.184 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.185 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -419,10 +419,10 @@ typedef struct ZMapFeatureSetStruct_
 
   ZMapFeatureTypeStyle style;
 
-      /* NB we donlt expect to use both these on the same featureset but play safe... */
+      /* NB we don't expect to use both these on the same featureset but play safe... */
   GList *masker_sorted_features;    /* or NULL if not sorted */
 
-  GQuark column_id;                                /* as mapped in view/window featuresset_2_column
+/*  GQuark column_id;                               * as mapped in view/window featureset_2_column
                                                     * as this is a view wide setting this is safe
                                                     * despite maybe having several windows
                                                     * NOTE: this is the column name canonicalised
@@ -702,6 +702,97 @@ typedef struct
 
 
 
+
+
+/* stuff to handle GFF input and config stanzas that map featurests styles and columns */
+
+/* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
+typedef struct
+{
+      // really need to change feature_set to column: it's confusing
+  GQuark column_id ;           /* The set name. (the display column) as a key value*/
+  GQuark column_ID ;           /* The set name. (the display column) as display text*/
+
+  GQuark feature_src_ID;            // the name of the source featureset (with upper case)
+                                    // struct is keyed with normalised name
+  char *feature_set_text;           // renamed so we can search for this
+
+} ZMapFeatureSetDescStruct, *ZMapFeatureSetDesc ;
+
+
+/* all the info about a display column */
+/* NOTE these are logical columns, real display columns get munged with strand and frame */
+typedef struct
+{
+      // really need to change feature_set to column: it's confusing
+  GQuark unique_id ;                /* column name as a key value*/
+  GQuark column_id ;                /* column name as display text*/
+
+  char *column_desc;                /* description */
+
+  int order;                        // column ordering
+
+  ZMapFeatureTypeStyle style;       /* column specific style data
+                                     * may be config'd explicitly or derived from contained featuresets
+                                     */
+  GQuark style_id;                  /* this can be set before we get the style itself */
+
+  GList *style_table;          /* all the styles needed by the column */
+
+} ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
+
+
+
+
+/* Struct holding "per source" information for GFF data. Can be used to look up the
+ * style for a GFF feature plus other stuff. */
+typedef struct
+{
+  GQuark source_id ;    /* The source name. From ACE this is the key used to ref this struct */
+                        /* but we can config an alternate name (requested by graham) */
+
+  GQuark source_text ;  /* Description. */
+
+  GQuark style_id ;     /* The style for processing the source. */
+
+} ZMapFeatureSourceStruct, *ZMapFeatureSource ;
+
+
+/* all the featureset mapping data - used by view and window */
+
+typedef struct
+{
+  GHashTable *styles;                     /* All the styles know to the view or window */
+
+  GHashTable *column_2_styles ;           /* Mapping of each column to all the styles
+                                           * it requires. using a GHashTable of
+                                           * GLists of style quark id's.
+                                           *
+                                           * NB: this stores data from ZMap config
+                                           * sections [featureset_styles] _and_ [column_styles]
+                                           * _and_ ACEDB
+                                           * collisions are merged
+                                           * Columns treated as fake featuresets so as to have a style
+                                           */
+
+  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureDesc
+                                           * NB: this contains data from ZMap config
+                                           * sections [columns] [featureset_description] _and_ ACEDB
+                                           */
+
+  GHashTable *source_2_sourcedata ;       /* Mapping of a feature source to its data using ZMapFeatureSource
+                                           * This consists of style id and description and source id
+                                           * NB: the GFFSource.source  (quark) is the GFF_source name
+                                           * the hash table is indexed by the featureset name quark
+                                           */
+
+  GHashTable *columns;                    /* All the columns that ZMap will display
+                                           * stored as ZMapFeatureColumn
+                                           * These may contain several featuresets each
+                                           * They are in display order left to right
+                                           */
+
+} ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;
 
 typedef enum
   {
@@ -1023,7 +1114,7 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 
 
 
-/* ================================================================= */
+/* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */
 /* ================================================================= */
 

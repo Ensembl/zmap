@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.23 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.24 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapGFF.h>
+//#include <ZMap/zmapGFF.h>
 #include <zmapView_P.h>
 
 
@@ -748,76 +748,6 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
   return ;
 }
 
-
-#if MH17_NOT_CALLED
-/* Set of noddy functions to do stuff to with the featureset_2_column mappings. */
-static void getSetCB(void *data, void *user_data) ;
-
-/* Given the name of a source, return its featureset. */
-
-// mh17: this function is never called and has a bug: it ignores the source name
-GQuark zmapViewSrc2FSetGetID(GHashTable *featureset_2_column, char *source_name)
-{
-  GQuark set_id = 0 ;
-  GQuark source_id ;
-  ZMapGFFSet set_data ;
-
-  if(featureset_2_column)
-  {
-    source_id = zMapFeatureSetCreateID(source_name) ;
-
-    if ((set_data = g_hash_table_lookup(featureset_2_column, GINT_TO_POINTER(set_id))))
-      {
-        set_id = set_data->feature_set_id ;
-      }
-  }
-  return set_id ;
-}
-
-
-// mh17: not called
-/* Given a list of source names (as quarks) return a list of featureset names as quarks. */
-GList *zmapViewSrc2FSetGetList(GHashTable *featureset_2_column, GList *source_list)
-{
-  GList *set_list = NULL ;
-  GetSetDataStruct cb_data ;
-
-  cb_data.featureset_2_column = featureset_2_column ;
-  cb_data.set_list = NULL ;
-
-  g_list_foreach(source_list, getSetCB, &cb_data) ;
-
-  set_list = cb_data.set_list ;
-
-  return set_list ;
-}
-
-
-static void getSetCB(void *data, void *user_data)
-{
-  GQuark source_id = GPOINTER_TO_INT(data) ;
-  GetSetData set_data_cb = (GetSetData)user_data ;
-  GList *set_list = set_data_cb->set_list ;
-  ZMapGFFSet set_data ;
-
-  if(!set_data_cb->featureset_2_column)
-    return;
-
-  if ((set_data = g_hash_table_lookup(set_data_cb->featureset_2_column, GINT_TO_POINTER(source_id))))
-    {
-      GQuark set_id ;
-
-      set_id = set_data->feature_set_id ;
-      set_list = g_list_append(set_list, GINT_TO_POINTER(set_id)) ;
-
-      set_data_cb->set_list = set_list ;
-    }
-
-  return ;
-}
-
-
-#endif
 
 
 

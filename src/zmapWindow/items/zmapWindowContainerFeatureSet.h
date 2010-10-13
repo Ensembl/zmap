@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.15 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.16 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,7 +83,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 								   GQuark     block_id,
 								   GQuark     feature_set_unique_id,
 								   GQuark     feature_set_original_id, /* unused! */
-								   GList     *style_list,
+								   ZMapFeatureTypeStyle style,
 								   ZMapStrand strand,
 								   ZMapFrame  frame);
 gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatureSet container_set,

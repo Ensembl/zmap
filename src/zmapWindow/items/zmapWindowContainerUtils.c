@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 15:27 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.20 2010-09-10 18:22:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.21 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -643,11 +643,17 @@ gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container,
 	  status = ZMAP_IS_CONTAINER_BLOCK(container);
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURESET:
+#if 1 /* MH17_NO_RECOVER */
+/* I'd like to remove this but that will mean having to re3move stats code in 3 files iffed bu RDS_REMOVED_STATS */
+/* this is the only place this function gets called */
 	  if((status = ZMAP_IS_CONTAINER_FEATURESET(container)))
 	    {
 	      status = zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)container,
 								     (ZMapFeatureSet)feature_any);
 	    }
+#else
+      status = ZMAP_IS_CONTAINER_FEATURESET(container);
+#endif
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	case ZMAPFEATURE_STRUCT_INVALID:
@@ -888,6 +894,65 @@ void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
 }
 
 
+
+/* look up a group in the the item_list
+ * rather tediously the canvas is structured differently than the feature context and FToIHash
+ * - it has a strand layer under block
+ * - 3-frame columns all have the same id, whereas in the FToI hash the names are mangled
+ */
+static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQuark id, ZMapFrame frame)
+{
+      ZMapWindowContainerGroup g;
+      GList *l;
+      FooCanvasGroup *children = (FooCanvasGroup *) zmapWindowContainerGetFeatures(group) ;
+            /* this gets the group one of the four item positions */
+
+      for(l = children->item_list;l;l = l->next)
+      {
+            g = (ZMapWindowContainerGroup) l->data;
+
+            if(g->level == ZMAPCONTAINER_LEVEL_STRAND)
+            {
+                  /* has no feature_any */
+                  ZMapWindowContainerStrand s = (ZMapWindowContainerStrand) g;
+
+                  if(s->strand == id)
+                        return(g);
+            }
+            else if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+            {
+                  ZMapWindowContainerFeatureSet set = ZMAP_CONTAINER_FEATURESET(g);;
+
+                  if(set->unique_id == id && set->frame == frame)
+                        return g;
+            }
+            else
+            {
+                  zMapAssert(g->feature_any);
+                  if(g->feature_any->unique_id == id)
+                        return g;
+            }
+      }
+      return NULL;
+}
+
+
+FooCanvasItem *zMapFindCanvasColumn(ZMapWindowContainerGroup group,
+      GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame)
+{
+  if(group)
+      group = getChildById(group,align,ZMAPFRAME_NONE);
+  if(group)
+      group = getChildById(group,block,ZMAPFRAME_NONE);
+  if(group)
+      group = getChildById(group,strand,ZMAPFRAME_NONE);
+  if(group)
+      group = getChildById(group,set,frame);
+
+  return FOO_CANVAS_ITEM(group);
+}
+
+
 /* Internal */
 
 static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, guint position)
@@ -1025,14 +1090,3 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
   return ;
 }
 
-
-// debugging for WindowItem.c here due to private headers
-char *group_foo_info(ZMapWindowContainerGroup container)
-{
-      static char buf[512];         // quick bo9dge function not thread safe
-      FooCanvasItem *foo = &container->__parent__.item;
-
-      sprintf(buf,"type %d, box (%s) %f %f %f %f",container->feature_any->struct_type,
-            (FOO_CANVAS_ITEM_GET_CLASS (foo)->bounds) ? "Y" : "N",foo->x1,foo->y1,foo->x2,foo->y2);
-      return(buf);
-}

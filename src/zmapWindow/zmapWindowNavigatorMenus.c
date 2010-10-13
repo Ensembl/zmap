@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jun 29 16:57 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.27 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.28 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,7 +78,7 @@ static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
         ZMapFeature feature = (ZMapFeature)feature_any;
 #ifdef THIS_LOCUS_STUFF_IS_A_PAIN
 	/* quick fix to zmapWindowNavigatorShowSameNameList...  */
-	if(locus_name == feature_any->original_id) 
+	if(locus_name == feature_any->original_id)
 	  match = TRUE;
 #endif /* THIS_LOCUS_STUFF_IS_A_PAIN */
 
@@ -92,7 +92,7 @@ static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
     default:
       break;
     }
-  
+
   return match;
 }
 
@@ -112,11 +112,11 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
 
   callback    = searchLocusSetCB;
   locus_quark = g_quark_from_string(wild_card);
-  
-  if((result = zmapWindowFToIFindItemSetFull(window->context_to_item,
+
+  if((result = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
-                                             locus_quark, // feature->parent->unique_id, 
+                                             locus_quark, // feature->parent->unique_id,
                                              wild_card, wild_card, locus_quark,
                                              callback, GUINT_TO_POINTER(feature->original_id))))
     {
@@ -158,14 +158,14 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
 #ifdef RDS_PROBLEMATIC_CODE
   /* Is it right to use window->context_to_item here??? */
-  if(!(result = zmapWindowFToIFindSameNameItems(window->context_to_item,
+  if(!(result = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                 ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
                                                 feature)))
     {
 #endif
 
       /* Here we going to search for transcripts in any feature set in
-       * the _main_ window which have a locus set which == feature->original_id 
+       * the _main_ window which have a locus set which == feature->original_id
        * i.e. feature->original_id == the locus name
        */
 
@@ -173,7 +173,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
       locus_quark = g_quark_from_string(wild_card);
 
       /* we use the wildcard to get all features... slow?? */
-      result = zmapWindowFToIFindItemSetFull(window->context_to_item,
+      result = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
 					     locus_quark, /* feature->parent->unique_id,  */
@@ -189,11 +189,11 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
     {
       gboolean zoom_to_item = FALSE;
       /* We have to access the window->context_to_item in the
-       * WindowList and it does that with a callback. It must 
+       * WindowList and it does that with a callback. It must
        * be the same window! */
-      zmapWindowListWindowCreate(window, item, 
+      zmapWindowListWindowCreate(window, item,
 				 (char *)(g_quark_to_string(feature->original_id)),
-				 access_window_context_to_item, window, 
+				 access_window_context_to_item, window,
 				 NULL, NULL,
 				 zoom_to_item);
       g_list_free(result);  /* clean up list. */
@@ -215,13 +215,13 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 						    wild_card, /* frame */
 						    searchLocusSetCB,
 						    GUINT_TO_POINTER(feature->original_id), NULL);
-    
-    zmapWindowListWindowCreate(window, item, 
+
+    zmapWindowListWindowCreate(window, item,
 			       (char *)(g_quark_to_string(feature->original_id)),
-			       access_window_context_to_item,  window, 
+			       access_window_context_to_item,  window,
 			       (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			       (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
-    
+
   }
 #endif /* USING_SET_SEARCH_DATA_METHOD */
 
@@ -255,7 +255,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
                                                     ZMapGUIMenuItemCallbackFunc callback_func,
                                                     gpointer callback_data)
 {
-  static ZMapGUIMenuItemStruct menu[] = 
+  static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, "Show Variants List",   1, popUpVariantList, NULL},
       {ZMAPGUI_MENU_NONE,   NULL,        0, NULL, NULL}
@@ -270,7 +270,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusColumnOps(int *start_index_inout
 							  ZMapGUIMenuItemCallbackFunc callback_func,
 							  gpointer callback_data)
 {
-  static ZMapGUIMenuItemStruct menu[] = 
+  static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, "Filter Loci",   2, popUpVariantList, NULL},
       {ZMAPGUI_MENU_NORMAL, "Show All Loci", 3, popUpVariantList, NULL},
@@ -317,7 +317,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
   if (curr_bump != ZMAPBUMP_UNBUMP)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
-      item->id = ZMAPBUMP_UNBUMP ; 
+      item->id = ZMAPBUMP_UNBUMP ;
     }
   else
     {
@@ -370,7 +370,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 	ZMapWindowFToISetSearchData search_data;
         FooCanvasItem *set_item = menu_data->item;
 	gboolean zoom_to_item = FALSE;
-	
+
         feature = zmapWindowItemGetFeatureAny(menu_data->item);
 
         if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
@@ -389,19 +389,19 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(container->strand),
 						    zMapFeatureFrame2Str(container->frame));
-	
-        zmapWindowListWindowCreate(menu_data->navigate->current_window, 
+
+        zmapWindowListWindowCreate(menu_data->navigate->current_window,
 				   NULL,
-                                   (char *)g_quark_to_string(feature->original_id), 
+                                   (char *)g_quark_to_string(feature->original_id),
 				   access_navigator_context_to_item,
 				   menu_data->navigate,
-				   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data, 
+				   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 				   (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
 	break ;
       }
     case 2:
-      zmapWindowCreateSearchWindow(menu_data->navigate->current_window, 
+      zmapWindowCreateSearchWindow(menu_data->navigate->current_window,
 				   access_navigator_context_to_item,
 				   menu_data->navigate,
 				   menu_data->item) ;
@@ -458,7 +458,7 @@ static GtkWidget *zmapWindowNavigatorNewToplevel(char *title)
   /* Set it up graphically nice */
   gtk_window_set_title(gtk_window, title) ;
 
-  gtk_window_set_default_size(gtk_window, -1, -1); 
+  gtk_window_set_default_size(gtk_window, -1, -1);
 
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
 
@@ -523,7 +523,7 @@ static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent)
 	  gboolean filter_active = FALSE;
 
 	  filter = (char *)(tmp->data);
-	  
+
 	  checkbox_with_label = gtk_check_button_new_with_label(filter);
 
 	  g_object_set_data(G_OBJECT(checkbox_with_label), FILTER_DATA_KEY, filter);
@@ -553,12 +553,12 @@ static void cancel_destroy_cb(GtkWidget *widget, gpointer user_data)
 {
   ZMapWindowNavigator navigator = (ZMapWindowNavigator)user_data;
   GtkWidget *toplevel;
-  
+
   if((toplevel = zMapGUIFindTopLevel(widget)))
     {
       GList *tmp;
 
-      /* logic here is just to swap the pointers between the navigator and 
+      /* logic here is just to swap the pointers between the navigator and
        * the toplevel g_object_set_data version... */
       tmp = navigator->hide_filter;
 
@@ -581,19 +581,19 @@ static void apply_destroy_cb(GtkWidget *widget, gpointer user_data)
 
   /* request a redraw of the navigator... */
   zmapWindowNavigatorLocusRedraw(navigator);
-  
+
   /* Get the toplevel to destroy */
   if((toplevel = zMapGUIFindTopLevel(widget)))
     {
       gtk_widget_destroy(toplevel);
-    }  
+    }
 
   return ;
 }
 
 static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navigator)
 {
-  GtkWidget 
+  GtkWidget
     *toplevel = NULL,
     *vbox_1,
     *vbox_2,

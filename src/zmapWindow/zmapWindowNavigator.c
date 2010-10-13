@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 23 13:59 2010 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.63 2010-09-22 14:28:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.64 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,6 @@
 #endif
 #include <zmapWindowContainerFeatureSet_I.h>
 
-#include <ZMap/zmapGFF.h>     /* for ZMapGFFSet */
 
 /* Return the widget! */
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
@@ -602,7 +601,7 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
   start   = locus_data->start;
   end     = locus_data->end;
 
-  if((item = zmapWindowFToIFindFeatureItem(data->navigate->ftoi_hash,
+  if((item = zmapWindowFToIFindFeatureItem(data->navigate->current_window,data->navigate->ftoi_hash,
                                            locus_data->strand, ZMAPFRAME_NONE,
                                            feature)))
     {
@@ -850,23 +849,27 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         FooCanvasItem *item = NULL;
         feature_set = (ZMapFeatureSet)feature_any;
 
-
+#if MH17_FToIHash_does_this_mapping
         if(!feature_set->column_id)
         {
-            ZMapGFFSet gffset;
+            ZMapFeatureSetDesc gffset;
 
-            gffset = g_hash_table_lookup(draw_data->navigate->current_window->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+            gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
             if(gffset)
-                  feature_set->column_id = gffset->feature_set_id;
+                  feature_set->column_id = gffset->column_id;
         }
+#endif
 
         draw_data->current_set = feature_set;
 
         status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
             /* play safe: only look up the item if it's displayed */
-        if(feature_set->column_id && (item = zmapWindowFToIFindSetItem(draw_data->navigate->ftoi_hash, feature_set,
-                                             ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
+        if(/*feature_set->column_id && */
+            (item = zmapWindowFToIFindSetItem(draw_data->navigate->current_window,
+                                                draw_data->navigate->ftoi_hash,
+                                                feature_set,
+                                                ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
           {
 	    ZMapWindowContainerFeatureSet container_feature_set;
             FooCanvasGroup *group_feature_set;
@@ -931,7 +934,8 @@ static gboolean drawScaleRequired(NavigateDraw draw_data)
 
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
 
-  if((item = zmapWindowFToIFindItemFull(draw_data->navigate->ftoi_hash,
+  if((item = zmapWindowFToIFindItemFull(draw_data->navigate->current_window,
+                                        draw_data->navigate->ftoi_hash,
                                         draw_data->current_align->unique_id,
                                         draw_data->current_block->unique_id,
                                         scale_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
@@ -953,7 +957,8 @@ static void drawScale(NavigateDraw draw_data)
   /* HACK...  */
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
   /* less of a hack ... */
-  if((item = zmapWindowFToIFindItemFull(draw_data->navigate->ftoi_hash,
+  if((item = zmapWindowFToIFindItemFull(draw_data->navigate->current_window,
+                                        draw_data->navigate->ftoi_hash,
                                         draw_data->current_align->unique_id,
                                         draw_data->current_block->unique_id,
                                         scale_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
@@ -991,15 +996,14 @@ static void createColumnCB(gpointer data, gpointer user_data)
   NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapWindowContainerFeatures features;
   ZMapWindowContainerBackground container_background = NULL;
-  GList *style_list = NULL;
+  ZMapFeatureTypeStyle style;
   gboolean status = FALSE;
 
-  style_list = zmapWindowFeatureSetStyles(draw_data->navigate->current_window,
-					  draw_data->styles, set_id);
+  style = zMapWindowGetSetColumnStyle(draw_data->navigate->current_window,set_id);
 
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id);
 
-  if(style_list && draw_data->current_set)
+  if(style && draw_data->current_set)
     {
       ZMapWindowContainerFeatureSet container_set;
 
@@ -1034,13 +1038,14 @@ static void createColumnCB(gpointer data, gpointer user_data)
 					   draw_data->navigate->current_window,
 					   draw_data->current_align->unique_id,
 					   draw_data->current_block->unique_id,
-					   set_id, 0, style_list,
+					   set_id, 0, style,
 					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
 
-      zmapWindowContainerFeatureSetAttachFeatureSet(container_set,
-						    draw_data->current_set);
-
-      g_list_free(style_list);
+#if MH17_NO_RECOVER
+      zmapWindowContainerFeatureSetAttachFeatureSet(container_set, draw_data->current_set);
+#else
+      zmapWindowContainerAttachFeatureAny(draw_data->container_feature_set, (ZMapFeatureAny) draw_data->current_set);
+#endif
 
       zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(draw_data->container_feature_set), TRUE);
 

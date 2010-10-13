@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 14 14:03 2010 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.45 2010-07-29 09:34:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.46 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,9 +85,11 @@ typedef struct
   GQuark block_id ;
   GQuark block_original_id ;
 
-  char *set_txt ;
+  char *set_txt ;       /* this is the column not the featureset(s) */
   GQuark set_id ;
   GQuark set_original_id ;
+
+  GList *featuresets;   /* defaults to all in the column */
 
   char *feature_txt ;
   GQuark feature_id ;
@@ -344,6 +346,31 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 
   fetchAllComboLists(search_data->feature_any, &alignList, &blockList, &columnList);
 
+#if MH17_COLUMN
+#else
+      /* we have a list of featuresets and need to make this a list of columns, removing any duplicates */
+  {
+      ZMapFeatureSetDesc f2c;
+      GList *l = columnList;
+
+      for(columnList = NULL;l ;l = l->next)
+      {
+            f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, GUINT_TO_POINTER(l->data));
+            if(f2c)
+            {
+                  if(!g_list_find(columnList,GUINT_TO_POINTER(f2c->column_ID)))
+                        columnList = g_list_append(columnList,GUINT_TO_POINTER(f2c->column_ID));
+                        /* this gets canonicalised on search by manage_quark_from_entry() */
+            }
+      }
+  }
+
+  /* also create a list of featuresets in each column
+   * for featuresets submenu to replace style filter */
+  /* TDB */
+
+#endif
+
   combo = createPopulateComboBox(alignList, TRUE) ;
   search_data->align_entry = entry = GTK_BIN(combo)->child;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->align_txt) ;
@@ -395,7 +422,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
-  search_data->styles = styles = search_data->window->read_only_styles ;
+  search_data->styles = styles = search_data->window->context_map->styles ;
   style_quarks = getStyleQuarks(styles) ;
 
 
@@ -657,7 +684,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  block_id = manage_quark_from_entry(block_id, search_data->block_original_id,
 					     search_data->block_id, wild_card_id);
 
-	  /* fix up set_id */
+	  /* fix up set_id NB: this is the column id */
 	  if((set_id = entry_get_text_quark(GTK_ENTRY(search_data->set_entry), wild_card_str)) != 0)
 	    {
 	      set_id = manage_quark_from_entry(set_id, search_data->set_original_id,
@@ -750,7 +777,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 #define USING_SET_SEARCH_DATA_METHOD
 #ifndef USING_SET_SEARCH_DATA_METHOD
-  if ((search_result = zmapWindowFToIFindItemSetFull(search_data->context_to_item,
+  if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window,search_data->context_to_item,
 						     align_id, block_id, set_id,
 						     strand_spec, frame_spec,
 						     feature_id,
@@ -923,9 +950,24 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
 
+#if MH17_COLUMN
 	    search_data->set_txt = (char *)g_quark_to_string(set->original_id) ;
 	    search_data->set_id = set->unique_id ;
 	    search_data->set_original_id = set->original_id ;
+#else
+            /* need to get the column that the featureset is in
+             * for when we search the hash
+             */
+          ZMapFeatureSetDesc f2c;
+
+          f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, GUINT_TO_POINTER(set->unique_id));
+          if(f2c)
+          {
+            search_data->set_txt = (char *) g_quark_to_string(f2c->column_ID) ;
+            search_data->set_id = f2c->column_id;
+            search_data->set_original_id = f2c->column_ID;
+          }
+#endif
 	    break ;
 	  }
 	case ZMAPFEATURE_STRUCT_BLOCK:

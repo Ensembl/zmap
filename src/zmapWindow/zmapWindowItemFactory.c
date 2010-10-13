@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:15 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.86 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.87 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -313,10 +313,12 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 
   /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id)))
-    {
-      zMapAssertNotReached();
-    }
+#if MH17_NO_MORE_STYLE_TABLES
+  style = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id) ;
+#else
+  style = feature->style;
+#endif
+  zMapAssert(style);
 
   style_mode = zMapStyleGetMode(style) ;
 
@@ -575,13 +577,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
           if(factory->ftoi_hash)
 	    {
-#ifdef MH17_REVCOMP_DEBUG
-            printf("FToIAddFeature %d-%d\n",feature->x1,feature->x2);
+#if MH17_REVCOMP_DEBUG
+            printf("FToIAddFeature %d-%d to %s\n",feature->x1,feature->x2,g_quark_to_string(set->unique_id));
 #endif
 	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
 						align->unique_id,
 						block->unique_id,
-						zMapWindowGetFeaturesetContainerID(window,set->unique_id),
+						//zMapWindowGetFeaturesetContainerID(window,set->unique_id),
+                                    set->unique_id,
 						strand, frame,
 						feature->unique_id, item) ;
 	    }

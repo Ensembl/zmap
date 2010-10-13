@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 20 10:24 2010 (edgrif)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.9 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.10 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 #include <zmapWindowContainers.h>
 
 
-typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container, 
+typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container,
 					   FooCanvasPoints         *container_points,
 					   ZMapContainerLevelType   container_level,
 					   gpointer                 func_data);
@@ -56,7 +56,7 @@ ZMapWindowContainerFeatures zmapWindowContainerUtilsItemGetFeatures(FooCanvasIte
 								    ZMapContainerLevelType level);
 ZMapWindowContainerGroup zmapWindowContainerUtilsGetParentLevel(ZMapWindowContainerGroup container_group,
 								ZMapContainerLevelType level);
-ZMapWindowContainerGroup zmapWindowContainerUtilsItemGetParentLevel(FooCanvasItem *item, 
+ZMapWindowContainerGroup zmapWindowContainerUtilsItemGetParentLevel(FooCanvasItem *item,
 								    ZMapContainerLevelType level);
 ZMapContainerLevelType zmapWindowContainerUtilsGetLevel(FooCanvasItem *item);
 ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem *item);
@@ -104,17 +104,21 @@ void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_g
 					    gboolean maximise_width, gboolean maximise_height);
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group);
 
-void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   parent, 
+void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   parent,
 					 ZMapContainerLevelType     stop_at_type,
 					 ZMapContainerUtilsExecFunc container_enter_cb,
 					 gpointer                   container_enter_data,
 					 ZMapContainerUtilsExecFunc container_leave_cb,
 					 gpointer                   container_leave_data,
 					 gboolean                   redraw_during_recursion);
-void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent, 
+void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
 				     ZMapContainerLevelType     stop_at_type,
 				     ZMapContainerUtilsExecFunc container_enter_cb,
 				     gpointer                   container_enter_data);
+
+
+FooCanvasItem *zMapFindCanvasColumn(ZMapWindowContainerGroup group,
+      GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame);
 
 
 #endif /* ! __ZMAP_WINDOW_CONTAINER_UTILS_H__ */

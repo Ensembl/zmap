@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Aug  5 15:07 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.64 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.65 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -826,6 +826,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file_in) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	    }
+        styles->server_styles_have_mode = TRUE;
 	}
       else
       {
@@ -887,6 +888,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	  if (!zMapStyleInheritAllStyles(tmp_styles))
 	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
+        zMapStyleSetSubStyles(tmp_styles);
 
 	  if(styles_debug)
 	    {
@@ -926,6 +928,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 
       /* Find out if the styles will need to have their mode set from the features.
       * I'm feeling like this is a bit hacky because it's really an acedb issue. */
+      /* mh17: these days ACE can be set to use a styles file */
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
             && !(styles->styles_file_in))
       {

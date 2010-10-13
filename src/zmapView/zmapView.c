@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.217 2010-09-22 15:42:08 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.218 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,7 +84,7 @@ typedef struct
   gboolean server_styles_have_mode ;
   gboolean status;      // load sucessful?
 
-  GHashTable *featureset_2_stylelist ;                    /* Mapping of each feature_set to all
+  GHashTable *column_2_styles ;                    /* Mapping of each feature_set to all
                                                  the styles it requires. */
 
   GHashTable *featureset_2_column;        // needed by pipeServers
@@ -103,13 +103,16 @@ typedef struct
   GString *missing_styles ;
 } DrawableDataStruct, *DrawableData ;
 
-
+#if MH17_NO_DEFERRED
 typedef struct
 {
   GHashTable *styles ;
   gboolean error ;
 } UnsetDeferredLoadStylesStruct, *UnsetDeferredLoadStyles ;
 
+static void unsetDeferredLoadStylesCB(gpointer key_id, gpointer data, gpointer user_data) ;
+
+#endif
 
 static GList *zmapViewGetIniSources(char *config_str,char **stylesfile);
 
@@ -132,7 +135,6 @@ static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *win
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
 
-static void unsetDeferredLoadStylesCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -209,7 +211,7 @@ static gboolean checkContinue(ZMapView zmap_view) ;
 static gboolean makeStylesDrawable(GHashTable *styles, char **missing_styles_out) ;
 static void drawableCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
-static void addPredefined(GHashTable **styles_inout, GHashTable **featureset_2_stylelist_inout) ;
+static void addPredefined(GHashTable **styles_inout, GHashTable **column_2_styles_inout) ;
 static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
@@ -360,7 +362,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   zmap_view->cwh_hash = zmapViewCWHHashCreate();
 
-  zmap_view->featureset_2_stylelist = zMap_g_hashlist_create() ;
+  zmap_view->context_map.column_2_styles = zMap_g_hashlist_create() ;
 
 
   return view_window ;
@@ -390,7 +392,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 void print_src2src(char * str,GHashTable *data)
 {
       GList *iter;
-      ZMapGFFSource gff_source;
+      ZMapFeatureSource gff_source;
       gpointer key, value;
 
       printf("\nsrc2src %s:\n",str);
@@ -398,7 +400,7 @@ void print_src2src(char * str,GHashTable *data)
       zMap_g_hash_table_iter_init (&iter, data);
       while (zMap_g_hash_table_iter_next (&iter, &key, &value))
       {
-            gff_source = (ZMapGFFSource) value;
+            gff_source = (ZMapFeatureSource) value;
             printf("%s = %s %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
                   g_quark_to_string(gff_source->source_id),
                   g_quark_to_string(gff_source->style_id));
@@ -407,7 +409,7 @@ void print_src2src(char * str,GHashTable *data)
 void print_fset2col(char * str,GHashTable *data)
 {
       GList *iter;
-      ZMapGFFSet gff_set;
+      ZMapFeatureSetDesc gff_set;
       gpointer key, value;
 
       printf("\nfset2col %s:\n",str);
@@ -415,33 +417,23 @@ void print_fset2col(char * str,GHashTable *data)
       zMap_g_hash_table_iter_init (&iter, data);
       while (zMap_g_hash_table_iter_next (&iter, &key, &value))
       {
-            gff_set = (ZMapGFFSet) value;
+            gff_set = (ZMapFeatureSetDesc) value;
             printf("%s = %s %s %s \"%s\"\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
-                  g_quark_to_string(gff_set->feature_set_id),
-                  g_quark_to_string(gff_set->feature_set_ID),
+                  g_quark_to_string(gff_set->column_id),
+                  g_quark_to_string(gff_set->column_ID),
                   g_quark_to_string(gff_set->feature_src_ID),
                   gff_set->feature_set_text ? gff_set->feature_set_text : "");
       }
 }
 
-void print_it(GHashTable *data )
-{
-      ZMapGFFSource gff_source;
-      gff_source = (ZMapGFFSource) g_hash_table_lookup(data,GUINT_TO_POINTER(g_quark_from_string("transcript_trunc")));
-      if(gff_source)
-      {
-            printf("transcript_trunc = %s %s\n",
-                  g_quark_to_string(gff_source->source_id),
-                  g_quark_to_string(gff_source->style_id));
-      }
-}
 
 /* read in rather a lot of stanzas and add the data to a few hash tables and lists
  * This sets up:
+ * view->context->map formerly as:
  *    view->columns
  *    view->featureset_2_column
  *    view->source_2_sourcedata
- *    view->featureset_2_stylelist
+ *    view->context_map.column_2_styles
  *
  * This 'replaces' ACEDB data but if absent we should still use the ACE stuff, it all gets merged
  */
@@ -456,8 +448,9 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
   GHashTable *col_styles;
   GHashTable *gff_desc;
   GHashTable *src2src;
-  ZMapGFFSource gff_source;
-  ZMapGFFSet gffset;
+  ZMapFeatureSource gff_source;
+  ZMapFeatureSetDesc gffset;
+  ZMapFeatureColumn column;
   GList *iter;
   char *str;
 
@@ -498,8 +491,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
              * the display columns in L -> R order
              *-------------------------------------
              */
-      view->columns = zMapConfigIniGetColumns(context);
-      if(g_hash_table_size(view->columns))
+      view->context_map.columns = zMapConfigIniGetColumns(context);
+      if(g_hash_table_size(view->context_map.columns))
             view->columns_set = TRUE;
 
 //      if(view->columns_set)       // else we rely on defaults and/or ACEDB
@@ -529,12 +522,12 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
               {
                  GQuark fset,col;
 
-                 gffset = g_new0(ZMapGFFSetStruct,1);
+                 gffset = g_new0(ZMapFeatureSetDescStruct,1);
 
                  col = GPOINTER_TO_UINT(featuresets->data);
                  fset = zMapFeatureSetCreateID((char *) g_quark_to_string(col));
-                 gffset->feature_set_id = fset;
-                 gffset->feature_set_ID = col;
+                 gffset->column_id = fset;
+                 gffset->column_ID = col;
                  gffset->feature_src_ID = col;
                  gffset->feature_set_text = g_strdup(g_quark_to_string(col));
 
@@ -549,7 +542,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col);
 
         if(g_hash_table_size(fset_col))
-            view->featureset_2_column = fset_col;
+            view->context_map.featureset_2_column = fset_col;
         else
             g_hash_table_destroy(fset_col);
 
@@ -569,15 +562,15 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
         // it's an input and output for servers, must provide for pipes
         // see featureset_2_column as above
-        zMap_g_hash_table_iter_init(&iter,view->featureset_2_column);
+        zMap_g_hash_table_iter_init(&iter,view->context_map.featureset_2_column);
         while(zMap_g_hash_table_iter_next(&iter,&key,&value))
           {
             GQuark q;
 
-            gff_source = g_new0(ZMapGFFSourceStruct,1);
+            gff_source = g_new0(ZMapFeatureSourceStruct,1);
 
                   // start with a 1-1 default mapping
-            gffset = (ZMapGFFSet) value;
+            gffset = (ZMapFeatureSetDesc) value;
 
             gff_source->source_id = gffset->feature_src_ID;   // upper case wanted
             gff_source->style_id = zMapStyleCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
@@ -585,7 +578,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
                   // then overlay this with the config file
 
-                  // get the GFFsource name
+                  // get the FeatureSource name
                   // this is displayed at status bar top right
             if(gff_src)
             {
@@ -623,13 +616,13 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         if(gff_desc)
             g_hash_table_destroy(gff_desc);
 
-        view->source_2_sourcedata = src2src;
+        view->context_map.source_2_sourcedata = src2src;
 
-//       print_src2src("view ini",view->source_2_sourcedata);
- //      print_fset2col("view ini",view->featureset_2_column);
+//       print_src2src("view ini",view->context_map.source_2_sourcedata);
+//       print_fset2col("view ini",view->context_map.featureset_2_column);
 
             /*---------------------------------------------
-             * featureset_2_stylelist: hash of Glist of quarks
+             * context_map.column_2_styles: hash of Glist of quarks
              *---------------------------------------------
              * contains all the styles needed by a column
              * NB: style for each featureset is also held in source_2_sourcedata above
@@ -638,7 +631,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
              */
 
         // NB we have to use zMap_g_hashlist_thing() as this is used all over
-        // view->featureset_2_stylelist is pre-allocated
+        // view->context_map.column_2_styles is pre-allocated
 
 
         // get list of featuresets for each column
@@ -653,12 +646,12 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
 
             // add featureset styles
-        zMap_g_hash_table_iter_init (&iter, view->featureset_2_column);
+        zMap_g_hash_table_iter_init (&iter, view->context_map.featureset_2_column);
         while (zMap_g_hash_table_iter_next (&iter, &key, &value))
         {
             GQuark style_id,fset_id;
 
-            gffset = (ZMapGFFSet) value;
+            gffset = (ZMapFeatureSetDesc) value;
 
             // key is featureset quark, value is column GFFSet struct
 
@@ -667,9 +660,9 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
             {
                   style_id = gff_source->style_id;
 //                  fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(gffset->feature_set_id));
-                  fset_id = gffset->feature_set_id;
+                  fset_id = gffset->column_id;
 
-                  zMap_g_hashlist_insert(view->featureset_2_stylelist,
+                  zMap_g_hashlist_insert(view->context_map.column_2_styles,
                                    fset_id,     // the column
                                    GUINT_TO_POINTER(style_id)) ;  // the style
             }
@@ -681,29 +674,27 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
         if(col_styles)
         {
-//           for(columns = view->columns;columns;columns = columns->next)
-            zMap_g_hash_table_iter_init (&iter, view->columns);
+            zMap_g_hash_table_iter_init (&iter, view->context_map.columns);
             while (zMap_g_hash_table_iter_next (&iter, &key, &value))
             {
-                  GQuark style_id,fset_id;
-                  // key is column id quark, value is column GFFSet struct
-                  gffset = (ZMapGFFSet) value;
+                  GQuark style_id;
 
-                  style_id = 0;
-                  fset_id = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
-
-                  style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(fset_id)));
+                  column = (ZMapFeatureColumn) value;
+                  style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
                               // set the column style if there
                   if(style_id)
-                        zMap_g_hashlist_insert(view->featureset_2_stylelist,
-                                   fset_id,
+                  {
+                        column->style_id = style_id;
+                        zMap_g_hashlist_insert(view->context_map.column_2_styles,
+                                   column->unique_id,
                                    GUINT_TO_POINTER(style_id)) ;
+                  }
             }
             g_hash_table_destroy(col_styles);
         }
 
 //        printf("\nfset2style\n");
-//        zMap_g_hashlist_print(view->featureset_2_stylelist);
+//        zMap_g_hashlist_print(view->context_map.column_2_styles);
       }
 
 
@@ -713,27 +704,29 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
 
 /* retro fit/ invent the columns config implied by server featuresets= command
- * needed for the status bar adn maybe some other things
+ * needed for the status bar and maybe some other things
  */
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
 {
-      ZMapGFFSet col;
+      ZMapFeatureColumn col;
 
-      int n = g_hash_table_size(view->columns);
+      int n = g_hash_table_size(view->context_map.columns);
 
       for(;featuresets; featuresets = featuresets->next)
       {
-            if(!g_hash_table_lookup(view->columns,featuresets->data))
+            if(!g_hash_table_lookup(view->context_map.columns,featuresets->data))
             {
-                  col = (ZMapGFFSet) g_new(ZMapGFFSetStruct,1);
+                  char *str = (char *) g_quark_to_string(GPOINTER_TO_UINT(featuresets->data));
+                  col = (ZMapFeatureColumn) g_new0(ZMapFeatureColumnStruct,1);
 
-                  col->feature_src_ID =
-                  col->feature_set_ID = GPOINTER_TO_UINT(featuresets->data);
-                  col->feature_set_text = (char *) g_quark_to_string(col->feature_set_ID);
-                  col->feature_set_id = zMapFeatureSetCreateID(col->feature_set_text);
+                  col->column_id = GPOINTER_TO_UINT(featuresets->data);
+                  col->unique_id = zMapFeatureSetCreateID(str);
+                  col->column_desc = str;
                   col->order = ++n;
 
-                  g_hash_table_insert(view->columns,GUINT_TO_POINTER(col->feature_set_id),col);
+                  /* no column specific style possible from servers */
+
+                  g_hash_table_insert(view->context_map.columns,GUINT_TO_POINTER(col->unique_id),col);
             }
       }
 }
@@ -741,7 +734,7 @@ static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
 
 gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
-      ZMapGFFSet pa,pb;
+      ZMapFeatureColumn pa,pb;
       GHashTable *hash = (GHashTable *) user_data;
 
       pa = g_hash_table_lookup(hash,a);
@@ -790,7 +783,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
       /* There are a number of predefined methods that we require so add these in as well
        * as the mapping for "feature set" -> style for these. */
-      addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
+      addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
 
       // read in a few ZMap stanzas
       zmapViewGetIniData(zmap_view, config_str, settings_list);
@@ -807,13 +800,13 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
          *
          * due to constraints w/ old config we need to give the window a list of column name quarks in order
          */
-        zMap_g_hash_table_iter_init(&kv,zmap_view->columns);
+        zMap_g_hash_table_iter_init(&kv,zmap_view->context_map.columns);
         while(zMap_g_hash_table_iter_next(&kv,&key,&value))
         {
             columns = g_list_prepend(columns,key);
         }
 
-        columns = g_list_sort_with_data(columns,colOrderCB,zmap_view->columns);
+        columns = g_list_sort_with_data(columns,colOrderCB,zmap_view->context_map.columns);
 	  g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
         g_list_free(columns);
 	}
@@ -1014,7 +1007,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
       zMapAssert(zmap_view->window_list);
       zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
 
-      copy_styles = zmap_view->orig_styles ;
+      copy_styles = zmap_view->context_map.styles ;
 
       view_window = createWindow(zmap_view, NULL) ;
 
@@ -1027,7 +1020,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
       if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence,
 						 view_window, copy_window,
 						 zmap_view->features,
-						 zmap_view->orig_styles, copy_styles,
+						 zmap_view->context_map.styles, copy_styles,
 						 window_locking)))
 	{
 	  /* should glog and/or gerror at this stage....really need g_errors.... */
@@ -1277,7 +1270,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapStartTimer("RevComp","");
 
       /* Call the feature code that will do the revcomp. */
-      zMapFeatureReverseComplement(zmap_view->features, zmap_view->orig_styles) ;
+      zMapFeatureReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
       zMapStopTimer("RevComp","Feature");
 
@@ -1286,7 +1279,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zMapWindowNavigatorReset(zmap_view->navigator_window);
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
-      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->orig_styles);
+      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
       zMapStopTimer("RevComp","Navigator");
 
       if((list_item = g_list_first(zmap_view->window_list)))
@@ -1298,11 +1291,11 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
 	      view_window = list_item->data ;
 
-	      copy_styles = zmap_view->orig_styles ;
+	      copy_styles = zmap_view->context_map.styles ;
 
             zMapStartTimer("RevComp","Window");
 	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
-				      zmap_view->orig_styles, copy_styles, TRUE) ;
+				      zmap_view->context_map.styles, copy_styles, TRUE) ;
             zMapStopTimer("RevComp","Window");
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
@@ -1467,7 +1460,7 @@ GHashTable *zMapViewGetStyles(ZMapViewWindow view_window)
   ZMapView view = zMapViewGetView(view_window);
 
   if (view->state != ZMAPVIEW_DYING)
-    styles = view->orig_styles ;
+    styles = view->context_map.styles ;
 
   return styles;
 }
@@ -1771,18 +1764,27 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
     {
       GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
 
-      if(view->featureset_2_column)
-	{
-	  ZMapGFFSet GFFset = NULL;
+      server = zmapViewGetSourceFromFeatureset(hash,featureset);
 
-	  GFFset = g_hash_table_lookup(view->featureset_2_column, GUINT_TO_POINTER(featureset)) ;
+      if(!server && view->context_map.featureset_2_column)
+	{
+	  ZMapFeatureSetDesc GFFset = NULL;
+
+        /* this is for ACEDB where the server featureset list is actually a list of columns
+         * so to find the server we need to find the column
+         * there is some possibility of collision if mis-configured
+         * and what will happen will be no data
+         */
+
+	  GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(featureset)) ;
 	  if(GFFset)
-	    featureset = GFFset->feature_set_id;
+	    featureset = GFFset->feature_src_ID;
+
+        server = zmapViewGetSourceFromFeatureset(hash,featureset);
 	}
 
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
 
-      // if global            server->stylesfile = g_strdup(stylesfile);
       //zMapLogMessage("Load features %s from %s, group = %d\n", g_quark_to_string(featureset),server->url,server->group);
 
       if (server)
@@ -1805,13 +1807,13 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		{
 		  fset = GPOINTER_TO_UINT(req_src->data);
 		  //zMapLogMessage("add %s\n",g_quark_to_string(fset));
-		  if(view->featureset_2_column)
+		  if(view->context_map.featureset_2_column)
 		    {
-		      ZMapGFFSet GFFset = NULL;
+		      ZMapFeatureSetDesc GFFset = NULL;
 
-		      GFFset = g_hash_table_lookup(view->featureset_2_column, GUINT_TO_POINTER(fset)) ;
+		      GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(fset)) ;
 		      if(GFFset)
-			fset = GFFset->feature_set_id;
+			fset = GFFset->column_id;
 		    }
 		  fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
 
@@ -1877,7 +1879,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  context = createContext(view->sequence, view->start, view->end, req_featuresets) ;
 #endif
 	  // make the windows have the same list of featuresets so that they display
-        // this function id a deferred load: for existing connections we already have the columns defined
+        // this function is a deferred load: for existing connections we already have the columns defined
         // so don't concat new ones on the end. A better fix would be to merge the data see zMapWindowMergeInFeatureSetNames()
 	  if(!view->columns_set && !existing)
         {
@@ -2298,8 +2300,8 @@ static void destroyZMapView(ZMapView *zmap_view_out)
   if (zmap_view->cwh_hash)
     zmapViewCWHDestroy(&(zmap_view->cwh_hash));
 
-  if (zmap_view->featureset_2_stylelist)
-    zMap_g_hashlist_destroy(zmap_view->featureset_2_stylelist) ;
+  if (zmap_view->context_map.column_2_styles)
+    zMap_g_hashlist_destroy(zmap_view->context_map.column_2_styles) ;
 
   if (zmap_view->session_data)
     {
@@ -2716,7 +2718,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
       {
 	ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)req_any ;
 
-	feature_sets->featureset_2_stylelist_out = connect_data->featureset_2_stylelist ;
+	feature_sets->featureset_2_stylelist_out = connect_data->column_2_styles ;
       /* MH17: if this is an output parameter why do we set it on dispatch?
        * beacuse it's a preallocated hash table
        */
@@ -2809,7 +2811,7 @@ GList *get_required_styles_list(GHashTable *srchash,GList *fsets)
 {
       GList *iter;
       GList *styles = NULL;
-      ZMapGFFSource src;
+      ZMapFeatureSource src;
       gpointer key,value;
 
       zMap_g_hash_table_iter_init(&iter,srchash);
@@ -2879,7 +2881,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    connect_data->curr_context->req_feature_set_names = feature_sets->feature_sets_inout ;
 
 	    feature_sets->required_styles_out =
-                  get_required_styles_list(zmap_view->source_2_sourcedata,feature_sets->feature_sets_inout);
+                  get_required_styles_list(zmap_view->context_map.source_2_sourcedata,feature_sets->feature_sets_inout);
 	  }
 
 
@@ -2913,7 +2915,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
        */
       for(fset = feature_sets->feature_sets_inout;fset;fset = fset->next)
         {
-            ZMapGFFSource src;
+            ZMapFeatureSource src;
 
             if(!(src = g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,fset->data)))
             {
@@ -2921,7 +2923,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
               // allocate a new struct and add to the table
 
 
-              src = g_new0(ZMapGFFSourceStruct,1);
+              src = g_new0(ZMapFeatureSourceStruct,1);
               zMapAssert(src);
               src->source_id = GPOINTER_TO_UINT(fset->data);
               src->source_text = src->source_id;
@@ -2947,21 +2949,21 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 printf("\nadding stylelists:\n");
-	zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out) ;
+	zMap_g_hashlist_print(feature_sets->column_2_styles_out) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	/* Merge the featureset to style hashses. */
-	zMap_g_hashlist_merge(zmap_view->featureset_2_stylelist, feature_sets->featureset_2_stylelist_out) ;
+	zMap_g_hashlist_merge(zmap_view->context_map.column_2_styles, feature_sets->featureset_2_stylelist_out) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 printf("\nview styles lists after merge:\n");
-      zMap_g_hashlist_print(zmap_view->featureset_2_stylelist) ;
+      zMap_g_hashlist_print(zmap_view->context_map.column_2_styles) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 	/* If the hashes aren't equal, we had to do a merge.  Need to free the server
 	 * created hash that will otherwise be left dangling... */
-	if (zmap_view->featureset_2_stylelist != feature_sets->featureset_2_stylelist_out)
+	if (zmap_view->context_map.column_2_styles != feature_sets->featureset_2_stylelist_out)
 	  {
 	    zMap_g_hashlist_destroy(feature_sets->featureset_2_stylelist_out);
 	    feature_sets->featureset_2_stylelist_out = NULL;
@@ -2972,31 +2974,31 @@ printf("\nview styles lists after merge:\n");
       // (see above) of source to display featureset and source to style.
       // See also zmapViewRemoteReceive.c/xml_featureset_start_cb()
 
-	if (!(zmap_view->featureset_2_column))
+	if (!(zmap_view->context_map.featureset_2_column))
 	  {
-           zmap_view->featureset_2_column = feature_sets->featureset_2_column_inout ;
+           zmap_view->context_map.featureset_2_column = feature_sets->featureset_2_column_inout ;
         }
       else if (feature_sets->featureset_2_column_inout &&
-                  zmap_view->featureset_2_column != feature_sets->featureset_2_column_inout)
+                  zmap_view->context_map.featureset_2_column != feature_sets->featureset_2_column_inout)
         {
-//print_fset2col("merge view",zmap_view->featureset_2_column);
+//print_fset2col("merge view",zmap_view->context_map.featureset_2_column);
 //print_fset2col("merge inout",feature_sets->featureset_2_column_inout);
           g_hash_table_foreach(feature_sets->featureset_2_column_inout,
-            mergeHashTableCB,zmap_view->featureset_2_column);
+            mergeHashTableCB,zmap_view->context_map.featureset_2_column);
         }
 
-	if (!(zmap_view->source_2_sourcedata))
+	if (!(zmap_view->context_map.source_2_sourcedata))
 	  {
-          zmap_view->source_2_sourcedata = feature_sets->source_2_sourcedata_inout ;
+          zmap_view->context_map.source_2_sourcedata = feature_sets->source_2_sourcedata_inout ;
         }
       else if(feature_sets->source_2_sourcedata_inout &&
-                  zmap_view->source_2_sourcedata !=  feature_sets->source_2_sourcedata_inout)
+                  zmap_view->context_map.source_2_sourcedata !=  feature_sets->source_2_sourcedata_inout)
         {
           g_hash_table_foreach(feature_sets->source_2_sourcedata_inout,
-            mergeHashTableCB,zmap_view->source_2_sourcedata);
+            mergeHashTableCB,zmap_view->context_map.source_2_sourcedata);
         }
-//print_src2src("got featuresets",zmap_view->source_2_sourcedata);
-//print_fset2col("got featuresets",zmap_view->featureset_2_column);
+//print_src2src("got featuresets",zmap_view->context_map.source_2_sourcedata);
+//print_fset2col("got featuresets",zmap_view->context_map.featureset_2_column);
 
 // MH17: need to think about freeing _inout tables if in != out
 
@@ -3007,29 +3009,32 @@ printf("\nview styles lists after merge:\n");
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
       //printf("\nmerging...old\n");
-      //g_hash_table_foreach(&(zmap_view->orig_styles), printStyle, "got styles") ;
+      //g_hash_table_foreach(&(zmap_view->context_map.styles), printStyle, "got styles") ;
       //printf("\nmerging...new\n");
       //g_hash_table_foreach(&(get_styles->styles_out), printStyle, "got styles") ;
 
 	/* Merge the retrieved styles into the views canonical style list. */
-	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
+	zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out,
 						      ZMAPSTYLE_MERGE_PRESERVE) ;
-	/* For dynamic loading the styles need to be set to load the features.*/
+
+#if MH17_NO_DEFERRED
+      /* For dynamic loading the styles need to be set to load the features.*/
 	if (connect_data->dynamic_loading)
 	  {
 	    gboolean is_complete_sequence = FALSE;
 
 	    if (is_complete_sequence)
-	      g_hash_table_foreach(zmap_view->orig_styles, unsetDeferredLoadStylesCB, NULL) ;
+	      g_hash_table_foreach(zmap_view->context_map.styles, unsetDeferredLoadStylesCB, NULL) ;
 
 	    g_hash_table_foreach(get_styles->styles_out, unsetDeferredLoadStylesCB, NULL) ;
 	  }
+#endif
 
 
 	/* Store the curr styles for use in creating the context and drawing features. */
 //	connect_data->curr_styles = get_styles->styles_out ;
       /* as the styles in the window get replaced we need to have all of them not the new ones */
-      connect_data->curr_styles = zmap_view->orig_styles ;
+      connect_data->curr_styles = zmap_view->context_map.styles ;
 
 	break ;
       }
@@ -3049,41 +3054,24 @@ printf("\nview styles lists after merge:\n");
 
 	    if (!(connect_data->server_styles_have_mode)
 		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
-						   connect_data->curr_styles))
+						   zmap_view->context_map.styles))
 	      {
-		zMapLogWarning("Source %s, inferring Style modes from Features failed.",
+     		zMapLogWarning("Source %s, inferring Style modes from Features failed.",
 			       view_con->url) ;
 
 		result = FALSE ;
 	      }
-
-	    if (!(connect_data->server_styles_have_mode)
-		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
-						   zmap_view->orig_styles))
-	      {
-		zMapLogWarning("Source %s, inferring Style modes from Features failed.",
-			       view_con->url) ;
-
-		result = FALSE ;
-	      }
-
 
 	    /* I'm not sure if this couldn't come much earlier actually....something
 	     * to investigate.... */
 
-	    if (result && !makeStylesDrawable(connect_data->curr_styles, &missing_styles))
-	      {
-		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
+          if (!makeStylesDrawable(zmap_view->context_map.styles, &missing_styles))
+            {
+            zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
 
-		result = FALSE ;
-	      }
+            result = FALSE ;
+            }
 
-	    if (result && !makeStylesDrawable(zmap_view->orig_styles, &missing_styles))
-	      {
-		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
-
-		result = FALSE ;
-	      }
 	  }
 
 	/* ok...once we are here we can display stuff.... */
@@ -3300,9 +3288,9 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       if(terminate)           // ie server->delayed -> called after startup
            connect_data->dynamic_loading = TRUE ;
 
-      connect_data->featureset_2_stylelist = zMap_g_hashlist_create() ;
-      connect_data->featureset_2_column = zmap_view->featureset_2_column;
-      connect_data->source_2_sourcedata = zmap_view->source_2_sourcedata;
+      connect_data->column_2_styles = zMap_g_hashlist_create() ;
+      connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;
+      connect_data->source_2_sourcedata = zmap_view->context_map.source_2_sourcedata;
 
       // we need to save this to tell otterlace when we've finished
       // it also gets given to threads: when can we free it?
@@ -3424,7 +3412,7 @@ static void resetWindows(ZMapView zmap_view)
 
 /* Signal all windows there is data to draw. */
 static void displayDataWindows(ZMapView zmap_view,
-			       ZMapFeatureContext all_features,
+			             ZMapFeatureContext all_features,
                                ZMapFeatureContext new_features, GHashTable *new_styles,
                                gboolean undisplay, GList *masked)
 {
@@ -3450,10 +3438,17 @@ static void displayDataWindows(ZMapView zmap_view,
       {
         zMapWindowDisplayData(view_window->window, NULL,
 			      all_features, new_features,
-			      view_window->parent_view->orig_styles, new_styles,
-			      zmap_view->featureset_2_stylelist,
-                        zmap_view->featureset_2_column,
-                        zmap_view->columns, masked) ;
+#if MH17_NO_STYLE_COPY
+			      view_window->parent_view->context_map.styles, new_styles,
+                        zmap_view->context_map.styles,
+			      zmap_view->context_map.column_2_styles,
+                        zmap_view->context_map.featureset_2_column,
+                        zmap_view->context_map.source_2_sourcedata,
+                        zmap_view->context_map.columns,
+#else
+                        &zmap_view->context_map,
+#endif
+                        masked) ;
       }
       else
         zMapWindowUnDisplayData(view_window->window, all_features, new_features);
@@ -3607,7 +3602,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     {
       zMapStartTimer("MergeRevComp","") ;
 
-      zMapFeatureReverseComplement(new_features, view->orig_styles);
+      zMapFeatureReverseComplement(new_features, view->context_map.styles);
 
       zMapStopTimer("MergeRevComp","") ;
     }
@@ -3629,7 +3624,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
   if (merge == ZMAPFEATURE_CONTEXT_OK)
     {
-      zMapLogMessage("%s", "Context merge succeeded.") ;
+/*      zMapLogMessage("%s", "Context merge succeeded.") ;*/
       merge_result = TRUE ;
 
       // mask ESTs with mRNAs if configured
@@ -3667,7 +3662,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHas
   zMapWindowNavigatorReset(view->navigator_window); /* So reset */
   zMapWindowNavigatorSetStrand(view->navigator_window, view->revcomped_features);
   /* and draw with _all_ the view's features. */
-  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->orig_styles);
+  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->context_map.styles);
 
   /* signal our caller that we have data. */
   (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
@@ -4348,7 +4343,7 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
 }
 
 
-
+#if MH17_NO_DEFERRED
 /* A GhashListForeachFunc() func that unsets DeferredLoads for styles in the target. */
 static void unsetDeferredLoadStylesCB(gpointer key, gpointer data, gpointer user_data_unused)
 {
@@ -4359,21 +4354,21 @@ static void unsetDeferredLoadStylesCB(gpointer key, gpointer data, gpointer user
   return ;
 }
 
+#endif
 
 
 
-
-static void addPredefined(GHashTable **styles_out, GHashTable **featureset_2_stylelist_inout)
+static void addPredefined(GHashTable **styles_out, GHashTable **column_2_styles_inout)
 {
   GHashTable *styles ;
-  GHashTable *f2s = *featureset_2_stylelist_inout ;
+  GHashTable *f2s = *column_2_styles_inout ;
 
   styles = zMapStyleGetAllPredefined() ;
 
   g_hash_table_foreach(styles, styleCB, f2s) ;
 
   *styles_out = styles ;
-  *featureset_2_stylelist_inout = f2s ;
+  *column_2_styles_inout = f2s ;
 
   return ;
 }

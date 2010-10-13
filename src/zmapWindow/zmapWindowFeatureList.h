@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,7 +25,7 @@
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: An extension/implementation of the ZMapGUITreeView class
- *              to display the details of a feature.  In order that we 
+ *              to display the details of a feature.  In order that we
  *              don't hold onto features and items which can go stale
  *              over the lifespan of a window we hold a serialised version.
  *
@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Jun 17 11:35 2009 (rds)
  * Created: Wed Jun  4 13:17:50 2008 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.h,v 1.6 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.h,v 1.7 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,14 +171,16 @@ gboolean zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
  *        FToI lookup and may well fail if the underlying feature has changed so that
  *        the lookup can no longer find it (unique id changes)
  */
-FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_tv,
+FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindow window,
+                                    ZMapWindowFeatureItemList zmap_tv,
 						GHashTable  *context_to_item,
 						GtkTreeIter *iterator);
 /*!
- * \brief get the feature from the list at the iterator's row.  Wraps the GetItem 
+ * \brief get the feature from the list at the iterator's row.  Wraps the GetItem
  *        function so is as limited as it is.
  */
-ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindowFeatureItemList zmap_tv,
+ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindow window,
+                                    ZMapWindowFeatureItemList zmap_tv,
 						GHashTable  *context_to_item,
 						GtkTreeIter *iterator);
 /*!

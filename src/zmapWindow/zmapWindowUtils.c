@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.66 2010-09-10 18:22:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.67 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@
 
 #include <zmapWindowCanvasItem.h>
 
-#include <ZMap/zmapGFF.h>
+//#include <ZMap/zmapGFF.h>
 
 
 /* Struct for style table callbacks. */
@@ -63,8 +63,8 @@ typedef struct
 
 
 
-static void styleDestroyCB(gpointer data) ;
-static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
+//static void styleDestroyCB(gpointer data) ;
+//static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
 
 
 
@@ -309,6 +309,7 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 }
 
 
+#if MH17_NO_STYLE_COPY
 /*
  * Noddy functions for handling our style lists within window.
  *
@@ -323,10 +324,10 @@ gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles,
 
   if (read_only_styles && g_hash_table_size(read_only_styles))
     {
-      if (window->read_only_styles)
-	zMapStyleDestroyStyles(window->read_only_styles) ;
+      if (window->context_map.styles)
+	zMapStyleDestroyStyles(window->context_map.styles) ;
 
-      result = zMapStyleCopyAllStyles(read_only_styles, &(window->read_only_styles)) ;
+      result = zMapStyleCopyAllStyles(read_only_styles, &(window->context_map.styles)) ;
     }
 
   if (display_styles  && g_hash_table_size(display_styles))
@@ -339,7 +340,7 @@ gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles,
 
   return result ;
 }
-
+#endif
 
 gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 					     ZMapFeatureBlock block,
@@ -386,6 +387,8 @@ gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor 
 }
 
 
+
+#if MH17_NO_MORE_STYLE_TABLES
 
 /*
  *                      Style table functions
@@ -470,30 +473,162 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 }
 
 /* End of Style Table functions... */
+#endif
 
 
-/* Free the list, but not the styles    ......um, what does this mean.....EG */
-/* It means there's no copying of the style from GHashTable[all_styles] ->
- * GList[some_styles] going on in this function. Just allocation of
- * GList items to hold onto the styles pointers. */
+/* create or extract a style for a column as a whole */
+/* no column specicifc style has been defined */
+/* style_table includes all the styles needed by the column */
 
-GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id)
+ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
+{
+      ZMapFeatureTypeStyle style = NULL,s;
+      GList *iter;
+      ZMapStyleMode mode;
+
+      zMapAssert(column->style_table);
+
+      if(!column->style_table->next)  /* only one style: use this directly */
+      {
+            style = (ZMapFeatureTypeStyle) column->style_table->data;
+      }
+      else
+      {
+            /* merge styles in reverse to give priority to first in the list as defined in config
+             * this models previous behaviour with a dynamic style table
+             * NB: sub feature styles come after their parents, see zmapWindowFeatureSetStyle() below
+             * but are likely to be a different style mode and will be ignored
+             */
+            mode = ((ZMapFeatureTypeStyle) column->style_table->data)->mode;
+
+            for(iter = g_list_last(column->style_table);iter; iter = iter->prev)
+            {
+                  s = (ZMapFeatureTypeStyle) iter->data;
+                  if(!s->mode || s->mode == mode)
+                  {
+                        if(!style)
+                        {
+                              style = zMapFeatureStyleCopy(s);
+                        }
+                        else
+                        {
+                              zMapStyleMerge(style, s);
+                        }
+                  }
+            }
+/*  read-only locations, need to use GObject, use last style as that's easy, not used for lookup anyway
+ *            style->unique_id = column->unique_id;
+ *            style->original_id = column->column_id;
+ *            can try creating empty style w/ column name and merge
+ *            but it's not needed, this style will never be looked up
+ */
+      }
+      return(style);
+}
+
+
+/* get the column struct for a featureset */
+ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id)
+{
+      ZMapFeatureColumn column = NULL;
+
+      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(col_id));
+      if(!column)
+            zMapLogWarning("no column for featureset %s",g_quark_to_string(col_id));
+
+      return column;
+}
+
+/* get the column struct for a featureset */
+ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id)
+{
+      ZMapFeatureColumn column = NULL;
+      ZMapFeatureSetDesc gff;
+
+      /* get the column the featureset goes in */
+      gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
+      if(!gff)
+      {
+            zMapLogWarning("no featureset_2_column for %s",g_quark_to_string(set_id));
+      }
+      else
+      {
+            column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
+            if(!column)
+                  zMapLogWarning("no column for featureset %s",g_quark_to_string(set_id));
+      }
+      return column;
+}
+
+
+/*
+ * construct a style table for a column
+ * and extract the column style or single featureset style or merge all styles into one for the column
+ * overloading with the specific column style if configured
+ */
+void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
+{
+      if(!column->style)
+      {
+            column->style_table = zmapWindowFeatureColumnStyles(window->context_map,column->unique_id);
+            column->style = zmapWindowColumnMergeStyle(column);
+
+            if(column->style_id)
+            {
+                  ZMapFeatureTypeStyle s;
+
+                  s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+                  if(!s->mode || s->mode == column->style->mode)
+                  {
+                        zMapStyleMerge(column->style, s);
+                  }
+            }
+      }
+}
+
+
+/*
+ * construct a style table for a column
+ * and extract the column style or single featureset style or merge all styles into one for the column
+ */
+ZMapFeatureTypeStyle zMapWindowGetSetColumnStyle(ZMapWindow window,GQuark set_id)
+{
+      ZMapFeatureColumn column = NULL;
+
+      column = zMapWindowGetSetColumn(window->context_map,set_id);
+      if(!column)
+            return NULL;
+
+      zmapWindowGenColumnStyle(window,column);
+
+      return(column->style);
+}
+
+/*
+ * construct a style table for a column
+ * and extract the column style or single featureset style or merge all styles into one for the column
+ */
+ZMapFeatureTypeStyle zMapWindowGetColumnStyle(ZMapWindow window,GQuark col_id)
+{
+      ZMapFeatureColumn column = NULL;
+
+      column = zMapWindowGetColumn(window->context_map,col_id);
+      if(!column)
+            return NULL;
+
+      zmapWindowGenColumnStyle(window,column);
+
+      return(column->style);
+}
+
+
+GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id)
 {
   GList *styles_list = NULL;
   GList *styles_quark_list = NULL;
   int i;
-  ZMapGFFSet gff;
 
-  /* MH17: the column has the list of style not an individual featureset */
-
-  gff = g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(feature_set_id));
-  if(gff)
-  {
-      feature_set_id = gff->feature_set_id;
-  }
-
-  if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles,
-					       GUINT_TO_POINTER(feature_set_id))))
+  if ((styles_quark_list = g_hash_table_lookup(map->column_2_styles,GUINT_TO_POINTER(column_id))))
     {
       GList *list;
 
@@ -506,33 +641,25 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQu
 
 	      style_id = GPOINTER_TO_UINT(list->data);
 
-	      if((style = zMapFindStyle(all_styles, style_id)))     // add styles needed by featuresets
+	      if((style = zMapFindStyle(map->styles, style_id)))    // add styles needed by featuresets
 		{
 		  styles_list = g_list_append(styles_list, (gpointer) style);
 
               for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
               {
-                GQuark sub_id;
                 ZMapFeatureTypeStyle sub;
 
-                if((sub_id = zMapStyleGetSubFeature(style,i)))
-                {
-                  if((sub = zMapFindStyle(all_styles, sub_id)))
+                if((sub = style->sub_style[i]))
                   {
                     styles_list = g_list_append(styles_list, (gpointer) sub);
                   }
-                }
               }
 		}
-
             else
             {
-                  //void printStyle(gpointer key, gpointer data, gpointer user_data);
-                  //g_hash_table_foreach(&all_styles, printStyle, "FeatureSetStyles") ;
-
                   zMapLogWarning("could not find style %s for featureset %s in table of %d\n",
-                        g_quark_to_string(style_id),g_quark_to_string(feature_set_id),
-                        g_hash_table_size(all_styles));
+                        g_quark_to_string(style_id),g_quark_to_string(column_id),
+                        g_hash_table_size(map->styles));
             }
 	    }
 	  while((list = g_list_next(list)));
@@ -633,7 +760,7 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 		  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
 		  zMapAssert(result) ;
 
-		  list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+		  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
 							 zMapFeatureStrand2Str(set_strand),
 							 zMapFeatureFrame2Str(set_frame),
 							 feature) ;
@@ -946,6 +1073,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 }
 
 
+#if MH17_NO_MORE_STYLE_TABLES
 /*
  *                  Internal routines.
  */
@@ -975,3 +1103,4 @@ static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data)
 
   return ;
 }
+#endif

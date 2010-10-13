@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 20 10:28 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.114 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.115 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -251,10 +251,16 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
+#if MH17_NO_STYLE_COPY
 			   GHashTable *all_styles, GHashTable *new_styles,
 			   GHashTable *new_featuresets_2_stylelist,
                      GHashTable *new_featureset_2_column,
-                     GHashTable *new_columns,GList *masked) ;
+                     GHashTable *new_source_2_sourcedata,
+                     GHashTable *new_columns,
+#else
+                     ZMapFeatureContextMap context_map,
+#endif
+                     GList *masked) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);

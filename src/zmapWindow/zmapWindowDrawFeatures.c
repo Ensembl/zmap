@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.295 2010-09-15 09:59:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.296 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@
 #include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
-#include <ZMap/zmapGFF.h>     // for GFFSet struct for column mapping
+//#include <ZMap/zmapGFF.h>     // for GFFSet struct for column mapping
 
 /* these will go when scale is in separate window. */
 #define SCALEBAR_OFFSET   0.0
@@ -65,7 +65,7 @@ typedef struct _ZMapCanvasDataStruct
 
   /* Records which alignment, block, set, type we are processing. */
   ZMapFeatureContext full_context ;
-  GHashTable *styles ;
+//  GHashTable *styles ;
   ZMapFeatureAlignment curr_alignment ;
   ZMapFeatureBlock curr_block ;
   ZMapFeatureSet curr_set ;
@@ -95,6 +95,8 @@ typedef struct _ZMapCanvasDataStruct
 
   gboolean    frame_mode_change ;
   ZMapFrame   current_frame;
+
+  ZMapFeatureTypeStyle style;       /* for the column */
 
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
@@ -134,7 +136,6 @@ typedef struct RemoveFeatureDataStructName
 
 
 static void windowDrawContext(ZMapCanvasData     canvas_data,
-			       GHashTable             *styles,
 			       ZMapFeatureContext full_context,
 			       ZMapFeatureContext diff_context,
                          GList *masked);
@@ -146,7 +147,8 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 				      ZMapWindowContainerFeatures container,
 				      GQuark          feature_set_id,
 				      ZMapStrand      column_strand,
-				      ZMapFrame       column_frame);
+				      ZMapFrame       column_frame,
+                              ZMapFeatureSet  feature_set);
 
 
 static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group,
@@ -174,8 +176,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data) ;
 static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 					      ZMapContainerLevelType level, gpointer user_data) ;
 static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
-						       ZMapCanvasData canvas_data,
-						       ZMapFeatureSet feature_set,
+                                          ZMapFeatureTypeStyle style,
 						       int *frame_start_out,
 						       int *frame_end_out) ;
 
@@ -204,7 +205,7 @@ static gboolean contextGetMasterAlignSpan(ZMapFeatureContext context,int *start,
 
 
 static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet container_set) ;
-static void removeFeatureCB(gpointer key, gpointer value, gpointer user_data) ;
+/*static void removeFeatureCB(gpointer key, gpointer value, gpointer user_data) ;*/
 
 
 /* Globals. */
@@ -352,7 +353,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   canvas_data.canvas = window->canvas;
 
 
-  if((tmp_item = zmapWindowFToIFindItemFull(window->context_to_item,
+  if((tmp_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                             0, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
     {
       zMapAssert(ZMAP_IS_CONTAINER_GROUP(tmp_item));
@@ -432,8 +433,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
    *     Draw all the features, so much in so few lines...sigh...
    */
 
-  windowDrawContext(&canvas_data, window->display_styles,
-		    full_context, diff_context, masked);
+  windowDrawContext(&canvas_data, full_context, diff_context, masked);
 
 
   /* Now we've drawn all the features we can position them all. */
@@ -517,7 +517,8 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
    * have been found either because styles may be on a separate server or more often because
    * the style for a feature set isn't known until the features have been read. Then if we don't
    * find any features feature set won't have a style...kind of a catch 22. */
-  style = zMapFindStyle(styles, feature_set->unique_id) ;
+/*  style = zMapFindStyle(styles, feature_set->unique_id) ;*/
+  style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
 
   name = (char *)g_quark_to_string(feature_set->unique_id) ;
 
@@ -525,10 +526,10 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
   if (!style)
     {
       /* Temporary...probably user will not want to see this in the end but for now its good for debugging. */
-      zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
+      zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its column style (\"%s\") could not be found.",
 		  name, name) ;
 
-      zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
+      zMapLogCritical("feature set \"%s\" not displayed because its column style (\"%s\") could not be found.",
 		      name, name) ;
 
       created = FALSE;
@@ -600,6 +601,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 						    feature_set,
 						    ZMAPSTRAND_NONE,
 						    frame,
+/* MH17: this is the separator yet 'is_seperator_col' is FALSE !! */
 						    FALSE,
 						    zMapStyleGetWidth(style),
 						    top, bottom);
@@ -614,17 +616,16 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	  canvas_data.window         = window;
 	  canvas_data.curr_alignment = (ZMapFeatureAlignment)(block->parent) ;
 	  canvas_data.curr_block     = block;
-	  canvas_data.styles         = styles;
+//	  canvas_data.styles         = styles;
+        canvas_data.style = style;
 
 	  set_group_item = produce_column(&canvas_data, forward_strand_group,
 					  feature_set->unique_id,
-					  ZMAPSTRAND_FORWARD, frame);
+					  ZMAPSTRAND_FORWARD, frame,feature_set);
 	  if(set_group_item)
 	    {
               zMapAssert(set_group_item && FOO_IS_CANVAS_GROUP(set_group_item));
               *forward_col_out = FOO_CANVAS_GROUP(set_group_item);
-
-	      zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)set_group_item, feature_set);
             }
 	  else
 	    *forward_col_out = NULL;
@@ -637,21 +638,21 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	  canvas_data.window         = window;
 	  canvas_data.curr_alignment = (ZMapFeatureAlignment)block->parent;
 	  canvas_data.curr_block     = block;
-	  canvas_data.styles         = styles;
+//	  canvas_data.styles         = styles;
+        canvas_data.style = style;
 
 	  set_group_item = NULL;
 
 	  if(zMapStyleIsStrandSpecific(style))
 	    set_group_item = produce_column(&canvas_data, reverse_strand_group,
 					    feature_set->unique_id,
-					    ZMAPSTRAND_REVERSE, frame);
+					    ZMAPSTRAND_REVERSE, frame, feature_set);
 
 	  if(set_group_item)
             {
               zMapAssert(set_group_item && FOO_IS_CANVAS_GROUP(set_group_item));
               *reverse_col_out = FOO_CANVAS_GROUP(set_group_item);
 
-	      zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)set_group_item, feature_set);
             }
 	  else
 	    *reverse_col_out = NULL;
@@ -701,12 +702,6 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
             container->maskable = TRUE;
         }
 
-      if(!g_list_find(container->featuresets,GUINT_TO_POINTER(feature_set->unique_id)))
-        {
-            container->featuresets = g_list_prepend(container->featuresets,
-                              GUINT_TO_POINTER(feature_set->unique_id));
-        }
-
       view_feature_set = zmapWindowContainerGetFeatureSet(forward_container);
 
       if (!view_feature_set)
@@ -729,13 +724,6 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
                   container->masked = TRUE;     /* default to not visible on first feature set */
             container->maskable = TRUE;
         }
-
-      if(!g_list_find(container->featuresets,GUINT_TO_POINTER(feature_set->unique_id)))
-        {
-            container->featuresets = g_list_prepend(container->featuresets,
-                              GUINT_TO_POINTER(feature_set->unique_id));
-        }
-
 
       if (!view_feature_set)
 	{
@@ -819,11 +807,11 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if (forward_col_wcp)
 	{
-	  ZMapStyleBumpMode curr_bump_mode = ZMAPSTYLE_COLDISPLAY_INVALID ;
+	  ZMapStyleColumnDisplayState display = ZMAPSTYLE_COLDISPLAY_INVALID ;
 	  gboolean redraw_needed = FALSE ;
 
 	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)forward_container))
-	      != ZMAPBUMP_UNBUMP)
+	      > ZMAPBUMP_UNBUMP)
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 
 	  /* try 3 frame stuff here...more complicated */
@@ -832,9 +820,9 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	      if (IS_3FRAME(window->display_3_frame))
 		{
 		  if (zmapWindowColumnIs3frameDisplayed(window, forward_col_wcp))
-		    curr_bump_mode = ZMAPSTYLE_COLDISPLAY_SHOW ;
+		    display = ZMAPSTYLE_COLDISPLAY_SHOW ;
 		  else
-		    curr_bump_mode = ZMAPSTYLE_COLDISPLAY_HIDE ;
+		    display = ZMAPSTYLE_COLDISPLAY_HIDE ;
 		}
 
 	      if (frame_mode_change)
@@ -845,14 +833,14 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	   * set explicitly in the style for the column. */
 	  zMapStartTimer("DrawFeatureSet","SetState");
 
-	  zmapWindowColumnSetState(window, forward_col_wcp, curr_bump_mode, redraw_needed) ;
+	  zmapWindowColumnSetState(window, forward_col_wcp, display, redraw_needed) ;
 
 	  zMapStopTimer("DrawFeatureSet","SetState");
     	}
 
       if (reverse_col_wcp)
 	{
-	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)reverse_container)) != ZMAPBUMP_UNBUMP)
+	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)reverse_container)) > ZMAPBUMP_UNBUMP)
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
@@ -928,7 +916,7 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
       canvas_data.window        = window;
       canvas_data.canvas        = window->canvas;
       canvas_data.curr_x_offset = 0.0;
-      canvas_data.styles        = window->display_styles;
+//      canvas_data.styles        = window->context_map->styles;
       canvas_data.full_context  = full_context;
       canvas_data.frame_mode_change = TRUE ;       // refer to comment in feature_set_matches_frame_drawing_mode()
 
@@ -989,7 +977,6 @@ void container_mask_cb(ZMapWindowContainerGroup container, FooCanvasPoints *poin
 }
 
 static void windowDrawContext(ZMapCanvasData     canvas_data,
-			      GHashTable             *styles,
 			      ZMapFeatureContext full_context,
 			      ZMapFeatureContext diff_context,
                         GList *masked)
@@ -997,13 +984,14 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 
   canvas_data->curr_x_offset = 0.0;
 
-  canvas_data->styles        = styles;
+//  canvas_data->styles        = styles;
 
   /* Full Context to attach to the items.
    * Diff Context feature any (aligns,blocks,sets) are destroyed! */
   canvas_data->full_context  = full_context;
 
   canvas_data->masked = masked;
+
 
   /* we iterate through the window's canvas data to mask existing features */
   zmapWindowContainerUtilsExecute(canvas_data->window->feature_root_group,
@@ -1089,12 +1077,14 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 }
 
 
+#if MH17_NO_RECOVER
 /* AGH, THIS ALL NEEDS TIDYING UP, ROYS NEW ITEMS HAVE CREATED A WHOLE LOAD OF ENCAPSULATION PROBLEMS.... */
 
 /* This function may exist already....not sure..... */
 static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet container_set)
 {
   RemoveFeatureDataStruct remove_data ;
+  GList *l;
 
   remove_data.window = window ;
   remove_data.strand = zmapWindowContainerFeatureSetGetStrand(container_set) ;
@@ -1117,54 +1107,32 @@ static void removeFeatureCB(gpointer key, gpointer value, gpointer user_data)
 
   return ;
 }
+#else
 
-
-
-
-
-#if MH17_THEY_GET_CREATED_ON_DEMAND
-static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
+/* MH17: remove all featuresets in the column, and all the features
+ * let's use the list of featuresets and the hash functions to do the work.
+ */
+static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet container_set)
 {
-  GQuark feature_set_id = GPOINTER_TO_INT(list_data);
-  ZMapCanvasData canvas_data = (ZMapCanvasData)user_data;
-  ZMapFrame frame;
-  int frame_i;
-  GQuark feature_set_unique_id = zMapFeatureSetCreateID((char *) g_quark_to_string(feature_set_id));
+      GList *l;
 
-  for (frame_i = ZMAPFRAME_NONE; frame_i <= ZMAPFRAME_2; frame_i++)
-    {
-      frame = (ZMapFrame)frame_i;
+      for(l = container_set->featuresets;l;l = l->next)
+      {
+            /* NOTE this call removes the features and not the set */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("making \"%s\" %s %s column \n",
-	     g_quark_to_string(feature_set_id),
-	     zMapFeatureFrame2Str(frame), zMapFeatureStrand2Str(ZMAPSTRAND_FORWARD)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      if (canvas_data->curr_forward_group)
-	produce_column(canvas_data,
-		       canvas_data->curr_forward_group,
-		       feature_set_unique_id, ZMAPSTRAND_FORWARD,
-		       frame) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("making \"%s\" %s %s column \n",
-	     g_quark_to_string(feature_set_id),
-	     zMapFeatureFrame2Str(frame), zMapFeatureStrand2Str(ZMAPSTRAND_REVERSE)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      if (canvas_data->curr_reverse_group)
-	produce_column(canvas_data,
-		       canvas_data->curr_reverse_group,
-		       feature_set_unique_id, ZMAPSTRAND_REVERSE,
-		       frame);
-    }
-
-  return ;
+            zmapWindowFToIRemoveSet(window->context_to_item,
+                                   container_set->align_id,
+                                   container_set->block_id,
+                                   GPOINTER_TO_UINT(l->data),
+                                   container_set->strand,
+                                   container_set->frame,TRUE) ;
+      }
 }
+
 #endif
+
+
+
 
 
 static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
@@ -1181,11 +1149,12 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   ZMapWindow window ;
   double top, bottom ;
   FooCanvasItem *existing_column_item ;
-  ZMapStyle3FrameMode frame_mode ;
   gboolean valid_strand = FALSE ;
   gboolean valid_frame  = FALSE ;
+  GQuark column_id = feature_set_id;
   GQuark display_id = feature_set_id;
-  GQuark orig_set_id = feature_set_id;
+  ZMapFeatureColumn f_col = NULL;
+  gboolean add_to_hash = FALSE;
 
   zMapAssert(canvas_data && strand_container) ;
 
@@ -1196,23 +1165,30 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
       /* MH17: map feature sets from context to canvas columns
        * refer to zmapGFF2parser.c/makeNewFeature()
        */
-  if (window->featureset_2_column)  /* will always be but let's play safe */
+  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
     {
-      ZMapGFFSet set_data ;
+      ZMapFeatureSetDesc set_data ;
 
-      if ((set_data = g_hash_table_lookup(window->featureset_2_column,
-                                 GINT_TO_POINTER(feature_set_id))))
+      if ((set_data = g_hash_table_lookup(window->context_map->featureset_2_column,
+                                 GUINT_TO_POINTER(feature_set_id))))
       {
-            feature_set_id = set_data->feature_set_id;      /* the display column as a key */
-            display_id = set_data->feature_set_ID;
+            column_id = set_data->column_id;      /* the display column as a key */
+            display_id = set_data->column_ID;
+            f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
       }
       /* else we use the original feature_set_id
          which should never happen as the view creates a 1-1 mapping regardless */
     }
+      /* but then we can't as we need the column style to work out whether to create it */
 
+  if(!f_col)
+  {
+      zMapLogWarning("No column defined for featureset %s", g_quark_to_string(feature_set_id));
+      return NULL;
+  }
+  zMapAssert(f_col && f_col->style);
 
-
-  if ((existing_column_item = zmapWindowFToIFindItemFull(window->context_to_item,
+  if ((existing_column_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 							 alignment->unique_id,
 							 block->unique_id,
 							 feature_set_id,
@@ -1220,7 +1196,21 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 							 column_frame, 0)))
     {
 
+      /* if the column is in the FToI hash then it exists */
+
       tmp_column = FOO_CANVAS_GROUP(existing_column_item) ;
+    }
+  else if((existing_column_item = zMapFindCanvasColumn(window->feature_root_group,
+                                           alignment->unique_id,
+                                           block->unique_id,
+                                           column_id,
+                                           column_strand,
+                                           column_frame)))
+    {
+      /* if the column exists (has another featureset) then add this one to the hash */
+
+      tmp_column = FOO_CANVAS_GROUP(existing_column_item) ;
+      add_to_hash = TRUE;
 
     }
   else if (create_if_not_exist)
@@ -1229,29 +1219,77 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
       bottom = block->block_to_sequence.t2 ;
       zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
+      if (column_strand == ZMAPSTRAND_FORWARD)
+            valid_strand = TRUE;
+      else if (column_strand == ZMAPSTRAND_REVERSE)
+            valid_strand = (zMapStyleIsStrandSpecific(f_col->style) && zMapStyleIsShowReverseStrand(f_col->style));
+
+      if (column_frame == ZMAPFRAME_NONE)
+            valid_frame = TRUE;
+      else if (column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
+            valid_frame = zMapStyleIsFrameSpecific(f_col->style);
+
+      if (valid_frame && valid_strand)
+      {
+
 #if MH17_PRINT_CREATE_COL
 /* now only a sensible number created. */
-      printf("create column %s -> %s S-%d F-%d\n",
-            g_quark_to_string(orig_set_id),
-            g_quark_to_string(feature_set_id),
+      printf("create column  %s/%s S-%d F-%d\n",
+            g_quark_to_string(column_id),g_quark_to_string(display_id),
             column_strand,column_frame);
 #endif
-      /* need to create the column */
-      if (!(tmp_column = createColumnFull(strand_container,
-					  window, alignment, block,
-					  NULL,
-                                display_id, feature_set_id,
-					  column_strand, column_frame, FALSE,
-					  0.0, top, bottom)))
-	{
-	  zMapLogMessage("Column '%s', frame '%d', strand '%d', not created.",
-			 g_quark_to_string(feature_set_id), column_frame, column_strand);
-	}
+
+            /* need to create the column */
+
+            if ((tmp_column = createColumnFull(strand_container,
+	            window, alignment, block,
+			NULL,
+                  display_id, column_id,
+		      column_strand, column_frame, FALSE,
+			0.0, top, bottom)))
+            {
+                  add_to_hash = TRUE;
+            }
+            else
+	      {
+	            zMapLogMessage("Column '%s', frame '%d', strand '%d', not created.",
+			       g_quark_to_string(feature_set_id), column_frame, column_strand);
+	      }
+      }
     }
 
+    if(add_to_hash)
+    {
+#if MH17_PRINT_CREATE_COL
+printf("adding hash %s -> %s\n",g_quark_to_string(feature_set_id),g_quark_to_string(column_id));
+#endif
+      gboolean status;
+      ZMapWindowContainerFeatureSet container_set;
 
+      status = zmapWindowFToIAddSet(window->context_to_item,
+                              alignment->unique_id,
+                              block->unique_id,
+                              feature_set_id,
+                              column_strand, column_frame,
+                              FOO_CANVAS_GROUP(tmp_column)) ;
+      zMapAssert(status) ;
+
+      container_set = (ZMapWindowContainerFeatureSet) tmp_column;
+      if(!g_list_find(container_set->featuresets,GUINT_TO_POINTER(feature_set_id)))
+        {
+            container_set->featuresets = g_list_prepend(container_set->featuresets,
+                              GUINT_TO_POINTER(feature_set_id));
+        }
+    }
+
+#if 0
+// no foolish creation done! whoopee :-o
   if (tmp_column)
     {
+      ZMapStyle3FrameMode frame_mode ;
+
+#warning logically we should not get here unless these conditions are met
+
       if (column_strand == ZMAPSTRAND_FORWARD)
       	valid_strand = TRUE;
       else if (column_strand == ZMAPSTRAND_REVERSE)
@@ -1265,39 +1303,31 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
                  (ZMapWindowContainerFeatureSet)tmp_column, &frame_mode) ;
 
       if (valid_frame && valid_strand)
+      {
       	column = tmp_column ;
-    }
-#if MH17_DEBUG
-printf("create %s: %p %p, v=%d %d\n",
+      }
+      else
+      {
+           printf("foolish create %s: s,f = %d %d, v=%d %d\n",
             g_quark_to_string(feature_set_id),
-            column,tmp_column,valid_strand,valid_frame);
+            column_strand,column_frame,
+            valid_strand,valid_frame);
+      }
+    }
+#else
+      column = tmp_column;
 #endif
+
   return column ;
 }
 
-#if MH17_THEY_GET_CREATED_ON_DEMAND
-static FooCanvasGroup *find_column(ZMapCanvasData  canvas_data,
-				   ZMapWindowContainerFeatures container,
-				   GQuark          feature_set_id,
-				   ZMapStrand      column_strand,
-				   ZMapFrame       column_frame)
-{
-  FooCanvasGroup *existing_column = NULL;
-
-  zMapAssert(canvas_data && container) ;
-
-  existing_column = find_or_create_column(canvas_data, container, feature_set_id,
-					  column_strand, column_frame, FALSE) ;
-
-  return existing_column;
-}
-#endif
 
 static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 				      ZMapWindowContainerFeatures container,
 				      GQuark          feature_set_id,
 				      ZMapStrand      column_strand,
-				      ZMapFrame       column_frame)
+				      ZMapFrame       column_frame,
+                              ZMapFeatureSet feature_set)
 {
   FooCanvasGroup *new_column = NULL;
 
@@ -1305,6 +1335,13 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 
   new_column = find_or_create_column(canvas_data, container, feature_set_id,
 				     column_strand, column_frame, TRUE) ;
+
+  if(new_column)
+#if MH17_NO_RECOVER
+      zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)new_column, feature_set);
+#else
+      zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup) new_column, (ZMapFeatureAny) feature_set);
+#endif
 
   return new_column;
 }
@@ -1323,10 +1360,8 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
   if (fwd_col_out && canvas_data->curr_forward_group && (set_column = produce_column(canvas_data,
 										  canvas_data->curr_forward_group,
 										  canvas_data->curr_set->unique_id,
-										  ZMAPSTRAND_FORWARD, frame)))
+										  ZMAPSTRAND_FORWARD, frame, feature_set)))
     {
-      zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)set_column, feature_set);
-
       *fwd_col_out = set_column;
       found_one    = TRUE;
     }
@@ -1335,10 +1370,8 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
   if (rev_col_out && canvas_data->curr_reverse_group && (set_column = produce_column(canvas_data,
 										  canvas_data->curr_reverse_group,
 										  canvas_data->curr_set->unique_id,
-										  ZMAPSTRAND_REVERSE, frame)))
+										  ZMAPSTRAND_REVERSE, frame, feature_set)))
     {
-      zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)set_column, feature_set);
-
       *rev_col_out = set_column;
       found_one    = TRUE;
     }
@@ -1361,7 +1394,6 @@ static gboolean contextGetMasterAlignSpan(ZMapFeatureContext context,int *start,
 
       return(res);
 }
-
 
 static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							   gpointer data,
@@ -1428,7 +1460,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
         my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_root_group), &x, &y) ;
 
-        if ((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+        if ((align_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 							  feature_align->unique_id,
 							  0, 0, ZMAPSTRAND_NONE,
 							  ZMAPFRAME_NONE, 0)))
@@ -1500,7 +1532,7 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
         /* Always set y offset to be top of current block. */
 //        canvas_data->curr_y_offset = feature_block->block_to_sequence.t1 ;
 
-        if ((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+        if ((block_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                                          canvas_data->curr_alignment->unique_id,
                                                          feature_block->unique_id, 0, ZMAPSTRAND_NONE,
                                                          ZMAPFRAME_NONE, 0)))
@@ -1650,18 +1682,6 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 
             canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
 
-#if MH17_THEY_GET_CREATED_ON_DEMAND
-          zMapStartTimer("CreateColumns","");
-
-	    /* We create the columns here now. */
-	    /* Why? So that we always have the column, even though it's empty... */
-	    g_list_foreach(window->feature_set_names,
-			   set_name_create_set_columns,
-			   canvas_data);
-
-          zMapStopTimer("CreateColumns","");
-#endif
-
           }
 
         zMapStopTimer("DrawBlock","");
@@ -1670,25 +1690,36 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-        FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
+      FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
 	int frame_start, frame_end;
+      ZMapFeatureTypeStyle style;
+#if MH17_REVCOMP_DEBUG
+    printf("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
+#endif
 
         /* record the full_context current block, not the diff block which will get destroyed! */
-        canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
+      canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
 
 	/* Don't attach this feature_set to anything. It is
 	 * potentially part of a _diff_ context in which it might be a
 	 * copy of the view context's feature set.  It should also get
 	 * destroyed with the diff context, so be warned. */
-        feature_set = (ZMapFeatureSet)feature_any;
+      feature_set = (ZMapFeatureSet)feature_any;
+
+      style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
+      if(!style)
+      {
+            zMapLogCritical("no column style for featureset %s\n",g_quark_to_string(feature_set->unique_id));
+            break;
+      }
+      canvas_data->style = style;
 
 	/* Default is not to draw more than one column... */
 	frame_start = ZMAPFRAME_NONE;
 	frame_end   = ZMAPFRAME_NONE;
 
-	if (!(canvas_data->frame_mode_change)
-	    || feature_set_matches_frame_drawing_mode(window, canvas_data, canvas_data->curr_set,
-						      &frame_start, &frame_end))
+	if ((!(canvas_data->frame_mode_change)
+	    || feature_set_matches_frame_drawing_mode(window, style, &frame_start, &frame_end)))
 	  {
 	    int i, got_columns = 0;
 
@@ -1712,7 +1743,7 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 		    zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
 		    zmapWindowDrawFeatureSet(window,
-					     canvas_data->styles,
+					     window->context_map->styles,
 					     feature_set,
 					     tmp_forward,
 					     tmp_reverse,
@@ -1755,58 +1786,24 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
  * frame start and end, to be used in a for() loop when splitting a
  * feature set into separate, or not so, framed columns */
 static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
-						       ZMapCanvasData canvas_data,
-						       ZMapFeatureSet feature_set,
+                                          ZMapFeatureTypeStyle style,
 						       int *frame_start_out,
 						       int *frame_end_out)
 {
   gboolean matched = FALSE ;
-  GList *list, *style_list = NULL;
   int frame_start, frame_end;
   gboolean frame_specific = FALSE;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
 
-
-  if (!(style_list = zmapWindowFeatureSetStyles(window, canvas_data->styles, feature_set->unique_id)))
-    {
-      zMapLogCritical("No style list for '%s'!", g_quark_to_string(feature_set->unique_id)) ;
-    }
-  else
-    {
-      /* Default is not to draw more than one column... */
+            /* Default is not to draw more than one column... */
       frame_start = ZMAPFRAME_NONE;
       frame_end   = ZMAPFRAME_NONE;
 
-      if ((list = g_list_first(style_list)))
-	{
-	  do
-	    {
-	      ZMapFeatureTypeStyle frame_style;
-
-	      frame_style = ZMAP_FEATURE_STYLE(list->data);
-
-	      if (!frame_specific)
-		frame_specific = zMapStyleIsFrameSpecific(frame_style);
-
-	      if (!frame_mode)
-		zMapStyleGetStrandAttrs(frame_style,NULL,NULL,&frame_mode);
-	    }
-	  while (!frame_specific && !frame_mode && (list = g_list_next(list)));
-	}
+      frame_specific = zMapStyleIsFrameSpecific(style);
+      zMapStyleGetStrandAttrs(style,NULL,NULL,&frame_mode);
 
       if (frame_specific)
 	{
-	  /* Get the style from the column. */
-	  if (style_list && frame_specific)
-	    {
-	      GValue value = {0};
-
-	      g_value_init(&value, G_TYPE_UINT);
-
-	      zmapWindowStyleListGetSetting(style_list, ZMAPSTYLE_PROPERTY_FRAME_MODE, &value);
-
-	      frame_mode = g_value_get_uint(&value);
-	    }
 
 	  if (IS_3FRAME(window->display_3_frame))
 	    {
@@ -1848,16 +1845,11 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 	    }
 	}
 
-      g_list_free(style_list);
-
       if (frame_start_out)
 	*frame_start_out = frame_start ;
       if (frame_end_out)
 	*frame_end_out = frame_end ;
-    }
-#if MH17_DEBUG
-printf("%s: matched = %d, %d-%d\n", g_quark_to_string(feature_set->unique_id),matched,frame_start,frame_end) ;
-#endif
+
   return matched ;
 }
 
@@ -1880,12 +1872,31 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
   if((block = (ZMapFeatureBlock)(feature_set->parent)) &&
      (align = (ZMapFeatureAlignment)(block->parent)))
     {
+      gboolean status;
+      ZMapWindowContainerFeatureSet container_set;
+
       group = createColumnFull(parent_group, window,
 			       align, block, NULL,
                          feature_set->original_id,
 			       feature_set->unique_id,
 			       strand, frame, is_separator_col,
 			       width, top, bot);
+
+      status = zmapWindowFToIAddSet(window->context_to_item,
+                              align->unique_id,
+                              block->unique_id,
+                              feature_set->unique_id,
+                              strand, frame,
+                              group) ;
+      zMapAssert(status) ;
+
+      container_set = (ZMapWindowContainerFeatureSet) group;
+      if(!g_list_find(container_set->featuresets,GUINT_TO_POINTER(feature_set->unique_id)))
+        {
+            container_set->featuresets = g_list_prepend(container_set->featuresets,
+                              GUINT_TO_POINTER(feature_set->unique_id));
+        }
+
     }
   else if(feature_set)
     {
@@ -1901,17 +1912,19 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
 }
 
 
+
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id)
 {
-  ZMapGFFSet gffset;
+  ZMapFeatureSetDesc gffset;
   GQuark container_id = featureset_id;
 
-  gffset = (ZMapGFFSet) g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(featureset_id));
+  gffset = (ZMapFeatureSetDesc) g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(featureset_id));
   if(gffset)
-      container_id = gffset->feature_set_id;    /* this is the column id, due to historical naming. */
+      container_id = gffset->column_id;
 
   return container_id;
 }
+
 
 /*
  * Create a Single Column.
@@ -1926,31 +1939,33 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 					ZMapFeatureBlock     block,
 					ZMapFeatureSet       feature_set,
                               GQuark               original_id,
-					GQuark               feature_set_unique_id,
+					GQuark               column_id,
 					ZMapStrand           strand,
 					ZMapFrame            frame,
 					gboolean             is_separator_col,
 					double width, double top, double bot)
 {
   FooCanvasGroup *group = NULL ;
+  ZMapFeatureTypeStyle style = NULL;
   GList *style_list = NULL;
   GdkColor *colour ;
-  gboolean status ;
+//  gboolean status ;
   gboolean proceed;
-  GHashTable *styles;
+//  GHashTable *styles;
+  ZMapFeatureColumn column;
 
   /* We _must_ have an align and a block... */
   zMapAssert(align != NULL);
   zMapAssert(block != NULL);
   /* ...and either a featureset _or_ a featureset id. */
-//  zMapAssert((feature_set != NULL) || (feature_set_unique_id != 0));
-  zMapAssert((feature_set_unique_id != 0));
+//  zMapAssert((feature_set != NULL) || (column_id != 0));
+  zMapAssert((column_id != 0));
 
 
 
   if(!original_id)
     {
-      original_id = feature_set_unique_id;
+      original_id = column_id;
     }
 
   /* Add a background colouring for the column. */
@@ -1995,15 +2010,25 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	}
     }
 
+
+#if MH17_NO_MORE_STYLE_TABLES
   styles = window->display_styles;
   if(!g_hash_table_size(styles))
-      styles = window->read_only_styles;
+      styles = window->context_map.styles;
   /* Get the list of styles for this column and check that _all_ the styles are displayable. */
-  if (!(style_list = zmapWindowFeatureSetStyles(window, styles, feature_set_unique_id)))
+  if (!(style_list = zmapWindowFeatureSetStyles(window, styles, column_id)))
+#else
+  style = zMapWindowGetColumnStyle(window, column_id);
+  column = zMapWindowGetColumn(window->context_map,column_id);
+  if(column)
+      style_list = column->style_table;
+
+  if(!style_list)
+#endif
     {
       proceed = FALSE;
       zMapLogMessage("Styles list for Column '%s' not found.",
-		     g_quark_to_string(feature_set_unique_id)) ;
+		     g_quark_to_string(column_id)) ;
     }
   else
     {
@@ -2017,7 +2042,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	      style = ZMAP_FEATURE_STYLE(list->data);
 	      if(!zMapStyleIsDisplayable(style))
             {
-                  printf("style %s for %s is not displayable\n", g_quark_to_string(style->unique_id),g_quark_to_string(feature_set_unique_id));
+                  printf("style %s for %s is not displayable\n", g_quark_to_string(style->unique_id),g_quark_to_string(column_id));
 		      proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
             }
 	    }
@@ -2062,8 +2087,8 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       zmapWindowContainerFeatureSetAugment((ZMapWindowContainerFeatureSet)container, window,
 					   align->unique_id,
 					   block->unique_id,
-					   feature_set_unique_id, original_id,
-					   style_list, strand, frame);
+					   column_id, original_id,
+					   style, strand, frame);
 
       /* This will create the stats if feature_set != NULL */
       zmapWindowContainerAttachFeatureAny(container, (ZMapFeatureAny)feature_set);
@@ -2076,19 +2101,23 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
       group = (FooCanvasGroup *)container;
 
+#if MH17_DONE_BY_CALLER
       if(!is_separator_col)
 	{
 	  status = zmapWindowFToIAddSet(window->context_to_item,
 					align->unique_id,
 					block->unique_id,
-					feature_set_unique_id,
+					column_id,
 					strand, frame,
 					group) ;
 	  zMapAssert(status) ;
 	}
+#endif
 
+#if MH17_NO_MORE_STYLE_TABLES
       g_list_free(style_list);
       style_list = NULL;
+#endif
     }
 
   return group ;
@@ -2322,12 +2351,12 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
         {
             GQuark q;
-            ZMapGFFSet gff;
+            ZMapFeatureColumn gff;
 
             q = zmapWindowContainerFeatureSetGetColumnId(container_set);
-            gff = g_hash_table_lookup(window->columns,GUINT_TO_POINTER(q));
-            if(gff && gff->feature_set_text)
-                  clipboard_text = select.feature_desc.feature_set_description = g_strdup(gff->feature_set_text);
+            gff = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(q));
+            if(gff && gff->column_desc)
+                  clipboard_text = select.feature_desc.feature_set_description = g_strdup(gff->column_desc);
         }
 
 	  select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -2373,7 +2402,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   ItemMenuCBData cbdata ;
   ZMapFeature feature;
   ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
-  menu_title = zMapFeatureName((ZMapFeatureAny)feature_set) ;
+  menu_title = (char *) g_quark_to_string(container_set->original_id);
 
   cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
   cbdata->item_cb = FALSE ;
@@ -2450,6 +2479,9 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
   ZMapWindowContainerFeatureSet container_set;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
+      /* MH17: if you move this function please update the comment in zmapWindowFeature.c/zmapMakeItemMenu() */
+      /* if we get here they clicked on a column background */
+
   container_set = (ZMapWindowContainerFeatureSet)(menu_data->item) ;
 
   switch (menu_item_id)
@@ -2469,13 +2501,13 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature_set->parent->parent->unique_id,
 						    feature_set->parent->unique_id,
-						    feature_set->column_id,
+						    container_set->unique_id, /* column to search not featureset */
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(zmapWindowContainerFeatureSetGetStrand(container_set)),
 						    zMapFeatureFrame2Str(zmapWindowContainerFeatureSetGetFrame(container_set)));
 
 	zmapWindowListWindow(menu_data->window,
-			     NULL, (char *)g_quark_to_string(feature_set->original_id),
+			     NULL, (char *)g_quark_to_string(container_set->original_id),
 			     NULL, NULL,
 			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
@@ -2716,6 +2748,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	  break ;
 	case ZMAPCONTAINER_LEVEL_FEATURESET:
 	  {
+            GList *l;
 	    container_set = (ZMapWindowContainerFeatureSet)container;
 
 	    if(feature_any)
@@ -2723,15 +2756,25 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 		zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET);
 		zMapAssert(feature_any->parent);
 		zMapAssert(feature_any->parent->parent);
-//		zMapAssert(feature_any->unique_id == container_set->unique_id); // not always true any more
+/*		zMapAssert(feature_any->unique_id == container_set->unique_id); // not always true any more */
 	      }
 
-	    status = zmapWindowFToIRemoveSet(context_to_item,
+
+            /* need to remove all the featuresets held in the column
+             * fortunately we have a handy list of these
+             */
+            for(l = container_set->featuresets;l;l = l->next)
+            {
+	            status = zmapWindowFToIRemoveSet(context_to_item,
 					     container_set->align_id,
 					     container_set->block_id,
-					     container_set->unique_id,
+					     GPOINTER_TO_UINT(l->data),     /*container_set->unique_id, */
 					     container_set->strand,
-					     container_set->frame) ;
+					     container_set->frame,FALSE) ;
+                                   /* not sure where the features got deleted from but this used to work */
+            }
+            g_list_free(container_set->featuresets);
+            container_set->featuresets = NULL;
 
 	    /* If the focus column goes then so should the focus items as they should be in step. */
 	    if (window->focus && zmapWindowFocusGetHotColumn(window->focus) == group)

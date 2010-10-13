@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 10 15:40 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.76 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.77 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -918,14 +918,18 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
       curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container);
 
       if (curr_bump_mode != ZMAPBUMP_UNBUMP)
-	bump_mode = ZMAPBUMP_UNBUMP ;
+      	bump_mode = ZMAPBUMP_UNBUMP ;
       else
-	bump_mode = zmapWindowContainerFeatureSetResetBumpModes(container) ;
+#if MH17_NO_STYLE_BUMP
+	      bump_mode = zmapWindowContainerFeatureSetResetBumpModes(container) ;
+#else
+            bump_mode = zmapWindowContainerFeatureSetGetDefaultBumpMode(container);
+#endif
 
       if (zmapWindowMarkIsSet(menu_data->window->mark))
-	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+	      compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
-	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+	      compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
       zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), bump_mode, compress_mode) ;
 
@@ -1009,6 +1013,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/DNA"          , 1, dumpMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/Features"     , 2, dumpMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/Context"      , 3, dumpMenuCB, NULL},
+/*      {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/Config "      , 4, dumpMenuCB, NULL},*/
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -1052,6 +1057,11 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 
 	break ;
       }
+    case 4:
+      {
+      /*    dumpConfig(); */
+      break;
+      }
     case 12:
       {
 	if(zmapWindowMarkIsSet(menu_data->window->mark))
@@ -1092,11 +1102,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
   return menu ;
 }
 
+#if 0
 static void show_all_styles_cb(ZMapFeatureTypeStyle style, gpointer unused)
 {
   zmapWindowShowStyle(style) ;
   return ;
 }
+#endif
 
 static void developerMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -1113,10 +1125,14 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
 	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
+          ZMapFeatureTypeStyle style;
+
 	    container = (ZMapWindowContainerFeatureSet)(menu_data->item);
 
-	    zmapWindowStyleTableForEach(container->style_table, show_all_styles_cb, NULL);
-	  }
+	    /*zmapWindowStyleTableForEach(container->style_table, show_all_styles_cb, NULL);*/
+          style = container->style;
+          zmapWindowShowStyle(style);
+    	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
 	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent->parent);
@@ -1126,7 +1142,12 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 		ZMapFeature feature;
 
 		feature = (ZMapFeature)feature_any;
-		style   = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id);
+#if MH17_NO_MORE_STYLE_TABLES
+            style = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id) ;
+#else
+            style = feature->style;
+#endif
+
 
 		zmapWindowShowStyle(style);
 	      }
@@ -1376,7 +1397,7 @@ static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny
   if (!(filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel),
 				      "Feature Dump filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, window->read_only_styles, region_span, file, &error))
+      || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, window->context_map->styles, region_span, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -1406,6 +1427,93 @@ static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny
 
 
 
+/* for migration from ACEDB call this via the --dump_config command line arg
+ * NB only write the column and featureset config stanzas
+ * this really belongs int he view but due to scope issue we cannot access that data here :-(
+ * so instead we dump the copy of that data that had to be passed to the window so that we could access it
+ *
+ * Hmmm.... we have featureset_2_column but not src_2_src
+ * so no can do.
+ * Will revisit after tidying up the view/window data copying fiasco
+ */
+#if MH17_DONT_INCLUDE   // can't do this due top scope
+void dumpConfig(GHashTable *f2c, GHashTable *f2s)
+{
+      GList *iter;
+      ZMapFeatureSetDesc gff_set;
+      ZMapFeatureSource gff_src;
+      gpointer key, value;
+      GHashTable * cols = zMap_g_hashlist_create();
+      GList *l;
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *error = NULL ;
+  char *error_prefix = "Feature config dump failed:" ;
+
+  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Config Dump filename ?", NULL, "zmap"))
+      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &error))
+    {
+      /* N.B. if there is no filepath it means user cancelled so take no action...,
+       * otherwise we output the error message. */
+      if (error)
+      {
+        zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+        g_error_free(error) ;
+      }
+    }
+
+
+  if (file)
+    {
+      GIOStatus status ;
+
+      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+      {
+        zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+        g_error_free(error) ;
+      }
+    }
+
+
+  return ;
+}
+
+      zMap_g_hash_table_iter_init (&iter, f2c);
+      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+      {
+            gff_set = (ZMapFeatureSetDesc) value;
+            zMap_g_hashlist_insert(cols,value,key);
+      }
+
+      printf("\n[columns]\n");
+
+      zMap_g_hash_table_iter_init (&iter, cols);
+      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+      {
+            char *sep = "";
+            printf("%s = ");
+            for(l = (GList *) value;l;l = l->next)
+            {
+                  printf(" %s %s",sep,g_quark_to_string(GPOINTER_TO_UINT(l->data)));
+                  sep = ";";
+            }
+            printf("\n");
+      }
+
+      zMap_g_hashlist_destroy(cols);
+
+      printf("\nf[featureset-style]\n");
+      zMap_g_hash_table_iter_init (&iter, f2s);
+      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+      {
+            gff_src = (ZMapFeatureSource) value;
+            printf("%s = %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)), g_quark_to_string(GPOINTER_TO_UINT(gff_src->style_id);
+      }
+}
+#endif
 
 static void dumpContext(ZMapWindow window)
 {
@@ -1416,7 +1524,7 @@ static void dumpContext(ZMapWindow window)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(window->feature_context, window->read_only_styles, file, &error))
+      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */

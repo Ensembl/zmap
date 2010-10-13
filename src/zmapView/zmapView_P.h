@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Apr  7 13:48 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.65 2010-09-01 09:50:17 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.66 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -252,12 +252,17 @@ typedef struct _ZMapViewStruct
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
 
+  ZMapFeatureContextMapStruct context_map;  /* all the data mapping featuresets columns and styles */
+  /* it may be good to combine context_map and context
+   * but that might mean a lot of work on on the server modules
+   */
+
   /* Original styles, these are all the styles as they were loaded from the server(s).
    * N.B. the list may be updated during the lifetime of the view and hence is always
    * passed into window for all update operations. */
-  GHashTable *orig_styles ;
+/*  GHashTable *orig_styles ; */
 
-  GHashTable *featureset_2_stylelist ;	/* Mapping of each feature_set to all the styles
+/*  GHashTable *featureset_2_stylelist ;	   Mapping of each feature_set to all the styles
 							 * the styles it requires. using a GHashTable of
                                            * GLists of style quark id's.
                                            *
@@ -268,18 +273,18 @@ typedef struct _ZMapViewStruct
                                            * Columns treated as fake featuresets so as to have a style
                                            */
 
-  GHashTable *featureset_2_column ;		/* Mapping of a feature source to a column using ZMapGFFSet
+/*  GHashTable *featureset_2_column ;        Mapping of a feature source to a column using ZMapGFFSet
                                            * NB: this contains data from ZMap config
                                            * sections [columns] [Column_description] _and_ ACEDB
                                            */
 
-  GHashTable *source_2_sourcedata ;       /* Mapping of a feature source to its data using ZMapGFFSource
+/*  GHashTable *source_2_sourcedata ;        Mapping of a feature source to its data using ZMapGFFSource
                                            * This consists of style id and description and source id
                                            * NB: the GFFSource.source  (quark) is the GFF_source name
                                            * the hash table is indexed by the featureset name quark
                                            */
 
-  GHashTable *columns;                    /* All the columns that ZMap will display
+/*  GHashTable *columns;                    All the columns that ZMap will display
                                            * stored as ZMapGFFSet
                                            * These may contain several featuresets each
                                            * They are in display order left to right

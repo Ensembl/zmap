@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Sep  8 08:51 2009 (edgrif)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.16 2010-09-16 11:57:41 mh17 Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.17 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -325,7 +325,7 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
       input_data->zoomed  = FALSE;
 
       if (window->revcomped_features)
-	zMapFeatureReverseComplement(input_data->edit_context, window->read_only_styles) ;
+	zMapFeatureReverseComplement(input_data->edit_context, window->context_map->styles) ;
 
       zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), ZMAPFEATURE_STRUCT_FEATURE,
                                 zoomToFeatureCB, input_data) ;
@@ -436,7 +436,7 @@ static void populate_request_data(RequestData input_data)
   input_data->edit_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(input_data->orig_context)) ;
   //input_data->edit_context->styles = NULL ;
 
-  input_data->styles = input_data->window->read_only_styles ;
+  input_data->styles = input_data->window->context_map->styles ;
 
   return ;
 }

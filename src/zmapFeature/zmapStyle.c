@@ -30,7 +30,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.60 2010-09-10 18:22:47 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.61 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,8 +122,8 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "bump-mode", "The Default Bump Mode",
             offsetof(zmapFeatureTypeStyleStruct, default_bump_mode),0 },
     { STYLE_PROP_BUMP_MODE, STYLE_PARAM_TYPE_BUMP, ZMAPSTYLE_PROPERTY_BUMP_MODE,
-            "cur-bump_mode", "Current bump mode",
-            offsetof(zmapFeatureTypeStyleStruct, curr_bump_mode),0 },
+            "initial-bump_mode", "Current bump mode",
+            offsetof(zmapFeatureTypeStyleStruct, initial_bump_mode),0 },
     { STYLE_PROP_BUMP_FIXED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_BUMP_FIXED,
             "bump-fixed", "Style cannot be changed once set.",
             offsetof(zmapFeatureTypeStyleStruct, bump_fixed) ,0},
@@ -191,13 +191,14 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_DIRECTIONAL_ENDS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,
             "directional-ends", "Display pointy \"short sides\"",
             offsetof(zmapFeatureTypeStyleStruct, directional_end),0 },
+#if MH17_NO_DEFERRED
     { STYLE_PROP_DEFERRED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_DEFERRED,
             "deferred", "Load only when specifically asked",
             offsetof(zmapFeatureTypeStyleStruct, deferred) ,0},
     { STYLE_PROP_LOADED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_LOADED,
             "loaded", "Style Loaded from server",
             offsetof(zmapFeatureTypeStyleStruct, loaded) ,0},
-
+#endif
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },
@@ -838,14 +839,12 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
         }
       }
     }
-
   if (valid && !zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_MODE))
     {
       valid = FALSE ;
       code = 3 ;
-      message = g_strdup("Style bump mode not set.") ;
+      message = g_strdup("Style initial bump mode not set.") ;
     }
-
   if (valid && !zMapStyleIsPropertySetId(style,STYLE_PROP_WIDTH))
      {
       valid = FALSE ;
@@ -990,13 +989,11 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
         zmapStyleSetIsSet(style,STYLE_PROP_COLUMN_DISPLAY_MODE);
         style->col_display_state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
       }
-
       if (!zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_MODE))
       {
         zmapStyleSetIsSet(style,STYLE_PROP_BUMP_MODE);
-        style->curr_bump_mode = ZMAPBUMP_UNBUMP ;
+        style->initial_bump_mode = ZMAPBUMP_UNBUMP ;
       }
-
       if (!zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_DEFAULT) && style->mode != ZMAPSTYLE_MODE_GLYPH)
       {
         /* MH17: as glyphs are sub-features we can't bump
@@ -1726,7 +1723,9 @@ static void zmap_feature_type_style_init(ZMapFeatureTypeStyle style)
       // but will be returned if a paramter is not set
       // ** only need to set if non zero **
 
-//  style->curr_bump_mode = ZMAPBUMP_INVALID;           // why not umbump?
+#if MH17_NO_STYLE_BUMP
+  style->curr_bump_mode = ZMAPBUMP_INVALID;           // why not umbump?
+#endif
 
   return ;
 }
@@ -1972,17 +1971,16 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
         p2 = &zmapStyleParams_G[STYLE_PROP_NAME];           // sourced from same data
         style->is_set[p2->flag_ind] |= p2->flag_bit;
         break;
-#if 0
+
       case STYLE_PROP_BUMP_MODE:
         p2 = &zmapStyleParams_G[STYLE_PROP_BUMP_DEFAULT];
         if(!(style->is_set[p2->flag_ind] & p2->flag_bit))
           {
-            style->default_bump_mode = style->curr_bump_mode;
+            style->default_bump_mode = style->initial_bump_mode;
             style->is_set[p2->flag_ind] |= p2->flag_bit;
           }
 
         break;
-#endif
 
       case STYLE_PROP_MODE:
             // set non zero default vaues for mode data

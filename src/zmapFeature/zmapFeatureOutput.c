@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 10 16:04 2010 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.15 2010-08-10 15:05:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.16 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -598,7 +598,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
       if(styles)
       {
-	      style = zMapFindStyle(styles, feature->style_id) ;
+	      style = feature->style ; /* zMapFindStyle(styles, feature->style_id) ; */
 	      type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
       }
         strand = zMapFeatureStrand2Str(feature->strand) ;

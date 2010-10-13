@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,16 +26,16 @@
  *
  * Description: Implements textual display of feature details in a
  *              gtk notebook widget.
- *              
+ *
  *              Intention is to have contents of notebook dynamically
- *              configurable by the controller application via our xremote 
+ *              configurable by the controller application via our xremote
  *              interface.
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
  * Last edited: Jun 12 23:10 2009 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.24 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.25 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,7 +69,7 @@
 
 
 /* Types/strings etc. for XML version of notebook pages etc....
- * 
+ *
  * Some of these strings need to be kept in step with the FeatureBook types above.
  */
 
@@ -161,39 +161,39 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					 ZMapFeature feature, FooCanvasItem *item) ;
 
 /* xml event callbacks */
-static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
                                   ZMapXMLParser parser);
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser);
-static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser);
-static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
 				     ZMapXMLParser parser) ;
-static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element,
 					ZMapXMLParser parser) ;
-static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser) ;
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
                                 ZMapXMLParser parser) ;
-static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element,
 				   ZMapXMLParser parser) ;
-static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
-static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
 static void printWarning(char *element, char *handler) ;
 
@@ -278,7 +278,7 @@ ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *it
 
 
 
-/* 
+/*
  *                   Internal routines.
  */
 
@@ -293,7 +293,7 @@ static ZMapWindowFeatureShow showFeature(ZMapWindowFeatureShow reuse_window, ZMa
       char *title ;
       char *feature_name ;
 
-      
+
       feature_name = (char *)g_quark_to_string(feature->original_id) ;
       title = zMapGUIMakeTitleString("Feature Show", feature_name) ;
 
@@ -315,10 +315,10 @@ static ZMapWindowFeatureShow showFeature(ZMapWindowFeatureShow reuse_window, ZMa
 
       show->item = item ;
       show->origFeature = feature ;
-      
+
       /* Make the notebook. */
       show->feature_book = createFeatureBook(show, feature_name, feature, item) ;
-      
+
 
       /* Now display the pages..... */
       show->notebook = zMapGUINotebookCreateWidget(show->feature_book) ;
@@ -388,8 +388,8 @@ static gboolean windowIsReusable(void)
 
 
 /* Parse a feature into a text version in a notebook structure.
- * 
- * 
+ *
+ *
  *  */
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					 ZMapFeature feature, FooCanvasItem *item)
@@ -479,7 +479,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					    "string", g_strdup(g_quark_to_string(feature->original_id)),
 					    NULL) ;
 
-  style = zMapFindStyle(show->zmapWindow->display_styles, feature->style_id);
+  style = feature->style; /* zMapFindStyle(show->zmapWindow->display_styles, feature->style_id); */
 
   tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]",
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -539,7 +539,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						NULL) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      
+
       /* Get a list of all the matches for this sequence.... */
       getAllMatches(show->zmapWindow, feature, item, subsection) ;
     }
@@ -547,12 +547,12 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
     {
       paragraph = zMapGUINotebookCreateParagraph(subsection, "Properties",
 						 ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
-      
+
       if (feature->feature.transcript.flags.cds)
 	tmp = g_strdup_printf("%d -> %d", feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
       else
 	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
-      
+
       tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS",
 						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 						"string",
@@ -676,11 +676,11 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 static void destroyCB(GtkWidget *widget, gpointer data)
 {
   ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data ;
-    
+
   g_ptr_array_remove(feature_show->zmapWindow->feature_show_windows, (gpointer)feature_show->window);
 
   g_free(feature_show) ;
-                                                           
+
   return ;
 }
 
@@ -796,14 +796,14 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list)
 
 
 
-/* 
+/*
  * Following routines are callbacks registered to parse an xml spec for
  * a notebook page.
- * 
+ *
  */
 
 
-static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
                                   ZMapXMLParser parser)
 {
   printWarning("zmap", "start") ;
@@ -811,7 +811,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
   return TRUE ;
 }
 
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
                                 ZMapXMLParser parser)
 {
   printWarning("zmap", "end") ;
@@ -822,7 +822,7 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -843,7 +843,7 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
   return TRUE;
 }
 
-static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   printWarning("response", "end") ;
@@ -854,7 +854,7 @@ static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 
-static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -887,7 +887,7 @@ static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element
   return TRUE;
 }
 
-static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -902,7 +902,7 @@ static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 
-static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
 				     ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -927,7 +927,7 @@ static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
             {
               chapter_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
 	    }
-              
+
 	  show->xml_curr_chapter = zMapGUINotebookCreateChapter(show->xml_curr_notebook, chapter_name, NULL) ;
         }
     }
@@ -935,7 +935,7 @@ static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
   return TRUE;
 }
 
-static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element,
 				   ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -951,7 +951,7 @@ static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 
-static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
 				  ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -970,11 +970,11 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
       else
         {
           show->xml_curr_tag = ZMAPGUI_NOTEBOOK_PAGE ;
-          
+
           if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
             {
               page_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
-              
+
               show->xml_curr_page = zMapGUINotebookCreatePage(show->xml_curr_chapter, page_name) ;
             }
           else
@@ -985,7 +985,7 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
   return TRUE;
 }
 
-static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -999,7 +999,7 @@ static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 
-static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element,
 					ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -1018,7 +1018,7 @@ static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement eleme
       else
         {
           show->xml_curr_tag = ZMAPGUI_NOTEBOOK_SUBSECTION ;
-          
+
           if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
             {
               subsection_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
@@ -1031,7 +1031,7 @@ static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement eleme
   return TRUE ;
 }
 
-static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -1047,7 +1047,7 @@ static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element
 
 
 
-static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -1190,7 +1190,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		      gboolean found = TRUE ;
 		      char *target ;
 		      GList *column_data = NULL ;
-		      
+
 		      target = zMapXMLAttributeValueToStr(attr) ;
 
 		      do
@@ -1207,7 +1207,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 			    found = FALSE ;
 
 			} while (found) ;
-	  
+
 		      types = column_data ;
 
 		    }
@@ -1227,7 +1227,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
   return TRUE ;
 }
 
-static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -1242,7 +1242,7 @@ static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 
-static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -1307,7 +1307,7 @@ static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element
   return TRUE;
 }
 
-static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 				    ZMapXMLParser parser)
 {
   gboolean status = TRUE ;
@@ -1337,7 +1337,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 	  GList *column_data = NULL ;
 
 	  /* Make a list of the names of the columns. */
- 
+
 	  do
 	    {
 	      char *new_col ;
@@ -1348,7 +1348,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 		      GPOINTER_TO_INT(type->data) == G_TYPE_BOOLEAN)
 		    {
 		      gboolean tmp = FALSE ;
-		      
+
 		      if ((status = zMapStr2Bool(new_col, &tmp)))
 			{
 			  column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
@@ -1376,7 +1376,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 			  zMapLogWarning("Invalid integer number: %s", new_col) ;
 			}
 		    }
-		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("float") || 
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("float") ||
 			   GPOINTER_TO_INT(type->data) == G_TYPE_FLOAT)
 		    {
 		      float tmp = 0.0 ;
@@ -1441,7 +1441,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 /* Cleans up any dangling page stuff. */
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
@@ -1453,7 +1453,7 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
     {
       message->error_message = g_strdup(mess_element->contents->str);
     }
-  
+
   return TRUE;
 }
 
@@ -1478,7 +1478,7 @@ static void getAllMatches(ZMapWindow window,
   result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
   zMapAssert(result) ;
 
-  if ((list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+  if ((list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
 					      zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
 					      feature)))
     {
@@ -1545,7 +1545,7 @@ static void addTagValue(gpointer data, gpointer user_data)
   /* Hack: we assume size(float) <= size(int) && size(float) == 4 and load the float into an int. */
   memcpy(&tmp, &(feature->score), 4) ;
   column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
-	  
+
   tagvalue = zMapGUINotebookCreateTagValue(paragraph,
 					   NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
 					   "compound", column_data,

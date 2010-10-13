@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 11 09:09 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.23 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.24 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -493,7 +493,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	ZMapFeature feature = (ZMapFeature)feature_any;
 	ZMapFeatureTypeStyle style ;
 
-	style = zMapFindStyle(gff_data->styles, feature->style_id) ;
+	style = feature->style;       /*zMapFindStyle(gff_data->styles, feature->style_id) ;*/
 
 
 	/* Output a GFFv2 record for the whole feature, fields are:

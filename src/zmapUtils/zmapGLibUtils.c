@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Sep  7 17:14 2010 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.38 2010-09-24 09:16:14 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.39 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -537,6 +537,7 @@ GList *zMap_g_list_merge(GList *a, GList *b)
  */
 
 
+/* MH17: this function is only ever called with nth == 0 */
 /* Returns nth hash table element, elements start with the zero'th. */
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 {

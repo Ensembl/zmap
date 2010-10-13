@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.340 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.341 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,7 @@
 #include <zmapWindowFeatures.h>
 #include <zmapWindow_P.h>
 
-#include <ZMap/zmapGFF.h>     // for featureset structs
+//#include <ZMap/zmapGFF.h>     // for featureset structs
 
 
 
@@ -69,6 +69,7 @@ typedef struct
   GHashTable *new_styles ;
   GHashTable *featuresets_2_stylelist ;
   GHashTable *featureset_2_column;
+  GHashTable *source_2_sourcedata;
   GHashTable *columns;
   GList *masked;
   ZMapWindowState state ;	/* Can be NULL! */
@@ -384,9 +385,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   GtkAdjustment *hadjustment = NULL, *vadjustment = NULL ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   int x, y ;
+#if MH17_NO_STYLE_COPY
   GHashTable *featureset_2_styles ;
   GHashTable *featureset_2_column ;
   GHashTable *columns ;
+  GHashTable *source_2_sourcedata;
+#endif
 
   zMapWindowBusy(original_window, TRUE) ;
 
@@ -409,11 +413,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   zMapWindowBusy(new_window, TRUE) ;
 
 
+#if MH17_NO_STYLE_COPY
   /* Update styles lists in original window, new window is done by display call. */
   zMapAssert(read_only_styles && display_styles) ;
   if (!zmapWindowUpdateStyles(original_window, read_only_styles, display_styles))
     zMapLogWarning("%s", "Errors in copying read only and display styles for original window.") ;
-
+#endif
   /* Lock windows together for scrolling/zooming if requested. */
   if (window_locking != ZMAP_WINLOCK_NONE)
     {
@@ -462,14 +467,16 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   foo_canvas_scroll_to(new_window->canvas, x, y) ;
 
 
+#if MH17_NO_STYLE_COPY
   /* Copy styles etc. */
   /* mh17: historically style have to be copies as they are not static */
-  featureset_2_styles = zMap_g_hashlist_copy(original_window->featureset_2_styles) ;
+  featureset_2_styles = zMap_g_hashlist_copy(original_window->context_map.column_2_styles) ;
 
   /* but these lists are not copied as they are supplied by the view */
-  featureset_2_column = original_window->featureset_2_column ;
-  columns = original_window->columns ;
-
+  featureset_2_column = original_window->context_map.featureset_2_column ;
+  columns = original_window->context_map.columns ;
+  source_2_sourcedata = original_window->context_map.source_2_sourcedata;
+#endif
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
@@ -487,7 +494,14 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
     /* should we be passing in a copy of the full set of original styles ? */
     zMapWindowDisplayData(new_window, state, feature_context, feature_context,
-			  read_only_styles, display_styles, featureset_2_styles, featureset_2_column, columns,NULL) ;
+#if MH17_NO_STYLE_COPY
+			  read_only_styles, display_styles,
+                    featureset_2_styles, featureset_2_column, source_2_sourcedata,
+                    columns,
+#else
+                    original_window->context_map,
+#endif
+                    NULL) ;
   }
 
   zMapWindowBusy(new_window, FALSE) ;
@@ -528,10 +542,15 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
+                     ZMapFeatureContextMap context_map,
+#if MH17_NO_STYLE_COPY
 			   GHashTable *all_styles, GHashTable *new_styles,
 			   GHashTable *new_featuresets_2_stylelist,
                      GHashTable *new_featureset_2_column,
-                     GHashTable *new_columns,GList *masked)
+                     GHashTable *new_source_2_sourcedata,
+                     GHashTable *new_columns,
+#endif
+                     GList *masked)
 {
   FeatureSetsState feature_sets ;
 
@@ -542,12 +561,18 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   feature_sets->current_features = current_features ;
   feature_sets->new_features     = new_features ;
 
+
+#if MH17_NO_STYLE_COPY
   zMapStyleCopyAllStyles(all_styles, &(feature_sets->all_styles)) ;
   zMapStyleCopyAllStyles(new_styles, &(feature_sets->new_styles)) ;
 
+  feature_sets->source_2_sourcedata = new_source_2_sourcedata;
   feature_sets->featuresets_2_stylelist = new_featuresets_2_stylelist ;
   feature_sets->featureset_2_column = new_featureset_2_column;
   feature_sets->columns = new_columns;
+#else
+  window->context_map = context_map;
+#endif
   feature_sets->masked = masked;
 
 //  printf("\nzMapWindowDisplay data:\n");
@@ -601,8 +626,6 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
   FooCanvasItem *feature_item;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapStrand column_strand;
-  ZMapGFFSet gffset;
-  ZMapFeatureSet fset;
 
   switch(feature_any->struct_type)
     {
@@ -616,17 +639,21 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	/* which column drawn in depends on style. */
 	column_strand = zmapWindowFeatureStrand(window, feature);
 
-      /* if the feature conetxt is from a request from otterlace then
+#if MH17_FToIHash_does_this_mapping
+      /* if the feature context is from a request from otterlace then
        * the display column has not been set, we need to lookup
        */
+  ZMapFeatureSetDesc gffset;
+  ZMapFeatureSet fset;
+
       fset = (ZMapFeatureSet) (feature_any->parent);
       if(!fset->column_id)
       {
-            gffset = g_hash_table_lookup(window->featureset_2_column,GUINT_TO_POINTER(fset->unique_id));
+            gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
             if(gffset)
-                  fset->column_id = gffset->feature_set_id;
+                  fset->column_id = gffset->column_id;
       }
-
+#endif
       /* MH17: we get locus features inserted mysteriously if a feature has a locus id
        * but they don't always appear in zmap in whcih case there is no column id
        * This is true when otterlace sends a single feature to delete and then we fail to find
@@ -638,7 +665,8 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
        * locus is used in the naviagtor, we hope dealt with via another call.
        */
 
-	if (fset->column_id && (feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+	if ( /*fset->column_id && */
+      (feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 							  column_strand,
 							  ZMAPFRAME_NONE,
 							  feature)))
@@ -647,7 +675,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 	  }
 	else
-	  zMapLogWarning("Failed to find feature '%s/%s'\n", g_quark_to_string(fset->unique_id), g_quark_to_string(feature->original_id));
+	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
 
 	break;
       }
@@ -856,8 +884,16 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   zMapWindowDisplayData(window, state, feature_context, feature_context,
-			all_styles, new_styles, window->featureset_2_styles,
-                  window->featureset_2_column, window->columns,NULL) ;
+#if MH17_NO_STYLE_COPY
+			all_styles, new_styles,
+                  window->context_map.column_2_styles,
+                  window->context_map.featureset_2_column,
+                  window->context_map.source_2_sourcedata,
+                  window->context_map.columns,
+#else
+                  window->context_map,
+#endif
+                  NULL) ;
 
   zMapStopTimer("WindowFeatureRedraw","Display");
 
@@ -1183,11 +1219,13 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->locked_display)
     unlockWindow(window, FALSE) ;
 
-  if (window->read_only_styles)
-    zMapStyleDestroyStyles(window->read_only_styles) ;
+#if MH17_NO_STYLE_COPY
+  if (window->context_map.styles)
+    zMapStyleDestroyStyles(window->context_map.styles) ;
 
   if (window->display_styles)
     zMapStyleDestroyStyles(window->display_styles) ;
+#endif
 
   /* free the array of feature list windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->featureListWindows), TRUE) ;
@@ -1327,7 +1365,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
-//  ZMapFeatureSet set;
   FooCanvasGroup *feature_group;
   ZMapFeatureSubPartSpan sub_feature;
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
@@ -1475,9 +1512,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
+#if MH17_NO_MORE_STYLE_TABLES
       style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)feature_group,
 						       feature->style_id) ;
-
+#else
+      style = feature->style;
+#endif
       select.feature_desc.struct_type = feature->struct_type ;
       select.feature_desc.type        = feature->type ;
 
@@ -1486,7 +1526,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 #if !MH17_FEATURE_SET_NAME_IS_COLUMN_NAME
         {
-            ZMapGFFSet gffset;
+            ZMapFeatureSetDesc gffset;
             ZMapFeatureSet feature_set = (ZMapFeatureSet)
                   zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET);
 
@@ -1495,17 +1535,17 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
                   select.feature_desc.feature_set =
                         g_strdup(g_quark_to_string(feature_set->original_id)) ;
 
-                  gffset = g_hash_table_lookup(window->featureset_2_column,
+                  gffset = g_hash_table_lookup(window->context_map->featureset_2_column,
                         GUINT_TO_POINTER(feature_set->unique_id));
                   if(gffset)
                   {
                         // got the featureset_2_column mapping, look up the column
-                        gffset  = g_hash_table_lookup(window->columns,
-                              GUINT_TO_POINTER(gffset->feature_set_id));
+                        gffset  = g_hash_table_lookup(window->context_map->columns,
+                              GUINT_TO_POINTER(gffset->column_id));
                         if(gffset)
                         {
                               select.feature_desc.feature_set =
-                                    g_strdup(g_quark_to_string(gffset->feature_set_ID));
+                                    g_strdup(g_quark_to_string(gffset->column_ID));
                         }
                   }
 
@@ -2772,18 +2812,22 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       else
 	diff_context = feature_sets->current_features ;
 
+#if MH17_NO_STYLE_COPY
       /* Reload the styles lists. */
       if (!zmapWindowUpdateStyles(window, feature_sets->all_styles, feature_sets->new_styles))
 	zMapLogWarning("%s", "Errors in copying read only and display styles.") ;
+#endif
 
-
+#if MH17_NO_STYLE_COPY
       /* Redo the hash ??? or should this be once only ????? */
-      window->featureset_2_styles = feature_sets->featuresets_2_stylelist ;
-      window->featureset_2_column = feature_sets->featureset_2_column;
-      window->columns = feature_sets->columns;
-
+      // wasn't here!    window->context_map.styles = feature_sets->styles
+      window->context_map.source_2_sourcedata = feature_sets->source_2_sourcedata;
+      window->context_map.column_2_styles = feature_sets->featuresets_2_stylelist ;
+      window->context_map.featureset_2_column = feature_sets->featureset_2_column;
+      window->context_map.columns = feature_sets->columns;
+#endif
 //      printf("\ndataEventCB (window):\n");
-//      zMap_g_hashlist_print(window->featureset_2_styles) ;
+//      zMap_g_hashlist_print(window->context_map.column_2_styles) ;
 
       /* Draw the features on the canvas */
       zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context, feature_sets->masked) ;
@@ -2858,9 +2902,10 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       else
 	zMapLogMessage("%s", "event handler for canvas already registered.");
 
-
+#if MH17_NO_STYLE_COPY
       zMapStyleDestroyStyles(feature_sets->all_styles) ;
       zMapStyleDestroyStyles(feature_sets->new_styles) ;
+#endif
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
@@ -3638,7 +3683,7 @@ gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
   gboolean result = FALSE ;
   FooCanvasItem *feature_item ;
 
-  if ((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+  if ((feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    feature->strand,
 						    ZMAPFRAME_NONE,
 						    feature)))
@@ -4065,7 +4110,7 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
     {
       FooCanvasItem *block_group;
 
-      if((block_group = zmapWindowFToIFindItemFull(window->context_to_item,
+      if((block_group = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						   block->parent->unique_id,
 						   block->unique_id, 0, 0, 0, 0)))
 	{
@@ -4087,7 +4132,7 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef MH17_NO_DEFERRED
 static void filter_deferred_styles  (GQuark key_id,
 				     gpointer data,
 				     gpointer user_data)
@@ -4107,7 +4152,6 @@ static void filter_deferred_styles  (GQuark key_id,
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 GList *zmapWindowDeferredColumns(ZMapWindow window)
@@ -4234,6 +4278,8 @@ GList *zmapWindowDeferredColumnsInBlock(ZMapWindow window)
 
   return list;
 }
+
+#endif
 
 /* Handles all keyboard events for the ZMap window, returns TRUE if it handled
  * the event, FALSE otherwise. */
@@ -4538,6 +4584,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         break;
       }
 
+#if MH17_NO_DEFERRED
       /* hack for testing..... */
     case GDK_l:
     case GDK_L:
@@ -4561,6 +4608,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	break ;
       }
+#endif
 
     case GDK_m:
     case GDK_M:
@@ -4752,7 +4800,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		    result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
 		    zMapAssert(result) ;
 
-		    list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+		    list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
 							   zMapFeatureStrand2Str(set_strand),
 							   zMapFeatureFrame2Str(set_frame),
 							   feature) ;
@@ -5051,7 +5099,10 @@ static void jumpColumn(ZMapWindow window, guint keyval)
   if (highlight_column)
     {
       ZMapWindowSelectStruct select = {0} ;
-      ZMapFeatureSet feature_set = NULL ;
+/*      ZMapFeatureSet feature_set = NULL ;*/
+      ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) focus_column;
+      ZMapFeatureColumn column;
+      GQuark set_id;
 
       zMapWindowUnHighlightFocusItems(window) ;
 
@@ -5061,11 +5112,27 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       zmapWindowScrollToItem(window, FOO_CANVAS_ITEM(focus_column)) ;
 
+#if MH17_NO_RECOVER
       feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet((ZMapWindowContainerFeatureSet)focus_column);
 
       select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set->unique_id) ;
 
       select.secondary_text = zmapWindowFeatureSetDescription(feature_set) ;
+#else
+
+
+      set_id = zmapWindowContainerFeatureSetGetColumnId(container_set);
+      // why unique_id, why not original_id ??
+      select.secondary_text =
+      select.feature_desc.feature_set = (char *)g_quark_to_string(set_id) ;
+
+      column = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(set_id));
+      zMapAssert(column);
+      select.secondary_text = column->column_desc;
+      /* column must exist and it will have some description, defaulting to the name of the column
+       * ideally we  should default it to the best featureset description on config or data load
+       */
+#endif
       select.type = ZMAPWINDOW_SELECT_SINGLE;
 
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;

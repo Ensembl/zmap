@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.104 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.105 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,6 +288,37 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
 }
 
 
+gboolean zMapStyleSetSubStyles(GHashTable *style_set)
+{
+  gboolean result = TRUE ;
+  GList *iter;
+  ZMapFeatureTypeStyle style,sub;
+  int i;
+
+      // get a list of keys
+  zMap_g_hash_table_get_keys(&iter,style_set);
+
+  for(;iter;iter = iter->next)
+    {
+      style = (ZMapFeatureTypeStyle) g_hash_table_lookup(style_set,iter->data);
+
+      for(i = 0;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)
+      {
+            if(style->sub_features[i])
+            {
+                  sub = g_hash_table_lookup(style_set,GUINT_TO_POINTER(style->sub_features[i]));
+                  style->sub_style[i] = sub;
+            }
+      }
+    }
+
+      // tidy up
+  g_list_free(iter);
+
+  return result ;
+}
+
+
 /* Copies a set of styles.
  *
  * If there are errors in trying to copy styles then this function returns FALSE
@@ -359,7 +390,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                   GList **ln = (GList **) (((void *) new_style) + param->offset);
 
                   // free old list before overwriting
-                  g_list_free( *l);
+                  if(*l)
+                        g_list_free( *l);
                   *l = g_list_copy(*ln);
                   break;
               }
@@ -668,6 +700,7 @@ void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable)
   return ;
 }
 
+#if MH17_NO_DEFERRED
 void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred)
 {
   style->deferred = deferred;
@@ -682,7 +715,7 @@ void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean loaded)
 
   return ;
 }
-
+#endif
 
 /* Controls whether the feature set is displayed. */
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show)
@@ -975,12 +1008,13 @@ void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mod
 	  style->default_bump_mode = bump_mode ;
 	}
 
-      style->curr_bump_mode = bump_mode ;
+      style->initial_bump_mode = bump_mode ;
       zmapStyleSetIsSet(style,STYLE_PROP_BUMP_MODE);
     }
 
   return ;
 }
+
 
 void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 {
@@ -991,6 +1025,7 @@ void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 }
 
 
+#if MH17_NO_STYLE_BUMP
 
 /* Reset bump mode to default and returns the default mode. */
 ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style)
@@ -1004,6 +1039,7 @@ ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style)
 
   return default_mode ;
 }
+#endif
 
 
 /* Re/init bump mode. */
@@ -1013,15 +1049,18 @@ void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
   zMapAssert(style
 	     && (default_bump_mode ==  ZMAPBUMP_INVALID
 		 || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
-	     && (curr_bump_mode ==  ZMAPBUMP_INVALID
-		 || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END))) ;
+           && (curr_bump_mode ==  ZMAPBUMP_INVALID
+		 || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END))
+
+             ) ;
 
   if (!style->bump_fixed)
     {
+
       if (curr_bump_mode != ZMAPBUMP_INVALID)
 	{
         zmapStyleSetIsSet(style,STYLE_PROP_BUMP_MODE);
-	  style->curr_bump_mode = curr_bump_mode ;
+	  style->initial_bump_mode = curr_bump_mode ;
 	}
 
       if (default_bump_mode != ZMAPBUMP_INVALID)

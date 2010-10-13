@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 20 10:15 2010 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.36 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.37 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -867,6 +867,7 @@ static void feature_type_get_titles_types_funcs(ZMapStyleMode feature_type,
 typedef struct
 {
   ZMapWindowFeatureItemList feature_list;
+  ZMapWindow               window;
   GHashTable               *context_to_item;
   GList                    *row_ref_list; /* GList * of GtkTreeRowReference * */
   GtkTreeModel             *model; /* model we're stepping through...sadly... */
@@ -887,7 +888,7 @@ typedef struct
 {
   GQuark align_id,
     block_id,
-    column_id,    /*    set_id,  renamed to catch all and to stress that it's canvas column we're using */
+    set_id,
     feature_id;
 } SerialisedFeatureSearchStruct, *SerialisedFeatureSearch;
 
@@ -1025,6 +1026,7 @@ gboolean zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
   gboolean success = FALSE;
 
   full_data.feature_list    = zmap_tv;
+  full_data.window          = window;
   full_data.context_to_item = context_to_item;
   full_data.row_ref_list    = NULL;
   full_data.list_incomplete = success;
@@ -1055,7 +1057,8 @@ gboolean zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
   return success;
 }
 
-FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_tv,
+FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindow window,
+                                    ZMapWindowFeatureItemList zmap_tv,
                                     GHashTable  *context_to_item,
                                     GtkTreeIter *iterator)
 {
@@ -1082,10 +1085,10 @@ FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_t
 
   if(feature_data)
     {
-      item = zmapWindowFToIFindItemFull(context_to_item,
+      item = zmapWindowFToIFindItemFull(window,context_to_item,
                               feature_data->align_id,
                               feature_data->block_id,
-                              feature_data->column_id,
+                              feature_data->set_id,
                               set_strand, set_frame,
                               feature_data->feature_id);
     }
@@ -1093,14 +1096,15 @@ FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_t
   return item;
 }
 
-ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindowFeatureItemList zmap_tv,
+ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindow window,
+                                    ZMapWindowFeatureItemList zmap_tv,
                                     GHashTable  *context_to_item,
                                     GtkTreeIter *iterator)
 {
   ZMapFeature feature = NULL;
   FooCanvasItem *feature_item = NULL;
 
-  if((feature_item = zMapWindowFeatureItemListGetItem(zmap_tv, context_to_item, iterator)))
+  if((feature_item = zMapWindowFeatureItemListGetItem(window,zmap_tv, context_to_item, iterator)))
     feature = zmapWindowItemGetFeature(feature_item);
 
   return feature;
@@ -1576,7 +1580,7 @@ static void feature_pointer_serialised_to_value (GValue *value, gpointer feature
       {
         ZMapFeatureSet fset = (ZMapFeatureSet) feature->parent;
 
-        feature_data->column_id = fset->column_id;
+        feature_data->set_id = fset->unique_id;
 /*        feature_data->set_id = feature->parent->unique_id;*/
         if(feature->parent->parent)
           {
@@ -1713,7 +1717,7 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
       /* If above fails then use this data to ensure no item
        * found and the row gets removed. */
       fail_data.align_id = fail_data.block_id = 1;
-      fail_data.column_id = fail_data.feature_id = 1;
+      fail_data.set_id = fail_data.feature_id = 1;
       feature_data = &fail_data;
     }
 
@@ -1721,17 +1725,17 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
    * find the item on the canvas if the feature's name has changed.
    * Otherwise, coordinate etc, changes should be handled...
    */
-  if(!(item = zmapWindowFToIFindItemFull(full_data->context_to_item,
+  if(!(item = zmapWindowFToIFindItemFull(full_data->window,full_data->context_to_item,
                                feature_data->align_id,
                                feature_data->block_id,
-                               feature_data->column_id,
+                               feature_data->set_id,
                                strand, frame,
                                feature_data->feature_id)))
     {
-      item = zmapWindowFToIFindItemFull(full_data->context_to_item,
+      item = zmapWindowFToIFindItemFull(full_data->window,full_data->context_to_item,
                               feature_data->align_id,
                               feature_data->block_id,
-                              feature_data->column_id,
+                              feature_data->set_id,
                               (strand == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD),
                               frame,
                               feature_data->feature_id);

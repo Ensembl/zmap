@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.130 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.131 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -563,7 +563,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
   ZMapFrame set_frame;
   ZMapStrand set_strand;
   gboolean frame_specific ;
-  ZMapFeatureSet feature_set ;
+/*  ZMapFeatureSet feature_set ;*/
 
   zMapAssert(window) ;
   zMapAssert(ZMAP_IS_CONTAINER_FEATURESET(col_group)) ;
@@ -577,9 +577,13 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
       set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
       set_frame  = zmapWindowContainerFeatureSetGetFrame(container) ;
 
+#if MH17_NO_RECOVER
       feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
 
       if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+#else
+      if(container->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+#endif
 	{
 	  if (IS_3FRAME_TRANS(window->display_3_frame))
 	    displayed = TRUE ;
@@ -789,7 +793,7 @@ void zmapWindowFullReposition(ZMapWindow window)
 
 
 
-  super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
+  super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window,window->context_to_item,
                                              0,0,0,
 							   ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
 							   0)) ;
@@ -942,7 +946,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
       canvas_data.window = window;
       canvas_data.full_context = window->strand_separator_context;
-      canvas_data.styles = window->read_only_styles ;
+      canvas_data.styles = window->context_map->styles ;
 
       drawSeparatorFeatures(&canvas_data, diff);
 
@@ -1260,7 +1264,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 #warning "Test doesn't find 3 frame column, work out why after annotation test."
 
   /* check we have the style... */
-  if (!(zmapWindowFToIFindItemFull(window->context_to_item,
+  if (!(zmapWindowFToIFindItemFull(window,window->context_to_item,
                            align_id, block_id,
 				   feature_set_unique,
 				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
@@ -1275,7 +1279,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
     {
       FooCanvasItem *frame_column ;
 
-      blocks = zmapWindowFToIFindItemSetFull(window->context_to_item,
+      blocks = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
 					     align_id, block_id, 0,
 					     NULL, NULL, 0, NULL, NULL) ;
 
@@ -1309,7 +1313,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 	    {
 	      ZMapFrame frame = (ZMapFrame)i ;
 
-	      frame_column = zmapWindowFToIFindItemFull(window->context_to_item,
+	      frame_column = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                           feature_block->parent->unique_id,
 							feature_block->unique_id,
 							feature_set_unique,
@@ -1414,11 +1418,13 @@ static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *poin
 
 	if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
 	  {
+#if MH17_NO_RECOVER
+/* this is not used! */
 	    ZMapFeatureSet feature_set ;
 
 	    feature_set = zmapWindowContainerGetFeatureSet(container);
 	    zMapAssert(feature_set);
-
+#endif
 	    if (!(coord_data->in_view)
 		&& (coord_data->compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE
 		    || zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container) != ZMAPSTYLE_COLDISPLAY_SHOW))
@@ -1556,7 +1562,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 	canvas_data->curr_alignment =
 	  zMapFeatureContextGetAlignmentByID(canvas_data->full_context,
 					     feature_any->unique_id);
-	if((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+	if((align_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                            feature_any->unique_id,
 							 0, 0, ZMAPSTRAND_NONE,
 							 ZMAPFRAME_NONE, 0)))
@@ -1580,7 +1586,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 	  zMapFeatureAlignmentGetBlockByID(canvas_data->curr_alignment,
 					   feature_any->unique_id);
 
-	if((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+	if((block_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                            canvas_data->curr_alignment->unique_id,
 							 feature_any->unique_id, 0,
 							 ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))

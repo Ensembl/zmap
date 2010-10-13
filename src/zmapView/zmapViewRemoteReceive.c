@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.55 2010-09-22 13:45:44 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.56 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,7 @@ typedef struct
   ZMapFeatureTypeStyle style ;
 
   GList                *feature_list;
-  GHashTable           *styles;
+//  GHashTable           *styles;   /* use the ones in view->context_map */
 
   GList *locations ;
 
@@ -585,13 +585,13 @@ static void viewDumpContextToFile(ZMapView view, RequestData input_data, Respons
       format = input_data->format;
 
       if(format && g_ascii_strcasecmp(format, "gff") == 0)
-	result = zMapGFFDump((ZMapFeatureAny)view->features, view->orig_styles, file, &error);
+	result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
 #ifdef STYLES_PRINT_TO_FILE
       else if(format && g_ascii_strcasecmp(format, "test-style") == 0)
 	zMapFeatureTypePrintAll(view->features->styles, __FILE__);
 #endif /* STYLES_PRINT_TO_FILE */
       else
-	result = zMapFeatureContextDump(view->features, view->orig_styles, file, &error);
+	result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
 
       if(!result)
 	{
@@ -823,8 +823,9 @@ static void populate_data_from_view(ZMapView view, RequestData xml_data)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   xml_data->styles  = xml_data->orig_context->styles ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  xml_data->styles  = view->orig_styles ;
-
+#ifdef MH17_USE_THE_VIEW_DATA_DIRECT
+  xml_data->styles  = view->context_map.styles ;
+#endif
 
 
   return ;
@@ -1173,13 +1174,13 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 #if MH17_GET_COLUMN_NOT_FEATURESET___DONT_USE
 	  if (xml_data->common.action != ZMAPVIEW_REMOTE_LOAD_FEATURES)
 	    {
-            ZMapGFFSet set_data ;
+            ZMapFeatureSetDesc set_data ;
 
-	      if (!(set_data = g_hash_table_lookup(request_data->view->featureset_2_column, GINT_TO_POINTER(set_id))))
+	      if (!(set_data = g_hash_table_lookup(request_data->view->context_map.featureset_2_column, GINT_TO_POINTER(set_id))))
 		{
 		  char *err_msg ;
 
-		  err_msg = g_strdup_printf("Source %s not found in view->featureset_2_column",
+		  err_msg = g_strdup_printf("Source %s not found in view->context_map.featureset_2_column",
 					    g_quark_to_string(set_id)) ;
 		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 		  g_free(err_msg) ;
@@ -1188,7 +1189,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		}
 	      else
 		{
-		  featureset_id = set_data->feature_set_id ;
+		  featureset_id = set_data->column_id ;
 		  featureset_name = (char *)g_quark_to_string(featureset_id) ;
 		}
 	    }
@@ -1223,14 +1224,14 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
        * won't know which column/style etc to use. */
       if (result)
 	{
-	  ZMapGFFSource source_data ;
+	  ZMapFeatureSource source_data ;
 
-        if (!(source_data = g_hash_table_lookup(request_data->view->source_2_sourcedata,
+        if (!(source_data = g_hash_table_lookup(request_data->view->context_map.source_2_sourcedata,
 						      GINT_TO_POINTER(set_id))))
 	    {
 		char *err_msg ;
 
-		err_msg = g_strdup_printf("Source %s not found in view->source_2_sourcedata",
+		err_msg = g_strdup_printf("Source %s not found in view->context_map.source_2_sourcedata",
 			    g_quark_to_string(set_id)) ;
 		zMapXMLParserRaiseParsingError(parser, err_msg) ;
 		g_free(err_msg) ;
@@ -1248,11 +1249,11 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
               // as load features processes a complete step list that inludes requesting the style
               // then if the style is not there then we'll drop the features
 
-	      if (!(request_data->style = zMapFindStyle(request_data->view->orig_styles, request_data->style_id)))
+	      if (!(request_data->style = zMapFindStyle(request_data->view->context_map.styles, request_data->style_id)))
 	        {
 		    char *err_msg ;
 
-		    err_msg = g_strdup_printf("Style %s not found in view->orig_styles",
+		    err_msg = g_strdup_printf("Style %s not found in view->context_map.styles",
 						      g_quark_to_string(request_data->style_id)) ;
 		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
 		    g_free(err_msg) ;
@@ -1522,7 +1523,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		    ZMapFeatureTypeStyle locus_style ;
 
 		    if (!(locus_style
-			  = zMapFindStyle(request_data->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME))))
+			  = zMapFindStyle(request_data->view->context_map.styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME))))
 		      {
 			zMapLogWarning("Feature %s created but Locus %s could not be added"
 				       " because Locus style could not be found.",
@@ -1756,7 +1757,7 @@ static void zoomWindowToFeature(ZMapView view, RequestData input_data, ResponseD
       input_data->zoomed  = FALSE;
 
       if (input_data->view->revcomped_features)
-	zMapFeatureReverseComplement(input_data->edit_context, input_data->view->orig_styles) ;
+	zMapFeatureReverseComplement(input_data->edit_context, input_data->view->context_map.styles) ;
 
       zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), ZMAPFEATURE_STRUCT_FEATURE,
                                 zoomToFeatureCB, input_data) ;

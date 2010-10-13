@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 14 12:06 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.40 2010-07-29 09:30:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.41 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1946,13 +1946,23 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 
 		  if((feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container)))
 		    {
-
+                  /* MH17: we need to find the 3frame columns from a given column id
+                   * Although we are only looking at one featureset out of possibly many
+                   * each one will have the same featureset attatched
+                   * so this will work. Phew!
+                   *
+                   * but only if the featureset is in the hash for that frame and strand combo.
+                   * Hmmm... this was always the case, but all the features were in one context featureset
+                   *
+                   * As this function is already broken I'm leaving it for now (RT 188834)
+                   */
+#warning column config should work on both strands
 		      for(i = ZMAPFRAME_NONE ; i <= ZMAPFRAME_2; i++)
 			{
 			  FooCanvasItem *frame_column;
 			  ZMapFrame frame = (ZMapFrame)i;
 
-			  frame_column = zmapWindowFToIFindSetItem(window->context_to_item, feature_set,
+			  frame_column = zmapWindowFToIFindSetItem(window, window->context_to_item,feature_set,
 								   zmapWindowContainerFeatureSetGetStrand(container), frame);
 
 			  if(frame_column && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
@@ -2053,9 +2063,10 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	    gboolean loaded = FALSE;
 
 	    container_set = (ZMapWindowContainerFeatureSet)container;
-	    want_deferred = lists_data->loaded_or_deferred;
-	    is_deferred   = zmapWindowContainerFeatureSetGetDeferred(container_set);
 	    is_empty      = (zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set) == TRUE ? FALSE : TRUE);
+#if MH17_NO_DEFERRED
+          want_deferred = lists_data->loaded_or_deferred;
+          is_deferred   = zmapWindowContainerFeatureSetGetDeferred(container_set);
 
 	    if(want_deferred && is_deferred)
 	      {
@@ -2066,6 +2077,9 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	      }
 	    else if(!is_empty && !want_deferred)
 	      is_deferred = FALSE;
+#else
+            want_deferred = is_deferred = FALSE;
+#endif
 
 	    if(( want_deferred &&  is_deferred && !loaded) ||
 	       (!want_deferred && !is_deferred && !is_empty))

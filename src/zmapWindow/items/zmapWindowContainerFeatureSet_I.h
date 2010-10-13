@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 15:41 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.13 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.14 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
@@ -58,7 +58,8 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   ZMapWindow  window;
   ZMapStrand  strand ;
   ZMapFrame   frame ;
-  GHashTable *style_table ;
+//  GHashTable *style_table ;
+  ZMapFeatureTypeStyle style;       /* column specific style or the one single style for a featureset */
 
   /* Empty columns are only hidden ATM and as they have no
    * ZMapFeatureSet removing them from the FToI hash becomes difficult
@@ -96,10 +97,17 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   gboolean    hidden_bump_features ; /* Features were hidden because they
 				      * are out of the marked range. */
 
+
+    gboolean                    has_feature_set;
+    gboolean                    has_stats;
+    ZMapStyleColumnDisplayState display_state;
+
+#if MH17_NO_MORE_STYLE_TABLES
   struct
   {
     gboolean                    has_feature_set;
     gboolean                    has_stats;
+    ZMapStyleColumnDisplayState display_state;
     gboolean                    show_when_empty;
     gboolean                    frame_specific;
     gboolean                    strand_specific;
@@ -110,6 +118,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
     ZMapStyleBumpMode           bump_mode;
     ZMapStyleBumpMode           default_bump_mode;
   }settings;
+#endif
 
 } zmapWindowContainerFeatureSetStruct;
 

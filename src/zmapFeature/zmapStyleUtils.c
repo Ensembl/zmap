@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.19 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.20 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -272,7 +272,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MIN_MAG), min_mag, "Min mag", "%g", (double)) ;
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MAX_MAG), max_mag, "Max mag", "%g", (double)) ;
 
-  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_MODE), curr_bump_mode, "Current Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_MODE), initial_bump_mode, "Current Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_DEFAULT), default_bump_mode, "Default Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_FIXED), bump_fixed, "Bump Fixed", "%s", PRINTBOOL) ;
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_SPACING), bump_spacing, "Bump Spacing", "%g", (double)) ;

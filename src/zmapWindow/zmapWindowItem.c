@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 18 10:21 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.140 2010-09-22 14:49:03 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.141 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -247,7 +247,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 	    set_strand = set_frame = "*" ;
 
-	    set_items = zmapWindowFToIFindSameNameItems(window->context_to_item, set_strand, set_frame, feature) ;
+	    set_items = zmapWindowFToIFindSameNameItems(window,window->context_to_item, set_strand, set_frame, feature) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    if (set_items)
@@ -394,6 +394,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
 }
 
 
+#warning this function does nothing but is called five times and should be removed
 /* Get "parent" item of feature, for simple features, this is just the item itself but
  * for compound features we need the parent group.
  *  */
@@ -407,16 +408,6 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
 }
 
 
-/* Get nth child of a compound feature (e.g. transcript, alignment etc), index starts
- * at zero for the first child. */
-FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index)
-{
-  FooCanvasItem *nth_item = NULL ;
-
-  zMapAssertNotReached();
-
-  return nth_item ;
-}
 
 /* Need to test whether this works for groups...it should do....
  *
@@ -478,7 +469,7 @@ FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *
           g_free(feature_name);
         }
 
-      if((dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+      if((dna_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						block->parent->unique_id,
 						block->unique_id,
 						feature_set_unique,
@@ -515,7 +506,7 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
       dna_id = zMapFeatureDNAFeatureID(block);
 
 
-      if ((dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+      if ((dna_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						 block->parent->unique_id,
 						 block->unique_id,
 						 dna_set_id,
@@ -598,7 +589,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
 
-  if ((item = zmapWindowFToIFindItemFull(window->context_to_item,
+  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 					 block->parent->unique_id, block->unique_id,
 					 set_id, tmp_strand, tmp_frame, 0)))
     {
@@ -626,7 +617,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
 
-  if ((item = zmapWindowFToIFindItemFull(window->context_to_item,
+  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 					 block->parent->unique_id, block->unique_id,
 					 set_id, tmp_strand, tmp_frame, 0)))
     {
@@ -891,7 +882,7 @@ FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, Z
   /* and look up the translation feature set with ^^^ */
   feature_set  = zMapFeatureBlockGetSetByID(block, feature_set_id);
 
-  translation  = zmapWindowFToIFindSetItem(window->context_to_item,
+  translation  = zmapWindowFToIFindSetItem(window,window->context_to_item,
                                            feature_set,
                                            ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
                                            ZMAPFRAME_NONE);
@@ -923,7 +914,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	  && !(feature_set = zMapFeatureBlockGetSetByID(block,
 							zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	if ((style = zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+	if ((style = zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
 	    && !(feature_set = zMapFeatureBlockGetSetByID(block,
 							  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
 
@@ -964,7 +955,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 					 NULL,
 					 block,
 					 feature_set,
-					 window->read_only_styles,
+					 window->context_map->styles,
 					 ZMAPFRAME_NONE,
 					 &tmp_forward, &tmp_reverse, NULL))
 	    {
@@ -1026,7 +1017,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   if ((item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
 									ITEM_SUBFEATURE_DATA)))
     {
-      matching_item = zmapWindowFToIFindItemChild(window->context_to_item,
+      matching_item = zmapWindowFToIFindItemChild(window,window->context_to_item,
 						  container->strand, container->frame,
 						  feature,
 						  item_subfeature_data->start,
@@ -1034,7 +1025,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
     }
   else
     {
-      matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    container->strand, container->frame,
 						    feature) ;
     }
@@ -1063,7 +1054,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
   /* Find the item that matches */
-  matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						container->strand, container->frame, feature) ;
 
   return matching_item ;
@@ -1988,7 +1979,7 @@ static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *colu
       /* ... and its quark id */
       feature_id   = g_quark_from_string(feature_name);
 
-      if((translation  = zmapWindowFToIFindItemFull(window->context_to_item,
+      if((translation  = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						    block->parent->unique_id,
 						    block->unique_id,
 						    feature_set_id,
@@ -2032,7 +2023,7 @@ static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char 
       /* ... and its quark id */
       feature_id   = g_quark_from_string(feature_name);
 
-      if((translation  = zmapWindowFToIFindItemFull(window->context_to_item,
+      if((translation  = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						    block->parent->unique_id,
 						    block->unique_id,
 						    feature_set_id,
@@ -2095,7 +2086,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
         {
           replace_highlight = !(highlight_data->multiple_select);
 
-          if((feature_item = zmapWindowFToIFindFeatureItem(highlight_data->window->context_to_item,
+          if((feature_item = zmapWindowFToIFindFeatureItem(highlight_data->window,highlight_data->window->context_to_item,
                               feature_in->strand, ZMAPFRAME_NONE,
                               feature_in)))
             {
@@ -2120,7 +2111,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
 
                       span = &g_array_index(feature_in->feature.transcript.exons, ZMapSpanStruct, i) ;
 
-                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window->context_to_item,
+                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window,highlight_data->window->context_to_item,
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
                         zmapWindowHighlightObject(highlight_data->window, feature_item,
@@ -2130,7 +2121,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                     {
                       span = &g_array_index(feature_in->feature.transcript.introns, ZMapSpanStruct, i) ;
 
-                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window->context_to_item,
+                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window,highlight_data->window->context_to_item,
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
                         zmapWindowHighlightObject(highlight_data->window, feature_item,
@@ -2233,10 +2224,8 @@ static void fill_workaround_struct(ZMapWindowContainerGroup container,
 				   gpointer               user_data)
 {
   get_item_at_workaround workaround = (get_item_at_workaround)user_data;
-extern char *group_foo_info(ZMapWindowContainerGroup container);
 
-if(!container) return;
-//zMapLogWarning("level %d container: %s",level,group_foo_info(container));
+  if(!container) return;
 
   switch(level)
     {

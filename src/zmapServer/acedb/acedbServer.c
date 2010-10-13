@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:17 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.161 2010-09-24 09:18:15 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.162 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,26 +410,26 @@ void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *feat
 {
   GList *iter;
   gpointer key,value;
-  ZMapGFFSet method_set,featureset;
+  ZMapFeatureSetDesc method_set,featureset;
 
   if(!featureset_2_column)
       return;
   zMap_g_hash_table_iter_init(&iter,method_2_feature_set);
   while(zMap_g_hash_table_iter_next(&iter,&key,&value))
   {
-      featureset = (ZMapGFFSet) g_hash_table_lookup(featureset_2_column,key);
-      method_set = (ZMapGFFSet) value;
+      featureset = (ZMapFeatureSetDesc) g_hash_table_lookup(featureset_2_column,key);
+      method_set = (ZMapFeatureSetDesc) value;
 
       if(featureset)
       {
-            method_set->feature_set_id = featureset->feature_set_id;
+            method_set->column_id = featureset->column_id;
             if(featureset->feature_set_text)
                   method_set->feature_set_text = g_strdup(featureset->feature_set_text);
       }
-      if(!method_set->feature_set_ID)
-            method_set->feature_set_ID = method_set->feature_set_id;
+      if(!method_set->column_ID)
+            method_set->column_ID = method_set->column_id;
       if(!method_set->feature_src_ID)
-            method_set->feature_src_ID = method_set->feature_set_ID;
+            method_set->column_ID = method_set->column_ID;
   }
 }
 
@@ -438,7 +438,7 @@ void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
 {
   GList *iter;
   gpointer key,value;
-  ZMapGFFSource method_src,source_data;
+  ZMapFeatureSource method_src,source_data;
 
   if(!source_2_data)
       return;
@@ -446,8 +446,8 @@ void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
   zMap_g_hash_table_iter_init(&iter,method_2_data);
   while(zMap_g_hash_table_iter_next(&iter,&key,&value))
   {
-      source_data = (ZMapGFFSource) g_hash_table_lookup(source_2_data,key);
-      method_src  = (ZMapGFFSource) value;
+      source_data = (ZMapFeatureSource) g_hash_table_lookup(source_2_data,key);
+      method_src  = (ZMapFeatureSource) value;
 
       if(source_data)
       {
@@ -1097,7 +1097,7 @@ static void loadableCB(gpointer data, gpointer user_data)
 {
   GQuark methods_id = GPOINTER_TO_UINT(data) ;		    /* Not needed. */
   Loadable loadable_data = ( Loadable)user_data ;
-  ZMapGFFSource source_data ;
+  ZMapFeatureSource source_data ;
 
   methods_id = zMapStyleCreateID((char *)g_quark_to_string(methods_id)) ;
 
@@ -1112,8 +1112,9 @@ static void loadableCB(gpointer data, gpointer user_data)
 	{
 	  gboolean deferred = FALSE ;
 
+#if MH17_NO_DEFERRED
 	  g_object_get(G_OBJECT(style), ZMAPSTYLE_PROPERTY_DEFERRED, &deferred, NULL) ;
-
+#endif
 	  if (!deferred)
 	    loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
 	}
@@ -2526,7 +2527,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
   if (result)
     {
       GQuark method_id = 0, style_id = 0, text_id = 0, feature_set_id ;
-      ZMapGFFSource source_data ;
+      ZMapFeatureSource source_data ;
 
       /* name/style are mandatory, remark is optional. */
       method_id = zMapStyleCreateID(name) ;
@@ -2548,7 +2549,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
       zMap_g_hashlist_insert(get_sets->set_2_styles, feature_set_id, GINT_TO_POINTER(style_id)) ;
 
       /* Record mappings we need later for parsing features. */
-      source_data = g_new0(ZMapGFFSourceStruct, 1) ;
+      source_data = g_new0(ZMapFeatureSourceStruct, 1) ;
       source_data->source_id = method_id ;
       source_data->style_id = style_id ;
       source_data->source_text = text_id ;
@@ -2758,11 +2759,11 @@ static void addMethodCB(gpointer data, gpointer user_data)
 {
   GQuark child_id = GPOINTER_TO_INT(data) ;
   HashFeatureSet hash_data = (HashFeatureSet)user_data ;
-  ZMapGFFSet set_data ;
+  ZMapFeatureSetDesc set_data ;
 
 
-  set_data = g_new0(ZMapGFFSetStruct, 1) ;
-  set_data->feature_set_id = hash_data->feature_set_id ;
+  set_data = g_new0(ZMapFeatureSetDescStruct, 1) ;
+  set_data->column_ID = set_data->column_id = hash_data->feature_set_id ;
   set_data->feature_set_text = hash_data->remark ;
 
   g_hash_table_insert(hash_data->method_2_feature_set,
@@ -2886,10 +2887,12 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	{
 	  mode = ZMAPSTYLE_MODE_GRAPH ;
 	}
+#if MH17_NO_DEFERRED
       else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
 	{
 	  deferred_flag = TRUE ;
 	}
+#endif
       else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
 	{
 	  deferred_flag = FALSE ;
@@ -3179,8 +3182,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
       zMapStyleSetDisplayable(style, displayable) ;
 
+#if MH17_NO_DEFERRED
       zMapStyleSetDeferred(style, deferred_flag) ;
       zMapStyleSetLoaded(style, FALSE) ;
+#endif
 
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
 	zMapStyleSetDisplay(style, col_state) ;
@@ -3327,10 +3332,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  parent = strtok_r(NULL, "\"", &line_pos) ;
 	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
+#if MH17_NO_DEFERRED
       else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
 	{
 	  deferred = TRUE ;
 	}
+#endif
       else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
 	{
 	  deferred = FALSE ;
@@ -3722,8 +3729,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (parent)
 	zMapStyleSetParent(style, parent) ;
 
+#if MH17_NO_DEFERRED
       if (deferred)
 	zMapStyleSetDeferred(style, deferred) ;
+#endif
 
       if (some_colours)
 	{
@@ -4451,7 +4460,7 @@ static gboolean get_url_query_boolean(char *full_query, char *key)
 /* A GDestroyNotify() to free the method data structs in the method_2_data hash table. */
 static void freeDataCB(gpointer data)
 {
-  ZMapGFFSet set_data = (ZMapGFFSet)data ;
+  ZMapFeatureSetDesc set_data = (ZMapFeatureSetDesc)data ;
 
   g_free(set_data) ;
 
@@ -4461,7 +4470,7 @@ static void freeDataCB(gpointer data)
 /* A GDestroyNotify() to free the method data structs in the method_2_data hash table. */
 static void freeSetCB(gpointer data)
 {
-  ZMapGFFSource source_data = (ZMapGFFSource)data ;
+  ZMapFeatureSource source_data = (ZMapFeatureSource)data ;
 
   g_free(source_data) ;
 

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.269 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.270 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -618,22 +618,24 @@ typedef struct _ZMapWindowStruct
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
-  GHashTable *read_only_styles ;				    /* Original styles list from server. */
-  GHashTable *display_styles ;				    /* Styles used for current display. */
+/*  GHashTable *read_only_styles ;				     Original styles list from server. */
+/*  GHashTable *display_styles ;				     Styles used for current display. */
 
   ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
 
+  ZMapFeatureContextMap context_map;      /* all the data for mapping featuresets styles and columns */
+
   GList *feature_set_names ;				    /* Gives names/order of columns to be displayed. */
-  GHashTable *featureset_2_styles ;			    /* Links column names to the styles
+/*  GHashTable *featureset_2_styles ;			     Links column names to the styles
 							       for that column. */
 
-  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapGFFSet
+/*  GHashTable *featureset_2_column ;        Mapping of a feature source to a column using ZMapGFFSet
                                            * NB: this contains data from ZMap config
                                            * sections [columns] [Column_description] _and_ ACEDB
                                            */
-  GHashTable *columns;                    /* the display columns. These are not featuresets */
+/*  GHashTable *columns;                     the display columns. These are not featuresets */
 
-  GHashTable *context_to_item ;				    /* Links parts of a feature context to
+  GHashTable *context_to_item ;	      /* Links parts of a feature context to
 							       the canvas groups/items that
 							       represent those parts. */
 
@@ -770,7 +772,7 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 typedef GHashTable * (*ZMapWindowListGetFToIHash)(gpointer user_data);
-typedef GList * (*ZMapWindowListSearchHashFunc)(GHashTable *hash_table, gpointer user_data);
+typedef GList * (*ZMapWindowListSearchHashFunc)(ZMapWindow widnow, GHashTable *hash_table, gpointer user_data);
 
 
 
@@ -882,23 +884,23 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 			      FooCanvasGroup *set_group) ;
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
-				 ZMapStrand strand, ZMapFrame frame) ;
+				 ZMapStrand strand, ZMapFrame frame, gboolean remove_features) ;
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
 				  GQuark feature_id, FooCanvasItem *feature_item) ;
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
 				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
-FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
+FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  ZMapStrand strand, ZMapFrame frame,
 					  GQuark feature_id) ;
-GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
+GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
 				     char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
-GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
+GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_to_context_hash,
 				       char *set_strand, char *set_frame, ZMapFeature feature) ;
 
 ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search_function,
@@ -920,16 +922,16 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  GQuark      feature_id,
 							  char       *strand_str,
 							  char       *frame_str);
-GList *zmapWindowFToISetSearchPerform(GHashTable                 *feature_to_context_hash,
+GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_to_context_hash,
 				      ZMapWindowFToISetSearchData search_data);
 void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data);
 
-FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
+FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;
-FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash,
+FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window,GHashTable *feature_to_context_hash,
                                ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
-FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
+FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature_to_context_hash,
 					   ZMapStrand set_strand, ZMapFrame set_frame,
 					   ZMapFeature feature, int child_start, int child_end) ;
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
@@ -1093,6 +1095,8 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset);
 gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle style);
 GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset);
 
+ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container);
+gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
 GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,
@@ -1335,7 +1339,14 @@ ZMapFeatureTypeStyle zmapWindowStyleTableFind(GHashTable *style_table, GQuark st
 void zmapWindowStyleTableForEach(GHashTable *style_table,
 				 ZMapWindowStyleTableCallback app_func, gpointer app_data) ;
 void zmapWindowStyleTableDestroy(GHashTable *style_table) ;
-GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
+
+ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id);
+ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id);
+ZMapFeatureTypeStyle zMapWindowGetSetColumnStyle(ZMapWindow window,GQuark set_id);
+ZMapFeatureTypeStyle zMapWindowGetColumnStyle(ZMapWindow window,GQuark col_id);
+
+GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id);
+//GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
 
 /* Ruler Functions */
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);

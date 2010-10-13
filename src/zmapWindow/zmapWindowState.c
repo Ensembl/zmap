@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 22 12:12 2010 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.29 2010-09-09 10:33:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.30 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -359,7 +359,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.column.align_id   = feature_any->parent->parent->unique_id;
 	  bump_data.column.block_id   = feature_any->parent->unique_id;
         fset = (ZMapFeatureSet) feature_any;
-	  bump_data.column.column_id  = fset->column_id;
+	  bump_data.column.column_id  = feature_any->unique_id;
 	  bump_data.column.feature_id = 0;  /* (we are saving the column not the feature) container_set->unique_id; */
 	  bump_data.column.strand     = container_set->strand;
 	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
@@ -376,7 +376,14 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
 					  ZMapWindow window)
 {
+#warning save bumped commented out temproarily while tweaking CFS code
+#if MH17_NO_RECOVER
 
+/* the restore was commented out so this function is not needed right now
+ * both need to handle columns not featuresets
+ * if bump applies to featuresets not columns (bump on feature)
+ * then they need to be cleverer.
+ */
   if(!state->bump_state_set)
     {
       ZMapWindowCompressMode compress_mode;
@@ -398,7 +405,7 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
 
       state->bump_state_set = TRUE;
     }
-
+#endif
   return state->bump_state_set;
 }
 
@@ -471,7 +478,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
       GList *possible_mark_items;
 
       /* We're not completely accurate here.  SubPart features are not remarked correctly. */
-      if((mark_item = zmapWindowFToIFindItemFull(window->context_to_item,
+      if((mark_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						 restore.item.align_id,
 						 restore.item.block_id,
 						 restore.item.column_id,
@@ -481,7 +488,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 	{
 	  zmapWindowMarkSetItem(mark, mark_item);
 	}
-      else if((possible_mark_items = zmapWindowFToIFindItemSetFull(window->context_to_item,
+      else if((possible_mark_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
 								   restore.item.align_id,
 								   restore.item.block_id,
 								   restore.item.column_id,
@@ -574,7 +581,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
       FooCanvasItem *focus_item = NULL;
       GList *possible_focus_items;
 
-      if((focus_item = zmapWindowFToIFindItemFull(window->context_to_item,
+      if((focus_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						  restore.item.align_id,
 						  restore.item.block_id,
 						  restore.item.column_id,
@@ -585,7 +592,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	  zmapWindowFocusAddItem(window->focus, focus_item);
 	  zMapWindowHighlightFocusItems(window);
 	}
-      else if((possible_focus_items = zmapWindowFToIFindItemSetFull(window->context_to_item,
+      else if((possible_focus_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
 								    restore.item.align_id,
 								    restore.item.block_id,
 								    restore.item.column_id,
@@ -633,7 +640,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 		column_state->column.strand = ZMAPSTRAND_FORWARD;
 	    }
 
-	  if((container = zmapWindowFToIFindItemFull(window->context_to_item,
+	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
 						     column_state->column.column_id,
@@ -725,7 +732,7 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
       serialize->align_id   = feature->parent->parent->parent->unique_id;
       serialize->block_id   = feature->parent->parent->unique_id;
       fset = (ZMapFeatureSet) feature->parent;
-      serialize->column_id  = fset->column_id;
+      serialize->column_id  = container_set->unique_id;
       serialize->feature_id = feature->unique_id;
       serialized = TRUE;
     }
