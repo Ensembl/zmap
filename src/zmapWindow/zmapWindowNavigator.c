@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 23 13:59 2010 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.64 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.65 2010-10-13 10:06:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -999,7 +999,10 @@ static void createColumnCB(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style;
   gboolean status = FALSE;
 
-  style = zMapWindowGetSetColumnStyle(draw_data->navigate->current_window,set_id);
+  /* for the navigator styles are hard coded?? and there's no featureset_2_colum mapping ?
+  style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
+  */
+  style = zMapFindStyle(draw_data->styles,set_id);
 
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id);
 
