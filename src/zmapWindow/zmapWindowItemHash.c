@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.49 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.50 2010-10-13 09:31:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -808,7 +808,9 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
                         forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
 
+#if MH17_SEARCH_DEBUG
 printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(set_id));
+#endif
 	                  if (isRegExp(forward_set_id))
 	                        forward_set_search.is_reg_exp = TRUE ;
 	            }
@@ -820,7 +822,9 @@ printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_
                         reverse_set_search.search_quark = reverse_set_id ;
 
                         reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
+#if MH17_SEARCH_DEBUG
 printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(set_id));
+#endif
 
       	            if (isRegExp(reverse_set_id))
             	            reverse_set_search.is_reg_exp = TRUE ;
@@ -981,7 +985,9 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
   gboolean wrong_params = FALSE;
   gboolean debug_caching = FALSE;
 
+#if MH17_SEARCH_DEBUG
 printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
+#endif
 
   search_data = g_new0(ZMapWindowFToISetSearchDataStruct, 1);
 
@@ -1287,7 +1293,9 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
    * stop. */
   zMapAssert(curr_search_id != stop) ;
 
-printf("cur_search id = %s (%d)\n",g_quark_to_string(curr_search_id),g_hash_table_size(hash_table));
+#if MH17_SEARCH_DEBUG
+printf("cur_search id = %s (%d)\n",g_quark_to_string(curr_search_id),g_hash_table_size(hash_table));*/
+#endif
 
   if (next_search_id == stop)
     {
@@ -1334,7 +1342,9 @@ printf("cur_search id = %s (%d)\n",g_quark_to_string(curr_search_id),g_hash_tabl
               curr_search->is_reg_exp = FALSE;
               if(isRegExp(curr_search->search_quark))
                   curr_search->is_reg_exp = TRUE;
-printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);
+#if MH17_SEARCH_DEBUG
+printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);*/
+#endif
 
               if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,l->data)))
                 {
