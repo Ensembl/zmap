@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.296 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.297 2010-10-13 14:08:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -783,13 +783,6 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
     }
 
 
-  /* We should be bumping columns here if required... */
-  if (bump_required && view_feature_set)
-    {
-      ZMapStyleBumpMode bump_mode ;
-
-      zMapStartTimer("DrawFeatureSet","Bump");
-
       /* Use the style from the feature set attached to the
        * column... Better than using what is potentially a diff
        * context... */
@@ -810,11 +803,24 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  ZMapStyleColumnDisplayState display = ZMAPSTYLE_COLDISPLAY_INVALID ;
 	  gboolean redraw_needed = FALSE ;
 
-	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)forward_container))
-	      > ZMAPBUMP_UNBUMP)
-	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+        /* We should be bumping columns here if required... */
+        if (bump_required && view_feature_set)
+          {
+            ZMapStyleBumpMode bump_mode ;
 
-	  /* try 3 frame stuff here...more complicated */
+            zMapStartTimer("DrawFeatureSet","Bump");
+
+	      if ((bump_mode =
+                  zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)forward_container))
+	                  > ZMAPBUMP_UNBUMP)
+	      {
+               zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+            }
+
+            zMapStopTimer("DrawFeatureSet","Bump");
+          }
+
+          /* try 3 frame stuff here...more complicated */
 	  if (zmapWindowContainerFeatureSetIsFrameSpecific(ZMAP_CONTAINER_FEATURESET(forward_col_wcp), NULL))
 	    {
 	      if (IS_3FRAME(window->display_3_frame))
@@ -822,15 +828,15 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 		  if (zmapWindowColumnIs3frameDisplayed(window, forward_col_wcp))
 		    display = ZMAPSTYLE_COLDISPLAY_SHOW ;
 		  else
-		    display = ZMAPSTYLE_COLDISPLAY_HIDE ;
+		   display = ZMAPSTYLE_COLDISPLAY_HIDE ;
 		}
 
 	      if (frame_mode_change)
-		redraw_needed = TRUE ;
+		    redraw_needed = TRUE ;
 	    }
 
-	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
-	   * set explicitly in the style for the column. */
+  	      /* Some columns are hidden initially, could be mag. level, 3 frame only display or
+	       * set explicitly in the style for the column. */
 	  zMapStartTimer("DrawFeatureSet","SetState");
 
 	  zmapWindowColumnSetState(window, forward_col_wcp, display, redraw_needed) ;
@@ -840,17 +846,21 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if (reverse_col_wcp)
 	{
-	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)reverse_container)) > ZMAPBUMP_UNBUMP)
-	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+        /* We should be bumping columns here if required... */
+        if (bump_required && view_feature_set)
+          {
+            ZMapStyleBumpMode bump_mode ;
 
+  	      if ((bump_mode =
+                     zmapWindowContainerFeatureSetGetBumpMode( (ZMapWindowContainerFeatureSet) reverse_container)) > ZMAPBUMP_UNBUMP)
+	      {
+              zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+            }
+          }
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
 	   * set explicitly in the style for the column. */
 	  zmapWindowColumnSetState(window, reverse_col_wcp, ZMAPSTYLE_COLDISPLAY_INVALID, FALSE) ;
 	}
-
-      zMapStopTimer("DrawFeatureSet","Bump");
-    }
-
 
   return ;
 }
@@ -1707,6 +1717,11 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
       feature_set = (ZMapFeatureSet)feature_any;
 
       style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
+      if(!style)
+      {
+            /* for special columns eg locus we may not have a mapping */
+            style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
+      }
       if(!style)
       {
             zMapLogCritical("no column style for featureset %s\n",g_quark_to_string(feature_set->unique_id));

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.218 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.219 2010-10-13 14:08:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -418,6 +418,7 @@ void print_fset2col(char * str,GHashTable *data)
       while (zMap_g_hash_table_iter_next (&iter, &key, &value))
       {
             gff_set = (ZMapFeatureSetDesc) value;
+if(!g_strstr_len(g_quark_to_string(GPOINTER_TO_UINT(key)),-1,":"))
             printf("%s = %s %s %s \"%s\"\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
                   g_quark_to_string(gff_set->column_id),
                   g_quark_to_string(gff_set->column_ID),
@@ -2986,6 +2987,27 @@ printf("\nview styles lists after merge:\n");
           g_hash_table_foreach(feature_sets->featureset_2_column_inout,
             mergeHashTableCB,zmap_view->context_map.featureset_2_column);
         }
+
+      /* we get lower case column names from ACE
+       * - patch in upppercased ones from other config if we have it
+       * (otterlace should provide config for this)
+       */
+      {
+            GList *iter;
+            gpointer key,value;
+
+            zMap_g_hash_table_iter_init(&iter,zmap_view->context_map.featureset_2_column);
+            while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+            {
+                  ZMapFeatureSetDesc fset;
+                  ZMapFeatureColumn column;
+
+                  fset = (ZMapFeatureSetDesc) value;
+                  column = g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
+                  if(column)
+                        fset->column_ID = column->column_id;      /* upper cased display name */
+            }
+      }
 
 	if (!(zmap_view->context_map.source_2_sourcedata))
 	  {

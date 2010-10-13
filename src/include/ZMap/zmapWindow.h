@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 20 10:28 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.115 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.116 2010-10-13 14:08:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -290,7 +290,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
 
 void zMapWindow3FrameToggle(ZMapWindow window) ;
-void zMapWindow3FrameToggleMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode, gboolean tmp_display) ;
+void zMapWindow3FrameSetMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
 
 /* should become internal to zmapwindow..... */
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window,

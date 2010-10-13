@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:24 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.60 2010-09-06 08:48:09 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.61 2010-10-13 14:08:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@ typedef struct
 /* fMap has 1/10/100/1000 bp per line and whole, here we replicate + ALL DNA */
 enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_100, ZOOM_1000, ZOOM_MIN} ;
 
-enum{ SHOW_DNA, HIDE_DNA, SHOW_3FEATURES, SHOW_3FT, HIDE_3FT, SHOW_3ALL };
+enum{ SHOW_DNA, HIDE_DNA, HIDE_3ALL, SHOW_3FEATURES, SHOW_3FT, SHOW_3ALL };
 
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
@@ -845,6 +845,7 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 {
   static ZMapGUIMenuItemStruct aa_menu[] =
     {
+      {ZMAPGUI_MENU_NORMAL, "None",                           HIDE_3ALL,      seqMenuCB,      NULL},
       {ZMAPGUI_MENU_NORMAL, "Features",                       SHOW_3FEATURES, seqMenuCB,      NULL},
       {ZMAPGUI_MENU_NORMAL, "3 Frame Translation",            SHOW_3FT,       seqMenuCB,      NULL},
       {ZMAPGUI_MENU_NORMAL, "Features + 3 Frame Translation", SHOW_3ALL,      seqMenuCB,      NULL},
@@ -865,6 +866,11 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
   GQuark align_id = 0, block_id = 0 ;
   gboolean force = TRUE, force_to = FALSE, do_dna = FALSE, do_aa = FALSE ;
 
+  /* MH17: I took the force and do_aa flags out of 3FT options as they are not currently relevant
+   * there had been experiment with operating DNA and 3FT in tandem
+   * but we prefer the buttons to do 'what they say on the can'
+   */
+
   align_id = data->align_unique_id ;
   block_id = data->block_unique_id ;
 
@@ -879,13 +885,8 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
       break;
     case SHOW_3FEATURES:
     case SHOW_3ALL:
-      break ;
     case SHOW_3FT:
-      force_to  = TRUE;
-      do_aa     = TRUE;
-      break;
-    case HIDE_3FT:
-      do_aa     = TRUE;
+    case HIDE_3ALL:
       break;
     default:
       break;
@@ -895,26 +896,22 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
   if ((window = data->original_data))
     {
       if (menu_item_id == SHOW_3FEATURES
-	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3FT
+	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3ALL
 	  || menu_item_id == SHOW_3ALL)
 	{
-	  gboolean display = TRUE ;
+
 	  ZMapWindow3FrameMode frame_mode ;
 
 	  switch(menu_item_id)
 	    {
+          case HIDE_3ALL:
+            frame_mode = ZMAP_WINDOW_3FRAME_INVALID ;
+            break;
 	    case SHOW_3FEATURES:
 	      frame_mode = ZMAP_WINDOW_3FRAME_COLS ;
 	      break ;
 	    case SHOW_3FT:
 	      frame_mode = ZMAP_WINDOW_3FRAME_TRANS ;
-	      force_to  = TRUE;
-	      do_aa     = TRUE;
-	      break;
-	    case HIDE_3FT:
-	      frame_mode = ZMAP_WINDOW_3FRAME_TRANS ;
-	      display = FALSE ;
-	      do_aa     = TRUE;
 	      break;
 	    case SHOW_3ALL:
 	      frame_mode = ZMAP_WINDOW_3FRAME_ALL ;
@@ -924,7 +921,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
 	      break;
 	    }
 
-	  zMapWindow3FrameToggleMode(window, frame_mode, display) ;
+	  zMapWindow3FrameSetMode(window, frame_mode) ;
 	}
       else
 	{

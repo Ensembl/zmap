@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.131 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.132 2010-10-13 14:08:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -154,14 +154,19 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 static void drawSeparatorFeatures(SeparatorCanvasData canvas_data, ZMapFeatureContext context);
 
 static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ; ;
-static void myWindowToggle3Frame(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
+static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
 
 
 
 /* Turn on/off 3 frame cols. */
 void zMapWindow3FrameToggle(ZMapWindow window)
 {
-  myWindowToggle3Frame(window, ZMAP_WINDOW_3FRAME_INVALID) ;
+  ZMapWindow3FrameMode mode = ZMAP_WINDOW_3FRAME_COLS;
+
+  if(IS_3FRAME(window->display_3_frame))
+      mode =ZMAP_WINDOW_3FRAME_INVALID;
+
+  myWindowSet3FrameMode(window, mode ) ;
 
   return ;
 }
@@ -169,9 +174,9 @@ void zMapWindow3FrameToggle(ZMapWindow window)
 
 
 /* Turn on/off 3 frame cols. */
-void zMapWindow3FrameToggleMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode, gboolean display)
+void zMapWindow3FrameSetMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 {
-  myWindowToggle3Frame(window, frame_mode) ;
+  myWindowSet3FrameMode(window, frame_mode) ;
 
   return ;
 }
@@ -181,16 +186,17 @@ void zMapWindow3FrameToggleMode(ZMapWindow window, ZMapWindow3FrameMode frame_mo
 
 
 /*!
- * Toggles the display of the Reading Frame columns, these columns show frame senstive
+ * Sets the display of the Reading Frame columns, these columns show frame senstive
  * features in separate sets of columns according to their reading frame.
  *
  *  */
-static void myWindowToggle3Frame(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
+static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 {
   gpointer three_frame_id = NULL;
   gpointer three_frame_Id = NULL;   // capitalised!
 
   zMapWindowBusy(window, TRUE) ;
+
 
   zMapStartTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
 
@@ -560,13 +566,14 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
   gboolean displayed = FALSE ;
   ZMapWindowContainerFeatureSet container;
   ZMapStyle3FrameMode frame_mode;
-  ZMapFrame set_frame;
-  ZMapStrand set_strand;
   gboolean frame_specific ;
 /*  ZMapFeatureSet feature_set ;*/
 
   zMapAssert(window) ;
   zMapAssert(ZMAP_IS_CONTAINER_FEATURESET(col_group)) ;
+
+//  if(!IS_3FRAME(window->display_3_frame))
+//    return displayed;
 
   container = (ZMapWindowContainerFeatureSet)col_group ;
 
@@ -574,15 +581,27 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 
   if (frame_specific)
     {
+#if MH17_NOT_USED
+      ZMapFrame set_frame;
+      ZMapStrand set_strand;
+
       set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
       set_frame  = zmapWindowContainerFeatureSetGetFrame(container) ;
+#endif
 
 #if MH17_NO_RECOVER
       feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
 
       if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
 #else
+
+/* MH17: acedb only gives us lower cased names
+   previously capitalised name can=me from req_featuresets ???
+      if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
+   but we can patch up from the [ZMap] columns list
+*/
       if(container->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+
 #endif
 	{
 	  if (IS_3FRAME_TRANS(window->display_3_frame))
@@ -967,97 +986,45 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
 
 /* Translate window 3 frame requests into 3 frame state.
- * If frame mode is ZMAP_WINDOW_3FRAME_INVALID then toggle 3 frame _display_,
- * otherwise toggle the supplied frame mode.
- *
- * Note that there modes/display get toggled to ensure that there is a logical
- * display/undisplay of at least some 3 frame data.
+ * ... could do this more simply by using the flag defines explicitly
  */
 static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 {
-  Display3FrameMode curr_display = DISPLAY_3FRAME_NONE ;
-
   switch (frame_mode)
     {
     case ZMAP_WINDOW_3FRAME_INVALID:
       {
+      ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
+      ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+
+      ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
 	break ;
       }
     case ZMAP_WINDOW_3FRAME_TRANS:
       {
-	curr_display = DISPLAY_3FRAME_TRANS ;
-
-	if (IS_3FRAME_TRANS(window->display_3_frame))
-	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-	else
-	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-
+      ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+      ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+      ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
 	break ;
       }
     case ZMAP_WINDOW_3FRAME_COLS:
       {
-	curr_display = DISPLAY_3FRAME_COLS ;
-
-	if (IS_3FRAME_COLS(window->display_3_frame))
-	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-	else
-	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-
+      ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+      ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
 	break ;
       }
     case ZMAP_WINDOW_3FRAME_ALL:
       {
-	curr_display = DISPLAY_3FRAME_ALL ;
-
-	if (IS_3FRAME_TRANS(window->display_3_frame) && IS_3FRAME_COLS(window->display_3_frame))
-	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ALL) ;
-	else
-	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ALL) ;
-
+      ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+      ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+      ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
 	break ;
       }
     default:
       {
 	zMapAssertNotReached() ;
       }
-    }
-
-
-  /* Tidy up state:
-   *   - If 3 frame is turned on but neither cols or translation are selected then
-   * default to show cols only.
-   *   - If the mode was changed and everything was turned off then turn off 3 frame display
-   * as well, otherwise if the mode was changed but 3 frame is off then turn it on with
-   * the mode that was toggled. */
-  if (frame_mode == ZMAP_WINDOW_3FRAME_INVALID)
-    {
-      if (IS_3FRAME(window->display_3_frame))
-	{
-	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	}
-      else
-	{
-	  if (!IS_3FRAME_TRANS(window->display_3_frame) && !IS_3FRAME_COLS(window->display_3_frame))
-	    ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-
-	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	}
-    }
-  else
-    {
-      if (IS_3FRAME(window->display_3_frame))
-	{
-	  if (!(IS_3FRAME_TRANS(window->display_3_frame) || IS_3FRAME_COLS(window->display_3_frame)))
-	    ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	}
-      else
-	{
-	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-	  ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-
-	  ZMAP_FLAG_ON(window->display_3_frame, curr_display) ;
-	  ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	}
     }
 
   return ;
