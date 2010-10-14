@@ -1,3 +1,5 @@
+<!-- $Id: ContainerFeatureset.html,v 1.2 2010-10-14 13:00:22 mh17 Exp $ -->
+
 <h2>Display columns</h4>
 <fieldset><legend>Orientation</legend>
 <p>All features on display are held in a data structure known as a <b>zmapWindowContainerFeatureset</b> which is a species of FooCanvasGroup (see <a href="Design_notes/modules/zmapindow_items.shtml"> zmapWindow/items</a>). These data structures can contain zero or more featuresets, although they should not be created unless there are features to display.
@@ -19,32 +21,325 @@
 <fieldset><legend>Problems and solutions</legend>
 
 <h3>The ContainerFeatureset style table is not deterministic</h3>
-<p>Styles are added to this table effectively in random order entirely dependant on the order in whcih features are loaded from servers, and this has become a much more crtitical issue with the advent of pipe servers, one for each featureset - the order of insertion into this table is dependant on the speed of external databases and the amount of data they provide.  In addition to this ther order of styles on lookup is dependant on an open source hash algorithm (they are stored in a hash table) and therefore dependant on the names given to the styles.
+<p>Styles are added to this table effectively in random order entirely dependant on the order in which features are loaded from servers, and this has become a much more crtitical issue with the advent of pipe servers, one for each featureset - the order of insertion into this table is dependant on the speed of external databases and the amount of data they provide.  In addition to this the order of styles on lookup is dependant on an open source hash algorithm (they are stored in a hash table) and therefore dependant on the names given to the styles.
 </p>
 <h4>Displaying 3-frame columns</h4>
-<p>Some ZMap functions such as displaying in 3-frame mode look up style information to decide whether of not a column should be displayed and this involves finding the first valid setting in the column's style table for the requried attribute, and if there is more than one style provided the value retrieved depends on the random ordering of styles in the table.
+<p>Some ZMap functions such as displaying in 3-frame mode look up style information to decide whether or not a column should be displayed and this involves finding the first valid setting in the column's style table for the required attribute, and if there is more than one style provided the value retrieved depends on the random ordering of styles in the table (this includes sub-feature styles).
 </p>
 <p>Columns are displayed by zmapWindow.c/windowDrawContextCB() which attempts to create all possible strand and frame combinations for that column.  This involves creating the column (ZMapWindowContainerFeatureset) and copying the style table and then looking up the style table to find out whether or not the column should have been created.
 </p>
 
+<h5>Solution</h5>
+<h6>Handling styles</h6>
+<p>The ContainerFeatureset data structure will be modified to include a pointer to its own style data structure.   The style table will be removed.
+</p>
+<p>Each column may be configured with a style of its own not related to any contained featuresets and if so this should define column specific attributes such as default bump mode.  This style is optional and may be used to define behaviour unambiguously.  If defined it will be referred to by the ContainerFeaturest structure on creation and this style will not take precedence over the contained featureset's styles.
+</p>
+<p>If a column does not have its own style defined then the column's style will be created by merging the view's column_2_stylelist in the order specified by configuration. For a recent ZMap with pipe servers and a [columns] stanza to define the mapping of featuresets to columns (in order) this is unambiguous.  ACEDB or other servers can provide additional mapping and if so this will be used as merged by following existing rules.
+</p>
+<p>For columns that contain only one featureset we wish to retain the current simple configuration and in such a case that featureset's style will be copied to the Container featureset implicitly by the process in the previous paragraph;
+</p>
+<p>Sub feature styles will not be merged into a ContainerFeatureset's style.  A style attribute will only be merged in if it has not already been set in the ContainerFeatureset (Note that this is th oppsite sense to that used by style inheritance).  Once created a ContainerFeatureset's style will not be modified  - this implies that all relevant information will be provided by the Zmap configuration.
+</p>
+<p>
+As part of the configuration handling on Zmap startup the list of columns in the view will be modified to use a new data structure (this was temporarily code using ZMapGFFSet) and this will include a reference to the ContainerFeatureset style (which in the most simple case will be the same style object as the one featureset it contains.
+</p>
+<p><b>NOTE:</b>This assumes that all featuresets in a column will exhibit the same 3-frame and strand behaviour and that this is waht is desired by displaying them in the same logical column.
+</p>
+
+<h6>Handling style tables and creating a column style</h6>
+<p>A ContainerFeatureset has a style table which contains all the styles needed to display all the features in that column and this was originally used to perform rapid lookup of styles for each feature (now the features have a direct pointer to thier style).  This table is still used to lookup sub-feature styles.  It is created by <b>zmapUtils.c/zmapWindowFeatureSetStyles()</b>, which is called by <b>zmapWindowDrawFeatures.c/feature_set_matches_frame_drawing_mode()</b> to see if a column should be created and shortly afterwards by <b>createColumnFull()</b> which adds the style table to the ContainerFeatureset when it has been created.  This is all done in <b>zmapWindow/windowDrawContextCB()</b>.
+</p>
+
+<p>
+To simplify this process the column config data  will be extended to include the style table and before attempting to create each column in windowDrawContextCB() this will be created and the column style either extracted or created.  This style can then be used to fuel feature_set_matches_frame_drawing_mode() and the table passed to CreateColumnFull().
+Processing these styles long after config handling ensures that the style data is available.
+After updating various other segments of code that require the style table then this can be removed.
+</p>
+<h4>Tidying up</h4>
+<p>
+<ul>
+<li> createColumnFull() still uses zmapWindowFeatureStyles() - i left this alone as it's intended to remove it later. The ContainerFeatureset still takes a copy of this copy of the data.
+<li>
+<li> double clicking on the navigator locus looks flaky
+<li> scan for zMapFindStyle() to find more column style lookups
+<li> remove window->display_styles
+</ul>
+</p>
+<p>
+<b>NOTE:</b> zmapWindowFeatureSetStyles() is also called from the matching navigator callback.
+</p>
+
+<h6>Creating columns</h6>
+<p>When deciding whether or not to create a column for a particular frame and strand combination the column will be looked up in the view->columns hash table and the relevant style found.   If not frame/strand appropriate it will not be created.
+</p>
+<p><b>NOTE:</b> <b>zmapWindowDrawFeatures.c</b> contains several routes into creating a column - normal, separator, 3F translation, and likely enough the navigator will also be implicated, These need to be resolved...
+</p>
+<p> <b>find_or_create_column()</b> can cretae a colum and then throw it away - should not happen
+</p>
+
+
+
+
 <h4>Maintaining the current bump-mode</h4>
 <p>Current bump mode is stored in style data structures and with a style table it is necessary to store this bump mode in every style in the table to ensure that lookup will return the same data.  If another featureset is added to the column then care must ba table to update that set's style appropriately.
 </p>
-<p>There is code in <b>zmapWindowColBump.c</b> that alows for the possibility of bumping eiother the whole column or a single featureset (if the user clicked on a feature) but as things stand it is not possible to control this reliably or in the obvious way (eg unbump one featureset)
+<p>There is code in <b>zmapWindowColBump.c</b> that allows for the possibility of bumping either the whole column or a single featureset (if the user clicked on a feature) but as things stand it is not possible to control this reliably or in the obvious way (eg unbump one featureset).
+</p>
+<h5>Solution</h5>
+<p>Current bump mode will be an attribute of the ContainerFeatureset and removed from the style. Bumping will be coded as an atrtribute of the whole column, and if it is desired to bump one featureset out of many then the bump state of each featureset in the column will be stored in some small data structure in the ContainerFeatureset. (eg a list/ hash table/ array)
+</p>
+<p>Note that styles are still specifiedwith a bump-mode: this is the initial bump mode to use with a column.
+
+
+<h3>Deferred and loaded style attributes</h3>
+<p>Styles data has been used to hold state information - featuresets could be marked for 'load when requested' via thier style and when loaded this fact was also recorded in the style data.  As styles can be used by more than one featureset this required styles to be copied for each column.
+</p>
+<p>With the advent of pipe Servers this deferred attribute has become redundant - indiviudual pipe servers can be marked as delayed or otherwise.
+</p>
+<h5>Solution</h5>
+<p> Deferred and loaded attributes will be removed from styles and this function replaced by pipe server config.  Note that current practice In Otterlace is to ask the user which columns to load at startup and to allow individual columns to be loaded on request later, so there is no need for these legacy features.
 </p>
 
 <h3>Style lookup should not be necessary</h3>
-<p>As features can point to thier style structures there whopuld be no need for lookup.  Currently each feature used its style directly but sub-feature styles are referred to by Id.
+<p>As features can point to thier style structures there should be no need for lookup.  Currently each feature used its style directly but sub-feature styles are referred to by Id.  These are then looked up via the column's style table.
 </p>
-</h5>Solution</h5>
+<h5>Solution</h5>
 <p>Sub-feature style id should be replaced by pointers to styles, by the style config code and ContainerFeatureset style table lookup removed.
 </p>
+<h6>Some intricacies</h6>
+<p>
+The function <b>zMapFindStyle()</b> is widely used to lookup a style, and ZMapWindow has two lists of styles (read_only_styles and display_styles).  These need to be resolved so that there is only one list which is maintained by the owning ZMapView (which out of scope of this page see <a href="Design_notes/notes/view_window_style.shtml">here</a>) but use of this function must be verified in the following places:
+<pre>
+deskpro18979[mh17]39: zgf zmapfindstyle
+- == iffed out
+* = ok
+- zmapControl/zmapControlRemoteReceive.c:1
+* zmapFeature/zmapFeature.c:1
+- zmapFeature/zmapFeatureContext.c:1
+* zmapFeature/zmapFeatureOutput.c:1
+* zmapFeature/zmapFeatureUtils.c:1
+* zmapGFF/zmapGFF2Dumper.c:1
+* zmapGFF/zmapGFF2parser.c:2              needs to do lookup!
+* zmapServer/acedb/acedbServer.c:3
+* zmapServer/zmapServerProtocolHandler.c:1
+* zmapServer/das/dasServer.c:1
+* zmapView/zmapViewRemoteReceive.c:2
+* zmapView/zmapViewFeatureMask.c:3        does initial lookup on featuresets
+* zmapWindow/zmapWindowDNA.c:1
+* zmapWindow/zmapWindowDrawFeatures.c:2   has 'no style' failure handling
+* zmapWindow/zmapWindowFeature.c:3
+* zmapWindow/zmapWindowFeatureShow.c:1
+* zmapWindow/zmapWindowItem.c:2
+* zmapWindow/zmapWindowSearch.c:1
+* zmapWindow/zmapWindowUtils.c:1
+</pre>
+Mostly the remaining lookup calls are for fixed/pre-defined styles and initial setting up of style pointers.
+</p>
+<p>
+<b>zmapFeature.c/addModeCB()</b> has some comments about ACEDB specific data and would be best recoded eg in acedbServer.c.  This appears to legacy code beyond it's call-by date and has been iffed out and a Critical error logged if it's ever required.
+</p>
+
 <h3>There is some confusion when more than one featureset is loaded into a column</h3>
 
-<h3>Features may only be displayed in one place</h3>
+<p>There are two functions <b>zmapWindowContainerFeaturesetAttachFeatureset()</b> and <b>zmapWindowContainerFeaturesetRecoverFeatureset()</b> which operate on a single feature set no matter how many are displayed in the column.  Which one this is depends entirely on the race condition of which one loads first - it is not clear whether or not this will make a difference, but previous versions of ZMap that accepted data only from ACEDB would have been in a more determinisitic environment as the order of retrieval could be predicted. Generally multiple featuresets in a column would have been stored in one feature context featureset but the code has comments about only attatching the first one to a Canvas column. There is also a <b>zmapWindowContainerGetFeatureAny()</b> function the returns the feature context equivalent of any container and a few parts of the code refer directly to the Container->feature_any. And there is also <b>zmapWindowContainerGetFeatureSet()</b>
+</p>
+
+<h5>Solution</h5>
+<p>Find all instances of these functions and recode appropriately.  There are a few circumstances - column details, feature details, search info etc. Note that statistics are created by the attach call. Statistics are under review and will be driven by a base class when implemented and this function may be removed if necessary.  (This means that zmapWindowContainerFeaturesetAttachFeatureset() can simply be removed).
+</p>
+<p>The attach call sets the Container's inherited ZmapWindowCanvasGroup->feature_any and although there are about 3-400 instances of this string there are only a few direct references to the actual structure member.
+</p>
+
+<p>
+<pre>
+C = deals with column (container(s))
+F = deals with featureset
+I = irrelevant
+OK = good as is/ needs to be like this
+** = needs to be done
+
+deskpro18979[mh17]6: zgf attachfeatureset
+
+OK zmapWindow/items/zmapWindowContainerFeatureSet.c:1
+OK zmapWindow/items/zmapWindowContainerUtils.c:1
+fixed F zmapWindow/zmapWindowDrawFeatures.c:4
+fixed F zmapWindow/zmapWindowNavigator.c:1  createColumnCB
+
+deskpro18979[mh17]62: zgf ">feature_any"
+
+I zmapFeature/zmapFeatureData.c:4
+OK zmapWindow/items/zmapWindowContainerFeatureSet.c:2
+OK zmapWindow/items/zmapWindowContainerUtils.c:2
+fixed F in C zmapWindow/zmapWindowDrawFeatures.c:1
+I zmapWindow/zmapWindowSearch.c:5
+
+deskpro18979[mh17]63: zgf zmapWindowContainerGetFeatureSet
+
+OK zmapWindow/items/zmapWindowContainerUtils.c:1
+I zmapWindow/zmapWindowDraw.c:1
+II FCzmapWindow/zmapWindowDrawFeatures.c:3      separator stuff: can replace
+***                                             create sep. column for featureset: review
+FI zmapWindow/zmapWindowFeature.c:1             add feature to featureset: problem?
+                                                no: function is not called
+
+deskpro18979[mh17]64: zgf zmapWindowContainerGetFeatureAny
+
+OK zmapWindow/items/zmapWindowContainerUtils.c:3
+I zmapWindow/zmapWindow.c:1         function not called
+OK zmapWindow/zmapWindowDNA.c:1
+OK zmapWindow/zmapWindowItem.c:1       multiple zmapWindowItemGetFeature macros
+OK zmapWindow/zmapWindowMark.c:1
+
+deskpro18979[mh17]5: zgf recoverfeatureset
+
+OK zmapWindow/items/zmapWindowContainerFeatureSet.c:1       logs a warning if not there
+OK F zmapWindow/zmapWindow.c:1   needs column description, must get featureset desc if not there
+** C zmapWindow/zmapWindowColConfig.c:1      needs 3 frame column lookup
+      this is nearly right, needs all 3 colums w/ the same featureset attached, also needs both strands
+fixed  zmapWindow/zmapWindowDraw.c:1
+FC zmapWindow/zmapWindowDrawFeatures.c:4
+OK    FToI hash lookup used to delete hash entries called from purge_hide
+OK    makeColumnMenu needs column name, needs feature set homology type
+OK? - uses column_id  processes 'list all features in column'
+OK - zmapWindow/zmapWindowFeature.c:1 dead code
+**C zmapWindow/zmapWindowState.c:1 tangled up with FtoI hash  (commented out)
+
+</pre>
+</p>
+
+<h6>Action taken</h6>
+<p><b>zmapWindowContainerFeaturesetAttachFeatureset()</b> remains (as removing it causes grief due to missing stats) but is now only called from one place.  <b>zmapWindowDrawFeatures.c</b> has been changed to call <b>zmapWindowContainerAttachFeatureAny()</b> and this only from <b>produce_column()</b>.  The featureset that gets assigned to the container (group) ->feature_any is the one that causes the column to be created ie the first one encountered.
+</p>
+<p><b>zmapWindowDrawFeatures.c/containerDestroyCB()</b> has been changed to operate on all contained featuresets.
+</p>
+
+
+<h3>There are several versions of code to create columns</h3>
+<p>Separate functions are provided for navigator separator and normal columns, which should not be necessary.
+</p>
+<h5>Solution</h5>
+<p>
+</p>Replace all these with a function in zmapWindowContainerFeatureSet.c </p>
+
+<h3>Features may only be displayed in one place per window</h3>
+<p>
+Discussed <a href="Design_notes/notes/FToIHash.shtml">here</a>.
+</p>
 
 
 </fieldset>
 
-<fieldset><legend></legend>
+<a name="GFFdata"></a>
+<fieldset><legend>Related issues</legend>
+<h3>GFF data structures and view and window data: resolving scope issues</h3>
+<p><b>ZMapGFFSet</b> and <b>ZmpaGFFSource</b> are defined by GFF parsing code but are used more widely.
+These structures are used for mapping featusets styles and columns and lists of these are copied from view to window.  Scope issues are quite common with this data and combining all these lists into one data structure would simplify a lot of code.
+</p>
+<p>This data is sourced from configuration files and server data and once defined is static: only one copy is needed.  There are functions to update this data as new data arrives and by copying and merging data several times there is greater opportunity for errors.
+</p>
+<h4>Where to put column and style mapping data?</h4>
+<p><b>zmapFeature.h</b> contains all the data structures used by the feature context and is included by <b>zmapView</b>, <b>zmapWindow</b> and <b>zmapGFF</b> and is the natural home for this data.
+<p>
+<p>What is proposed is to mogve <b>ZMapGFFSet</b> and <b>ZMapGFFSource</b> into zmapFeature.h and rename them, and add a similar structure for column data (which currently re-uses ZMapGFFSet).  The add another structure <b>ZMapContextMap</b> which will hold all the lists and hash tables used by <b>zmapView</b> and <b>zmapWindow</b> to map featuresets, styles and columns.
+</p>
+<p><b>ZMapView</b> and <b>ZmapWindow</b> will be modified to have a single pointer to a <b>ZMapContextMap</b> and the window structure will point to the same object as held in the view. Copy merge and update functions will be removed.
+</p>
+<h4>Tidying up</h4>
+<p>Having access to needed data will remove the need to copy many items of data around. here are a few places to tidy up:
+<ul>
+<li>zMapWindowDisplayData() - remove args and just set context_map; there is extra code scattered around to pass this info from struct to struct.
+<li> stop copying the data when it's become static. remove window->display_styles
+<li> remove context_map->column_2_styles
+<li> resolve view to window style copy and fix zmapWindowDestroy styles free.
+<li> remove window->feature_set_names and use context_map.columns instead for column ordering. look at zmapView/invoke_merge_in_names
+<li>turn window->context_map into a pointer, review all alloc and free code.
+<li> scanning for various data items reveals a lot of code that looks like cut and paste: marvelous for lines per day productivity targets but not nice to maintain.
+</ul>
+<h4>Feature Context</h4>
+<p>It could be argued that the ZMapFeatureContextMap data should be part of the feature context - styles are referenced directly by features and the context cannot be used much without this data.
+However, the request protocol in place assumed these are held seperately and it may require a lot of work to combine these.
+</p>
+
+<h4>Where is the data referenced?</h4>
+<pre>
+deskpro18979[mh17]12: zgf ZMapGFFSource  (change to ZMapFeatureSource)
+
+zmapGFF/zmapGFF2parser.c:3
+zmapServer/acedb/acedbServer.c:7
+zmapView/zmapView.c:9
+zmapView/zmapViewRemoteReceive.c:1
+zmapView/zmapViewFeatureMask.c:6
+zmapWindow/zmapWindowMenus.c:2
+
+deskpro18979[mh17]13: zgf ZMapGFFSet    (change to ZmapFeatureDesc or zmapFeatureColumn)
+
+zmapConfig/zmapConfigLoader.c:6
+zmapGFF/gffparser.c:1
+zmapGFF/zmapGFF2parser.c:10
+zmapServer/acedb/acedbServer.c:7
+zmapServer/file/fileServer.c:2
+zmapServer/pipe/pipeServer.c:3
+zmapView/zmapView.c:12
+zmapView/zmapViewRemoteReceive.c:1
+zmapWindow/zmapWindow.c:2
+zmapWindow/zmapWindowDrawFeatures.c:4
+zmapWindow/zmapWindowMenus.c:2
+zmapWindow/zmapWindowNavigator.c:2
+zmapWindow/zmapWindowUtils.c:1
+</pre>
+
+<pre>
+deskpro18979[mh17]7: zgf featureset_2_column
+(irrelevant ones removed)
+
+zmapView/zmapView.c:23
+zmapView/zmapViewRemoteReceive.c:2
+zmapView/zmapViewUtils.c:1
+zmapWindow/zmapWindow.c:11
+zmapWindow/zmapWindowDrawFeatures.c:3
+zmapWindow/zmapWindowMenus.c:1
+zmapWindow/zmapWindowNavigator.c:1
+zmapWindow/zmapWindowUtils.c:1
+</pre>
+
+<pre>
+deskpro18979[mh17]9: zgf source_2_sourcedata
+NB: previously not present in the window but we need it
+(irrelevant ones removed)
+
+zmapView/zmapView.c:18
+zmapView/zmapViewRemoteReceive.c:2
+zmapView/zmapViewFeatureMask.c:3
+</pre>
+
+<pre>
+deskpro18979[mh17]24: zgf orig_styles
+
+zmapView/zmapView.c:17
+zmapView/zmapViewRemoteReceive.c:6
+zmapView/zmapViewFeatureMask.c:3
+
+deskpro18979[mh17]25: zgf read_only_styles
+
+zmapWindow/zmapWindow.c:7
+zmapWindow/zmapWindowDNA.c:1
+zmapWindow/zmapWindowDraw.c:1
+zmapWindow/zmapWindowDrawFeatures.c:1
+zmapWindow/zmapWindowFeature.c:4
+zmapWindow/zmapWindowItem.c:2
+zmapWindow/zmapWindowMenus.c:3
+zmapWindow/zmapWindowRemoteReceive.c:2
+zmapWindow/zmapWindowSearch.c:1
+zmapWindow/zmapWindowUtils.c:5
+</pre>
+
+<h3>Resolving source featureset and column ambiguities</h3>
+<p>With ACEDB feature set source and column names can get mapped transparently which has some implications for data requests.  Received data has been taken care of by keeping feature sets distinct in the feature context and merging into columns in the display code.
+</p>
+<p>
+The reverse mapping may need to be done on request: to find a featureset in the ACEDB server config we need to map from featureset to column and request the column and then ACEDB will return the featuresets.  This mapping is the reverse of what we want to do for pipe servers and we will try to find the featureset directly before trying the mapping.  Note that the source_2_source data provides a source featureset name to GFF source ID mapping.  It turns out that ACEDB "no longer uses this mapping" but ZMap config file allow this to be set via the config files.  If an alternate name is provided either by config or by ACEDB then the featureset will be found via the featureset name or column and the request will be for the GFF source ID.
+</p>
+
 </fieldset>
+

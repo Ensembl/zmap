@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.24 2010-09-27 11:13:18 mh17 Exp $ -->
+<!-- $Id: index.html,v 1.25 2010-10-14 13:00:22 mh17 Exp $ -->
 
 <h2>ZMap Design Documentation</h2>
 
@@ -20,18 +20,22 @@
 <br />
 <a href="Design_notes/modules/zmapConfig.shtml">Configuration files</a><br />
 Coordinate systems<br />
-
+<a href="Design_notes/notes/ContainerFeatureset.shtml">Container Featureset</a>
+<a href="Design_notes/notes/FToIHash.shtml">FToIHash</a> <br />
 <a href="Design_notes/modules/zmapFeature.shtml">Featuresets</a>
 <a href="Design_notes/notes/featureset_col.shtml">Config</a>
 <a href="Design_notes/notes/col_order.shtml">Column Ordering</a>
+<br />
+<a href="Design_notes/notes/feature_search.shtml">Features search</a>
 <br />
 <a href="Design_notes/notes/focus_list.shtml">Focus/ highlight items</a>
 <br />
 
 
-<a href="Design_notes/modules/pipeServer.shtml">pipeServer Config</a><br />
-<a href="Design_notes/modules/zmapFeature.shtml">Styles</a>
+<a href="Design_notes/modules/zmapFeature.shtml">Featuresets and Styles</a>
 <a href="Design_notes/notes/glyph_style.shtml">and Glyphs</a><br>
+<a href="Design_notes/notes/view_window_style.shtml">Styles (Global)</a><br />
+<a href="Design_notes/modules/pipeServer.shtml">pipeServer Config</a><br />
 <a href="Design_notes/notes/slaveThread.shtml">Threads</a><br>
 <a href="Design_notes/modules/zmapView.shtml">All about Views</a><br />
 </fieldset>
@@ -63,18 +67,21 @@ Coordinate systems<br />
 <ul>
 <li>delayed server needs to free view_con->context etc etc (memory leak)
 <li>sequence server is assumed to be ACEDB or some other server that is not delayed and there can be only one
-<li>Styles have 3 fields that appear to be misplaced as they refer to column data: loaded, deferred, and cur_bump_mode. Most importantly <b>deferred styles</b> need to be looked at esp as commented around <b>zmapViewRemoteReceive.c #1242</b>
+
 <li><a href="Design_notes/modules/zmapView.shtml#DNA_memory">Scope and memory allocation issues</a> with DNA sequence data
-<li>zMapFeaturesetCreateID() and zmapStyleCreateId() and ZMapGFFSet and ZMapGFFSource could benefit from a review.  The problem is that sometimes we want names normalised and sometimes we want them capitalised as given.  Perhaps the best way woule be to have all key values as normalised and duplicate quarks used for display names.  There are 86 calls to these functions, and this is not all the code that would have to be checked.
-<li><b>NC-Splice</b> markers - need to verify if correct or not, need some test data.  Currently coded as James' recommendations
+<li>zMapFeaturesetCreateID() and zmapStyleCreateId() and ZMapGFFSet and ZMapGFFSource could benefit from a review.  (<b>NB</b> these structuire have been renamed ZMapFeatureSetDesc, ZMapFeatureSource The problem is that sometimes we want names normalised and sometimes we want them capitalised as given.  Perhaps the best way woule be to have all key values as normalised and duplicate quarks used for display names.  There are 86 calls to these functions, and this is not all the code that would have to be checked.
+<li> Styles have <b>gff_source</b> and <b>gff_feature</b> parameters. There are supplied by ACEDB and only used for GFF dump functions.  This information is more appropriately handled by the GFFSource data structure, held in the view/window <b>context_map->source_2_sourcedata</b> hash table.
 
 <li><b>zMapViewLoadFeatures()</b> is called for <b>OTF data requests</b> after the initial load, and featuresets etc are concatenated not merged. The server interface has some loose ends relating to whether or not the report all supported featuresets of just those requested, and currently theyeturn all styles not just those needed. Needs a tidy up.
-<li> ZMapView->columns needs to be a new struct. This should handle column ordering and also column bump state. zmapWindow->feature_set_names is currently used for this and need to be replaced - it's left as is right now as support for old ACE connectuons needs it.
 
 <li>Locus features are apparently created via some kludge which causes some problems when deleting features. This and the naviagtor-sets needs a review. see eg <b>zmapViewRemoteRecieve.c #1601</b>.
 
 <li>Migration from ACEDB requires featureset to column and style mappings which can be obscure. it is possible to extract this information by hand from otterlace config but this is not possible for users.
 RC export/config could be used to dump this info to a file but due to scope issues it's really difficult to find that information where the functions get called from. This is tied up with view/window 'modularity' and there is a clear need to restructre some of the v iew and window data so that stuff that is needed by both modules is available. Currently some data (eg featureset_2_column) is copied but this is not ideal.
+
+<li> the columns dialog needs to feed off server config fro loading columns
+
+<li> zmapWindowContainerFeatureSet is created by three different version of the same code: normal, navigator and separator and these should be merged and moved into zmapWindowContainerFeatureSet,c
 </ul>
 </p>
 
