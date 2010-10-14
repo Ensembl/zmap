@@ -39,6 +39,7 @@ zmapReadLine.c \
 zmapIOOut.c \
 zmapGLibUtils.c \
 zmapSequence.c \
+zmapSO.c \
 zmapFooUtils.c \
 zmapBase.c \
 zmapUrlUtils.c \
