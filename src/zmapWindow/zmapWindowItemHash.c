@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.51 2010-10-13 15:44:25 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.52 2010-10-14 09:33:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,7 @@ zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, Z
  *  */
 
 
+#define MH17_SEARCH_DEBUG 0
 
 /* Used to hold coord information + return a result the child search callback function. */
 typedef struct
@@ -926,7 +927,6 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
 {
   GList *item_list    = NULL ;
   GQuark same_name_id = 0;
-  ZMapWindowContainerFeatureSet column;
   GQuark column_id;
 
   same_name_id = feature_same_name_id(feature);
@@ -953,7 +953,7 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
     {
       ZMapWindowFToISetSearchData search;
       search = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems,
-					     feature, 0, 0, 0, 0, "+", "*");
+					     feature, 0, 0, set_id, 0, "+", "*");
       result = zmapWindowFToISetSearchPerform(window, search);
       if(search_cache_out)
 	*search_cache_out = search;
@@ -1003,7 +1003,7 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
 	{
 	  search_data->align_id   = feature->parent->parent->parent->unique_id;
 	  search_data->block_id   = feature->parent->parent->unique_id;
-	  search_data->set_id     = feature->parent->unique_id;
+	  search_data->set_id     = set_id;
 	  search_data->feature_id = feature->unique_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1030,7 +1030,7 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
 
 	  search_data->align_id   = feature->parent->parent->parent->unique_id;
 	  search_data->block_id   = feature->parent->parent->unique_id;
-	  search_data->set_id     = feature->parent->unique_id;
+	  search_data->set_id     = set_id;
 	  search_data->feature_id = same_name_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1294,7 +1294,7 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
   zMapAssert(curr_search_id != stop) ;
 
 #if MH17_SEARCH_DEBUG
-printf("cur_search id = %s (%d)\n",g_quark_to_string(curr_search_id),g_hash_table_size(hash_table));*/
+printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id), g_hash_table_size(hash_table), g_quark_to_string(next_search_id),curr_search->is_reg_exp);
 #endif
 
   if (next_search_id == stop)
@@ -1343,7 +1343,7 @@ printf("cur_search id = %s (%d)\n",g_quark_to_string(curr_search_id),g_hash_tabl
               if(isRegExp(curr_search->search_quark))
                   curr_search->is_reg_exp = TRUE;
 #if MH17_SEARCH_DEBUG
-printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);*/
+printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);
 #endif
 
               if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,l->data)))
@@ -1388,8 +1388,19 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
       && (!(curr_search->pred_func)
 	  || (curr_search->pred_func
 	      && curr_search->pred_func(hash_item->item, curr_search->user_data))))
-    *results = g_list_append(*results, hash_item->item) ;
+  {
+      *results = g_list_append(*results, hash_item->item) ;
 
+#if MH17_SEARCH_DEBUG
+      printf("added: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
+#endif
+  }
+#if MH17_SEARCH_DEBUG
+  else
+  {
+      printf("filtered: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
+  }
+#endif
   return ;
 }
 

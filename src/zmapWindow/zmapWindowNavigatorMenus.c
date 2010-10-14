@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 29 16:57 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.28 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.29 2010-10-14 09:33:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -209,7 +209,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
     search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
-						    locus_quark, /* feature->parent->unique_id,  */
+						    locus_quark, /* feature->parent->unique_id, NO: container->unique_id */
 						    locus_quark,
 						    wild_card, /* strand */
 						    wild_card, /* frame */
@@ -385,7 +385,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature->parent->parent->unique_id,
 						    feature->parent->unique_id,
-						    feature->unique_id,
+						    container->unique_id,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(container->strand),
 						    zMapFeatureFrame2Str(container->frame));
