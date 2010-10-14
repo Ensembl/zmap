@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 14 12:06 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.41 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.42 2010-10-14 10:05:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1480,7 +1480,7 @@ static void configure_add_pages(ColConfigure configure_data)
       if(page_data->page_constructor)
 	(page_data->page_constructor)(page_data, new_page);
     }
-
+#if MH17_NO_DEFERED_PAGE
   if((page_data = deferred_page_create(configure_data, &page_name)))
     {
       label = gtk_label_new(page_name);
@@ -1495,7 +1495,7 @@ static void configure_add_pages(ColConfigure configure_data)
       if(page_data->page_constructor)
 	(page_data->page_constructor)(page_data, new_page);
     }
-
+#endif
   return ;
 }
 

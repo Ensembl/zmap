@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Aug 18 12:04 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.39 2010-09-22 15:42:08 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.40 2010-10-14 10:05:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -880,7 +880,7 @@
 #define ZMAPSTANZA_BLIXEM_KILL_EXIT  "kill-on-exit"
 #define ZMAPSTANZA_BLIXEM_DNA_FS     "dna-featuresets"
 #define ZMAPSTANZA_BLIXEM_PROT_FS    "protein-featuresets"
-#define ZMAPSTANZA_BLIXEM_FS         "transcript-featuresets"
+#define ZMAPSTANZA_BLIXEM_FS         "featuresets"
 
 #define ZMAPSTANZA_BLIXEM_FILE_OPT_GFF   "gffv3"
 #define ZMAPSTANZA_BLIXEM_FILE_OPT_EXBLX "exblx"
