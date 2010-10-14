@@ -1,0 +1,47 @@
+<!-- $Id: feature_search.html,v 1.1 2010-10-14 12:20:15 mh17 Exp $ -->
+<h2>Searching for features</h2>
+
+<fieldset><legend>Some brief notes</legend>
+<h3>Where is this used?</h3>
+<p>This code affect more things than are immediately obvious:
+<ul>
+<li> context menu 'feature search'
+<li> context menu 'list all features in column'
+<li> context menu list same named features
+<li> feature select/ highlight to get same name features
+<li> indirectly via feature tabbing??
+</ul>
+</p>
+
+<h3>Old and New</h3>
+<p>Traditionally (using ACEDB) we could search in a column for features using the feature context as a featureset in the feature context mapped onto a Canvas column directly (1-1).
+</p>
+
+<p>Now that the feature context has been organised as one set of features per featureset the search process has been changed slightly and although the user can select a column as before the code has to extract all the contained featuresets and search each one.
+</p>
+
+<p>This involves a mod to the search code that implements a list of keys to search for.  Foe example if you select the column Repeats there will be a search though Repeatmasker_LINE, Repeatmasker_SINE and a few others.  If you try a wild card for the column the each one of these columns will be expanded in the same way.
+</p>
+<img src="Design_notes/notes/search.png" border="0">
+
+<h3>Loose Ends</h3>
+<p>The style filter is now out of date and a featureset selection in the search box would be more appropriate.  However filtering by style should produce the same result.
+</p>
+</fieldset>
+
+<fieldset><legend>Implementation notes</legend>
+<h3>Searching by feature name</h3>
+<p>This used a search with align, block, and column unspecified, and it was necessary to supply the column ID from the selected feature.  This should not be a problem as the feature names are accession numbers and should be different in different columns.
+</p>
+
+<h3>Files and functions</h3>
+<p>Of main interest are: <b>zmapWindowItemHash.c</b> (for doing the search), <b>zmapWindowSearch.c</b> (for operating the search window), <b>zmapWindowFeature.c</b> (for the feature menu) <b>zmapWindowDrawFeatues.c</b> (for the column menu).
+</p>
+
+<h3>Feature Context and ZMapWindowCanvas</h3>
+<p>Both the context and canvas are organised as trees of data structures in the following hierarchy: Align, Block, Strand (canvas only), Featureset/Column, Features.   There is a series of hash tables following a similar structure owned by the window and at each level the hash table contains entries for the next lower level.  Note that although these hash tables can be searched they are implicitly unsorted.
+</p>
+<p>One nuance that is worth noting is that the FToIHash is organised with each featureset split into strand and frame combinations and it is possible to select (eg) all reverse strand features in a set wihtout accessing any others.  This gives us a two-way mapping of featuresets in that several featuresets may be mapped into a single column and also each of these featuresets may be split into several columns according to strand and frame.
+</p>
+
+</fieldset>
