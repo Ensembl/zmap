@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.67 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.68 2010-10-18 08:11:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -486,7 +486,8 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
       GList *iter;
       ZMapStyleMode mode;
 
-      zMapAssert(column->style_table);
+      if(!column->style_table)      /* mis-configuration */
+            return NULL;
 
       if(!column->style_table->next)  /* only one style: use this directly */
       {
@@ -578,9 +579,13 @@ void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
                   ZMapFeatureTypeStyle s;
 
                   s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
-                  if(!s->mode || s->mode == column->style->mode)
+                  if(column->style && (!s->mode || s->mode == column->style->mode))
                   {
                         zMapStyleMerge(column->style, s);
+                  }
+                  else
+                  {
+                        column->style = s;
                   }
             }
       }
