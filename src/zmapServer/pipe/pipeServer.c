@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.30 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.31 2010-10-18 09:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -503,7 +503,7 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
   PipeServer server = (PipeServer)server_in ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  have_mode = TRUE;
+  *have_mode = TRUE;
 
   return result ;
 }
