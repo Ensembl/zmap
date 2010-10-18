@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:12 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.39 2010-10-18 15:18:40 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.40 2010-10-18 15:31:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -287,6 +287,7 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 static int calcCoord(ZMapSequenceType match_seq_type, int start, int end) ;
 
+GList * zMapViewGetColumnFeatureSets(blixemData data,GQuark column_id);
 
 /*
  *                Globals
@@ -2292,28 +2293,61 @@ static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, char *lin
 
 
 
-/* A GFunc() to step through the named feature sets and make a list of the features. */
+/* A GFunc() to step through the named feature sets and write them out for passing
+ * to blixem. */
 static void getSetList(gpointer data, gpointer user_data)
 {
   GQuark set_id = GPOINTER_TO_UINT(data) ;
   GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
-
+  GList *column_2_featureset;
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
-  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
-    {
-      zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
-		     (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
-		      ? "alignment" : "transcript"),
-		     g_quark_to_string(set_id)) ;
-    }
+  feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+
+  if(feature_set)
+  {
+      g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data);
+  }
   else
-    {
-      g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
-    }
+  {
+      /* assuming a mis-config treat the set id as a column id */
+      column_2_featureset = zMapViewGetColumnFeatureSets(blixem_data,canon_id);
+      if(!column_2_featureset)
+      {
+            zMapLogWarning("Could not find %s feature set or column \"%s\" in context feature sets.",
+                  (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
+                  ? "alignment" : "transcript"),
+                  g_quark_to_string(set_id)) ;
+      }
+
+      for(;column_2_featureset;column_2_featureset = column_2_featureset->next)
+      {
+            if((feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data)))
+            {
+                  g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data);
+            }
+#if MH17_GIVES_SPURIOUS_ERRORS
+/*
+We get a featureset to column mapping that includes all possible
+but without features for eachione the set does not get created
+in which case here a not found error is not an error
+but not finding the column or featureset in the first attempt is
+previous code would not have found *_trunc featuresets!
+*/
+            else
+            {
+                 zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
+                       (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
+                        ? "alignment" : "transcript"),
+                       g_quark_to_string(GPOINTER_TO_UINT(column_2_featureset->data))) ;
+
+            }
+#endif
+      }
+  }
 
   return ;
 }
