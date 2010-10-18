@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.68 2010-10-18 08:11:12 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.69 2010-10-18 15:18:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -673,6 +673,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 
   return styles_list;
 }
+
 
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)

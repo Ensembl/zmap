@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.270 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.271 2010-10-18 15:18:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1347,6 +1347,8 @@ ZMapFeatureTypeStyle zMapWindowGetColumnStyle(ZMapWindow window,GQuark col_id);
 
 GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id);
 //GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
+
+
 
 /* Ruler Functions */
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);

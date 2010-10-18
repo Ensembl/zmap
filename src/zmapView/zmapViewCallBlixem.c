@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:12 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.38 2010-09-24 09:12:50 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.39 2010-10-18 15:18:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -536,7 +536,6 @@ static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData bl
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
   zMapAssert(block) ;
   blixem_data->block = block ;
-
 
   blixem_data->file_format = BLX_FILE_FORMAT_EXBLX ;
 
@@ -1221,6 +1220,27 @@ static gboolean initFeatureFile(char *filename, char *file_header, GString *buff
   return status ;
 }
 
+/* returmn a list of featureset quarks that are configured to map to a column
+ * NOTE that this is not the same as a ZMapWindowContainerFeatureSet->featurstes list
+ * as that is a list of sets with features actually displayed and may vary according to strand etc
+ * NOTE we calculate this OTF as it could change as data is loaded
+ * main use is for blixem config
+ */
+
+GList * zMapViewGetColumnFeatureSets(blixemData data,GQuark column_id)
+{
+      ZMapFeatureSetDesc fset;
+      GList *iter,*list = NULL;
+      gpointer key;
+
+      zMap_g_hash_table_iter_init(&iter,data->view->context_map.featureset_2_column);
+      while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
+      {
+            if(fset->column_id == column_id)
+                  list = g_list_prepend(list,key);
+      }
+      return list;
+}
 
 
 /* A GFunc() to step through the named feature sets and write them out for passing
@@ -1231,20 +1251,53 @@ static void processSetList(gpointer data, gpointer user_data)
   GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
+  GList *column_2_featureset;
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
-  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id))))
-    {
-      zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
-		     (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
-		      ? "alignment" : "transcript"),
-		     g_quark_to_string(set_id)) ;
-    }
-  else
-    {
+  feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+
+  if(feature_set)
+  {
       g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data);
-    }
+  }
+  else
+  {
+      /* assuming a mis-config treat the set id as a column id */
+      column_2_featureset = zMapViewGetColumnFeatureSets(blixem_data,canon_id);
+      if(!column_2_featureset)
+      {
+            zMapLogWarning("Could not find %s feature set or column \"%s\" in context feature sets.",
+                  (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
+                  ? "alignment" : "transcript"),
+                  g_quark_to_string(set_id)) ;
+      }
+
+      for(;column_2_featureset;column_2_featureset = column_2_featureset->next)
+      {
+            if((feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data)))
+            {
+                  g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data);
+            }
+#if MH17_GIVES_SPURIOUS_ERRORS
+/*
+We get a featureset to column mapping that includes all possible
+but without features for eachione the set does not get created
+in which case here a not found error is not an error
+but not finding the column or featureset in the first attempt is
+previous code would not have found *_trunc featuresets!
+*/
+            else
+            {
+                 zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
+                       (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
+                        ? "alignment" : "transcript"),
+                       g_quark_to_string(GPOINTER_TO_UINT(column_2_featureset->data))) ;
+
+            }
+#endif
+      }
+  }
 
   return ;
 }
