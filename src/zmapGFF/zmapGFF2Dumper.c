@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 19 16:54 2010 (edgrif)
+ * Last edited: Oct 19 17:19 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.25 2010-10-19 15:54:56 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.26 2010-10-19 16:34:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,11 +151,16 @@ static gboolean dump_transcript_locus(ZMapFeature    feature,
 				      GError       **error,
 				      GFFDumpData    gff_data);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* See Malcolms comment later.... */
 static gboolean dump_known_name(ZMapFeature    feature,
                               gpointer       transcript_data,
                               GString       *gff_string,
                               GError       **error,
                               GFFDumpData    gff_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
 					      gpointer       transcript_data,
