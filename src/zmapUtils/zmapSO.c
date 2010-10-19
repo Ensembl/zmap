@@ -29,9 +29,9 @@
  * Exported functions: See zmapSO.h
  *              
  * HISTORY:
- * Last edited: Oct 19 08:41 2010 (edgrif)
+ * Last edited: Oct 19 17:20 2010 (edgrif)
  * Created: Mon Oct 11 12:04:13 2010 (edgrif)
- * CVS info:   $Id: zmapSO.c,v 1.2 2010-10-19 15:45:26 edgrif Exp $
+ * CVS info:   $Id: zmapSO.c,v 1.3 2010-10-19 16:35:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,7 +87,7 @@ char *zMapSOAcc2Term(GQuark SO_accession)
  * a string. */
 GQuark zMapSOAcc2TermID(GQuark SO_accession)
 {
-  char *SO_term_id = 0 ;
+  GQuark SO_term_id = 0 ;
 
   if (SO_accession)
     {
