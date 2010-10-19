@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Dec 17 11:15 2009 (edgrif)
+ * Last edited: Oct 19 09:05 2010 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.27 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.28 2010-10-19 15:59:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,8 +104,12 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
  * or for a column is:
  *
  *                                     column name
+ * 
+ * THE APPROACH HERE IS NOT CORRECT, SHOULD BE REWRITTEN TO KNOW NOTHING ABOUT FEATURES
+ * AND SIMPLY DISPLAY IN ORDER A NUMBER OF FIELDS WITH TOOLTIP TEXT PROVIDED BY THE
+ * CALLER, THIS SHOULD BE A DUMB DISPLAY FACILITY.
  *
- *  */
+ */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc)
 {
   GtkWidget *label[TOTAL_LABELS] = {NULL} ;
