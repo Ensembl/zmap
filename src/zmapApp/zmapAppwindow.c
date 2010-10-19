@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Oct 19 16:48 2010 (edgrif)
+ * Last edited: Oct 19 17:18 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.74 2010-10-19 15:50:14 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.75 2010-10-19 16:33:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
+#include <unistd.h>
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
