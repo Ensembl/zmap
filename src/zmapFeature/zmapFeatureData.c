@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 08:41 2010 (edgrif)
+ * Last edited: Oct 19 17:18 2010 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.9 2010-10-19 15:53:13 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.10 2010-10-19 16:34:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <gobject/gvaluecollector.h>
 #include <ZMap/zmap.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapSO.h>
 #include <ZMap/zmapStyle.h>
 
 
