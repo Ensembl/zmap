@@ -21,15 +21,14 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internals for command line parsing.
  *
  * HISTORY:
- * Last edited: May 12 17:07 2008 (rds)
+ * Last edited: Oct 13 17:39 2010 (edgrif)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.8 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.9 2010-10-19 15:50:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
@@ -40,6 +39,7 @@
 
 
 #define ZMAPARG_VERSION_DESC        "Program version."
+#define ZMAPARG_SLEEP_DESC          "Makes ZMap sleep for 15 secs at start-up to give time to attach a debugger."
 #define ZMAPARG_SEQUENCE_START_DESC "Start coord in sequence, must be in range 1 -> seq_length."
 #define ZMAPARG_SEQUENCE_END_DESC   "End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence."
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."

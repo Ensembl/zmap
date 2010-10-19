@@ -31,9 +31,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Feb 11 09:54 2009 (edgrif)
+ * Last edited: Oct 13 17:36 2010 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.15 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.16 2010-10-19 15:50:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -333,6 +333,9 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, 
       G_OPTION_ARG_NONE, NULL, 
       ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG, 
+      G_OPTION_ARG_NONE, NULL, 
+      ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
     { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS, 
       G_OPTION_ARG_INT, NULL,
       ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },

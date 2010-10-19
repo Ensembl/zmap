@@ -26,9 +26,9 @@
  *              program.
  *
  * HISTORY:
- * Last edited: May 19 21:37 2008 (rds)
+ * Last edited: Oct 13 17:43 2010 (edgrif)
  * Created: Mon Feb  7 08:19:50 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.h,v 1.7 2010-03-04 15:14:49 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.h,v 1.8 2010-10-19 15:50:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_H
@@ -118,6 +118,7 @@ typedef union
 
 
 #define ZMAPARG_VERSION        "version"
+#define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_SEQUENCE_START "start"
 #define ZMAPARG_SEQUENCE_END   "end"
 #define ZMAPARG_CONFIG_FILE    "conf_file"

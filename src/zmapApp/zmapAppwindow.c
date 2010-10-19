@@ -20,25 +20,18 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Creates the first toplevel window in the zmap app.
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 30 21:16 2010 (edgrif)
+ * Last edited: Oct 19 16:48 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.73 2010-08-09 09:04:30 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.74 2010-10-19 15:50:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -48,6 +41,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
+#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
@@ -61,6 +55,7 @@
 #define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
+static gboolean checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 static void checkConfigDir(void) ;
@@ -126,16 +121,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #endif
 
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  sleep(15) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
+  if (checkForCmdLineSleep(argc, argv))
+    sleep(15) ;
 
   g_thread_init(NULL) ;
   if (!g_thread_supported())
@@ -641,6 +628,29 @@ static void checkForCmdLineVersionArg(int argc, char *argv[])
 
 
   return ;
+}
+
+/* Did user ask for zmap to sleep initially - useful for attaching a debugger. */
+static gboolean checkForCmdLineSleep(int argc, char *argv[])
+{
+  gboolean do_sleep = FALSE ;
+  char **curr_arg ;
+
+  /* We do this by steam because the cmdline args stuff is not set up immediately. */
+
+  curr_arg = argv ;
+  while (*curr_arg)
+    {
+      if (g_ascii_strcasecmp(*curr_arg, "--sleep") == 0)
+	{
+	  do_sleep = TRUE ;
+	  break ;
+	}
+
+      curr_arg++ ;
+    }
+
+  return do_sleep ;
 }
 
 
