@@ -21,15 +21,15 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Set of file handling utilities.
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Sep 22 16:43 2010 (edgrif)
+ * Last edited: Oct 19 16:46 2010 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.14 2010-09-22 16:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.15 2010-10-19 15:46:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,7 +164,8 @@ char *zMapExpandFilePath(char *path_in)
 
   if (path_in && *path_in)
     {
-      wordexp_t p ;
+      wordexp_t p = {0} ;				    /* wordaround for MacOS X failure
+							       to zero it when !WE_DOOFFS */
 
       if (wordexp(path_in, &p, 0) == 0)
 	{
