@@ -28,9 +28,9 @@
  *              package.
  *
  * HISTORY:
- * Last edited: Oct 12 15:02 2010 (edgrif)
+ * Last edited: Oct 19 08:40 2010 (edgrif)
  * Created: Mon Oct 11 13:05:06 2010 (edgrif)
- * CVS info:   $Id: zmapSO.h,v 1.1 2010-10-14 13:48:06 edgrif Exp $
+ * CVS info:   $Id: zmapSO.h,v 1.2 2010-10-19 15:45:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SO_H
@@ -56,6 +56,7 @@
 
 
 char *zMapSOAcc2Term(GQuark SO_acc) ;
+GQuark zMapSOAcc2TermID(GQuark SO_accession) ;
 GQuark zMapSOVariation2SO(char *variation_str) ;
 GQuark zMapSOFeature2SO(ZMapFeature feature) ;
 

@@ -29,9 +29,9 @@
  * Exported functions: See zmapSO.h
  *              
  * HISTORY:
- * Last edited: Oct 14 14:42 2010 (edgrif)
+ * Last edited: Oct 19 08:41 2010 (edgrif)
  * Created: Mon Oct 11 12:04:13 2010 (edgrif)
- * CVS info:   $Id: zmapSO.c,v 1.1 2010-10-14 13:46:41 edgrif Exp $
+ * CVS info:   $Id: zmapSO.c,v 1.2 2010-10-19 15:45:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,12 +75,29 @@ char *zMapSOAcc2Term(GQuark SO_accession)
     {
       SOEntry SO_entry ;
 
-      SO_entry = findSOentry(SO_accession) ;
-
-      SO_term = SO_entry->term ;
+      if ((SO_entry = findSOentry(SO_accession)))
+	SO_term = SO_entry->term ;
     }
 
   return SO_term ;
+}
+
+
+/* Given the SO accession as a quark will return the SO_term (e.g. "exon") as
+ * a string. */
+GQuark zMapSOAcc2TermID(GQuark SO_accession)
+{
+  char *SO_term_id = 0 ;
+
+  if (SO_accession)
+    {
+      SOEntry SO_entry ;
+
+      if ((SO_entry = findSOentry(SO_accession)))
+	SO_term_id = g_quark_from_string(SO_entry->term) ;
+    }
+
+  return SO_term_id ;
 }
 
 
@@ -107,8 +124,8 @@ GQuark zMapSOVariation2SO(char *variation_str)
 {
   GQuark SO_acc = 0 ;
 
-
-  /* temporary check until we move gtk versions, this seems not to work...sigh... */
+  /* Temporary check until we can move on to a new gtk. GRegex did not come along until minor
+   * version 14. */
 #if GTK_MINOR_VERSION > 13
 
   static GRegex *insertion_exp = NULL, *deletion_exp, *snp_exp, *substitution_exp, *alteration_exp ;
@@ -121,10 +138,12 @@ GQuark zMapSOVariation2SO(char *variation_str)
       deletion_exp = g_regex_new("[ACGT]+/-", 0, 0, NULL) ;
       snp_exp = g_regex_new("[ACGT]/[ACGT]", 0, 0, NULL) ;
       substitution_exp = g_regex_new("[ACGT]+/[ACGT]+", 0, 0, NULL) ;
-      alteration_exp = g_regex_new("([ACGT]+|-)/([ACGT]+|-)/([ACGT]+|-)", 0, 0, NULL) ;
+      alteration_exp = g_regex_new("([ACGT]*|-)/([ACGT]*|-)/([ACGT]*|-)", 0, 0, NULL) ;
     }
 
-  if (g_regex_match(insertion_exp, variation_str, 0, &match_info)
+  if (g_regex_match(alteration_exp, variation_str, 0, &match_info))
+    var_id = g_quark_from_string(SO_ACC_SEQ_ALT) ;
+  else if (g_regex_match(insertion_exp, variation_str, 0, &match_info)
       || g_ascii_strcasecmp("-/(LARGEINSERTION)", variation_str) ==0)
     var_id = g_quark_from_string(SO_ACC_INSERTION) ;
   else if (g_regex_match(deletion_exp, variation_str, 0, &match_info))
@@ -135,8 +154,6 @@ GQuark zMapSOVariation2SO(char *variation_str)
     var_id = g_quark_from_string(SO_ACC_SUBSTITUTION) ;
   else if (g_ascii_strcasecmp("CNV_PROBE", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_CNV) ;
-  else if (g_regex_match(alteration_exp, variation_str, 0, &match_info))
-    var_id = g_quark_from_string(SO_ACC_SEQ_ALT) ;
 
   /* belt and braces to make sure that we know about this id. */
   if (var_id && (findSOentry(var_id)))
