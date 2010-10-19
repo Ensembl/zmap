@@ -27,15 +27,16 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug 11 09:09 2010 (edgrif)
+ * Last edited: Oct 19 16:54 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.24 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.25 2010-10-19 15:54:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapSO.h>
 #include <ZMap/zmapGFF.h>
 
 
@@ -521,8 +522,12 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 
       gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
 #endif
+
+
 	if (!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
-	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology) ;
+	  {
+	    gff_data->gff_feature = zMapSOAcc2Term(feature->SO_accession) ;
+	  }
 
 	g_string_append_printf(gff_string,
 			       GFF_SEQ_SOURCE_FEAT_START_END,
