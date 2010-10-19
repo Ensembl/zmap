@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Aug 18 12:52 2010 (edgrif)
+ * Last edited: Oct 19 16:51 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.185 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.186 2010-10-19 15:53:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -450,7 +450,17 @@ typedef struct ZMapFeatureSetStruct_
 /* Basic feature: a "box" on the screen. */
 typedef struct
 {
+  /* Used to detect when data fields are set. */
+  struct
+  {
+    unsigned int variation_str : 1 ;
+  } has_attr ;
+
+
   GQuark known_name ;					    /* Known or external name for feature. */
+
+  char *variation_str ;					    /* e.g. "A/T" for SNP etc. */
+
 } ZMapBasicStruct, *ZMapBasic ;
 
 
@@ -554,6 +564,10 @@ typedef struct ZMapFeatureStruct_
 
 
   /* Feature only data. */
+
+
+  /* OK, THIS IS THE WRONG APPROACH, WE ARE EXPANDING ALL FEATURE STRUCTS WITH THIS
+   * STUFF WHEN ONLY A PREDICTABLE FEW WILL NEED THESE....MOVE INTO BASIC.... */
   /* flags field holds extra information about various aspects of the feature. */
   /* I'm going to try the bitfields syntax here.... */
   struct
@@ -562,16 +576,20 @@ typedef struct ZMapFeatureStruct_
     unsigned int has_boundary : 1 ;
   } flags ;
 
+
+
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
 
   ZMapStyleMode type ;					    /* Basic, transcript, alignment. */
 
 
-  GQuark ontology ;					    /* Basically a detailed name for this
-							       feature such as
-							       "trans_splice_acceptor_site", this
-							       might be recognised SO term or not. */
+
+  /* This type identifies the sort of feature this is. We are using SO because it's enough
+   * for this program, it includes terms like mRNA, polyA_site etc. We store the accession
+   * because it is imutable whereas the term could change. */
+  GQuark SO_accession ;
+
 
   // style id tp be removed when style fully working
   GQuark style_id ;					    /* Style defining how this feature is processed.
@@ -587,16 +605,17 @@ typedef struct ZMapFeatureStruct_
 
   ZMapBoundaryType boundary_type ;			    /* splice, clone end ? */
 
-
+  /* GET RID OF PHASE....IT'S WRONG HERE.... */
   /* THIS IS WRONG...we shouldn't have phase in here...it only applies to translated features,
    * i.e. transcripts...which have a start_phase field, remove this one.... */
   ZMapPhase phase ;
 
+  /* MOVE THIS...WE ONLY NEED IT IN SOME FEATURES.... */
   float score ;
 
   GQuark locus_id ;					    /* needed for a lot of annotation. */
 
-  /* Source name and text. */
+  /* Source name and text, gives information about all features of a particular type. */
   GQuark source_id ;
   GQuark source_text ;
 
@@ -896,11 +915,13 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 					int length, ZMapStrand strand, GArray *path) ;
+gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 void     zMapFeatureReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
+gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
@@ -1120,7 +1141,6 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out);
-
 char *zMapFeatureStructType2Str(ZMapFeatureStructType type) ;
 char *zMapFeatureType2Str(ZMapStyleMode type) ;
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;

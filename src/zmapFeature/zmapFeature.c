@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Aug 17 08:42 2010 (edgrif)
+ * Last edited: Oct 11 15:57 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.136 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.137 2010-10-19 15:53:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -605,7 +605,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
  * Adds the standard data fields to an empty feature.
  *  */
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
-				    char *sequence, char *ontology,
+				    char *sequence, char *SO_accession,
 				    ZMapStyleMode feature_type,
 				    ZMapFeatureTypeStyle style,
 				    int start, int end,
@@ -622,7 +622,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->unique_id = g_quark_from_string(feature_name_id) ;
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
-      feature->ontology = g_quark_from_string(ontology) ;
+      feature->SO_accession = g_quark_from_string(SO_accession) ;
       feature->style_id = zMapStyleGetUniqueID(style) ;
       feature->style = style;
       feature->x1 = start ;
@@ -770,6 +770,31 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
   return result ;
 }
 
+
+
+gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string)
+{
+  gboolean result = TRUE ;
+
+  zMapAssert(feature && (variation_string && *variation_string)) ;
+
+  feature->feature.basic.has_attr.variation_str = TRUE ;
+  feature->feature.basic.variation_str = variation_string ;
+
+  return result ;
+}
+
+
+gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession)
+{
+  gboolean result = TRUE ;
+
+  zMapAssert(feature && SO_accession) ;
+
+  feature->SO_accession = SO_accession ;
+
+  return result ;
+}
 
 
 /*!

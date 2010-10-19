@@ -19,35 +19,27 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility routines for handling features/sets/blocks etc.
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug 20 17:25 2010 (edgrif)
+ * Last edited: Oct 11 13:48 2010 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.74 2010-08-20 16:25:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.75 2010-10-19 15:53:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
-#include <ZMap/zmap.h>
-
-
-
-
-
-
 
 #include <string.h>
 #include <unistd.h>
 
+#include <ZMap/zmap.h>
 #include <zmapFeature_P.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
-//#include <zmapStyle_I.h>
 
 
 typedef struct
@@ -1008,9 +1000,16 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
   return frame;
 }
 
+
+
+
+
 /*
  *              Internal routines.
  */
+
+
+
 
 /* Encapulates the rules about which frame a feature is in and what enum to return.
  *

@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  6 13:14 2010 (edgrif)
+ * Last edited: Oct 19 08:41 2010 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.8 2010-08-09 09:07:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.9 2010-10-19 15:53:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -522,50 +522,60 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
     case PROP_DATA_TERM:
     case PROP_DATA_SOFA_TERM:
       {
-	FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
+	FeatureSubFeature feature_data = (FeatureSubFeature)user_data ;
 	ZMapFeature feature;
 
-	feature = (ZMapFeature)feature_data->feature_any;
+	feature = (ZMapFeature)feature_data->feature_any ;
 
-	if(feature_data->sub_feature == NULL)
+	if (feature_data->sub_feature == NULL)
 	  {
 	    GQuark term_id;
-	    switch(feature->type)
+
+	    if (feature->SO_accession)
 	      {
-	      case ZMAPSTYLE_MODE_BASIC:
-		term_id = g_quark_from_string("Basic");
-		break;
-	      case ZMAPSTYLE_MODE_TRANSCRIPT:
-		term_id = g_quark_from_string("Transcript");
-		break;
-	      case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-		term_id = g_quark_from_string("Assembly Path");
-		break;
-	      case ZMAPSTYLE_MODE_ALIGNMENT:
-		term_id = g_quark_from_string("Alignment");
-		break;
-	      case ZMAPSTYLE_MODE_GRAPH:
-		term_id = g_quark_from_string("Graph");
-		break;
-	      case ZMAPSTYLE_MODE_GLYPH:
-		term_id = g_quark_from_string("Glyph");
-		break;
-	      case ZMAPSTYLE_MODE_TEXT:
-		term_id = g_quark_from_string("Text");
-		break;
-	      case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-	      case ZMAPSTYLE_MODE_PEP_SEQUENCE:
-		term_id = g_quark_from_string("Sequence");
-		break;
-	      default:
-		term_id = g_quark_from_string("<UNKNOWN>");
-		break;
+		term_id = zMapSOAcc2TermID(feature->SO_accession) ;
 	      }
-	    g_value_set_static_string(value, g_quark_to_string(term_id));
+	    else
+	      {
+		switch(feature->type)
+		  {
+		  case ZMAPSTYLE_MODE_BASIC:
+		    term_id = g_quark_from_string("Basic") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_TRANSCRIPT:
+		    term_id = g_quark_from_string("Transcript") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+		    term_id = g_quark_from_string("Assembly Path") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_ALIGNMENT:
+		    term_id = g_quark_from_string("Alignment") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_GRAPH:
+		    term_id = g_quark_from_string("Graph") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_GLYPH:
+		    term_id = g_quark_from_string("Glyph") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_TEXT:
+		    term_id = g_quark_from_string("Text") ;
+		    break ;
+		  case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+		  case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+		    term_id = g_quark_from_string("Sequence") ;
+		    break ;
+		  default:
+		    term_id = g_quark_from_string("<UNKNOWN>") ;
+		    break ;
+		  }
+	      }
+
+	    g_value_set_static_string(value, g_quark_to_string(term_id)) ;
 	  }
 	else
 	  {
 	    GQuark term_id;
+
 	    switch(feature_data->sub_feature->subpart)
 	      {
 	      case ZMAPFEATURE_SUBPART_GAP:
