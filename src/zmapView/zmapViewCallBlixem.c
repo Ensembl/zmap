@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Oct 19 16:58 2010 (edgrif)
+ * Last edited: Oct 19 17:27 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.41 2010-10-19 15:58:59 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.42 2010-10-19 16:36:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -300,12 +300,12 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 static int calcCoord(ZMapSequenceType match_seq_type, int start, int end) ;
 
-<<<<<<< zmapViewCallBlixem.c
 static void printFunc(gpointer key, gpointer value, gpointer user_data) ;
-
-=======
 GList * zMapViewGetColumnFeatureSets(blixemData data,GQuark column_id);
->>>>>>> 1.40
+
+
+
+
 
 /*
  *                Globals
@@ -2064,8 +2064,6 @@ static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int m
 				    int sstart, int send)
 {
   gboolean status = TRUE ;
-  static char *curr_transcript = NULL ;
-  char *SO_rna_id = "mRNA" ;
   char *SO_exon_id = "exon" ;
   char *SO_CDS_id = "CDS" ;
   char *id_str = NULL ;
@@ -2324,8 +2322,12 @@ static gboolean formatVariant(GFFFormatData gff_data, GString *line,
       char *url_escaped ;
       char *url_str = NULL ;
 
+#if GTK_MINOR_VERSION > 15
       /* The final arg is to allow utf_8 chars, I've put FALSE but I'm not sure. */
       url_escaped = g_uri_escape_string(feature->url, NULL, FALSE) ;
+#else
+      url_escaped = g_strdup(feature->url) ;
+#endif
 
       url_str = g_strdup_printf("url=%s;", url_escaped) ;
 
