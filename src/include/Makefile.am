@@ -30,6 +30,7 @@ ZMap/zmapReadLine.h \
 ZMap/zmapSeqBitmap.h \
 ZMap/zmapSequence.h \
 ZMap/zmapServerProtocol.h \
+ZMap/zmapSO.h \
 ZMap/zmapString.h \
 ZMap/zmapStyle.h \
 ZMap/zmapThreads.h \
