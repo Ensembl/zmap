@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.198 2010-10-14 09:33:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.199 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1230,6 +1230,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
 						    menu_data->container_set->unique_id,
+                                        0,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(set_strand),
 						    zMapFeatureFrame2Str(set_frame));
@@ -1253,7 +1254,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	zMapAssert(result) ;
 
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems, feature,
-						    0, 0, menu_data->container_set->unique_id, 0, zMapFeatureStrand2Str(set_strand),
+						    0, 0, menu_data->container_set->unique_id, 0, 0, zMapFeatureStrand2Str(set_strand),
 						    zMapFeatureFrame2Str(set_frame));
 	zmapWindowListWindow(menu_data->window,
 			     menu_data->item,

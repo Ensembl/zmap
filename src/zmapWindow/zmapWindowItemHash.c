@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.52 2010-10-14 09:33:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.53 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -569,7 +569,8 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_c
 
 FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_context_to_item,
 					  GQuark align_id, GQuark block_id,
-					  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
+					  GQuark set_id,
+                                ZMapStrand set_strand, ZMapFrame set_frame,
 					  GQuark feature_id)
 {
   FooCanvasItem *item = NULL ;
@@ -707,7 +708,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
  *
  *  */
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_context_to_item,
-				     GQuark align_id, GQuark block_id,
+				     GQuark align_id, GQuark block_id, GQuark column_id,
 				     GQuark set_id, char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data)
@@ -735,12 +736,12 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
     block_search.is_reg_exp = TRUE ;
 
 
-  if (set_id)
+  if (column_id)
     {
       ZMapFeatureSetDesc f2c;
       GList *iter;
       gpointer key,value;
-      gboolean reg = isRegExp(set_id);
+      gboolean reg = isRegExp(column_id);
 
       /* convert strand spec to something useful. */
       strand_id = 0 ;
@@ -786,9 +787,10 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
             f2c = (ZMapFeatureSetDesc) value;
             /* get exact match or pattern match for the column */
 
-            filter_search.search_quark = set_id;
+            filter_search.search_quark = column_id;
 
-            if(f2c->column_id == set_id || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))
+            if((featureset_id == set_id) ||
+                  (!set_id && (f2c->column_id == column_id || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))))
             {
                   /* add this featureset as an exact string with strand and frame */
                   /* erm... no ... the context has plain featuresets but
@@ -806,7 +808,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
                         forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
 
 #if MH17_SEARCH_DEBUG
-printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(set_id));
+printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
 #endif
 	                  if (isRegExp(forward_set_id))
 	                        forward_set_search.is_reg_exp = TRUE ;
@@ -820,7 +822,7 @@ printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_
 
                         reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
 #if MH17_SEARCH_DEBUG
-printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(set_id));
+printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
 #endif
 
       	            if (isRegExp(reverse_set_id))
@@ -845,7 +847,7 @@ printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_
       /* N.B. there is always an align id.... */
       if (!block_id)
 	last_search = &align_search ;
-      else if (!set_id)
+      else if (!column_id)
 	last_search = &block_search ;
       else if (!feature_id)
 	{
@@ -873,7 +875,7 @@ printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
    * parameters is a stop). */
-  if (!set_id
+  if (!column_id
       || (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both))
     {
       search = NULL ;
@@ -893,7 +895,7 @@ printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_
 
   /* No point in doing a second search unless we are going to search as far down as the reverse
    * strand sets. */
-  if (set_id && (strand_id == strand_reverse || strand_id == strand_both))
+  if (column_id && (strand_id == strand_reverse || strand_id == strand_both))
     {
       search = NULL ;
 
@@ -936,7 +938,7 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
   item_list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
 					    feature->parent->parent->parent->unique_id,
 					    feature->parent->parent->unique_id,
-					    column_id, /* feature->parent->unique_id,*/
+					    column_id, 0,
 					    set_strand,
 					    set_frame,
 					    same_name_id, NULL, NULL) ;
@@ -953,7 +955,7 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
     {
       ZMapWindowFToISetSearchData search;
       search = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems,
-					     feature, 0, 0, set_id, 0, "+", "*");
+					     feature, 0, 0, column_id, 0, "+", "*");
       result = zmapWindowFToISetSearchPerform(window, search);
       if(search_cache_out)
 	*search_cache_out = search;
@@ -973,6 +975,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
 							      ZMapFeature feature,
 							      GQuark      align_id,
 							      GQuark      block_id,
+                                                GQuark      column_id,
 							      GQuark      set_id,
 							      GQuark      feature_id,
 							      char       *strand_str,
@@ -986,7 +989,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
   gboolean debug_caching = FALSE;
 
 #if MH17_SEARCH_DEBUG
-printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
+printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 #endif
 
   search_data = g_new0(ZMapWindowFToISetSearchDataStruct, 1);
@@ -1003,7 +1006,8 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
 	{
 	  search_data->align_id   = feature->parent->parent->parent->unique_id;
 	  search_data->block_id   = feature->parent->parent->unique_id;
-	  search_data->set_id     = set_id;
+	  search_data->column_id  = column_id;
+        search_data->set_id     = set_id;
 	  search_data->feature_id = feature->unique_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1012,7 +1016,8 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
 	{
 	  search_data->align_id   = align_id;
 	  search_data->block_id   = block_id;
-	  search_data->set_id     = set_id;
+	  search_data->column_id  = column_id;
+        search_data->set_id     = set_id;
 	  search_data->feature_id = feature_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1030,7 +1035,8 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(set_id));
 
 	  search_data->align_id   = feature->parent->parent->parent->unique_id;
 	  search_data->block_id   = feature->parent->parent->unique_id;
-	  search_data->set_id     = set_id;
+	  search_data->column_id  = column_id;
+        search_data->set_id     = set_id;
 	  search_data->feature_id = same_name_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1064,6 +1070,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  ZMapFeature feature,
 							  GQuark      align_id,
 							  GQuark      block_id,
+                                            GQuark      column_id,
 							  GQuark      set_id,
 							  GQuark      feature_id,
 							  char       *strand_str,
@@ -1072,7 +1079,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
   ZMapWindowFToISetSearchData search_data;
 
   search_data = zmapWindowFToISetSearchCreateFull(search_function, feature,
-						  align_id, block_id, set_id,
+						  align_id, block_id, column_id, set_id,
 						  feature_id, strand_str, frame_str,
 						  NULL, NULL, NULL);
 
@@ -1093,6 +1100,7 @@ GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_cont
       list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
 					   search_data->align_id,
 					   search_data->block_id,
+                                 search_data->column_id,
 					   search_data->set_id,
 					   search_data->strand_str,
 					   search_data->frame_str,

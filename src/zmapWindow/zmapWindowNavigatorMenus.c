@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 29 16:57 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.29 2010-10-14 09:33:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.30 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,7 +116,7 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   if((result = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
-                                             locus_quark, // feature->parent->unique_id,
+                                             locus_quark, 0,
                                              wild_card, wild_card, locus_quark,
                                              callback, GUINT_TO_POINTER(feature->original_id))))
     {
@@ -211,6 +211,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 						    feature->parent->parent->unique_id,
 						    locus_quark, /* feature->parent->unique_id, NO: container->unique_id */
 						    locus_quark,
+                                        0,
 						    wild_card, /* strand */
 						    wild_card, /* frame */
 						    searchLocusSetCB,
@@ -386,6 +387,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 						    feature->parent->parent->unique_id,
 						    feature->parent->unique_id,
 						    container->unique_id,
+                                        0,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(container->strand),
 						    zMapFeatureFrame2Str(container->frame));

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.219 2010-10-13 14:08:34 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.220 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1779,9 +1779,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 	  GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(featureset)) ;
 	  if(GFFset)
-	    featureset = GFFset->feature_src_ID;
-
-        server = zmapViewGetSourceFromFeatureset(hash,featureset);
+	    featureset = GFFset->column_id;
 	}
 
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
@@ -3006,6 +3004,12 @@ printf("\nview styles lists after merge:\n");
                   column = g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
                   if(column)
                         fset->column_ID = column->column_id;      /* upper cased display name */
+
+                  /* we get hundreds of these from ACE that are not in the config */
+                  /* and there's no capitalised names */
+                  /* we could hack in a capitaliser function but it would never be perfect */
+                  if(!fset->feature_src_ID)
+                        fset->feature_src_ID = GPOINTER_TO_UINT(key);
             }
       }
 

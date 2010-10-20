@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 11 13:48 2010 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.75 2010-10-19 15:53:13 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.76 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,7 @@
 #include <zmapFeature_P.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 
 
 typedef struct
@@ -683,6 +684,22 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
   return ;
 }
 
+GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
+{
+      ZMapFeatureSetDesc fset;
+      GList *iter,*list = NULL;
+      gpointer key;
+
+      zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
+      while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
+      {
+            if(fset->column_id == column_id)
+            {
+                  list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
+            }
+      }
+      return list;
+}
 
 
 
@@ -935,7 +952,7 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 
       cds_start = feature->feature.transcript.cds_start ;
       cds_end = feature->feature.transcript.cds_end ;
-      
+
       if (!(cds_start > exon_end || cds_end < exon_start))
 	{
 	  /* Exon has a cds section so calculate it and find the exons phase. */
@@ -946,7 +963,7 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 	      *exon_cds_start = start ;
 	      *exon_cds_end = end ;
 	      *phase_out = phase ;
-	      
+
 	      is_cds_exon = TRUE ;
 	    }
 	}
@@ -1195,7 +1212,7 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
   int exon_index = -1 ;
   GArray *exons ;
   int i ;
-  
+
   exons = feature->feature.transcript.exons ;
 
   for (i = 0 ; i < exons->len ; i++)

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 29 11:28 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.297 2010-10-13 14:08:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.298 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2516,7 +2516,8 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature_set->parent->parent->unique_id,
 						    feature_set->parent->unique_id,
-						    container_set->unique_id, /* column to search not featureset */
+						    container_set->unique_id,
+                                        0,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(zmapWindowContainerFeatureSetGetStrand(container_set)),
 						    zMapFeatureFrame2Str(zmapWindowContainerFeatureSetGetFrame(container_set)));

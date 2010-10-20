@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.132 2010-10-13 14:08:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.133 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1215,10 +1215,10 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 {
   GList *blocks = NULL;
   const char *wildcard = "*";
-  GQuark feature_set_unique  = 0;
+  GQuark featureset_unique  = 0;
   ZMapStyleColumnDisplayState show_hide_state ;
 
-  feature_set_unique = zMapStyleCreateID(name);
+  featureset_unique = zMapStyleCreateID(name);
 
   if (align_id == 0)
     align_id = g_quark_from_string(wildcard);
@@ -1233,7 +1233,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
   /* check we have the style... */
   if (!(zmapWindowFToIFindItemFull(window,window->context_to_item,
                            align_id, block_id,
-				   feature_set_unique,
+				   featureset_unique,   /* this is column really but the name is the same */
 				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
     {
       zMapWarning("Column with name \"%s\" does not exist."
@@ -1247,7 +1247,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
       FooCanvasItem *frame_column ;
 
       blocks = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
-					     align_id, block_id, 0,
+					     align_id, block_id, 0, 0,
 					     NULL, NULL, 0, NULL, NULL) ;
 
       /* Foreach of the blocks, toggle the display of the DNA */
@@ -1283,7 +1283,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 	      frame_column = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                           feature_block->parent->unique_id,
 							feature_block->unique_id,
-							feature_set_unique,
+							featureset_unique,
 							ZMAPSTRAND_FORWARD, frame, 0) ;
 
 	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)

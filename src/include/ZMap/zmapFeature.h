@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Oct 19 16:51 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.186 2010-10-19 15:53:12 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.187 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -1076,6 +1076,8 @@ char *zMapFeatureCanonName(char *feature_name) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
+
+GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
 
 /* Probably should be merged at some time.... */
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;

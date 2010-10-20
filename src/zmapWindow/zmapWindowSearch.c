@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 14 14:03 2010 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.47 2010-10-13 15:44:25 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.48 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,9 @@ typedef struct
   ZMapWindow window ;
   FooCanvasItem *feature_item ;
   ZMapFeatureAny feature_any ;
+#if MH17_NO_STYLE
   GHashTable *styles ;
+#endif
 
   GHashTable *context_to_item;
   ZMapWindowListGetFToIHash get_hash_func;
@@ -64,6 +66,7 @@ typedef struct
   GtkWidget *toplevel ;
   GtkWidget *align_entry ;
   GtkWidget *block_entry ;
+  GtkWidget *column_entry ;
   GtkWidget *set_entry ;
   GtkWidget *feature_entry ;
 
@@ -73,8 +76,9 @@ typedef struct
   GtkWidget *start_entry ;
   GtkWidget *end_entry ;
   GtkWidget *locus_but ;
+#if MH17_NO_STYLE
   GtkWidget *style_entry ;
-
+#endif
 
   /* Context field data... */
   char *align_txt ;
@@ -85,11 +89,15 @@ typedef struct
   GQuark block_id ;
   GQuark block_original_id ;
 
+  char *column_txt ;       /* this is the column not the featureset(s) */
+  GQuark column_id ;
+  GQuark column_original_id ;
+
   char *set_txt ;       /* this is the column not the featureset(s) */
   GQuark set_id ;
   GQuark set_original_id ;
-
-  GList *featuresets;   /* defaults to all in the column */
+  int n_sets;           /* how big is the menu? */
+  GtkComboBox *setCombo;      /* child of same object as set_entry */
 
   char *feature_txt ;
   GQuark feature_id ;
@@ -101,8 +109,10 @@ typedef struct
   char *start ;						    /* Coords range to limit search. */
   char *end ;
   gboolean locus ;
+#if MH17_NO_STYLE
   char *style_text ;
   ZMapFeatureTypeStyle style ;
+#endif
 
 
 } SearchDataStruct, *SearchData ;
@@ -112,6 +122,7 @@ typedef struct
 {
   GList *align_list;
   GList *block_list;
+  GList *column_list;
   GList *set_list;
 } AllComboListsStruct, *AllComboLists;
 
@@ -123,7 +134,9 @@ typedef struct
 
   gboolean locus ;
 
+#if MH17_NO_STYLE
   ZMapFeatureTypeStyle style ;
+#endif
 } SearchPredCBDataStruct, *SearchPredCBData ;
 
 
@@ -145,6 +158,7 @@ static void setFilterDefaults(SearchData search_data) ;
 static void addToComboBoxText(gpointer list_data, gpointer combo_data);
 static void addToComboBoxQuark(gpointer list_data, gpointer combo_data);
 static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks);
+static void clearPopulateComboBox(GtkWidget *combo, GList *list,int len);
 static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
@@ -152,12 +166,20 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
 static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data,
                                                         gpointer user_data, char **err_out);
 
+#if MH17_NO_STYLE
 static GList *getStyleQuarks(GHashTable *styles) ;
 static void getQuark(gpointer key, gpointer data, gpointer user_data) ;
+#endif
 
 gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
 
 GQuark makeCanonID(char *orig_text) ;
+
+static void onSearchColumnChanged(GtkWidget *col,gpointer user_data);
+static GQuark entry_get_text_quark(GtkEntry *entry, char *wildcard);
+static GQuark manage_quark_from_entry(GQuark user_set, GQuark original,
+                              GQuark usable,   GQuark wildcard);
+
 
 /* If TRUE will cause the clipboard to be set to the selected text. */
 static gboolean select_region_G = FALSE;
@@ -272,6 +294,36 @@ void zmapWindowCreateSearchWindow(ZMapWindow                window,
  */
 
 
+/* adjust the featureset combo */
+static void onSearchColumnChanged(GtkWidget *col,gpointer user_data)
+{
+      SearchData search_data = (SearchData) user_data;
+      GQuark column_id;
+      char *wild_card_str = "*";
+      GQuark wild_card_id;
+      GList *setList = NULL;
+
+      wild_card_id = g_quark_from_string(wild_card_str) ;
+
+      if((column_id = entry_get_text_quark(GTK_ENTRY(search_data->column_entry), wild_card_str)) != 0)
+      {
+            column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
+                                     search_data->column_id, wild_card_id);
+      }
+      search_data->set_txt = wild_card_str;
+      search_data->set_id = wild_card_id;
+      search_data->set_original_id = wild_card_id;
+      gtk_entry_set_text(GTK_ENTRY(search_data->set_entry), search_data->set_txt) ;
+      gtk_widget_show_all(search_data->set_entry);
+
+      if(column_id)
+      {
+            setList = zMapFeatureGetColumnFeatureSets(search_data->window->context_map,column_id,FALSE);
+      }
+      clearPopulateComboBox(GTK_WIDGET(search_data->set_entry),setList,search_data->n_sets);
+      search_data->n_sets = g_list_length(setList);
+}
+
 GtkWidget *makeMenuBar(SearchData search_data)
 {
   GtkAccelGroup *accel_group;
@@ -296,7 +348,7 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *combo ;
-  GList *alignList, *blockList, *columnList;
+  GList *alignList, *blockList, *columnList, *setList;
 
 
   /* Need to set up the default values for the text using feature_any, we should
@@ -335,6 +387,10 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+  label = gtk_label_new( "FeatureSet :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
   label = gtk_label_new( "Feature :" ) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
@@ -353,7 +409,7 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
       ZMapFeatureSetDesc f2c;
       GList *l = columnList;
 
-      for(columnList = NULL;l ;l = l->next)
+      for(columnList = setList = NULL;l ;l = l->next)
       {
             f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, GUINT_TO_POINTER(l->data));
             if(f2c)
@@ -361,13 +417,13 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
                   if(!g_list_find(columnList,GUINT_TO_POINTER(f2c->column_ID)))
                         columnList = g_list_append(columnList,GUINT_TO_POINTER(f2c->column_ID));
                         /* this gets canonicalised on search by manage_quark_from_entry() */
-            }
-      }
-  }
 
-  /* also create a list of featuresets in each column
-   * for featuresets submenu to replace style filter */
-  /* TDB */
+           }
+      }
+
+      setList = zMapFeatureGetColumnFeatureSets(search_data->window->context_map,
+                  search_data->column_id,FALSE);
+   }
 
 #endif
 
@@ -385,13 +441,24 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
   search_data->block_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->block_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-
   if(select_region_G)
     gtk_editable_select_region(GTK_EDITABLE(entry), 0, 0) ;
-
   gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
 
   combo = createPopulateComboBox(columnList, TRUE);
+  search_data->column_entry = entry = GTK_BIN(combo)->child ;
+  gtk_entry_set_text(GTK_ENTRY(entry), search_data->column_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
+
+  g_signal_connect(GTK_OBJECT(search_data->column_entry), "changed",
+               GTK_SIGNAL_FUNC(onSearchColumnChanged), (gpointer)search_data) ;
+
+
+  combo = createPopulateComboBox(setList, TRUE);
+  search_data->n_sets = g_list_length(setList);
   search_data->set_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->set_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
@@ -414,17 +481,21 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 static GtkWidget *makeFiltersPanel(SearchData search_data)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *combo ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label;
   ZMapFeatureContext context ;
+#if MH17_NO_STYLE
+  GtkWidget *combo ;
   GHashTable *styles ;
   GList *style_quarks ;
+#endif
 
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
+#if MH17_NO_STYLE
   search_data->styles = styles = search_data->window->context_map->styles ;
   style_quarks = getStyleQuarks(styles) ;
-
+#endif
 
   setFilterDefaults(search_data) ;
 
@@ -467,10 +538,11 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+#if MH17_NO_STYLE
   label = gtk_label_new( "Style :" ) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
+#endif
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
@@ -518,7 +590,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 		   GTK_SIGNAL_FUNC(locusCB), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(entrybox), search_data->locus_but, FALSE, FALSE, 0) ;
 
-
+#if MH17_NO_STYLE
   combo = createPopulateComboBox(style_quarks, TRUE);
   search_data->style_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
@@ -526,7 +598,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   if(select_region_G)
     gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
-
+#endif
 
 
   return frame ;
@@ -541,7 +613,7 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
   char *title = "Feature Search Window" ;
   char *help_text =
     "The ZMap Search Window allows you to search for features using simple filtering.\n"
-    "When initially show the search window displays the names it has assigned to the\n"
+    "When initially shown the search window displays the names it has assigned to the\n"
     "displayed alignment, block, set and the feature you clicked on. You can either\n"
     "replace or augment these names with the \"*\" wild card to find sets of features,\n"
     "e.g. if the feature name is \"B0250\" then changing it to \"B025*\" will find all\n"
@@ -639,23 +711,24 @@ static GQuark manage_quark_from_entry(GQuark user_set, GQuark original,
 static void searchCB(GtkWidget *widget, gpointer cb_data)
 {
   SearchData search_data = (SearchData)cb_data ;
-  char *align_txt, *block_txt, *strand_txt, *frame_txt, *set_txt, *feature_txt  ;
+  char *align_txt, *block_txt, *strand_txt, *frame_txt, *column_txt, *set_text, *feature_txt  ;
   char *start_txt, *end_text ;
   gboolean locus ;
-  GQuark align_id, block_id, set_id, feature_id ;
+  GQuark align_id, block_id, column_id, set_id, feature_id ;
   char *strand_spec, *frame_spec ;
   ZMapWindowFToIPredFuncCB callback = NULL ;
   SearchPredCBDataStruct search_pred = {0} ;
   SearchPredCBData search_pred_ptr = NULL ;
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
+#if MH17_NO_STYLE
   char *style_text ;
-
+#endif
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
-  align_txt = block_txt = strand_txt = frame_txt = set_txt = feature_txt = NULL ;
-  align_id = block_id = set_id = feature_id = 0 ;
+  align_txt = block_txt = strand_txt = frame_txt = column_txt = set_text = feature_txt = NULL ;
+  align_id = block_id = column_id = set_id = feature_id = 0 ;
 
 
   /* Currently we check to see if the text matches the original id and if it does we use the
@@ -684,11 +757,19 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  block_id = manage_quark_from_entry(block_id, search_data->block_original_id,
 					     search_data->block_id, wild_card_id);
 
-	  /* fix up set_id NB: this is the column id */
-	  if((set_id = entry_get_text_quark(GTK_ENTRY(search_data->set_entry), wild_card_str)) != 0)
+	  /* fix up column_id  */
+	  if((column_id = entry_get_text_quark(GTK_ENTRY(search_data->column_entry), wild_card_str)) != 0)
 	    {
-	      set_id = manage_quark_from_entry(set_id, search_data->set_original_id,
-					       search_data->set_id, wild_card_id);
+	      column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
+					       search_data->column_id, wild_card_id);
+
+            if((set_id = entry_get_text_quark(GTK_ENTRY(search_data->set_entry), wild_card_str)) != 0)
+            {
+                  set_id = manage_quark_from_entry(set_id, search_data->set_original_id,
+                                     search_data->set_id, wild_card_id);
+                  if(set_id == wild_card_id)    /* handled specially for column */
+                        set_id = 0;
+            }
 
 	      /* fix up feature_id */
 	      if((feature_id = entry_get_text_quark(GTK_ENTRY(search_data->feature_entry), wild_card_str)) != 0)
@@ -745,9 +826,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* Get predicate stuff, start/end/locus currently. */
   locus = search_data->locus ;
+#if MH17_NO_STYLE
   style_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->style_entry)) ;
 
   if ((start_txt && *start_txt && end_text && *end_text) || locus || (style_text && *style_text))
+#else
+  if ((start_txt && *start_txt && end_text && *end_text) || locus)
+#endif
     {
       callback          = searchPredCB ;
       search_pred_ptr   = &search_pred ;
@@ -757,7 +842,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       search_pred.end   = atoi(end_text) ;
 
       search_pred.locus = locus ;
-
+#if MH17_NO_STYLE
       if (style_text && *style_text)
 	{
 	  ZMapFeatureTypeStyle style ;
@@ -765,76 +850,18 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  if ((style = zMapFindStyle(search_data->styles, zMapStyleCreateID(style_text))))
 	    search_pred.style = style ;
 	}
+#endif
     }
 
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Left for debugging.... */
-  printf("Search parameters -    align: %s   block: %s  strand: %s  frame: %s  set: %s  feature: %s\n",
-	 align_txt, block_txt, strand_spec, frame_spec, set_txt, feature_txt) ;
+  printf("Search parameters -    align: %s   block: %s  strand: %s  frame: %s  column: %s  feature: %s\n",
+	 align_txt, block_txt, strand_spec, frame_spec, column_txt, feature_txt) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#define USING_SET_SEARCH_DATA_METHOD
-#ifndef USING_SET_SEARCH_DATA_METHOD
-  if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window,search_data->context_to_item,
-						     align_id, block_id, set_id,
-						     strand_spec, frame_spec,
-						     feature_id,
-						     callback, search_pred_ptr)))
-    {
 
-      /* What the code is trying to trap here is the sort of item returned...
-       * the search function will simply return a list of items which could be blocks,
-       * aligns, columns or features, in practice we probably only want to handle
-       * features for now....for now we will just warn the user that we don't
-       * support items returned other than features.... */
-      GList *list_item ;
-      FooCanvasItem *item ;
-      ZMapFeatureAny any_feature ;
-      gboolean zoom_to_item = TRUE;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* debugging.... */
-      displayResult(search_result) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
-      zoom_to_item = FALSE;
-#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
-
-      /* Get hold of the first canvas item in the returned list.... */
-      list_item   = g_list_first(search_result) ;
-      item        = (FooCanvasItem *)list_item->data ;
-      any_feature = zmapWindowItemGetFeatureAny(item);
-      zMapAssert(any_feature) ;
-
-      if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-	{
-	  char *title = NULL;
-        if(!feature_text)
-            feature_text = g_quark_to_string(set_id);
-	  title = g_strdup_printf("Results '%s'", feature_txt);
-	  zmapWindowListWindow(search_data->window,
-			       NULL, title,
-			       search_data->get_hash_func,
-			       search_data->get_hash_data,
-			       NULL, NULL, NULL,
-			       zoom_to_item);
-	  if(title)
-	    g_free(title);
-	}
-      else
-	{
-	  zMapMessage("Sorry, list windows of %ss within a feature context not currently supported.",
-		      zMapFeatureStructType2Str(any_feature->struct_type)) ;
-	}
-
-      g_list_free(search_result) ;
-
-    }
-#else	/* !USING_SET_SEARCH_DATA_METHOD */
-  if(1)
     {
       ZMapWindowFToISetSearchData search_set_data = NULL;
       SearchPredCBData search_pred_data = NULL ;
@@ -849,11 +876,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  search_pred_data->start = search_pred_ptr->start;
 	  search_pred_data->end   = search_pred_ptr->end;
 	  search_pred_data->locus = search_pred_ptr->locus;
+#if MH17_NO_STYLE
 	  search_pred_data->style = search_pred_ptr->style;
+#endif
 	}
 
       search_set_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
-							  align_id, block_id, set_id, feature_id,
+							  align_id, block_id, column_id, set_id, feature_id,
 							  strand_spec, frame_spec,
 							  callback, search_pred_data, g_free);
 
@@ -869,22 +898,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 			   (GDestroyNotify)zmapWindowFToISetSearchDestroy,
 			   zoom_to_item);
 
-    }
-#endif /* USING_SET_SEARCH_DATA_METHOD */
-  else
-    {
-      char *msg = g_strdup_printf("No Results for:\n"
-				  "\n     align  =  \"%s\""
-				  "\n     block  =  \"%s\""
-				  "\n       set  =  \"%s\""
-				  "\n    strand  =  \"%s\""
-				  "\n    frame  =  \"%s\""
-				  "\n   feature  =  \"%s\"",
-				  align_txt, block_txt, set_txt, strand_spec, frame_spec, feature_txt) ;
-
-      zMapGUIShowMsgFull(NULL, msg, ZMAP_MSG_INFORMATION, GTK_JUSTIFY_LEFT, 0, TRUE) ;
-							    /* Format msg for clarity. */
-      g_free(msg) ;
     }
 
   return ;
@@ -925,13 +938,13 @@ static void setFieldDefaults(SearchData search_data)
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
   search_data->align_txt = search_data->block_txt = search_data->strand_txt = search_data->frame_txt
-    = search_data->set_txt = search_data->feature_txt = wild_card_str ;
+    = search_data->column_txt = search_data->set_txt = search_data->feature_txt = wild_card_str ;
 
   search_data->align_id = search_data->block_id
-    = search_data->set_id = search_data->feature_id = wild_card_id ;
+    = search_data->column_id = search_data->set_id = search_data->feature_id = wild_card_id ;
 
   search_data->align_original_id = search_data->block_original_id
-    = search_data->set_original_id = search_data->feature_original_id = 0 ;
+    = search_data->column_original_id = search_data->set_original_id = search_data->feature_original_id = 0 ;
 
   /* Loop up the feature context hierachy setting default values as we go. Where we start
    * in the hierachy depends on what level feature we get passed. */
@@ -946,6 +959,7 @@ static void setFieldDefaults(SearchData search_data)
 	    search_data->feature_txt = (char *)g_quark_to_string(feature->original_id) ;
 	    search_data->feature_id = feature->unique_id ;
 	    search_data->feature_original_id = feature->original_id ;
+
 	    break ;
 	  }
 	case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -953,9 +967,9 @@ static void setFieldDefaults(SearchData search_data)
 	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
 
 #if MH17_COLUMN
-	    search_data->set_txt = (char *)g_quark_to_string(set->original_id) ;
+	    search_data->column_txt = (char *)g_quark_to_string(set->original_id) ;
 	    search_data->set_id = set->unique_id ;
-	    search_data->set_original_id = set->original_id ;
+	    search_data->column_original_id = set->original_id ;
 #else
             /* need to get the column that the featureset is in
              * for when we search the hash
@@ -965,9 +979,17 @@ static void setFieldDefaults(SearchData search_data)
           f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, GUINT_TO_POINTER(set->unique_id));
           if(f2c)
           {
-            search_data->set_txt = (char *) g_quark_to_string(f2c->column_ID) ;
-            search_data->set_id = f2c->column_id;
-            search_data->set_original_id = f2c->column_ID;
+            search_data->column_txt = (char *) g_quark_to_string(f2c->column_ID) ;
+            search_data->column_id = f2c->column_id;
+            search_data->column_original_id = f2c->column_ID;
+          }
+
+          if(search_data->feature_id != wild_card_id)
+          {
+            /* they clicked on a feature so default to that featureset */
+            search_data->set_txt = (char *)g_quark_to_string(set->original_id) ;
+            search_data->set_id = set->unique_id ;
+            search_data->set_original_id = set->original_id ;
           }
 #endif
 	    break ;
@@ -1130,6 +1152,22 @@ static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks)
   return combo;
 }
 
+/* didn't implement non quarks as they're never used */
+static void clearPopulateComboBox(GtkWidget *combo, GList *list,int len)
+{
+      int i;
+
+      /* combo is actuallt the text entry child oft he combo box */
+      combo = gtk_widget_get_parent(combo);
+
+      for(i = len;i > 0;)
+      {
+            i--;
+            gtk_combo_box_remove_text(GTK_COMBO_BOX(combo), i);
+      }
+      g_list_foreach(list,addToComboBoxQuark,combo);
+}
+
 static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data,
                                                         gpointer user_data, char **err_out)
 {
@@ -1154,8 +1192,10 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       set   = (ZMapFeatureSet)feature_any;
-      all_data->set_list   = g_list_prepend(all_data->set_list,   GUINT_TO_POINTER(key));
+      all_data->column_list   = g_list_prepend(all_data->column_list,   GUINT_TO_POINTER(key));
       break;
+      /* set list initialised to all in current column */
+
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
@@ -1169,7 +1209,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
 static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
-                               GList **set_list_out)
+                               GList **column_list_out)
 {
   AllComboListsStruct all_data = { NULL };
 
@@ -1179,8 +1219,8 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
     *align_list_out = all_data.align_list;
   if(block_list_out)
     *block_list_out = all_data.block_list;
-  if(set_list_out)
-    *set_list_out = all_data.set_list;
+  if(column_list_out)
+    *column_list_out = all_data.column_list;
   return ;
 }
 
@@ -1248,6 +1288,7 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
 	    else
 	      result = FALSE ;
 	  }
+#if MH17_NO_STYLE
 
 	if (search_pred->style)
 	  {
@@ -1256,6 +1297,7 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
 	    else
 	      result = FALSE ;
 	  }
+#endif
 
 	break;
       }
@@ -1299,6 +1341,7 @@ static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data)
 }
 
 
+#if MH17_NO_STYLE
 
 static GList *getStyleQuarks(GHashTable *styles)
 {
@@ -1322,5 +1365,6 @@ static void getQuark(gpointer key, gpointer data, gpointer user_data)
 
   return ;
 }
+#endif
 
 /*************************** end of file *********************************/

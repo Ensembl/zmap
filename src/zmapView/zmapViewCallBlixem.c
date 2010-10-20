@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Oct 19 17:27 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.42 2010-10-19 16:36:02 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.43 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1251,27 +1251,6 @@ static gboolean initFeatureFile(char *filename, char *file_header, GString *buff
   return status ;
 }
 
-/* returmn a list of featureset quarks that are configured to map to a column
- * NOTE that this is not the same as a ZMapWindowContainerFeatureSet->featurstes list
- * as that is a list of sets with features actually displayed and may vary according to strand etc
- * NOTE we calculate this OTF as it could change as data is loaded
- * main use is for blixem config
- */
-
-GList * zMapViewGetColumnFeatureSets(blixemData data,GQuark column_id)
-{
-      ZMapFeatureSetDesc fset;
-      GList *iter,*list = NULL;
-      gpointer key;
-
-      zMap_g_hash_table_iter_init(&iter,data->view->context_map.featureset_2_column);
-      while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
-      {
-            if(fset->column_id == column_id)
-                  list = g_list_prepend(list,key);
-      }
-      return list;
-}
 
 
 /* A GFunc() to step through the named feature sets and write them out for passing
@@ -1295,7 +1274,7 @@ static void processSetList(gpointer data, gpointer user_data)
   else
   {
       /* assuming a mis-config treat the set id as a column id */
-      column_2_featureset = zMapViewGetColumnFeatureSets(blixem_data,canon_id);
+      column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
       if(!column_2_featureset)
       {
             zMapLogWarning("Could not find %s feature set or column \"%s\" in context feature sets.",
@@ -2401,7 +2380,7 @@ static void getSetList(gpointer data, gpointer user_data)
   else
   {
       /* assuming a mis-config treat the set id as a column id */
-      column_2_featureset = zMapViewGetColumnFeatureSets(blixem_data,canon_id);
+      column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
       if(!column_2_featureset)
       {
             zMapLogWarning("Could not find %s feature set or column \"%s\" in context feature sets.",

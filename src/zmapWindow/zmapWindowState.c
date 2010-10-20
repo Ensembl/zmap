@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 22 12:12 2010 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.30 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.31 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,7 @@
 
 typedef struct
 {
-  GQuark align_id, block_id, column_id, feature_id;
+  GQuark align_id, block_id, column_id, fset_id, feature_id;
   ZMapFrame frame;
   ZMapStrand strand;
 } SerializedItemStruct;
@@ -359,7 +359,8 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.column.align_id   = feature_any->parent->parent->unique_id;
 	  bump_data.column.block_id   = feature_any->parent->unique_id;
         fset = (ZMapFeatureSet) feature_any;
-	  bump_data.column.column_id  = feature_any->unique_id;
+        bump_data.column.fset_id    = fset->unique_id;
+    	  bump_data.column.column_id  = container_set->unique_id;
 	  bump_data.column.feature_id = 0;  /* (we are saving the column not the feature) container_set->unique_id; */
 	  bump_data.column.strand     = container_set->strand;
 	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
@@ -481,7 +482,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
       if((mark_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						 restore.item.align_id,
 						 restore.item.block_id,
-						 restore.item.column_id,
+						 restore.item.fset_id,
 						 restore.item.strand,
 						 restore.item.frame,
 						 restore.item.feature_id)))
@@ -492,6 +493,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 								   restore.item.align_id,
 								   restore.item.block_id,
 								   restore.item.column_id,
+                                                   0,
 								   "*",	/* reverse complement... */
 								   "*",	/* laziness */
 								   restore.item.feature_id,
@@ -584,7 +586,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
       if((focus_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						  restore.item.align_id,
 						  restore.item.block_id,
-						  restore.item.column_id,
+						  restore.item.fset_id,
 						  restore.item.strand,
 						  restore.item.frame,
 						  restore.item.feature_id)))
@@ -596,6 +598,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 								    restore.item.align_id,
 								    restore.item.block_id,
 								    restore.item.column_id,
+                                                    0,
 								    "*",	/* reverse complement... */
 								    "*",	/* laziness */
 								    restore.item.feature_id,
@@ -643,7 +646,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
-						     column_state->column.column_id,
+						     column_state->column.fset_id,
 						     column_state->column.strand,
 						     column_state->column.frame,
 						     0)))
@@ -733,6 +736,7 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
       serialize->block_id   = feature->parent->parent->unique_id;
       fset = (ZMapFeatureSet) feature->parent;
       serialize->column_id  = container_set->unique_id;
+      serialize->fset_id    = fset->unique_id;
       serialize->feature_id = feature->unique_id;
       serialized = TRUE;
     }

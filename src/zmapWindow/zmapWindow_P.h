@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.271 2010-10-18 15:18:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.272 2010-10-20 09:33:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -187,6 +187,7 @@ typedef struct
 
   GQuark align_id;
   GQuark block_id;
+  GQuark column_id;
   GQuark set_id;
   GQuark feature_id;
 
@@ -896,7 +897,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_
 					  ZMapStrand strand, ZMapFrame frame,
 					  GQuark feature_id) ;
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_to_context_hash,
-				     GQuark align_id, GQuark block_id, GQuark set_id,
+				     GQuark align_id, GQuark block_id, GQuark column_id, GQuark set_id,
 				     char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
@@ -907,6 +908,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
 							      ZMapFeature feature,
 							      GQuark      align_id,
 							      GQuark      block_id,
+                                                GQuark column_id,
 							      GQuark      set_id,
 							      GQuark      feature_id,
 							      char       *strand_str,
@@ -918,6 +920,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  ZMapFeature feature,
 							  GQuark      align_id,
 							  GQuark      block_id,
+                                            GQuark      column_id,
 							  GQuark      set_id,
 							  GQuark      feature_id,
 							  char       *strand_str,
