@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,7 +23,7 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
@@ -50,7 +50,13 @@ enum
 };
 
 #define FOO_TYPE_CANVAS_FLOAT_GROUP            (foo_canvas_float_group_get_type ())
+
+#if GOBJ_CAST
+#define FOO_CANVAS_FLOAT_GROUP(obj)            (FooCanvasFloatGroup) (obj)
+#else
 #define FOO_CANVAS_FLOAT_GROUP(obj)            (GTK_CHECK_CAST ((obj), FOO_TYPE_CANVAS_FLOAT_GROUP, FooCanvasFloatGroup))
+#endif
+
 #define FOO_CANVAS_FLOAT_GROUP_CLASS(klass)    (GTK_CHECK_CLASS_CAST ((klass), FOO_TYPE_CANVAS_FLOAT_GROUP, FooCanvasFloatGroupClass))
 #define FOO_IS_CANVAS_FLOAT_GROUP(obj)         (GTK_CHECK_TYPE ((obj), FOO_TYPE_CANVAS_FLOAT_GROUP))
 #define FOO_IS_CANVAS_FLOAT_GROUP_CLASS(klass) (GTK_CHECK_CLASS_TYPE ((klass), FOO_TYPE_CANVAS_FLOAT_GROUP))
@@ -59,10 +65,10 @@ enum
 typedef struct _FooCanvasFloatGroup FooCanvasFloatGroup;
 typedef struct _FooCanvasFloatGroupClass FooCanvasFloatGroupClass;
 
-struct _FooCanvasFloatGroup 
+struct _FooCanvasFloatGroup
 {
   FooCanvasGroup group;
-  
+
   double zoom_x, zoom_y;
   /* world coords scroll region, also sets min/max x/y positions */
   double scr_x1, scr_y1, scr_x2, scr_y2;
@@ -71,11 +77,11 @@ struct _FooCanvasFloatGroup
   unsigned int max_x_set : 1;
   unsigned int min_y_set : 1;
   unsigned int max_y_set : 1;
-  
+
   unsigned int float_axis : 2;
 };
 
-struct _FooCanvasFloatGroupClass 
+struct _FooCanvasFloatGroupClass
 {
   FooCanvasItemClass parent_class;
 };
