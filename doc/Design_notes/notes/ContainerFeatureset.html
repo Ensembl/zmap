@@ -1,4 +1,4 @@
-<!-- $Id: ContainerFeatureset.html,v 1.2 2010-10-14 13:00:22 mh17 Exp $ -->
+<!-- $Id: ContainerFeatureset.html,v 1.3 2010-10-21 13:50:29 mh17 Exp $ -->
 
 <h2>Display columns</h4>
 <fieldset><legend>Orientation</legend>
@@ -56,19 +56,7 @@ To simplify this process the column config data  will be extended to include the
 Processing these styles long after config handling ensures that the style data is available.
 After updating various other segments of code that require the style table then this can be removed.
 </p>
-<h4>Tidying up</h4>
-<p>
-<ul>
-<li> createColumnFull() still uses zmapWindowFeatureStyles() - i left this alone as it's intended to remove it later. The ContainerFeatureset still takes a copy of this copy of the data.
-<li>
-<li> double clicking on the navigator locus looks flaky
-<li> scan for zMapFindStyle() to find more column style lookups
-<li> remove window->display_styles
-</ul>
-</p>
-<p>
-<b>NOTE:</b> zmapWindowFeatureSetStyles() is also called from the matching navigator callback.
-</p>
+
 
 <h6>Creating columns</h6>
 <p>When deciding whether or not to create a column for a particular frame and strand combination the column will be looked up in the view->columns hash table and the relevant style found.   If not frame/strand appropriate it will not be created.
@@ -216,8 +204,18 @@ OK - zmapWindow/zmapWindowFeature.c:1 dead code
 
 
 <h3>There are several versions of code to create columns</h3>
-<p>Separate functions are provided for navigator separator and normal columns, which should not be necessary.
+<p>Separate functions are provided for navigator separator, show translation and normal columns, which should not be necessary.
 </p>
+<p>Specifically:
+<b>zmapWindowCreateSetColumns()</b> is called from:
+<ul>
+<li><b>zmapWindowItem.c</b> zmapWindowItemGetShowTranslationColumn()
+<li><b>zmapWindow</b> zMapWindowFeatureSetAdd() (never called)
+<li><b>zmapWindow</b> draw_separator_features()
+</ul>
+and <b>zmapWindowNavigator.c</b> has its own code in createColumnCB().
+</p>
+
 <h5>Solution</h5>
 <p>
 </p>Replace all these with a function in zmapWindowContainerFeatureSet.c </p>
