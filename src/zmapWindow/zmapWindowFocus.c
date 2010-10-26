@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.24 2010-08-26 08:04:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.25 2010-10-26 15:46:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,11 +78,12 @@ typedef struct _ZMapWindowFocusItemStruct
 {
       FooCanvasItem *item;
 
-      // next two not used
       ZMapWindowContainerFeatureSet item_column ;   // column if on display: interacts w/ focus_column
+
+      // next one not used yet
       ZMapFeatureSet featureset;                    // featureset it lives in (esp if not displayed)
 
-      int flags;                                    // a bitmap of focus tyoes and misc data
+      int flags;                                    // a bitmap of focus types and misc data
       int display_state;
             // selected flags if any
             // all states need to be kept as more than one may be visible
@@ -140,7 +141,7 @@ static gboolean overlay_manager_list_debug_G = FALSE;
 
 /*
  *              Set of routines to handle focus items.
- *    extended by mh17 to handle evidence features highlgihting too.
+ *    extended by mh17 to handle evidence features highlighting too.
  *
  * Holds a list of items that are highlighted/focussed, one of these is the "hot" item
  * which is the last one selected by the user.
@@ -170,7 +171,7 @@ int focus_group_mask[] = { 1,2,4,8,16,32,64,128,258 };
 #define WINDOW_FOCUS_GROUP_ALL 0xff
 
 #if N_FOCUS_GROUPS > 8
-#warning array too short: FIX THIS
+#error array too short: FIX THIS
 // (right now there are only 3)
 #endif
 
@@ -658,6 +659,8 @@ static void rehighlightFocusCB(gpointer list_data, gpointer user_data)
 static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
 {
   GdkColor *fill = NULL, *border = NULL;
+  int n_focus;
+  GList *l;
 
   if((item->flags & WINDOW_FOCUS_GROUP_ALL) == item->display_state)
     return;
@@ -686,7 +689,21 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
   else
     {
       zMapWindowCanvasItemSetIntervalColours(item->item, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL,NULL);
-      foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;
+      /* foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;*/
+
+      /* this is a pain: to keep ordering stable we have to put the focus item back where it was
+       * so we have to comapre it wiht items not in the focus list
+       */
+      /* find out how many focus item there are in this item's column */
+      for(n_focus = 0,l = window->focus->focus_item_set;l;l = l->next)
+        {
+            ZMapWindowFocusItem focus_item = (ZMapWindowFocusItem) l->data;
+
+            if(item->item_column == focus_item->item_column)      /* count includes self */
+                  n_focus++;
+        }
+      /* move the item back to where it should be */
+      zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, item->item, n_focus,0);
     }
 
    item->display_state = item->flags & WINDOW_FOCUS_GROUP_ALL;
@@ -740,7 +757,25 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
 
   list_item->flags |= focus_group_mask[type];
   list_item->item = item;
-  // need to fill in featureset and column
+
+  /* tricky -> a container is a foo canvas group
+   * that has a fixed size list of foo canvas groups
+   * that contain lists of features
+   * that all have the same parent
+   */
+  list_item->item_column = (ZMapWindowContainerFeatureSet) FOO_CANVAS_ITEM(item)->parent;
+  // also need to fill in featureset
+
+  if (!list_item->item_column->sorted)
+    {
+      /* we need this for uh-highlight into stable ordering
+       * for focus items it happens in setHotColumn
+       * but if we select features eg via XRemote maybe it doesn't
+       */
+      zmapWindowContainerFeatureSetSortFeatures(list_item->item_column, 0) ;
+      list_item->item_column->sorted = TRUE ;
+    }
+
 
   highlightItem(focus->window,list_item);
   return list_item;
@@ -927,7 +962,6 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
 
       if (!container->sorted)
 	{
-	  //zmapWindowContainerFeatureSetSortFeatures(focus->focus_column, ZMAPCONTAINER_VERTICAL) ;
 	  zmapWindowContainerFeatureSetSortFeatures(container, 0) ;
 
 	  container->sorted = TRUE ;

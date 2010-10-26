@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 19 08:37 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.342 2010-10-19 15:53:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.343 2010-10-26 15:46:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4395,7 +4395,21 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      }
 
 	    /* We don't bump here because user may be deleting a series of features so it
-	     * be irritating to keep bumping. */
+	     * be irritating to keep bumping.
+           * MH17: use control key to prevent bump
+           */
+
+          if (!zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+            {
+                ZMapWindowCompressMode compress_mode;
+
+                if (zmapWindowMarkIsSet(window->mark))
+                  compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+                else
+                  compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+
+                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), ZMAPBUMP_INVALID, compress_mode) ;
+            }
 
 	    /* Make sure selected features are shown or hidden. */
 	    zmapWindowFullReposition(window) ;

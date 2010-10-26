@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.78 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.79 2010-10-26 15:46:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,13 +350,14 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 //  historic_bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container) ;
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
-  if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
-    bump_mode = historic_bump_mode ;
 
   // if bumping from one mode to another just clear up with am unbump first, it's tidier this way
   // mh17: ideally i'd prefer to have a separate unbump function, can hack it out later?
   if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
       zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
+
+  if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
+    bump_mode = historic_bump_mode ;
 
   //  RT 171529
   if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)

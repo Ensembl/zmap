@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.36 2010-10-13 15:44:25 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.37 2010-10-26 15:46:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1189,7 +1189,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 
 	  features_group = (FooCanvasGroup *)container_features;
 
-	  if(direction == 0)
+	  if(direction == 0) /* MH17: NOTE that direction is always 0 */
 	    compare_func = comparePosition;
 	  else
 	    compare_func = comparePositionRev;
@@ -1198,6 +1198,89 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 	}
 
       container_set->sorted = TRUE;
+    }
+
+  return ;
+}
+
+
+/*
+      take a focus item from the front of the container/foo canvas group item_list
+      and move it to where it should be when sorted
+      we skip over the first n items as these are the focus itmes and out of order
+      subsequent ones are sorted
+
+      this has to be in this file to use the same compare functions
+*/
+void zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
+            ZMapWindowCanvasItem item,int n_focus,int direction)
+{
+  ZMapWindowContainerFeatures container_features;
+  FooCanvasGroup *features_group;
+  ZMapWindowCanvasItem list_item;
+  GList *item_list,*prev_list= NULL,*next_list,*my_list = NULL;
+
+  zMapAssert(container_set->sorted);
+
+  if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
+    {
+      GCompareFunc compare_func;
+
+      features_group = (FooCanvasGroup *) container_features;
+
+      if(direction == 0)    /* MH17: NOTE that direction is always 0 */
+        compare_func = comparePosition;
+      else
+        compare_func = comparePositionRev;
+
+      /* initialise and skip the focus items */
+      for(item_list = features_group->item_list;n_focus-- && item_list;item_list = item_list->next)
+      {
+            if(item_list->data == item)
+                  my_list = item_list;
+            prev_list = item_list;
+      }
+      zMapAssert(my_list);
+
+      /* now find the item before the one that should go after this one */
+      for(;item_list;item_list = item_list->next)
+      {
+            list_item = ZMAP_CANVAS_ITEM(item_list->data);
+            /* unfortunately even though merge sort is stable
+             * at this point we have no way of knowing where this feature was
+             * to be rock solid we'd have to implement before pointers
+             * and handle all the nasty overlapping cases
+             * so we just choose the left most place
+             */
+            if(compare_func(item,list_item) <= 0)
+                  break;
+
+            prev_list = item_list;
+      }
+
+      /* now move item to after the previous */
+      /* there's a few case to consider but..
+       * - only one item total
+       * - one focus item that goes at the front of the list
+       * - focus item goes in the middle
+       * - focus item goes to the end
+       */
+      if(prev_list != my_list)
+      {
+            features_group->item_list = g_list_remove_link(features_group->item_list,my_list);
+
+            next_list = prev_list->next;
+            if(next_list)
+            {
+                  my_list->next = next_list;
+                  next_list->prev = my_list;
+            }
+            if(prev_list != my_list)      /* only one focus item */
+            {
+                  my_list->prev = prev_list;
+                  prev_list->next = my_list;
+            }
+      }
     }
 
   return ;

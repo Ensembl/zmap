@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.199 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.200 2010-10-26 15:46:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -968,86 +968,54 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       gboolean replace_highlight = TRUE, highlight_same_names = TRUE, externally_handled = FALSE;
       ZMapFeatureSubPartSpan sub_feature ;
       ZMapWindowCanvasItem canvas_item ;
+      ZMapFeatureStruct feature_copy = {};
+      ZMapFeatureAny my_feature = (ZMapFeatureAny) feature;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
+      highlight_item = item;
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-      if (zMapGUITestModifiersOnly(but_event, shift_mask))
-	{
-	  ZMapFeatureStruct feature_copy = {};
 
+      if (zMapGUITestModifiers(but_event, control_mask))
+	{
 	  /* Only highlight the single item user clicked on. */
 	  highlight_same_names = FALSE ;
 
-
 	  /* Annotators say they don't want subparts sub selections + multiple
 	   * selections for alignments. */
-	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	    {
-	      highlight_item = item;
-	    }
-	  else
+	  if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      highlight_item = sub_item ;
+
+            /* monkey around to get feature_copy to be the right correct data */
+            featureCopySelectedItem(feature, &feature_copy, highlight_item);
+            my_feature = (ZMapFeatureAny) &feature_copy;
 	    }
 
+      }
 
-	  /* monkey around to get feature_copy to be the right correct data */
-	  featureCopySelectedItem(feature, &feature_copy, highlight_item);
-
-	  if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item)
-	      && window->multi_select)
-	    {
-	      replace_highlight = FALSE ;
-	      externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy),
-							       "multiple_select", highlight_item);
-	    }
-	  else
-	    {
-	      externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy),
-							       "single_select", highlight_item);
-	      window->multi_select = TRUE ;
-	    }
-	}
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I've left this in because we might want to use Cntl-xxx at some time .... */
-      else if (zMapGUITestModifiersOnly(but_event, control_mask))
-	{
-	  ZMapFeatureStruct feature_copy = {};
-
-	  /* sub selections */
-	  highlight_item = sub_item ;
-	  highlight_same_names = FALSE ;
-
-	  /* monkey around to get feature_copy to be the right correct data */
-	  featureCopySelectedItem(feature, &feature_copy,
-				  highlight_item);
-	  externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      else if (zMapGUITestModifiersOnly(but_event, shift_control_mask))
+      if (zMapGUITestModifiers(but_event, shift_mask))
 	{
 	  /* multiple selections */
-	  highlight_item = item;
 
-	  if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item)
+	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item)
 	      && window->multi_select)
 	    {
 	      replace_highlight = FALSE ;
-	      externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "multiple_select", highlight_item);
+	      externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "multiple_select", highlight_item);
 	    }
 	  else
 	    {
-	      externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
+	      externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "single_select", highlight_item);
 	      window->multi_select = TRUE ;
 	    }
 	}
+
       else
 	{
 	  /* single select */
-	  highlight_item = item;
-	  externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
+	  externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "single_select", highlight_item);
 	  window->multi_select = FALSE ;
 	}
 

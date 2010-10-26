@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.220 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.221 2010-10-26 15:46:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -796,8 +796,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
         /* MH17:
          * due to an oversight I lost this ordering when converting columns to a hash table from a list
-         * the columns struct should contain the order, and bump status too
-         * but for the moment we are re-using the featureset struct
+         * the columns struct contains the order, and bump status too
          *
          * due to constraints w/ old config we need to give the window a list of column name quarks in order
          */
