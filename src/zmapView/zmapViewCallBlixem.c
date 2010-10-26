@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Oct 19 17:27 2010 (edgrif)
+ * Last edited: Oct 26 15:06 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.43 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.44 2010-10-26 14:11:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -263,20 +263,22 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 				   float score, GArray *gaps, char *sequence, char *description) ;
 
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
-static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only) ;
-static gboolean formatTranscriptExblx(GString *line, int min, int max,
+
+static gboolean processExonsGFF(blixemData blixem_data, ZMapFeature feature, gboolean cds_only_unused) ;
+static gboolean printExonGFF(GFFFormatData gff_data, GString *line, int min, int max,
+				    char *ref_name, char *source_name,
+				    ZMapFeature feature, char *transcript_name,
+				    int exon_start, int exon_end,
+				    int qstrand) ;
+
+static gboolean processExonsExblx(blixemData blixem_data, ZMapFeature feature, gboolean cds_only) ;
+static gboolean printExonExblx(GString *line, int min, int max,
 				      char *transcript_name,
 				      float score,
 				      int exon_base, int exon_start, int exon_end,
 				      int qstart, int qend, int qstrand,
 				      int sstart, int send) ;
-static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int min, int max,
-				    char *ref_name, char *source_name,
-				    ZMapFeature feature, char *transcript_name,
-				    int exon_start, int exon_end,
-				    int qstart, int qend, int qstrand,
-				    int sstart, int send) ;
-static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only) ;
+static gboolean printIntronsExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only) ;
 
 static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean formatPolyA(GFFFormatData gff_data, GString *line,
@@ -1783,24 +1785,28 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 }
 
 
-
+/* Print a transcript. */
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 {
   gboolean status = TRUE;
   gboolean cds_only = TRUE ;
 
-  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
-    cds_only = FALSE ;
-
-  if (!cds_only || feature->feature.transcript.flags.cds)
+  if (blixem_data->file_format == BLX_FILE_FORMAT_GFF)
     {
-      /* Do the exons... */
-      status = processExons(blixem_data, feature, cds_only) ;
+      status = processExonsGFF(blixem_data, feature, cds_only) ;
+    }
+  else
+    {
+      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+	cds_only = FALSE ;
 
-      /* Now do extra's for each file format. */
-      if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
+      if (!cds_only || feature->feature.transcript.flags.cds)
 	{
-	  printTranscriptExtrasExblx(feature, blixem_data, cds_only) ;
+	  /* Do the exons... */
+	  status = processExonsExblx(blixem_data, feature, cds_only) ;
+
+	  /* Now do extra's. */
+	  printIntronsExblx(feature, blixem_data, cds_only) ;
 	}
     }
 
@@ -1808,8 +1814,143 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 }
 
 
+
 /* Print out the exons taking account of the extent of the CDS within the transcript. */
-static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only)
+static gboolean processExonsGFF(blixemData blixem_data, ZMapFeature feature, gboolean cds_only_unused)
+{
+  gboolean status = TRUE ;
+  GIOChannel *channel ;
+  int i ;
+  ZMapSpan span = NULL ;
+  int min, max ;
+  GString *line ;
+  char *ref_name ;
+  char *transcript_name ;
+  char *source_name ;
+  GFFFormatData gff_data = (GFFFormatData)(blixem_data->format_data) ;
+  char *SO_rna_id = "mRNA" ;
+
+
+  channel = blixem_data->gff_channel ;
+
+  line = blixem_data->line ;
+
+  min = blixem_data->min ;
+  max = blixem_data->max ;
+
+  ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
+  transcript_name = (char *)g_quark_to_string(feature->original_id) ;
+  source_name = (char *)g_quark_to_string(feature->source_id) ;
+
+  /* Write out the transcript record:
+   *            ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00001;Name=EDEN.1 */
+  gff_data->transcript_count++ ;
+
+  g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\tID=transcript%d;Name=%s\n",
+		  ref_name, source_name, SO_rna_id,
+		  feature->x1, feature->x2,
+		  (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+		  gff_data->transcript_count,
+		  transcript_name) ;
+
+  status = printLine(channel, &(blixem_data->errorMsg), line->str) ;
+
+  blixem_data->line = g_string_truncate(blixem_data->line, 0) ; /* Reset string buffer. */
+
+
+  /* Write out the exons...and if there is one the CDS sections. */
+  for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+    {
+      int exon_start, exon_end ;
+
+      span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
+
+      exon_start = span->x1 ;
+      exon_end = span->x2 ;
+
+      printExonGFF(blixem_data->format_data, line, min, max,
+			  ref_name, source_name,
+			  feature, transcript_name,
+			  exon_start, exon_end,
+			  feature->strand) ;
+
+      status = printLine(channel, &(blixem_data->errorMsg), line->str) ;
+
+      blixem_data->line = g_string_truncate(blixem_data->line, 0) ; /* Reset string buffer. */
+    }
+
+  return status ;
+}
+
+
+static gboolean printExonGFF(GFFFormatData gff_data, GString *line, int min, int max,
+			     char *ref_name, char *source_name,
+			     ZMapFeature feature, char *transcript_name,
+			     int exon_start, int exon_end,
+			     int qstrand)
+{
+  gboolean status = TRUE ;
+  char *SO_exon_id = "exon" ;
+  char *SO_CDS_id = "CDS" ;
+  char *id_str = NULL ;
+
+  if (gff_data->maximise_ids)
+    {
+      gff_data->exon_count++ ;
+
+      id_str = g_strdup_printf("ID=exon%d;", gff_data->exon_count) ;
+    }
+
+  /* ctg123 . exon            1300  1500  .  +  .  Parent=mRNA00003 */
+  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\t%sParent=transcript%d\n",
+			 ref_name, source_name, SO_exon_id,
+			 exon_start, exon_end,
+			 (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+			 (id_str ? id_str : ""),
+			 gff_data->transcript_count) ;
+
+
+  if (ZMAPFEATURE_HAS_CDS(feature))
+    {
+      int cds_start, cds_end ;
+
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+
+      if (exon_start > cds_end || exon_end < cds_start)
+	{
+	  ;
+	}
+      else
+	{
+	  int tmp_cds1, tmp_cds2, phase ;
+
+	  /* ctg123 . CDS 1201 1500 . + 0 Parent=mRNA00001 */
+	  if (zMapFeatureExon2CDS(feature,
+				  exon_start, exon_end, &tmp_cds1, &tmp_cds2, &phase))
+	    {
+	      /* Only print if exon has cds section. */
+	      g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t%d\t%sParent=transcript%d\n",
+				     ref_name, source_name, SO_CDS_id,
+				     tmp_cds1, tmp_cds2,
+				     (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+				     phase,
+				     (id_str ? id_str : ""),
+				     gff_data->transcript_count) ;
+	    }
+	}
+    }
+
+  if (id_str)
+    g_free(id_str) ;
+
+  return status ;
+}
+
+
+
+/* ExBlx Format: print out the exons taking account of the extent of the CDS within the transcript. */
+static gboolean processExonsExblx(blixemData blixem_data, ZMapFeature feature, gboolean cds_only)
 {
   gboolean status = TRUE ;
   GIOChannel *channel ;
@@ -1824,13 +1965,7 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
   char *transcript_name ;
   char *source_name ;
 
-
-
-  if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
-    channel = blixem_data->exblx_channel ;
-  else
-    channel = blixem_data->gff_channel ;
-
+  channel = blixem_data->exblx_channel ;
 
   line = blixem_data->line ;
 
@@ -1882,30 +2017,6 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 	}
     }
 
-
-
-  /* If it's a new transcript then write the transcript record with a new ID. */
-  if (blixem_data->file_format == BLX_FILE_FORMAT_GFF)
-    {
-      GFFFormatData gff_data = (GFFFormatData)(blixem_data->format_data) ;
-      char *SO_rna_id = "mRNA" ;
-
-      gff_data->transcript_count++ ;
-
-      /* ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00001;Name=EDEN.1 */
-      g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\tID=transcript%d;Name=%s\n",
-		      ref_name, source_name, SO_rna_id,
-		      feature->x1, feature->x2,
-		      (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
-		      gff_data->transcript_count,
-		      transcript_name) ;
-
-      status = printLine(channel, &(blixem_data->errorMsg), line->str) ;
-
-      blixem_data->line = g_string_truncate(blixem_data->line, 0) ; /* Reset string buffer. */
-    }
-
-
   for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
     {
       span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
@@ -1931,7 +2042,6 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 		exon_end = cds_end ;
 	    }
 
-	  /* NEED TO REVISIT THIS FOR GFFv3... */
 	  /* We only export exons that fit completely within the blixem scope. */
 	  if (exon_start >= min && exon_end <= max)
 	    {
@@ -1951,30 +2061,12 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 		  send   = (exon_base + (exon_end - exon_start)) / 3 ;
 		}
 
-	      if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
-		{
-		  formatTranscriptExblx(line, min, max,
-					transcript_name,
-					score,
-					exon_base, exon_start, exon_end,
-					qstart, qend, feature->strand,
-					sstart, send) ;
-		}
-	      else
-		{
-		  int tmp ;
-
-		  if (feature->strand == ZMAPSTRAND_REVERSE)
-		    tmp = qstart, qstart = qend, qend = tmp ;
-
-		  formatTranscriptGFF(blixem_data->format_data, line, min, max,
-				      ref_name, source_name,
-				      feature, transcript_name,
-				      exon_start, exon_end,
-				      qstart, qend, feature->strand,
-				      sstart, send) ;
-		}
-
+	      printExonExblx(line, min, max,
+				    transcript_name,
+				    score,
+				    exon_base, exon_start, exon_end,
+				    qstart, qend, feature->strand,
+				    sstart, send) ;
 
 	      status = printLine(channel, &(blixem_data->errorMsg), line->str) ;
 
@@ -1997,12 +2089,12 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 }
 
 
-static gboolean formatTranscriptExblx(GString *line, int min, int max,
-				      char *transcript_name,
-				      float score_unused,
-				      int exon_base, int exon_start, int exon_end,
-				      int qstart, int qend, int qstrand,
-				      int sstart, int send)
+static gboolean printExonExblx(GString *line, int min, int max,
+			       char *transcript_name,
+			       float score_unused,
+			       int exon_base, int exon_start, int exon_end,
+			       int qstart, int qend, int qstrand,
+			       int sstart, int send)
 {
   gboolean status = TRUE;
   char qframe_strand ;
@@ -2035,81 +2127,7 @@ static gboolean formatTranscriptExblx(GString *line, int min, int max,
 }
 
 
-static gboolean formatTranscriptGFF(GFFFormatData gff_data, GString *line, int min, int max,
-				    char *ref_name, char *source_name,
-				    ZMapFeature feature, char *transcript_name,
-				    int exon_start, int exon_end,
-				    int qstart, int qend, int qstrand,
-				    int sstart, int send)
-{
-  gboolean status = TRUE ;
-  char *SO_exon_id = "exon" ;
-  char *SO_CDS_id = "CDS" ;
-  char *id_str = NULL ;
-
-  if (gff_data->maximise_ids)
-    {
-      gff_data->exon_count++ ;
-
-      id_str = g_strdup_printf("ID=exon%d;", gff_data->exon_count) ;
-    }
-
-  /* ctg123 . exon            1300  1500  .  +  .  Parent=mRNA00003 */
-  g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.\t%sParent=transcript%d\n",
-			 ref_name, source_name, SO_exon_id,
-			 qstart, qend,
-			 (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
-			 (id_str ? id_str : ""),
-			 gff_data->transcript_count) ;
-
-
-  if (feature->feature.transcript.flags.cds)
-    {
-      int cds_start, cds_end ;
-
-      cds_start = feature->feature.transcript.cds_start ;
-      cds_end = feature->feature.transcript.cds_end ;
-
-      if (exon_start > cds_end || exon_end < cds_start)
-	{
-	  ;
-	}
-      else
-	{
-	  int tmp_cds1, tmp_cds2, phase ;
-
-	  if (cds_start >= exon_start && cds_start <= exon_end)
-	    qstart += cds_start - exon_start ;
-	  if (cds_end >= qstart && cds_end <= qend)
-	    qend -= exon_end - cds_end ;
-
-
-
-	  /* ctg123 . CDS 1201 1500 . + 0 Parent=mRNA00001 */
-	  if (zMapFeatureExon2CDS(feature,
-				  exon_start, exon_end, &tmp_cds1, &tmp_cds2, &phase))
-	    {
-	      /* Only print if exon has cds section. */
-	      g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t%d\t%sParent=transcript%d\n",
-				     ref_name, source_name, SO_CDS_id,
-				     qstart, qend,
-				     (qstrand == ZMAPSTRAND_REVERSE ? '-' : '+'),
-				     phase,
-				     (id_str ? id_str : ""),
-				     gff_data->transcript_count) ;
-	    }
-	}
-    }
-
-  if (id_str)
-    g_free(id_str) ;
-
-  return status ;
-}
-
-
-
-static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only)
+static gboolean printIntronsExblx(ZMapFeature feature, blixemData  blixem_data, gboolean cds_only)
 {
   gboolean status = TRUE;
   int min, max ;
@@ -2188,8 +2206,7 @@ static gboolean printTranscriptExtrasExblx(ZMapFeature feature, blixemData  blix
 
 
 
-/* There is some not good stuff here....we are keying off the source_id which is not great.
- * This is were we really need gffv3.... */
+/* This is were we really need gffv3.... */
 static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
 {
   gboolean status = TRUE ;
@@ -2301,7 +2318,7 @@ static gboolean formatVariant(GFFFormatData gff_data, GString *line,
       char *url_escaped ;
       char *url_str = NULL ;
 
-#if GTK_MINOR_VERSION > 15
+#if GLIB_MINOR_VERSION > 15
       /* The final arg is to allow utf_8 chars, I've put FALSE but I'm not sure. */
       url_escaped = g_uri_escape_string(feature->url, NULL, FALSE) ;
 #else
