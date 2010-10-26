@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 18 08:18 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.122 2010-10-19 15:56:44 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.123 2010-10-26 12:18:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1370,7 +1370,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
 	    {
 	      *err_text = g_strdup_printf("feature ignored, could not parse variation string");
-	      
+
 	      return result ;
 	    }
 	  else
@@ -1409,7 +1409,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     {
       feature_set = parser_feature_set->feature_set ;
 
-      feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
+      if(feature_name)  /* have to check in case of no-name data errors */
+            feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
 						 feature_name) ;
     }
 
@@ -1446,8 +1447,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	}
     }
 
+  if(!feature_name_id)
+    {
+      *err_text = g_strdup_printf("feature ignored as it has no name");
+    }
 
-  if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
+  else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 					   sequence, ontology,
 					   feature_type, feature_style,
 					   start, end,
@@ -1752,10 +1757,13 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
       if (attr_fields == 1)
 	{
-	  has_name         = TRUE ;
-	  *feature_name    = g_strdup(name) ;
-	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+        if(name[0])     /* das_WashU_PASA_human_ESTs have Name "" */
+	  {
+            has_name         = TRUE ;
+	      *feature_name    = g_strdup(name) ;
+	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						   start, end, query_start, query_end) ;
+        }
 	}
     }
   else
@@ -2330,29 +2338,29 @@ static gboolean getHomolLength(char *attributes, int *length_out)
 /* Format of Variation string is like this:
  *
  *   SNP:
- *   
+ *
  *   Name "rs28847272 - A/G"
- *   
- *   
+ *
+ *
  *   deletion:
- *   
+ *
  *   Name "rs35621402 - -/G"
  *   Name "rs3047232 - -/AA"
  *   Name "rs57043843 - -/CTTA"
  *   Name "rs33945458 - -/(LARGEINSERTION)"
- *   
- *   
+ *
+ *
  *   insertion:
- *   
+ *
  *   Name "rs35022483 - T/-"
  *   Name "rs61033774 - TAAA/-"
  *   Name "rs58131816 - AAAAAAGTTCCTTGCATGATTAAAAAAGTATT/-"
- *   
- *   
+ *
+ *
  *   CNV:
- *   
+ *
  *   Name "cnvi0023136 - CNV_PROBE"    I'm not completely sure about this.
- * 
+ *
  * Format string extracts the variation string.
  *
  *  */

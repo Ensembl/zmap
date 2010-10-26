@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Oct 11 15:57 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.137 2010-10-19 15:53:12 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.138 2010-10-26 12:18:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -636,7 +636,8 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 	}
     }
 
-  result = TRUE ;
+  if(feature->unique_id)      /* some DAS servers give use  Name "" which is an error */
+    result = TRUE ;
 
   return result ;
 }
