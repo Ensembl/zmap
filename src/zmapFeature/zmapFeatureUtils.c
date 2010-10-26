@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 11 13:48 2010 (edgrif)
+ * Last edited: Oct 25 16:25 2010 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.76 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.77 2010-10-26 13:39:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1257,13 +1257,13 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
   if (feature->strand == ZMAPSTRAND_FORWARD)
     {
       i = 0 ;
-      end = feature->feature.transcript.exons->len - 1 ;
+      end = feature->feature.transcript.exons->len ;
       incr = 1 ;
     }
   else
     {
       i = exons->len - 1 ;
-      end = 0 ;
+      end = -1 ;
       incr = -1 ;
     }
 
