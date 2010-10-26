@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Oct 19 17:18 2010 (edgrif)
+ * Last edited: Oct 22 11:56 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.75 2010-10-19 16:33:43 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.76 2010-10-26 13:32:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,13 +42,13 @@
 #include <signal.h>
 #include <locale.h>
 #include <unistd.h>
+#include <string.h>
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
 #include <ZMap/zmapControl.h>
 #include <zmapApp_P.h>
 
@@ -56,7 +56,7 @@
 #define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
-static gboolean checkForCmdLineSleep(int argc, char *argv[]) ;
+static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 static void checkConfigDir(void) ;
@@ -110,6 +110,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   char *sequence ;
   int start, end ;
   int log_size ;
+  int sleep_seconds = 0 ;
   /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
 
 
@@ -122,8 +123,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #endif
 
 
-  if (checkForCmdLineSleep(argc, argv))
-    sleep(15) ;
+  /* User can ask for an immediate sleep, useful for attaching a debugger. */
+  if ((sleep_seconds = checkForCmdLineSleep(argc, argv)))
+    sleep(sleep_seconds) ;
+
 
   g_thread_init(NULL) ;
   if (!g_thread_supported())
@@ -631,10 +634,12 @@ static void checkForCmdLineVersionArg(int argc, char *argv[])
   return ;
 }
 
-/* Did user ask for zmap to sleep initially - useful for attaching a debugger. */
-static gboolean checkForCmdLineSleep(int argc, char *argv[])
+/* Did user ask for zmap to sleep initially - useful for attaching a debugger.
+ * Returns number of seconds to sleep or zero if user did not specify sleep.
+ *  */
+static int checkForCmdLineSleep(int argc, char *argv[])
 {
-  gboolean do_sleep = FALSE ;
+  int seconds = 0 ;
   char **curr_arg ;
 
   /* We do this by steam because the cmdline args stuff is not set up immediately. */
@@ -642,16 +647,16 @@ static gboolean checkForCmdLineSleep(int argc, char *argv[])
   curr_arg = argv ;
   while (*curr_arg)
     {
-      if (g_ascii_strcasecmp(*curr_arg, "--sleep") == 0)
+      if (g_str_has_prefix(*curr_arg, "--sleep="))
 	{
-	  do_sleep = TRUE ;
+	  seconds = atoi((strstr(*curr_arg, "=") + 1)) ;
 	  break ;
 	}
 
       curr_arg++ ;
     }
 
-  return do_sleep ;
+  return seconds ;
 }
 
 
