@@ -29,9 +29,9 @@
  * Exported functions: See zmapSO.h
  *              
  * HISTORY:
- * Last edited: Oct 19 17:20 2010 (edgrif)
+ * Last edited: Oct 26 14:37 2010 (edgrif)
  * Created: Mon Oct 11 12:04:13 2010 (edgrif)
- * CVS info:   $Id: zmapSO.c,v 1.3 2010-10-19 16:35:11 edgrif Exp $
+ * CVS info:   $Id: zmapSO.c,v 1.4 2010-10-26 13:38:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,9 +124,10 @@ GQuark zMapSOVariation2SO(char *variation_str)
 {
   GQuark SO_acc = 0 ;
 
+
   /* Temporary check until we can move on to a new gtk. GRegex did not come along until minor
    * version 14. */
-#if GTK_MINOR_VERSION > 13
+#if GLIB_MINOR_VERSION > 13
 
   static GRegex *insertion_exp = NULL, *deletion_exp, *snp_exp, *substitution_exp, *alteration_exp ;
   GMatchInfo *match_info ;
@@ -160,7 +161,6 @@ GQuark zMapSOVariation2SO(char *variation_str)
     SO_acc = var_id ;
 
 #endif
-
 
   return SO_acc ;
 }
