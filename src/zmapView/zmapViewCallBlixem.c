@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Oct 26 15:06 2010 (edgrif)
+ * Last edited: Oct 26 15:23 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.44 2010-10-26 14:11:19 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.45 2010-10-26 14:24:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1172,9 +1172,10 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 
       if (blixem_data->transcript_sets)
 	{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* debug. */
 	  g_hash_table_foreach(blixem_data->block->feature_sets, printFunc, NULL) ;
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  g_list_foreach(blixem_data->transcript_sets, processSetList, blixem_data) ;
 	}
