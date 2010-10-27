@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,12 +25,12 @@
  *
  * Description: Various GUI convenience functions for messages, text,
  *              notebook creation and so on.
- *              
+ *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
  * Last edited: Jun  9 15:02 2009 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.58 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.59 2010-10-27 08:15:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,9 +86,9 @@ static char *help_URL_base_G = NULL ;
 
 /*! @defgroup zmapguiutils   zMapGUI: set of utility functions for use in a GUI.
  * @{
- * 
+ *
  * \brief  GUI utility functions.
- * 
+ *
  * zMapGUI routines provide some basic GUI functions many of which encapsulate
  * tricky bits of coding in GTK. The functions do things like display messages
  * (modal and not modal), text in a text widget, find fonts and font sizes etc.
@@ -107,8 +107,8 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 {
   GdkWindow *window;
 
-  if(((GTK_WIDGET_NO_WINDOW(widget)) && 
-      (window = gtk_widget_get_parent_window(widget))) ||   
+  if(((GTK_WIDGET_NO_WINDOW(widget)) &&
+      (window = gtk_widget_get_parent_window(widget))) ||
      (window = widget->window))
     {
       gdk_window_raise(window);
@@ -120,7 +120,7 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 
 
 /*!
- * Find GtkWindow (i.e. ultimate) parent of given widget. 
+ * Find GtkWindow (i.e. ultimate) parent of given widget.
  * Can return NULL if widget is not part of a proper widget tree.
  *
  * @param widget     The child widget.
@@ -144,17 +144,17 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
 
 
 
-/*! For use with custom built dialogs. 
- * 
+/*! For use with custom built dialogs.
+ *
  * Gtk provides a function called  gtk_dialog_run() which blocks until the user presses
- * a button on the dialog, the function returns an int indicating which button was 
+ * a button on the dialog, the function returns an int indicating which button was
  * pressed. The problem is though that this function blocks any user interaction with
  * the rest of the application. This function is an attempt to get round this by
  * continuing to service events while waiting for a response.
- * 
+ *
  * The code _relies_ on the response never being zero, no GTK predefined responses
  * have this value and you should not use this value either (see gtk web page for dialogs).
- * 
+ *
  *
  * @param toplevel     This must be the dialog widget itself.
  * @return             an integer which corresponds to the button pressed.
@@ -189,13 +189,13 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
  * bar in zmap windows.
  *
  * Currently the format is:
- * 
+ *
  *             "ZMap (version) <window_type> - <text>"
- * 
+ *
  * Either the window_type or the text can be NULL but not both.
- * 
+ *
  * The returned string should be free'd by the caller using g_free() when no longer required.
- * 
+ *
  *
  * @param window_type  The sort of window it is, e.g. "feature editor"
  * @param message      Very short text, e.g. "Please Reply" or a feature name or....
@@ -218,7 +218,7 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
 }
 
 /*!
- * Trivial cover function for creating a new toplevel window complete 
+ * Trivial cover function for creating a new toplevel window complete
  * with the title set as per zMapGUIMakeTitleString above.
  *
  * @param window_type  The sort of window it is, e.g. "feature editor"
@@ -277,7 +277,7 @@ static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_dat
 }
 
 /*! zMapGUIPopOutWidget
- * 
+ *
  * \brief Simple function to reparent a widget to a new toplevel,
  * complete with handlers to reparent back to original and handle
  * original parent destruction.
@@ -307,14 +307,14 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
 	  popout_data->popout_child    = popout;
 
 	  gtk_widget_reparent(popout, new_toplevel);
-	  
-	  popout_data->original_parent_signal_id = 
+
+	  popout_data->original_parent_signal_id =
 	    g_signal_connect(G_OBJECT(curr_parent), "destroy",
-			     G_CALLBACK(handle_original_parent_destroy_cb), 
+			     G_CALLBACK(handle_original_parent_destroy_cb),
 			     popout_data);
 
 	  g_signal_connect(G_OBJECT(new_toplevel), "destroy",
-			   G_CALLBACK(handle_popout_destroy_cb), 
+			   G_CALLBACK(handle_popout_destroy_cb),
 			   popout_data);
 	}
     }
@@ -336,11 +336,12 @@ void zMapGUIShowAbout(void)
 #if GTK_MAJOR_VERSION == (2) && GTK_MINOR_VERSION >= (6)
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
+                      "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
 
   gtk_show_about_dialog(NULL,
 			"authors", authors,
-			"comments", zMapGetCommentsString(), 
+			"comments", zMapGetCommentsString(),
 			"copyright", zMapGetCopyrightString(),
 			"license", zMapGetLicenseString(),
 			"name", zMapGetAppName(),
@@ -423,7 +424,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
   else
     {
       zMapWarning("Error: %s\n", error->message) ;
-      
+
       g_error_free(error) ;
     }
 
@@ -447,7 +448,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
  * If parent is non-NULL then the dialog will be kept on top of that window, essential for
  * modal dialogs in particular. I think parent should be the application window that the message
  * applies to probably, or perhaps the application main window.
- * 
+ *
  * If user_data is non-NULL it gives the type of data to be returned. The dialog will be
  * constructed so the user can return the correct sort of data.
  *
@@ -462,9 +463,9 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
  * @param display_timeout  Time in seconds after which message is automatically removed (ignored for
  *                     modal dialogs).
  * @param user_data    struct giving type of data that should be returned.
- * 
+ *
  * Some of the message functions return a boolean, if they do the meaning is this:
- * 
+ *
  * @return             TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
 
@@ -488,7 +489,7 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   va_end(args) ;
 
   zMapGUIShowMsg(msg_type, msg_string) ;
-  
+
   g_free(msg_string) ;
 
   return ;
@@ -642,7 +643,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
 
   /* Ensure that the dialog box is destroyed when the user responds. */
   g_signal_connect_swapped(dialog,
-			   "response", 
+			   "response",
 			   G_CALLBACK(gtk_widget_destroy),
 			   dialog) ;
 
@@ -694,7 +695,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
 
       text_width = (int)(((double)(80 * width)) / x) ;
       text_height = text_width / 2 ;
-  
+
       /* This is all a bit hacky but basically the borders around the window take up quite a lot of
        * size and its not easy to calculate how big to make the window so the text shows....sigh... */
       text_width += TEXT_X_BORDERS ;
@@ -795,7 +796,7 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
  * @param desc_out       If non-NULL, the font description is returned.
  * @return               TRUE if font found, FALSE otherwise.
  */
-gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget, 
+gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 				  GList *pref_families, gint points, PangoWeight weight,
 				  PangoFont **font_out, PangoFontDescription **desc_out)
 {
@@ -819,7 +820,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 
       name = pango_font_family_get_name(families[i]) ;
       current = 0;
-      
+
       pref = g_list_first(pref_families) ;
       while(pref && ++current)
 	{
@@ -856,7 +857,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
     {
       PangoFontDescription *desc ;
       const gchar *name ;
-      
+
       name = pango_font_family_get_name (match_family) ;
 
       desc = pango_font_description_from_string(name) ;
@@ -874,7 +875,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 
       found = TRUE ;
     }
-  
+
   return found ;
 }
 
@@ -963,7 +964,7 @@ void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, 
     *y_out = y ;
 
   return ;
-} 
+}
 
 
 /* Handle creating a radio group.
@@ -976,7 +977,7 @@ static void radioButtonCB(GtkWidget *button, gpointer radio_data)
   RadioButtonCBData data = (RadioButtonCBData)radio_data;
   gboolean active;
 
-  if((active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) 
+  if((active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
      && data->output)
     *(data->output) = data->value;
 
@@ -1003,8 +1004,8 @@ static void radioButtonCBDataDestroy(gpointer data)
 }
 
 /* Possibly sensible to make value_out point to a member of clickedData if you are setting clickedCB. */
-void zMapGUICreateRadioGroup(GtkWidget *gtkbox, 
-                             ZMapGUIRadioButton all_buttons, 
+void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
+                             ZMapGUIRadioButton all_buttons,
                              int default_button, int *value_out,
                              ZMapGUIRadioButtonCBFunc clickedCB, gpointer clickedData)
 {
@@ -1025,7 +1026,7 @@ void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
       data->callback  = clickedCB;
       data->user_data = clickedData;
 
-      buttons->widget = 
+      buttons->widget =
         radio = gtk_radio_button_new_with_label(group, buttons->name);
 
       g_signal_connect_data(G_OBJECT(radio), "clicked",
@@ -1054,7 +1055,7 @@ void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
 
 
 
-ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit, 
+ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit,
                                             double *top_inout, double *bot_inout)
 {
   ZMapGUIClampType ct = ZMAPGUI_CLAMP_INIT;
@@ -1078,14 +1079,14 @@ ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit
     }
   else if(ceil(bot) == bot_limit)
     ct |= ZMAPGUI_CLAMP_END;
-    
+
   *top_inout = top;
   *bot_inout = bot;
 
   return ct;
 }
 
-ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot_limit, 
+ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot_limit,
                                                   double *top_inout, double *bot_inout)
 {
   ZMapGUIClampType ct = ZMAPGUI_CLAMP_INIT;
@@ -1127,7 +1128,7 @@ void zMapGUISetClipboard(GtkWidget *widget, char *text)
   if(text)
     {
       GtkClipboard* clip = NULL;
-      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(widget), 
+      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(widget),
                                           GDK_SELECTION_PRIMARY)) != NULL)
         {
           //printf("Setting clipboard to: '%s'\n", text);
@@ -1164,12 +1165,12 @@ static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosur
  *
  * Without this doing a gtk_paned_set_position in the handler results
  * in another call to the handler and it's very easy to get into a
- * loop... So instead of doing 
+ * loop... So instead of doing
  * g_signal_connect(widget, "notify::position", cb, data);
  * use this function.
  *
  * \param               GtkWidget * should be GtkPaned *
- * \param               Your GCallback 
+ * \param               Your GCallback
  * \param               Your data (this is never freed)
  * \return              void
  ************************************************** */
@@ -1180,12 +1181,12 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
   if(GTK_IS_PANED(widget))
     {
       pane_data = g_new0(PaneMaxPositionStruct, 1);
-      
+
       pane_data->callback   = (g_object_notify_callback)callback;
       pane_data->user_data  = user_data;
-      pane_data->handler_id = g_signal_connect_data(G_OBJECT(widget), 
-                                                    "notify::position", 
-                                                    G_CALLBACK(pane_max_position_callback), 
+      pane_data->handler_id = g_signal_connect_data(G_OBJECT(widget),
+                                                    "notify::position",
+                                                    G_CALLBACK(pane_max_position_callback),
                                                     (gpointer)pane_data,
                                                     pane_max_position_destroy_notify, 0);
     }
@@ -1198,15 +1199,15 @@ static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpoint
   PaneMaxPosition pane_data = (PaneMaxPosition)user_data;
 
   if(pane_data->callback)
-    {  
-      g_signal_handlers_block_by_func(G_OBJECT(pane), 
-				      G_CALLBACK(pane_max_position_callback), 
+    {
+      g_signal_handlers_block_by_func(G_OBJECT(pane),
+				      G_CALLBACK(pane_max_position_callback),
 				      pane_data);
 
       (pane_data->callback)(pane, scroll, pane_data->user_data);
 
-      g_signal_handlers_unblock_by_func(G_OBJECT(pane), 
-					G_CALLBACK(pane_max_position_callback), 
+      g_signal_handlers_unblock_by_func(G_OBJECT(pane),
+					G_CALLBACK(pane_max_position_callback),
 					pane_data);
     }
 
@@ -1229,7 +1230,7 @@ static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosur
 
 
 /*
- *                      Internal functions                      
+ *                      Internal functions
  */
 
 
@@ -1267,7 +1268,7 @@ static gboolean modalFromMsgType(ZMapMsgType msg_type)
  * If parent is non-NULL then the dialog will be kept on top of that window, essential for
  * modal dialogs in particular. I think parent should be the application window that the message
  * applies to probably, or perhaps the application main window.
- * 
+ *
  * If user_data is non-NULL it gives the type of data to be returned. The dialog will be
  * constructed so the user can return the correct sort of data.
  *
@@ -1395,11 +1396,11 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
   if (!modal && !user_data)
     {
       g_signal_connect_swapped(dialog,
-			       "response", 
+			       "response",
 			       G_CALLBACK(gtk_widget_destroy),
 			       dialog) ;
     }
-  else    
+  else
     {
       gint result ;
 
@@ -1442,7 +1443,7 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 		      break ;
 		    }
 		  }
-		
+
 		break ;
 	      }
 	    default:
@@ -1461,7 +1462,7 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 		      break ;
 		    }
 		  }
-		
+
 		break ;
 	      }
 	    }
