@@ -1,0 +1,155 @@
+#!/usr/bin/perl
+# add a header at the start of a source file, sandwiched by CVS operations
+# *Please* do this with no files active from cvs and a clean build expected
+# mh17 03 Mar 2010
+# Copyright(c) 2010 Genome Research Limited
+# test data in CopyRight.txt, copy to a header first the run over it (the other file)
+# to use on ZMap try:
+#
+#     cd ZMap/src
+#     find ./zmap* -name "*.c" -exec cvs edit "name"\{\} \;
+#     find ./zmap* -name "*.c" -exec ../scripts/Include file \{\} \;
+#     cvs commit -m "added header XXXX to files"
+#
+# hack to Include: silly me typed the file name wrong :-(
+
+
+use warnings;
+
+my ($file, $comment_found, $include_added,$include);
+my ($ofile);
+my ($year_now);
+my $CVS = 0;      # use the CVS:  only for the brave
+
+sub add_include
+{
+      my $pre;
+      my $len;
+      my $i;
+
+      for(@_)     # process our one argument directly
+      {
+            if($comment_found)
+            {
+                  if(/\*\//)
+                  {
+                        print OFILE "\n#include <$include>\n\n";
+                        $include_added = 1;
+                  }
+            }
+            elsif(/\/\*/)
+            {
+                  $comment_found = 1;
+            }
+      }
+      return 1;
+}
+
+
+for($i = $#ARGV;$i >= 0;$i--)
+{
+      my $arg;
+
+      $arg = shift @ARGV;
+
+      if($arg eq "--help")
+      {
+            printf("usage: Include [--help] [-CVS] thing.h file\n");
+      }
+      elsif($arg eq "-CVS")
+      {
+            $CVS = 1;
+      }
+      elsif(!$include)
+      {
+            $include = $arg;
+      }
+      else
+      {
+            $file = $arg;
+      }
+}
+
+if(!$include)     {     die("No file to include");  }
+if(!$file)        {     die("No file!\n"); }
+
+print "$file: ";
+
+$comment_found = 0;
+$include_added = 0;
+$lineno = 0;
+
+if($CVS)
+{
+      @args = ("cvs", "edit", $file);
+      # test if writeable: not sure if CVS return values are good
+      system(@args);
+
+      if(!(-w $file))
+      {
+            die("Cannot checkout $file from CVS - not writeable\n");
+      }
+}
+
+open(IFILE,$file) or die("cannot open $file\n");
+
+$ofile = $file . ".tmp";         # make tmp file in same directory
+$year_now = 2010;
+open(OFILE,"> ".$ofile) or die("cannot open $ofile\n");
+
+while(<IFILE>)
+{
+
+      $lineno++;
+      if(! /#include <Zmap\/zmap.h>/)
+      {
+            print OFILE $_;
+      }
+
+      if(!$include_added)
+      {
+            #$line =
+            add_include($_);
+      }
+
+}
+
+close $ofile;
+
+
+if($include_added)
+{
+      print "$include added\n";
+
+      unlink $file or die ("Can't remove old file\n");
+      rename($ofile,$file) or die("Can't update file\n");
+
+      if($CVS)
+      {
+            @args = ("cvs", "commit", "-m", "$include added", $file);
+            system(@args);
+            if(-w $file)
+            {
+                  die("$include added but cannot commit $file to CVS: still writeable\n");
+            }
+      }
+}
+else
+{
+      print "$include not added\n";
+      unlink $ofile;
+
+      if($CVS)
+      {
+            @args = ("cvs", "unedit", $file);
+            system(@args);
+            if(-w $file)
+            {
+                  die("Can't CVS unedit $file: still writeable\n");
+            }
+
+      }
+}
+
+
+
