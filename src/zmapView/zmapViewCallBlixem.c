@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Oct 26 15:23 2010 (edgrif)
+ * Last edited: Oct 28 17:36 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.45 2010-10-26 14:24:04 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.46 2010-10-28 16:37:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -300,7 +300,8 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void getSetList(gpointer data, gpointer user_data) ;
 static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
-static int calcCoord(ZMapSequenceType match_seq_type, int start, int end) ;
+static int calcBlockLength(ZMapSequenceType match_seq_type, int start, int end) ;
+static int calcGapLength(ZMapSequenceType match_seq_type, int start, int end) ;
 
 static void printFunc(gpointer key, gpointer value, gpointer user_data) ;
 GList * zMapViewGetColumnFeatureSets(blixemData data,GQuark column_id);
@@ -1705,7 +1706,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 
 	  gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index)) ;
 
-	  coord = calcCoord(match_seq_type, gap->t1, gap->t2) ;
+	  coord = calcBlockLength(match_seq_type, gap->t1, gap->t2) ;
 	  g_string_append_printf(align_str, "M%d ", coord) ;
 
 	  if (k < gaps->len - 1)
@@ -1749,14 +1750,16 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 		}
 
 	      if (next_match > curr_match + 1)
-		g_string_append_printf(align_str, "I%d ", (next_match - curr_match) - 1) ;
+		{
+		  g_string_append_printf(align_str, "I%d ", (next_match - curr_match) - 1) ;
+		}
 	      else if (next_ref > curr_ref + 1)
 		{
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  g_string_append_printf(align_str, "D%d ", (next_ref - curr_ref) - 1) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		  coord = calcCoord(match_seq_type, curr_ref, next_ref) ;
+		  coord = calcGapLength(match_seq_type, curr_ref, next_ref) ;
 		  g_string_append_printf(align_str, "D%d ", coord) ;
 		}
 	      else
@@ -3017,12 +3020,25 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
   return ;
 }
 
-
-static int calcCoord(ZMapSequenceType match_seq_type, int start, int end)
+/* Length of a block. */
+static int calcBlockLength(ZMapSequenceType match_seq_type, int start, int end)
 {
   int coord ;
 
   coord = (end - start) + 1 ;
+
+  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
+    coord /= 3 ;
+
+  return coord ;
+}
+
+/* Length between two blocks. */
+static int calcGapLength(ZMapSequenceType match_seq_type, int start, int end)
+{
+  int coord ;
+
+  coord = (end - start) - 1 ;
 
   if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
     coord /= 3 ;
