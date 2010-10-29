@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 18 08:18 2010 (edgrif)
+ * Last edited: Oct 29 11:24 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.123 2010-10-26 12:18:13 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.124 2010-10-29 10:41:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1558,14 +1558,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    {
 	      char *known_name = NULL ;
 
+	      /* Look for optional known name provided by some databases. */
 	      if ((result = getKnownName(attributes, &known_name)))
 		{
 		  if (!(result = zMapFeatureAddKnownName(feature, known_name)))
 		    *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;
-		}
-	      else
-		{
-		  *err_text = g_strdup("Known name attribute not found");   // this string gets freed by the caller!
 		}
 	    }
 	  else
