@@ -1,4 +1,4 @@
-<!-- $Id: EST_mRNA.html,v 1.7 2010-09-15 10:43:14 mh17 Exp $ -->
+<!-- $Id: EST_mRNA.html,v 1.8 2010-10-29 09:13:38 mh17 Exp $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 
 <fieldset><legend>Background</legend>
@@ -19,8 +19,6 @@ and recently (after the latest annotation test) we were requested to see how eas
 <h4>Design issues</h4>
 <p> This was once intended to be an interactive process w/ otterlace- see <a href="Design_notes/notes/otter_zmap.shtml">here</a>. However, reading the text and a quick chat w/ the requestor suggest that an interactive process was not wanted.
 </p>
-<h4>Implementation issues</h4>
-<p>Please refer to <a href="Design_notes/notes/f_context.shtml">this page</a> for some notes on loose ends that need attention.</p>
 </fieldset>
 
 <fieldset><legend>Things to define/ solve</legend>
@@ -83,6 +81,8 @@ Note that canvas items refer to features and not vice versa, but a canvas item c
 
 </fieldset>
 <fieldset><legend>Masking algorithm</legend>
+
+<h3>Coding</h3>
 <p>
 There may be a combinatorial problem to solve.  A sample session from human chr-4-04 presented about 4-500 vertebrate mRNA features and 2-3000 EST_Human and given that each feature may contain many parts a naive algorithm could get quite slow.
 </p>
@@ -100,6 +100,12 @@ There may be a combinatorial problem to solve.  A sample session from human chr-
 <h3>Masking a set with itself</h3>
 <p>The same procedure as above is followed but with the restriction that each exon must be matched (no gaps are allowed) and splice junctions must be the same. (which means that only the 5' and 3' coordinates may differ).
 </p>
+<h3>What gets's masked by what?</h3>
+<p>
+Perhaps the easiet way to illustrate this is with a diagram:
+<img src="Design_notes/notes/est_mask.png" class="img">
+</p>
+
 <h3>Data Structures</h3>
 <p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment. Extra flags will be added to these to handle masking status.
 </p>
