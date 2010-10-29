@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 19 08:37 2010 (edgrif)
+ * Last edited: Oct 29 11:36 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.343 2010-10-26 15:46:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.344 2010-10-29 10:42:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1394,8 +1394,16 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     g_type_class_ref(ZMAP_TYPE_FEATURE_DATA);
 
 
+
+  /*
+   * Need to merge sequence and non-sequence feature code....too much repetition...
+   */
+
+
   if (feature_arg->type == ZMAPSTYLE_MODE_RAW_SEQUENCE || feature_arg->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
+      /* sequence like feature. */
+
       ZMapWindowSequenceFeature sequence_feature = NULL;
       int origin_index = sub_start;
       int current_index = sub_end;
@@ -1473,30 +1481,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 
-      /* Update the highlighting, note that for peptides we highlight the
-       * corresponding dna sequence as well as the peptide. */
       if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 	{
 	  g_free(select.feature_desc.sub_feature_start);
 	  g_free(select.feature_desc.sub_feature_end);
 	  g_free(select.feature_desc.sub_feature_length);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zmapWindowItemHighlightDNARegion(window, FALSE, sub_item, feature->feature.sequence.frame,
-					   feature->feature.sequence.type, origin_index, current_index);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else
-	{
-	  zmapWindowItemHighlightTranslationRegions(window, FALSE, sub_item,
-						    feature->feature.sequence.type, origin_index, current_index) ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       g_free(select.feature_desc.feature_start);
       g_free(select.feature_desc.feature_end);
@@ -1504,6 +1494,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
   else
     {
+      /* non-sequence like feature. */
+
       sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
       feature = zMapWindowCanvasItemGetFeature(sub_item);
       zMapAssert(feature_arg == feature);
@@ -1684,10 +1676,13 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 			 "locus", &(select.feature_desc.feature_locus),
 			 NULL);
 
-      /* Need to replicate this ... */
-      /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
+      if (ZMAPFEATURE_IS_BASIC(feature) && feature->feature.basic.has_attr.variation_str)
+	select.feature_desc.feature_name = g_strdup_printf("%s \"%s\"",
+							   (char *)g_quark_to_string(feature->original_id),
+							   feature->feature.basic.variation_str) ;
+      else
+	select.feature_desc.feature_name = g_strdup((char *)g_quark_to_string(feature->original_id)) ;
 
-      select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
       if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
 	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
@@ -1719,13 +1714,14 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
       /* Clear up.... */
+      g_free(select.feature_desc.feature_name) ;
       g_free(select.feature_desc.sub_feature_start) ;
       g_free(select.feature_desc.sub_feature_end) ;
       g_free(select.feature_desc.sub_feature_query_start) ;
       g_free(select.feature_desc.sub_feature_query_end) ;
-      g_free(select.feature_desc.feature_set) ;     // mh17 was missing
-      if(select.feature_desc.feature_set_description)     // mh17: can be null
-            g_free(select.feature_desc.feature_set_description) ;
+      g_free(select.feature_desc.feature_set) ;
+      if (select.feature_desc.feature_set_description)	    // mh17: can be null
+	g_free(select.feature_desc.feature_set_description) ;
       g_free(select.feature_desc.feature_start) ;
       g_free(select.feature_desc.feature_end) ;
       g_free(select.feature_desc.feature_query_start) ;
