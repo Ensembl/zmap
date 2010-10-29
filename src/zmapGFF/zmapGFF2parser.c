@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 29 11:24 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.124 2010-10-29 10:41:51 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.125 2010-10-29 13:53:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1558,8 +1558,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    {
 	      char *known_name = NULL ;
 
-	      /* Look for optional known name provided by some databases. */
-	      if ((result = getKnownName(attributes, &known_name)))
+            result = TRUE;
+	      if ((getKnownName(attributes, &known_name)))
 		{
 		  if (!(result = zMapFeatureAddKnownName(feature, known_name)))
 		    *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;

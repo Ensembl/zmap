@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.69 2010-10-18 15:18:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.70 2010-10-29 13:53:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -662,7 +662,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 		}
             else
             {
-                  zMapLogWarning("could not find style %s for featureset %s in table of %d\n",
+                  zMapLogWarning("could not find style %s for column %s in table of %d\n",
                         g_quark_to_string(style_id),g_quark_to_string(column_id),
                         g_hash_table_size(map->styles));
             }
