@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:19 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.36 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.37 2010-10-29 13:51:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -810,7 +810,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
       gchar ** keys,**freethis;
       GList *sources;
       ZMapFeatureSetDesc GFFset;
-      char *desc;
+
       GQuark column,column_id;
       char *names;
       gsize len;
@@ -832,7 +832,8 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   column = g_quark_from_string(normalkey);
                   column_id = zMapFeatureSetCreateID(normalkey);
 
-
+#if MH17_USE_COLUMNS_HASH
+      char *desc;
                         // add self ref to allow column lookup
                   GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(column_id));
                   if(!GFFset)
@@ -846,7 +847,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   desc = normalkey;
                   GFFset->feature_set_text = g_strdup(desc);
                   g_hash_table_replace(hash,GUINT_TO_POINTER(column_id),GFFset);
-
+#endif
                   sources = zMapConfigString2QuarkList(names,FALSE);
                   g_free(names);
 
