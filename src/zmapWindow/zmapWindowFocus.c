@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.25 2010-10-26 15:46:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.26 2010-11-01 09:57:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -703,7 +703,11 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
                   n_focus++;
         }
       /* move the item back to where it should be */
-      zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, item->item, n_focus,0);
+      if(!zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, (ZMapWindowCanvasItem) item->item, n_focus,0))
+      {
+            zmapWindowFocusReset(window->focus);
+            /* in case of failure zap the focus */
+      }
     }
 
    item->display_state = item->flags & WINDOW_FOCUS_GROUP_ALL;

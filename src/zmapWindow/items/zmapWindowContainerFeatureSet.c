@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.37 2010-10-26 15:46:24 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.38 2010-11-01 09:59:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1212,7 +1212,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 
       this has to be in this file to use the same compare functions
 */
-void zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
+gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
             ZMapWindowCanvasItem item,int n_focus,int direction)
 {
   ZMapWindowContainerFeatures container_features;
@@ -1220,7 +1220,14 @@ void zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSe
   ZMapWindowCanvasItem list_item;
   GList *item_list,*prev_list= NULL,*next_list,*my_list = NULL;
 
-  zMapAssert(container_set->sorted);
+  if(!(container_set->sorted))
+  {
+      /* we expect it should ahve been but extra data could have arrived ?? */
+      /* this could mess up the focus list */
+      zmapWindowContainerFeatureSetSortFeatures(container_set, direction);
+      return(FALSE);
+  }
+  else
 
   if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
     {
@@ -1283,7 +1290,7 @@ void zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSe
       }
     }
 
-  return ;
+  return TRUE ;
 }
 
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set)

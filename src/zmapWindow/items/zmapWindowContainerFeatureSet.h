@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.17 2010-10-26 15:46:24 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.18 2010-11-01 09:59:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -154,7 +154,7 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
 void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set,
 					       gint direction);
 
-void zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
+gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
             ZMapWindowCanvasItem item,int n_focus,int direction);
 
 void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet container_set);
