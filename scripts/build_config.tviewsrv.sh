@@ -21,4 +21,5 @@ GTK_PREFIX=/software/acedb/gtk
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
 
 # autotools are also installed in here!
-PATH=$GTK_PREFIX/bin:$PATH
+#PATH=$GTK_PREFIX/bin:$PATH
+PATH=$PATH:$GTK_PREFIX/bin
