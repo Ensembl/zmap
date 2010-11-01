@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.70 2010-10-29 13:53:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.71 2010-11-01 09:56:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -556,7 +556,10 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
       {
             column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
             if(!column)
-                  zMapLogWarning("no column for featureset %s",g_quark_to_string(set_id));
+            {
+                  zMapLogWarning("no column %s for featureset %s", g_quark_to_string(gff->column_id), g_quark_to_string(set_id));
+
+            }
       }
       return column;
 }
