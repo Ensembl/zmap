@@ -48,6 +48,46 @@ that runs on the various building hosts.
 Overview of scripts
 ===================
 
+Each time a build is done a sequence of scripts is run (N.B. some scripts are
+in src and some in scripts), e.g. for a developer run build:
+
+
+src/bootstrap -> scripts/build_config.sh \
+  -> scripts/build_config.<mach_type>.sh -> scripts/build_config.<node>.sh
+
+
+or from the automated or master builds:
+
+scripts/build_bootstrap.sh -> src/bootstrap \
+  -> scripts/build_config.sh -> scripts/build_config.<mach_type>.sh \
+     -> scripts/build_config.<node>.sh
+
+
+While this seems complex it allows overriding for machine type and then for
+particular nodes, we need this flexibility to deal with amongst other things
+differing levels of gtk on different machines.
+
+NOTE that it's a bit confusing to have all this in different directories, I
+think the problem is that we didn't work out how to only distribute parts of
+the source tree so it seemed a good idea to put different things in different
+places.
+
+
+
+Developer builds:
+
+The developer runs bootstrap from the ZMap/src directory, this script then
+calls build_config.sh which then calls a number of scripts 
+
+
+
+
+
+
+
+
+
+
 ********************** N.B. ***************************
 
 Some of these  are now obsolete. I've been  updating the build scripts
