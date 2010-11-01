@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:19 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.37 2010-10-29 13:51:41 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.38 2010-11-01 10:00:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -697,8 +697,11 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GH
               /* Free style, report error and move on. */
               zMapStyleDestroy(new_style) ;
 
+#if MH17_useless_message
+// only occurs if there are no parameters specified
               zMapLogWarning("Styles file \"%s\", stanza %s could not be added.",
                          styles_file, curr_config_style->name) ;
+#endif
             }
           }
 
