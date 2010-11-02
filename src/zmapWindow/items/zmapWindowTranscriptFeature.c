@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 09:36 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.11 2010-08-18 09:23:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.12 2010-11-02 15:57:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,8 @@
 
 
 
-
+#include <include/ZMap/zmapEnum.h>
+#include <include/ZMap/zmapStyle.h>
 
 #include <zmapWindowTranscriptFeature_I.h>
 
@@ -87,7 +88,7 @@ static gboolean create_locus_text_G = FALSE ;
 
 
 
-/* 
+/*
  *                     External routines.
  */
 
@@ -122,7 +123,7 @@ GType zMapWindowTranscriptFeatureGetType(void)
 
 
 
-/* 
+/*
  *                  Internal routines.
  */
 
@@ -345,9 +346,10 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
 	   !(zMapStyleGetColours(style, STYLE_PROP_COLOURS, colour_type,
 				 NULL, NULL, &xon_border)))
 	  {
-	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has no colour set.",
+	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has no %s colour set.",
 			   g_quark_to_string(transcript->feature->original_id),
-			   g_quark_to_string(transcript->feature->parent->original_id));
+			   g_quark_to_string(transcript->feature->parent->original_id),
+                     zmapStyleColourType2ExactStr(colour_type));
 	  }
 
 	if((intron_follow_cds == TRUE) &&
@@ -356,10 +358,10 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
 				 NULL, NULL, &xon_border)))
 	  {
 	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has a CDS but it's style, \"%s\","
-			   "has no CDS colour set.",
+			   "has no CDS %s colour set.",
 			   g_quark_to_string(transcript->feature->original_id),
 			   g_quark_to_string(transcript->feature->parent->original_id),
-			   zMapStyleGetName(style));
+			   zMapStyleGetName(style), zmapStyleColourType2ExactStr(colour_type));
 	  }
 
 
