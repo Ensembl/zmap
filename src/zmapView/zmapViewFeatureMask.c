@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.4 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.5 2010-11-02 15:53:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,8 +63,8 @@
  *     NOTE: See Design_notes/notes/EST_mRNA.shtml for the write up
  */
 
-#define FILE_DEBUG      0     /* can use this for performance stats, coould add it to the log? */
-#define PDEBUG          printf      /* zMapLogWarning */
+#define FILE_DEBUG      0     /* can use this for performance stats, could add it to the log? */
+#define PDEBUG          zMapLogWarning
 
 
 /* header of list of features of the same name */
@@ -334,6 +334,9 @@ gint nameOrderCB(gconstpointer a, gconstpointer b)
       ZMapFeature fa = (ZMapFeature) a;
       ZMapFeature fb = (ZMapFeature) b;
 
+      if(fa->strand != fb->strand)
+            return((gint) fa->strand - (gint) fb->strand);
+
       return ((gint) fa->original_id - (gint) fb->original_id);
 }
 
@@ -364,7 +367,7 @@ static GList *sortFeatureset(ZMapFeatureSet fset)
       zMap_g_hash_table_get_data(&l, fset->features);
       l = g_list_sort(l,nameOrderCB);
 
-      /* chop this list into lists per name group
+      /* chop this list into lists per name group and strand
        * sorted by start coordinate
        * with a little header struct at the front
        * then add to another list,
@@ -377,6 +380,8 @@ static GList *sortFeatureset(ZMapFeatureSet fset)
             for(gl_end = gl_start;gl_end;gl_end = gl_end->next)
             {
                   f_end = (ZMapFeature) gl_end->data;
+                  if(f_end->strand != f_start->strand)
+                        break;
                   if(f_end->original_id != f_start->original_id)
                         break;
             }
@@ -409,7 +414,7 @@ static GList *sortFeatureset(ZMapFeatureSet fset)
       return(l_out);
 }
 
-static gboolean maskOne(GList *f, GList *mask, gboolean exact)
+static gboolean maskOne(GList *mask_top, GList *f, GList *mask,  gboolean exact)
 {
       GList *l;
       ZMapFeature f_feat,m_feat;
@@ -436,7 +441,11 @@ if(twitter) PDEBUG(" ma %d-%d",m_feat->x1,m_feat->x2);
 
                         if(exact)   /* must match splice junctions */
                         {
-                              if(f->prev && m_feat->x1 != f_feat->x1)
+                              /*
+                               * our list of exons has a header struct at the front
+                               * so the first exon has a prev list pointer
+                               */
+                              if(f->prev != mask_top && m_feat->x1 != f_feat->x1)
                                     return(FALSE);
                               if(f->next && m_feat->x2 != f_feat->x2)
                                     return(FALSE);
@@ -490,7 +499,7 @@ PDEBUG("mask set %s with set %s\n",
 #endif
 
       /* for clarity we pretend we are masking an EST with an mRNA
-       * but it could be EST x EST ro mRNA x mRNA
+       * but it could be EST x EST or mRNA x mRNA
        */
       if(!masked->masker_sorted_features)
             masked->masker_sorted_features = sortFeatureset(masked);
@@ -507,12 +516,27 @@ PDEBUG("mask set %s with set %s\n",
 
             EST = (GList *) ESTset->data;
             est = (ZMapViewAlignSet) EST->data;
+#if FILE_DEBUG
 
+if(0)
+{
+/* human chr4/4/4 @ 125917/ 125914  = BC022370.1
+ * 127502- = BX537887.1
+ */
+
+twitter = 0;
+if(est->id == g_quark_from_string("BX537887.1"))
+      twitter = 1;
+}
+#endif
             while(mRNAset)
             {
                   mRNA = (GList *) mRNAset->data;
                   mrna = (ZMapViewAlignSet) mRNA->data;
-                  if(mrna->x2 > est->x1) // && mrna->x2 >= est->x2)
+#if FILE_DEBUG
+if(twitter) PDEBUG("find mRNA est %s %d-%d mrna %d-%d",g_quark_to_string(est->id),est->x1,est->x1,mrna->x1,mrna->x2);
+#endif
+                  if(mrna->x2 > est->x1) // && mrna->x2 >= est->x2)     // why?
                         break;
                   mRNAset = mRNAset->next;
             }
@@ -539,7 +563,7 @@ if(twitter) PDEBUG("EST %s = %d-%d (%d), mRNA = %s %d-%d (%d)\n",
 #endif
                   if(!mrna->masked && !est->masked && mrna->x2 >= est->x2)
                   {
-                        if(maskOne(EST->next,mRNA->next,exact))
+                        if(maskOne(EST,EST->next,mRNA->next,exact))
                         {     /* this EST is covered by this mRNA */
                               GList *l;
                               ZMapFeature f;
