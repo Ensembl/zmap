@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.221 2010-10-26 15:46:23 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.222 2010-11-05 09:14:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -715,6 +715,8 @@ static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
 
       for(;featuresets; featuresets = featuresets->next)
       {
+            /* this ought to do a featureset_2_column lookup  and then default to the featureset name */
+
             if(!g_hash_table_lookup(view->context_map.columns,featuresets->data))
             {
                   char *str = (char *) g_quark_to_string(GPOINTER_TO_UINT(featuresets->data));
@@ -2395,7 +2397,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	{
 	  ZMapViewConnection view_con ;
 	  ZMapThread thread ;
-	  ZMapThreadReply reply ;
+	  ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
 	  gboolean thread_has_died = FALSE ;
@@ -2615,8 +2617,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
 
 	      if(view_con->step_list)
-		reqs_finished = TRUE;
+      		reqs_finished = TRUE;
             thread_status = -1;
+
+            if(reply == ZMAPTHREAD_REPLY_QUIT)
+            {
+                  ZMapViewConnectionStep step;
+
+                  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+                  if(step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
+                        thread_status = 1;
+            }
+
 	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)
 
 	    }
