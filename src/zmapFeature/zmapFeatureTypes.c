@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.105 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.106 2010-11-08 12:03:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@
 #include <memory.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapGLibUtils.h>
 
 /* This should go in the end..... */
@@ -216,7 +217,6 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
 
                   // keep this up to date
               g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
-
               zMapStyleDestroy(style);
             }
           else

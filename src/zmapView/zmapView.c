@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 07:53 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.222 2010-11-05 09:14:56 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.223 2010-11-08 12:03:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3066,6 +3066,9 @@ printf("\nview styles lists after merge:\n");
 	    g_hash_table_foreach(get_styles->styles_out, unsetDeferredLoadStylesCB, NULL) ;
 	  }
 #endif
+
+      /* need to patch in sub style pointers after merge/ copy */
+      zMapStyleSetSubStyles(zmap_view->context_map.styles);
 
 
 	/* Store the curr styles for use in creating the context and drawing features. */

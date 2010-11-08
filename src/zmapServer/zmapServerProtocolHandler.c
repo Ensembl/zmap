@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Aug  5 15:07 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.65 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.66 2010-11-08 12:03:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -888,7 +888,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	  if (!zMapStyleInheritAllStyles(tmp_styles))
 	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
-        zMapStyleSetSubStyles(tmp_styles);
+        zMapStyleSetSubStyles(tmp_styles); /* this is not effective as a subsequent style copy will not copy this internal data */
 
 	  if(styles_debug)
 	    {

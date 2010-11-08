@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 29 11:24 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.125 2010-10-29 13:53:22 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.126 2010-11-08 12:03:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1303,7 +1303,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 							   function for the feature_set list. */
     }
 
-  //printf("GFF: src %s, style %s\n",source,g_quark_to_string(feature_style_id));
+  /*printf("GFF: src %s, style %s\n",source,g_quark_to_string(feature_style_id)); */
 
 
   if(!(feature_style = (ZMapFeatureTypeStyle)
@@ -1318,7 +1318,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
           return result ;
         }
       g_hash_table_insert(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
-      //printf("using feature style %s\n",g_quark_to_string(feature_style->unique_id));
+      /* printf("using feature style %s @%p for %s\n",g_quark_to_string(feature_style->unique_id),feature_style, feature_set_name);*/
 
     }
 
