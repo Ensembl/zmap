@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.79 2010-10-26 15:46:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.80 2010-11-08 10:21:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2459,8 +2459,24 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE)) ;
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)) ;
-  zMapAssert(feat_1->parent == feat_2->parent) ;
+
+/*
+ * as we have multiple featuresets in a column this occurs, esp on 'name no interleave'
+*  zMapAssert(feat_1->parent == feat_2->parent) ;
+*/
+ if(feat_1->parent != feat_2->parent)
+      return(colinearity);
+
+/*
+ * RT 184372 'reliaable crash on bumping repeats'
+ * this appears to be due to trf features bei8ng simple repeats which are basic features not alignments
+ * mostly it doesn;t seem to be a problem but for one dataset it asserts here
+ * see comment around line 696, not easy to see what to test up there, so handle the situation here.
+ */  if(feat_1->type != ZMAPSTYLE_MODE_ALIGNMENT)
+      return(colinearity);
+
   zMapAssert(feat_1->type == ZMAPSTYLE_MODE_ALIGNMENT && feat_1->type == feat_2->type) ;
+
 // mh17: in case of 'Name No Interleave' we have gropups of features in the same column with different names
 // in which case this will fail (i've never liked asserts())
 //  zMapAssert(feat_1->original_id == feat_2->original_id) ;
