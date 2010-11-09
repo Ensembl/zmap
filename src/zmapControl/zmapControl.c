@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug  5 14:59 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.107 2010-09-16 14:18:55 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.108 2010-11-09 09:13:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -632,7 +632,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
     char *response = NULL;
     GList *features;
     char * featurelist = NULL;
-    char *f;
+    char *f,*emsg;
 
     for(features = lfd->feature_sets;features;features = features->next)
       {
@@ -643,13 +643,16 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
             featurelist = g_strjoin(";",featurelist,f,NULL);
       }
 
+    emsg =  html_quote_string(lfd->err_msg ? lfd->err_msg  : "OK");
+
     request = g_strdup_printf(
             "<zmap> <request action=\"features_loaded\">"
             " <client xwid=\"0x%lx\" />"
             " <featureset names=\"%s\" />"
             " <status value=\"%d\" message=\"%s\" />"
             "</request></zmap>",
-            lfd->xwid, featurelist,(int) lfd->status,lfd->err_msg ? lfd->err_msg : "OK") ;
+            lfd->xwid, featurelist,(int) lfd->status,emsg) ;
+     free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
     if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
       {

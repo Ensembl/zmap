@@ -303,6 +303,8 @@ char *strdupdelim(const char *, const char *) ;
 int numdigit(long) ;
 char *number_to_string(char *, long) ;
 
+char *html_quote_string (const char *s);
+
 #endif /* ZMAPURLUTILS_H */
 
 
