@@ -27,9 +27,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Aug  5 14:59 2010 (edgrif)
+ * Last edited: Nov 12 09:05 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.108 2010-11-09 09:13:02 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.109 2010-11-12 09:19:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,12 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
+#include <ZMap/zmapUrlUtils.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <zmapControl_P.h>
 
 
@@ -1052,7 +1058,7 @@ static void updateControl(ZMap zmap, ZMapView view)
       /* Update title bar of zmap window. */
       zMapViewGetSourceNameTitle(view, &db_name, &db_title) ;
       seq_name = zMapViewGetSequence(view) ;
-      title = g_strdup_printf("%s - %s%s%s - %s%s", zmap->zmap_id,
+      title = g_strdup_printf("%s: %s%s%s - %s%s", zmap->zmap_id,
 			      db_name ? db_name : "",
 			      db_title ? " - ": "",
 			      db_title ? db_title : "",
