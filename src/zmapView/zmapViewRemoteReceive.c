@@ -30,9 +30,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Apr 30 13:15 2010 (edgrif)
+ * Last edited: Nov 11 15:04 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.56 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.57 2010-11-12 09:20:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1496,7 +1496,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 									      ZMAPSTYLE_MODE_BASIC,
 									      request_data->style,
 									      start, end, has_score,
-									      score, strand, ZMAPPHASE_NONE)))
+									      score, strand)))
               {
 		request_data->feature->style_id = request_data->style_id ;
 
@@ -1582,8 +1582,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 										  NULL, "",
 										  ZMAPSTYLE_MODE_BASIC, locus_style,
 										  start, end, FALSE, 0.0,
-										  ZMAPSTRAND_NONE,
-										  ZMAPPHASE_NONE);
+										  ZMAPSTRAND_NONE) ;
+
 			    zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
 
 			    if ((old_locus_feature
@@ -1601,8 +1601,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 										  NULL, "",
 										  ZMAPSTYLE_MODE_BASIC, locus_style,
 										  start, end, FALSE, 0.0,
-										  ZMAPSTRAND_NONE,
-										  ZMAPPHASE_NONE);
+										  ZMAPSTRAND_NONE) ;
 			      }
 
 			    zMapFeatureDestroy(tmp_locus_feature);
@@ -1614,8 +1613,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 									      NULL, "",
 									      ZMAPSTYLE_MODE_BASIC, locus_style,
 									      start, end, FALSE, 0.0,
-									      ZMAPSTRAND_NONE,
-									      ZMAPPHASE_NONE);
+									      ZMAPSTRAND_NONE) ;
 
 			  }
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 11:15 2010 (edgrif)
+ * Last edited: Nov 11 15:07 2010 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.27 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.28 2010-11-12 09:20:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -864,7 +864,6 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   double score = 100.0;
   int start, end;
   gboolean has_score = TRUE;
-  ZMapPhase phase = ZMAPPHASE_NONE;
 
   start = current_match->start;
   end   = current_match->end;
@@ -885,8 +884,7 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
 						      style,
 						      start, end,
 						      has_score, score,
-						      current_match->strand,
-						      phase);
+						      current_match->strand) ;
 
   zMapFeatureSetAddFeature(feature_set, current_feature);
 

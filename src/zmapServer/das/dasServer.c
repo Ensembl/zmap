@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jan 14 10:10 2010 (edgrif)
+ * Last edited: Nov 11 15:02 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.48 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: dasServer.c,v 1.49 2010-11-12 09:20:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1322,11 +1322,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
 }
 
 
-#ifdef RDS_DONT_INCLUDE
-  zMapFeatureFormatPhase(feature->PHASE, &feature_phase);
-  zMapFeatureFormatScore(feature->score, &has_score, &feature_score);
-#endif
-static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data)
+static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 {
   BlockServer     block_server = (BlockServer)user_data;
   DasServer             server = NULL;
@@ -1335,7 +1331,6 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
   ZMapFeatureSet   feature_set = NULL;
   ZMapFeature      new_feature = NULL;
   ZMapStrand    feature_strand = ZMAPSTRAND_NONE;
-  ZMapPhase      feature_phase = ZMAPPHASE_NONE;
   ZMapStyleMode feature_type = ZMAPSTYLE_MODE_INVALID;
 
   /* gdouble        feature_score = 0.0; */
@@ -1392,7 +1387,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
                                      feature_type, style,
                                      feature->start, feature->end,
                                      has_score, feature->score,
-                                     feature_strand, feature_phase);
+                                     feature_strand) ;
         }
       else
         mergeWithGroupFeature(new_feature, feature, feature_type, group_id);
@@ -1409,7 +1404,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
                                         feature_type, style,
                                         feature->start, feature->end,
                                         has_score, feature->score,
-                                        feature_strand, feature_phase))
+                                        feature_strand))
             zMapFeatureSetAddFeature(feature_set, new_feature);
         }
     }
