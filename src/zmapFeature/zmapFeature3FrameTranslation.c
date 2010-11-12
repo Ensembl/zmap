@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 29 10:29 2010 (edgrif)
+ * Last edited: Nov 11 14:47 2010 (edgrif)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.5 2010-07-29 09:30:08 edgrif Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.6 2010-11-12 09:16:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -248,7 +248,7 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
 			     feature_name, sequence,
 			     ontology, ZMAPSTYLE_MODE_PEP_SEQUENCE, 
                              style, 1, 10, FALSE, 0.0, 
-			     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+			     ZMAPSTRAND_NONE) ;
 
   zMapFeatureSetAddFeature(feature_set, frame_feature);
 
@@ -290,7 +290,7 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
                                      seq_name, "sequence",
                                      ZMAPSTYLE_MODE_PEP_SEQUENCE, style,
                                      x1, x2, FALSE, 0.0,
-                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+                                     ZMAPSTRAND_NONE) ;
 
 	  zMapFeatureAddFrame(translation, i) ;
 

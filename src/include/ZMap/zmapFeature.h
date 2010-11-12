@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Oct 19 16:51 2010 (edgrif)
+ * Last edited: Nov 12 09:14 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.187 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.188 2010-11-12 09:16:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -472,6 +472,10 @@ typedef struct
 
   int length ;						    /* Length of homol/align etc. */
 
+  /* Quality measures. (NEED TO GET SCORE IN HERE) */
+  double percent_id ;
+
+
   GQuark clone_id ;					    /* Clone this match is aligned to. */
 
   /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
@@ -605,13 +609,12 @@ typedef struct ZMapFeatureStruct_
 
   ZMapBoundaryType boundary_type ;			    /* splice, clone end ? */
 
-  /* GET RID OF PHASE....IT'S WRONG HERE.... */
-  /* THIS IS WRONG...we shouldn't have phase in here...it only applies to translated features,
-   * i.e. transcripts...which have a start_phase field, remove this one.... */
-  ZMapPhase phase ;
 
-  /* MOVE THIS...WE ONLY NEED IT IN SOME FEATURES.... */
+  /* MOVE THIS...WE ONLY NEED IT IN SOME FEATURES....NEEDS SOME RESEARCH BECAUSE WHILE
+   * THIS IS BASICALLY AN ALIGNMENT THING THERE MAY BE OTHER FEATURES THAT HAVE SCORES... */
   float score ;
+
+
 
   GQuark locus_id ;					    /* needed for a lot of annotation. */
 
@@ -882,7 +885,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               ZMapFeatureTypeStyle style,
                                               int start, int end,
                                               gboolean has_score, double score,
-					      ZMapStrand strand, ZMapPhase phase);
+					      ZMapStrand strand) ;
 
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
@@ -890,7 +893,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 				    ZMapFeatureTypeStyle style,
 				    int start, int end,
 				    gboolean has_score, double score,
-				    ZMapStrand strand, ZMapPhase phase) ;
+				    ZMapStrand strand) ;
 
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
@@ -905,6 +908,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
+				     double percent_id,
 				     int query_start, int query_end,
 				     ZMapHomolType homol_type,
 				     int query_length,

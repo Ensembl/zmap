@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 10 16:04 2010 (edgrif)
+ * Last edited: Nov 11 14:54 2010 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.16 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.17 2010-11-12 09:16:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -591,7 +591,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	ZMapFeature feature;
-	char *type = "(type)", *strand, *phase;
+	char *type = "(type)", *strand ;
 	ZMapFeatureTypeStyle style ;
 
 	feature = (ZMapFeature)feature_any;
@@ -602,10 +602,9 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 	      type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
       }
         strand = zMapFeatureStrand2Str(feature->strand) ;
-        phase  = zMapFeaturePhase2Str(feature->phase) ;
 
 	g_string_append_printf(dump_string_in_out,
-			       "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f",
+			       "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%f",
 			       (char *)g_quark_to_string(feature->unique_id),
 			       feature->db_id,
 			       (char *)g_quark_to_string(feature->original_id),
@@ -613,7 +612,6 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 			       feature->x1,
 			       feature->x2,
 			       strand,
-			       phase,
 			       feature->score) ;
 
         if (feature->description)

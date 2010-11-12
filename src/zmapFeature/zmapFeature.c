@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Oct 11 15:57 2010 (edgrif)
+ * Last edited: Nov 11 15:46 2010 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.138 2010-10-26 12:18:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.139 2010-11-12 09:16:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -570,7 +570,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               ZMapFeatureTypeStyle style,
                                               int start, int end,
                                               gboolean has_score, double score,
-                                              ZMapStrand strand, ZMapPhase phase)
+                                              ZMapStrand strand)
 {
   ZMapFeature feature = NULL;
   gboolean       good = FALSE;
@@ -586,7 +586,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
 						 name, sequence, ontology,
 						 feature_type, style,
 						 start, end, has_score, score,
-						 strand, phase)))
+						 strand)))
             {
               /* Check I'm valid. Really worth it?? */
               if(!(good = zMapFeatureIsValid((ZMapFeatureAny)feature)))
@@ -610,7 +610,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 				    ZMapFeatureTypeStyle style,
 				    int start, int end,
 				    gboolean has_score, double score,
-				    ZMapStrand strand, ZMapPhase phase)
+				    ZMapStrand strand)
 {
   gboolean result = FALSE ;
 
@@ -628,7 +628,6 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->x1 = start ;
       feature->x2 = end ;
       feature->strand = strand ;
-      feature->phase = phase ;
       if (has_score)
 	{
 	  feature->flags.has_score = 1 ;
@@ -818,6 +817,7 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
  *  */
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
+				     double percent_id,
 				     int query_start, int query_end,
 				     ZMapHomolType homol_type,
 				     int query_length,
@@ -835,6 +835,9 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
       feature->feature.homol.flags.has_clone_id = TRUE ;
       feature->feature.homol.clone_id = clone_id ;
     }
+
+  if (percent_id)
+    feature->feature.homol.percent_id = percent_id ;
 
   feature->feature.homol.type = homol_type ;
   feature->feature.homol.strand = query_strand ;
