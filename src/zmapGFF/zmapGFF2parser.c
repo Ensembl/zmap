@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 29 11:24 2010 (edgrif)
+ * Last edited: Nov 12 09:17 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.126 2010-11-08 12:03:13 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.127 2010-11-12 09:17:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,7 +80,7 @@ static GQuark getLocus(char *attributes) ;
 static gboolean getKnownName(char *attributes, char **known_name_out) ;
 static gboolean getHomolLength(char *attributes, int *length_out) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
-			      int *start_out, int *end_out, ZMapStrand *strand_out) ;
+			      int *start_out, int *end_out, ZMapStrand *strand_out, double *percent_ID_out) ;
 static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
 				     ZMapStrand *strand_out, int *length_out, GArray **path_out) ;
 static gboolean getCDSAttrs(char *attributes,
@@ -1174,6 +1174,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0, query_length = 0 ;
   ZMapStrand query_strand ;
+  double percent_id ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
   GQuark locus_id = 0 ;
@@ -1345,13 +1346,19 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       homol_type = ZMAPHOMOL_NONE ;
 
-      if (!(result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end, &query_strand)))
+      if (!(result = getHomolAttrs(attributes,
+				   &homol_type,
+				   &query_start, &query_end, &query_strand,
+				   &percent_id)))
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not get Homol attrs") ;
+
 	  return result ;
 	}
       else
-	result = getHomolLength(attributes, &query_length) ; /* Not fatal to not have length. */
+	{
+	  result = getHomolLength(attributes, &query_length) ; /* Not fatal to not have length. */
+	}
     }
   else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
@@ -1457,7 +1464,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 					   feature_type, feature_style,
 					   start, end,
 					   has_score, score,
-					   strand, phase)))
+					   strand)))
     {
       zMapFeatureSetAddFeature(feature_set, feature);
 
@@ -1499,6 +1506,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 						    NULL, NULL) ;
 	    }
 
+
+	  /* Shouldn't we be getting phase from what's passed in ??????? actually we are not 
+	   * recording phase in the right place...it's needs to be part of an exon.... */
+
+
+
+
 	  if (result && (result = getCDSAttrs(attributes,
 					      &start_not_found, &start_phase,
 					      &end_not_found)))
@@ -1537,9 +1551,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,
+					       percent_id,
 					       query_start, query_end,
 					       homol_type, query_length, query_strand, ZMAPPHASE_0,
-					       gaps, zMapStyleGetWithinAlignError(feature_style),
+					       gaps,
+					       zMapStyleGetWithinAlignError(feature_style),
 					       local_sequence) ;
 	}
       else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
@@ -2047,14 +2063,15 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
  *
  * Format of similarity/homol attribute section is:
  *
- *   Class "Protein" ; Name "BP:CBP01448" ; Align 157 197 + ; [Gaps "Qstart Qend Tstart Tend, ..."]
+ *   Class "Protein" ; Name "BP:CBP01448" ; Align 157 197 + ; percentID 100 ; [Gaps "Qstart Qend Tstart Tend, ..."]
  *
  * Name has already been extracted, this routine looks at "Class" to get the
  * type of homol and at "Align" to get the match sequence coords/strand.
  *
  *  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
-			      int *start_out, int *end_out, ZMapStrand *query_strand)
+			      int *start_out, int *end_out, ZMapStrand *query_strand,
+			      double *percent_ID_out)
 {
   gboolean result = FALSE ;
   char *tag_pos ;
@@ -2088,13 +2105,37 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 
   if (homol_type)
     {
+      if ((tag_pos = strstr(attributes, "percentID")))
+	{
+	  /* Parse "Align 157 197 +" */
+	  char *attr_format_str = "%*s %lg" ;
+	  double percent_ID = 0 ;
+
+	  if ((attr_fields = sscanf(tag_pos, attr_format_str, &percent_ID)) == 1)
+	    {
+	      if (percent_ID > 0)
+		{
+		  *percent_ID_out = percent_ID ;
+
+		  result = TRUE ;
+		}
+	      else
+		{
+		  zMapLogWarning("Bad homol percent ID: %s", tag_pos) ;
+		}
+	    }
+	  else
+	    {
+	      zMapLogWarning("Could not parse Homol Data: %s", tag_pos) ;
+	    }
+	}
+
       if ((tag_pos = strstr(attributes, "Align")))
 	{
 	  /* Parse "Align 157 197 +" */
 	  char *attr_format_str = "%*s %d%d %c" ;
 	  int start = 0, end = 0 ;
 	  char strand ;
-
 
 	  if ((attr_fields = sscanf(tag_pos, attr_format_str, &start, &end, &strand)) == 3)
 	    {
