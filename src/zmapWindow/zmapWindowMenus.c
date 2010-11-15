@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 10 15:40 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.77 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.78 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,7 @@ typedef struct
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
 
 
-static void evidenceMenuCB(int menu_item_id, gpointer callback_data);
+static void hideEvidenceMenuCB(int menu_item_id, gpointer callback_data);
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
@@ -198,6 +198,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
  */
 #define ZMAPWINDOWCOLUMN_MASK 5678
 #define ZMAPWINDOW_HIDE_EVIDENCE 5679
+#define ZMAPWINDOW_SHOW_EVIDENCE 5680
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -234,12 +235,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Compress Columns",                       ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
       {ZMAPGUI_MENU_NORMAL, "UnCompress Columns",                     ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
 
-      {ZMAPGUI_MENU_HIDE, "Hide Evidence",                     ZMAPWINDOW_HIDE_EVIDENCE, evidenceMenuCB,  NULL },
+      {ZMAPGUI_MENU_HIDE, "Hide Evidence",                     ZMAPWINDOW_HIDE_EVIDENCE, hideEvidenceMenuCB,  NULL },
 
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
     } ;
   static gboolean menu_set = FALSE ;
-  static int ind_evidence = -1;
+  static int ind_hide_evidence = -1;
   static int ind_mask = -1;
   ZMapGUIMenuItem item ;
   ItemMenuCBData menu_data = (ItemMenuCBData) callback_data;
@@ -255,7 +256,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 	    tmp->name = g_strdup_printf("%s/%s", MORE_OPTS, zmapStyleBumpMode2ShortText(tmp->id)) ;
 
         if(tmp->id == ZMAPWINDOW_HIDE_EVIDENCE)
-          ind_evidence = tmp - menu;
+          ind_hide_evidence = tmp - menu;
         if(tmp->id == ZMAPWINDOWCOLUMN_MASK)
           ind_mask = tmp - menu;
 
@@ -300,9 +301,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
 
 
-  if(ind_evidence >= 0)
+  if(ind_hide_evidence >= 0)
     {
-      item = &menu[ind_evidence];
+      item = &menu[ind_hide_evidence];
       if(zmapWindowFocusHasType(menu_data->window->focus,WINDOW_FOCUS_GROUP_EVIDENCE))
       {
             item->type = ZMAPGUI_MENU_TOGGLEACTIVE;
@@ -602,6 +603,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
   return menu ;
 }
 
+#if MH17_NOT_CALLED
+
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data)
@@ -693,6 +696,8 @@ static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+#endif
 
 /* If we had a more generalised "sequence" object that could be with dna or peptide we
  * could merge this routine with the dnamenucb...much more elegant.... */
@@ -963,7 +968,7 @@ static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
 
 
 // unhighlight the evidence features
-static void evidenceMenuCB(int menu_item_id, gpointer callback_data)
+static void hideEvidenceMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowFocus focus = menu_data->window->focus;

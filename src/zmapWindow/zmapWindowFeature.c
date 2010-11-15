@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:55 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.200 2010-10-26 15:46:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.201 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,6 +77,7 @@ enum
     ITEM_MENU_TOGGLE_MARK,
 
     ITEM_MENU_SHOW_EVIDENCE,
+    ITEM_MENU_ADD_EVIDENCE,
     ITEM_MENU_SHOW_TRANSCRIPT,
 
     ITEM_MENU_ITEMS
@@ -1288,7 +1289,76 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case ITEM_MENU_SHOW_EVIDENCE:
+    case ITEM_MENU_ADD_EVIDENCE:
+
       {
+            // show evidence for a transcript
+        ZMapWindowFocus focus = menu_data->window->focus;
+
+        if(focus)
+          {
+            GList *evidence;
+            GList *evidence_items = NULL;
+            ZMapFeatureAny any = (ZMapFeatureAny) menu_data->feature;   /* our transcript */
+
+            /* clear any existing highlight */
+            if(menu_item_id != ITEM_MENU_ADD_EVIDENCE)
+                  zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_EVIDENCE);
+
+            /* add the transcript to the evidence group */
+            zmapWindowFocusAddItemType(menu_data->window->focus, menu_data->item, WINDOW_FOCUS_GROUP_EVIDENCE);
+
+            /* request the list of features from otterlace */
+            evidence = zmapWindowFeatureGetEvidence(menu_data->window,menu_data->feature);
+
+            /* search for the features named in the list and find thier canvas items */
+
+            for(;evidence;evidence = evidence->next)
+            {
+                  GList *items,*items_free;
+                  GQuark wildcard = g_quark_from_string("*");
+                  char *feature_name;
+                  GQuark feature_search_id;
+
+                  /* need to add a * to the end to match strand and frame name mangling */
+
+                  feature_name = g_strdup_printf("%s*",g_quark_to_string(GPOINTER_TO_UINT(evidence->data)));
+                  feature_name = zMapFeatureCanonName(feature_name);    /* done in situ */
+                  feature_search_id = g_quark_from_string(feature_name);
+
+                  items_free = zmapWindowFToIFindItemSetFull(menu_data->window,
+                             menu_data->window->context_to_item,
+                             any->parent->parent->parent->unique_id,
+                             any->parent->parent->unique_id,
+                             wildcard,0,"*","*",
+                             feature_search_id,
+                             NULL,NULL);
+
+                  /* zMapLogWarning("evidence %s returns %d features\n", feature_name, g_list_length(items_free));*/
+                  g_free(feature_name);
+
+                  for(items = items_free; items; items = items->next)
+                  {
+                        /* NOTE: need to filter by transcript start and end coords in case of repeat alignments */
+                        /* Not so - annotators want to see duplicated features' data */
+
+                        evidence_items = g_list_prepend(evidence_items,items->data);
+
+                  }
+                  g_list_free(items_free);
+            }
+
+            /* menu_data->item is the transcript and would be the
+             * focus hot item if this was a focus highlight
+             * in this call it's irrelevant
+             */
+            zmapWindowFocusAddItemsType(menu_data->window->focus, evidence_items,
+                  menu_data->item, WINDOW_FOCUS_GROUP_EVIDENCE);
+
+
+            g_list_free(evidence);
+            g_list_free(evidence_items);
+          }
       }
       break;
 
@@ -1329,6 +1399,7 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
       {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
 
@@ -1337,8 +1408,6 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 
   menu[i].type = ZMAPGUI_MENU_NONE;
 
-  if(zmap_development_G)    // during development
-  {
             // add in evidence/ transcript items
             // option to remove existing is in column menu
       if(md->feature && md->feature->style)
@@ -1348,14 +1417,20 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
                   menu[i].type = ZMAPGUI_MENU_NORMAL;
                   menu[i].name = "Highlight Evidence";
                   menu[i].id = ITEM_MENU_SHOW_EVIDENCE;
+                  i++;
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Evidence (add more)";
+                  menu[i].id = ITEM_MENU_ADD_EVIDENCE;
             }
+#if MH17_NOT_IMPLEMENTED
             else
             {
                   menu[i].type = ZMAPGUI_MENU_NORMAL;
                   menu[i].name = "Highlight Transcript";
                   menu[i].id = ITEM_MENU_SHOW_TRANSCRIPT;
             }
-            i++;
+#endif
+
       }
       else
       {
@@ -1363,7 +1438,6 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
             // new features should also have styles attached
             zMapLogWarning("Feature menu item does not have style","");
       }
-  }
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 

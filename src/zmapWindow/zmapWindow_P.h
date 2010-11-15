@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 08:24 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.272 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.273 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -426,8 +426,8 @@ typedef enum
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
 
 /* default colours for related features */
-#define ZMAP_WINDOW_ITEM_EVIDENCE_BORDER "dark grey"
-#define ZMAP_WINDOW_ITEM_EVIDENCE_FILL "light grey"
+#define ZMAP_WINDOW_ITEM_EVIDENCE_BORDER "black"
+#define ZMAP_WINDOW_ITEM_EVIDENCE_FILL "yellow"
 
 
 
@@ -1091,6 +1091,8 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
 ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
+
+GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature);
 
 /* summarise busy column by not displaying invisible features */
 gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1,double dy1,double dx2, double dy2);

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 14 14:03 2010 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.48 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.49 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1321,11 +1321,13 @@ GQuark makeCanonID(char *orig_text)
   char *canon_text ;
 
   canon_text = g_strdup(orig_text) ;
+  /* NOTE: mh17: is this a memory leak? */
 
   canon_text = zMapFeatureCanonName(canon_text) ;
 
   canon_id = g_quark_from_string(canon_text) ;
 
+  g_free(canon_text);   /* yes: quarks are created using a copy of the string */
   return canon_id ;
 }
 

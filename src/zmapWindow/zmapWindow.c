@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 29 11:36 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.344 2010-10-29 10:42:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.345 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4540,7 +4540,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
 
-#if 1 // def ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
     case GDK_D:
       g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
@@ -4548,6 +4548,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#if MH17_DONT_INCLUDE
     case GDK_e:
 
       if(zmap_development_G)
@@ -4572,6 +4573,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
           zmapWindowFocusReset(window->focus);
         }
       break;
+#endif
 
     case GDK_h:
       {

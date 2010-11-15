@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 12 09:05 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.109 2010-11-12 09:19:34 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.110 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,10 +46,11 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 /* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
+/* need to be sorted out sometime */
+/* but we need this header for an html escaping function */
 #include <ZMap/zmapUrlUtils.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 #include <zmapControl_P.h>
 

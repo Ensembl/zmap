@@ -76,9 +76,9 @@ so, delete this exception statement from your version.  */
 
 /* Include these, so random files need not include them.  */
 //#include "sysdep.h"
-#include <zmapUrlOptions.h>
+#include <ZMap/zmapUrlOptions.h>
 /* locale independent replacement for ctype.h */
-#include <safe-ctype.h>
+#include <ZMap/safe-ctype.h>
 
 #define DO_NOTHING do {} while (0)
 

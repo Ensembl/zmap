@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.53 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.54 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -675,7 +675,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
  * Which hash tables are searched is decided by the ids supplied, "*" acts as the
  * the wild card and 0 acts as search limiter.
  *
- *   align     block      set     feature
+ *   align     block      column   feature
  *
  *     "*"       0        <  not  read  >     returns all the alignment items
  *
@@ -684,6 +684,11 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
  *     "*"      id        "*"       0         returns all sets in the block "id" in all alignments.
  *
  * etc.
+ *
+ * set_id is 0 for all feature sets that map to the column
+ * or non null for one specific featureset which ought to map to the specified column
+ * but you can set a single featureset and wildcard the column
+ * NOTE we search the featureset hash tables, the column is only a user centered way to specify these
  *
  * Warning, may return null so result MUST BE TESTED by caller.
  *
@@ -725,6 +730,15 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
   /* Required for minimum query. */
   zMapAssert(feature_context_to_item && align_id) ;
 
+#if 0
+zMapLogWarning("find item set full %s. %s, %s, %s, %s %s",
+      g_quark_to_string(align_id),
+      g_quark_to_string(block_id),
+      g_quark_to_string(column_id),
+      g_quark_to_string(set_id),
+      strand_spec,frame_spec,
+      g_quark_to_string(feature_id));
+#endif
 
   align_search.search_quark = align_id ;
   if (align_id && isRegExp(align_id))
@@ -807,8 +821,8 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
                         forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
 
-#if MH17_SEARCH_DEBUG
-printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
+#if MH17_SEARCH_DEBUG > 1
+//zMapLogWarning("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
 #endif
 	                  if (isRegExp(forward_set_id))
 	                        forward_set_search.is_reg_exp = TRUE ;
@@ -821,8 +835,8 @@ printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_
                         reverse_set_search.search_quark = reverse_set_id ;
 
                         reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
-#if MH17_SEARCH_DEBUG
-printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
+#if MH17_SEARCH_DEBUG > 1
+//zMapLogWarning("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
 #endif
 
       	            if (isRegExp(reverse_set_id))
@@ -988,8 +1002,8 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
   gboolean wrong_params = FALSE;
   gboolean debug_caching = FALSE;
 
-#if MH17_SEARCH_DEBUG
-printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
+#if MH17_SEARCH_DEBUG > 1
+//zMapLogWarning("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 #endif
 
   search_data = g_new0(ZMapWindowFToISetSearchDataStruct, 1);
@@ -1302,7 +1316,7 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
   zMapAssert(curr_search_id != stop) ;
 
 #if MH17_SEARCH_DEBUG
-printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id), g_hash_table_size(hash_table), g_quark_to_string(next_search_id),curr_search->is_reg_exp);
+zMapLogWarning("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id), g_hash_table_size(hash_table), g_quark_to_string(next_search_id),curr_search->is_reg_exp);
 #endif
 
   if (next_search_id == stop)
@@ -1315,7 +1329,12 @@ printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id)
 						    GUINT_TO_POINTER(curr_search_id))))
 	{
 	  if (!curr_search->pred_func || curr_search->pred_func(item_id->item, curr_search->user_data))
-	    results = g_list_append(results, item_id->item) ;
+	  {
+          results = g_list_append(results, item_id->item) ;
+#if MH17_SEARCH_DEBUG
+      zMapLogWarning("added: exact %s, %p\n",g_quark_to_string(curr_search->search_quark), item_id->item);
+#endif
+        }
 	}
       else if (curr_search_id == wild_card || curr_search->is_reg_exp)
 	{
@@ -1351,7 +1370,7 @@ printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id)
               if(isRegExp(curr_search->search_quark))
                   curr_search->is_reg_exp = TRUE;
 #if MH17_SEARCH_DEBUG
-printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);
+//zMapLogWarning("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);
 #endif
 
               if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,l->data)))
@@ -1379,7 +1398,9 @@ printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_q
     }
 
   *results_inout = results ;
-
+#if MH17_SEARCH_DEBUG
+zMapLogWarning("do_hash_set returns %d features",g_list_length(results));
+#endif
   return ;
 }
 
@@ -1400,13 +1421,13 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
       *results = g_list_append(*results, hash_item->item) ;
 
 #if MH17_SEARCH_DEBUG
-      printf("added: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
+      zMapLogWarning("added: %d %s, %s %p\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)),hash_item->item);
 #endif
   }
 #if MH17_SEARCH_DEBUG
   else
   {
-      printf("filtered: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
+//      zMapLogWarning("filtered: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
   }
 #endif
   return ;
@@ -1421,7 +1442,12 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data)
 
   if (!search->curr_search->is_reg_exp
       || filterOnRegExp(search->curr_search, key))
-    doHashSet(hash_item->hash_table, search->search, search->results) ;
+    {
+#if MH17_SEARCH_DEBUG
+      zMapLogWarning("do hash set %s",g_quark_to_string(GPOINTER_TO_UINT(key)));
+#endif
+      doHashSet(hash_item->hash_table, search->search, search->results) ;
+    }
 
   return ;
 }

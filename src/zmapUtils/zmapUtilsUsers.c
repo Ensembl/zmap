@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 17 12:02 2010 (edgrif)
  * Created: Fri Dec 12 13:14:55 2008 (edgrif)
- * CVS info:   $Id: zmapUtilsUsers.c,v 1.6 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsUsers.c,v 1.7 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,7 +56,7 @@ static gboolean developer_status_G = FALSE ;
 
 
 /* Currently developers are limited to certain ids in certain domains. */
-static char *developers_G[] = {"edgrif", "rds", NULL} ;
+static char *developers_G[] = {"edgrif", "zmap", "not_mh17", NULL} ;      /* MH17: i need to see what the users get */
 static char *domain_G[] = {"localhost", "sanger.ac.uk", NULL} ;
 
 
@@ -65,17 +65,17 @@ static char *domain_G[] = {"localhost", "sanger.ac.uk", NULL} ;
 static char *passwd_G = "rubbish" ;
 
 
-
-/* 
+extern gboolean zmap_development_G;
+/*
  *               Interface functions
  */
 
 
 /*! @addtogroup zmaputils
  * @{
- * 
+ *
  * \brief  Set of utilities for user-related functions.
- * 
+ *
  *  */
 
 
@@ -162,6 +162,8 @@ void zMapUtilsUserInit(void)
     status = TRUE ;
 
   developer_status_G = status ;
+  if(!zmap_development_G)
+      zmap_development_G = status;
 
   return ;
 }
@@ -209,7 +211,7 @@ gboolean zMapUtilsUserSetDeveloper(char *passwd)
 
 
 
-/* 
+/*
  *               Internal functions
  */
 

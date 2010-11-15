@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.26 2010-11-01 09:57:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.27 2010-11-15 10:55:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -234,7 +234,7 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
       add_unique(focus,FOO_CANVAS_ITEM(list->data),type);
     }
 
-  if (!focus->hot_item && first && type == WINDOW_FOCUS_GROUP_FOCUS)
+  if (hot && !focus->hot_item && first && type == WINDOW_FOCUS_GROUP_FOCUS)
     zmapWindowFocusSetHotItem(focus, hot) ;
 
 
