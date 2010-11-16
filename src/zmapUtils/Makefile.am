@@ -15,7 +15,6 @@ zmapString.c \
 zmapSeqBitmap.c \
 zmapCmdLineArgs.c \
 zmapFASTA.c \
-safe-ctype.h \
 zmapIO_P.h \
 zmapXRemoteUtils.c \
 zmapBase_I.h \
@@ -25,7 +24,6 @@ zmapGUITreeView.c \
 zmapDNA.c \
 zmapReadLine_P.h \
 zmapGUImenus.c \
-zmapUrlOptions.h \
 zmapPeptide.c \
 zmapUrl.c \
 safe-ctype.c \
