@@ -1,0 +1,203 @@
+<h2>Version Control</h2>
+<p>I'm still working on this, it's a bit ragged at the end especially. I'll have to run through all the commands and cut and paste real examples...
+</p>
+
+<fieldset><legend>Version control for ZMap</legend>
+
+<p>Historically ZMap has used CVS to store source code documentation and scripts and prior to constructing version 1.0.0 of ZMap it is intended to switch to using git.  There are a subset of CVS commands used by the ZMap team plus a few custon scripts and we envisage a similar situation with git - the intention is to keep things as simple as possible. There are two main sections to this page: a) <a href="Design_notes/build/cvs_git.shtml#convert">converting to git</a> and b) <a href="Design_notes/build/cvs_git.shtml#usegit">Using git</a>.
+</p>
+
+<h3>Documentation provided (git)</h3>
+<p>Quite a lot of readable docs are available online:
+<ul>
+<li> <a href="http://git-scm.com/documentation"> git front page</a>
+<li> <a href="http://www.kernel.org/pub/software/scm/git/docs/gittutorial.html"> tutorial/easy introduction</a>
+<li> <a href="http://www.kernel.org/pub/software/scm/git/docs/gitcvs-migration.html"> importing from CVS</a>
+</ul>
+The reader is advised to refer to these and others on the git web site as well as this document.
+</p>
+Command line help is also quite user friendly:
+'git ?help' brings up a list of commands (like CVS) and individual commands produce a Unix man-page. You can also access these with (eg) 'man git-merge' like commands for various git features.
+
+</fieldset>
+
+
+<a name="convert"></a>
+<fieldset><legend>Converting ZMap CVS to git</legend>
+<h3>Orientation</h3>
+<p>
+In the interests of simplicity we aim to keep the last CVS version as a backup and simply import all the files tags and commit history using the tools provided by git with default paramters.  We see little benefit in detailed older versions as there are no legacy user issues of relevance.
+</p>
+<p>
+</p>Other groups have imported CVS histories in great deatil but this is reputedly a tricky and time consuming process (eg <a href="http://lwn.net/Articles/409635/">PostgresSQL</a>).
+
+<h3>Importing from CVS</h3>
+<p>Creating a repository from an existing CVS checkout is trivial.  Importing change history is thought to be relatively simple and requires a program called cvsps, which is available in /usr/bin on the deskpros.  This program detects 'patchsets' consisting of commits of multiple files.  Various people suggest that the import process is imperfect and that CVS commits are not grouped together appropriately in all cases.
+</p>
+<p> As we intend to save the last CVS as a backup then we can work with a flat import with all files apparently created at the same time.  Previous versions can be checked out from CVS if needed.  Indeed, git allows the developer to re-invent history by re-basing a repository on another version and this implies that it will be possible to checkout an old version from CVS, import it into git and rebase the original to that, which then implies that a modification to the old version can be merged into the current. <b>NOTE</b>: this circumstance is thought to be very unlikely and possibly complex, It will be much more practical to import the ZMap tags and restrict the use of old versions to offcial builds.
+</p>
+<p>
+An experiment reveals that importing the ZMap CVS take about 30 minutes, and this imports all the tags and commit history, and has master and origin branches. This is in ~zmap/git and uses 43MB of disc space, compared with 69MB for a ZMap source tree with object files. Git can be told to ignore certain files (eg *.o).
+This could work as a master copy similar to the existing CVS repository.  The documentation states that this import is incremental  and changes in the existing CVS can be added to the repository, which implies that it is possible to switch from CVS to Git with no risk ? they can be run in parallel (although there's no mention of exporting back to CVS).
+</p>
+
+<h3>Hosting the git repository</h3>
+<p>Our use of  CVS is to provide a master copy of the source with individual checkouts being made by developers that are uploaded to the master copy when tasks are completed.  For distribution we make a tarball of the soucre - there is no public access to the repository.
+</p>
+<p>To emulate this with git the following is proposed:
+<ul>
+<li> the master copy of the source is to be stored in ~zmap/git/
+<li> git clones will be made by developers and these may include branches (or multiple clones created)
+<li> after completing development the developer will push thier updates to the master clone
+<li> official builds will only be created from the master copy in ~zmap/git.  Note that this is not the distributed model espoused by git but instead the 'person-independant' philosophy practiced by the Zmap team.  It also imples that the master copy only contains stable tested code
+<li> distribution tarballs are made by 'offcial' builds from ~zmap/git
+</ul>
+Note that due to file permissioning issues developers need to be in a 'zmapteam' group to upload their work. An alternative way would be for them to log in as zmap and pull thier updates for thier clones instead of pushing them.
+</p>
+
+<h3>Simple differences between CVS and git</h3>
+<p>Note should be take of the following:
+<ul>
+<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.1 2010-11-16 13:18:58 mh17 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
+<li> CVS has been set up to checkout files as read only and to require files to be explicitly opened for editing whereas git records file permissions and therefore emulating this kind of behaviour is not ideal. Instead git is aware of changes to files and only those changes that have been explictly added will be committed to the repository (you have to add chenges in content rather than files) - so git provides a similar kind of control but allows instant editing.  Use git-show to see what files have been changed or added.
+</ul>
+</p>
+
+
+</fieldset>
+
+<a name="usegit"></a>
+<fieldset><legend>Patterns of use in the ZMap development environment</legend>
+<p>
+git is very powerful and has far more features than are needed by the ZMap team and here we define the subset of git features that we intend to use and a number of expected tasks.  Note that our use of git is entirely local - there are no public repositories and no use of emailed updates.
+</p>
+<p><b>NOTE</b> that what appears below is a quick summary and users shoudl refer to the git man-pages, which are very informative and have examples.
+</p>
+
+<h3>Import a CVS tree into git</h3>
+<p>Since inception the Zmap source tree has not been branched in CVS and this makes the import process much simpler.  Simply run these commands with CVS configured as normal:
+<pre>
+cd ~zmap/git
+git cvsimport -a -v ZMap
+</pre>
+This takes about 30 minutes, after which the ~/zmap/git directory contains a copy of the CVS source tree/
+</p>
+<h3>Register with git</h3>
+<p>To make normal commands easier it is recommended to define users and shortcuts:
+Each user should introduce themselves with (eg):
+<pre>
+deskpro1[fred]5: git config --global user.name "fred"
+deskpro1[fred]6: git config --global user.email fred@sanger.ac.uk
+</pre>
+and set up an alias to the master repository:
+<pre>
+deskpro1[fred]16: git remote zmap ~zmap/git
+</pre>
+</p>
+
+<h3>Setting up access permissions</h3>
+<p>
+TBD
+</p>
+
+<h3>Setting up repository options</h3>
+<p>As git allows yout to add and commit all files that have changed there is value in having it ignore object an temporary files.
+This is done by:
+<pre>
+TBD
+</pre>
+</p>
+
+<h3>Clone a repository</h3>
+<p>Developers should not work on the master respository but instead clone this.
+<pre>
+deskpro1[fred]13: mkdir git
+deskpro1[fred]14: cd git
+deskpro1[fred]15: git clone ~zmap/git
+Initialized empty Git repository in /nfs/users/nfs_m/mh17/zmap/git/.git/
+deskpro1[fred]16: ls
+ace-zmap-code  demo  doc  events  foocanvas  g2  gtk  RT_Test  scripts
+src  web  xcode  ZMAP_LACE_PROJECT  zmap-no-threads
+</pre>
+After this files may be edited as normal, programs compiled and tested.
+</p>
+
+
+<h3>Editing files</h3>
+<p>Edit the files as normal. When finished use:
+<pre>
+git add [files]
+</pre>
+to queue the changes for commit.  Chnaged that have not been added will not be committed, but you can commit everything changed with:
+<pre>
+git commit -a
+</pre>
+</p>
+
+<h3>Showing git/ file status</h3>
+<p>The command:
+<pre>
+git status
+</pre>
+lists all modified files and all changes addded for commit.
+<pre>
+git show
+git diff
+</pre>
+Reveal th differences between current and indexed files.
+
+<h3>Committing files</h3>
+<p>
+'git commit' will commit all files staged with 'git add' or specific files may be specified. The flags -a tells git to commit all files that have been changed, which include additions and deletions.
+<pre>
+git commit -a -m "this is my new wizzo feature"
+</pre>
+<pre>
+git add zmapWorking.c
+git commit -m "a small bug fix" zmapWorking.c
+</pre>
+</p>
+
+<h3>Resolving Conflicts</h3>
+<p>Unlike CVS a commit is to the current local clone and there can be no editing conflicts arising (this assumes that each developer clones the master).  Likewise different branches from a single clone have conflict free histories.   Conflicts can occur on merging branches or pushing/pulling fields from another repository (push and pull do a merge)
+</p>
+<p>As for CVS conflicts are indicated with marker lines such as:
+<pre>
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed.
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; yours:sample.txt
+Conflict resolution is hard;
+let´s go shopping.
+=======
+Git makes conflict resolution easy.
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; theirs:sample.txt
+And here is another line that is cleanly resolved or unmodified.
+</pre>
+Please refer to 'man git-merge' or <a href="Design_notes/build/cvs_git.shtml#branches">operating branches</a> below for the merge process.
+</p>
+
+<h3>Adding and Deleting files</h3>
+<p>
+Create or delete the files using normal linux commands.  Then any sensible combination of the following git commands will work:
+<pre>
+git add [files]         queues the files for commit
+git commit -a [files]   queues and commits changed files including deletions
+git rm   file...        remove named files
+git add -A              remove files that have been deleted from the file system
+</pre>
+More complex variants are possible - see man git-rm.
+</p>
+<h3>Renaming files</h3>
+<p>This necessarily involves a delete and then an add but can be done with the git-mv command.
+This works with directories and several files can be moved to a new directory with one command.
+</p>
+
+<a name="branches"></a>
+<h3>Operating branches: split update and merge</h3>
+
+<h3>How are tags combined?</h3>
+<p>man git-merge reveals how branches are combined and we need to know the converse - how to clone a previous version of a branch before the merge.
+</p>
+<p>TBD
+</p>
+</fieldset>
