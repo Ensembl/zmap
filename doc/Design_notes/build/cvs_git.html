@@ -58,7 +58,7 @@ Note that due to file permissioning issues developers need to be in a 'zmapteam'
 <h3>Simple differences between CVS and git</h3>
 <p>Note should be take of the following:
 <ul>
-<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.1 2010-11-16 13:18:58 mh17 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
+<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.2 2010-11-16 13:27:56 mh17 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
 <li> CVS has been set up to checkout files as read only and to require files to be explicitly opened for editing whereas git records file permissions and therefore emulating this kind of behaviour is not ideal. Instead git is aware of changes to files and only those changes that have been explictly added will be committed to the repository (you have to add chenges in content rather than files) - so git provides a similar kind of control but allows instant editing.  Use git-show to see what files have been changed or added.
 </ul>
 </p>
@@ -194,6 +194,13 @@ This works with directories and several files can be moved to a new directory wi
 
 <a name="branches"></a>
 <h3>Operating branches: split update and merge</h3>
+<p>
+<pre>
+git branch              to list existing and current
+git branch fred         to create a new branch fred
+git checkout fred       to switch to using fred
+</pre>
+</p>
 
 <h3>How are tags combined?</h3>
 <p>man git-merge reveals how branches are combined and we need to know the converse - how to clone a previous version of a branch before the merge.
