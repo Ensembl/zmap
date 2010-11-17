@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 12 09:17 2010 (edgrif)
+ * Last edited: Nov 17 11:14 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.127 2010-11-12 09:17:58 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.128 2010-11-17 11:58:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1174,7 +1174,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0, query_length = 0 ;
   ZMapStrand query_strand ;
-  double percent_id ;
+  double percent_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
   GQuark locus_id = 0 ;
