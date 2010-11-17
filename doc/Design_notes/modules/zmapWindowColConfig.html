@@ -1,0 +1,33 @@
+<!-- $Id: zmapWindowColConfig.html,v 1.1 2010-11-17 12:50:07 mh17 Exp $ -->
+<h2>Column Config Window - interface to pipe servers</h2>
+<fieldset><legend>Background</legend>
+<h3>Deferred loading of columns</h3>
+<p>Historically ACEDB could define some columns for deferred loading (via a style) and these would not be requested in the initial data load.  The columns dialog could be used to request these, and also to specify an address range via the mark.  This implies the possibility of patchwork coverage of any column but it is not clear how much information would have been stored regarding the ranges requested.
+</p>
+<p>More recently Otterlace has provided a post startup 'load columns' dialog  and this is used to request data over the whole address range for selected columns.
+
+</p>
+<p>Deferred styles have been removed and it is intended to allow ZMap to request data from (pipe) servers as configured via the columns dialog - this will allow similar functionality as within the Otterlace context while running in standalone mode.   It has been suggested that the load and display panes can be combined although this would require a re-arrangement as the display pane works by strand.
+</p>
+
+<p>Note also that display is traditionally done by column yet data is requested nominally by featureset
+</p>
+
+<p>To provide RNAseq data it is also necessary to implement a more complicated request interface as defined <a href="Design_notes/notes/RNAseq.shtml">here</a>.
+</p>
+</fieldset>
+
+<fieldset><legend>User Interface</legend>
+<p>
+A simplified user interface is suggested with each column having tick boxed for fwd and reverse strand as applicable and an auto radio button and tick boxes for load all and load from mark.  On requesting a column to be loaded ZMap will initiate request for all the featuresets that map to that column.
+</p>
+<p>It would of course be possible to supply controls for each featureset but this will not be implemented initially as a) it would require much more coding of user interface with very little benefit to the user and b) it would make the user interface very complicated - there are hundreds of featuresets defined.</p>
+<img src="Design_notes/modules/col_config.png" class = "img">
+</fieldset>
+
+
+
+<fieldset>
+
+<fieldset><legend>Loading data</legend>
+<fieldset>
