@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 19 20:59 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.23 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.24 2010-11-19 11:48:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -169,7 +169,7 @@ static void flagNotebookIgnoreDuplicates(gpointer any, gpointer unused);
 
 static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_list_data);
 
-static gboolean disallow_empty_strings(ZMapGuiNotebookAny notebook_any, 
+static gboolean disallow_empty_strings(ZMapGuiNotebookAny notebook_any,
 				       const char *entry_text, gpointer user_data);
 
 static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
@@ -218,38 +218,38 @@ typedef enum
 
 
 /*!
- * The model for building a notebook for displaying/editting resources/data etc is: 
- * 
+ * The model for building a notebook for displaying/editting resources/data etc is:
+ *
  * 1) Use zMapGUINotebookCreateXXX() functions to build up a tree representing your data.
- * 
+ *
  * 2) Pass the tree to zMapGUINotebookCreateDialog() and it will create the dialog or
  *    pass it to zMapGUINotebookCreateWidget() to create just the notebook widget for
  *    embedding in other windows.
- * 
+ *
  * 3) Once the user has made their changes, each of your chapter callbacks will be
  *    called so you can extract the changed data from your original tree using the
  *    zMapGUINotebookFindPage() and zMapGUINotebookGetTagValue() calls.
- * 
+ *
  *    The model here is that each "chapter" will specify resources for a major component
  *    and hence its resources should be processed by a single callback.
- * 
+ *
  * 4) Finally your cleanup routine will be called so that you can free the tree
  *    (we could make this automatic if no cleanup function is supplied ?).
- * 
+ *
  * NOTE that the code currently assumes that tags are unique within pages, this could
  * be changed but would mean providing a tagvalue search function that searched within
  * paragraphs/subsections.
- * 
+ *
  * You should also note that if you don't supply a parent to chapter/page etc calls
  * then its your responsibility to hook the tree up correctly.
- * 
- * 
+ *
+ *
  *  */
 
 
-/*! Create a notebook, this is the top level of the data structure from which the GUI 
+/*! Create a notebook, this is the top level of the data structure from which the GUI
  * notebook compound widget dialog will be built from.
- * 
+ *
  * @param notebook_name      String displayed in title of notebook dialog.
  * @param editable           TRUE means user can edit values, FALSE means they can't.
  * @param cleanup_cb         The callback function you want called when the dialog is destroyed.
@@ -271,7 +271,7 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
 }
 
 /*! Create a chapter within a notebook.
- * 
+ *
  * @param note_book       If non-NULL, the chapter is added to this note_book.
  * @param chapter_name    String displayed in button to select this subnotebook.
  * @param user_callbacks  Cancel and OK callbacks called when user clicks relevant button.
@@ -313,7 +313,7 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
 
 
 /*! Create a page within a chapter.
- * 
+ *
  * @param chapter    If non-NULL, the page is added to this chapter.
  * @param page_name  String displayed at top of notebook page.
  * @return           ZMapGuiNotebookPage
@@ -335,7 +335,7 @@ ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, ch
 
 
 /*! Create a subsection within a page.
- * 
+ *
  * @param chapter          If non-NULL, the subsection is added to the subsection.
  * @param subsection_name  String displayed at top of notebook subsection.
  * @return                 ZMapGuiNotebookSubsection
@@ -357,7 +357,7 @@ ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage pa
 
 
 /*! Create a paragraph within a subsection.
- * 
+ *
  * @param subsection      If non-NULL, the subsection is added to this chapter.
  * @param paragraph_name  If non-NULL, the string displayed at the top of the frame of this paragraph.
  * @param display_type    The type of paragraph (e.g. simple list, table etc.).
@@ -382,7 +382,7 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
       paragraph->num_cols = g_list_length(headers) ;
       paragraph->compound_titles = headers ;
 
-      g_list_foreach(types, translate_string_types_to_gtypes, 
+      g_list_foreach(types, translate_string_types_to_gtypes,
 		     &(paragraph->compound_types));
     }
 
@@ -398,7 +398,7 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
 
 
 /*! Create a tagvalue within a paragraph.
- * 
+ *
  * @param paragraph            If non-NULL, the tagvalue is added to this paragraph.
  * @param tag_value_name  The "tag" string, displayed on the left of the tag value fields.
  * @param display_type    The type of tag-value (e.g. checkbox, simple, scrolled)
@@ -407,13 +407,13 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
  *
  *
  * This function uses the va_arg mechanism to allow caller to say something like:
- * 
+ *
  * zMapGUINotebookCreateTagValue(paragraph, "some name", ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
  *                               "string", string_ptr) ;
- * 
+ *
  * Valid arg_types are currently "bool", "int", "float", "string" or "compound". Note that no checking of args
  * can be done, the caller just has to get this right.
- * 
+ *
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
 						      char *tag_value_name,
@@ -442,7 +442,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       bool_arg = va_arg(args, gboolean) ;
 
-      tag_value->original_data.bool_value = 
+      tag_value->original_data.bool_value =
 	tag_value->data.bool_value = bool_arg ;
     }
   else if (strcmp(arg_type, "int") == 0)
@@ -451,7 +451,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       int_arg = va_arg(args, int) ;
 
-      tag_value->original_data.int_value = 
+      tag_value->original_data.int_value =
 	tag_value->data.int_value = int_arg ;
     }
   else if (strcmp(arg_type, "float") == 0)
@@ -460,7 +460,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       double_arg = va_arg(args, double) ;
 
-      tag_value->original_data.float_value = 
+      tag_value->original_data.float_value =
 	tag_value->data.float_value = double_arg ;
     }
   else if (strcmp(arg_type, "string") == 0)
@@ -469,7 +469,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       string_arg = va_arg(args, char *) ;
 
-      tag_value->data.string_value = 
+      tag_value->data.string_value =
 	tag_value->original_data.string_value = g_strdup(string_arg) ;
     }
   else if (strcmp(arg_type, "item") == 0)
@@ -507,10 +507,10 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
 
 /*! Add a chapter to a notebook.
- * 
+ *
  * NOTE: this could be made into a general function that adds any to any.
- * 
- * 
+ *
+ *
  * @param   notebook     Parent notebook.
  * @param   page         Child chapter.
  * @return               void
@@ -525,10 +525,10 @@ void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter 
 }
 
 /*! Add a page to a chapter.
- * 
+ *
  * NOTE: this could be made into a general function that adds any to any.
- * 
- * 
+ *
+ *
  * @param   chapter      Parent chapter.
  * @param   page         Child page
  * @return               void
@@ -545,16 +545,16 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
 
 
 /*! Merge two notebooks.
- * 
+ *
  * The merge consists of:
- * 
+ *
  * Any sub part of notebook_new that is _not_ in notebook is moved from
  * notebook_new to notebook. Individual sub parts are not merged into
  * each other.
- * 
+ *
  * Note that the merge is destructive, notebook_new is destroyed.
- * 
- * 
+ *
+ *
  * @param   notebook      Target of merge.
  * @param   notebook_new  Subject of merge.
  * @return                void
@@ -564,7 +564,13 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
   zMapAssert(notebook);
   zMapAssert(notebook_new) ;
 
-  flagNotebookIgnoreDuplicates(notebook, NULL);
+/* MH17:
+  don't ignore or else we won't get the description from otterlace
+  erm... not true since i renamed the style description
+  put this back in case something broke by changing it
+ */
+ flagNotebookIgnoreDuplicates(notebook, NULL);
+
 
   mergeAny((ZMapGuiNotebookAny)notebook, (ZMapGuiNotebookAny)notebook_new) ;
 
@@ -574,7 +580,7 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
 
 
 /*! Create the compound notebook widget from the notebook tree.
- * 
+ *
  * @param notebook_spec  The notebook tree.
  * @return               top container widget of notebook
  */
@@ -596,7 +602,7 @@ GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
 
 
 /*! Create the compound notebook dialog from the notebook tree.
- * 
+ *
  * @param notebook_spec  The notebook tree.
  * @return               dialog widget
  */
@@ -618,7 +624,7 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
 
   /*
    * Make dialog
-   */  
+   */
   make_notebook->toplevel = dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
   gtk_window_set_title(GTK_WINDOW(dialog), g_quark_to_string(notebook_spec->name)) ;
@@ -667,7 +673,7 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
 
 
 /*! Find a given page within a chapter.
- * 
+ *
  * @param chapter    Chapter to be searched.
  * @param page_name  Name of page to be searched for.
  * @return           ZMapGuiNotebookPage or NULL if not in chapter.
@@ -694,7 +700,7 @@ ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, cons
  *
  * @param notebook     Notebook to search
  * @param chapter_name Name of the Chapter to find.
- * @return             ZMapGuiNotebookChapter or NULL if no matching chapter found.  
+ * @return             ZMapGuiNotebookChapter or NULL if no matching chapter found.
  */
 ZMapGuiNotebookChapter zMapGUINotebookFindChapter(ZMapGuiNotebook notebook, const char *chapter_name)
 {
@@ -713,28 +719,28 @@ ZMapGuiNotebookChapter zMapGUINotebookFindChapter(ZMapGuiNotebook notebook, cons
 }
 
 /*! Find a tagvalue within a page and return its value.
- * 
+ *
  * @param page    Page to be searched.
  * @param tagvalue_name  Tagvalue to find.
  * @return           TRUE if tagvalue found and value returned, FALSE otherwise.
- * 
- * 
+ *
+ *
  * This function is the corollary of zMapGUINotebookCreateTagValue() and also uses
  * the va_arg mechanism to allow caller to say something like:
- * 
+ *
  * zMapGUINotebookGetTagValue(page, "tag name",
  *                            "int", &int_variable) ;
- * 
+ *
  * Valid arg_types are currently "bool", "int", "float" or "string". Note that no checking of args
  * can be done, the caller just has to get this right.
- * 
+ *
  * NOTE that the field following the arg_type _MUST_ be the address of a variable into
  * which the value of the tag will be returned.
  *
  * N.B. In the case of strings the returned value will be the actual pointer stored in the
  * tag value.  The caller is responsible for copying this and later freeing it. So be warned
  * the internal value might go away anytime!
- * 
+ *
  */
 gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagvalue_name,
 				    const char *arg_type, ...)
@@ -816,7 +822,7 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 
 
 /*! Destroy a notebook or subpart of a notebook freeing all resources.
- * 
+ *
  * @param note_any   Any level within a notebook, and its children to be destroyed.
  * @return           <nothing>
  */
@@ -829,7 +835,7 @@ void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any)
 
 
 /*! Destroy a notebook tree freeing all resources.
- * 
+ *
  * @param note_book  Notebook to be destroyed.
  * @return           <nothing>
  */
@@ -852,7 +858,7 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 
 
 
-/* 
+/*
  *                        Internal routines.
  */
 
@@ -984,7 +990,7 @@ static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook)
   make_notebook->notebook_stack = gtk_notebook_new() ;
   gtk_notebook_set_show_tabs(GTK_NOTEBOOK(make_notebook->notebook_stack), FALSE) ;
   gtk_container_add(GTK_CONTAINER(frame), make_notebook->notebook_stack) ;
-  
+
   g_list_foreach(make_notebook->notebook_spec->chapters, makeChapterCB, make_notebook) ;
 
 
@@ -1027,7 +1033,7 @@ static void makeChapterCB(gpointer data, gpointer user_data)
    * so it can be raised to the top of the notebook stack when the button is clicked. */
   make_notebook->curr_notebook = notebook_widget = gtk_notebook_new() ;
   g_object_set_data(G_OBJECT(notebook_widget), GUI_NOTEBOOK_STACK_SETDATA, make_notebook->notebook_stack) ;
-  
+
   button = gtk_radio_button_new_with_label_from_widget((make_notebook->prev_button
 							? GTK_RADIO_BUTTON(make_notebook->prev_button)
 							: NULL),
@@ -1113,14 +1119,14 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->curr_paragraph_table = gtk_table_new(make_notebook->curr_paragraph_rows,
 							  make_notebook->curr_paragraph_columns,
 							  FALSE) ;
-      gtk_table_set_homogeneous(GTK_TABLE(make_notebook->curr_paragraph_table), 
+      gtk_table_set_homogeneous(GTK_TABLE(make_notebook->curr_paragraph_table),
 				(paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS));
 
-      gtk_table_set_row_spacings(GTK_TABLE(make_notebook->curr_paragraph_table), 
+      gtk_table_set_row_spacings(GTK_TABLE(make_notebook->curr_paragraph_table),
 				 GUI_NOTEBOOK_DEFAULT_BORDER);
 
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), make_notebook->curr_paragraph_table) ;
-     
+
     }
   else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
     {
@@ -1168,7 +1174,7 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
 static gboolean editing_finished_cb(GtkWidget     *widget,
 				    GdkEventFocus *event,
-				    gpointer       user_data) 
+				    gpointer       user_data)
 {
   GtkEntry *entry = GTK_ENTRY(widget);
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data;
@@ -1187,13 +1193,13 @@ static gboolean editing_finished_cb(GtkWidget     *widget,
       ZMapGuiNotebookChapter chapter = NULL;
       gboolean edit_allowed = TRUE;
       char *tag_value_text = NULL;
-      
+
       chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
 
       if(chapter->user_CBs.edit_func)
-	edit_allowed = (chapter->user_CBs.edit_func)((ZMapGuiNotebookAny)tag_value, entry_text, 
+	edit_allowed = (chapter->user_CBs.edit_func)((ZMapGuiNotebookAny)tag_value, entry_text,
 						     chapter->user_CBs.edit_data);
-      
+
       switch(tag_value->data_type)
 	{
 	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
@@ -1250,7 +1256,7 @@ static gboolean editing_finished_cb(GtkWidget     *widget,
   /* Gtk-WARNING **: GtkEntry - did not receive focus-out-event. If you
    * connect a handler to this signal, it must return
    * FALSE so the entry gets the event as well */
-  return FALSE;			
+  return FALSE;
 }
 
 /* A GFunc() to build notebook pages. */
@@ -1332,7 +1338,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	    gtk_container_add(GTK_CONTAINER(hbox), value) ;
 #endif
 	    gtk_box_pack_start(GTK_BOX(make_notebook->curr_paragraph_vbox), hbox, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
-	    
+
 	    gtk_box_pack_start(GTK_BOX(hbox), tag,   TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
 	    gtk_box_pack_start(GTK_BOX(hbox), value, TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
 	  }
@@ -1421,7 +1427,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 							    scrolled_window, make_notebook) ;
 
 	gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
-  
+
 	g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
 			 GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
 	g_signal_connect(GTK_OBJECT(treeView), "size-request",
@@ -1477,7 +1483,7 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
   if((chapter_name = gtk_button_get_label(GTK_BUTTON(widget))))
     {
       ZMapGuiNotebookChapter focus_chapter = NULL;
-      
+
       focus_chapter = zMapGUINotebookFindChapter(make_notebook->notebook_spec, chapter_name);
 
       make_notebook->current_focus_chapter = focus_chapter;
@@ -1577,7 +1583,7 @@ static void callChapterCBs(MakeNotebook make_notebook)
 {
   if(!make_notebook->non_destroy_func)
     make_notebook->non_destroy_func = warn_unset_func;
-  
+
   g_list_foreach(make_notebook->notebook_spec->chapters,
 		 make_notebook->non_destroy_func, make_notebook->current_focus_chapter);
 
@@ -1629,10 +1635,10 @@ static void invoke_save_all_callback(gpointer data, gpointer user_data)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data;
   ZMapGuiNotebookAny notebook_any = (ZMapGuiNotebookAny)data;
-  
+
   if(chapter->user_CBs.save_func)
     (chapter->user_CBs.save_func)(notebook_any, chapter->user_CBs.save_data);
-  
+
   return ;
 }
 
@@ -1851,7 +1857,7 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
       for(i = 0; i < n_columns; i++)
 	{
 	  GType column_type;
-	  
+
 	  column_type = gtk_tree_model_get_column_type(tree_model, i);
 
 	  switch(column_type)
@@ -2108,7 +2114,7 @@ static gint compareFuncCB(gconstpointer a, gconstpointer b)
   ZMapGuiNotebookAny any = (ZMapGuiNotebookAny)a ;
   GQuark tag_id = GPOINTER_TO_INT(b) ;
 
-  if ((any->name == tag_id) && 
+  if ((any->name == tag_id) &&
       ((any->type != ZMAPGUI_NOTEBOOK_TAGVALUE) ||
        (any->type == ZMAPGUI_NOTEBOOK_TAGVALUE && any->ignore_duplicates)))
     result = 0 ;
@@ -2139,7 +2145,7 @@ static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost
       if(GTK_IS_BOX(box))
 	{
 	  gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill, &padding, &pack_type);
-	  
+
 	  expand = TRUE;
 	  gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill, padding, pack_type);
 
@@ -2169,9 +2175,9 @@ static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_c
     }
   else if(GTK_IS_CONTAINER(parent_container))
     {
-      gtk_container_set_border_width(GTK_CONTAINER(parent_container), 
+      gtk_container_set_border_width(GTK_CONTAINER(parent_container),
 				     GUI_NOTEBOOK_CONTAINER_BORDER);
-      
+
       gtk_container_add(GTK_CONTAINER(parent_container), frame);
     }
 
@@ -2205,7 +2211,7 @@ static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_li
 static gboolean disallow_empty_strings(ZMapGuiNotebookAny notebook_any, const char *entry_text, gpointer user_data)
 {
   gboolean allowed = TRUE;
-  
+
   if(!entry_text || (entry_text && !*entry_text))
     allowed = FALSE;
 

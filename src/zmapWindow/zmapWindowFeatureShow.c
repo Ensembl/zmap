@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jun 12 23:10 2009 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.26 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.27 2010-11-19 11:48:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -541,8 +541,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
   if ((description = zMapStyleGetDescription(style)))
     {
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Description",
-						ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Style Description",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,   /* SCROLLED_TEXT,*/
 						"string", g_strdup(description), NULL) ;
     }
 
@@ -1485,11 +1485,14 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 			  column_data = g_list_append(column_data, g_strdup(new_col)) ;
                     if(show->get_evidence == GOT_EVIDENCE && col_ind == show->evidence_column)
                     {
+#if MH17_FEATURES_HAVE_PREFIXES
+/*
+ * feature prefixes are not desired but got added back on due to some otterlace inconsistency thing
+ */
                         char *p = g_strstr_len(new_col,-1,":");
-
                         if(p) /* strip data type off the front */
                               new_col = p + 1;
-
+#endif
                         show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(new_col)));
 
                     }

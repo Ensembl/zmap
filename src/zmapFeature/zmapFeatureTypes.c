@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.106 2010-11-08 12:03:12 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.107 2010-11-19 11:48:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -217,6 +217,12 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
 
                   // keep this up to date
               g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
+#if MH17_CHECK_INHERITANCE
+zMapLogWarning("%s inherited  %s, description = %s\n",
+g_quark_to_string(tmp_style->unique_id),
+g_quark_to_string(parent->unique_id),
+tmp_style->description);
+#endif
               zMapStyleDestroy(style);
             }
           else
