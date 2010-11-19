@@ -1,24 +1,28 @@
-<!-- $Id: RNAseq.html,v 1.2 2010-07-29 08:41:45 mh17 Exp $ -->
+<!-- $Id: RNAseq.html,v 1.3 2010-11-19 15:55:41 mh17 Exp $ -->
 <h2>OTF requests for RNA seq data</h2>
 
-<fieldset><legend>As requested by Laurens</legend>
+<fieldset><legend>As requested by Laurens (RT 180043)</legend>
 
 <p>
 For displaying on-demand rna-seq data, i.e. only data for the marked region, we propose interfaces and map displays as in the two attached mock-ups.
 </p>
 <p>
 For the column chooser window I've created a third tab where we can select which of the four types of displays (gene models, introns, coverage and reads) for each of the four different data sets (tissue, cell type and developmental stage, and other) we want to display. The "Display All" buttons of course operate on the column or row they align with (forgive me the awkward spacing of the columns).
+</p>
+<p>
 In zmap the columns could look like what is displayed in the mock-up. Default for all columns except gene models would be unbumped (compressed/condensed). The coverage bar graph would be on a logarithmic scale. The condensed form of that column, the heat map, wouldn't be sufficient on its own as heat maps are fine for comparing levels between neighbours, but not for comparing medium/long-distance levels as it suffers from the well-known context dependent apparent density level problem (i.e. the same shade surrounded by black neighbours looks much, much lighter than when surrounded by white neighbours).
 </p>
 
-<p>NOTE: these images have been squashed slightly to fit a small monitor, right-click to view full size</p>
-<img src="Design_notes/notes/zmap_rnaseq_column_selection_window.gif" class="img" style="width:800px">
-<img src="Design_notes/notes/zmap_rnaseq_columns.gif" class="img" style="width:800px">
+<img src="Design_notes/notes/zmap_rnaseq_column_selection_window.gif" class="img" >
+<img src="Design_notes/notes/zmap_rnaseq_columns.gif" class="img" >
 
 </fieldset>
 
 <fieldset><legend>How to implement</legend>
 <p> Please feel free to update this with your ideas and thoughts</p>
 <h3>Requesting data from a marked region</h3>
-<p>The existing pipe server mechanism could be used to request data as specified in theco9miplicated dialog bewteen the coordinates defined by the marked region - there should be no need to implement an XML driven interface</p>
+<p>The existing pipe server mechanism could be used to request data as specified in the complicated dialog between the coordinates defined by the marked region. Note that seperate control will have ot be provided for display and data requests, unless we just load automatically if the data is not present</p>
+
+<h3>Displaying coverage data</h3>
+<p>Refer to <a href="Design_notes/notes/density.shtml">Density Plots</a> for some notes about displaying coverage data - ZMap will calculate graphs and heat maps as this allows exact mapping to display pixels.
 </fieldset>

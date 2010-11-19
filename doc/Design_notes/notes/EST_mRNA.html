@@ -1,4 +1,4 @@
-<!-- $Id: EST_mRNA.html,v 1.8 2010-10-29 09:13:38 mh17 Exp $ -->
+<!-- $Id: EST_mRNA.html,v 1.9 2010-11-19 15:55:41 mh17 Exp $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 
 <fieldset><legend>Background</legend>
@@ -252,6 +252,14 @@ masked 339, failed 4171, tried 457 of 457 composite features
 </p>
 
 <p>The algortihm appears to run effciently: # failed is the number of comparisons used with no effect. The worst case is quadratic (like the obvious naive algorithm) but we are a long way from that.
+</p>
+<a name="Notes"></a>
+<h3>A note about homology markers</h3>
+<p>
+By hiding masked alignments wich typically include those that are missing a few bases at either end we display much fewer alignemtnes that would be displayed with incomplete homology markers - an obvious side effect but disconcerting when you first see it.   This can be verified by clicking on 'Display Masked Features'.
+</p>
+<h3>A note about duplicate alignments</h3>
+<p>An alignment can math to several places on the genome due to sequence duplications and this produces some potential problems.  Each alignment is made of several features with the same name that match to splicing and if a series is repeated on the same strand then we can get longer series of features.  This will result in features not being masked, which is not harmful but could be improved.  NB a similar problem occurs in the display of homology markers - if in doubt try 'List same name features'.
 </p>
 </fieldset>
 

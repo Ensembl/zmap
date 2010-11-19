@@ -58,8 +58,12 @@ The pthread interface only includes one function that allows a signal to be sent
 <li> zmapSlave.c/zmapNewThread() to break out of the main loop on QUIT status.
 </ul>
 </p>
-<h4>Post implemntation remarks</h4>
-<p>Ed reveals that on the Mac the pthread_kill() function is not implemented properly, and always reports a dead thread.  Google reveals that some implementations return a wrong error code, and it may be possible to fix this by testing for success rather than failure. However as  we are working round a bug in an external library it's worth keeping this in mind.
+<h4>Post implementation remarks</h4>
+<h5>pthread_kill() on the Mac</h5>
+<p>It appears that on the Mac the pthread_kill() function is not implemented properly, and always reports a dead thread.  Google reveals that some implementations return a wrong error code, and it may be possible to fix this by testing for success rather than failure. However as  we are working round a bug in an external library it's worth keeping this in mind.
+</p>
+<h5>Status codes sent to Otterlace</h5>
+<p>Some problems were found with handling Terminate requests and it was necessary the catch <b>ZMAPTHREAD_REPLY_QUIT</b> in repsonse to a terminate request and set a thread statos of good.  (If sent in reply to any other request it is considered a failure).  After loading data a delayed server is requested to terminate, and at the end of processing the entire step list of requests status is reported to Otterlace.  This includes a status code of 1 or 0 (1 means OK, 0 means failure) and an explanatory message, which is normally OK on success (if the server is not delayed) or 'server terminated' (if the server is delayed), and any other messages are errors.
 </p>
 
 

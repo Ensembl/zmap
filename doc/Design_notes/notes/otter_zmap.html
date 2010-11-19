@@ -87,15 +87,24 @@ For a series of EST's we wish to have an automated process to see if each of the
 <li> User selects evidence, related transcript is highlit.
 <li> User selects transcript, related evidence is highlit.
 </ul>
-This clearly needs a list of features to highlight from otterlace.  Grey has been mentioned as the highlight colour, the idea being to divert the annotator's attention towards data not yet used.
+This clearly needs a list of features to highlight from otterlace.
 </p>
-<p>Evidence and transcript will both be highlit.  As evidence can appear in several columns a single colour defined in the window will be used - this will identify all the evidence as one group. Defining different (contrasting) colours per style could be confusing for the user.
+<p>Evidence and transcript will both be highlit.  As evidence can appear in several columns a single colour defined in the window will be used - this will identify all the evidence as one group. Defining different (contrasting) colours per style could be confusing for the user.  A 'washed out' version of the original feature's colour has been suggested but this would require more colour information per style - calculated colours are diffcult to make perfect.  The default is yellow in black and applies to all features/ columns affected.
+</p>
+<p>
+Configuration is done by:
+<pre>
+[ZMapWindow]
+colour-evidence-fill=pink
+colour-evidence-border=green
+</pre>
+
 </p>
 
 <h4>Sequence of events</h4>
 <ul>
 <li> user selects feature
-<li> user selects RC menu and chooses show transcript or show evidence
+<li> user selects RC menu and chooses highlight transcript or highlight evidence
 <li> Zmap requests related features from otterlace
 <li> otterlace replies and ZMap highlights them
 </ul>
@@ -114,7 +123,7 @@ Window colours are set in <b>zmapWindowDrawFeatures.c/setColours()</b>.
 
 <h4>Clearing evidence/transcript highlights</h4>
 <p>There is some value in having related features highlit semi-permanently.
-When do they get un-highlit? a) if another feature is used to request related data b) via the RC menu/'hide related features'. If a feature is selected (becomes the focus) and then used to select evidence related features and then loses focus the evidence is still highlit. We need to provide two menu options 1) to show evidence and 2) hide evidence, and 1) will also hide any evidence already highlit.
+When do they get un-highlit? a) if another feature is used to request related data b) via the RC menu/'hide related features'. If a feature is selected (becomes the focus) and then used to select evidence related features and then loses focus the evidence is still highlit. We need to provide two menu options 1) to show evidence and 2) hide evidence, and 1) will also hide any evidence already highlit.  A further option will be provided to add more features for the evidence list.
 </p>
 <p> But it's a little more complicated. Requesting related features is a feature specific function and appears on the feature menu. Hide features must appear if some are highlit but cannot be in the feature menu as the option will not appear if there is no focus feature. The feature menu can offer 'highlight evidence' or 'highlight transcript' depending on the focus feature type. The column menu can offer 'hide xxxx' depending on the type highlit, but to avoid confusion (as hide implies removal from display) this will be expressed as a toggle item with a tick and be called 'highlight XXX', and by selecting this menu item the user is unticking the box.
 </p>
@@ -124,57 +133,52 @@ When do they get un-highlit? a) if another feature is used to request related da
 
 <h3>XML interface</h3>
 <p>
-Here's some sample requests from ZMap. <i>These are are an early stage of specification and suggested improvements/ corrections are welcomed.</i>
+The existing 'feature details' popup has a section for evidence features and this information could be used to drive this highlighting. Here is an example repsonse from Otterlace
+<pre>
+&lt;response handled="true"&gt;
+  &lt;notebook&gt;
+    &lt;chapter&gt;
+     &lt;page name="Details"&gt;
+       &lt;subsection name="Annotation"&gt;
+       &lt;paragraph type="tagvalue_table"&gt;
+         &lt;tagvalue name="Transcript Stable ID" type="simple"&gt;OTTHUMT00000326814&lt;/tagvalue&gt;
+         &lt;tagvalue name="Translation Stable ID" type="simple"&gt;OTTHUMP00000201976&lt;/tagvalue&gt;
+         &lt;tagvalue name="Transcript author" type="simple"&gt;jel&lt;/tagvalue&gt;
+       &lt;/paragraph&gt;
+       &lt;paragraph columns="&apos;Type&apos; &apos;Accession.SV&apos;" name="Evidence" type="compound_table" column_types="string string"&gt;
+         &lt;tagvalue type="compound"&gt;EST Em:BI909683.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;Protein Sw:P43626.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;Protein Sw:Q14954.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;cDNA Em:AF022046.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;cDNA Em:U24078.1&lt;/tagvalue&gt;
+       &lt;/paragraph&gt;
+       &lt;/subsection&gt;
+       &lt;subsection name="Locus"&gt;
+         &lt;paragraph type="tagvalue_table"&gt;
+           &lt;tagvalue name="Symbol" type="simple"&gt;KIR2DS1&lt;/tagvalue&gt;
+           ... etc ...
+       &lt;/paragraph&gt;
+       &lt;/subsection&gt;
+     &lt;/page&gt;
+    &lt;/chapter&gt;
+  &lt;/notebook&gt;
+&lt;/response&gt;
+</pre>
 </p>
-<p><b>NOTE</b>: the XML protocol is to be changed soon to simplify it and provide a single window interface and to allow responses to be matched to requests.  Currently they are assumed to be in order and not missing!  The following examples show the message content that will be include in the improved protocol.
+
+<h3>Parsing this data</h3>
+<p>The existing message handling code is tied in quite tightly to some other code that drives creating a popup window and this involves using a callback from the window to its owning view to actually request the data - the view is aware of external interfaces but the window is not.
 </p>
-
-<h4>ZMap requests features to highlight</h4>
+<p><b>zmapWindowFeatureShow.c/featureShow()</b> supplies stacks of start and end handlers for XML tags which imply parent/child relationships and these mirror the structure of the XML document expected from otterlace. The easiest way to process this data and extract the list of supporting features will be to provide different tag handlers that simply accumulate a list of items to be used by the calling code.
+</p>
+<p>
+</p>NOTE that the XML as used contains composite values and the data we want to use consists of a data type then a space, then an accession number.  To find the data needed we need to trawl through &lt;notebook&gt;, &lt;chapter&gt;, &lt;subsection&gt;, &lt;paragraph name="Evidence"&gt;, and then we have a list of &lt;tagvalue&gt; items.  To extract the data we have to call:
 <pre>
-&lt;zmap&gt;
-  &lt;request action="evidence_features"&gt;
-    &lt;align name="chr4-04_210623-364887_master"&gt;
-      &lt;block name="1.0.+_1.0.+"&gt;
-        &lt;featureset&gt;
-          &lt;feature name="Z95704.2-001" strand="-" style="havana_tsct" start="53842" end="88488"&gt;
-            &lt;subfeature start="53842" end="55797" ontology="exon"/&gt;
-            &lt;subfeature start="78605" end="78700" ontology="exon"/&gt;
-            &lt;subfeature start="79196" end="79322" ontology="exon"/&gt;
-            &lt;subfeature start="88475" end="88488" ontology="exon"/&gt;
-            &lt;subfeature start="55798" end="78604" ontology="intron"/&gt;
-            &lt;subfeature start="78701" end="79195" ontology="intron"/&gt;
-            &lt;subfeature start="79323" end="88474" ontology="intron"/&gt;
-          &lt;/feature&gt;
-        &lt;/featureset&gt;
-      &lt;/block&gt;
-    &lt;/align&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
+      char *content = zMapXMLElementStealContent(element);
 </pre>
-<pre>
-(get transcript from evidence feature)
-</pre>
-
-<h4>Otterlace replies with lists of features</h4>
-Both requests could be responded to by similar messages using unique action codes eg 'evidence_from_transcript' and 'transcript_from_evidence'.
-
-<pre>
-&lt;zmap&gt;
-  &lt;response handled="true"&gt;
-    &lt;align name="chr4-04_210623-364887_master"&gt;
-      &lt;block name="1.0.+_1.0.+"&gt;
-        &lt;featureset name="ens_cdna"&gt;
-          &lt;feature name="Em:NM_001137608.1" strand="-" style="ens_cdna" start="88475" end="88488"/&gt;
-        &lt;/featureset name-"EST_Human"&gt;
-       &lt;featureset&gt;
-          &lt;feature name="Em:DC397567.1" strand="-" style="est_align" start="55459" end="55797"/&gt;
-        &lt;/featureset&gt;
-      &lt;/block&gt;
-   .&lt;/align&gt;
- &lt;/response&gt;
-&lt;/zmap&gt;
-</pre>
-
+and this is done in the tagvalue_end callback.  This function also splits the text into data items as specified earlier, producing a GList of column_data which in the original popup generating code is fed into a ZMapGUINotebook.
+</p>
+<p>Ths code can be re-used with the addition of a couple of flags and can be made to return a list of accession quarks defining the evidence features.  Note that this necessarily creates data structures to drive the feature details popup and this nmust be freed.
 </p>
 </fieldset>
 
@@ -182,7 +186,7 @@ Both requests could be responded to by similar messages using unique action code
 <a name="otterface"></a>
 <fieldset><legend>Interface to Otterlace</legend>
 <h3>Strategy</h3>
-<p>There is a need for ZMap to operate on it s own and some advanced features can be implemented in several ways.  If Otterlace is connected then we wish to have the option of alternate behaviour and a mechanism for this exists in the current 'Feature Show' requests.
+<p>There is a need for ZMap to operate on its own and some advanced features can be implemented in several ways.  If Otterlace is connected then we wish to have the option of alternate behaviour and a mechanism for this exists in the current 'Feature Show' requests.
 </p>
 <p>ZMap will make requests to Otterlace informing Otterlace what it is about to do and Otterlace will respond this a message like the following:
 <pre>
