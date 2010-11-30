@@ -46,7 +46,7 @@ This could work as a master copy similar to the existing CVS repository.  The do
 </p>
 <p>To emulate this with git the following is proposed:
 <ul>
-<li> the master copy of the source is to be stored in ~zmap/git/
+<li> a master repository, say zmap.git, will be stored in git.internal.sanger.ac.uk:/repos/git/annotools/
 <li> git clones will be made by developers and these may include branches (or multiple clones created)
 <li> after completing development the developer will push thier updates to the master clone
 <li> official builds will only be created from the master copy in ~zmap/git.  Note that this is not the distributed model espoused by git but instead the 'person-independant' philosophy practiced by the Zmap team.  It also imples that the master copy only contains stable tested code
@@ -58,7 +58,7 @@ Note that due to file permissioning issues developers need to be in a 'zmapteam'
 <h3>Simple differences between CVS and git</h3>
 <p>Note should be take of the following:
 <ul>
-<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.3 2010-11-19 15:55:41 mh17 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
+<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.4 2010-11-30 10:19:27 gb10 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
 <li> CVS has been set up to checkout files as read only and to require files to be explicitly opened for editing whereas git records file permissions and therefore emulating this kind of behaviour is not ideal. Instead git is aware of changes to files and only those changes that have been explictly added will be committed to the repository (you have to add chenges in content rather than files) - so git provides a similar kind of control but allows instant editing.  Use git-show to see what files have been changed or added.
 </ul>
 </p>
@@ -71,7 +71,7 @@ Note that due to file permissioning issues developers need to be in a 'zmapteam'
 <p>
 git is very powerful and has far more features than are needed by the ZMap team and here we define the subset of git features that we intend to use and a number of expected tasks.  Note that our use of git is entirely local - there are no public repositories and no use of emailed updates.
 </p>
-<p><b>NOTE</b> that what appears below is a quick summary and users shoudl refer to the git man-pages, which are very informative and have examples.
+<p><b>NOTE</b> that what appears below is a quick summary and users should refer to the git man-pages, which are very informative and have examples.
 </p>
 
 <h3>Import a CVS tree into git</h3>
@@ -82,42 +82,102 @@ git cvsimport -a -v ZMap
 </pre>
 This takes about 30 minutes, after which the ~/zmap/git directory contains a copy of the CVS source tree/
 </p>
-<h3>Register with git</h3>
+
+<h3>Create a bare repository</h3>
+<p>The master repository should be a bare repository; that is, a repository that just contains the .git directory but not the checked-out working tree.  This is because if you push to a repository that has a checked-out working tree, the working tree will not be updated by the push.  This may lead to unexpected results if the branch you push to is the currently checked-out branch.
+</p>
+<p>We can create a bare repository from any existing repository, e.g. from ~zmap/git.  Create the master repository as the zmap user to make sure the owner and group are correct.
+<pre>
+cd /repos/git/annotools
+mkdir zmap.git
+cd zmap.git
+git --bare init --shared
+git --bare fetch ~zmap/git master:master
+</pre>
+</p>
+The --shared option makes the repository group-writable.
+</p>
+
+<h3>Setting up access permissions</h3>
+<p>We have set the master repository to be group-writable with the --shared option in the above section.  We need to make sure the owner of the repository is the zmap group, which will already be the case if we created the master repository as the zmap user (if not, then we can change the group with chown or chgrp, but this will overwrite the 's' in the group permissions, so we would need to put that back).  We should also run the following 'setfacl' commands to ensure that all file permissions are inherited when new files are created.
+<pre>
+export GIT_DIR=/repos/git/annotools/zmap.git
+setfacl -d -m g::rwx $GIT_DIR/{refs,objects,branches}
+setfacl -m g::rwx $GIT_DIR/{refs,objects,branches}
+setfacl -m g::rw $GIT_DIR/HEAD
+</pre>
+</p>
+<p>Our repository contents should now look something like this:
+<pre>
+drwxrwsr-x+ 2 zmap zmap    6 2010-11-30 09:52 branches
+-rw-rw-r--  1 zmap zmap  126 2010-11-30 09:52 config
+-rw-rw-r--  1 zmap zmap   58 2010-11-30 09:52 description
+-rw-r--r--  1 zmap zmap 1066 2010-11-30 09:52 FETCH_HEAD
+-rw-rw-r--  1 zmap zmap   23 2010-11-30 09:52 HEAD
+drwxrwsr-x  2 zmap zmap 4096 2010-11-30 09:52 hooks
+drwxrwsr-x  2 zmap zmap   20 2010-11-30 09:52 info
+drwxrwsr-x+ 4 zmap zmap   28 2010-11-30 09:52 objects
+drwxrwsr-x+ 4 zmap zmap   29 2010-11-30 09:52 refs
+</pre>
+<p>
+
+<h3>Registering with git</h3>
 <p>To make normal commands easier it is recommended to define users and shortcuts:
-Each user should introduce themselves with (eg):
+Each user should register their name and email address so that this information can be recorded against commits, e.g. with:
 <pre>
 deskpro1[fred]5: git config --global user.name "fred"
 deskpro1[fred]6: git config --global user.email fred@sanger.ac.uk
 </pre>
-and set up an alias to the master repository:
+If you cloned a repository, then by default you will already have the 'origin' alias set up to point to the repository that you cloned.  Use 'git remote -v' to view existing aliases.  You can also explicitly set up an alias to a specific repository as follows:
 <pre>
 deskpro1[fred]16: git remote zmap ~zmap/git
 </pre>
 </p>
 
-<h3>Setting up access permissions</h3>
-<p>
-TBD
+<h3>Other useful configuration</h3>
+<p>Git can <a href= http://progit.org/book/ch7-1.html#colors_in_git>color its output</a>.  To turn on default terminal coloring use:
+<pre>
+git config --global color.ui true
+</pre>
+</p>
+<p>You can specify a tool to view diffs with by using 'git difftool' rather than 'git diff'.  To set the default tool used by difftool to, say, diffuse, use:
+<pre>
+git config --global diff.tool diffuse
+</pre>
 </p>
 
 <h3>Setting up repository options</h3>
-<p>As git allows yout to add and commit all files that have changed there is value in having it ignore object an temporary files.
-This is done by:
+<p>As git allows you to perform operations on all files that have been modified, there is value in having it ignore certain files, e.g. object and temporary files.  This is done by specifying file names or patterns in a file called '.gitignore' (generally placed in the top level directory of the project), or in .git/info/exclude.  Generally, .git/info/exclude is used for things that are applicable to your local repository only.  A .gitignore file can be checked in as part of the project, so it can be used for anything that is also useful to other developers on the project.
+</p>
+<p>For example, the .gitignore file might contain:
 <pre>
-TBD
+*.[oa]
+*~
+.DS_Store
+</pre>
+</p>
+<p>and my local .git/info/exclude file might contain:
+<pre>
+my_notes.txt
+mylog/*
 </pre>
 </p>
 
 <h3>Clone a repository</h3>
-<p>Developers should not work on the master respository but instead clone this.
+<p>Developers should not work on the master respository but instead make a clone of it.
 <pre>
-deskpro1[fred]13: mkdir git
-deskpro1[fred]14: cd git
-deskpro1[fred]15: git clone ~zmap/git
-Initialized empty Git repository in /nfs/users/nfs_m/mh17/zmap/git/.git/
-deskpro1[fred]16: ls
-ace-zmap-code  demo  doc  events  foocanvas  g2  gtk  RT_Test  scripts
-src  web  xcode  ZMAP_LACE_PROJECT  zmap-no-threads
+mac18480i[gb10]253: mkdir git
+mac18480i[gb10]254: cd git/
+mac18480i[gb10]255: git clone git.internal.sanger.ac.uk:/repos/git/annotools/seqtools.git
+Cloning into seqtools...
+remote: Counting objects: 2532, done.
+remote: Compressing objects: 100% (463/463), done.
+remote: Total 2532 (delta 2064), reused 2532 (delta 2064)
+Receiving objects: 100% (2532/2532), 1.53 MiB, done.
+Resolving deltas: 100% (2064/2064), done.
+mac18480i[gb10]256: cd seqtools/
+mac18480i[gb10]257: ls -a
+.		..		.git		.gitignore	src
 </pre>
 After this files may be edited as normal, programs compiled and tested.
 </p>
@@ -128,7 +188,7 @@ After this files may be edited as normal, programs compiled and tested.
 <pre>
 git add [files]
 </pre>
-to queue the changes for commit.  Chnaged that have not been added will not be committed, but you can commit everything changed with:
+to queue the changes for commit.  Modified files that have not been added using 'git add' will not be committed by default, but you can use the -a option to commit all files that have been modified or deleted.  New files must always be added with 'git add' before they will be tracked.
 <pre>
 git commit -a
 </pre>
@@ -144,11 +204,11 @@ lists all modified files and all changes addded for commit.
 git show
 git diff
 </pre>
-Reveal th differences between current and indexed files.
+Reveal the differences between current and indexed files.
 
 <h3>Committing files</h3>
 <p>
-'git commit' will commit all files staged with 'git add' or specific files may be specified. The flags -a tells git to commit all files that have been changed, which include additions and deletions.
+'git commit' will commit all files staged with 'git add' or specific files may be specified. The flag -a tells git to commit all files that have been changed, which includes deletions (but not additions).
 <pre>
 git commit -a -m "this is my new wizzo feature"
 </pre>
@@ -159,9 +219,9 @@ git commit -m "a small bug fix" zmapWorking.c
 </p>
 
 <h3>Resolving Conflicts</h3>
-<p>Unlike CVS a commit is to the current local clone and there can be no editing conflicts arising (this assumes that each developer clones the master).  Likewise different branches from a single clone have conflict free histories.   Conflicts can occur on merging branches or pushing/pulling fields from another repository (push and pull do a merge)
+<p>Unlike CVS, a commit is to the current local clone and there can be no editing conflicts arising (this assumes that each developer clones the master).  Likewise different branches from a single clone have conflict free histories.   Conflicts can occur on merging branches or pulling fields from another repository (pull does a fetch and merge).
 </p>
-<p>As for CVS conflicts are indicated with marker lines such as:
+<p>As for CVS, conflicts are indicated with marker lines such as:
 <pre>
 Here are lines that are either unchanged from the common
 ancestor, or cleanly resolved because only one side changed.
@@ -193,14 +253,34 @@ This works with directories and several files can be moved to a new directory wi
 </p>
 
 <a name="branches"></a>
-<h3>Operating branches: split update and merge</h3>
-<p>
+<h3>Operating branches: split, update and merge</h3>
+<p>The following commands are used to manage branches in a local repository:
 <pre>
-git branch              to list existing and current
+git branch              to list existing branches
 git branch fred         to create a new branch fred
 git checkout fred       to switch to using fred
+git checkout master     to switch back to using master
+git merge fred          to merge commits from fred into the current (master) branch
+git branch -D fred      to delete a branch that is no longer required
 </pre>
 </p>
+<p>After making some commits in the local repository, the following commands would be used to fetch-and-merge changes from the master repository before pushing our commits into the master repository.  This assumes that we have the alias 'origin' set up to point to the master repository, which would automatically be the case for a cloned repository.  (Aliases can be displayed with the 'git remote -v' command.)
+<pre>
+git fetch origin        to fetch changes from origin into our repository
+git merge origin        to merge changes from origin into our repository
+git pull origin         the same as doing a fetch then merge
+git push origin         to push our changes to origin (any conflicts must be resolved first)
+</pre>
+</p>
+
+<h3>Merges, fast-forward and rebasing</h3>
+<p>A straightforward merge, where there have been no simultaneous commits created in parallel in other repositories, is called a fast-forward merge.  This means a branch can be advanced along a linear sequence, so we end up with a simple, linear history.  If there have been parallel commits, then 'git merge' would actually introduce a new merge-commit to tie the two commits together.  This is called a non-fast-forward merge.
+</p>
+<p>When a non-fast-forward merge occurs, there is always the possibility that a conflict occurs. In this case, 'git merge' will leave conflict markers in the files and instruct you to resolve the conflicts. When you are finished, you would issue a 'git commit -a' to create the merge commit.
+</p>
+<p>You can 'rebase' your local branch so that when you push your changes you will get a linear history, even for non-fast-forward merges.  <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#using-git-rebase">This</a> page explains how to do this and <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">this one</a> explains why it is a good idea.  However, <font color="red"><i>you should not rebase any changes that might already have been fetched by anyone else (i.e. anything in the master repository).</i></font>  <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#problems-With-rewriting-history">This page</a> explains why not.
+</p>
+
 
 <h3>Tagging a release/build</h3>
 <p>TBD
@@ -218,10 +298,6 @@ git checkout fred       to switch to using fred
 <p>rebase looks like something we may want to use (eg after fixing a bug in an old verrsion) but apparently there are pitfalls.
 </p>
 <p>more terminology: "non fast forward push error", "fetch and rebase"
-</p>
-<p>
-</p>repository to go on > /repos/git/ZMap on cvs.internal.sanger.ac.uk
-(Also known as git.internal.sanger.ac.uk)
 </p>
 
 </fieldset>
