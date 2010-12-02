@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.71 2010-11-01 09:56:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.72 2010-12-02 10:54:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -546,19 +546,43 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
       ZMapFeatureColumn column = NULL;
       ZMapFeatureSetDesc gff;
 
+      char *name = (char *) g_quark_to_string(set_id);
+
       /* get the column the featureset goes in */
       gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
       if(!gff)
       {
-            zMapLogWarning("no featureset_2_column for %s",g_quark_to_string(set_id));
+            zMapLogWarning("creating featureset_2_column for %s",name);
+            /* recover from un-configured error
+             * NOTE this occurs for seperator features eg DNA search
+             * the style is predefined but the featureset and column are cretaed
+             * blindly with no reference to config
+             * NOTE ideally these should be done along with getAllPredefined() styles
+             */
+
+             /* instant fix for a bug: DNA search fails to display seperator features */
+             gff = g_new0(ZMapFeatureSetDescStruct,1);
+             gff->column_id =
+             gff->column_ID =
+             gff->feature_src_ID = set_id;
+             gff->feature_set_text = name;
+             g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
       }
-      else
+/*      else*/
       {
             column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
             if(!column)
             {
-                  zMapLogWarning("no column %s for featureset %s", g_quark_to_string(gff->column_id), g_quark_to_string(set_id));
+                  zMapLogWarning("creating column  %s for featureset %s", g_quark_to_string(gff->column_id), g_quark_to_string(set_id));
 
+                  column = g_new0(ZMapFeatureColumnStruct,1);
+                  column->unique_id =
+                  column->column_id =
+                  column->style_id = set_id;
+                  column->column_desc = name;
+                  column->featuresets = g_list_append(column->featuresets,GUINT_TO_POINTER(set_id));
+
+                  g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
             }
       }
       return column;
