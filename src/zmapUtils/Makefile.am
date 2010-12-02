@@ -32,7 +32,6 @@ zmapGUINotebook.c \
 zmapUtils_P.h \
 zmapGUIutils.c \
 zmapUtilsSpawn.c \
-zmapUrlUtils.h \
 zmapReadLine.c \
 zmapIOOut.c \
 zmapGLibUtils.c \
