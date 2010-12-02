@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.72 2010-12-02 10:54:32 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.73 2010-12-02 11:42:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -580,7 +580,10 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
                   column->column_id =
                   column->style_id = set_id;
                   column->column_desc = name;
+#if MH17_BUG_FIX
+// commented out for bug fix CVS update, must put back!!
                   column->featuresets = g_list_append(column->featuresets,GUINT_TO_POINTER(set_id));
+#endif
 
                   g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
             }
