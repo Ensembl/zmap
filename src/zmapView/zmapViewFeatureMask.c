@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.5 2010-11-02 15:53:49 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.6 2010-12-02 12:59:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -483,7 +483,12 @@ static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker)
       int n_tried = 0;
 
 
+#if MH17_MASK_EXACT
+/* original request was to not mask diff sets exactly
+ * experience shows that exact splicing is better
+ */
       if(masked == masker)
+#endif
       {
             /* each exon must correspond, no alt-splicing allowed
              * we sort into biggest first order (start then end coord reversed)
