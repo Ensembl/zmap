@@ -58,7 +58,7 @@ Note that due to file permissioning issues developers need to be in a 'zmapteam'
 <h3>Simple differences between CVS and git</h3>
 <p>Note should be take of the following:
 <ul>
-<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.4 2010-11-30 10:19:27 gb10 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
+<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.5 2010-12-06 12:07:51 gb10 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
 <li> CVS has been set up to checkout files as read only and to require files to be explicitly opened for editing whereas git records file permissions and therefore emulating this kind of behaviour is not ideal. Instead git is aware of changes to files and only those changes that have been explictly added will be committed to the repository (you have to add chenges in content rather than files) - so git provides a similar kind of control but allows instant editing.  Use git-show to see what files have been changed or added.
 </ul>
 </p>
@@ -283,7 +283,10 @@ git push origin         to push our changes to origin (any conflicts must be res
 
 
 <h3>Tagging a release/build</h3>
-<p>TBD
+<p>Tag a release using the 'git tag' command.  Use the -a option so that you get an annotated tag (otherwise Git will create a 'lightweight' tag, which is not so useful - <a href="http://www.rockstarprogrammer.org/post/2008/oct/16/git-tag-does-wrong-thing-default/">this post</a> explains why).
+<pre>
+git tag -am "tag comment" tagname
+</pre>
 </p>
 
 <h3>How are tags combined?</h3>
