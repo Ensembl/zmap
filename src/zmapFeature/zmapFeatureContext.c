@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 30 16:23 2009 (edgrif)
+ * Last edited: Nov  5 13:42 2010 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.55 2010-06-14 15:40:13 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.56 2010-12-07 16:43:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -131,7 +131,7 @@ static gboolean catch_hash_abuse_G = TRUE;
  * mappings etc.....needs some thought and effort....
  *
  */
-void zMapFeatureReverseComplement(ZMapFeatureContext context, GHashTable *styles)
+void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles)
 {
   RevCompDataStruct cb_data ;
 
@@ -150,6 +150,42 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, GHashTable *styles
 
   return ;
 }
+
+
+
+void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature)
+{
+  int start, end ;
+
+  /* should be block... */
+  start = context->sequence_to_parent.c1 ;
+  end = context->sequence_to_parent.c2 ;
+
+  revCompFeature(feature, start, end) ;
+
+  return ;
+}
+
+void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout)
+{
+  int start, end, my_start, my_end ;
+
+  /* should be block... */
+  start = context->sequence_to_parent.c1 ;
+  end = context->sequence_to_parent.c2 ;
+
+  my_start = *start_inout ;
+  my_end = *end_inout ;
+
+  zmapFeatureRevComp(Coord, start, end, my_start, my_end) ;
+
+  *start_inout = my_start ;
+  *end_inout = my_end ;
+
+  return ;
+}
+
+
 
 
 gboolean zmapDNA_strup(char *string, int length)

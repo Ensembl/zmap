@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Nov 12 09:14 2010 (edgrif)
+ * Last edited: Nov 12 10:49 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.188 2010-11-12 09:16:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.189 2010-12-07 16:43:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -684,6 +684,8 @@ typedef struct
 
   /* more specific details (more strings) */
   char *feature_score ;
+  char *feature_percent_id ;
+
   char *feature_type ;
   char *feature_description ;
 
@@ -922,8 +924,12 @@ gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
-void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
-void     zMapFeatureReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
+void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
+
+void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
+void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
+void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout) ;
+
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
