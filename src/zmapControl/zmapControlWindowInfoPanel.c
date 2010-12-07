@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 19 09:05 2010 (edgrif)
+ * Last edited: Nov 12 10:45 2010 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.28 2010-10-19 15:59:39 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.29 2010-12-07 16:41:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,7 +99,7 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
  *
  * Current panel for a feature is:
  *
- *  name [strand] [start end] [subpart_start subpart_end] [frame] [score] [type] [feature_set] [feature_style]
+ *  name [strand] [start end] [subpart_start subpart_end] [frame] [score/percent_id] [type] [feature_set] [feature_style]
  *
  * or for a column is:
  *
@@ -216,7 +216,20 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
 
 	  text[4] = feature_desc->feature_frame ; /* Frame */
-	  text[5] = feature_desc->feature_score ; /* Score */
+
+	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    {
+	      text[5] = g_strdup_printf("%s%s%s",
+					feature_desc->feature_score,
+					(feature_desc->feature_percent_id ? " / " : ""),
+					(feature_desc->feature_percent_id ? feature_desc->feature_percent_id : "")) ;
+	    }
+	  else
+	    {
+	      text[5] = g_strdup_printf("%s", feature_desc->feature_score) ;
+	    }
+
+
 	  text[6] = feature_desc->feature_term ; /* Style type */
 	  text[7] = feature_desc->feature_set ;	/* Feature set */
 	  text[8] = feature_desc->feature_source ; /* Source */
@@ -286,7 +299,12 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    tooltip[3] = g_strdup("sub_feature_type  index:   start, end  (length)") ;
 
 	  tooltip[4] = "Frame" ;
-	  tooltip[5] = "Score" ;
+
+	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
+	    tooltip[5] = g_strdup("Score / percent ID") ;
+	  else
+	    tooltip[5] = g_strdup("Score") ;
+
 	  tooltip[6] = "Feature Type" ;
 	  tooltip[7] = "Feature Set" ;
 	  tooltip[8] = "Feature Source" ;
@@ -335,6 +353,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
       g_free(text[1]) ;
       g_free(text[2]) ;
       g_free(text[3]) ;
+      g_free(text[5]) ;
     }
 
   /* I don't know if we need to do this each time....or if it does any harm.... */
