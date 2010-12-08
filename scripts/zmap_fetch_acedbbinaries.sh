@@ -146,6 +146,9 @@ RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
 BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
 
+DIST_DIR="$TARGET_RELEASE_DIR/Dist"
+
+zmap_mkdir $DIST_DIR
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
     ssh $ZMAP_MASTER_HOST "[ -d $SOURCE ] || exit 1" || \
@@ -178,10 +181,11 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
 
+
     release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
     release_file=`basename $release_file`
 
-    tar_file="$ZMAP_BUILD_CONTAINER/Dist/$release_file.src.tar"	# Put tar file in Dist directory.
+    tar_file="$DIST_DIR/$release_file.src.tar"	# Put tar file in Dist directory.
 
     zmap_message_out "Running tar -cvf $tar_file $RELEASE_SRC/w*"
     tar -cvf $tar_file $RELEASE_SRC/w* || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
