@@ -168,6 +168,8 @@ fi
 zmap_message_out "Copying source code and $ZMAP_ACEDB_BINARIES ..."
 zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 
+zmap_message_out "ZMAP_MASTER_HOST is: $ZMAP_MASTER_HOST"
+
 
 #
 # copy acedb source code, we only do this once from the master host.
