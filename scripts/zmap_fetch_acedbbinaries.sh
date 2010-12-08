@@ -57,6 +57,7 @@ else
     let shift_count=$shift_count+1
 fi
 
+
 if [ ! -d $1 ]; then
     if echo $1 | egrep -q ':'; then 
 	zmap_message_err "Checking $1 as a remote location..."
@@ -146,7 +147,7 @@ RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
 BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
 
-DIST_DIR="$TARGET_RELEASE_DIR/Dist"
+DIST_DIR="$TAR_TARGET_PATH/Dist"
 
 zmap_mkdir $DIST_DIR
 
