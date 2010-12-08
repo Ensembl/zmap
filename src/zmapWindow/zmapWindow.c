@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 29 11:36 2010 (edgrif)
+ * Last edited: Nov 12 11:28 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.345 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.346 2010-12-08 09:00:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1695,8 +1695,16 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (zMapStyleIsFrameSpecific(style))
 	select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
 
+      /* quality measures. */
       if (feature->flags.has_score)
-	select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
+	select.feature_desc.feature_score = g_strdup_printf("%g", feature->score) ;
+
+      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  if (feature->feature.homol.percent_id)
+	    select.feature_desc.feature_percent_id = g_strdup_printf("%g", feature->feature.homol.percent_id) ;
+	}
+
 
       select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
@@ -4425,7 +4433,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
 	ZMapWindowCallbacks window_callbacks_G = zmapWindowGetCBs() ;
 	ZMapFeatureAny feature_any ;
-	ZMapFeature  feature ;
+	ZMapFeature  feature = NULL ;
 	gboolean column = FALSE ;
 	FooCanvasItem *focus_item ;
 
@@ -4437,20 +4445,28 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	/* Test there was an item selected otherwise we don't know which aligns to show. */
 	if (focus_item && (feature_any = zmapWindowItemGetFeatureAnyType(focus_item, -1)))
 	  {
+	    int y1, y2 ;
+
 	    if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	      {
-		/*  need to fix implicit dec here! */
-		feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
 		column = TRUE ;
+
+		if (zMapWindowGetVisibleSeq(window, &y1, &y2))
+		  feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
 	      }
 	    else
 	      {
 		feature = (ZMapFeature)feature_any ;
+
+		y1 = feature->x1 ;
+		y2 = feature->x2 ;
 	      }
 
-	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    if (feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	      {
 		align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
+
+		align.position = y1 + ((y2 - y1) / 2) ;
 		align.feature = feature ;
 
 		if (key_event->state & GDK_CONTROL_MASK)
