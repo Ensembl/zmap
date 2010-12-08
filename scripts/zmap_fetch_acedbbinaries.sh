@@ -257,7 +257,7 @@ seqtools_dist=`ls $seqtools_dist_dir/seqtools*.tar.gz`
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
-    cp $seqtools_dist_dir/$seqtools_dist $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist_dir/$seqtools_dist"
+    cp $seqtools_dist $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist"
 
 fi
 
