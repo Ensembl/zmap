@@ -30,9 +30,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Oct 28 17:36 2010 (edgrif)
+ * Last edited: Dec  8 11:19 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.46 2010-10-28 16:37:51 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.47 2010-12-08 11:26:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -327,7 +327,7 @@ static gboolean debug_G = TRUE ;
  */
 
 
-gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out)
+gboolean zmapViewBlixemLocalSequences(ZMapView view, int position, ZMapFeature feature, GList **local_sequences_out)
 {
   gboolean status = TRUE ;
   blixemDataStruct blixem_data = {0} ;
@@ -407,7 +407,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList 
  * The function returns TRUE if blixem was successfully launched and also returns the pid of the blixem
  * process so that the blixems can be cleared up when the view exits.
  *  */
-gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
+gboolean zmapViewCallBlixem(ZMapView view, int position, ZMapFeature feature, GList *local_sequences,
 			    ZMapViewBlixemAlignSet align_set, GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
