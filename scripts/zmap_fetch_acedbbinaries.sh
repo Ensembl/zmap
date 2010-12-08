@@ -174,7 +174,7 @@ zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 #
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
-    ZBGotoDir $ZMAP_ACEDB_RELEASE_CONTAINER
+    zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
 
     release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
     release_file=`basename $release_file`
