@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Jul 20 10:28 2010 (edgrif)
+ * Last edited: Nov  4 13:34 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.116 2010-10-13 14:08:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.117 2010-12-08 08:57:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -174,6 +174,8 @@ typedef struct
 typedef struct
 {
   ZMapWindowCommandType cmd ;
+  int position ;
+
   ZMapFeature feature ;
 
   struct
@@ -304,15 +306,13 @@ gboolean zMapWindowHasHistory(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
 void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in the same view
 							       has a child removed */
-#ifdef RDS_DONT_INCLUDE
-/* Remove this to use Ed's version */
-//PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window);
-#endif
+
 PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
                                                           double *width_out,
                                                           double *height_out);
-void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
+void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
+gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_out) ;
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 
 void zMapWindowColumnList(ZMapWindow window) ;

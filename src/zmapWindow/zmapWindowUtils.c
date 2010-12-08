@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 22 11:22 2010 (edgrif)
+ * Last edited: Nov  4 13:33 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.73 2010-12-02 11:42:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.74 2010-12-08 08:57:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -295,7 +295,7 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 
 
 
-
+/* Get scroll region top/bottom. */
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out)
 {
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
@@ -307,6 +307,30 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
   return ;
 }
+
+
+
+gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_out)
+{
+  gboolean result = FALSE ;
+  double wx1, wy1, wx2, wy2 ;
+  FooCanvasGroup *block_grp ;
+  int y1, y2 ;
+
+  zmapWindowItemGetVisibleCanvas(window, &wx1, &wy1, &wx2, &wy2) ;
+
+  if (zmapWindowWorld2SeqCoords(window, wx1, wy1, wx2, wy2,
+				&block_grp, &y1, &y2))
+    {
+      *top_out = y1 ;
+      *bottom_out = y2 ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 
 
 #if MH17_NO_STYLE_COPY
