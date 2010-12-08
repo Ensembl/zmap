@@ -145,7 +145,11 @@ TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}/bin
 
 RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
-BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
+
+
+# Blixem is now in a new place.....
+#
+#BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
 
 DIST_DIR="$TAR_TARGET_PATH/Dist"
 
@@ -218,28 +222,44 @@ for binary in $ZMAP_ACEDB_BINARIES;
 done
 
 
+
+# Blixem is now in a new place.....
+#
 # Do the new blixem binaries.
 #
-for binary in $ZMAP_BLIXNEW_BINARIES;
-  do
-  # Copy from remote to local.
-  if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
-      zmap_message_out "Running scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary"
-      scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
-  else
-      zmap_message_out "Running cp $BLXNEW_SOURCE/$binary $TARGET/$binary"
-      cp $$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
-  fi
+#for binary in $ZMAP_BLIXNEW_BINARIES;
+#  do
+#  # Copy from remote to local.
+#  if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+#      zmap_message_out "Running scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary"
+#      scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+#  else
+#      zmap_message_out "Running cp $BLXNEW_SOURCE/$binary $TARGET/$binary"
+#      cp $$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+#  fi
+#
+#  # check locally written files.
+#  if [ "x$TAR_TARGET_HOST" == "x" ]; then
+#      zmap_message_out "Testing $binary was copied..."
+#      [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
+#      [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
+#  fi
+#done
 
-  # check locally written files.
-  if [ "x$TAR_TARGET_HOST" == "x" ]; then
-      zmap_message_out "Testing $binary was copied..."
-      [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
-      [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
-  fi
-done
+# I can't find where ~zmap is set up so it's hard-coded here for now...in the end
+# we will want to pass the directory in.
+#
+base_dir=~zmap
+seqtools_dir='SeqTools'
+seqtools_dist_dir="$base_dir/$seqtools_dir/BUILD.DEVELOPMENT/Dist"
+seqtools_dist=`ls $seqtools_dist_dir/seqtools*.tar.gz`
 
 
+if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+
+    cp $seqtools_dist_dir/$seqtools_dist $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist_dir/$seqtools_dist"
+
+fi
 
 
 zmap_message_out "Copied acedb source and binaries: $ZMAP_ACEDB_BINARIES !"
