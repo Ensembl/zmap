@@ -130,13 +130,23 @@ ZMAP_RELEASE_LEVEL=DEVELOPMENT
 # RELEASE_SYMLINK is made by zmap_get_release_symlink()
 ZMAP_RELEASE_SYMLINK='~zmap/BUILD.${ZMAP_RELEASE_LEVEL}'
 
+
 # acedb stuff
 ZMAP_ACEDB_RELEASE_CONTAINER=~acedb
 if [ -z "$ZMAP_ACEDB_RELEASE_DIR" ] ; then
   ZMAP_ACEDB_RELEASE_DIR='DEVELOPMENT'
 fi
 ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd belvu dotter xremote'
-ZMAP_BLIXNEW_BINARIES='blixem blixemh'
+
+
+# seqtools stuff
+ZMAP_SEQTOOLS_RELEASE_CONTAINER=~zmap/SeqTools
+if [ -z "$ZMAP_SEQTOOLS_RELEASE_DIR" ] ; then
+  ZMAP_SEQTOOLS_RELEASE_DIR='BUILD.DEVELOPMENT'
+fi
+
+
+
 
 
 ZMAP_RELEASE_NOTES_TIMESTAMP=LAST_RELEASE_DATE.txt

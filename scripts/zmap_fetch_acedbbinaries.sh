@@ -223,36 +223,11 @@ done
 
 
 
-# Blixem is now in a new place.....
-#
-# Do the new blixem binaries.
-#
-#for binary in $ZMAP_BLIXNEW_BINARIES;
-#  do
-#  # Copy from remote to local.
-#  if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
-#      zmap_message_out "Running scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary"
-#      scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
-#  else
-#      zmap_message_out "Running cp $BLXNEW_SOURCE/$binary $TARGET/$binary"
-#      cp $$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
-#  fi
-#
-#  # check locally written files.
-#  if [ "x$TAR_TARGET_HOST" == "x" ]; then
-#      zmap_message_out "Testing $binary was copied..."
-#      [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
-#      [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
-#  fi
-#done
-
 # I can't find where ~zmap is set up so it's hard-coded here for now...in the end
 # we will want to pass the directory in.
 #
-base_dir=~zmap
-seqtools_dir='SeqTools'
-seqtools_dist_dir="$base_dir/$seqtools_dir/BUILD.DEVELOPMENT/Dist"
-seqtools_dist=`ls $seqtools_dist_dir/seqtools*.tar.gz`
+seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
+seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
 
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
