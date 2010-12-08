@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#
+# Usage
+# zmap_fetch_acedbbinaries.sh <Target Release Dir> [acedb level]
+#
+# Script to copy acedb source and binaries from an acedb release directory to a
+# local directory.
+#
+# In the build this is the local install prefix.
+#
+# We only copy one architecture binaries as build_bootstrap.sh runs this on multiple machines.
+# We can copy from remote or local machine to remote or local machine.
+# Depending on $ZMAP_MASTER_HOST and first arg (remote = hostname:/path/to/target)
+#
+# The source is $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.<level>/bin.<hosttype>/
+# For one off runs/emergency fixing try
+# ln -s ~/work/acedb RELEASE.DEVELOPMENT
+# zmap_fetch_acedbbinaries.sh /target/dir DEVELOPMENT ZMAP_ACEDB_RELEASE_CONTAINER=~/work/acedb
+#
+#
 
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
@@ -20,23 +40,6 @@ if [ "x$ACEDB_MACHINE" == "x" ]; then
     zmap_message_exit "."
 fi
 
-
-# Usage
-# zmap_fetch_acedbbinaries.sh <Target Release Dir> [acedb level]
-
-# Script to copy  acedb binaries from an acedb  release directory to a
-# local directory.
-
-# In the build this is the local install prefix.
-
-# We only copy one architecture binaries as build_bootstrap.sh runs this on multiple machines.
-# We can copy from remote or local machine to remote or local machine.
-# Depending on $ZMAP_MASTER_HOST and first arg (remote = hostname:/path/to/target)
-
-# The source is $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.<level>/bin.<hosttype>/
-# For one off runs/emergency fixing try
-# ln -s ~/work/acedb RELEASE.DEVELOPMENT
-# zmap_fetch_acedbbinaries.sh /target/dir DEVELOPMENT ZMAP_ACEDB_RELEASE_CONTAINER=~/work/acedb
 
 # ================== OPTIONS ======================
 
@@ -138,6 +141,8 @@ zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL point
 # Finalise the source and target directories.
 
 TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}/bin
+
+RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
 BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
 
@@ -160,10 +165,32 @@ fi
 # ================ COPYING! ======================
 
 # copy all the files from acedb release
-zmap_message_out "Copying $ZMAP_ACEDB_BINARIES ..."
+zmap_message_out "Copying source code and $ZMAP_ACEDB_BINARIES ..."
 zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 
 
+
+# copy acedb source code, we only do this once from the master host.
+
+# Copy from remote to local.
+if [ "x$ZMAP_MASTER_HOST" == "x" ]; then
+
+    ZBGotoDir $ZMAP_ACEDB_RELEASE_CONTAINER
+
+    release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
+    release_file=`basename $release_file`
+    tar_file="$TARGET_RELEASE_DIR/$release_file.src.tar"
+
+    zmap_message_out "Running tar -cvf $tar_file $RELEASE_SRC/w*"
+    tar -cvf $tar_file $RELEASE_SRC/w* || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
+    gzip $tar_file || zmap_message_exit "Failed to gzip $tar_file of acedb source in $RELEASE_SRC"
+
+fi
+
+
+
+# Do the standard acedb binaries.
+#
 for binary in $ZMAP_ACEDB_BINARIES;
   do
   # Copy from remote to local.
@@ -184,7 +211,8 @@ for binary in $ZMAP_ACEDB_BINARIES;
 done
 
 
-
+# Do the new blixem binaries.
+#
 for binary in $ZMAP_BLIXNEW_BINARIES;
   do
   # Copy from remote to local.
@@ -207,7 +235,7 @@ done
 
 
 
-zmap_message_out "Copied $ZMAP_ACEDB_BINARIES !"
+zmap_message_out "Copied acedb source and binaries: $ZMAP_ACEDB_BINARIES !"
 
 # ============== END ==============
 
