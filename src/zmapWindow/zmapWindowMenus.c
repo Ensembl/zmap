@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Aug 10 15:40 2010 (edgrif)
+ * Last edited: Nov  4 16:21 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.78 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.79 2010-12-08 09:02:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1261,8 +1261,9 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
   ZMapFeatureAny feature_any;
-  ZMapFeature feature ;
+  ZMapFeature feature = NULL ;
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  int y1, y2 ;
 
 
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
@@ -1273,41 +1274,67 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
 	ZMapFeatureSet feature_set;
+	FooCanvasGroup *block_grp ;
 
-	feature_set = (ZMapFeatureSet)feature_any;
-	feature = zMap_g_hash_table_nth(feature_set->features, 0);
+	feature_set = (ZMapFeatureSet)feature_any ;
+
+
+	/* We should use the mouse position here.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	if (zMapWindowGetVisibleSeq(menu_data->window, &y1, &y2))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  if (zmapWindowWorld2SeqCoords(menu_data->window,
+					menu_data->x, menu_data->y, menu_data->x, menu_data->y,
+					&block_grp, &y1, &y2))
+	    {
+	      y2 = y1 ;
+	      feature = zMap_g_hash_table_nth(feature_set->features, 0) ;
+	    }
 
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
-      feature = (ZMapFeature)feature_any;
-      break;
+      {
+	feature = (ZMapFeature)feature_any;
+
+	y1 = feature->x1 ;
+	y2 = feature->x2 ;
+
+	break;
+      }
     default:
       break;
     }
 
-  align.cmd                      = ZMAPWINDOW_CMD_SHOWALIGN ;
-  align.feature                  = feature ;
-
-  switch(menu_item_id)
+  if (feature)
     {
-    case BLIX_MATCH:
-      align.blix_type.single_match = TRUE ;
-      break;
-    case BLIX_FEATURE:
-      align.blix_type.single_feature = TRUE ;
-      break;
-    case BLIX_SET:
-      align.blix_type.feature_set = TRUE ;
-      break;
-    case BLIX_MULTI_SETS:
-      align.blix_type.multi_sets = TRUE ;
-      break;
-    default:
-      break;
-    }
+      align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
 
-   (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
+      align.position = y1 + ((y2 - y1) / 2) ;
+      align.feature = feature ;
+
+      switch(menu_item_id)
+	{
+	case BLIX_MATCH:
+	  align.blix_type.single_match = TRUE ;
+	  break;
+	case BLIX_FEATURE:
+	  align.blix_type.single_feature = TRUE ;
+	  break;
+	case BLIX_SET:
+	  align.blix_type.feature_set = TRUE ;
+	  break;
+	case BLIX_MULTI_SETS:
+	  align.blix_type.multi_sets = TRUE ;
+	  break;
+	default:
+	  break;
+	}
+
+      (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
+    }
 
   g_free(menu_data) ;
 
