@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 29 10:55 2010 (edgrif)
+ * Last edited: Nov  4 13:59 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.201 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.202 2010-12-08 09:02:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1079,6 +1079,9 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Call back stuff.... */
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
+
+  menu_data->x = button_event->x ;
+  menu_data->y = button_event->y ;
   menu_data->item_cb = TRUE ;
   menu_data->window = window ;
   menu_data->item = item ;

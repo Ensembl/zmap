@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Jul 29 11:28 2010 (edgrif)
+ * Last edited: Nov  4 16:04 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.298 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.299 2010-12-08 09:01:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2404,8 +2404,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 /* Build the background menu for a column. */
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 			FooCanvasItem *item,
-                  ZMapWindowContainerFeatureSet container_set,
-                  ZMapFeatureTypeStyle style_unused)
+			ZMapWindowContainerFeatureSet container_set,
+			ZMapFeatureTypeStyle style_unused)
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
@@ -2420,6 +2420,9 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   menu_title = (char *) g_quark_to_string(container_set->original_id);
 
   cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
+
+  cbdata->x = button_event->x ;
+  cbdata->y = button_event->y ;
   cbdata->item_cb = FALSE ;
   cbdata->window = window ;
   cbdata->item = item ;
