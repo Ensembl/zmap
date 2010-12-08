@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Jul 29 08:24 2010 (edgrif)
+ * Last edited: Nov  4 15:53 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.273 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.274 2010-12-08 09:03:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -435,6 +435,8 @@ typedef enum
 /* Used to pass data to canvas item menu callbacks, whether columns or feature items. */
 typedef struct
 {
+  double x, y ;						    /* Position of menu click. */
+
   gboolean item_cb ;					    /* TRUE => item callback,
 							       FALSE => column callback. */
 
