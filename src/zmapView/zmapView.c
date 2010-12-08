@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 27 07:53 2010 (edgrif)
+ * Last edited: Nov  5 12:33 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.223 2010-11-08 12:03:15 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.224 2010-12-08 08:55:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1272,7 +1272,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapStartTimer("RevComp","");
 
       /* Call the feature code that will do the revcomp. */
-      zMapFeatureReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
+      zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
       zMapStopTimer("RevComp","Feature");
 
@@ -3172,11 +3172,9 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
 
       /* Got the sequences so launch blixem. */
       if ((status = zmapViewCallBlixem(zmap_view,
-				       get_sequence->orig_feature,
-				       get_sequence->sequences,
-				       get_sequence->flags,
+				       get_sequence->position, get_sequence->orig_feature,
+				       get_sequence->sequences, get_sequence->flags,
 				       &blixem_pid,
-
 				       &(zmap_view->kill_blixems))))
 	zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
 						     GINT_TO_POINTER(blixem_pid)) ;
@@ -3642,7 +3640,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     {
       zMapStartTimer("MergeRevComp","") ;
 
-      zMapFeatureReverseComplement(new_features, view->context_map.styles);
+      zMapFeatureContextReverseComplement(new_features, view->context_map.styles);
 
       zMapStopTimer("MergeRevComp","") ;
     }
@@ -3756,7 +3754,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	else if (align_cmd->blix_type.all_sets)
 	  align_type = BLIXEM_ALL_FEATURESET_MATCHES ;
 
-	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->feature, &local_sequences)))
+	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->position, align_cmd->feature, &local_sequences)))
 	  {
 	    if (!view->sequence_server)
 	      {
@@ -3769,7 +3767,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 		ZMapServerReqAny req_any ;
 
 		view_con = view->sequence_server ;
-            // assumed to be acedb
+		// assumed to be acedb
 
 		if (!view_con) // || !view_con->sequence_server)
 		  {
@@ -3777,13 +3775,13 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 				" so cannot fetch local sequences for blixem.") ;
 		  }
 		else if(view_con->step_list)
-              {
-                zMapWarning("%s", "Sequence server is currently active"
-                        " so cannot fetch local sequences for blixem.") ;
-              }
-            else
 		  {
-                zmapViewBusy(view, TRUE) ;
+		    zMapWarning("%s", "Sequence server is currently active"
+				" so cannot fetch local sequences for blixem.") ;
+		  }
+		else
+		  {
+		    zmapViewBusy(view, TRUE) ;
 
 		    /* Create the step list that will be used to fetch the sequences. */
 		    view_con->step_list = zmapViewStepListCreate(NULL, processGetSeqRequests, NULL) ;
@@ -3792,7 +3790,8 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
 		    /* Add the request to the step list. */
 		    req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
-						      align_cmd->feature, local_sequences, align_type) ;
+						      align_cmd->position, align_cmd->feature,
+						      local_sequences, align_type) ;
 		    request = zmapViewStepListAddServerReq(view_con->step_list,
 							   view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any) ;
 
@@ -3805,7 +3804,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	  {
 	    GPid blixem_pid ;
 
-	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, align_type,
+	    if ((status = zmapViewCallBlixem(view, align_cmd->position, align_cmd->feature, NULL, align_type,
 					     &blixem_pid, &(view->kill_blixems))))
 	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
 	  }

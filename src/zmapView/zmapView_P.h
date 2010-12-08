@@ -25,9 +25,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Apr  7 13:48 2010 (edgrif)
+ * Last edited: Nov  5 09:08 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.66 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.67 2010-12-08 08:55:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -328,8 +328,8 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
-gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out) ;
-gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
+gboolean zmapViewBlixemLocalSequences(ZMapView view, int position, ZMapFeature feature, GList **local_sequences_out) ;
+gboolean zmapViewCallBlixem(ZMapView view, int position, ZMapFeature feature, GList *local_sequences,
 			    ZMapViewBlixemAlignSet align_set, GPid *child_pid, gboolean *kill_on_exit) ;
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);

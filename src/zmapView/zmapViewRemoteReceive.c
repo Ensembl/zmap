@@ -30,9 +30,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Nov 11 15:04 2010 (edgrif)
+ * Last edited: Nov 12 09:23 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.57 2010-11-12 09:20:14 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.58 2010-12-08 08:55:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1755,7 +1755,7 @@ static void zoomWindowToFeature(ZMapView view, RequestData input_data, ResponseD
       input_data->zoomed  = FALSE;
 
       if (input_data->view->revcomped_features)
-	zMapFeatureReverseComplement(input_data->edit_context, input_data->view->context_map.styles) ;
+	zMapFeatureContextReverseComplement(input_data->edit_context, input_data->view->context_map.styles) ;
 
       zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), ZMAPFEATURE_STRUCT_FEATURE,
                                 zoomToFeatureCB, input_data) ;
