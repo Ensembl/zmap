@@ -169,17 +169,17 @@ zmap_message_out "Copying source code and $ZMAP_ACEDB_BINARIES ..."
 zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 
 
-
+#
 # copy acedb source code, we only do this once from the master host.
-
-# Copy from remote to local.
-if [ "x$ZMAP_MASTER_HOST" == "x" ]; then
+#
+if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     ZBGotoDir $ZMAP_ACEDB_RELEASE_CONTAINER
 
     release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
     release_file=`basename $release_file`
-    tar_file="$TARGET_RELEASE_DIR/$release_file.src.tar"
+
+    tar_file="$ZMAP_BUILD_CONTAINER/Dist/$release_file.src.tar"	# Put tar file in Dist directory.
 
     zmap_message_out "Running tar -cvf $tar_file $RELEASE_SRC/w*"
     tar -cvf $tar_file $RELEASE_SRC/w* || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
