@@ -17,7 +17,7 @@ acedb/, DAS, and pipe/ are the servers that run in these threads.
 </fieldset>
 
 <fieldset><legend>Servers and Threads</legend>
-<p>Traditionally with a single ACEDB server thsi will have been kept active with ZMap and ZMap would not run without it. With the advent of pipeServers being used to request data on demand it becomes necessary to have threads startup , run and then be cleared up,  a function that has been planned but not implemented.  There is code to kill off threads on shutdown, but the threads code does not include a clean exit!</p>
+<p>Traditionally with a single ACEDB server this will have been kept active with ZMap and ZMap would not run without it. With the advent of pipeServers being used to request data on demand it becomes necessary to have threads startup, run and then be cleared up,  a function that has been planned but not implemented.  There is code to kill off threads on shutdown, but the threads code does not include a clean exit!</p>
 <p>Tasks that need doing include:
 <ul>
 <li>documenting the threads/ slave/ server/ view interactions
@@ -29,6 +29,32 @@ acedb/, DAS, and pipe/ are the servers that run in these threads.
 
 </fieldset>
 
-<fieldset><legend>Requesting data by coordinate</legend>
-<p> If unspecified a data source is requested to return data from coordinates 1 to N ie the whole sequence.  We need to be able to request data for a marked region or other subsets of this.  Currently start and end coordinates are included in requests to pipeServers, but this is opnly triggered from the ZMap coordinates given at startup.</p>
+<fieldset><legend>Specifying coordinates</legend>
+<p>The server protocol as implemented and used with ACEDB specifies coordinates base from 1 for the region of chromosome stored in an ACEDB and there is currently no way to specify chromosome coordinates (or chromosome, or species) in ZMap.  This leaves some implementation difficulties for pipes in that each pipe is specifies as a URL with GET parameters giving this information (ie defined statically and externally).  To requests a subset of the the whole alignment it is necessary to request this in ZMap coordinates ie based from 1 and covering the implies sequence range.
+</p>
+<p>Data is normally requested using coordinates 1,0 and this specifies 'the whole sequence'. Subsets of the whole sequence may be requested by coordinats relaitve to the local sequence based from 1.
+</p>
+<h3>Coordinates in the server protocol</h3>
+<p>There are some legacy issues with this in that sequence coordinates are specified by some feature context data supplied to the server at some point in the request process after the server has bee created and opened.  As a pipe server is regared as a script that simply provides a GFF stream there is no interaction with the server protocol as defined for ACEDB after starting the script (and this is not desired as it would introduce needless complexity).  As a temporary implemntation ZMap base coordinates are appeneded to the pipe server arguments, and the coordinates are also stored in the features contect block as supplied to the thread.
+</p>
+<h3>Data retrieval process</h3>
+<p>Both ACEDB and pipe servers process GFF data and create populated featureset data structures held in a GFF parser data structure while reading the data stream.  Subsequently in another server protocol function these featuresets are added to a feature context block supplied by the ZMap application.
+</p>
+<p>This is problematical as:
+<ul>
+<li> The model is that the server provides a feature context as requested and then this feature contect is merged into a ZMap view's feature context and it's odd for ZMap to provide part of this.
+<li> The supplied feature context block is the mechanism for specifing coordinates <i>after</i> the request for data has been fulfilled
+<li> There is no way to access the 'request block' from the server protocol code or data
+<li> The protocol as defined does not include a mechanism to specify requested data coordinates; this is curently achieved by incidental features of the data.
+</ul>
+Note also that due to the layering of the server protocol code there is no way to pass data which is global to ZMap (eg request coordinates for several servers) to an individual server - if needed it must be duplicated.
+This is because the ZMap server data structure contains a pointer to a server specific structure and it is the latter that is passed to the thread specific code.
+</p>
+
+<h3>Chromosome coordinates</h3>
+<p>There is a need to display chromosome coordinates (to allow users to communicate with others) and currently these are extracted from the sequence name.
+</p>
+<p>It should be possible to specify species chromososme and seqeuence coordinates to pipe server scripts and still present ZMap style (based from 1) coordinates to the user (which is useful as chromsome coordinates are too big and Zmap coordinates give some sense of scale.  This would imply specifying pipe server script arguments for this data, and thse can quite easily be designed by referring to the exosting pipe server script URL currently in use, and this is a necessary step to provide true standalone operation for ZMap.  For a given session these could be specified in a stanza in the Zmap configuration, or given in the main window.
+</p>
+
 </fieldset>

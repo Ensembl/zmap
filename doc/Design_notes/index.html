@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.26 2010-11-19 15:55:41 mh17 Exp $ -->
+<!-- $Id: index.html,v 1.27 2010-12-09 10:18:58 mh17 Exp $ -->
 
 <h2>ZMap Design Documentation</h2>
 
@@ -41,8 +41,9 @@ Coordinate systems<br />
 </fieldset>
 </div>
 <div  class="left">
-<fieldset><legend>Requests</legend>
+<fieldset><legend>Requests and ideas</legend>
 <a href="Design_notes/notes/EST_mRNA.shtml">Masking EST's with mRNA's</a><br />
+<a href="Design_notes/notes/notepad.shtml">Feature Notepad</a><br />
 <a href="Design_notes/notes/otter_zmap.shtml#otterface">Otterlace interface</a>
 <a href="Design_notes/notes/otter_zmap.shtml#evidence">Show Evidence</a><br />
 <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a><br />
@@ -81,9 +82,17 @@ Coordinate systems<br />
 <li>Migration from ACEDB requires featureset to column and style mappings which can be obscure. it is possible to extract this information by hand from otterlace config but this is not possible for users.
 RC export/config could be used to dump this info to a file but due to scope issues it's really difficult to find that information where the functions get called from. This is tied up with view/window 'modularity' and there is a clear need to restructre some of the v iew and window data so that stuff that is needed by both modules is available. Currently some data (eg featureset_2_column) is copied but this is not ideal.
 
+<li> <b>zMapFeatureGetColumnFeatureSets()</b> is very ineffcient in that it scans all the featuresets for each column.  An attempt to do this reverse mapping and stire the list int he column sturcture failed due to some obscure list corruption happening and was abandoned. Note also that user and unique ID's are needed.
+With ext_curated we get and extra 1000 featuresets to scan for each column.
+
 <li> the columns dialog needs to feed off server config for loading columns
 
-<li> zmapWindowContainerFeatureSet is created by three different version of the same code: normal, navigator and separator and these should be merged and moved into zmapWindowContainerFeatureSet,c
+<li> request logic (for servers) is tangled up with aligns and blocks and the request coordinates are unknown. ACEDB appear to provide multiple aligns and block but pipe servers cannot - this logic need to be in the ZMap application and chromosome coordnates shoudl be supplied by ZMap - currently they are buried in pipe server config in a url.
+<li> It would be better is ZMap used chromosome coordinates internally and if these are deemed 'too big' to present to the user (eg on the ruler) then they can be made relative to each block for display.
+
+<li> zmapWindowContainerFeatureSet is created by three different versions of the same code: normal, navigator and separator and these should be merged and moved into zmapWindowContainerFeatureSet.c
+
+<li> Initial and deferred load of features goes via different paths resulting in repeated coding
 </ul>
 </p>
 
@@ -96,7 +105,7 @@ Here's a list of suspicious bits of code encountered while looking for something
 <li><b>In zmpWindowCanvasItem.c zMapWindowCanvasItemGetBounds()</b> looks like a cut &amp; paste of <b>zMapWindowCanvasItemGetFeature()</b>  directly above it including the explanatory comment. It's not called from anywhere.
 <li>zmapWindowFeatureShow.c appears to have some memory leaks - strings are strdup'd when creating a GUINotebook, but are they freed on Notebook destroy??
 <li> feature search with a wildcard featureset tries all possible rather than all existing featuresets: not very efficient.
-<li> window focus can carsh on zmap shutdown due to a bad free (must be twice)
+<li> window focus can crash on zmap shutdown due to a bad free (must be twice)
 </ul>
 </p>
 </fieldset>

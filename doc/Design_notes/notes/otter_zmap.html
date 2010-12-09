@@ -39,6 +39,7 @@ Close reading of the ticket suggests that this is not intended to be an interact
 </p>
 </fieldset>
 
+<a name="dotter"></a>
 <fieldset><legend>RT 69003 - Automating Dotter</legend>
 <p>
 For a series of EST's we wish to have an automated process to see if each of them is represented by any of a series of existing annotated transcripts.  As the number of combinations can be quite large it is not practical to do this by hand.  The original ticket mentions 'check to see of the dotter is an uninterrupted diagonal line', but the reality is that approximate matches are needed and that in most cases there will be that diagonal line but it will fade out and not be full length, or there will be breaks near the tail - it is necessary for the annotator to see the dotter output and interpret it.
@@ -178,7 +179,7 @@ The existing 'feature details' popup has a section for evidence features and thi
 </pre>
 and this is done in the tagvalue_end callback.  This function also splits the text into data items as specified earlier, producing a GList of column_data which in the original popup generating code is fed into a ZMapGUINotebook.
 </p>
-<p>Ths code can be re-used with the addition of a couple of flags and can be made to return a list of accession quarks defining the evidence features.  Note that this necessarily creates data structures to drive the feature details popup and this nmust be freed.
+<p>Ths code can be re-used with the addition of a couple of flags and can be made to return a list of accession quarks defining the evidence features.  Note that this necessarily creates data structures to drive the feature details popup and this must be freed.
 </p>
 </fieldset>
 
