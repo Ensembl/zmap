@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.38 2010-11-01 09:59:07 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.39 2010-12-09 13:59:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1222,9 +1222,12 @@ gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatu
 
   if(!(container_set->sorted))
   {
-      /* we expect it should ahve been but extra data could have arrived ?? */
+      /* we expect it should have been but extra data could have arrived ?? */
       /* this could mess up the focus list */
       zmapWindowContainerFeatureSetSortFeatures(container_set, direction);
+#if 1 // MH17_CHASING_FOCUS_CRASH
+      zMapLogWarning("Container set %s unsorted (re focus item)",g_quark_to_string(container_set->unique_id));
+#endif
       return(FALSE);
   }
   else
@@ -1247,8 +1250,13 @@ gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatu
                   my_list = item_list;
             prev_list = item_list;
       }
-      zMapAssert(my_list);
-
+      if(!(my_list))
+      {
+#if 1 // MH17_CHASING_FOCUS_CRASH
+      zMapLogWarning("Container set %s: cannot find focus item",g_quark_to_string(container_set->unique_id));
+#endif
+            return FALSE;
+      }
       /* now find the item before the one that should go after this one */
       for(;item_list;item_list = item_list->next)
       {

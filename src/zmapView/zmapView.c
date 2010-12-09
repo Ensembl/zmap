@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  5 12:33 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.224 2010-12-08 08:55:43 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.225 2010-12-09 13:59:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2965,7 +2965,7 @@ printf("\nadding stylelists:\n");
 	/* Merge the featureset to style hashses. */
 	zMap_g_hashlist_merge(zmap_view->context_map.column_2_styles, feature_sets->featureset_2_stylelist_out) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 printf("\nview styles lists after merge:\n");
       zMap_g_hashlist_print(zmap_view->context_map.column_2_styles) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -3034,8 +3034,10 @@ printf("\nview styles lists after merge:\n");
           g_hash_table_foreach(feature_sets->source_2_sourcedata_inout,
             mergeHashTableCB,zmap_view->context_map.source_2_sourcedata);
         }
+
 //print_src2src("got featuresets",zmap_view->context_map.source_2_sourcedata);
 //print_fset2col("got featuresets",zmap_view->context_map.featureset_2_column);
+
 
 // MH17: need to think about freeing _inout tables if in != out
 

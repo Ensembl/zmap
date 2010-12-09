@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.27 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.28 2010-12-09 13:59:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,9 +63,9 @@ typedef struct _ZMapWindowFocusStruct
 
   ZMapWindowContainerFeatureSet focus_column ;
   FooCanvasItem *hot_item;           // current hot focus item or NULL
-  int hot_item_orig_index ;          /* Record where hot_item was in its list. */
+  /* int hot_item_orig_index ;           Record where hot_item was in its list. */
   /* mh17: this is of limited use as it works only for single items; not used
-   * and not comapatble with raising focus item to the top and loweiring previous to the bottom
+   * and not comapatble with raising focus item to the top and lowering previous to the bottom
    * (see zMapWindowCanvasItemSetIntervalColours())
    */
 
@@ -278,7 +278,7 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item)
   setFocusColumn(focus, column) ;			    /* N.B. May sort features. */
 
   /* Record where the item is in the stack of column items _after_ setFocusColumn. */
-  focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(column), item) ;
+  /* focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(column), item) ;*/
 
   /* Now raise the item to the top of its group to make sure it is visible. */
   zmapWindowRaiseItem(item) ;
@@ -429,16 +429,24 @@ void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow wind
 
 /* MH17: this may be called from a destroy object callback in which case the canvas is not in a safe state
  * the assumption in this code if that the focus is removed from an object while it still exists
- * but alignments appear to call this whenthioer parent has dissappeared causing a crash
- * wghich is a bug in the canvas item code not here
- * The fix is to add another option 'destroy' which means 'don't highlight it because it's not there'
+ * but alignments appear to call this when thier parent has dissappeared causing a crash
+ * which is a bug in the canvas item code not here
+ * The fix is to add another option to say 'don't highlight it because it's not there'
  */
+
+/* NOTE this is only called from zmapWindowFeature.c/canvasItemDestroyCB()
+   and also some temporary test code in zmapWindow.c/keyboardEvent(GDK_E)
+*/
 
 void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 					FooCanvasItem *item, ZMapWindowFocusType type, gboolean unhighlight)
 {
   ZMapWindowFocusItem gonner,data;
   GList *remove,*l;
+
+#if 1 // MH17_CHASING_FOCUS_CRASH
+  zMapLogWarning("focus item removed","");
+#endif
 
   /* always try to remove, if item is not in list then list is unchanged. */
   if (focus->focus_item_set && item)
@@ -463,6 +471,9 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 		{
 		  zmapWindowFocusItemDestroy(gonner);
 		  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
+                  /* although we are removing the link that gets processed by the for loop
+                   * we will break out of it so this is safe
+                   */
 		}
 	      break;
 
@@ -581,6 +592,7 @@ ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item)
 
   if(!(list_item = g_new0(ZMapWindowFocusItemStruct, 1)))
     {
+
       zMapAssertNotReached();
     }
   else
@@ -600,7 +612,6 @@ void zmapWindowFocusItemDestroy(ZMapWindowFocusItem list_item)
 
   return ;
 }
-
 
 
 
@@ -634,6 +645,13 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
 {
+      /* NOTE these itens remain in the focus list as normal but are not visible
+       * arguably it would be better to handle the hidden items lists in this module
+       * but it's done in zmapWindow.c due to history
+       * for a review of this see docs/Design_notes/notes/notepad.shtml
+       * NB this is not critical as when features are hidden and others selected others the focus will be cleared anyway
+       */
+
       zmapWindowFocusForEachFocusItemType(focus,WINDOW_FOCUS_GROUP_FOCUS, hideFocusItemsCB, hidden_items) ;
 }
 
@@ -692,7 +710,7 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
       /* foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;*/
 
       /* this is a pain: to keep ordering stable we have to put the focus item back where it was
-       * so we have to comapre it wiht items not in the focus list
+       * so we have to comapre it with items not in the focus list
        */
       /* find out how many focus item there are in this item's column */
       for(n_focus = 0,l = window->focus->focus_item_set;l;l = l->next)
@@ -702,11 +720,20 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
             if(item->item_column == focus_item->item_column)      /* count includes self */
                   n_focus++;
         }
+
+
+      zMapAssert(n_focus);
+      zMapAssert(item->item_column);
       /* move the item back to where it should be */
       if(!zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, (ZMapWindowCanvasItem) item->item, n_focus,0))
       {
-            zmapWindowFocusReset(window->focus);
+            zMapLogWarning("Could not lower highlighted focus item","");
+            /* zmapWindowFocusReset(window->focus); */
             /* in case of failure zap the focus */
+            /* erm... this would delete the list we are processing
+             * and could be triggered by the container being marked unsorted by windowDrawContextCB()
+             * which could be called due to a vsplit for example
+             */
       }
     }
 
@@ -775,6 +802,9 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
       /* we need this for uh-highlight into stable ordering
        * for focus items it happens in setHotColumn
        * but if we select features eg via XRemote maybe it doesn't
+       */
+      /* NOTE if we have focus items in a column that gets more data and flagged as unsorted
+       * then our features head for the middle but are still focus items
        */
       zmapWindowContainerFeatureSetSortFeatures(list_item->item_column, 0) ;
       list_item->item_column->sorted = TRUE ;
