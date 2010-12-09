@@ -25,17 +25,17 @@ SRC_MACHINE=tviewsrv
 CVS_CHECKOUT_SCRIPT=$(dirname $0)/build_bootstrap.sh
 
 # GLOBAL_LOG= The place to hold the log file
-GLOBAL_LOG=~/BUILDS/TODAY.BUILD.LOG
+GLOBAL_LOG=~/BUILDS/OVERNIGHT.BUILD.LOG
 
 # ERROR_RECIPIENT= Someone to email
-ERROR_RECIPIENT=
+ERROR_RECIPIENT=zmapdev@sanger.ac.uk
 
 # ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=yes
 
 # OUTPUT dir. If changed, also edit RELEASE_LOCATION= later on...
 # Sadly no expansion of variable is possible there!
-OUTPUT=~/BUILDS/TODAY
+OUTPUT=~/BUILDS/OVERNIGHT
 
 # For development make sure these are set
 #CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
@@ -90,7 +90,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line             ; \
-./root_checkout.sh RELEASE_LOCATION=~/BUILDS/TODAY ZMAP_MASTER_RT_TO_CVS=yes ZMAP_MASTER_BUILD_DOCS=no ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no ZMAP_MASTER_BUILD_DIST=no ZMAP_MASTER_RT_RELEASE_NOTES=no ZMAP_MASTER_DOCS2WEB=no ZMAP_CLUSTER_CONFIG_FILE=~/cluster.config.sh || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION=~/BUILDS/TODAY ZMAP_MASTER_RT_TO_CVS=yes ZMAP_MASTER_BUILD_DOCS=no ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no ZMAP_MASTER_BUILD_DIST=no ZMAP_MASTER_RT_RELEASE_NOTES=yes ZMAP_MASTER_DOCS2WEB=no ZMAP_CLUSTER_CONFIG_FILE=~/cluster.config.sh || _rm_exit; \
 :                                               ; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
