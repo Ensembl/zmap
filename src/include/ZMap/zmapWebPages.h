@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 18 10:14 2008 (edgrif)
  * Created: Wed Oct 18 11:19:12 2006 (edgrif)
- * CVS info:   $Id: zmapWebPages.h,v 1.52 2010-03-04 15:15:28 mh17 Exp $
+ * CVS info:   $Id: zmapWebPages.h,v 1.53 2010-12-09 11:59:07 zmap Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WEBPAGES_H
@@ -48,7 +48,7 @@
 
 /* This line is parsed/updated by ZMap/scripts/zmapreleasenotes, do not alter its format without
  * updating that script as well. */
-#define ZMAPWEB_RELEASE_NOTES "release_notes.2010_02_05.shtml"
+#define ZMAPWEB_RELEASE_NOTES "release_notes.2010_12_09.shtml"
 
 #define ZMAPWEB_HELP_DOC  "user_interface.shtml"
 #define ZMAPWEB_HELP_ALIGNMENT_SECTION "alignment_display"
