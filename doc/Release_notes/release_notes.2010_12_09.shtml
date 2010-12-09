@@ -122,6 +122,24 @@
   <li> doc/Release_notes/LAST_RELEASE_DATE.txt: changed date to fix
 	  broken build
 
+
+  </li>
+  <li> doc/Release_notes/release_notes.2010_12_09.shtml: new zmap
+	  release notes for  9 December 2010
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 09/12/2010
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: editign error!
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: tweak build again
+
     <!-- --- End editing ZMap changes here... --- --!>
   </li>
 </ul>
