@@ -70,7 +70,7 @@ UPDATE_HTML=yes
 UPDATE_DATE=yes
 UPDATE_DEFINE=yes
 ZMAP_ONLY=no
-RT_QUEUES="zmap acedb"
+RT_QUEUES="zmap seqtools acedb"
 
 zmap_message_out "Start of script"
 
