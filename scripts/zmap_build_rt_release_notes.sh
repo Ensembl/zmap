@@ -171,7 +171,7 @@ if [ "x$ZMAP_ONLY" == "xyes" ]; then
 fi
 
 
-if [ "x$UPDATE_CVS" != "xyes" ]; then
+if [ "x$UPDATE_CVS" == "xyes" ]; then
 
     if [ "x$RT_LAST_RUN" == "x$RT_TODAY" ]; then
 	zmap_message_exit "Not enough time has passed since $RT_LAST_RUN. Today is $RT_TODAY"
