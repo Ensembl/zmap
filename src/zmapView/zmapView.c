@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  5 12:33 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.225 2010-12-09 13:59:54 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.226 2010-12-09 14:32:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2965,7 +2965,7 @@ printf("\nadding stylelists:\n");
 	/* Merge the featureset to style hashses. */
 	zMap_g_hashlist_merge(zmap_view->context_map.column_2_styles, feature_sets->featureset_2_stylelist_out) ;
 
-//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 printf("\nview styles lists after merge:\n");
       zMap_g_hashlist_print(zmap_view->context_map.column_2_styles) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
