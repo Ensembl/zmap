@@ -227,8 +227,6 @@ done
 # we will want to pass the directory in.
 #
 
-this bit is screwed up....
-
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
 
