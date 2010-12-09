@@ -231,12 +231,10 @@ seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/D
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
 
 
-
-
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     zmap_message_out "Running cp $seqtools_dist $DIST_DIR"
-    cp $seqtools_dist $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist"
+    cp $seqtools_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist"
 
 fi
 
