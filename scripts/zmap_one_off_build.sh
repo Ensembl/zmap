@@ -25,17 +25,17 @@ SRC_MACHINE=tviewsrv
 CVS_CHECKOUT_SCRIPT=$(dirname $0)/build_bootstrap.sh
 
 # GLOBAL_LOG= The place to hold the log file
-GLOBAL_LOG=~/BUILDS/OVERNIGHT.BUILD.LOG
+GLOBAL_LOG=~/BUILDS/TODAY.BUILD.LOG
 
 # ERROR_RECIPIENT= Someone to email
-ERROR_RECIPIENT=zmapdev@sanger.ac.uk
+ERROR_RECIPIENT=
 
 # ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=yes
 
 # OUTPUT dir. If changed, also edit RELEASE_LOCATION= later on...
 # Sadly no expansion of variable is possible there!
-OUTPUT=~/BUILDS/OVERNIGHT
+OUTPUT=~/BUILDS/TODAY
 
 # For development make sure these are set
 #CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
