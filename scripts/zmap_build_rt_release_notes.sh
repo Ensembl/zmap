@@ -170,14 +170,20 @@ if [ "x$ZMAP_ONLY" == "xyes" ]; then
     RT_QUEUES="zmap"
 fi
 
-if [ "x$RT_LAST_RUN" == "x$RT_TODAY" ]; then
-    zmap_message_exit "Not enough time has passed since $RT_LAST_RUN. Today is $RT_TODAY"
+
+if [ "x$UPDATE_CVS" != "xyes" ]; then
+
+    if [ "x$RT_LAST_RUN" == "x$RT_TODAY" ]; then
+	zmap_message_exit "Not enough time has passed since $RT_LAST_RUN. Today is $RT_TODAY"
+    fi
+
 fi
 
 set_zmap_version_release_update_vars $ZMAP_PATH_TO_VERSION_HEADER
 
 COMMENT_START="<!-- commented by $0"
 COMMENT_END=" end of commenting by $0 -->"
+
 if [ "x$UPDATE_CVS" != "xyes" ]; then
     DEV_BUILD=" [non-release build]"
     NO_RELEASE_A=$COMMENT_START
