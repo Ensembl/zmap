@@ -90,7 +90,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line             ; \
-./root_checkout.sh RELEASE_LOCATION=~/BUILDS/TODAY ZMAP_MASTER_RT_TO_CVS=no ZMAP_MASTER_BUILD_DOCS=no ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no ZMAP_MASTER_BUILD_DIST=no ZMAP_MASTER_RT_RELEASE_NOTES=no ZMAP_MASTER_DOCS2WEB=no ZMAP_CLUSTER_CONFIG_FILE=~/cluster.config.sh || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION=~/BUILDS/TODAY ZMAP_MASTER_RT_TO_CVS=yes ZMAP_MASTER_BUILD_DOCS=no ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no ZMAP_MASTER_BUILD_DIST=no ZMAP_MASTER_RT_RELEASE_NOTES=no ZMAP_MASTER_DOCS2WEB=no ZMAP_CLUSTER_CONFIG_FILE=~/cluster.config.sh || _rm_exit; \
 :                                               ; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
