@@ -82,7 +82,7 @@ fi
 
 cat <<EOF
 
-After a short pause ($SLEEP seconds), we'll begin.
+After a short pause ($SLEEP seconds), we will begin.
 
 First some questions:
 
@@ -120,9 +120,13 @@ chmod 755 root_checkout.sh || _rm_exit; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
-echo "Finished."
+# does this reset $?...probably....see comment below....
+#echo "Finished."
 
 # ================== ERROR HANDLING ================== 
+
+# whatever is supposed to happen here doesn't work even if the build
+# fails we get the succeeded message.
 
 if [ $? != 0 ]; then
     # There was an error, email someone about it!
