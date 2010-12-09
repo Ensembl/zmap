@@ -194,8 +194,8 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     tar_file="$DIST_DIR/$release_file.src.tar"	# Put tar file in Dist directory.
 
-    zmap_message_out "Running tar -cvf $tar_file $RELEASE_SRC/w*"
-    tar -cvf $tar_file $RELEASE_SRC/w* || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
+    zmap_message_out "Running tar -cf $tar_file $RELEASE_SRC/w*"
+    tar -cf $tar_file $RELEASE_SRC/w* || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
     gzip $tar_file || zmap_message_exit "Failed to gzip $tar_file of acedb source in $RELEASE_SRC"
 
 fi
