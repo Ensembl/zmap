@@ -34,6 +34,8 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
+zmap_message_out "Starting to copy acedb source/binaries and Seqtools dist file."
+
 
 if [ "x$ACEDB_MACHINE" == "x" ]; then
     zmap_message_err "The ENV variable ACEDB_MACHINE is not set so the acedb binaries cannot be found."
@@ -70,10 +72,14 @@ if [ ! -d $1 ]; then
     fi
 fi
 
+
+# First parameter is target directory.
+#
 TARGET_RELEASE_DIR=$1
 
-# Get second parameter, defaulting to DEVELOPMENT
 
+# Get second parameter, defaulting to DEVELOPMENT
+#
 ACEDB_BUILD_LEVEL=DEVELOPMENT
 
 if [ "x$2" == "x" ]; then
@@ -172,16 +178,12 @@ fi
 
 # ================ COPYING! ======================
 
-# copy all the files from acedb release
-zmap_message_out "Copying source code and $ZMAP_ACEDB_BINARIES ..."
-zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
-
-zmap_message_out "ZMAP_MASTER_HOST is: $ZMAP_MASTER_HOST"
-
-
 #
 # copy acedb source code, we only do this once from the master host.
 #
+
+zmap_message_out "Copying acedb source..."
+
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
@@ -199,9 +201,13 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 fi
 
 
-
+#
 # Do the standard acedb binaries.
 #
+
+zmap_message_out "Copying acedb binaries: $ZMAP_ACEDB_BINARIES..."
+zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
+
 for binary in $ZMAP_ACEDB_BINARIES;
   do
   # Copy from remote to local.
@@ -222,24 +228,25 @@ for binary in $ZMAP_ACEDB_BINARIES;
 done
 
 
-
-# I can't find where ~zmap is set up so it's hard-coded here for now...in the end
-# we will want to pass the directory in.
 #
+# The new blixem has a dist file so just copy this across.
+#
+
+zmap_message_out "Copying Seqtools dist file..."
 
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
 
-
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
-    zmap_message_out "Running cp $seqtools_dist $DIST_DIR"
-    cp $seqtools_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist"
+    zmap_message_out "Running cp $seqtools_dist_file $DIST_DIR"
+    cp $seqtools_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist_file"
 
 fi
 
 
-zmap_message_out "Copied acedb source and binaries: $ZMAP_ACEDB_BINARIES !"
+zmap_message_out "Finished copying acedb source/binaries and Seqtools dist file."
+
 
 # ============== END ==============
 
