@@ -34,7 +34,7 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
-zmap_message_out "Starting to copy acedb source/binaries and Seqtools dist file."
+zmap_message_out "Starting copying acedb source/binaries, Seqtools and AceConn dist files."
 
 
 if [ "x$ACEDB_MACHINE" == "x" ]; then
@@ -153,9 +153,6 @@ RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
 
 
-# Blixem is now in a new place.....
-#
-#BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
 
 DIST_DIR="$TAR_TARGET_PATH/Dist"
 
@@ -245,7 +242,25 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 fi
 
 
-zmap_message_out "Finished copying acedb source/binaries and Seqtools dist file."
+#
+# The AceConn library.
+#
+
+zmap_message_out "Copying AceConn dist file..."
+
+aceconn_dist_dir="$ZMAP_ACECONN_RELEASE_CONTAINER/$ZMAP_ACECONN_RELEASE_DIR"
+aceconn_dist_file=`ls $aceconn_dist_dir/libAceConn-*.tar.gz` # Should match only one file.
+
+if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+
+    zmap_message_out "Running cp $aceconn_dist_file $DIST_DIR"
+    cp $aceconn_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $aceconn_dist_file"
+
+fi
+
+
+
+zmap_message_out "Finished copying acedb source/binaries, Seqtools and AceConn dist files."
 
 
 # ============== END ==============
