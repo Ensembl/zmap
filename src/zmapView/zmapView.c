@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  5 12:33 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.226 2010-12-09 14:32:49 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.227 2010-12-10 14:35:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2626,7 +2626,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                   step = (ZMapViewConnectionStep) view_con->step_list->current->data;
                   if(step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
+                  {
                         thread_status = 1;
+
+                        /* patch out confusing error message about termination */
+                        /* really this ought to just report OK from the server code */
+
+                        if (err_msg)
+                              g_free(err_msg) ;
+                        err_msg = 0;
+                  }
             }
 
 	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)

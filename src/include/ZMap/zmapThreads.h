@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar 20 12:02 2009 (edgrif)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.11 2010-07-09 15:07:21 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.12 2010-12-10 14:35:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
@@ -68,6 +68,7 @@ typedef enum {ZMAPTHREAD_REQUEST_INIT, ZMAPTHREAD_REQUEST_WAIT, ZMAPTHREAD_REQUE
 
 
 /* Replies from a slave thread. */
+/* quit is as requested failed is quit unexpectedly */
 typedef enum {ZMAPTHREAD_REPLY_INIT, ZMAPTHREAD_REPLY_WAIT, ZMAPTHREAD_REPLY_GOTDATA, ZMAPTHREAD_REPLY_REQERROR,
 	      ZMAPTHREAD_REPLY_DIED, ZMAPTHREAD_REPLY_CANCELLED, ZMAPTHREAD_REPLY_QUIT } ZMapThreadReply ;
 

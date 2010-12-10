@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 10 16:57 2010 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.37 2010-07-12 09:05:31 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.38 2010-12-10 14:35:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,7 +111,7 @@ void *zmapNewThread(void *thread_args)
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
-  while (slave_response != ZMAPTHREAD_RETURNCODE_QUIT)
+  while (slave_response < ZMAPTHREAD_RETURNCODE_QUIT)
     {
       void *request ;
 
@@ -230,16 +230,17 @@ void *zmapNewThread(void *thread_args)
 		goto clean_up ;
 	      }
 
+
           case ZMAPTHREAD_RETURNCODE_QUIT:
             {
             char * error_msg;
             error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
             zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
+            }
             // we've already closed the connection and cleaned up data
             // but we still want to exit
             // don't call the cleanup fucntion as it's there as an exception handler
             call_clean = 0;
-            }
             break;
 	    }
 	}
