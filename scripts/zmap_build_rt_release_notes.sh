@@ -374,10 +374,10 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 EOF
 
-zmap_message_exit "Finished processing RT tickets"
+zmap_message_out "Finished processing RT tickets"
 
 
-zmap_message_exit "Processing CVS changes"
+zmap_message_out "Processing CVS changes"
 
 # Write header for CVS changes section.
 #
