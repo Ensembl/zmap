@@ -209,6 +209,9 @@ else
     NO_RELEASE_B=""
 fi
 
+
+
+
 #
 # Write the proper header for sanger pages
 # oops some stuff to construct here...the date !!
@@ -232,13 +235,25 @@ $NO_RELEASE_B
 (Last release was on $RT_PREV_DATE)
 </p>
 
+EOF
+
+
+
+
+
+# Write header for RT ticket section.
+#
+cat >> $RELEASE_NOTES_OUTPUT <<EOF
+
 <h5>Request Tracker Tickets Resolved</h5>
 <br />
 <!-- Now the resolved tickets... --!>
 
 EOF
 
-# Can no longer run on scratchy.. rt is now installed in /software/acedb/bin for i386
+
+
+# rt is now installed in /software/acedb/bin for i386
 RTSERVER=tviewsrv
 #RTSERVER=deskpro16113
 RTHTTPSERVER="https://rt.sanger.ac.uk"
@@ -347,7 +362,7 @@ zmap_message_out "Processing RT tickets"
 $BASE_DIR/process_rt_tickets_file.pl $RTRESULTS >> $RELEASE_NOTES_OUTPUT || \
     zmap_message_exit "Failed processing RT tickets"
 
-# End of RT tickets/start of cvs tickets section.
+# End of RT tickets
 #
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
@@ -355,6 +370,19 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <fieldset>
 <legend>ZMap Changes/Fixes [from cvs]</legend>
+
+EOF
+
+
+
+
+# Write header for CVS changes section.
+#
+cat >> $RELEASE_NOTES_OUTPUT <<EOF
+
+<h5>Code Changes From CVS/GIT Repositories</h5>
+<br />
+<!-- Now the cvs changes tickets... --!>
 
 EOF
 
@@ -485,13 +513,30 @@ fi
 # end of seqtools section
 
 
+# End of CVS/GIT changes
+#
+cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
+<!-- End of CVS/GIT changes section  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+EOF
+
+
+
+
+#
+# End of html doc.
+#
 
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!--#include virtual="/perl/footer" -->
 
 EOF
+
 
 
 # 
