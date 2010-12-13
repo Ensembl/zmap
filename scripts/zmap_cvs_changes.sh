@@ -110,7 +110,7 @@ fi
 changes_file="$changes_dir/$changes_filename"
 
 
-if [ cvs == "acedb" || cvs == "zmap" ] ; then
+if [[ cvs == "acedb" || cvs == "zmap" ]] ; then
     # Need to make sure the date stuff is passed correctly to cvs, format must be:
     #
     # cvs2cl.pl  -l "-d'2004-03-01<2004-04-01'"  [other args]
