@@ -1,13 +1,17 @@
 #!/bin/bash
 
 SCRIPT_NAME=$(basename $0)
+
 INITIAL_DIR=$(pwd)
- SCRIPT_DIR=$(dirname $0)
+
+SCRIPT_DIR=$(dirname $0)
+
 if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
    BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
 else
    BASE_DIR=$SCRIPT_DIR
 fi
+
 
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 set -o history
@@ -225,10 +229,10 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- The release version, etc... --!>
 
-<h5>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h5>
+<h1>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h1>
 
 $NO_RELEASE_A
-<h5>Release Date: $HUMAN_TODAY</h5>
+<h3>Release Date: $HUMAN_TODAY</h3>
 $NO_RELEASE_B
 
 <p>
@@ -245,7 +249,7 @@ EOF
 #
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
-<h5>Request Tracker Tickets Resolved</h5>
+<h2>Request Tracker Tickets Resolved</h2>
 <br />
 <!-- Now the resolved tickets... --!>
 
@@ -368,27 +372,35 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- End of tickets  --!>
 
-<fieldset>
-<legend>ZMap Changes/Fixes [from cvs]</legend>
-
 EOF
 
+zmap_message_exit "Finished processing RT tickets"
 
 
+zmap_message_exit "Processing CVS changes"
 
 # Write header for CVS changes section.
 #
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
-<h5>Code Changes From CVS/GIT Repositories</h5>
+<h2>Code Changes From CVS/GIT Repositories</h2>
 <br />
 <!-- Now the cvs changes tickets... --!>
 
 EOF
 
 
+# ZMap cvs changes
+#
+cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
-TMP_CHANGES_FILE=zmap.changefile
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+EOF
+
+
+TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/zmap.changefile"
 touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
 zmap_message_out "Getting zmap changes into '$TMP_CHANGES_FILE'"
 
@@ -432,7 +444,7 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 <legend>Aceb Changes/Fixes [from cvs]</legend>
 EOF
 
-    TMP_CHANGES_FILE=acedb.changefile
+    TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/acedb.changefile"
     touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
     zmap_message_out "Getting acedb changes into '$TMP_CHANGES_FILE'"
 
@@ -477,7 +489,7 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 <legend>Seqtools Changes/Fixes [from git]</legend>
 EOF
 
-    TMP_CHANGES_FILE=seqtools.changefile
+    TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/seqtools.changefile"
     touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
     zmap_message_out "Getting seqtools changes into '$TMP_CHANGES_FILE'"
 
