@@ -70,6 +70,10 @@ UPDATE_HTML=yes
 UPDATE_DATE=yes
 UPDATE_DEFINE=yes
 ZMAP_ONLY=no
+
+
+# Note that the zmap user must have permissions within RT to see and query these queues
+# or no data will come back.
 RT_QUEUES="zmap seqtools acedb"
 
 zmap_message_out "Start of script"
@@ -146,9 +150,13 @@ HUMAN_TODAY=$(date "+%e %B %Y")
 set_cvs_prev_date $RT_PREV_DATE
 
 CVS_TOMORROW=$(date -d"tomorrow" "+%Y-%m-%d")
-CVS_DATE="$CVS_PREV_DATE<$CVS_TOMORROW"
+CVS_START_DATE="$CVS_PREV_DATE"
+CVS_END_DATE="$CVS_TOMORROW"
 CVS_YEAR=$(date "+%Y")
 CVS_YEAR='\d{4}-\d{2}-\d{2}'
+
+GIT_START_DATE="$CVS_PREV_DATE"
+GIT_END_DATE=$(date -d"today" "+%Y-%m-%d")
 
 FILE_DATE=$(date "+%Y_%m_%d")
 
@@ -156,7 +164,12 @@ zmap_message_out '$RT_TODAY ='     $RT_TODAY
 zmap_message_out '$HUMAN_TODAY ='  $HUMAN_TODAY
 zmap_message_out '$RT_LAST_RUN ='  $RT_LAST_RUN
 zmap_message_out '$CVS_TOMORROW =' $CVS_TOMORROW
-zmap_message_out '$CVS_DATE ='     $CVS_DATE
+zmap_message_out '$CVS_START_DATE =' $CVS_START_DATE
+zmap_message_out '$CVS_END_DATE =' $CVS_END_DATE
+zmap_message_out '$GIT_START_DATE =' $GIT_START_DATE
+zmap_message_out '$GIT_END_DATE =' $GIT_END_DATE
+
+
 
 RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
 
@@ -171,6 +184,8 @@ if [ "x$ZMAP_ONLY" == "xyes" ]; then
 fi
 
 
+# If we are updating cvs with these reports then check that we are not doing this twice
+# in a day because otherwise we will lose cvs updates in our reports.....
 if [ "x$UPDATE_CVS" == "xyes" ]; then
 
     if [ "x$RT_LAST_RUN" == "x$RT_TODAY" ]; then
@@ -319,6 +334,8 @@ if [ -f $RTERROR ]; then
     fi
 fi
 
+
+
 zmap_message_out "Finished getting Request tracker tickets"
 
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
@@ -330,6 +347,8 @@ zmap_message_out "Processing RT tickets"
 $BASE_DIR/process_rt_tickets_file.pl $RTRESULTS >> $RELEASE_NOTES_OUTPUT || \
     zmap_message_exit "Failed processing RT tickets"
 
+# End of RT tickets/start of cvs tickets section.
+#
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- End of tickets  --!>
@@ -339,11 +358,13 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 EOF
 
+
+
 TMP_CHANGES_FILE=zmap.changefile
 touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
 zmap_message_out "Getting zmap changes into '$TMP_CHANGES_FILE'"
 
-$BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d $CVS_DATE -t . || \
+$BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d$CVS_START_DATE -e$CVS_END_DATE -t . || \
     zmap_message_exit "cvschanges for zmap didn't complete"
 
 zmap_message_out "Finished getting zmap changes"
@@ -371,6 +392,11 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <br />
 EOF
 
+
+
+# Do acedb section......
+#
+#
 if [ "x$ZMAP_ONLY" != "xyes" ]; then
 
     cat >> $RELEASE_NOTES_OUTPUT <<EOF
@@ -382,7 +408,7 @@ EOF
     touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
     zmap_message_out "Getting acedb changes into '$TMP_CHANGES_FILE'"
 
-    $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -a -d$CVS_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD || \
+    $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -a -d$CVS_START_DATE -e$CVS_END_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD || \
 	zmap_message_exit "cvschanges for acedb didn't complete"
 
     zmap_message_out "Finished getting acedb changes"
@@ -410,8 +436,56 @@ EOF
 <br />
 EOF
 
-# end of ZMAP_ONLY=yes section
 fi
+
+
+# Do seqtools section......
+#
+#
+if [ "x$ZMAP_ONLY" != "xyes" ]; then
+
+    cat >> $RELEASE_NOTES_OUTPUT <<EOF
+<fieldset>
+<legend>Seqtools Changes/Fixes [from git]</legend>
+EOF
+
+    TMP_CHANGES_FILE=seqtools.changefile
+    touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
+    zmap_message_out "Getting seqtools changes into '$TMP_CHANGES_FILE'"
+
+    $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -s -d$CVS_START_DATE -e$CVS_END_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD || \
+	zmap_message_exit "git log for seqtools didn't complete"
+
+    zmap_message_out "Finished getting seqtools changes"
+    
+    cat >> $RELEASE_NOTES_OUTPUT <<EOF
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+EOF
+
+    cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
+    
+    zmap_message_out "Processing git changes..."
+
+    # process using perl one-liner
+    perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+
+    rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
+
+    cat >> $RELEASE_NOTES_OUTPUT <<EOF
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+EOF
+
+fi
+# end of seqtools section
+
+
+
 
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
@@ -490,4 +564,5 @@ fi
 
 
 zmap_message_out "Reached end of script"
-exit 0;
+
+exit 0
