@@ -288,11 +288,19 @@ EOF
 fi
 
 
+
+
+
+
+
 #
 #
 # TEMP....DON'T GO FURTHER AS I WANT TO TEST DOCS GENERATION....
 #
 #
+
+exit 0
+
 
 
 
