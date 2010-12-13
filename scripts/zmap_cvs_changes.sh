@@ -69,7 +69,7 @@ changes_filename="$cvs.$changename"
 # Get the cmd line stuff...
 #
 
-while getopts ":ao:zd:t:" opt ; do
+while getopts ":aszo:d:e:t:" opt ; do
   case $opt in
     a  ) cvs="acedb"
          export CVSROOT=':ext:cvs.internal.sanger.ac.uk:/repos/cvs/acedb'
