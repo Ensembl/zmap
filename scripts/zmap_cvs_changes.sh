@@ -28,16 +28,21 @@ set -o history
 
 
 # set up usage strings.
-cmdstring='[-a -o -z  -ddate_range -ttarget_release_notes_directory]'
+cmdstring='[ [-a | -s | -z]  -ooutput_filename -dstart_date -eend_date -ttarget_release_notes_directory]'
 descstring=`cat <<DESC
    -a   do acedb cvs changes
 
-   -o   output filename (default is XXXX.ChangeLog
+   -s   do seqtool git changes
 
    -z   do zmap cvs changes
 
-   -d   date_range
-        should be in the format "2004-03-01<2004-04-01", note that you need
+   -o   output filename (default is XXXX.ChangeLog)
+
+   -d   start date
+        should be in the format "2004-03-01"
+
+   -e   end date
+        should be in the format "2004-04-01", note that you need
         to specify one day _past_ the final day you want.
 
    -t   target_release_notes_directory
@@ -48,8 +53,10 @@ DESC`
 changes_dir=`pwd`
 changename='ChangeLog'
 
-zmap_dirs='doc src'
+
 acedb_dirs='w*'
+seqtools_dirs='*'
+zmap_dirs='doc src'
 
 
 cvs=$ZBReleaseBase/ZMap
@@ -65,15 +72,23 @@ changes_filename="$cvs.$changename"
 while getopts ":ao:zd:t:" opt ; do
   case $opt in
     a  ) cvs="acedb"
+         export CVSROOT=':ext:cvs.internal.sanger.ac.uk:/repos/cvs/acedb'
          dirs=$acedb_dirs
          change_suffix=$cvs
          changes_filename="$cvs.$changename" ;;
-    o  ) filename_set=$OPTARG ;;
+    s  ) cvs="seqtools"
+         git_dir=~zmap/SeqTools/BUILD.DEVELOPMENT/seqtools
+         dirs=$seqtools_dirs
+         change_suffix=$cvs
+         changes_filename="$cvs.$changename" ;;
     z  ) cvs="zmap"
+         export CVSROOT=':ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap'
          dirs=$zmap_dirs
          change_suffix=$cvs
          changes_filename="$cvs.$changename" ;;
-    d  ) date=$OPTARG;;
+    o  ) filename_set=$OPTARG ;;
+    d  ) start_date=$OPTARG;;
+    e  ) end_date=$OPTARG;;
     t  ) cvs_dir=$OPTARG;;
     \? ) 
 zmap_message_exit "Bad Command Line flag
@@ -94,18 +109,29 @@ fi
 
 changes_file="$changes_dir/$changes_filename"
 
-# Need to make sure the date stuff is passed correctly to cvs, format must be:
-#
-# cvs2cl.pl  -l "-d'2004-03-01<2004-04-01'"  [other args]
-#
 
-date="-d'"$date"'"
+if [ cvs == "acedb" || cvs == "zmap" ] ; then
+    # Need to make sure the date stuff is passed correctly to cvs, format must be:
+    #
+    # cvs2cl.pl  -l "-d'2004-03-01<2004-04-01'"  [other args]
+    #
 
-zmap_cd $cvs_dir
+    date="-d'"$start_date"<"$end_date"'"
 
-zmap_message_out "Issuing: cvs2cl --chrono -f $changes_file -l $date $dirs"
+    zmap_cd $cvs_dir
 
-$BASE_DIR/cvs2cl --chrono -f $changes_file  -l $date $dirs
+    zmap_message_out "Issuing: cvs2cl --chrono -f $changes_file -l $date $dirs"
+
+    $BASE_DIR/cvs2cl --chrono -f $changes_file  -l $date $dirs
+else
+    # git procedure is different....
+
+    # date format for git is 2010-12-07
+
+    zmap_cd $git_dir
+    
+    git log --since=$start_date --until=$end_date > $cvs_dir/$changes_file
+fi
 
 
 exit 0
