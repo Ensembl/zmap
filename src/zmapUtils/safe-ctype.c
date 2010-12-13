@@ -48,7 +48,7 @@ so, delete this exception statement from your version.  */
      unsigned char.  */
 
 #include <config.h>
-#include <safe-ctype.h>
+#include <ZMap/safe-ctype.h>
 #include <stdio.h>  /* for EOF */
 
 /* Shorthand */
