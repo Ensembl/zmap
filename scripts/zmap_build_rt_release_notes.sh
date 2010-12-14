@@ -244,6 +244,11 @@ EOF
 
 
 
+#
+# Get all resolved RT tickets since last release.
+#
+#
+
 
 # Write header for RT ticket section.
 #
@@ -361,7 +366,7 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <!-- Finished getting the resolved request tracker tickets --!>
 EOF
 
-zmap_message_out "Processing RT tickets"
+zmap_message_out "Now processing RT tickets"
 # This goes directly into the html file
 $BASE_DIR/process_rt_tickets_file.pl $RTRESULTS >> $RELEASE_NOTES_OUTPUT || \
     zmap_message_exit "Failed processing RT tickets"
@@ -377,7 +382,15 @@ EOF
 zmap_message_out "Finished processing RT tickets"
 
 
+
+
+#
+# Get the cvs/git changes
+#
+#
+
 zmap_message_out "Processing CVS changes"
+
 
 # Write header for CVS changes section.
 #
@@ -390,6 +403,7 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 EOF
 
 
+
 # ZMap cvs changes
 #
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
@@ -399,15 +413,20 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 EOF
 
-
 TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/zmap.changefile"
+
 touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
+
 zmap_message_out "Getting zmap changes into '$TMP_CHANGES_FILE'"
 
+zmap_message_out "Executing: $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d$CVS_START_DATE -e$CVS_END_DATE -t ."
 $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d$CVS_START_DATE -e$CVS_END_DATE -t . || \
     zmap_message_exit "cvschanges for zmap didn't complete"
 
 zmap_message_out "Finished getting zmap changes"
+
+
+zmap_message_out "Starting processing zmap cvs changes..."
 
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <ul>
@@ -417,7 +436,7 @@ EOF
 
 cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
 
-zmap_message_out "Processing cvs changes..."
+
 
 # process using perl one-liner
 perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
@@ -432,6 +451,7 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <br />
 EOF
 
+zmap_message_out "Finished processing zmap cvs changes..."
 
 
 # Do acedb section......
@@ -445,9 +465,12 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 EOF
 
     TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/acedb.changefile"
+
     touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
+
     zmap_message_out "Getting acedb changes into '$TMP_CHANGES_FILE'"
 
+    zmap_message_out "Executing: $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -a -d$CVS_START_DATE -e$CVS_END_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD"
     $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -a -d$CVS_START_DATE -e$CVS_END_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD || \
 	zmap_message_exit "cvschanges for acedb didn't complete"
 
@@ -461,7 +484,7 @@ EOF
 
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
-    zmap_message_out "Processing cvs changes..."
+    zmap_message_out "Starting processing cvs changes..."
 
     # process using perl one-liner
     perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
@@ -476,6 +499,7 @@ EOF
 <br />
 EOF
 
+    zmap_message_out "Finished processing cvs changes..."
 fi
 
 
@@ -490,9 +514,12 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 EOF
 
     TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/seqtools.changefile"
+
     touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
+
     zmap_message_out "Getting seqtools changes into '$TMP_CHANGES_FILE'"
 
+    zmap_message_out "Executing: $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -s -d$CVS_START_DATE -e$CVS_END_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD"
     $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -s -d$CVS_START_DATE -e$CVS_END_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD || \
 	zmap_message_exit "git log for seqtools didn't complete"
 
@@ -506,7 +533,7 @@ EOF
 
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
-    zmap_message_out "Processing git changes..."
+    zmap_message_out "Starting processing git changes..."
 
     # process using perl one-liner
     perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
@@ -520,6 +547,8 @@ EOF
 </fieldset>
 <br />
 EOF
+
+zmap_message_out "Finished processing git changes..."
 
 fi
 # end of seqtools section

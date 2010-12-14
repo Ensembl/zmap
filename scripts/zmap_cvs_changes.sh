@@ -14,8 +14,11 @@
 
 
 SCRIPT_NAME=$(basename $0)
+SCRIPT_DIR=$(dirname $0)
+
 INITIAL_DIR=$(pwd)
- SCRIPT_DIR=$(dirname $0)
+
+
 if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
    BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
 else
@@ -129,7 +132,8 @@ else
     # date format for git is 2010-12-07
 
     zmap_cd $git_dir
-    
+
+    zmap_message_out "Issuing: git log --since=$start_date --until=$end_date > $cvs_dir/$changes_file"
     git log --since=$start_date --until=$end_date > $cvs_dir/$changes_file
 fi
 
