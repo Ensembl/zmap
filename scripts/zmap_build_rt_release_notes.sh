@@ -229,15 +229,15 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- The release version, etc... --!>
 
-<h1>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h1>
+<h1>RT Tickets Resolved/Code Changes For ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h1>
+
+<p>Last Release Date: $RT_PREV_DATE</p>
 
 $NO_RELEASE_A
-<h3>Release Date: $HUMAN_TODAY</h3>
+<h3>Current Release Date: $HUMAN_TODAY</h3>
 $NO_RELEASE_B
 
-<p>
-(Last release was on $RT_PREV_DATE)
-</p>
+<p>This report covers $GIT_START_DATE to $GIT_END_DATE</p>
 
 EOF
 
@@ -409,7 +409,7 @@ EOF
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <fieldset>
-<legend>ZMap Changes/Fixes [from cvs]</legend>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
 
 EOF
 
@@ -461,7 +461,7 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 
     cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <fieldset>
-<legend>Aceb Changes/Fixes [from cvs]</legend>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
 EOF
 
     TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/acedb.changefile"
@@ -510,7 +510,7 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 
     cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <fieldset>
-<legend>Seqtools Changes/Fixes [from git]</legend>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
 EOF
 
     TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/seqtools.changefile"
@@ -536,7 +536,7 @@ EOF
     zmap_message_out "Starting processing seqtools changes..."
 
     # process using perl one-liner
-    perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+    perl -lne "s!.*\*!  </li>\n  <li>!; print if (!/Date/ && !/commit/ && !/Author/)" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 
     rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
 
@@ -559,9 +559,6 @@ fi
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- End of CVS/GIT changes section  --!>
-
-<fieldset>
-<legend>ZMap Changes/Fixes [from cvs]</legend>
 
 EOF
 
