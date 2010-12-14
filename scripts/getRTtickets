@@ -2,8 +2,8 @@
 #
 # Cribbed from systems who use it to look at tickets.
 #
-# NOTE that currently this script will only run on scratchy as rt is only installed
-# there.
+# The rt application is currently installed in /software/acedb/bin so 
+# needs to be added to the path.
 #
 #
 #
