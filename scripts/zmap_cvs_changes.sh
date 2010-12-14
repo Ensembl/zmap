@@ -113,7 +113,10 @@ fi
 changes_file="$changes_dir/$changes_filename"
 
 
-if [[ cvs == "acedb" || cvs == "zmap" ]] ; then
+zmap_message_out "Getting changes for $cvs..."
+
+
+if [[ $cvs == "acedb" || $cvs == "zmap" ]] ; then
     # Need to make sure the date stuff is passed correctly to cvs, format must be:
     #
     # cvs2cl.pl  -l "-d'2004-03-01<2004-04-01'"  [other args]
@@ -137,5 +140,6 @@ else
     git log --since=$start_date --until=$end_date > $cvs_dir/$changes_file
 fi
 
+zmap_message_out "Finished changes for $cvs..."
 
 exit 0
