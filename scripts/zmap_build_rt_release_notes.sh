@@ -535,10 +535,7 @@ EOF
     
     zmap_message_out "Starting processing seqtools changes..."
 
-    # process using perl one-liner
-    #perl -lne "s!.*\*!  </li>\n  <li>!; print if !/Date/ && !/commit/ && !/Author/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
-
-    # Jeremy's suggestion:
+    # process using perl one-liner (Jeremy Henty's suggestion):
 perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 
 
