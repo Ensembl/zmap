@@ -1,10 +1,21 @@
-<!-- CVS info:   $Id: foocanvas_build.html,v 1.7 2010-04-12 09:20:07 edgrif Exp $ -->
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.8 2010-12-14 16:31:59 edgrif Exp $ -->
 
 
 
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+
 .example{ border-color: #000000 }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
 </style>
 
 
@@ -27,10 +38,13 @@ needs adding to probably the pkgconfig and maybe other files...</p>
   <li><a href=#overview>Overview</a>
   <li><a href=#philosophy>Philosophy</a>
   <li><a href=#philosophy>Scripts and Directories</a>
-  <li><a href=#bootstrapping>Bootstrapping</a>
+  <li><a href=#patching_and_building>Patching and Building the ZMap foocanvas</a>
+  <li><a href=#bootstrapping>Bootstrapping: when you have no foocanvas</a>
   <li><a href=#updating_gnome>Updating the Version of Gnome FooCanvas</a>
   <li><a href=#updating_zmap>Updating the Version of ZMap FooCanvas</a>
+  <li><a href=#no_updating>Making a Version of ZMap FooCanvas when there are no updates</a>
   <li><a href=#building>Building/Distributing ZMmap FooCanvas</a>
+  <li><a href=#own_foocanvas>Building ZMap using your own copy of Foocanvas</a>
   <li><a href=#appendix>Appendix</a>
 </ul>
 
@@ -185,13 +199,21 @@ foocanvas ---|----- merged_foocanvas    Created/populated by <b>makedirs</b>, in
 
 
 
-<a name="bootstrapping">
-<h3>Bootstrapping</h3>
+<a name="patching_and_building">
+<h3>Patching and Building the ZMap foocanvas</h3>
 </a>
 
-<p>This needed to be done initially but shouldn't need to be done again unless
-  either zmap or foocanvas change radically in which case a remerge by hand
-  may be appropriate.</p>
+  
+
+<a name="bootstrapping">
+<fieldset>
+<legend>Boot-strapping: when you have no foocanvas</legend>
+</a>
+
+<p>This needed to be done initially when we did not have a copy of the
+foocanvas and needed to make our first changes. This shouldn't need to be done
+again unless either zmap or foocanvas change radically in which case a remerge
+by hand may be appropriate.</p>
 
 <p>
 <ol>
@@ -219,10 +241,14 @@ foocanvas ---|----- merged_foocanvas    Created/populated by <b>makedirs</b>, in
 </ol>
 </p>
 
+</fieldset>
+<br />
+
 
 
 <a name="updating_gnome">
-<h3>Updating the Version of Gnome FooCanvas</h3>
+<fieldset>
+<legend>Updating the Version of Gnome FooCanvas</legend>
 </a>
 
 <p>This is the standard procedure for updating ZMapFooCanvas with a new version
@@ -263,9 +289,14 @@ of gnome foocanvas.</p>
 </ol>
 </p>
 
+</fieldset>
+<br />
+
+
 
 <a name="updating_zmap">
-<h3>Updating the Version of ZMap FooCanvas</h3>
+<fieldset>
+<legend>Updating the Version of ZMap FooCanvas</legend>
 </a>
 
 <p>This is the standard procedure for updating ZMapFooCanvas with new zmap code.</p>
@@ -317,6 +348,42 @@ of gnome foocanvas.</p>
 
 </ol>
 </p>
+
+</fieldset>
+<br />
+
+
+
+
+<a name="no_updating">
+<fieldset>
+<legend>Making a Version of ZMap FooCanvas when there are no updates</legend>
+</a>
+
+<p>This is the standard procedure for creating a build version of ZMapFooCanvas when there
+have been no updates to the Gnome foocanvas or to the ZMap canvas code.</p>
+
+<p>
+<ol>
+  <li>cd ZMap/foocanvas
+
+  <li>Make changes to the files in zmap_source.
+
+  <li>run <b>makedirs</b> to download the latest foocanvas from gnome into
+      gnome_foocanvas directory and make a copy in merged_foocanvas and copy
+      zmap_source files into zmap_foocanvas.
+
+  <li>run <b>makepatch</b> to create the full set of patched foocanvas files
+      for building the zmap foocanvas.
+
+</ol>
+</p>
+
+</fieldset>
+<br />
+
+
+
 
 
 <a name="building">
@@ -470,6 +537,38 @@ For <b>/software/acedb/</b> this is:</p>
 /software/acedb/src/libzmapfoocanvas-0.1
 
 </pre>
+
+
+
+
+<a name="own_foocanvas">
+<h3>Building ZMap using your own copy of foocanvas</h3>
+</a>
+
+<p><b>TEMP FIX, BETTER WAY TO BE DOCUMENTED ASAP.</b></p>
+
+<p>To use your own copy of zmap foocanvas you need to make sure that
+it comes first in the include and library lists, currently you need to
+do this by hand by editing the ZMap/src/runconfig script:</p>
+
+<pre>
+Change lines like this:
+
+    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
+
+
+to lines like this:
+
+    # We need to find freetype2.pc in here. No idea why.
+    PKG_CONFIG_PATH="$HOME/CHECKOUT/ZMap_foocanvas_build/local_dist/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+    LDFLAGS_args="-L$HOME/CHECKOUT/ZMap_foocanvas_build/local_dist/lib -lzmapfoocanvas $LDFLAGS $LDFLAGS_args"
+</pre>
+
+<p>This is pretty ghastly and I will fix this !!</p>
+
 
 
 <a name="future">
