@@ -484,7 +484,7 @@ EOF
 
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
-    zmap_message_out "Starting processing cvs changes..."
+    zmap_message_out "Starting processing acedb changes..."
 
     # process using perl one-liner
     perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
@@ -499,7 +499,7 @@ EOF
 <br />
 EOF
 
-    zmap_message_out "Finished processing cvs changes..."
+    zmap_message_out "Finished processing acedb changes..."
 fi
 
 
@@ -533,7 +533,7 @@ EOF
 
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
-    zmap_message_out "Starting processing git changes..."
+    zmap_message_out "Starting processing seqtools changes..."
 
     # process using perl one-liner
     perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
@@ -548,7 +548,7 @@ EOF
 <br />
 EOF
 
-zmap_message_out "Finished processing git changes..."
+zmap_message_out "Finished processing seqtools changes..."
 
 fi
 # end of seqtools section
@@ -594,12 +594,10 @@ if [ "x$UPDATE_HTML" == "xyes" ]; then
     mv $RELEASE_NOTES_OUTPUT $ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/ || \
 	zmap_message_exit "Failed to move the html file to the release_notes dir"
     
-    RELEASE_NOTES_OUTPUT=$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/$RELEASE_NOTES_OUTPUT
-
-    zmap_message_out cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT 
-
     if [ "x$UPDATE_CVS" == "xyes" ]; then
 	zmap_message_out "updating html in cvs..."
+
+	RELEASE_NOTES_OUTPUT=$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/$RELEASE_NOTES_OUTPUT
 
 	# ask cvs if it knows of the file
 	# cvs_unknown will have data if nothing is known.
@@ -610,6 +608,7 @@ if [ "x$UPDATE_HTML" == "xyes" ]; then
 		zmap_message_exit "cvs add failed"
 	fi
 
+	zmap_message_out cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT 
 	cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT || \
 	    zmap_message_exit "cvs commit failed for $RELEASE_NOTES_OUTPUT"
     fi
@@ -622,9 +621,12 @@ if [ "x$UPDATE_DEFINE" == "xyes" ]; then
     perl -i -lne 's!((.*)(ZMAPWEB_RELEASE_NOTES\s)(.*))!$2$3"'$RELEASE_FILE'"!; print ;' $ZMAP_PATH_TO_WEBPAGE_HEADER || \
 	zmap_message_exit "failed to edit webpages header"
 
-    zmap_message_out cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER
+
     if [ "x$UPDATE_CVS" == "xyes" ]; then
 	zmap_message_out "updating webpages header in cvs..."
+
+
+	zmap_message_out cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER
 	cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER || \
 	    zmap_message_exit "cvs commit failed for $ZMAP_PATH_TO_WEBPAGE_HEADER"
     fi
@@ -638,10 +640,11 @@ if [ "x$UPDATE_DATE" == "xyes" ]; then
     echo $RT_TODAY > $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
 	zmap_message_exit "Failed to write to last release file"
 
-    zmap_message_out cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP
 
     if [ "x$UPDATE_CVS" == "xyes" ]; then
 	zmap_message_out "updating the last run date in cvs..."
+
+	zmap_message_out cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP
     	cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
 	    zmap_message_exit "cvs commit failed for $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
     fi

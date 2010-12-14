@@ -136,8 +136,8 @@ else
 
     zmap_cd $git_dir
 
-    zmap_message_out "Issuing: git log --since=$start_date --until=$end_date > $cvs_dir/$changes_file"
-    git log --since=$start_date --until=$end_date > $cvs_dir/$changes_file
+    zmap_message_out "Issuing: git log --since=$start_date --until=$end_date > $changes_file"
+    git log --since=$start_date --until=$end_date > $changes_file
 fi
 
 zmap_message_out "Finished changes for $cvs..."
