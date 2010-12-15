@@ -58,7 +58,7 @@ Note that due to file permissioning issues developers need to be in a 'zmapteam'
 <h3>Simple differences between CVS and git</h3>
 <p>Note should be take of the following:
 <ul>
-<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.5 2010-12-06 12:07:51 gb10 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
+<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.6 2010-12-15 15:20:04 gb10 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
 <li> CVS has been set up to checkout files as read only and to require files to be explicitly opened for editing whereas git records file permissions and therefore emulating this kind of behaviour is not ideal. Instead git is aware of changes to files and only those changes that have been explictly added will be committed to the repository (you have to add chenges in content rather than files) - so git provides a similar kind of control but allows instant editing.  Use git-show to see what files have been changed or added.
 </ul>
 </p>
@@ -138,6 +138,27 @@ deskpro1[fred]16: git remote zmap ~zmap/git
 <p>Git can <a href= http://progit.org/book/ch7-1.html#colors_in_git>color its output</a>.  To turn on default terminal coloring use:
 <pre>
 git config --global color.ui true
+</pre>
+</p>
+<p>You can create your own formatted/colored output from the log command using the --pretty option.  The following gives an example.  You can use --pretty with 'git log' directly, but here I've set up alias commands, 'lg' and 'tg', to show a nicely formatted log and tag list respectively (works best on a black background!).  You could also set the 'format.pretty' config item to change the default format for the log command.
+<pre>
+git config --global alias.lg "log --graph --pretty='format:%Cgreen%ai%Creset - %Cred%h%Creset %C(yellow)%d%Creset %s %C(cyan)<%an>%Creset %Cgreen(%ar)%Creset'"
+git config --global alias.tg "log --tags --simplify-by-decoration --pretty='format:%Cgreen%ai%Creset %C(yellow)%d%Creset'"
+</pre>
+<pre>
+mac18480i[gb10]16: git tg
+<font color="green">2010-12-07 18:25:55 +0000</font>  <font color="yellow">(BUILD-2010_12_07)</font>
+<font color="green">2010-12-06 16:07:47 +0000</font>  <font color="yellow">(BUILD-2010_12_06)</font>
+<font color="green">2010-11-30 16:20:39 +0000</font>  <font color="yellow">(new-build-system, dev)</font>
+<font color="green">2010-10-19 09:52:54 +0000</font>  <font color="yellow">(RELEASE-4_9_54)</font>
+<font color="green">2010-10-18 14:06:53 +0000</font>  <font color="yellow">(test-release-pre-new-dotter)</font>
+<font color="green">2010-06-11 09:38:31 +0000</font>  <font color="yellow">(RELEASE-4_9_53)</font>
+<font color="green">2010-05-06 09:36:42 +0000</font>  <font color="yellow">(RELEASE-4_9_52)</font>
+<font color="green">2010-05-05 15:17:24 +0000</font>  <font color="yellow">(RELEASE-4_9_51)</font>
+<font color="green">2010-04-21 17:23:03 +0000</font>  <font color="yellow">(RELEASE-4_9_50)</font>
+<font color="green">2010-03-26 15:17:20 +0000</font>  <font color="yellow">(RELEASE-4_9_49)</font>
+<font color="green">2010-02-26 16:37:06 +0000</font>  <font color="yellow">(RELEASE-4_9_48)</font>
+<font color="green">2009-11-03 18:28:23 +0000</font> 
 </pre>
 </p>
 <p>You can specify a tool to view diffs with by using 'git difftool' rather than 'git diff'.  To set the default tool used by difftool to, say, diffuse, use:
