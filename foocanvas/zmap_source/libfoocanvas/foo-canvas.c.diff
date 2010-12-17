@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas.c	2010-03-16 15:14:38.394000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas.c	2010-03-16 15:14:36.930000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas.c	2010-12-17 17:07:36.818548000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas.c	2010-12-17 17:12:10.126987000 +0000
 @@ -75,7 +75,7 @@
  
  static void foo_canvas_request_update (FooCanvas      *canvas);
@@ -523,7 +523,7 @@
  }
  
  
-@@ -3997,3 +4174,11 @@
+@@ -3997,3 +4174,13 @@
                                         FOO_TYPE_CANVAS_ITEM,
                                         foo_canvas_item_accessible_factory_get_type ());
  }
@@ -531,7 +531,9 @@
 +void 
 +foo_canvas_zmap(void)
 +{
-+  /* do nothing */
++	/* dummy function, used simply to test that this is the zmap
++	 * version of foocanvas. */
++	return ;
 +}
 +
-+/*  Last edited: Mar 16 14:19 2010 (edgrif) */
++/*  Last edited: Dec 17 13:36 2010 (edgrif) */

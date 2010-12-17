@@ -1,5 +1,5 @@
 --- ./tmp_merged_foocanvas/libfoocanvas/foozmap-canvas-text.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-text.h	2010-03-16 15:14:36.975000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-text.h	2010-12-17 17:12:10.149982000 +0000
 @@ -0,0 +1,132 @@
 +/*  File: foozmap-canvas-text.h
 + *  Author: Roy Storey (rds@sanger.ac.uk)
@@ -30,7 +30,7 @@
 + *
 + * Exported functions: See XXXXXXXXXXXXX.h
 + * HISTORY:
-+ * Last edited: Mar 17 09:20 2008 (rds)
++ * Last edited: Dec 15 13:52 2010 (edgrif)
 + * Created: Thu Jan 24 08:36:51 2008 (rds)
 + * CVS info:   $Id: foozmap-canvas-text.h 1.2 2010-03-12 18:21:36 edgrif Exp $
 + *-------------------------------------------------------------------
@@ -40,7 +40,7 @@
 +#define FOO_CANVAS_ZMAP_TEXT_H
 +
 +
-+#include <libfoocanvas/foo-canvas.h>
++#include <libzmapfoocanvas/foo-canvas.h>
 +
 +
 +G_BEGIN_DECLS

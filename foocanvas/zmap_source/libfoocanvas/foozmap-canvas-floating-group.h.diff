@@ -1,5 +1,5 @@
 --- ./tmp_merged_foocanvas/libfoocanvas/foozmap-canvas-floating-group.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-floating-group.h	2010-03-16 15:14:36.945000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-floating-group.h	2010-12-17 17:12:10.134982000 +0000
 @@ -0,0 +1,89 @@
 +/*  File: foozmap-canvas-floating-group.h
 + *  Author: Roy Storey (rds@sanger.ac.uk)
@@ -30,7 +30,7 @@
 + *
 + * Exported functions: See XXXXXXXXXXXXX.h
 + * HISTORY:
-+ * Last edited: Jan 25 09:59 2008 (rds)
++ * Last edited: Dec 15 13:52 2010 (edgrif)
 + * Created: Thu Jan 24 08:39:05 2008 (rds)
 + * CVS info:   $Id: foozmap-canvas-floating-group.h 1.2 2010-03-12 18:21:36 edgrif Exp $
 + *-------------------------------------------------------------------
@@ -39,7 +39,7 @@
 +#ifndef FOO_CANVAS_FLOAT_GROUP_H
 +#define FOO_CANVAS_FLOAT_GROUP_H
 +
-+#include <libfoocanvas/foo-canvas.h>
++#include <libzmapfoocanvas/foo-canvas.h>
 +
 +G_BEGIN_DECLS
 +

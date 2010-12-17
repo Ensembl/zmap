@@ -1,4 +1,4 @@
-/*  Last edited: Mar  4 15:19 2010 (edgrif) */
+/*  Last edited: Dec 16 11:21 2010 (edgrif) */
 /* GNOME libraries - GdkPixbuf item for the GNOME canvas
  *
  * Copyright (C) 1999 The Free Software Foundation
@@ -23,8 +23,8 @@
 
 #include <config.h>
 #include <math.h>
-#include <libfoocanvas/foo-canvas.h>
-#include <libfoocanvas/foo-canvas-util.h>
+#include <libzmapfoocanvas/foo-canvas.h>
+#include <libzmapfoocanvas/foo-canvas-util.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include "foo-canvas-pixbuf.h"
 

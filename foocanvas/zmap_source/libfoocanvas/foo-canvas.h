@@ -45,16 +45,6 @@
 G_BEGIN_DECLS
 
 
-/*
- *    replace dynaic casts with static ones
- *    we need to be careful that the result of dynamic casts is not acted on
- *    if so re-code with a dynic type check first
- *    first attempt just assumes we are ok!
- *    no source files changed, so in case of aSNAFU just undo this define
- */
-#define GOBJ_CAST 1     // if true use static casts for foo objects
-
-
 /* "Small" value used by canvas stuff */
 #define FOO_CANVAS_EPSILON 1e-10
 
@@ -116,13 +106,7 @@ enum {
 typedef enum {FOO_CANVAS_GROUP_BOTTOM = -1, FOO_CANVAS_GROUP_TOP  = -2} FooCanvasGroupPosition ;
 
 #define FOO_TYPE_CANVAS_ITEM            (foo_canvas_item_get_type ())
-
-#if GOBJ_CAST
-#define FOO_CANVAS_ITEM(obj)            (FooCanvasItem) (obj)
-#else
 #define FOO_CANVAS_ITEM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), FOO_TYPE_CANVAS_ITEM, FooCanvasItem))
-#endif
-
 #define FOO_CANVAS_ITEM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), FOO_TYPE_CANVAS_ITEM, FooCanvasItemClass))
 #define FOO_IS_CANVAS_ITEM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), FOO_TYPE_CANVAS_ITEM))
 #define FOO_IS_CANVAS_ITEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), FOO_TYPE_CANVAS_ITEM))
@@ -180,7 +164,7 @@ struct _FooCanvasItemClass {
 			  FooCanvasItem **actual_item);
 
 	void (* translate) (FooCanvasItem *item, double dx, double dy);
-
+	
 	/* Fetch the item's bounding box (need not be exactly tight).  This
 	 * should be in item-relative coordinates.
 	 */
@@ -288,7 +272,7 @@ void foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y);
  * item will be put on top of all the items in the new group.  The item's
  * coordinates relative to its new parent to *not* change -- this means that the
  * item could potentially move on the screen.
- *
+ * 
  * The item and the group must be in the same canvas.  An item cannot be
  * reparented to a group that is the item itself or that is an inferior of the
  * item.
@@ -337,12 +321,7 @@ void foo_canvas_item_request_redraw (FooCanvasItem *item);
 
 
 #define FOO_TYPE_CANVAS_GROUP            (foo_canvas_group_get_type ())
-
-#if GOBJ_CAST
-#define FOO_CANVAS_GROUP(obj)            (FooCanvasGroup) (obj)
-#else
 #define FOO_CANVAS_GROUP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), FOO_TYPE_CANVAS_GROUP, FooCanvasGroup))
-#endif
 #define FOO_CANVAS_GROUP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), FOO_TYPE_CANVAS_GROUP, FooCanvasGroupClass))
 #define FOO_IS_CANVAS_GROUP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), FOO_TYPE_CANVAS_GROUP))
 #define FOO_IS_CANVAS_GROUP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), FOO_TYPE_CANVAS_GROUP))
@@ -353,7 +332,7 @@ struct _FooCanvasGroup {
 	FooCanvasItem item;
 
 	double xpos, ypos;
-
+	
 	/* Children of the group */
 	GList *item_list;
 	GList *item_list_end;
@@ -372,13 +351,7 @@ GType foo_canvas_group_get_type (void) G_GNUC_CONST;
 
 
 #define FOO_TYPE_CANVAS            (foo_canvas_get_type ())
-
-#if GOBJ_CAST
-#define FOO_CANVAS(obj)            (FooCanvas) (obj)
-#else
 #define FOO_CANVAS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), FOO_TYPE_CANVAS, FooCanvas))
-#endif
-
 #define FOO_CANVAS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), FOO_TYPE_CANVAS, FooCanvasClass))
 #define FOO_IS_CANVAS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), FOO_TYPE_CANVAS))
 #define FOO_IS_CANVAS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), FOO_TYPE_CANVAS))
@@ -566,7 +539,7 @@ int foo_canvas_get_color (FooCanvas *canvas, const char *spec, GdkColor *color);
 /* Allocates a color from the RGB value passed into this function. */
 gulong foo_canvas_get_color_pixel (FooCanvas *canvas,
 				   guint        rgba);
-
+     
 
 /* Sets the stipple origin of the specified gc so that it will be aligned with
  * all the stipples used in the specified canvas.  This is intended for use only

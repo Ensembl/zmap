@@ -1,4 +1,4 @@
-/*  Last edited: Oct  3 14:00 2006 (edgrif) */
+/*  Last edited: Dec 15 13:52 2010 (edgrif) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
@@ -37,7 +37,7 @@
 #define FOOZMAP_CANVAS_LINE_GLYPH_H
 
 
-#include <libfoocanvas/foo-canvas.h>
+#include <libzmapfoocanvas/foo-canvas.h>
 
 
 G_BEGIN_DECLS
@@ -74,13 +74,7 @@ G_BEGIN_DECLS
 
 
 #define FOO_TYPE_CANVAS_LINE_GLYPH            (foo_canvas_line_glyph_get_type ())
-
-#if GOBJ_CAST
-#define FOO_CANVAS_LINE_GLYPH(obj)            (FooCanvasLineGlyph) (obj)
-#else
 #define FOO_CANVAS_LINE_GLYPH(obj)            (GTK_CHECK_CAST ((obj), FOO_TYPE_CANVAS_LINE_GLYPH, FooCanvasLineGlyph))
-#endif
-
 #define FOO_CANVAS_LINE_GLYPH_CLASS(klass)    (GTK_CHECK_CLASS_CAST ((klass), FOO_TYPE_CANVAS_LINE_GLYPH, FooCanvasLineGlyphClass))
 #define FOO_IS_CANVAS_LINE_GLYPH(obj)         (GTK_CHECK_TYPE ((obj), FOO_TYPE_CANVAS_LINE_GLYPH))
 #define FOO_IS_CANVAS_LINE_GLYPH_CLASS(klass) (GTK_CHECK_CLASS_TYPE ((klass), FOO_TYPE_CANVAS_LINE_GLYPH))

@@ -1,5 +1,5 @@
 --- ./tmp_merged_foocanvas/libfoocanvas/foozmap-canvas-floating-group.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-floating-group.c	2010-03-16 15:14:36.941000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-floating-group.c	2010-12-17 17:12:10.131994000 +0000
 @@ -0,0 +1,449 @@
 +/*  File: foozmap-canvas-floating-group.c
 + *  Author: Roy Storey (rds@sanger.ac.uk)

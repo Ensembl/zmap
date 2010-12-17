@@ -4178,7 +4178,9 @@ foo_canvas_item_class_init (FooCanvasItemClass *klass)
 void 
 foo_canvas_zmap(void)
 {
-  /* do nothing */
+	/* dummy function, used simply to test that this is the zmap
+	 * version of foocanvas. */
+	return ;
 }
 
-/*  Last edited: Mar 16 14:19 2010 (edgrif) */
+/*  Last edited: Dec 17 13:36 2010 (edgrif) */

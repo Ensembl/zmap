@@ -1,26 +1,15 @@
-AM_CPPFLAGS = \
-	-I$(top_srcdir) 				\
-	-I$(top_builddir)				\
-	$(WARN_CFLAGS) 					\
-	$(LIBFOOCANVAS_CFLAGS)				\
-        -DFOOCANVASLIBDIR=\""$(libdir)"\" 		\
-        -DFOOCANVASDATADIR=\""$(datadir)"\" 		\
-        -DFOOCANVASPIXMAPDIR=\""$(datadir)/pixmaps"\"	\
-        -DFOOCANVASBINDIR=\""$(bindir)"\" 		\
-        -DFOOCANVASLOCALSTATEDIR=\""$(localstatedir)"\"	\
-        -DFOOCANVASLOCALEDIR=\""$(gnomelocaledir)"\" 	\
-	-DG_LOG_DOMAIN=\"Foocanvas\"			\
-	-DVERSION=\"$(VERSION)\"
 
-lib_LTLIBRARIES = libzmapfoocanvas.la
+include $(top_srcdir)/Makefile.common
 
-libzmapfoocanvas_la_LIBADD = \
-	$(RENDER_LIBS)				\
-	$(LIBFOOCANVAS_LIBS)
+SUBDIRS = .
 
-libfoocanvasincludedir = $(includedir)/libzmapfoocanvas-1.0/libfoocanvas
 
-libfoocanvasinclude_HEADERS =			\
+noinst_LTLIBRARIES = libzmapfoocanvas.la
+
+
+libzmapfoocanvasincludedir = $(INCLUDE_COMMON)/libzmapfoocanvas
+
+libzmapfoocanvasinclude_HEADERS =			\
 	foo-canvas-line.h			\
 	foozmap-canvas-line-glyph.h		\
 	foo-canvas-pixbuf.h			\
@@ -36,7 +25,6 @@ libfoocanvasinclude_HEADERS =			\
 
 libzmapfoocanvas_la_SOURCES =			\
 	$(libfoocanvasinclude_HEADERS)		\
-	foo-canvas-marshal.list			\
 	foo-canvas-i18n.h			\
 	foo-canvas-line.c			\
 	foozmap-canvas-line-glyph.c		\
@@ -51,26 +39,31 @@ libzmapfoocanvas_la_SOURCES =			\
 	foo-canvas.c				\
 	libfoocanvastypes.c
 
+
+libzmapfoocanvas_la_CFLAGS = $(INCLUDE_COMMON)
+
+libzmapfoocanvas_la_marshal = foo-canvas-marshal.list
+
+libzmapfoocanvas_la_DEPENDENCIES = $(nodist_libzmapfoocanvas_la_SOURCES)
+
+libzmapfoocanvas_la_extra_sources = foo-canvas-marshal.h \
+foo-canvas-marshal.c \
+$(NULL)
+
+nodist_libzmapfoocanvas_la_SOURCES = $(libzmapfoocanvas_la_extra_sources)
+
+BUILT_SOURCES = $(libzmapfoocanvas_la_extra_sources)
+CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = $(libzmapfoocanvas_la_marshal)   
+
+
 GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=foo_canvas_marshal
-SUFFIXES = .list
 
 .list.h:
 	$(GENMARSHAL_COMMAND) --header $< >$@
 
 .list.c:
-	(echo '/* This file has been automatically generated.  Do not edit. */' && \
-	echo '#include "$*.h"' && \
-	$(GENMARSHAL_COMMAND) --body $< ) >$@
+	$(GENMARSHAL_COMMAND) --body $< >$@
 
-# A hint is needed to build the header first:
-BUILT_SOURCES = foo-canvas-marshal.h
 
-# Another hint, see bugs #172211 and #172212:
-non-intermediate: foo-canvas-marshal.c
 
-CLEANFILES = foo-canvas-marshal.h foo-canvas-marshal.c
-
-EXTRA_DIST = libzmapfoocanvas.pc.in
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libzmapfoocanvas.pc

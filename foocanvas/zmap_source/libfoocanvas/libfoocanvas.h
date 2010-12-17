@@ -1,4 +1,4 @@
-/*  Last edited: Jan 24 09:17 2008 (rds) */
+/*  Last edited: Dec 15 13:48 2010 (edgrif) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
@@ -27,18 +27,18 @@
 #ifndef LIBFOOCANVAS_H
 #define LIBFOOCANVAS_H
 
-#include <libfoocanvas/foo-canvas.h>
-#include <libfoocanvas/foo-canvas-line.h>
-#include <libfoocanvas/foo-canvas-text.h>
-#include <libfoocanvas/foo-canvas-polygon.h>
-#include <libfoocanvas/foo-canvas-pixbuf.h>
-#include <libfoocanvas/foo-canvas-widget.h>
-#include <libfoocanvas/foo-canvas-rect-ellipse.h>
-#include <libfoocanvas/foo-canvas-util.h>
+#include <libzmapfoocanvas/foo-canvas.h>
+#include <libzmapfoocanvas/foo-canvas-line.h>
+#include <libzmapfoocanvas/foo-canvas-text.h>
+#include <libzmapfoocanvas/foo-canvas-polygon.h>
+#include <libzmapfoocanvas/foo-canvas-pixbuf.h>
+#include <libzmapfoocanvas/foo-canvas-widget.h>
+#include <libzmapfoocanvas/foo-canvas-rect-ellipse.h>
+#include <libzmapfoocanvas/foo-canvas-util.h>
 
-#include <libfoocanvas/foozmap-canvas-line-glyph.h>
-#include <libfoocanvas/foozmap-canvas-text.h>
-#include <libfoocanvas/foozmap-canvas-floating-group.h>
+#include <libzmapfoocanvas/foozmap-canvas-line-glyph.h>
+#include <libzmapfoocanvas/foozmap-canvas-text.h>
+#include <libzmapfoocanvas/foozmap-canvas-floating-group.h>
 
 G_BEGIN_DECLS
 

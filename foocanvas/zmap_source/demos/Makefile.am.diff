@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/demos/Makefile.am	2010-03-16 15:14:38.462000000 +0000
-+++ ./tmp_zmap_foocanvas/demos/Makefile.am	2010-03-16 15:14:36.994000000 +0000
+--- ./tmp_merged_foocanvas/demos/Makefile.am	2010-12-17 17:07:37.067549000 +0000
++++ ./tmp_zmap_foocanvas/demos/Makefile.am	2010-12-17 17:07:30.088121000 +0000
 @@ -14,7 +14,7 @@
  	-DVERSION=\"$(VERSION)\"
  
