@@ -1,0 +1,16 @@
+--- ./tmp_merged_foocanvas/libfoocanvas/libfoocanvastypes.c	2010-12-17 17:07:36.738550000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/libfoocanvastypes.c	2010-12-17 17:12:10.153984000 +0000
+@@ -1,3 +1,4 @@
++/*  Last edited: Dec 16 11:29 2010 (edgrif) */
+ /*
+  * Copyright (C) 1999, 2000 Red Hat, Inc.
+  * All rights reserved.
+@@ -26,7 +27,7 @@
+ #include <config.h>
+ #include <glib-object.h>
+ 
+-#include <libfoocanvas/libfoocanvas.h>
++#include <libzmapfoocanvas/libfoocanvas.h>
+ 
+ GType
+ foo_canvas_points_get_type (void)

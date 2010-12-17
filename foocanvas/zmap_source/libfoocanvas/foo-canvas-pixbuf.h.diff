@@ -1,0 +1,16 @@
+--- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas-pixbuf.h	2010-12-17 17:07:36.741545000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas-pixbuf.h	2010-12-17 17:12:10.101984000 +0000
+@@ -1,3 +1,4 @@
++/*  Last edited: Dec 15 13:51 2010 (edgrif) */
+ /* GNOME libraries - GdkPixbuf item for the GNOME canvas
+  *
+  * Copyright (C) 1999 The Free Software Foundation
+@@ -24,7 +25,7 @@
+ #define FOO_CANVAS_PIXBUF_H
+ 
+ 
+-#include <libfoocanvas/foo-canvas.h>
++#include <libzmapfoocanvas/foo-canvas.h>
+ 
+ G_BEGIN_DECLS
+ 
