@@ -1,0 +1,25 @@
+==========================================================================
+ZMap Foocanvas
+
+
+We hereby acknowledge that the zmap foocanvas version was derived directly
+from the gnome foo canvas. Please see the copyright notice and other
+information in the ZMap/foocanvas directory which gives full credit to and
+details the authors of the original foocanvas.
+
+
+This directory contains the source code for the zmap version of the foocanvas.
+The code is copied directly from ZMap/foocanvas/tmp_merged_foocanvas which is
+a merged version of the latest foocanvas and our modifications to the
+foocanvas contained in ZMap/foocanvas/zmap_source. This code is not in CVS,
+the cvs copy is in ZMap/foocanvas/zmap_source, please follow the instructions
+in ZMap/foocanvas/foocanvas_build.html which show how to make these source
+files.
+
+
+These files are now part of the build process for ZMap and are compiled into
+an archive of .o files which is used to directly build the zmap executable. We
+no longer require the configure and other steps to build a separately
+installed foocanvas library.
+
+
