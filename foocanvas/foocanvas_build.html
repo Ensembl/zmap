@@ -1,4 +1,4 @@
-<!-- CVS info:   $Id: foocanvas_build.html,v 1.9 2010-12-20 09:17:56 edgrif Exp $ -->
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.10 2010-12-20 10:48:00 edgrif Exp $ -->
 
 
 
@@ -23,13 +23,12 @@ legend{ font-weight: bold }
 
 <p>
 <pre>
-[<i><font color="red">The merge/build system was completely rewritten/restructured in March 2010 so previous code/canvas versions have been archived.</font></i>]
+[<i><font color="red">The merge/build system was completely rewritten/restructured in March 2010
+so previous code/canvas versions have been archived. The zmap version of the
+foocanvas is now part of the core zmap build system and we no longer make a
+separate zmapfoocanvas library.</font></i>]
 </pre>
 </p>
-
-
-<p>add stuff about version numbers as well...perhaps should add version number to code but also
-needs adding to probably the pkgconfig and maybe other files...</p>
 
 
 <h3>Contents</h3>
@@ -39,12 +38,12 @@ needs adding to probably the pkgconfig and maybe other files...</p>
   <li><a href=#philosophy>Philosophy</a>
   <li><a href=#philosophy>Scripts and Directories</a>
   <li><a href=#first_build_bootstrapping>Boot-strapping - Building the ZMap foocanvas for the first time</a>
-  <li><a href=#patching_and_building>Patching and Building the ZMap foocanvas</a>
+  <li><a href=#patching_and_building>Patching the ZMap foocanvas</a>
   <li><a href=#updating_gnome>Updating the Version of Gnome FooCanvas</a>
   <li><a href=#updating_zmap>Updating the Version of ZMap FooCanvas</a>
   <li><a href=#no_updating>Making a Version of ZMap FooCanvas when there are no updates</a>
   <li><a href=#building>Building/Distributing ZMmap FooCanvas</a>
-  <li><a href=#own_foocanvas>Building ZMap using your own copy of Foocanvas</a>
+  <li><a href=#future>Future Work</a>
   <li><a href=#appendix>Appendix</a>
 </ul>
 
@@ -107,17 +106,10 @@ changes.</p>
 
 <h4>Current Limitations</h4>
 
-<p><b>Naming:</b> The code currently builds into various library files with the
-prefix <b>libzmapfoocanvas</b> to avoid clashes with the gnome foocanvas which
-uses <b>libfoocanvas</b>. Really all the include files should be installed into
-an include directory called <b>XXXX/include/libzmapfoocanvas</b> but this has
-not been done yet BUT SHOULD BE !!</p>
-
 <p>The build scripts are not bullet proof, it is possible to mess things up so
 that diff files become empty. On the whole though the committing to CVS is
 solid so that these files can be reconstructed.</p>
 
-<p><b>makedist</b> needs more thought and should not be used currently.
 
 
 <a name="scripts_and_directories">
@@ -177,6 +169,9 @@ foocanvas ---|----- tmp_merged_foocanvas    Created/populated by <b>makedirs</b>
 <p>The scripts are:</p>
 
 <dl>
+  <dt><b>makebuildcode</b>
+  <dd>copies the merged files from tmp_merged_foocanvas into ZMap/src/libzmapfoocanvas
+      from where they get compiled into zmap directly.
   <dt><b>makecvs</b>
   <dd>compares source files in tmp_zmap_foocanvas with those in tmp_merged_foocanvas, any that
       have changed are put back into cvs.
@@ -185,9 +180,6 @@ foocanvas ---|----- tmp_merged_foocanvas    Created/populated by <b>makedirs</b>
   <dt><b>makediff</b>
   <dd>does a diff on tmp_gnome_foocanvas and tmp_zmap_foocanvas to create diff files
   for use by makepatch
-  <dt><b>makedist</b>
-  <dd>copies, tars and gzips the merged zmap foocanvas for distribution, uses a date stamp
-      on the tar file and extracted directory to avoid version clashes.
   <dt><b>makedirs</b>
   <dd>retrieves the latest version of the gnome foocanvas into the directory
       tmp_gnome_foocanvas and makes a copy of that into tmp_merged_foocanvas in preparation
@@ -200,7 +192,7 @@ foocanvas ---|----- tmp_merged_foocanvas    Created/populated by <b>makedirs</b>
 
 
 <a name="first_build_bootstrapping">
-<h3>Boot-strapping - Building the ZMap foocanvas for the first time</h3>
+<h3>Boot-strapping - Patching the ZMap foocanvas for the first time</h3>
 </a>
 
 <p>This needed to be done initially when we did not have a copy of the
@@ -219,25 +211,23 @@ by hand may be appropriate.</p>
 <ol>
   <li>cd ZMap/foocanvas
 
-  <li>run <b>makedirs</b> to download the latest foocanvas from gnome into
+  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
       tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas.
 
   <li>in a separate directory called tmp_zmap_foocanvas make a copy of any foocanvas
       files that need to be changed and add any new ones.
 
-  <li>run the script <b>makediff</b> to do a diff for changes required to the code in
+  <li>run the script <b>./makediff</b> to do a diff for changes required to the code in
       tmp_merged_foocanvas to merge in the tmp_zmap_foocanvas files. This step leaves a
       series of *.diff files in tmp_zmap_foocanvas.
 
-  <li>run <b>makepatch</b> to check that the diff files will patch the zmap foocanvas
+  <li>run <b>./makepatch</b> to check that the diff files will patch the zmap foocanvas
       files into the new ones correctly, this should produce a full set of merged
       files in tmp_merged_foocanvas from which a distribution can be made.
 
-  <li>run <b>makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
+  <li>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
       and check them back into cvs.
 
-  <li>run <b>makedist</b> to create a gzip'd tar file that can be installed on different
-      systems to build the zmap foocanvas.
 </ol>
 </p>
 
@@ -248,7 +238,7 @@ by hand may be appropriate.</p>
 
 
 <a name="patching_and_building">
-<h3>Patching and Building the ZMap foocanvas</h3>
+<h3>Patching the ZMap foocanvas</h3>
 </a>
 
 
@@ -266,10 +256,10 @@ of gnome foocanvas.</p>
 <ol>
   <li>cd ZMap/foocanvas
 
-  <li>run <b>makedirs</b> to download the latest foocanvas from gnome into
+  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
       tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas.
 
-  <li>run <b>makepatch</b> to check that the diff files will patch the zmap foocanvas
+  <li>run <b>./makepatch</b> to check that the diff files will patch the zmap foocanvas
       files into the new ones correctly, this should produce a full set of merged
       files in tmp_merged_foocanvas from which a distribution can be made.
 
@@ -283,16 +273,16 @@ of gnome foocanvas.</p>
 
 	<li>cvs edit the diff file for that source file
 
-	<li>run <b>makediff &lt;filename&gt;</b> to make a new diff file (will overwrite the cvs diff file).
+	<li>run <b>./makediff &lt;filename&gt;</b> to make a new diff file (will overwrite the cvs diff file).
 
-	<li>run <b>makepatch &lt;filename&gt;</b> to check the new diff file works.
+	<li>run <b>./makepatch &lt;filename&gt;</b> to check the new diff file works.
       </ul>
       </p>
     
-  <li>run <b>makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
+  <li>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
       and check them back into cvs.
 
-  <li>run <b>makedist</b> to create a gzip'd tar file that can be installed on different
+  <li>run <b>./makedist</b> to create a gzip'd tar file that can be installed on different
       systems to build the zmap foocanvas.
 </ol>
 </p>
@@ -315,7 +305,7 @@ of gnome foocanvas.</p>
 
   <li>Make changes to the files in zmap_source.
 
-  <li>run <b>makedirs</b> to download the latest foocanvas from gnome into
+  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
       tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas and copy
       zmap_source files into tmp_zmap_foocanvas.
 
@@ -325,13 +315,13 @@ of gnome foocanvas.</p>
       <ul>
 	<li>cvs edit the diff file for that source file
 
-	<li>run <b>makediff &lt;filename&gt;</b> to make a new diff file (will overwrite the cvs diff file).
+	<li>run <b>./makediff &lt;filename&gt;</b> to make a new diff file (will overwrite the cvs diff file).
 
-	<li>run <b>makepatch &lt;filename&gt;</b> to check the new diff file works.
+	<li>run <b>./makepatch &lt;filename&gt;</b> to check the new diff file works.
       </ul>
       </p>
     
-  <li>now run <b>makepatch</b> to check that <b>all</b> the diff files will patch the zmap foocanvas
+  <li>now run <b>./makepatch</b> to check that <b>all</b> the diff files will patch the zmap foocanvas
       files into the new ones correctly, this should produce a full set of merged
       files in tmp_merged_foocanvas from which a distribution can be made.
 
@@ -345,13 +335,13 @@ of gnome foocanvas.</p>
 
 	<li>cvs edit the diff file for that source file
 
-	<li>run <b>makediff &lt;filename&gt;</b> to make a new diff file (will overwrite the cvs diff file).
+	<li>run <b>./makediff &lt;filename&gt;</b> to make a new diff file (will overwrite the cvs diff file).
 
-	<li>run <b>makepatch &lt;filename&gt;</b> to check the new diff file works.
+	<li>run <b>./makepatch &lt;filename&gt;</b> to check the new diff file works.
       </ul>
       </p>
 
-  <li>run <b>makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
+  <li>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
       and check them back into cvs.
 
 </ol>
@@ -377,11 +367,11 @@ have been no updates to the Gnome foocanvas or to the ZMap canvas code.</p>
 
   <li>Make changes to the files in zmap_source.
 
-  <li>run <b>makedirs</b> to download the latest foocanvas from gnome into
+  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
       tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas and copy
       zmap_source files into tmp_zmap_foocanvas.
 
-  <li>run <b>makepatch</b> to create the full set of patched foocanvas files
+  <li>run <b>./makepatch</b> to create the full set of patched foocanvas files
       for building the zmap foocanvas.
 
 </ol>
@@ -395,8 +385,137 @@ have been no updates to the Gnome foocanvas or to the ZMap canvas code.</p>
 
 
 <a name="building">
-<h3>Building/Distributing ZMmap FooCanvas</h3>
+<h3>Building the ZMap FooCanvas</h3>
 </a>
+
+
+<p>The preceding sections will have left you with a patched foocanvas in tmp_merged_foocanvas
+from which you can extract files to do the zmap build, this section describes how to do this.</p>
+
+<p>The directory tmp_merged_foocanvas mirrors the original foocanvas directory
+as this makes it easier to see what's going on during the merge/patch. Now that
+the zmap foocanvas code has become part of the core zmap build only files from
+the libfoocanvas directory are needed. <b>No</b> files from the base tmp_merged_foocanvas
+are used or referred to in any way.</p>
+
+<p>Simply run the makebuildcode script to copy the required files from tmp_merged_foocanvas
+to the ZMap/src/libzmapfoocanvas directory in preparation for the zmap build:</p>
+
+
+<fieldset>
+<legend>Copying files into the ZMap source directory for the build</legend>
+
+<p>
+<ol>
+  <li>cd ZMap/foocanvas
+
+  <li>run <b>./makebuildcode</b> to copy the patched Makefile.am and source code files
+      from tmp_merged_foocanvas to ZMap/src/libzmapfoocanvas.
+</ol>
+</p>
+
+</fieldset>
+<br />
+
+<p>The zmap build can now be done as normal:</p>
+
+
+<fieldset>
+<legend>The ZMap build</legend>
+
+<p>
+<ol>
+  <li>cd ZMap/src
+
+  <li>run <b>./bootstrap</b> to run the autoconf/automake tools.
+
+  <li>cd ./build/&lt;machine_type&gt; (e.g. linux)
+
+  <li>run <b>../../runconfig</b> to set up and run the ./configure script for
+      this machines architecture
+
+  <li>make
+</ol>
+</p>
+
+</fieldset>
+<br />
+
+<p>If the make succeeds then you will have a zmap executable that has the latest
+zmap foocanvas compiled into it.</p>
+
+
+
+<a name="future">
+<h3>Future Work</h3>
+</a>
+
+<p>Future tidying up/work:</p>
+
+
+<p>Need to rationalise and automate the version number we use for our
+version of foocanvas. I think we need to use the version from the package
+config file but this needs some investigation.</p>
+
+
+
+<a name="appendix">
+<h2>Appendix</h2>
+</a>
+
+
+<h3>Foocanvas Versions</h3>
+
+<p>Originally FooCanvas was held in the GNome CVS repository but this became
+defunct and it was moved to the GNome SVN repository, now this has become
+defunct and it's in the GNome GIT repository.</p>
+
+<p>So currently there are two versions available:</p>
+
+<ul>
+  <li>http://svn.gnome.org/svn/foocanvas/
+  <li>http://git.gnome.org./browse/foocanvas/
+</ul>
+
+<p>They are currently identical but it looks like the git version is the
+active one.</p>
+
+
+
+
+<h3>Patch versioning</h3>
+
+<p>We use a combination of <b>diff</b> and <b>patch</b> to manage the merge
+of zmap foocanvas code into gnome foocanvas code. It is possible to add
+versioning to diff files to stop the wrong diff's being applied. The
+<b>Prereq</b> flag can be added to the start of diff files for this purpose:
+
+<pre>
+<font color="red">Prereq: 1.1.1</font>
+--- old.txt	2010-03-05 09:43:46.000000000 +0000
++++ new.txt	2010-03-05 09:43:05.000000000 +0000
+@@ -1,5 +1,5 @@
+ 
+-line 1 of target
++first line of target
+ 
+ second line of target
+</pre> 
+
+<p>All source files in zmap_source would need to have the version number that
+follows "<font color="red">Prereq:</font>" embedded in them and then if the
+patch and diff files had different versions <b>patch</b> would not do the merge
+unless the user forced it.</p>
+
+<p>Currently this is not implemented because it would be tedious.</p>
+
+
+
+<h3>Building a separate ZMmap FooCanvas</h3>
+
+<p><b><font color="red">This section details how we used to build a separte zmap foocanvas
+library that was installed and referenced by the zmap build system. We no longer
+do this, we simply compile the zmap foocanvas code into zmap directly.</font></b></p>
 
 
 <p>The preceding sections will have left you with a patched foocanvas in tmp_merged_foocanvas
@@ -548,12 +667,8 @@ For <b>/software/acedb/</b> this is:</p>
 
 
 
-
-<a name="own_foocanvas">
 <h3>Building ZMap using your own copy of foocanvas</h3>
-</a>
 
-<p><b>TEMP FIX, BETTER WAY TO BE DOCUMENTED ASAP.</b></p>
 
 <p>To use your own copy of zmap foocanvas you need to make sure that
 it comes first in the include and library lists, currently you need to
@@ -575,75 +690,12 @@ to lines like this:
     LDFLAGS_args="-L$HOME/CHECKOUT/ZMap_foocanvas_build/local_dist/lib -lzmapfoocanvas $LDFLAGS $LDFLAGS_args"
 </pre>
 
-<p>This is pretty ghastly and I will fix this !!</p>
-
-
-
-<a name="future">
-<h3>Future Work</h3>
-</a>
-
-<p>Future tidying up/work:</p>
-
-
-<p>Need to rationalise and automate the version number we use for our
-version of foocanvas. I think we need to use the version from the package
-config file but this needs some investigation.</p>
-
-
-<a name="appendix">
-<h2>Appendix</h2>
-</a>
-
-
-<h3>Foocanvas Versions</h3>
-
-<p>Originally FooCanvas was held in the GNome CVS repository but this became
-defunct and it was moved to the GNome SVN repository, now this has become
-defunct and it's in the GNome GIT repository.</p>
-
-<p>So currently there are two versions available:</p>
-
-<ul>
-  <li>http://svn.gnome.org/svn/foocanvas/
-  <li>http://git.gnome.org./browse/foocanvas/
-</ul>
-
-<p>They are currently identical but it looks like the git version is the
-active one.</p>
-
-
-
-
-<h3>Patch versioning</h3>
-
-<p>We use a combination of <b>diff</b> and <b>patch</b> to manage the merge
-of zmap foocanvas code into gnome foocanvas code. It is possible to add
-versioning to diff files to stop the wrong diff's being applied. The
-<b>Prereq</b> flag can be added to the start of diff files for this purpose:
-
-<pre>
-<font color="red">Prereq: 1.1.1</font>
---- old.txt	2010-03-05 09:43:46.000000000 +0000
-+++ new.txt	2010-03-05 09:43:05.000000000 +0000
-@@ -1,5 +1,5 @@
- 
--line 1 of target
-+first line of target
- 
- second line of target
-</pre> 
-
-<p>All source files in zmap_source would need to have the version number that
-follows "<font color="red">Prereq:</font>" embedded in them and then if the
-patch and diff files had different versions <b>patch</b> would not do the merge
-unless the user forced it.</p>
-
-<p>Currently this is not implemented because it would be tedious.</p>
+<p>This is pretty ghastly !!</p>
 
 
 
 <h3>Notes from previous build system</h3>
+
 
 
 <p>Notes from the previous system which may be useful if there are problems.</p>
