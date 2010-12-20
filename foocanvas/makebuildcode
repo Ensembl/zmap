@@ -46,6 +46,7 @@ then
 fi
 
 
+
 # Overwrite existing files ?
 #
 c_files=`ls $target_dir/*.[ch] 2> /dev/null`
@@ -56,18 +57,19 @@ then
 
   if [[ $reply == 'y' || $reply == '' ]]
   then
-    echo "Copying Makefile.am from $code_dir to $target_dir"
-    cp -f "$code_dir/Makefile.am" $target_dir
-    echo "Copying all code files from $code_dir to $target_dir"
-    cp -f $code_dir/*.[ch] $target_dir
-    cp -f "$code_dir/foo-canvas-marshal.list" $target_dir
-    echo "done"
+    echo 'Overwriting files in $target_dir'
   else
     msgExit "Copy of source files to $target_dir aborted."
   fi
 fi
 
-
+# copy the files.
+echo "Copying Makefile.am from $code_dir to $target_dir"
+cp -f "$code_dir/Makefile.am" $target_dir
+echo "Copying all code files from $code_dir to $target_dir"
+cp -f $code_dir/*.[ch] $target_dir
+cp -f "$code_dir/foo-canvas-marshal.list" $target_dir
+echo "done"
 
 exit 0
 
