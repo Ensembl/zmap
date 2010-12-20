@@ -10,7 +10,6 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	-I$(top_builddir) \
         @ALPHA_POPT@ \
 	@GTK_CFLAGS@ \
-	@FOOCANVAS_CFLAGS@ \
 	@ACECONN_CFLAGS@ \
         @LIBCURL_CPPFLAGS@ \
         $(NULL)
@@ -26,6 +25,8 @@ LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \
 	$(top_builddir)/.libs/libZMapThr.la \
 	$(top_builddir)/.libs/libZMapXML.a \
 	$(top_builddir)/.libs/libZMapXML.la \
+	$(top_builddir)/.libs/libzmapfoocanvas.a \
+	$(top_builddir)/.libs/libzmapfoocanvas.la \
 	$(top_builddir)/.libs/libPFetch.a \
 	$(top_builddir)/.libs/libPFetch.la \
 	$(NULL)
