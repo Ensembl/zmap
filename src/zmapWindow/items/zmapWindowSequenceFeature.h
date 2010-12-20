@@ -29,9 +29,9 @@
  *              highlighting.
  *
  * HISTORY:
- * Last edited: Aug 17 13:55 2010 (edgrif)
+ * Last edited: Dec 15 15:19 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.11 2010-08-18 09:24:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.12 2010-12-20 12:20:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 
 

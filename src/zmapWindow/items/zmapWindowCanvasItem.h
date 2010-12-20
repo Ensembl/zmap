@@ -28,16 +28,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 17:45 2010 (edgrif)
+ * Last edited: Dec 15 13:57 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.15 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.16 2010-12-20 12:19:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_ITEM_H
 #define ZMAP_WINDOW_CANVAS_ITEM_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
 #include <zmapWindowGlyphItem.h>

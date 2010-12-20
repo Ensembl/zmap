@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 14:53 2009 (rds)
+ * Last edited: Dec 15 13:56 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment.h,v 1.5 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment.h,v 1.6 2010-12-20 12:19:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define ZMAP_WINDOW_CONTAINER_ALIGNMENT_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 
 #define ZMAP_WINDOW_CONTAINER_ALIGNMENT_NAME 	"ZMapWindowContainerAlignment"

@@ -28,15 +28,15 @@
  *              and this file contains them.
  *
  * HISTORY:
- * Last edited: Jul  2 09:59 2010 (edgrif)
+ * Last edited: Dec 15 13:56 2010 (edgrif)
  * Created: Wed May 12 11:45:10 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.h,v 1.4 2010-07-05 09:48:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAllBase.h,v 1.5 2010-12-20 12:19:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_ALL_BASE_H
 #define ZMAP_WINDOW_ALL_BASE_H
 
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 /* currently needed in alignmentfeatuer and featureset, if we stop using it in
  * alignment then it should go to the featureset internal header. */

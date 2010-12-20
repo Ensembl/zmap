@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:42 2009 (rds)
+ * Last edited: Dec 15 13:58 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand.h,v 1.5 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerStrand.h,v 1.6 2010-12-20 12:20:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define __ZMAP_WINDOW_CONTAINER_STRAND_H__
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 
 #define ZMAP_WINDOW_CONTAINER_STRAND_NAME 	"ZMapWindowContainerStrand"

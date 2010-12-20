@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 10:02 2010 (edgrif)
+ * Last edited: Dec 15 13:56 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.9 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.10 2010-12-20 12:20:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_I_H
@@ -38,7 +38,7 @@
 
 #include <gdk/gdk.h>		/* GdkColor, GdkBitmap */
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowAllBase.h>
 #include <zmapWindowContainerGroup.h>

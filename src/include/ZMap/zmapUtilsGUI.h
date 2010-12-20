@@ -26,16 +26,16 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Jun  8 10:11 2009 (rds)
+ * Last edited: Dec 15 13:49 2010 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.41 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.42 2010-12-20 12:19:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
 
 #include <gtk/gtk.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapUtilsMesg.h>
 #include <ZMap/zmapFeature.h>
 

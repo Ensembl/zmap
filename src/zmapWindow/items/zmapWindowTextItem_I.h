@@ -28,16 +28,16 @@
  *              to implement dna/peptide sequence display.
  *
  * HISTORY:
- * Last edited: Jul 29 11:18 2010 (edgrif)
+ * Last edited: Dec 15 15:19 2010 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.9 2010-07-29 10:22:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.10 2010-12-20 12:20:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_TEXT_ITEM_I_H
 #define ZMAP_WINDOW_TEXT_ITEM_I_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowTextItem.h>
 
 

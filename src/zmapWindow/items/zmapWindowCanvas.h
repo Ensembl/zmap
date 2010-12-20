@@ -28,15 +28,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 10:19 2010 (edgrif)
+ * Last edited: Dec 15 13:58 2010 (edgrif)
  * Created: Wed Apr 29 14:45:58 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.h,v 1.5 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvas.h,v 1.6 2010-12-20 12:19:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_H
 #define ZMAP_WINDOW_CANVAS_H
 
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 
 #define ZMAP_WINDOW_CANVAS_NAME "zmapWindowCanvas"

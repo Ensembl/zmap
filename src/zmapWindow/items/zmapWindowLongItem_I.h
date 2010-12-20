@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  9 11:00 2009 (rds)
+ * Last edited: Dec 15 15:19 2010 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem_I.h,v 1.3 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowLongItem_I.h,v 1.4 2010-12-20 12:20:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define __ZMAP_WINDOW_LONG_ITEM_I_H__
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowLongItem.h>
 
 

@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 21 22:01 2010 (roy)
+ * Last edited: Dec 15 13:57 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.7 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.8 2010-12-20 12:19:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define __ZMAP_WINDOW_CONTAINER_BLOCK_H__
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindowMark_P.h>	/* ZMapWindowMark ... */

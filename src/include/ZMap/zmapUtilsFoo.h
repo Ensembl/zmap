@@ -27,16 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 12 08:15 2007 (edgrif)
+ * Last edited: Dec 15 13:54 2010 (edgrif)
  * Created: Mon Apr  2 13:08:53 2007 (rds)
- * CVS info:   $Id: zmapUtilsFoo.h,v 1.3 2010-03-04 15:15:21 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsFoo.h,v 1.4 2010-12-20 12:19:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_UTILS_FOO_H
 #define ZMAP_UTILS_FOO_H
 
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas, 
                                         PangoFontDescription **font_desc_out,

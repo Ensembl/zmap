@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  6 14:44 2009 (rds)
+ * Last edited: Dec 15 15:19 2010 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem_I.h,v 1.5 2010-06-14 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem_I.h,v 1.6 2010-12-20 12:20:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define ZMAP_WINDOW_GLYPH_ITEM_I_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowGlyphItem.h>
 
 

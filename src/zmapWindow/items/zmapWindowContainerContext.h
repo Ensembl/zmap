@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 13:10 2009 (rds)
+ * Last edited: Dec 15 13:55 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.h,v 1.4 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.h,v 1.5 2010-12-20 12:19:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define ZMAP_WINDOW_CONTAINER_CONTEXT_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 
 #define ZMAP_WINDOW_CONTAINER_CONTEXT_NAME 	"ZMapWindowContainerContext"

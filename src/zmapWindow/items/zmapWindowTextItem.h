@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 26 17:24 2010 (edgrif)
+ * Last edited: Dec 15 13:57 2010 (edgrif)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.h,v 1.6 2010-07-29 10:22:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.h,v 1.7 2010-12-20 12:20:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define ZMAP_WINDOW_TEXT_ITEM_H
 
 #include <glib-object.h>
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 #define ZMAP_WINDOW_TEXT_ITEM_NAME "ZMapWindowTextItem"
 

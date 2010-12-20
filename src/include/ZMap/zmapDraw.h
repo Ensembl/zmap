@@ -26,15 +26,15 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Sep  5 10:18 2007 (edgrif)
+ * Last edited: Dec 15 13:53 2010 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.39 2010-03-04 15:15:00 mh17 Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.40 2010-12-20 12:19:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
 #define ZMAP_DRAW_H
 
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 
 /* Some basic drawing types. */

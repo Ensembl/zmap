@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Nov  4 13:34 2010 (edgrif)
+ * Last edited: Dec 15 13:47 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.117 2010-12-08 08:57:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.118 2010-12-20 12:19:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -40,7 +40,7 @@
  * in time.... */
 
 /* SHOULD CANVAS BE HERE...MAYBE, MAYBE NOT...... */
-#include <libfoocanvas/libfoocanvas.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
