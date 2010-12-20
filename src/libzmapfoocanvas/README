@@ -11,10 +11,10 @@ details the authors of the original foocanvas.
 This directory contains the source code for the zmap version of the foocanvas.
 The code is copied directly from ZMap/foocanvas/tmp_merged_foocanvas which is
 a merged version of the latest foocanvas and our modifications to the
-foocanvas contained in ZMap/foocanvas/zmap_source. This code is not in CVS,
-the cvs copy is in ZMap/foocanvas/zmap_source, please follow the instructions
-in ZMap/foocanvas/foocanvas_build.html which show how to make these source
-files.
+foocanvas contained in ZMap/foocanvas/zmap_source. The code in this directory
+is NOT in CVS, the cvs copy is in ZMap/foocanvas/zmap_source, please follow
+the instructions in ZMap/foocanvas/foocanvas_build.html which shows how to
+make these source files.
 
 
 These files are now part of the build process for ZMap and are compiled into
