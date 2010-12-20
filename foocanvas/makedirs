@@ -28,6 +28,19 @@ merged_dir='./tmp_merged_foocanvas'
 gnome_link='http://svn.gnome.org/svn/foocanvas/trunk'
 
 
+curr_dir=`pwd`
+curr_dir=`basename $curr_dir`
+base_dir='ZMap'
+
+
+# currently scripts MUST be run in the Zmap/foocanvas directory or they
+# won't work.
+if [ $curr_dir != 'foocanvas' ]
+then
+  msgAndExit "Script must be run from the $base_dir/foocanvas directory !"
+fi
+
+
 if [ -d $zmap_dir ]  || [ -d $gnome_dir ] || [ -d $merged_dir ]
 then
   echo "Merge/Build working directories $zmap_dir $gnome_dir $merged_dir"

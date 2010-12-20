@@ -26,6 +26,20 @@ diff_file="./tmp_file.diff"
 commit_needed=""
 
 
+curr_dir=`pwd`
+curr_dir=`basename $curr_dir`
+base_dir='ZMap'
+
+
+# currently scripts MUST be run in the Zmap/foocanvas directory or they
+# won't work.
+if [ $curr_dir != 'foocanvas' ]
+then
+  msgAndExit "Script must be run from the $base_dir/foocanvas directory !"
+fi
+
+
+
 #
 # Because gnome foocanvas may have changed we first need to copy any
 # source files in merged_foocanvas that are different from those in

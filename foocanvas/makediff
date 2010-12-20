@@ -25,6 +25,19 @@ old='./tmp_merged_foocanvas'
 new='./tmp_zmap_foocanvas'
 
 
+curr_dir=`pwd`
+curr_dir=`basename $curr_dir`
+base_dir='ZMap'
+
+
+# currently scripts MUST be run in the Zmap/foocanvas directory or they
+# won't work.
+if [ $curr_dir != 'foocanvas' ]
+then
+  msgAndExit "Script must be run from the $base_dir/foocanvas directory !"
+fi
+
+
 # set up file list as single file from zmap_foocanvas given on command line or all files
 # in zmap_foocanvas, it's critical that the list of filenames is given as "./XXXXXX" so
 # that patch will pick up the correct files to patch from the diff file.
