@@ -75,8 +75,9 @@ case $opsys in
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
-            CFLAGS="-pg $CFLAGS"
+                CFLAGS="-pg $CFLAGS"
 	    fi
+
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
 
@@ -93,6 +94,7 @@ case $opsys in
 		zmap_register_prefix_in_env $ACECONN_PREFIX
 		zmap_register_prefix_as_rpath $ACECONN_PREFIX
 	    fi
+
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 
@@ -107,11 +109,16 @@ case $opsys in
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
-            CFLAGS="-pg $CFLAGS"
+                CFLAGS="-pg $CFLAGS"
 	    fi
+
+
+
+
 	    # Now add LDFLAGS to args so they get through to configure.
+            CFLAGS_args="$CFLAGS $CFLAGS_args"
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
-          CFLAGS_args="$CFLAGS $CFLAGS_args"
+
 
 	    ;; # end *
     esac
