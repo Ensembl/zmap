@@ -251,7 +251,7 @@ if [ test "$zmap_os_type" = "darwin" ] && [ test -d /Users/zmap/nfs_mount ]; the
 fi
 
 # now foocanvas
-PKG_CHECK_MODULES([FOOCANVAS], [libzmapfoocanvas = 0.1],,AC_MSG_ERROR(zmap version of foocanvas is required))
+#PKG_CHECK_MODULES([FOOCANVAS], [libzmapfoocanvas = 0.1],,AC_MSG_ERROR(zmap version of foocanvas is required))
 
 # needs curl, we'll be looking using curl-config
 # LIBCURL_CHECK_CONFIG ([DEFAULT-ACTION], [MINIMUM-VERSION],
@@ -283,8 +283,8 @@ fi
 
 # and substitute values....
 # Should be able to use @VARIABLE@ in Makefile.am
-AC_SUBST(FOOCANVAS_CFLAGS)
-AC_SUBST(FOOCANVAS_LIBS)
+#AC_SUBST(FOOCANVAS_CFLAGS)
+#AC_SUBST(FOOCANVAS_LIBS)
 AC_SUBST(ACECONN_CFLAGS)
 AC_SUBST(ACECONN_LIBS)
 AC_SUBST(GTK_CFLAGS)
@@ -337,11 +337,13 @@ AC_TYPE_SIZE_T
 AC_FUNC_STAT
 AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
 
-LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
-if test "x$with_macosx_sdk_path" == "x$ZMAP_FALSE" ; then
-  AC_CHECK_LIB(zmapfoocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
+#LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
+LDFLAGS="$LDFLAGS $ACECONN_LIBS"
+
+#if test "x$with_macosx_sdk_path" == "x$ZMAP_FALSE" ; then
+#  AC_CHECK_LIB(zmapfoocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
-fi
+#fi
 
 #--------------------------------------------------------------------
 #	Find out if backtrace/backtrace_symbols_fd are available.
@@ -436,6 +438,7 @@ zmapView/Makefile
 zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
+libzmapfoocanvas/Makefile
 libpfetch/Makefile
 libpfetch/tests/Makefile
 libcurlobject/Makefile
