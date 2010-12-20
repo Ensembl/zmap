@@ -21,7 +21,7 @@ include $(srcdir)/Makefile.common
 
 # ZMAP_SRC_DIRS See configure.ac
 
-SUBDIRS = $(ZMAP_SRC_DIRS) libpfetch libcurlobject include $(CANVAS_TESTING)
+SUBDIRS = $(ZMAP_SRC_DIRS) libpfetch libcurlobject libzmapfoocanvas include $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -52,7 +52,7 @@ pkgconfig_DATA = zmap.pc
 
 # Libraries (These are libtool convenience libraries)
 
-noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libPFetch.la
+noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libzmapfoocanvas.la libPFetch.la
 
 libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
@@ -61,6 +61,10 @@ libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
 libPFetch_la_SOURCES = 
 libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
 #libPFetch_la_LDFLAGS = -all-static
+
+libzmapfoocanvas_la_SOURCES = 
+libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
+
 
 libZMap_la_SOURCES =
 #libZMap_la_LDFLAGS = -all-static
@@ -95,20 +99,41 @@ $(NULL)
 bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
 
 
-zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
-	-L$(top_builddir)/.libs                              \
-	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
-	$(ACECONN_LIBS) $(GTK_LIBS) $(FOOCANVAS_LIBS)        \
+# Try Jeremy's new build stuff....
+#
+#zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
+#	-L$(top_builddir)/.libs                              \
+#	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
+#	$(ACECONN_LIBS) $(GTK_LIBS) $(FOOCANVAS_LIBS)        \
+#	$(LIBCURL) -lexpat -lg2 -lgd                         \
+#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+
+
+# Give .a files explicitly to ensure we link the right ones.
+#
+zmap_LDADD =                                                 \
+	$(top_builddir)/.libs/libZMapApp.a                   \
+	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapThr.a                   \
+	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapXML.a                   \
+	$(top_builddir)/.libs/libzmapfoocanvas.a             \
+	$(top_builddir)/.libs/libPFetch.a                    \
+        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
+	$(ACECONN_LIBS) $(GTK_LIBS)                          \
 	$(LIBCURL) -lexpat -lg2 -lgd                         \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
+
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 zmap_LDFLAGS      = 
+
 # We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(
 zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
 # MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
+
 
 # gffparser - program to parse gff...
 gffparser_SOURCES      = $(top_srcdir)/zmapGFF/gffparser.c
@@ -132,6 +157,10 @@ xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
+
+#
+# OH GOSH ALL THIS TEST STUFF IS CURRENTLY UNUSED AND THEREFORE USELESS.....
+#
 ################################################################################
 ################################################################################
 # Testing
