@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# Copies files required to compile foocanvas into zmap from
+# ./tmp_merged_foocanvas/libfoocanvas to ../src/libzmapfoocanvas.
+#
+# Only the Makefile.am and code files need to be copied, the configure
+# files and other install files are not required because we are
+# compiling libzmapfoocanvas into zmap directly as a part of our
+# zmap build.
+#
+#
+
+scriptname=`basename $0`
+
+# error and exit routine, call with an error string as the only arg.
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+
+merged_dir='./tmp_merged_foocanvas'
+code_dir="$merged_dir/libfoocanvas"
+target_dir='../src/libzmapfoocanvas'
+curr_dir=`pwd`
+curr_dir=`basename $curr_dir`
+base_dir='ZMap'
+
+
+# currently scripts MUST be run in the Zmap/foocanvas directory or they
+# won't work.
+if [ $curr_dir != 'foocanvas' ]
+then
+  msgAndExit "Script must be run from the $base_dir/foocanvas directory !"
+fi
+
+
+
+if [ ! -d $target_dir ]
+then
+  msgAndExit "there is no $target_dir, please do a CVS update of $base_dir"
+fi
+
+
+# Overwrite existing files ?
+#
+c_files=`ls $target_dir/*.[ch] 2> /dev/null`
+if [ -f $target_dir/Makefile.am ] || [ -n "$c_files" ] 
+then
+  echo "Build directory $target_dir already contains foocanvas files, overwrite them [y] ?"
+  read reply
+
+  if [[ $reply == 'y' || $reply == '' ]]
+  then
+    echo "Copying Makefile.am from $code_dir to $target_dir"
+    cp -f "$code_dir/Makefile.am" $target_dir
+    echo "Copying all code files from $code_dir to $target_dir"
+    cp -f $code_dir/*.[ch] $target_dir
+    cp -f "$code_dir/foo-canvas-marshal.list" $target_dir
+    echo "done"
+  else
+    msgExit "Copy of source files to $target_dir aborted."
+  fi
+fi
+
+
+
+exit 0
+
+
+
+
