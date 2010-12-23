@@ -1,7 +1,7 @@
 /*  Last edited: Mar 16 13:51 2010 (edgrif) */
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * $Id: foo-canvas-text.c,v 1.2 2010-12-23 11:03:23 edgrif Exp $
+ * $Id: foo-canvas-text.c,v 1.3 2010-12-23 11:15:11 edgrif Exp $
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
  *
