@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 16 14:19 2010 (edgrif)
  * Created: Fri Jan 25 12:01:12 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.c,v 1.1 2010-12-23 09:37:04 edgrif Exp $
+ * CVS info:   $Id: foozmap-canvas-text.c,v 1.2 2010-12-23 11:03:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
