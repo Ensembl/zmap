@@ -1,4 +1,4 @@
-<!-- CVS info:   $Id: foocanvas_build.html,v 1.10 2010-12-20 10:48:00 edgrif Exp $ -->
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.11 2010-12-23 10:09:46 edgrif Exp $ -->
 
 
 
@@ -209,24 +209,24 @@ by hand may be appropriate.</p>
 
 <p>
 <ol>
-  <li>cd ZMap/foocanvas
+  <li><p>cd ZMap/foocanvas</p>
 
-  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
-      tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas.
+  <li><p>run <b>./makedirs</b> to download the latest foocanvas from gnome into
+      tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas.</p>
 
-  <li>in a separate directory called tmp_zmap_foocanvas make a copy of any foocanvas
-      files that need to be changed and add any new ones.
+  <li><p>in a separate directory called tmp_zmap_foocanvas make a copy of any foocanvas
+      files that need to be changed and add any new ones.</p>
 
-  <li>run the script <b>./makediff</b> to do a diff for changes required to the code in
+  <li><p>run the script <b>./makediff</b> to do a diff for changes required to the code in
       tmp_merged_foocanvas to merge in the tmp_zmap_foocanvas files. This step leaves a
-      series of *.diff files in tmp_zmap_foocanvas.
+      series of *.diff files in tmp_zmap_foocanvas.</p>
 
-  <li>run <b>./makepatch</b> to check that the diff files will patch the zmap foocanvas
+  <li><p>run <b>./makepatch</b> to check that the diff files will patch the zmap foocanvas
       files into the new ones correctly, this should produce a full set of merged
-      files in tmp_merged_foocanvas from which a distribution can be made.
+      files in tmp_merged_foocanvas from which a distribution can be made.</p>
 
-  <li>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
-      and check them back into cvs.
+  <li><p>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
+      and check them back into cvs.</p>
 
 </ol>
 </p>
@@ -238,33 +238,32 @@ by hand may be appropriate.</p>
 
 
 <a name="patching_and_building">
-<h3>Patching the ZMap foocanvas</h3>
+<h3>"Day to Day" Patching of the ZMap foocanvas</h3>
 </a>
-
 
 
 
 <a name="updating_gnome">
 <fieldset>
-<legend>Updating the Version of Gnome FooCanvas</legend>
+<legend>Patching when the Gnome FooCanvas code has changed</legend>
 </a>
 
 <p>This is the standard procedure for updating ZMapFooCanvas with a new version
-of gnome foocanvas.</p>
+of gnome foocanvas:</p>
 
 <p>
 <ol>
-  <li>cd ZMap/foocanvas
+  <li><p>cd <b>ZMap/foocanvas</b></p>
 
-  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
-      tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas.
+  <li><p>run <b>./makedirs</b> to download the latest foocanvas from gnome into
+      tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas.</p>
 
-  <li>run <b>./makepatch</b> to check that the diff files will patch the zmap foocanvas
+  <li><p>run <b>./makepatch</b> to check that the diff files will patch the zmap foocanvas
       files into the new ones correctly, this should produce a full set of merged
-      files in tmp_merged_foocanvas from which a distribution can be made.
+      files in tmp_merged_foocanvas from which a distribution can be made.</p>
 
-  <li>if makepatch fails it will report all merges that failed and the patches that failed
-      will be listed in *.rej files. For files that failed:
+  <li><p>if makepatch fails it will report all merges that failed and the patches that failed
+      will be listed in *.rej files. For files that failed:</p>
 
       <p>
       <ul>
@@ -279,11 +278,11 @@ of gnome foocanvas.</p>
       </ul>
       </p>
     
-  <li>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
-      and check them back into cvs.
+  <li><p>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
+      and check them back into cvs.</p>
 
-  <li>run <b>./makedist</b> to create a gzip'd tar file that can be installed on different
-      systems to build the zmap foocanvas.
+  <li><p>run <b>./makedist</b> to create a gzip'd tar file that can be installed on different
+      systems to build the zmap foocanvas.</p>
 </ol>
 </p>
 
@@ -294,22 +293,33 @@ of gnome foocanvas.</p>
 
 <a name="updating_zmap">
 <fieldset>
-<legend>Updating the Version of ZMap FooCanvas</legend>
+<legend>Patching when the ZMap FooCanvas code has changed</legend>
 </a>
 
 <p>This is the standard procedure for updating ZMapFooCanvas with new zmap code.</p>
 
 <p>
 <ol>
-  <li>cd ZMap/foocanvas
+  <li><p>cd <b>ZMap/src/libzmapfoocanvas</b></p>
 
-  <li>Make changes to the files in zmap_source.
+  <li><p>cvs edit the files you wish to change</p>
 
-  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
+  <li><p>make and verify your changes</p>
+
+  <li><p>cvs commit the changed files</p>
+
+  <li><p>copy any files you have changed into ZMap/foocanvas/zmap_source (this means
+      cvs editing the files in that directory before doing the copy !)</p>
+
+  <li><p>cd <b>ZMap/foocanvas</b></p>
+
+  <li><p>Make changes to the files in zmap_source.</p>
+
+  <li><p>run <b>./makedirs</b> to download the latest foocanvas from gnome into
       tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas and copy
-      zmap_source files into tmp_zmap_foocanvas.
+      zmap_source files into tmp_zmap_foocanvas.</p>
 
-  <li>for each file that you changed:
+  <li><p>for each file that you changed:</p>
 
       <p>
       <ul>
@@ -321,12 +331,12 @@ of gnome foocanvas.</p>
       </ul>
       </p>
     
-  <li>now run <b>./makepatch</b> to check that <b>all</b> the diff files will patch the zmap foocanvas
+  <li><p>now run <b>./makepatch</b> to check that <b>all</b> the diff files will patch the zmap foocanvas
       files into the new ones correctly, this should produce a full set of merged
-      files in tmp_merged_foocanvas from which a distribution can be made.
+      files in tmp_merged_foocanvas from which a distribution can be made.</p>
 
-  <li>if makepatch fails it will report all merges that failed and the patches that failed
-      will be listed in *.rej files. For files that failed:
+  <li><p>if makepatch fails it will report all merges that failed and the patches that failed
+      will be listed in *.rej files. For files that failed:</p>
 
       <p>
       <ul>
@@ -341,8 +351,8 @@ of gnome foocanvas.</p>
       </ul>
       </p>
 
-  <li>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
-      and check them back into cvs.
+  <li><p>run <b>./makecvs</b> to update the copies of source and diff files in tmp_zmap_foocanvas
+      and check them back into cvs.</p>
 
 </ol>
 </p>
@@ -363,16 +373,16 @@ have been no updates to the Gnome foocanvas or to the ZMap canvas code.</p>
 
 <p>
 <ol>
-  <li>cd ZMap/foocanvas
+  <li><p>cd ZMap/foocanvas</p>
 
-  <li>Make changes to the files in zmap_source.
+  <li><p>Make changes to the files in zmap_source.</p>
 
-  <li>run <b>./makedirs</b> to download the latest foocanvas from gnome into
+  <li><p>run <b>./makedirs</b> to download the latest foocanvas from gnome into
       tmp_gnome_foocanvas directory and make a copy in tmp_merged_foocanvas and copy
-      zmap_source files into tmp_zmap_foocanvas.
+      zmap_source files into tmp_zmap_foocanvas.</p>
 
-  <li>run <b>./makepatch</b> to create the full set of patched foocanvas files
-      for building the zmap foocanvas.
+  <li><p>run <b>./makepatch</b> to create the full set of patched foocanvas files
+      for building the zmap foocanvas.</p>
 
 </ol>
 </p>
@@ -407,10 +417,10 @@ to the ZMap/src/libzmapfoocanvas directory in preparation for the zmap build:</p
 
 <p>
 <ol>
-  <li>cd ZMap/foocanvas
+  <li><p>cd ZMap/foocanvas</p>
 
-  <li>run <b>./makebuildcode</b> to copy the patched Makefile.am and source code files
-      from tmp_merged_foocanvas to ZMap/src/libzmapfoocanvas.
+  <li><p>run <b>./makebuildcode</b> to copy the patched Makefile.am and source code files
+      from tmp_merged_foocanvas to ZMap/src/libzmapfoocanvas.</p>
 </ol>
 </p>
 
@@ -425,16 +435,16 @@ to the ZMap/src/libzmapfoocanvas directory in preparation for the zmap build:</p
 
 <p>
 <ol>
-  <li>cd ZMap/src
+  <li><p>cd ZMap/src</p>
 
-  <li>run <b>./bootstrap</b> to run the autoconf/automake tools.
+  <li><p>run <b>./bootstrap</b> to run the autoconf/automake tools.</p>
 
-  <li>cd ./build/&lt;machine_type&gt; (e.g. linux)
+  <li><p>cd ./build/&lt;machine_type&gt; (e.g. linux)</p>
 
-  <li>run <b>../../runconfig</b> to set up and run the ./configure script for
-      this machines architecture
+  <li><p>run <b>../../runconfig</b> to set up and run the ./configure script for
+      this machines architecture</p>
 
-  <li>make
+  <li><p>make</p>
 </ol>
 </p>
 
