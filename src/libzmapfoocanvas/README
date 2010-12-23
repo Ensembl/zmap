@@ -2,6 +2,9 @@
 ZMap Foocanvas
 
 
+Acknowledgements
+----------------
+
 We hereby acknowledge that the zmap foocanvas version was derived directly
 from the gnome foo canvas. Please see the copyright notice and other
 information in the ZMap/foocanvas directory which gives full credit to and
@@ -21,5 +24,19 @@ These files are now part of the build process for ZMap and are compiled into
 an archive of .o files which is used to directly build the zmap executable. We
 no longer require the configure and other steps to build a separately
 installed foocanvas library.
+
+
+
+CHANGING THESE FILES
+--------------------
+
+These files are in CVS but...........please read this before you go making
+changes to them:
+
+- For debugging and temporary changes you can obviously just change these files
+  and then _not_ put the changes back in cvs.
+
+- If you want to make permanent changes however you MUST read how to do this
+  in ZMap/foocanvas/foocanvas_build.html !!
 
 
