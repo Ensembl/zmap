@@ -8,6 +8,12 @@
 # compiling libzmapfoocanvas into zmap directly as a part of our
 # zmap build.
 #
+# The process is slightly complicated by the fact that we keep the
+# files in ../src/libzmapfoocanvas in cvs as a convenience so that
+# they get checked out when the user does a src checkout. This means
+# the user can just go ahead and do a build of zmap without having
+# to do makedirs, makepatch etc.
+#
 #
 
 scriptname=`basename $0`
@@ -25,7 +31,8 @@ msgAndExit ()
 
 merged_dir='./tmp_merged_foocanvas'
 code_dir="$merged_dir/libfoocanvas"
-target_dir='../src/libzmapfoocanvas'
+target_base='libzmapfoocanvas'
+target_dir="../src/$target_base"
 curr_dir=`pwd`
 curr_dir=`basename $curr_dir`
 base_dir='ZMap'
@@ -47,21 +54,13 @@ fi
 
 
 
-# Overwrite existing files ?
+# Need to cvs edit $target_dir files: doing cvs edit ../src/libzmapfoocanvas
+# causes errors, I don't know why, hence all the cd'ing business....
 #
-c_files=`ls $target_dir/*.[ch] 2> /dev/null`
-if [ -f $target_dir/Makefile.am ] || [ -n "$c_files" ] 
-then
-  echo "Build directory $target_dir already contains foocanvas files, overwrite them [y] ?"
-  read reply
-
-  if [[ $reply == 'y' || $reply == '' ]]
-  then
-    echo 'Overwriting files in $target_dir'
-  else
-    msgExit "Copy of source files to $target_dir aborted."
-  fi
-fi
+tmp_dir=`pwd`
+cd ../src
+cvs edit $target_base || msgAndExit "cvs edit $target_base failed."
+cd $tmp_dir
 
 # copy the files.
 echo "Copying Makefile.am from $code_dir to $target_dir"
@@ -70,6 +69,18 @@ echo "Copying all code files from $code_dir to $target_dir"
 cp -f $code_dir/*.[ch] $target_dir
 cp -f "$code_dir/foo-canvas-marshal.list" $target_dir
 echo "done"
+
+
+# Now cvs commit $target_dir files, -f flag forces the commit for
+# files that have not changed.
+#
+
+tmp_dir=`pwd`
+cd ../src
+cvs commit -f -m "Updated files from ZMap/foocanvas." $target_base || msgAndExit "cvs commit $target_base failed."
+cd $tmp_dir
+
+
 
 exit 0
 
