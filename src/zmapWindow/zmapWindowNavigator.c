@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 23 13:59 2010 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.65 2010-10-13 10:06:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.66 2011-01-04 11:10:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1044,11 +1044,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
 					   set_id, 0, style,
 					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
 
-#if MH17_NO_RECOVER
-      zmapWindowContainerFeatureSetAttachFeatureSet(container_set, draw_data->current_set);
-#else
       zmapWindowContainerAttachFeatureAny(draw_data->container_feature_set, (ZMapFeatureAny) draw_data->current_set);
-#endif
 
       zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(draw_data->container_feature_set), TRUE);
 

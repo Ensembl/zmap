@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov  4 16:04 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.299 2010-12-08 09:01:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.300 2011-01-04 11:10:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1087,37 +1087,6 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 }
 
 
-#if MH17_NO_RECOVER
-/* AGH, THIS ALL NEEDS TIDYING UP, ROYS NEW ITEMS HAVE CREATED A WHOLE LOAD OF ENCAPSULATION PROBLEMS.... */
-
-/* This function may exist already....not sure..... */
-static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet container_set)
-{
-  RemoveFeatureDataStruct remove_data ;
-  GList *l;
-
-  remove_data.window = window ;
-  remove_data.strand = zmapWindowContainerFeatureSetGetStrand(container_set) ;
-  remove_data.frame = zmapWindowContainerFeatureSetGetFrame(container_set) ;
-  remove_data.feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set) ;
-
-  g_hash_table_foreach(remove_data.feature_set->features, removeFeatureCB, &remove_data) ;
-
-  return ;
-}
-
-
-static void removeFeatureCB(gpointer key, gpointer value, gpointer user_data)
-{
-  ZMapFeature feature = (ZMapFeature)value ;
-  RemoveFeatureData remove_data = (RemoveFeatureData)user_data ;
-
-  zmapWindowFToIRemoveFeature(remove_data->window->context_to_item,
-			      remove_data->strand, remove_data->frame, feature) ;
-
-  return ;
-}
-#else
 
 /* MH17: remove all featuresets in the column, and all the features
  * let's use the list of featuresets and the hash functions to do the work.
@@ -1139,7 +1108,6 @@ static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet c
       }
 }
 
-#endif
 
 
 
@@ -1347,11 +1315,7 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 				     column_strand, column_frame, TRUE) ;
 
   if(new_column)
-#if MH17_NO_RECOVER
-      zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)new_column, feature_set);
-#else
       zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup) new_column, (ZMapFeatureAny) feature_set);
-#endif
 
   return new_column;
 }
@@ -2026,20 +1990,12 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
     }
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-  styles = window->display_styles;
-  if(!g_hash_table_size(styles))
-      styles = window->context_map.styles;
-  /* Get the list of styles for this column and check that _all_ the styles are displayable. */
-  if (!(style_list = zmapWindowFeatureSetStyles(window, styles, column_id)))
-#else
   style = zMapWindowGetColumnStyle(window, column_id);
   column = zMapWindowGetColumn(window->context_map,column_id);
   if(column)
       style_list = column->style_table;
 
   if(!style_list)
-#endif
     {
       proceed = FALSE;
       zMapLogMessage("Styles list for Column '%s' not found.",
@@ -2116,23 +2072,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
       group = (FooCanvasGroup *)container;
 
-#if MH17_DONE_BY_CALLER
-      if(!is_separator_col)
-	{
-	  status = zmapWindowFToIAddSet(window->context_to_item,
-					align->unique_id,
-					block->unique_id,
-					column_id,
-					strand, frame,
-					group) ;
-	  zMapAssert(status) ;
-	}
-#endif
-
-#if MH17_NO_MORE_STYLE_TABLES
-      g_list_free(style_list);
-      style_list = NULL;
-#endif
     }
 
   return group ;

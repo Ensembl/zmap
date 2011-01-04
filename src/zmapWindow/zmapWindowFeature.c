@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov  4 13:59 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.202 2010-12-08 09:02:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.203 2011-01-04 11:10:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1063,12 +1063,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   zMapAssert(feature);
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-  style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)column_group,
-                                       feature->style_id);
-#else
   style = feature->style;
-#endif
 
   feature_set = (ZMapFeatureSet)(feature->parent);
   menu_title = g_strdup_printf("%s (%s)", zMapFeatureName((ZMapFeatureAny)feature),
@@ -2122,16 +2117,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   ZMapStyleBumpMode bump_mode;
   ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) feature_group;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  ZMapFeatureSet feature_set ;
-
-  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
-  zMapAssert(feature_set) ;
-
-  style = zmapWindowContainerFeatureSetStyleFromID(ZMAP_CONTAINER_FEATURESET( feature_group ), feature->style_id) ;
-#else
   style = feature->style;
-#endif
 
   container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)feature_group));
   column_is_empty = !(container_features->item_list);

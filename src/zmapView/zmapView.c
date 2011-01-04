@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  5 12:33 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.227 2010-12-10 14:35:51 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.228 2011-01-04 11:10:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,16 +103,6 @@ typedef struct
   GString *missing_styles ;
 } DrawableDataStruct, *DrawableData ;
 
-#if MH17_NO_DEFERRED
-typedef struct
-{
-  GHashTable *styles ;
-  gboolean error ;
-} UnsetDeferredLoadStylesStruct, *UnsetDeferredLoadStyles ;
-
-static void unsetDeferredLoadStylesCB(gpointer key_id, gpointer data, gpointer user_data) ;
-
-#endif
 
 static GList *zmapViewGetIniSources(char *config_str,char **stylesfile);
 
@@ -3065,18 +3055,6 @@ printf("\nview styles lists after merge:\n");
 	zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out,
 						      ZMAPSTYLE_MERGE_PRESERVE) ;
 
-#if MH17_NO_DEFERRED
-      /* For dynamic loading the styles need to be set to load the features.*/
-	if (connect_data->dynamic_loading)
-	  {
-	    gboolean is_complete_sequence = FALSE;
-
-	    if (is_complete_sequence)
-	      g_hash_table_foreach(zmap_view->context_map.styles, unsetDeferredLoadStylesCB, NULL) ;
-
-	    g_hash_table_foreach(get_styles->styles_out, unsetDeferredLoadStylesCB, NULL) ;
-	  }
-#endif
 
       /* need to patch in sub style pointers after merge/ copy */
       zMapStyleSetSubStyles(zmap_view->context_map.styles);
@@ -3487,16 +3465,7 @@ static void displayDataWindows(ZMapView zmap_view,
       {
         zMapWindowDisplayData(view_window->window, NULL,
 			      all_features, new_features,
-#if MH17_NO_STYLE_COPY
-			      view_window->parent_view->context_map.styles, new_styles,
-                        zmap_view->context_map.styles,
-			      zmap_view->context_map.column_2_styles,
-                        zmap_view->context_map.featureset_2_column,
-                        zmap_view->context_map.source_2_sourcedata,
-                        zmap_view->context_map.columns,
-#else
                         &zmap_view->context_map,
-#endif
                         masked) ;
       }
       else
@@ -4393,18 +4362,6 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
 }
 
 
-#if MH17_NO_DEFERRED
-/* A GhashListForeachFunc() func that unsets DeferredLoads for styles in the target. */
-static void unsetDeferredLoadStylesCB(gpointer key, gpointer data, gpointer user_data_unused)
-{
-  ZMapFeatureTypeStyle orig_style = (ZMapFeatureTypeStyle)data ;
-
-  zMapStyleSetDeferred(orig_style, FALSE) ;
-
-  return ;
-}
-
-#endif
 
 
 

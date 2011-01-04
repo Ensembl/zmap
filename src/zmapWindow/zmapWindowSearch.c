@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 14 14:03 2010 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.49 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.50 2011-01-04 11:10:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,9 +54,6 @@ typedef struct
   ZMapWindow window ;
   FooCanvasItem *feature_item ;
   ZMapFeatureAny feature_any ;
-#if MH17_NO_STYLE
-  GHashTable *styles ;
-#endif
 
   GHashTable *context_to_item;
   ZMapWindowListGetFToIHash get_hash_func;
@@ -76,9 +73,6 @@ typedef struct
   GtkWidget *start_entry ;
   GtkWidget *end_entry ;
   GtkWidget *locus_but ;
-#if MH17_NO_STYLE
-  GtkWidget *style_entry ;
-#endif
 
   /* Context field data... */
   char *align_txt ;
@@ -109,10 +103,6 @@ typedef struct
   char *start ;						    /* Coords range to limit search. */
   char *end ;
   gboolean locus ;
-#if MH17_NO_STYLE
-  char *style_text ;
-  ZMapFeatureTypeStyle style ;
-#endif
 
 
 } SearchDataStruct, *SearchData ;
@@ -134,9 +124,6 @@ typedef struct
 
   gboolean locus ;
 
-#if MH17_NO_STYLE
-  ZMapFeatureTypeStyle style ;
-#endif
 } SearchPredCBDataStruct, *SearchPredCBData ;
 
 
@@ -166,10 +153,6 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
 static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data,
                                                         gpointer user_data, char **err_out);
 
-#if MH17_NO_STYLE
-static GList *getStyleQuarks(GHashTable *styles) ;
-static void getQuark(gpointer key, gpointer data, gpointer user_data) ;
-#endif
 
 gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
 
@@ -483,19 +466,10 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label;
   ZMapFeatureContext context ;
-#if MH17_NO_STYLE
-  GtkWidget *combo ;
-  GHashTable *styles ;
-  GList *style_quarks ;
-#endif
 
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
-#if MH17_NO_STYLE
-  search_data->styles = styles = search_data->window->context_map->styles ;
-  style_quarks = getStyleQuarks(styles) ;
-#endif
 
   setFilterDefaults(search_data) ;
 
@@ -538,11 +512,6 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-#if MH17_NO_STYLE
-  label = gtk_label_new( "Style :" ) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-#endif
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
@@ -589,16 +558,6 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   g_signal_connect(GTK_OBJECT(search_data->locus_but), "toggled",
 		   GTK_SIGNAL_FUNC(locusCB), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(entrybox), search_data->locus_but, FALSE, FALSE, 0) ;
-
-#if MH17_NO_STYLE
-  combo = createPopulateComboBox(style_quarks, TRUE);
-  search_data->style_entry = entry = GTK_BIN(combo)->child ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  if(select_region_G)
-    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
-#endif
 
 
   return frame ;
@@ -721,9 +680,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   SearchPredCBData search_pred_ptr = NULL ;
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
-#if MH17_NO_STYLE
-  char *style_text ;
-#endif
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
@@ -826,13 +782,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* Get predicate stuff, start/end/locus currently. */
   locus = search_data->locus ;
-#if MH17_NO_STYLE
-  style_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->style_entry)) ;
-
-  if ((start_txt && *start_txt && end_text && *end_text) || locus || (style_text && *style_text))
-#else
   if ((start_txt && *start_txt && end_text && *end_text) || locus)
-#endif
     {
       callback          = searchPredCB ;
       search_pred_ptr   = &search_pred ;
@@ -842,15 +792,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       search_pred.end   = atoi(end_text) ;
 
       search_pred.locus = locus ;
-#if MH17_NO_STYLE
-      if (style_text && *style_text)
-	{
-	  ZMapFeatureTypeStyle style ;
-
-	  if ((style = zMapFindStyle(search_data->styles, zMapStyleCreateID(style_text))))
-	    search_pred.style = style ;
-	}
-#endif
     }
 
 
@@ -876,9 +817,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  search_pred_data->start = search_pred_ptr->start;
 	  search_pred_data->end   = search_pred_ptr->end;
 	  search_pred_data->locus = search_pred_ptr->locus;
-#if MH17_NO_STYLE
-	  search_pred_data->style = search_pred_ptr->style;
-#endif
 	}
 
       search_set_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
@@ -1288,16 +1226,6 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
 	    else
 	      result = FALSE ;
 	  }
-#if MH17_NO_STYLE
-
-	if (search_pred->style)
-	  {
-	    if (feature->style_id == zMapStyleGetID(search_pred->style))
-	      result = TRUE ;
-	    else
-	      result = FALSE ;
-	  }
-#endif
 
 	break;
       }
@@ -1343,30 +1271,5 @@ static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data)
 }
 
 
-#if MH17_NO_STYLE
-
-static GList *getStyleQuarks(GHashTable *styles)
-{
-  GList *style_quarks = NULL ;
-
-  g_hash_table_foreach(styles, getQuark, &style_quarks) ;
-
-  return style_quarks ;
-}
-
-
-
-static void getQuark(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  GList *style_quarks = *((GList **)user_data) ;
-
-  style_quarks = g_list_append(style_quarks, GINT_TO_POINTER(zMapStyleGetID(style))) ;
-
-  *((GList **)user_data) = style_quarks ;
-
-  return ;
-}
-#endif
 
 /*************************** end of file *********************************/

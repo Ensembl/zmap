@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:15 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.87 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.88 2011-01-04 11:10:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -313,11 +313,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 
   /* Get the styles table from the column and look for the features style.... */
-#if MH17_NO_MORE_STYLE_TABLES
-  style = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id) ;
-#else
   style = feature->style;
-#endif
   zMapAssert(style);
 
   style_mode = zMapStyleGetMode(style) ;

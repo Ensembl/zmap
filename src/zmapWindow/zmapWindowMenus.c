@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  4 16:21 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.79 2010-12-08 09:02:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.80 2011-01-04 11:10:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -925,11 +925,7 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
       if (curr_bump_mode != ZMAPBUMP_UNBUMP)
       	bump_mode = ZMAPBUMP_UNBUMP ;
       else
-#if MH17_NO_STYLE_BUMP
-	      bump_mode = zmapWindowContainerFeatureSetResetBumpModes(container) ;
-#else
             bump_mode = zmapWindowContainerFeatureSetGetDefaultBumpMode(container);
-#endif
 
       if (zmapWindowMarkIsSet(menu_data->window->mark))
 	      compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
@@ -1147,12 +1143,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 		ZMapFeature feature;
 
 		feature = (ZMapFeature)feature_any;
-#if MH17_NO_MORE_STYLE_TABLES
-            style = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id) ;
-#else
             style = feature->style;
-#endif
-
 
 		zmapWindowShowStyle(style);
 	      }

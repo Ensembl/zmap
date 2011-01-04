@@ -30,7 +30,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.61 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.62 2011-01-04 11:10:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,14 +191,6 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_DIRECTIONAL_ENDS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,
             "directional-ends", "Display pointy \"short sides\"",
             offsetof(zmapFeatureTypeStyleStruct, directional_end),0 },
-#if MH17_NO_DEFERRED
-    { STYLE_PROP_DEFERRED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_DEFERRED,
-            "deferred", "Load only when specifically asked",
-            offsetof(zmapFeatureTypeStyleStruct, deferred) ,0},
-    { STYLE_PROP_LOADED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_LOADED,
-            "loaded", "Style Loaded from server",
-            offsetof(zmapFeatureTypeStyleStruct, loaded) ,0},
-#endif
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },
@@ -1723,9 +1715,6 @@ static void zmap_feature_type_style_init(ZMapFeatureTypeStyle style)
       // but will be returned if a paramter is not set
       // ** only need to set if non zero **
 
-#if MH17_NO_STYLE_BUMP
-  style->curr_bump_mode = ZMAPBUMP_INVALID;           // why not umbump?
-#endif
 
   return ;
 }

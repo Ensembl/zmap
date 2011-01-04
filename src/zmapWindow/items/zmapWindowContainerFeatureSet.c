@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.39 2010-12-09 13:59:54 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.40 2011-01-04 11:10:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -212,21 +212,6 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 
       container_set->style = style;
 
-#if MH17_NO_MORE_STYLE_TABLES
-      GList *list;
-      if((list = g_list_first(style_list)))
-	{
-	  do
-	    {
-	      ZMapFeatureTypeStyle style;
-
-	      style = (ZMapFeatureTypeStyle)(list->data);
-
-	      zmapWindowContainerFeatureSetStyleFromStyle(container_set, style);
-	    }
-	  while((list = g_list_next(list)));
-	}
-#endif
 
       zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
     }
@@ -349,65 +334,6 @@ ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFea
 }
 #endif
 
-#if MH17_NO_MORE_STYLE_TABLES
-/*!
- * \brief Columns require a _copy_ of the global list of styles in order to function.
- *        This function both accesses and creates the 'local' copy of the style that is
- *        cached in the container.
- *
- * The styles are stored in a hash for speed of access.  Drawing the features in the
- * column requires access to these styles and the more features the more the styles need
- * to be looked up.  Using a GList or GDatalist would be too slow.
- *
- * \param container  The container with the hash of styles.
- * \param style      The style that is to be accessed/copied.
- *
- * \return The cached style.
- */
-
-ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowContainerFeatureSet container_set,
-								 ZMapFeatureTypeStyle         style2copy)
-{
-  ZMapFeatureTypeStyle local_style = NULL;
-
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), local_style);
-  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style2copy), local_style);
-
-  if(!(local_style = zmapWindowStyleTableFind(container_set->style_table, zMapStyleGetUniqueID(style2copy))))
-    {
-      local_style = zmapWindowStyleTableAddCopy(container_set->style_table, style2copy);
-    }
-
-  return local_style;
-}
-
-/*!
- * \brief  As per zmapWindowContainerFeatureSetStyleFromStyle, but requires only a
- *         unique style id, so cannot copy the style.
- *
- * \param container  The container with the hash of styles.
- * \param unique-id  The unique id of a style to access from the container.
- *
- * \return The cached style.
- */
-
-ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
-							      GQuark                       style_unique_id)
-{
-  ZMapFeatureTypeStyle local_style = NULL;
-
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), local_style);
-
-  if(!(local_style = zmapWindowStyleTableFind(container_set->style_table, style_unique_id)))
-    {
-//      zMapAssertNotReached();
-// mh17: we need to handle 'not there' for legacy code (see get_sub_feature_style() in collection feature.c
-
-    }
-
-  return local_style;
-}
-#endif
 
 /*!
  * \brief  The display name for the column.
@@ -486,14 +412,7 @@ ZMapFrame  zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet 
 double zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet container_set)
 {
   double width = 0.0;
-#if MH17_NO_MORE_STYLE_TABLES
-
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_WIDTH, &width,
-	       NULL);
-#else
   width = zMapStyleGetWidth(container_set->style);
-#endif
   return width;
 }
 
@@ -509,13 +428,7 @@ double zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet co
 {
   double spacing;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_BUMP_SPACING, &spacing,
-	       NULL);
-#else
   spacing = zMapStyleGetBumpSpace(container_set->style);
-#endif
   return spacing;
 }
 
@@ -540,40 +453,8 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
   double min_mag ;
   double max_mag ;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  ItemFeatureValueDataStruct value_data = {NULL};
-  GValue value = {0};
-
-  g_value_init(&value, G_TYPE_DOUBLE);
-
-  g_value_set_double(&value, 0.0);
-
-  value_data.spec_name = "not required";
-  value_data.gvalue    = &value;
-
-  if(1)
-    {
-      value_data.param_id  = ITEM_FEATURE__MIN_MAG;
-
-      g_hash_table_foreach(container_set->style_table, extract_value_from_style_table, &value_data);
-
-      min_mag = g_value_get_double(&value);
-    }
-
-  if(1)
-    {
-      value_data.param_id  = ITEM_FEATURE__MAX_MAG;
-
-      g_hash_table_foreach(container_set->style_table, extract_value_from_style_table, &value_data);
-
-      max_mag = g_value_get_double(&value);
-    }
-
-  g_value_unset(&value);
-#else
   min_mag = zMapStyleGetMinMag(container_set->style);
   max_mag = zMapStyleGetMaxMag(container_set->style);
-#endif
 
   if (min_mag != 0.0 || max_mag != 0.0)
     mag_sens = TRUE ;
@@ -602,17 +483,9 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
 {
   ZMapStyleColumnDisplayState display = ZMAPSTYLE_COLDISPLAY_SHOW;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(container_set->settings.display_state),
-	       NULL);
-
-  display = container_set->settings.display_state ;
-#else
   display = container_set->display_state ;
   if(display == ZMAPSTYLE_COLDISPLAY_INVALID)
       display = zMapStyleGetDisplay(container_set->style);   /* get initial state from set style */
-#endif
   return display ;
 }
 
@@ -634,33 +507,7 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
 					     ZMapStyleColumnDisplayState state)
 {
-#if MH17_NO_MORE_STYLE_TABLES
-  ItemFeatureValueDataStruct value_data = {NULL};
-  GValue value = {0};
-
-  g_object_set(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, state,
-	       NULL);
-
-  g_value_init(&value, G_TYPE_UINT);
-
-  g_value_set_uint(&value, state);
-
-  value_data.spec_name = ZMAPSTYLE_PROPERTY_DISPLAY_MODE;
-  value_data.gvalue    = &value;
-  value_data.param_id  = ITEM_FEATURE_SET_VISIBLE;
-
-  if(debug_table_ids_G)
-    {
-      zMapLogMessage("container_set->unique_id = '%s'", g_quark_to_string(container_set->unique_id));
-    }
-
-  g_hash_table_foreach(container_set->style_table, value_to_each_style_in_table, &value_data);
-
-  g_value_unset(&value);
-#else
       container_set->display_state = state;
-#endif
 
   return ;
 }
@@ -668,51 +515,6 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
 
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-
-/*!
- * \brief Example of how to change the setting in only one style.
- NOT USED
- *
- * Assuming the style is found the setting in the local copy is changed.
- *
- * \param container  The container which hold the style.
- * \param style      The style to change. This could only be a unique id actually.
- * \param state      The new value for display state in the style.
- *
- * \return void
- */
-
-void zmapWindowContainerFeatureSetStyleDisplay(ZMapWindowContainerFeatureSet container_set,
-					       ZMapFeatureTypeStyle          style,
-					       ZMapStyleColumnDisplayState   state)
-{
-  ZMapFeatureTypeStyle local_style = NULL;
-  ItemFeatureValueDataStruct value_data = {NULL};
-  GValue value = {0};
-  GQuark style_id = 0;
-
-  style_id = zMapStyleGetUniqueID(style);
-
-  if ((local_style = zmapWindowStyleTableFind(container_set->style_table, style_id)))
-    {
-      g_value_init(&value, G_TYPE_UINT);
-
-      g_value_set_uint(&value, state);
-
-      value_data.spec_name = ZMAPSTYLE_PROPERTY_DISPLAY_MODE;
-      value_data.gvalue    = &value;
-      value_data.param_id  = ITEM_FEATURE_SET_VISIBLE;
-
-      value_to_each_style_in_table(GUINT_TO_POINTER(style_id), (gpointer) local_style, &value_data);
-
-      g_value_unset(&value);
-    }
-
-  return ;
-}
-
-#endif
 
 /*!
  * \brief Access the show when empty property of a column.
@@ -726,15 +528,7 @@ gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSe
 {
   gboolean show = FALSE;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY, &(container_set->settings.show_when_empty),
-	       NULL);
-
-  show = container_set->settings.show_when_empty;
-#else
   show = zMapStyleGetShowWhenEmpty(container_set->style);
-#endif
   return show;
 }
 
@@ -750,17 +544,7 @@ ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContaine
 {
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), frame_mode);
-
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_FRAME_MODE, &(container_set->settings.frame_mode),
-	       NULL);
-
-  frame_mode = container_set->settings.frame_mode;
-#else
   frame_mode = zMapStyleGetFrameMode(container_set->style);
-#endif
   return frame_mode;
 }
 
@@ -778,24 +562,8 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
   gboolean frame_specific = FALSE;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), FALSE);
-
-  frame_mode = zmapWindowContainerFeatureSetGetFrameMode(container_set) ;
-
-  if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
-    container_set->settings.frame_specific = TRUE;
-
-  if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
-    {
-      container_set->settings.frame_specific = FALSE;
-    }
-
-  frame_specific = container_set->settings.frame_specific;
-#else
   frame_mode = zMapStyleGetFrameMode(container_set->style);
   frame_specific = zMapStyleIsFrameSpecific(container_set->style);
-#endif
 
   if(frame_mode_out)
     *frame_mode_out = frame_mode;
@@ -815,22 +583,9 @@ gboolean zmapWindowContainerFeatureSetIsStrandShown(ZMapWindowContainerFeatureSe
 {
   gboolean strand_show = FALSE ;
 
-#if MH17_NO_MORE_STYLE_TABLES
-
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, &(container_set->settings.strand_specific),
-	       ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND, &(container_set->settings.show_reverse_strand),
-	       NULL) ;
-
-
-  if (container_set->strand == ZMAPSTRAND_FORWARD
-      || (container_set->settings.strand_specific && container_set->settings.show_reverse_strand))
-    strand_show = TRUE ;
-#else
   if (container_set->strand == ZMAPSTRAND_FORWARD
       || (zMapStyleIsStrandSpecific(container_set->style) && zMapStyleIsShowReverseStrand(container_set->style)))
     strand_show = TRUE ;
-#endif
 
   return strand_show ;
 }
@@ -848,19 +603,12 @@ gboolean zmapWindowContainerFeatureSetIsStrandShown(ZMapWindowContainerFeatureSe
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpMode(ZMapWindowContainerFeatureSet container_set)
 {
   ZMapStyleBumpMode mode = ZMAPBUMP_UNBUMP;
-#if MH17_NO_MORE_STYLE_TABLES
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_BUMP_MODE, &(container_set->settings.bump_mode),
-	       NULL);
-  mode = container_set->settings.bump_mode;
-#else
   mode = container_set->bump_mode;
 
   if(mode == ZMAPBUMP_INVALID)
       mode = zMapStyleGetInitialBumpMode(container_set->style);
   if(mode == ZMAPBUMP_INVALID)
       mode = ZMAPBUMP_UNBUMP;
-#endif
 
   return mode;
 }
@@ -885,15 +633,7 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetDefaultBumpMode(ZMapWindowCont
 {
   ZMapStyleBumpMode mode = ZMAPBUMP_UNBUMP;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, &(container_set->settings.default_bump_mode),
-	       NULL);
-
-  mode = container_set->settings.default_bump_mode;
-#else
   mode = zMapStyleGetDefaultBumpMode(container_set->style);
-#endif
 
   return mode;
 }
@@ -903,23 +643,9 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContain
 {
   gboolean x = TRUE;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  container_set->settings.bump_unmarked = ZMAPSTYLE_COLDISPLAY_INVALID;
-
-      // this gets the data from a lot of styles
-      // perhaps it should be assigned when the property is set??
-  g_object_get(G_OBJECT(container_set),
-             ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, &(container_set->settings.bump_unmarked),
-             NULL);
-
-  if(container_set->settings.bump_unmarked &&
-            container_set->settings.bump_unmarked != ZMAPSTYLE_COLDISPLAY_SHOW)
-      x = FALSE;
-#else
   ZMapStyleColumnDisplayState state  = zMapStyleGetUnmarked(container_set->style);
   if(state && state != ZMAPSTYLE_COLDISPLAY_SHOW)
       x = FALSE;
-#endif
 
   return x;
 }
@@ -927,38 +653,6 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContain
 
 
 
-#if MH17_NO_STYLE_BUMP
-
-/*!
- * \brief reset the bump modes
- *
- * \param The container to reset bump modes for.
- *
- * \return The bump mode of the container.
- */
-
-ZMapStyleBumpMode zmapWindowContainerFeatureSetResetBumpModes(ZMapWindowContainerFeatureSet container_set)
-{
-  ZMapStyleBumpMode mode = ZMAPBUMP_UNBUMP;
-#if MH17_NO_MORE_STYLE_TABLES
-  ItemFeatureValueDataStruct value_data = {NULL};
-  GValue value = {0};
-
-  g_value_init(&value, G_TYPE_UINT);
-
-  value_data.spec_name = ZMAPSTYLE_PROPERTY_BUMP_MODE;
-  value_data.gvalue    = &value;
-  value_data.param_id  = ITEM_FEATURE_SET_BUMP_MODE;
-
-  g_hash_table_foreach(container_set->style_table, reset_bump_mode_cb, &value_data);
-
-  mode = g_value_get_uint(&value);
-#else
-  mode = container_set->bump_mode;
-#endif
-  return mode;
-}
-#endif
 
 
 /*!
@@ -977,13 +671,7 @@ gboolean zmapWindowContainerFeatureSetJoinAligns(ZMapWindowContainerFeatureSet c
 
   if(threshold)
     {
-#if MH17_NO_MORE_STYLE_TABLES
-      g_object_get(G_OBJECT(container_set),
-		   ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, &tmp,
-		   NULL);
-#else
       tmp = zMapStyleGetWithinAlignError(container_set->style);
-#endif
       if(tmp != 0)
 	{
 	  *threshold = tmp;
@@ -994,28 +682,6 @@ gboolean zmapWindowContainerFeatureSetJoinAligns(ZMapWindowContainerFeatureSet c
   return result;
 }
 
-#if MH17_NO_DEFERRED
-
-/*!
- * \brief Access the deferred mode of a column.
- *
- * \param The container to interrogate.
- *
- * \return whether the column is deferred.
- */
-
-gboolean zmapWindowContainerFeatureSetGetDeferred(ZMapWindowContainerFeatureSet container_set)
-{
-  gboolean is_deferred = FALSE;
-
-  /* Not cached! */
-  g_object_get(G_OBJECT(container_set),
-	       ZMAPSTYLE_PROPERTY_DEFERRED, &is_deferred,
-	       NULL);
-
-  return is_deferred;
-}
-#endif
 
 #if DOCUMENTED_AS_NOT_USED
 
@@ -1405,10 +1071,6 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 {
   ZMapStyleBumpMode mode = container_set->bump_mode;
 
-#if MH17_NO_MORE_STYLE_TABLES
-  if(mode == ZMAPBUMP_INVALID)
-      mode = zmapWindowContainerFeatureSetGetBumpMode(container_set) ;      /* from style tables */
-#endif
   return(mode);
 }
 
@@ -1452,51 +1114,6 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
 }
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-/* This function is written the wrong way round.  It should be
- * re-written, along with extract_value_from_style_table so that
- * this function is part of utils and extract_value_from_style_table
- * calls it.  It wouldn't need to be here then! */
-#warning function needs re-writing (zmapWindowStyleListGetSetting)
-gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,
-				       char *setting_name,
-				       GValue *value_in_out)
-{
-  GList *list;
-  gboolean result = FALSE;
-
-  if(value_in_out && (list = g_list_first(list_of_styles)))
-    {
-      ItemFeatureValueDataStruct value_data = {};
-      GObjectClass *object_class;
-      GParamSpec *param_spec;
-
-      object_class = g_type_class_peek(ZMAP_TYPE_CONTAINER_FEATURESET);
-
-      if((param_spec = g_object_class_find_property(object_class, setting_name)))
-	{
-	  value_data.param_id  = param_spec->param_id;
-	  value_data.spec_name = setting_name;
-	  value_data.gvalue    = value_in_out;
-
-	  result = TRUE;
-
-	  do
-	    {
-	      ZMapFeatureTypeStyle style;
-	      GQuark unique_id;
-
-	      style = ZMAP_FEATURE_STYLE(list->data);
-	      unique_id = zMapStyleGetUniqueID(style);
-	      extract_value_from_style_table(GINT_TO_POINTER(unique_id), (gpointer) style, &value_data);
-	    }
-	  while((list = g_list_next(list)));
-	}
-    }
-
-  return result;
-}
-#endif
 
 
 /*
@@ -1548,100 +1165,6 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
                                            "GHashTable of ZMap styles for column.",
                                            ZMAP_PARAM_STATIC_RW));
 
-#if MH17_NO_MORE_STYLE_TABLES
-  g_object_class_install_property(gobject_class, ITEM_FEATURE_SET_STYLE_TABLE,
-                          g_param_spec_pointer("style-table", "ZMapStyle table",
-                                           "GHashTable of ZMap styles for column.",
-                                           ZMAP_PARAM_STATIC_RW));
-  /* width */
-  g_object_class_install_property(gobject_class,
-				  ITEM_FEATURE_SET_WIDTH,
-				  g_param_spec_double(ZMAPSTYLE_PROPERTY_WIDTH,
-						      ZMAPSTYLE_PROPERTY_WIDTH,
-						      "The minimum width the column should be displayed at.",
-						      0.0, 32000.00, 16.0,
-						      ZMAP_PARAM_STATIC_RO));
-  /* Bump spacing */
-  g_object_class_install_property(gobject_class,
-				  ITEM_FEATURE_SET_BUMP_SPACING,
-				  g_param_spec_double(ZMAPSTYLE_PROPERTY_BUMP_SPACING,
-						      ZMAPSTYLE_PROPERTY_BUMP_SPACING,
-						      "The x coord spacing between features when bumping.",
-						      0.0, 32000.00, 1.0,
-						      ZMAP_PARAM_STATIC_RO));
-
-  /* bump default */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_DEFAULT_BUMP_MODE,
-                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,
-                                        ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,
-                                        "The Default Bump Mode",
-                                        ZMAPBUMP_INVALID,
-                                        ZMAPBUMP_END,
-                                        ZMAPBUMP_INVALID,
-                                        ZMAP_PARAM_STATIC_RO));
-  /* bump unmarked */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_BUMP_UNMARKED,
-                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
-                                        ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
-                                        "[ hide | show_hide | show ]",
-                                        ZMAPSTYLE_COLDISPLAY_INVALID,
-                                        ZMAPSTYLE_COLDISPLAY_SHOW,
-                                        ZMAPSTYLE_COLDISPLAY_INVALID,
-                                        ZMAP_PARAM_STATIC_RO));
-  /* join aligns */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_JOIN_ALIGNS,
-                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
-                                        ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
-                                        "match threshold",
-                                        0, 1000, 0,
-                                        ZMAP_PARAM_STATIC_RO));
-  /* Frame mode */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_FRAME_MODE,
-                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_FRAME_MODE,
-                                        "3 frame display mode",
-                                        "Defines frame sensitive display in 3 frame mode.",
-                                        ZMAPSTYLE_3_FRAME_INVALID,
-                                        ZMAPSTYLE_3_FRAME_ONLY_1,
-                                        ZMAPSTYLE_3_FRAME_INVALID,
-                                        ZMAP_PARAM_STATIC_RO));
-
-  /* Strand specific */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_STRAND_SPECIFIC,
-                          g_param_spec_boolean(ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,
-                                           "Strand specific",
-                                           "Defines strand sensitive display.",
-                                           TRUE, ZMAP_PARAM_STATIC_RO));
-
-  /* Show reverse strand */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_SHOW_REVERSE_STRAND,
-                          g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,
-                                           "Show reverse strand",
-                                           "Defines whether reverse strand is displayed.",
-                                           TRUE, ZMAP_PARAM_STATIC_RO));
-
-  /* Show when empty */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
-                          g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,
-                                           ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,
-                                           "Does the Style get shown when empty",
-                                           TRUE, ZMAP_PARAM_STATIC_RO));
-
-
-  /* Deferred */
-  g_object_class_install_property(gobject_class,
-                          ITEM_FEATURE_SET_DEFERRED,
-                          g_param_spec_boolean(ZMAPSTYLE_PROPERTY_DEFERRED,
-                                           ZMAPSTYLE_PROPERTY_DEFERRED,
-                                           "Is this deferred",
-                                           FALSE, ZMAP_PARAM_STATIC_RO));
-#endif
 
   /* display mode */
   g_object_class_install_property(gobject_class,
@@ -1740,31 +1263,6 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
       g_value_set_uint(value, container_set->display_state) ;
       break ;
 
-#if MH17_NO_MORE_STYLE_TABLES
-    case ITEM_FEATURE_SET_STYLE_TABLE:
-      g_value_set_pointer(value, container_set->style_table) ;
-      break ;
-    case ITEM_FEATURE_SET_BUMP_SPACING:
-    case ITEM_FEATURE_SET_WIDTH:
-    case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
-    case ITEM_FEATURE_SET_BUMP_UNMARKED:
-    case ITEM_FEATURE_SET_FRAME_MODE:
-    case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
-    case ITEM_FEATURE_SET_DEFERRED:
-    case ITEM_FEATURE_SET_STRAND_SPECIFIC:
-    case ITEM_FEATURE_SET_SHOW_REVERSE_STRAND:
-    case ITEM_FEATURE_SET_JOIN_ALIGNS:
-      {
-	ItemFeatureValueDataStruct value_data = {NULL};
-
-	value_data.spec_name = g_param_spec_get_name(pspec);
-	value_data.gvalue    = value;
-	value_data.param_id  = param_id;
-
-	g_hash_table_foreach(container_set->style_table, extract_value_from_style_table, &value_data);
-      }
-      break;
-#endif
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -1780,13 +1278,6 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 
   container_set = ZMAP_CONTAINER_FEATURESET(gtkobject);
 
-#if MH17_NO_MORE_STYLE_TABLES
-  if (container_set->style_table)
-    {
-      zmapWindowStyleTableDestroy(container_set->style_table);
-      container_set->style_table = NULL;
-    }
-#endif
 
   if (container_set->user_hidden_stack)
     {
@@ -1872,223 +1363,6 @@ static gint comparePositionRev(gconstpointer a, gconstpointer b)
 }
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-
-/* helps out the get_property function as that needs to foreach a hash. */
-static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data)
-{
-  ItemFeatureValueData value_data;
-  ZMapFeatureTypeStyle style;
-  GQuark style_id;
-
-  style_id = GPOINTER_TO_INT(key);
-  style    = ZMAP_FEATURE_STYLE(value);
-  value_data = (ItemFeatureValueData)user_data;
-
-  switch(value_data->param_id)
-    {
-    case ITEM_FEATURE_SET_BUMP_SPACING:
-    case ITEM_FEATURE_SET_WIDTH:
-      {
-	double tmp_width, style_width;
-
-	tmp_width = g_value_get_double(value_data->gvalue);
-
-	g_object_get(G_OBJECT(style),
-		     value_data->spec_name, &style_width,
-		     NULL);
-
-	if(style_width > tmp_width)
-	  g_value_set_double(value_data->gvalue, style_width);
-
-	break;
-      }
-
-    case ITEM_FEATURE_SET_STRAND_SPECIFIC:
-    case ITEM_FEATURE_SET_SHOW_REVERSE_STRAND:
-    case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
-    case ITEM_FEATURE_SET_DEFERRED:
-      {
-	gboolean style_version = FALSE, current;
-
-	current = g_value_get_boolean(value_data->gvalue);
-
-	if(!current)
-	  {
-	    g_object_get(G_OBJECT(style),
-			 value_data->spec_name, &style_version,
-			 NULL);
-
-	    if(style_version)
-	      g_value_set_boolean(value_data->gvalue, style_version);
-
-	  }
-
-	break;
-      }
-
-    case ITEM_FEATURE_SET_FRAME_MODE:
-    case ITEM_FEATURE_SET_BUMP_MODE:
-    case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
-      {
-	guint style_version = 0, current;
-
-	current = g_value_get_uint(value_data->gvalue);
-
-	if (!current)
-	  {
-	    g_object_get(G_OBJECT(style),
-			 value_data->spec_name, &style_version,
-			 NULL);
-
-	    if(style_version)
-	      g_value_set_uint(value_data->gvalue, style_version);
-	  }
-
-	break;
-      }
-
-    case ITEM_FEATURE_SET_BUMP_UNMARKED:
-        if(zMapStyleGetMode(style) != ZMAPSTYLE_MODE_ALIGNMENT)
-          break;
-    case ITEM_FEATURE_SET_VISIBLE:
-      {
-	guint style_version = 0, current;
-
-	current = g_value_get_uint(value_data->gvalue);
-
-	if (!current)
-	  {
-	    g_object_get(G_OBJECT(style),
-			 value_data->spec_name, &style_version,
-			 NULL);
-
-	    if (style_version)
-	      g_value_set_uint(value_data->gvalue, style_version);
-	  }
-
-	break;
-      }
-
-
-    case ITEM_FEATURE_SET_JOIN_ALIGNS:
-      {
-	guint style_version = 0, current;
-
-	current = g_value_get_uint(value_data->gvalue);
-
-	if(!current)
-	  {
-//	    if(zMapStyleGetJoinAligns(style, &style_version))
-            style_version = zMapStyleGetWithinAlignError(style);
-            if(style_version) // if it's set we only care if it's not zero
-	      {
-		g_value_set_uint(value_data->gvalue, style_version);
-	      }
-	  }
-      }
-      break;
-    case ITEM_FEATURE__MIN_MAG:
-      {
-	double all_min_mag, this_min_mag;
-
-	all_min_mag  = this_min_mag = g_value_get_double(value_data->gvalue);
-
-	this_min_mag = zMapStyleGetMinMag(style);
-
-	/* We want the minimum across all styles here. */
-	if(all_min_mag != this_min_mag)
-	  {
-	    if((this_min_mag == 0.0) || (this_min_mag != 0.0 && this_min_mag > all_min_mag))
-	      {
-		this_min_mag = all_min_mag;
-	      }
-	  }
-
-	g_value_set_double(value_data->gvalue, this_min_mag);
-      }
-      break;
-    case ITEM_FEATURE__MAX_MAG:
-      {
-	double all_max_mag, this_max_mag;
-
-	all_max_mag  = this_max_mag = g_value_get_double(value_data->gvalue);
-
-	this_max_mag = zMapStyleGetMaxMag(style);
-
-	/* We want the maximum across all styles here. */
-	if(all_max_mag != this_max_mag)
-	  {
-	    if((this_max_mag == 0.0) || (this_max_mag != 0.0 && this_max_mag < all_max_mag))
-	      {
-		this_max_mag = all_max_mag;
-	      }
-	  }
-
-	g_value_set_double(value_data->gvalue, this_max_mag);
-      }
-      break;
-    case ITEM_FEATURE__DIVIDE:
-      /* This isn't valid. */
-    default:
-      break;
-    }
-
-  return ;
-}
-
-/* helps out functions that need to set settings in styles. can be in a hash_foreach */
-static void value_to_each_style_in_table(gpointer key, gpointer value, gpointer user_data)
-{
-  ItemFeatureValueData value_data;
-  ZMapFeatureTypeStyle style;
-  GQuark style_id;
-
-  style_id = GPOINTER_TO_INT(key);
-  style    = ZMAP_FEATURE_STYLE(value);
-  value_data = (ItemFeatureValueData)user_data;
-
-  if(debug_table_ids_G)
-    {
-      zMapLogMessage("style_id = '%s'", g_quark_to_string(style_id));
-    }
-
-  switch(value_data->param_id)
-    {
-    case ITEM_FEATURE_SET_FRAME_MODE:
-    case ITEM_FEATURE_SET_VISIBLE:
-    case ITEM_FEATURE_SET_BUMP_MODE:
-    case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
-      {
-	guint new = g_value_get_uint(value_data->gvalue);
-
-	g_object_set(G_OBJECT(style),
-		     value_data->spec_name, new,
-		     NULL);
-      }
-      break;
-    default:
-      break;
-    }
-
-  return ;
-}
-
-
-/* helps out resetting the bump more.  hash foreach function */
-static void reset_bump_mode_cb(gpointer key, gpointer value, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style;
-
-  style = ZMAP_FEATURE_STYLE(value);
-
-  zMapStyleResetBumpMode(style);
-
-  extract_value_from_style_table(key, value, user_data);
-
-  return ;
-}
-#endif
 
 
 static void removeList(gpointer data, gpointer user_data_unused)

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.107 2010-11-19 11:48:38 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.108 2011-01-04 11:10:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -706,22 +706,6 @@ void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable)
   return ;
 }
 
-#if MH17_NO_DEFERRED
-void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred)
-{
-  style->deferred = deferred;
-  zmapStyleSetIsSet(style,STYLE_PROP_DEFERRED);
-  return ;
-}
-
-void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean loaded)
-{
-  style->loaded = loaded;
-  zmapStyleSetIsSet(style,STYLE_PROP_LOADED);
-
-  return ;
-}
-#endif
 
 /* Controls whether the feature set is displayed. */
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show)
@@ -1031,21 +1015,6 @@ void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 }
 
 
-#if MH17_NO_STYLE_BUMP
-
-/* Reset bump mode to default and returns the default mode. */
-ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style)
-{
-  ZMapStyleBumpMode default_mode = ZMAPBUMP_INVALID ;
-
-  if (!style->bump_fixed)
-    {
-      default_mode = style->curr_bump_mode = style->default_bump_mode ;
-    }
-
-  return default_mode ;
-}
-#endif
 
 
 /* Re/init bump mode. */

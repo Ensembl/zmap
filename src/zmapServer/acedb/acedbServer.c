@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Sep 24 10:17 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.162 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.163 2011-01-04 11:10:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1095,31 +1095,9 @@ static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, 
 
 static void loadableCB(gpointer data, gpointer user_data)
 {
-  GQuark methods_id = GPOINTER_TO_UINT(data) ;		    /* Not needed. */
   Loadable loadable_data = ( Loadable)user_data ;
-  ZMapFeatureSource source_data ;
 
-  methods_id = zMapStyleCreateID((char *)g_quark_to_string(methods_id)) ;
-
-  if ((source_data = g_hash_table_lookup(loadable_data->method_2_data, GINT_TO_POINTER(methods_id))))
-    {
-      GQuark real_id ;
-      ZMapFeatureTypeStyle style ;
-
-      real_id = zMapStyleCreateID((char *)g_quark_to_string(source_data->style_id)) ;
-
-      if ((style = zMapFindStyle(loadable_data->styles, real_id)))
-	{
-	  gboolean deferred = FALSE ;
-
-#if MH17_NO_DEFERRED
-	  g_object_get(G_OBJECT(style), ZMAPSTYLE_PROPERTY_DEFERRED, &deferred, NULL) ;
-#endif
-	  if (!deferred)
-	    loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
-	}
-    }
-
+  loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
 
   return ;
 }
@@ -2887,12 +2865,6 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	{
 	  mode = ZMAPSTYLE_MODE_GRAPH ;
 	}
-#if MH17_NO_DEFERRED
-      else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
-	{
-	  deferred_flag = TRUE ;
-	}
-#endif
       else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
 	{
 	  deferred_flag = FALSE ;
@@ -3182,11 +3154,6 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
       zMapStyleSetDisplayable(style, displayable) ;
 
-#if MH17_NO_DEFERRED
-      zMapStyleSetDeferred(style, deferred_flag) ;
-      zMapStyleSetLoaded(style, FALSE) ;
-#endif
-
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
 	zMapStyleSetDisplay(style, col_state) ;
 
@@ -3332,12 +3299,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  parent = strtok_r(NULL, "\"", &line_pos) ;
 	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
-#if MH17_NO_DEFERRED
-      else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
-	{
-	  deferred = TRUE ;
-	}
-#endif
       else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
 	{
 	  deferred = FALSE ;
@@ -3729,10 +3690,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (parent)
 	zMapStyleSetParent(style, parent) ;
 
-#if MH17_NO_DEFERRED
-      if (deferred)
-	zMapStyleSetDeferred(style, deferred) ;
-#endif
 
       if (some_colours)
 	{

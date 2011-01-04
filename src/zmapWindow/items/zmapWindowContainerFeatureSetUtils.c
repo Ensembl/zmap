@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.7 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.8 2011-01-04 11:10:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -242,23 +242,12 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
 
 	  parent = FOO_CANVAS_GROUP(zmapWindowContainerGetOverlay(ZMAP_CONTAINER_GROUP(feature_set))) ;
 
-#if MH17_NO_MORE_STYLE_TABLES
-        style = zmapWindowContainerFeatureSetStyleFromID(feature_set,curr_feature->style_id) ;
-#else
         style = curr_feature->style;
-#endif
 
 	  if (style)
 	    {
 	      /* do sub-feature bit or not needed now ? */
-#if MH17_NO_MORE_STYLE_TABLES
-	      if ((id = zMapStyleGetSubFeature(style,ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE)))
-		{
-              style = zmapWindowContainerFeatureSetStyleFromID(feature_set,id) ;
-            }
-#else
             style = curr_feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
-#endif
 		  if (style)
 		    {
 		      ZMapWindowGlyphItem glyph ;
@@ -507,21 +496,10 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 //      GQuark id;
       FooCanvasGroup *parent;
 
-#if MH17_NO_MORE_STYLE_TABLES
-      style = zmapWindowContainerFeatureSetStyleFromID(feature_set,feature->style_id) ;
-#else
       style = feature->style;
-#endif
 
       // if homology is configured and we have the style...
-#if MH17_NO_MORE_STYLE_TABLES
-      if ((id = zMapStyleGetSubFeature(style, ZMAPSTYLE_SUB_FEATURE_HOMOLOGY)))
-	{
-        sub_style = zmapWindowContainerFeatureSetStyleFromID(feature_set,id) ;
-      }
-#else
       sub_style = feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_HOMOLOGY];
-#endif
 
       // otherwise (eg style from ACEDB) if legacy switched on then invent it
       if(!sub_style)

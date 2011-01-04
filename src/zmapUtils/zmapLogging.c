@@ -32,12 +32,11 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.29 2010-09-07 09:25:36 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.30 2011-01-04 11:10:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
 
 
 

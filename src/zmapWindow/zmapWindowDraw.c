@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.133 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.134 2011-01-04 11:10:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -589,11 +589,6 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
       set_frame  = zmapWindowContainerFeatureSetGetFrame(container) ;
 #endif
 
-#if MH17_NO_RECOVER
-      feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
-
-      if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
-#else
 
 /* MH17: acedb only gives us lower cased names
    previously capitalised name can=me from req_featuresets ???
@@ -602,7 +597,6 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 */
       if(container->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
 
-#endif
 	{
 	  if (IS_3FRAME_TRANS(window->display_3_frame))
 	    displayed = TRUE ;
@@ -1385,13 +1379,6 @@ static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *poin
 
 	if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
 	  {
-#if MH17_NO_RECOVER
-/* this is not used! */
-	    ZMapFeatureSet feature_set ;
-
-	    feature_set = zmapWindowContainerGetFeatureSet(container);
-	    zMapAssert(feature_set);
-#endif
 	    if (!(coord_data->in_view)
 		&& (coord_data->compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE
 		    || zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container) != ZMAPSTYLE_COLDISPLAY_SHOW))

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov  4 13:33 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.74 2010-12-08 08:57:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.75 2011-01-04 11:10:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -333,38 +333,6 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_ou
 
 
 
-#if MH17_NO_STYLE_COPY
-/*
- * Noddy functions for handling our style lists within window.
- *
- * These might be noddy _but_ they are mucky, the logic in calling routines
- * is muddied and we need to clear this up....
- *
- */
-
-gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles, GHashTable *display_styles)
-{
-  gboolean result = FALSE ;
-
-  if (read_only_styles && g_hash_table_size(read_only_styles))
-    {
-      if (window->context_map.styles)
-	zMapStyleDestroyStyles(window->context_map.styles) ;
-
-      result = zMapStyleCopyAllStyles(read_only_styles, &(window->context_map.styles)) ;
-    }
-
-  if (display_styles  && g_hash_table_size(display_styles))
-    {
-      if (window->display_styles)
-	zMapStyleDestroyStyles(window->display_styles) ;
-
-      result = zMapStyleCopyAllStyles(display_styles, &(window->display_styles)) ;
-    }
-
-  return result ;
-}
-#endif
 
 gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 					     ZMapFeatureBlock block,
@@ -412,92 +380,6 @@ gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor 
 
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-
-/*
- *                      Style table functions
- *
- */
-
-/* Set of functions for managing hash tables of styles for features. Each column in zmap has
- * a hash table of styles for all the features it displays. */
-GHashTable *zmapWindowStyleTableCreate(void)
-{
-  GHashTable *style_table = NULL ;
-
-  style_table = g_hash_table_new_full(NULL, NULL, NULL, styleDestroyCB) ;
-
-  return style_table ;
-}
-
-
-/* Adds a _copy_ of the style to the list of feature styles using the styles unique_id as the key.
- * NOTE that if the style is already there it is not added as this would overwrite
- * the existing style.
- *
- * If the style was there or was added successfully then a pointer to the style is returned,
- * otherwise NULL is returned.
- *  */
-ZMapFeatureTypeStyle zmapWindowStyleTableAddCopy(GHashTable *style_table, ZMapFeatureTypeStyle new_style)
-{
-  ZMapFeatureTypeStyle style = NULL ;
-
-  zMapAssert(style_table && new_style) ;
-
-  if (!(style = g_hash_table_lookup(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)))))
-    {
-      style = zMapFeatureStyleCopy(new_style) ;
-
-      g_hash_table_insert(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)), (gpointer) style) ;
-    }
-
-  return style ;
-}
-
-
-/* Finds a feature style using the styles unique_id. */
-ZMapFeatureTypeStyle zmapWindowStyleTableFind(GHashTable *style_table, GQuark style_id)
-{
-  ZMapFeatureTypeStyle style ;
-
-  zMapAssert(style_table && style_id) ;
-
-  style = g_hash_table_lookup(style_table, GINT_TO_POINTER(style_id)) ;
-
-  return style ;
-}
-
-
-/* Calls the app_func for each of the styles in the table. */
-void zmapWindowStyleTableForEach(GHashTable *style_table,
-				 ZMapWindowStyleTableCallback app_func, gpointer app_data)
-{
-  ZMapWindowStyleTableDataStruct table_data ;
-
-  zMapAssert(style_table && app_func) ;			    /* Do not assert app_data it can be zero. */
-
-  table_data.func = app_func ;
-  table_data.data = app_data ;
-
-  /* Call the users style processing function. */
-  g_hash_table_foreach(style_table, styleTableHashCB, &table_data) ;
-
-
-  return ;
-}
-
-/* Destroys the style table. */
-void zmapWindowStyleTableDestroy(GHashTable *style_table)
-{
-  zMapAssert(style_table) ;
-
-  g_hash_table_destroy(style_table) ;
-
-  return ;
-}
-
-/* End of Style Table functions... */
-#endif
 
 
 /* create or extract a style for a column as a whole */
@@ -1133,34 +1015,3 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 }
 
 
-#if MH17_NO_MORE_STYLE_TABLES
-/*
- *                  Internal routines.
- */
-
-
-/* Called when a style is destroyed and the styles hash of feature_styles is destroyed. */
-static void styleDestroyCB(gpointer data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-
-  zMapStyleDestroy(style) ;
-
-  return ;
-}
-
-
-
-/* A GHFunc() callback, used by zmapWindowStyleTableForEach() to call the applications
- * style callback. */
-static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)value ;
-  ZMapWindowStyleTableData style_data = (ZMapWindowStyleTableData)user_data ;
-
-  /* Call the apps function passing in the current style and the apps data. */
-  (style_data->func)(style, style_data->data) ;
-
-  return ;
-}
-#endif
