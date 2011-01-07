@@ -1,4 +1,4 @@
-<!-- $Id: zmapWindowColConfig.html,v 1.3 2010-12-09 10:18:58 mh17 Exp $ -->
+<!-- $Id: zmapWindowColConfig.html,v 1.4 2011-01-07 14:21:54 mh17 Exp $ -->
 <h2>Column Config Window - interface to pipe servers</h2>
 <fieldset><legend>Background</legend>
 <h3>Deferred loading of columns</h3>
@@ -156,10 +156,9 @@ RC on column gives a choice of 'configure this column' or 'configure all columns
 <h5>Loose ends</h5>
 <p>
 <ul>
-<li>zmapWindowFetchData() as called from zmapWindowColConfig.c/deferred_page_apply() needs to be given featureset names not columns and the list should be freed afterwards
 <li> requesting makred regions needs agreement on protocol w/ anacode
 <li> 3F, 3FT, Show translation, and DNA need some special handling
-<li> makred regions (loaded list) needs reviewing as does handling of empty featuresets and stubs
+<li> marked regions (loaded list) needs reviewing as does handling of empty featuresets and stubs
 <li> find and verify/fix other interfaces
 </ul>
 </p>

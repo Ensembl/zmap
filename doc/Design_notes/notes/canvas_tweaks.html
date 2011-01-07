@@ -1,4 +1,4 @@
-<!-- $Id: canvas_tweaks.html,v 1.5 2010-11-19 15:55:41 mh17 Exp $ -->
+<!-- $Id: canvas_tweaks.html,v 1.6 2011-01-07 14:21:54 mh17 Exp $ -->
 
 <h2>Speeding up the use of the Foo Canvas</h2>
 
@@ -93,11 +93,27 @@ Given that the list of covered regions stays very short there seems little point
 <h3>Some caveats</h3>
 <p>This has so far been an experiment and there are some issues that need to be resolved:
 <ul>
-<li> some ZMap features such as list features in column may need to be adjusted to refernce the feature context rather than the canvas
-<li> zoom appears to operate without doing a re-draw and this code needs to be adjusted to add featrues to the canvas
+<li> some ZMap features such as list features in column may need to be adjusted to reference the feature context rather than the canvas
+<li> zoom appears to operate without doing a re-draw and this code needs to be adjusted to add features to the canvas
 <li> bump column must draw the missing features
 </ul>
 The later two imply some performance overhead, although not as great as drawing the whole column in the first place.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Faster sorting of featuresets and columns</legend>
+<p>Many perfomance improvements can be implemented by algorithms that presume sorted data and as more of these are implemented then sorting will have a greater influence on speed. (Caveat: most of the time spent by ZMap is due to operating the foo canvas and also GObjects, Howver if an algorithm reduces the use of these then improvements will be had).
+</p>
+<p>Performance of ZMap should be limitied by sorting and searching - all it does is to draw lines - and most fo the data to be sorted is held in linked lists which can be sorted efficiently using a merge sort.  This gives O(n log n) for the worst case (and the best case) but it can be improved by using a radix sort.  Given that the features we want to sort are ordered by start coordinate whcih can be expressed as a 32 bit integer (although in the canvas these get converted to real numbers) we can implement a list based radix sort using 256 bins, resulting in a worst and best case of O(4n) operations, which implies that performance improvements can be had for feature sets with more than 16 features.  For a larger data set (eg 30K Trembl) we expect to run  1000 times as fast, and for a bigger but real data set (170K Trembl) we expect the sort to be 8000 times faster.
+</p>
+
+<h3>Radix sort: implementation for a list of 32 bit integers</h3>
+<p>A simple function can be writtent to operat on a GList and be given a comparison fucntion in a similar way to <b>g_list_sort()</b>.  Note that radix sort is not comparison based and the similarity stops there.
+</p>
+<p>Radix sort is stable ie the ordering of source data is preserved for equal items. It works by placing items in bins according to thier value and in the case of sorting integers the cardinal example is to use bins for each digit (0-9) and to sort first by the least significant digit.  This data (from the bins) is then concatenated in order and sorting proceeds on the next least signifcant digit, and we repeat until there are no more digits left.
+</p>
+<p>As we choose 256 bins for a 32 bit integer we need to iterate four times only.  The bins can be implemented using an array of 256 lists and therefore requires 1K of memory and provides instant lookup for each base-256 digit from the features.  The function given to the sort shoudl provide the coordinate to be sorted from the particular data structure in the source list.
 </p>
 
 </fieldset>

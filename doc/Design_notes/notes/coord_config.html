@@ -1,0 +1,45 @@
+<h2>Coordinate systems and configuration</h2>
+<fieldset><legend>Chromosome and ZMap coordinates</legend>
+<p>Chromosome coordinates are useful when dealing with external sources and people but are unwieldy when annotating and ZMap has traditionally held features based on slice coordinates ie based from 1.
+</p>
+<p>The user will always be presented with ZMap coordinates in status widgets and the ruler also provides a tooltip with the zmap coordinate and if available the corresponding chromosome coordinate.
+</p>
+<p>Traditionally the chromosome coordinates have been derived from the sequence name (eg 'chr3-18_123124234-234242342').
+</p>
+
+<h3>New configuration options</h3>
+<p>As a first step towards specifying the regiojn of interest in ZMap configuration we will provide the following options:
+<pre>
+[ZMap]
+start=12324124
+end=234242234
+csname=chromosome
+csver=Otter
+</pre>
+and initially any values other than chromosome and Otter will be invalid.
+</p>
+<p>Subsequently various other parameters currently used in pipe server URL's will be controlled by extra option in [Zmap].
+</p>
+
+<h3>Use with otterlace</h3>
+<p>dev_otterlace will accept an environment variable (OTTERLACE_CHROMOSOME_COORDINATES=1) to choose between chromosome coordinates and 1-based coordinates.  This will control whether of not start and end is configured in ZMap and also whether pipe server scripts rebase thier coordinates from 1. ACEDB must be configured seperately.
+</p>
+
+
+<h3>Handling chromosome coordinates without new configuration</h3>
+<p>If available, the chromosome coordinates in the sequence name in the ZMap config will be used to present chromosome coordinates on request by the user (eg in the ruler tooltip).
+Pipe servers and ACEDB should provide GFF data based from 1 and requests for data will be based from 1.
+</p>
+
+<h3>Handling chromosome coordinates with new configuration</h3>
+<p>
+ZMap will store features with chromosome coordinates and Pipe servers and ACEDB must provide these in their GFF output.  Coordinates presented to the user will be adjusted to be based from 1.  Requests for data (eg load from mark) will be in chromosome coordinates. <b>NB</b> ACEDB must be configured with extra data to facilitate this.
+</p>
+
+<h3>Implications for ZMap</h3>
+<p>Data requests will always be in the native coordinate system.
+</p>
+<p>The scale display must be adjusted when choromosome coords are configured.
+</p>
+
+<fieldset>
