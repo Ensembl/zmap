@@ -4,7 +4,7 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <!-- Start of page. -->
-<!-- CVS info:  $Id: styles.html,v 1.3 2010-09-27 11:13:18 mh17 Exp $ -->
+<!-- CVS info:  $Id: styles.html,v 1.4 2011-01-07 14:31:00 edgrif Exp $ -->
 <h2>ZMap Feature Sets and Styles</h2>
 
 
@@ -396,25 +396,33 @@ the properties themselves.
       <td>If true, gapped alignment data is parsed out of the incoming data stream.</td>
     </tr>
     <tr>
-      <td>alignment-align-gaps</td>
-      <td>boolean</td>
-      <td>If true, gapped alignment data is drawn.</td>
+      <td>alignment-show-gaps</td>
+      <td>&lt; never | mark | always &gt;</td>
+      <td>Controls when the gaps in an alignment are displayed:
+	  <ul>
+	    <li><b>never:</b> gaps are never displayed.
+	    <li><b>mark:</b> gaps are only displayed in the marked region when a column is bumped.
+	    <li><b>always:</b> gaps are always displayed when a column is bumped.
+	  </ul>
+      </td>
     </tr>
     <tr>
-      <td>alignment-within-error</td>
+      <td>alignment-join-align</td>
       <td>int</td>
-      <td>Specifies allowable alignment error in bases between sub-blocks <b>within</b> a single gapped alignment.</td>
-    </tr>
-    <tr>
-      <td>alignment-between-error</td>
-      <td>int</td>
-      <td>Specifies allowable alignment error in bases between separate alignments.</td>
+      <td>Specifies whether separate hits (HSP's) for the same match sequence should be joined
+	  by lines when bumped. The int value is the maximum allowable gap in bases
+	  between separate hits, if the gap is great then no line is drawn.</td>
     </tr>
     <tr>
       <td>alignment-allow-misalign</td>
       <td>boolean</td>
       <td>If true then match and reference do not have to be exactly the same length, reference
 	  coords will be used for display.</td>
+    </tr>
+    <tr>
+      <td>alignment-pfetchable</td>
+      <td>boolean</td>
+      <td>If true, the sequence for an alignment feature can be retrieved using the pfetch server.</td>
     </tr>
     <tr>
       <td>alignment-blixem</td>
@@ -425,11 +433,6 @@ the properties themselves.
 	    <li><b>blixem-x:</b> peptide alignment.
 	  </ul>
       </td>
-    </tr>
-    <tr>
-      <td>alignment-pfetchable</td>
-      <td>boolean</td>
-      <td>If true, the sequence for an alignment feature can be retrieved using the pfetch server.</td>
     </tr>
     <tr>
       <td>alignment-perfect-colours</td>
@@ -458,6 +461,12 @@ the properties themselves.
       </td>
     </tr>
 
+    <tr>
+      <td>alignment-unmarked-colours</td>
+      <td>boolean</td>
+      <td>If true then colinear markers are always shown, if false then they are only displayed
+	  when there is a mark set and a column is bumped.</td>
+    </tr>
     <tr>
       <td>transcript-cds-colours</td>
       <td>colour type</td>
