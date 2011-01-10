@@ -1,8 +1,0 @@
-
-This directory contains code that was originally written by Simon Kelley to implement
-a zmap running under xace.
-
-Rob Clack then took this code and tried to change it to have genuinely acedb/non-acedb
-parts, this was not a success and was abandonned.
-
-The code is here just so that is does not get lost, that's all.
