@@ -136,7 +136,7 @@ ZMAP_ACEDB_RELEASE_CONTAINER=~acedb
 if [ -z "$ZMAP_ACEDB_RELEASE_DIR" ] ; then
   ZMAP_ACEDB_RELEASE_DIR='DEVELOPMENT'
 fi
-ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd belvu dotter xremote'
+ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd belvu xremote'
 
 
 # seqtools stuff
@@ -144,7 +144,7 @@ ZMAP_SEQTOOLS_RELEASE_CONTAINER=~zmap/SeqTools
 if [ -z "$ZMAP_SEQTOOLS_RELEASE_DIR" ] ; then
   ZMAP_SEQTOOLS_RELEASE_DIR='BUILD.DEVELOPMENT'
 fi
-
+ZMAP_SEQTOOLS_BINARIES='blixem blixemh dotter'
 
 # AceConn stuff
 ZMAP_ACECONN_RELEASE_CONTAINER=$ZMAP_ACEDB_RELEASE_CONTAINER
