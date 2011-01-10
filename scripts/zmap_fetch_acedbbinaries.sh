@@ -226,18 +226,33 @@ done
 
 
 #
-# The new blixem has a dist file so just copy this across.
+# The new blixem has binaries and a dist file so just copy all across.
 #
 
 zmap_message_out "Copying Seqtools dist file..."
 
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
+seqtools_bin_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/bin"
+
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     zmap_message_out "Running cp $seqtools_dist_file $DIST_DIR"
     cp $seqtools_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist_file"
+
+else
+
+    for binary in $ZMAP_SEQTOOLS_BINARIES;
+      do
+      zmap_message_out "Running cp $seqtools_bin_dir/$binary $TARGET/$binary"
+      cp $seqtools_bin_dir/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+
+      # check locally written files.
+      zmap_message_out "Testing $binary was copied..."
+      [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
+      [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
+    done
 
 fi
 
