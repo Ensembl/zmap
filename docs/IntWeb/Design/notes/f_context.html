@@ -1,0 +1,96 @@
+<!-- $Id $ -->
+<h2>Restructuring the Feature Context </h2>
+<fieldset><legend>Introduction</legend>
+<p>Please refer to <a href= "Design_notes/modules/zmapFeature.shtml">zmapFeature</a> for a discussion of featuresets columns and styles. See the section ?? below for details if implementation and implications of this.
+</p>
+<p>Data in ZMap is stored in a <b>Feature Context</b> which is organised in a hierarchy of Context, Align, Block, FeatureSet, Features.  The features themselves can be complex but this is not relevant here.
+</p>
+<p>Historically with ACEDB ZMap would request a list of 'featuresets' from ACE and each one of these could turn out to include data from several sources.  The acedbServer (and later pipeServers) module would request all the data and store this in a new Feature Context, and this feature context would be passed to the <b>zmapView</b> module complete.  The <b>zmapView</b> module would then merge this data into its own feature context and the process can be repeated for each server.  As ZMap moves to being mainly pipeServer based (although ACE will still be supported and needed esp for genefinder features) and various analysis modules are added it become necessary to distinguish more clearly between source data (featuresets) and display layout (columns).
+</p>
+</fieldset>
+
+<fieldset><legend>What's different?</legend>
+<h3>One featureset per data type</h3>
+<p>The Feature Context is the raw data as extracted from various servers and is organised in the same hierarchy as before but each featureset contains data from one source and of one type.  For example requesting 'Repeats' from ACEDB would traditionally result in a single featureset containing data from the following analyses:
+<ul>
+<li> repeatmasker
+<li> repeatmasker_line
+<li> repeatmasker_recon
+<li> repeatmasker_sine
+<li> repeatmasker_waterman
+<li> tandem
+<li> trf
+</ul>
+It would be possible to identify the type of each feature, but not to access all of them without scanning all the featuresets in the group.
+</p>
+<p>This has been achieved by not combining featuresets in <b>zmapGFF2parser.c/makeNewFeature()</b> according to the <i>source_2_featureset</i> hash in the Server which equates to the <i>featureset_2_column</i> hash in the View.  This same data is combined for display in <b>zmapWindowDrawFeatures.c/find_or_create_column()</b> to achieve the same layout as before.
+</p>
+<p>However the situation is slightly more complicated...
+<p>
+<h3>Display columns are containers for featuresets and featuresets are data</h3>
+<p>What gets displayed in a ZMap is a series of columns each containing features, which may belong to more than one featureset. A column is defined in the ZMap configuration either by the [Zmap] columns command or by implication by concatenating the requested featuresets from each configured server.  Note that we still have this confusing terminology: a featureset command in a server can be used to imply a display column.  From ACEDB (and possibly other servers??) such a 'featureset' may result in several source featuresets that are stored distincly in the feature context and are displayed in a single column.
+</p>
+<p>It is preferred that the columns command is used to define display columns, but legacy configuration will still be honoured - each item in a featureset command may create a display column of the same name and the implied/ unspecified source featuresets will appear in the feature context and be mapped into it.
+</p>
+<p>On display a featureset is mapped to its appropriate column via the <i>view-&gt;featureset_2_column</i> hash.  Ths column is created on demand and identified by the name of the column (as configured or implied).  There is a unique id use internally and an original/ display id (with upper case) and a description for presentation to the users.  Previously a column was identified by its attached featureset, which is not determinisitic except through incidental patterns of use.  The container structure also has its own unique and original ids, so there was some duplication.
+</p>
+<p><b>Column Ordering</b> is now done using the <i>container->unqiue_id</i> rather than <i>container->feature_any->unique_id</i>.
+</p>
+<h3>The View and Window data structures have more data</h3>
+<p>The Window now has a copy of the featureset_2_column mapping from the view to allow it to display data in the right place.
+</p>
+<p>In the View the previous list of columns (used to define the display order) has been replaced by a hash table, initially using the same ZMapGFFSet structure used for view->featureset_to_column.  The Window also has a copy of this.  The window still has window->feature_set_names, which is a list of columns in display order.
+</p>
+</fieldset>
+
+<fieldset><legend>Loose Ends</legend>
+<h3>View data and Window data</h3>
+<p>The View has a few data structures used to handle mapping between data sources display columns and styles, and each window has a copy of these. Whenever a new window is opened or more data is added then  this is merged into the view data and the update percolated through to all the windows.  It's not clear why this copying is necessary, but in case it is the existing mechanism has been extended to the extra data items that have been added.  It would be desirable to replace the copied data with a pointer to the view's data (or rather, give the window a pointer to the view).  Perhaps this data has been copied for reasons of scope - if the window had access to the view data then it would have to include zmapView_P.h - yet maintaining copies introduces further scope for errors &amp; bugs.  Perhaps an new structure could be invented to amalgamate all thee items and pass them around.
+</p>
+<h3>Column data and ordering</h3>
+<p>It is hoped to remove window->feature_set_names, which is used for column ordering and use the columns data instead.  The columns data is distinct from the featureset to column mapping but as a practical (interim) measure the same data structure is used to store both - historically they have been treated as the same data.  A new data structure is needed for column data, which should include display-order, bump status (to be removed from the style), the list of required styles (remove from featureset_2_styles)
+</p>
+<h3>Column bumping and style data</h3>
+<p>The current bump state of a column is stored in the style (see below for comments about style lists in ContainerFeatureSets) and this requires each style to be copied to a columns style list, in case of a style being used for two columns.  This more properly belongs to the container.  A style is a description of how to display a feature, and the bump state is state data (yes really!). There are two other flags in the style related to deferred columns, and when these are also moved to the colmn or featureset then styles will become static data structures and can be passed around as pointers instead of copies.
+
+<h3> Columns featuresets and style lists</h3>
+<p>Currently each featureset has one style and a column (previously know as a featureset) can contain multiple featuresets. It is also possible for a column to have an extra style of its own. The column container canavs item has a single featureset 'attached', which was previously used for column ordering.
+When displaying a column for each feature the entire list of styles is scanned for particular style parameters and the first one found applies to all features in the column.
+</p>
+<p>This is not deterministic, except in terms of incidental patterns of use, and we may find that one set of data is affected by the style of another set.  Proper configuration implies that each style is fully specified for its features and it would be better to refer directly to the correct style.  Column specific paramters (such as strand-sensitive can be specified for individual featuresets, or if desired, in the column specific style.  It is hoped to ammend the ContainerFeatureSet code to reflect this.  If a column specific style is not configured, then as at present the first featureset to be displayed will define the column specific parameters (similar to the present situation). It will only be necessary to lookup one style instead of scanning a list.
+</p>
+<p>There is some redundancy in the data used to construct columns of features. zmapView->featureset_2_style gives a list of the style needed to display all the features in a column, and zmapView->featureset_2_column maps each featureset to the required column and zmapView->source_2_sourcedata specifies the style.
+</p>
+
+<h3>Columns dialog</h3>
+<p>
+It may be wise to review the columns dialog in terms of 'available columns', and the distinction between featuresets and columns as above, especially when considering that (particularly with pipeServers) we request featuresets not columns.  Recent requests (eg <a href="Design_notes/notes/RNAseq.shtml">RNASeq</a> affect this dialog and a review is required,
+</p>
+
+<h3>Column sorting</h3>
+<p>The windowFocus code sorts the canvas itens in a column to handle feature tabbing.New fucntions (such as <a href="Design_notes/notes/EST_mRNA.shtml">EST masking</a>) need to sort individual feature sets and thsi can be done in the features context without affecting fucntion such as feature tabbing.
+<i>Good News: no work required!</i>
+</p>
+
+<h3>Merging data from server in to the view</h3>
+<p>This is still not perfect, there are a few areas where memory is possibly not being freed, and the merge strategy is ad-hoc in places.  There are also some unexpected side effects to be had while changing code - adding columns to the requested featuresets caused the featuresets_2_styles data to be lost.  This is probably not code spontaneously breaking but more likely being used in new ways.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Organising featuresets</legend>
+<h3>Context to Featureset</h3>
+<p>In the feature context we represent a sequence of DNA and various associated features and this is organsied as aligns blocks and featuresets.  These are stored as a tree structures containing hash tables that hold the next lower level in the hierarchy and given the small numbers of these groups there is not performance issue with this structure - items may be looked up individually or processed in turn efficiently.
+</p>
+<p>Each featureset contains data of one type (formerly several related types) and the data volumes can be quite large (eg 50k for some alignment featuresets.  As these are strioed in a hash table they can be looked up very quickly and also processed en masse with little performance overhead, but note that the features will not be sorted.
+</p>
+<h3>Feature context to Foo Canvas Item</h3>
+<p>When displayed a featureset can be split into several columns on the screen and each display item has a pointer to its feature in the feature context.  The Foo Canvas implements groups of data as lists and this can be sorted, but random access is potentially very slow.
+</p>
+<a name="sort_featureset"></a>
+<h3>Processing Featureset data</h3>
+<p>For some functions (eg <a href="Design_notes/notes/EST_mRNA.shtml">masking EST features</a>) we wish to process the feature context in order and this requires either a change of data structure or an additional set of pointers to each feature to allow sorted access. Please follow that link for implementation details.
+</p>
+
+
+</fieldset>

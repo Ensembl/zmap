@@ -1,0 +1,95 @@
+<!--#set var="banner" value="ZMap Stand-Alone Design"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<H2>ZMap: Stand-Alone Design</H2>
+
+
+
+<H3>Background</H3>
+
+<p>ZMap currently runs as a peer program with otterlace which sets up the
+configuration files and servers and data that ZMap needs. It also an important
+design goal however that ZMap can be run "stand-alone", that is to say that the
+user can simply and easily run ZMap to view their data e.g. from a GFF
+file.</p>
+
+<p>This document discusses what work is needed to support "stand-alone"
+operation of ZMap.</p>
+
+
+<H3>Feature Display</H3>
+
+<p>When ZMap was originally written is was seen as desireable that there be no
+hidden "methods" for display of particular types of features as these had
+proved unpopular with users because they could not be customised. Unfortunately
+this was taken too far in that if the user does not specify a "style" for a
+feature then it is not displayed. This was a mistake, it forces the user to do
+major work, i.e. learn all about styles, just to do a basic feature
+display.</p>
+
+<p>ZMap should have a default display style for each type of data which should
+be applied in the absence of a style. This could be done along the following
+lines:</p>
+
+
+<ul>
+  <li><b>Basic Features, Alignments, Transcripts:</b> would all be displayed as
+      rectangles with a white background and a black border. The extent of the
+      rectangle would be the maximum extent of the feature, e.g. for a
+      transcript the extent would be from the start of the first exon to the
+      end of the last.
+  <li><b>Sequence:</b> would be black text on a white background.
+</ul>
+
+<p>Adding support for this would enable a user to start ZMap with just an input
+file of features and nothing else.</p>
+
+
+
+  
+<H3>Data Input/Output</H3>
+
+<p>A common idiom in unix is for programs to read from stdin and write to stdout:</p>
+
+<pre>
+cat file | word &gt; words.txt
+</pre>
+
+<p>ZMap should be able to read data from stdin, e.g. in the following example
+ZMap would be reading a gff file from stdin and displaying the features in that
+file:</p>
+
+<pre>
+cat b0250.gff | zmap
+
+or
+
+zmap &lt; b0250.gff
+</pre>
+
+<p>Alternatively the user should be able to give file(s) as command line args
+in the normal unix way:</p>
+
+<pre>
+zmap [zmap flags] file1 file2 ... filen
+</pre>
+
+
+<H3>Configuration Files</H3>
+
+<p>ZMap already allows the user to specify configuration files on the command line
+as well as in <b>$HOME/.ZMap</b> which should provide enough flexibility. The contents
+of the files need revisiting however to ensure that the user only has to supply
+the minimum information.</p>
+
+
+
+<!--#include virtual="/perl/footer"-->

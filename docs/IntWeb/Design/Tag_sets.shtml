@@ -1,0 +1,54 @@
+<!--#set var="banner" value="ZMap Feature Sets and Styles"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<br/>
+<fieldset>
+<legend id="Tag_sets">Tag Sets In Acedb</legend>
+
+
+<H3>Tag Sets</H3>
+
+<P>A "tag set" is a set of tags and data that occur in a defined order and can be processed
+by acedb code regardless of the class they appear in.
+These tag sets are colour coded in this document to help
+identify the significant parts of the tag set:
+
+<P><pre><code><font color=red>feature_tag</font> <font color=green>[anonymous tag and object reference]</font> <font color=purple>[feature specific tags and data]</font>
+</pre></code>
+
+<P>Where:
+
+<P><font color=red>feature_tag</font> is the tag that the code searches for and locates
+on to find out what sort of feature it is processing. This tag must be specified <b>exactly</b>
+as given in these examples.
+
+<P><font color=green>anonymous tag and object reference</font> are sometimes included
+to allow insertion in to the tag set of object references of arbitrary class (this is also known
+as the "tag2 system"). Although this anonymous tag must be present, it's value is not read
+by the code and so it can have any value. Similarly while the anonymous object reference
+must be present, the class of the object is not used by the code and so it can be any class.</p>
+
+<P><font color=purple>feature specific tags and data</font> are specific tags and data that follow
+a particular feature_tag and must be in the order and of the type specified in the tag set description.</p>
+
+<P>Some examples:
+
+<P><pre><code><font color=red>Source_Exons</font><font color=purple> Int UNIQUE Int</font>
+
+<font color=red>Homol</font> <font color=green>DNA_homol ?Sequence</font> <font color=red>XREF</font> <font color=green>DNA_homol</font> <font color=purple>?Method Float Int Int Int Int #Homol_info</font>
+</pre></code>
+
+
+
+</fieldset>
+
+
+<!--#include virtual="/perl/footer"-->

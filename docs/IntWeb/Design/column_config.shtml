@@ -1,0 +1,68 @@
+<!--#set var="banner" value="Column Configuration"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<H2>Column Configuration</H2>
+
+
+<pre>
+
+Column Ordering
+---------------
+
+There are two column orderings required for zmap, the columns in the main zmap window and the
+column orderings in the navigator window. These are specified in the ZMap configuration file in
+the "source" stanza:
+
+
+source
+{
+featuresets = "Locus \"3 Frame\" \"3 Frame Translation\" vertebrate_mRNA Assembly_Tags etc."
+navigator = "Genomic_canonical Locus Scale"
+}
+
+(Note that feature set names can have embedded blanks)
+
+These lists not only specify the order of columns but also control which feature sets will be
+displayed, if the feature set (or its Column_group) is not in this list then the feature will not
+be displayed.
+
+
+Other Column settings
+---------------------
+
+acedb did not allow configuration of attributes such as "between column" spacing, we could
+add this to the acedb database in the form of some kind of "meta style" but probably its
+better to simply specify this in the configuration file.
+
+Currently we have:
+
+"canvas_maxsize"              maximum size in pixels of canvas window
+"canvas_maxbases"             <not used>
+"keep_empty_columns"          maintain empty columns to keep even spacing on screen between blocks
+"display_forward_coords"      when specified means coords for reverse complement view are -ve of forward coords
+"show_3_frame_reverse"        when specified means 3 frame cols are displayed on reverse strand as well
+
+spacing:
+
+"align_spacing"               these all control the horizontal space between various parts of zmap,
+"block_spacing"               probably column spacing is the most relevant.
+"strand_spacing"
+"column_spacing"
+"feature_spacing"
+
+"feature_line_width"          controls default thickness of lines used for feature display.
+
+
+
+</pre>
+
+
+<!--#include virtual="/perl/footer"-->

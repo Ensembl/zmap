@@ -1,0 +1,487 @@
+<!-- $Id: optimise.html,v 1.1 2011-01-10 13:47:48 edgrif Exp $ -->
+
+<h2>Optimising ZMap</h2>
+
+<fieldset><legend>Overview</legend>
+<p>
+Some ZMap functions take a long time, notably 3-Frame toggle and RevComp, zoom and we wish to make these run much faster.  The design so far has been to display all the data so that it is displayed in a single bitmap which can be scrolled using hardware and inevitably as data size increases display functions get slower.
+</p>
+
+<p>
+It may be beneficial to consider some different aspects of speed and percieved speed:
+<ul>
+<li> macro-efficiency where the overall design and choice of strategy affects perfomance on a large scale
+<li> micro-efficiency where the implementation of a particular strategy affect performance within the overall context
+<li> latency of response to the user - if the user is still able to operate ZMap while some process is completing then ZMap will not be seen as slow, whears a busy cursor and no control is frustrating
+</ul>
+
+</p>
+<hr>
+<p>
+<a href="Design_notes/notes/optimise.shtml#ideas">Ideas/Action</a>
+<a href="Design_notes/notes/optimise.shtml#gobj_build">Notes on ZMap build</a>
+<a href="Design_notes/notes/optimise.shtml#results">Results</a>
+</p>
+
+</fieldset>
+
+<fieldset><legend>Measurements</legend>
+
+<h3>Test data and environment</h3>
+<p>We need to be able to evaluate how long a given process takes to see if improvements can be made or are effective and we need a reproducable test environment with a fixed set of data and operations that can be run and results generated automatically.
+</p>
+
+<p>
+Some ad-hoc timing code has been used in the past and suffers the disadvantage that it must be coded and then removed for a production build.  This could be used in a separate build only used for development and automatically removed from production versions but instead the X-remote test program could be enhanced to gather this data, which would allow the timing code to remain in the ZMap source.
+<ul>
+<li> some way to use scripts to drive a sequence of operations
+<li> a data set and sequence of operations for repeated testing
+<li> extra messages in the protocol to specify 'timing mode' and for ZMap to report 'operation complete'. It should be safe for ZMap to send operation complete messages for any command from X-remote, but it may be useful to have more data supplied as each major part of an operation completes (eg RevComp to report reversing each column and then drawing each column).  For simplicity we can have the X-remote test program perform all the timing.
+<li> Alternatively ZMap could just send spontaneous start and stop messages for various functions which would also allow ad-hoc manual testing.
+<li> We could also add a timing data to the ZMap event log.  This would be generally useful, but has the disadvantage that data has to be extracted from the log to be useful.
+<li> A config option could be added to specify 'print out timing data'.
+
+</ul>
+</p>
+<h3>Actions we may want to time</h3>
+<p>
+<ul>
+<li> display feature context - driven from busy cursor?
+<li> revcomp and then display - driven from busy cursor?
+<li> 3 Frame toggle
+<li> zoom - canvas not clipped
+<li> zoom - canvas clipped
+<li> bump column
+</ul>
+After some experience we may wish to split some of these into smaller chunks.
+</p>
+
+<fieldset><legend>Action plan</legend>
+<h3>Constructive delivery</h3>
+<p>With a view on max results from min work a practical approach shall be used:
+<ul>
+<li> ZMap to have a config option to produce timing data where-ever hard coded. This will be left in the source but not run if not configured
+<li> events to be recorded will be in plain text format with TAB delimited fields and start with msec since program startup
+<li> initialliy these will be output to STDOUT but later may be included in exactly the same format in an XML string and sent to the X-remote test program
+<li> initially functions can be timed by operating ZMap by hand and analysing the output by hand or with a script.
+<li> when convenient the X-remote test program will be modified to send a series of commands to ZMap, which will have to be modified to process them. Data output will be via ZMap STDOUT.  NB: this step is important for automation if ZMap testing, especially if we remove Asserts from the production versions.
+<li> if there is a need, ZMap will send X-remote messagae back to the test program with result data.
+</ul>
+</p>
+<p>This process will be subject to 'constant review'.
+</p>
+</fieldset>
+
+<h3>Effect of data size</h3>
+<p>It would be useful to have a similar test sequence run on datasets of different sizes to see whether certain functions are especially sensitive to data size.  However, just testing with a large data set may be a simpler strategy - if any part of the code has a problem then it will become apparrent.
+</p>
+
+<h3>Timing and call frequency data from VTune</h3>
+<p>Running ZMap under VTune is quite useful - we get a hardware assisted profile  of the whole PC which appears to be quite accurate and data can be grouped by process, thread, module (eg zmap, foo-canvas, glib) and source file and ordered by name, CPU % and call count.  This does not appear to provide cumulative totals but is very effective for showing the contribution of individual functions.  Call frequencies appear to be estimated but are driven by execution (or caching?) of call instructions.
+</p>
+<p>
+Note that the CPU percentages given are relative to a module and therefore cannopt be compared directly between modules.  There also appears to be no way to export the data eg to a spreadsheet, so it looks quite difficult to get a cumulatative total of time spent within a function.  There appears to be no cut &amp; paste function either.
+</p>
+
+
+<h3>Canvas choice</h3>
+<p>Jeremy has produced some statistics comparing various canvas widgets and this reveals that the foo-canvas is the best choice, only bettered by openGL.
+</p>
+
+<h3>Ad hoc test programs</h3>
+<p>As styles are used to draw every feature a simple test program was written to test the effect of using function calls to read style parameters. (in ~mh17/src/styles).  This shows a 10x performance improvement when just reading the style's structure members directly.
+
+
+</fieldset>
+
+<fieldset><legend>Initial timing results</legend>
+<p>Here's a summary of the big picture from loading ZMap, toggling 3-Frame and then clicking on RevComp.
+<br/> All other modules are less than 0.7%.  ZMap used 97% of the CPU.
+</p>
+<table border="1" cellpadding="3">
+<thead><tr><th>Module</th> <th>CPU %</th></tr><thead>
+<tbody>
+<tr> <td> libGObject</td> <td>24.6 </td> </tr>
+<tr> <td> libGLib</td> <td> 18.9</td> </tr>
+<tr> <td> libc</td> <td>15.6 </td> </tr>
+<tr> <td> zmap</td> <td> 12.8</td> </tr>
+<tr> <td> libgdk</td> <td> 11.2</td> </tr>
+<tr> <td> libpthread</td> <td>11.0 </td> </tr>
+<tr> <td> libX11</td> <td> 2.7</td> </tr>
+<tr> <td> vmlinux</td> <td> 1.4</td> </tr>
+</tbody>
+</table>
+
+<p>Within the ZMap module grouping their data by source file reveals (all others less than 2.0%):
+<table border="1" cellpadding="3">
+<thead><tr><th>Module</th> <th>CPU %</th></tr><thead>
+<tbody>
+<tr> <td>foo_canvas.c </td> <td>32.9 </td> </tr>
+<tr> <td> foo_canvas_rect-ellipse.c</td> <td>15.9 </td> </tr>
+<tr> <td> zmapWindowCanvasItem.c</td> <td>13.0 </td> </tr>
+<tr> <td> crtn.S</td> <td> 5.7 </td> </tr>
+<tr> <td> zmapStyle.c</td> <td>3.1 </td> </tr>
+<tr> <td> zmapFeatureUtils.c</td><td> 2.8 </td> </tr>
+<tr> <td> zmapWindowFeature.c</td><td> 2.6 </td> </tr>
+<tr> <td> zmapWindowItemFactory</td> <td>2.3 </td> </tr>
+<tr> <td> zmapFeature.c</td> <td>2.0 </td> </tr>
+</tbody>
+</table>
+</p>
+
+<p>Grouping by function reveals that:
+<ul>
+<li> zmapIsPropertySetID() uses 2% of the ZMap CPU and this function is arguably not necessary as almost always default values can be provided.
+<li> zmapFeatureIsValid() also uses 2% of the ZMap CPU and is only called from ZMapAssert() so could argualbly be removed from production versions
+<li> 40% of libGobject's CPU is taken up be check_instance_is_a and check_instance_cast
+<li> libGlib is dominated by g_hash_table_lookup (24%) and g_datalist_id_get_data (14%)
+</ul>
+</p>
+</fieldset>
+
+<a name="ideas"></a>
+<fieldset><legend>Ideas for performance improvement</legend>
+<h3>Targeting the right code</h3>
+<p>Other than loading feature data we regard all startup and configuration code as acceptably fast and we can afford to perform extensive validation of data as necessary.  However, recent changes to the startup behaviour of ZMap/ otterlace may require a review of this - if we operate a separate pipe server for each featureset then an ineffcient way of reading this data may become an issue.
+</p>
+
+<h3>Checking compiler options</h3>
+<p>Have we selected the best compiler optimisations?</p>
+
+<h3>Speeding up style data access (a)</h3>
+<p>Styles are GObjects and are read in from a file or a database such as ACEDB. Style data is currrently not accessable outside of module other than by function call and this was deemed appropriate to ensure data integrity. Structure members are set via a GObject->set() function call, which is inevitably quite slow.
+</p>
+<p>However, accessing styles takes up 2%+ of the CPU and can be reduced to a small fraction of 1% by allowing direct access to the style data structure. (access is prevented by having the style structure defined in a private header).</p>
+
+<fieldset><legend>Action plan</legend>
+<p>It is suggested that the implementation is changed as follows:
+<ul>
+<li> the style structure is moved to the public header
+<li> in the public header the typdef ZMapFeatureTypeStyle is defined as a const pointer to ensure the code outside the module cannot write to the data
+<li> in the private header this typedef is changed to allow write access
+<li> the access functions (such as zMapStyleGetWidth() are removed and replaced with macros, which preserves the existing type-checking and means we do not need to change any other code
+<li> the styles config code is changed to fill in default values for all data items, removing the need to call zMapStyleIsPropertySetID(). There may be cases where the calling code will need to call this but for the majority of cases if a property is not set a default value is used.  Inheritance of styles will use the 'is_set' flags as at present.
+</ul>
+</p>
+<p><b>Expected gain 2% of zmap CPU, about 0.4% overall</b></p>
+<h5>Results</h5>
+<p> Little difference to overall time used but vtune reports a change of ~2% of ZMap CPU for StyleIsPropertySetID().
+</p>
+
+</fieldset>
+
+<h3>Speeding up style data access (b)</h3>
+<p>
+To find a single basic feature's style (the majority of features) the window items class factory calls zmapWindowContainerFeatureSetStyleFromID(), and to set the colours a separate call to (class)->get_style() is made. Glyphs got though a similar process:
+<pre>
+style = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
+</pre>
+which translates as:
+<pre>
+style = zmap_window_canvas_item_get_style(basic);
+</pre>
+This does not appear in VTune as it's static but it calls some globals:
+<pre>
+zMapWindowCanvasItemIntervalGetTopLevelObject 0.1%  CPU 100k calls = 0.001 per 1k calls
+zmapWindowContainerCanvasItemGetContainer     0.55% CPU 600k calls = 0.0009 per 1k calls
+zmapWindowContainerFeatureSetStyleFromID      0.4%  CPU 500k calls = 0.0008 per 1k calls
+</pre>
+
+So for each basic feature we expect to use 0.0027 + 0.0008 = 0.0035% CPU per 1000 features just to lookup the style.  The situation may be worse: zmapWindowContainerFeatureSetStyleFromID calls a GObject type check function and then another function which calls g_hash_table_lookup, both of which are implicated in 25% CPU of thier respective modules, both of which use significantly more CPU than ZMap.
+
+This is significantly more than required to read the style data once we have the struct, even using function calls.
+</p>
+
+
+<fieldset><legend>Action plan</legend>
+<a name="featurestyle"></a>
+<h4>Restructuring the feature data to speed up style access</h4>
+<p>The server model used by ZMap  is such that display styles must be present in the server so that it can filter out data that has no display style. In the case of ACEDB styles are traditionally derived from the database and for pipe servers (and optionally for ACEDB) styles are passed to the server in a file.  All servers return styles in data structure which is then merged with existing styles.
+</p>
+<p>There are also some hard coded styles that are provided by ZMap</p>
+<p>Features when read in by the server are given a style id which is later used to look up the style in a small hash table owned by the column the feature is to be displayed in.  The whole feature contect is passed over to ZMap and merged into the existing one.</p>
+<p> By combining the styles data with the feature context from each server it would be possible to include a pointer to a feature's style in the feature itself, giving instant lookup.  This has some implications:
+<ul>
+<li> It would be necessary for the server to return only the styles it needs to avoid using large amount of memory when many servers are used, and each given a global styles file.  Alternatively, we could change the model such that ZMap is to read in the styles data and pass what is required to each server. This makes sense structurally as styles are display data and logically should be controlled by ZMap not an external source.
+<li> Some care would have to be taken with sub-feature styles - these could be implemented as pointers to styles in the style structure rather than ID's as at present.  With legacy styles this could get a little complex
+<li> Starting servers would run slightly faster as they would not have to re-read the styles file, and styles would not be changable until a new view was started.
+<li> Possibly we would be able to remove the window->styles GData list.
+<li> ZMap provides some hard coded styles and these might have to be passed to ACEDB and combined in the ACEDB feature context ... oh ok... the server code adds these automatically.
+</ul>
+</p>
+<p><b>Expected gain 1.4% of zmap CPU, plus some contribution from GLib and Gobject, about 0.5-1.0% overall</b></p>
+<h5>Initial results</h5>
+<p>
+The featureset CanvasGroup now holds a copy of its style and each feature has a pointer to this. In ProcessFeature() the function calls to lookup styles have been removed. The column group still has copies of all the styles needed - any changing parameters such as current bump mode are stored in these not the private featureset copies.
+</p>
+<h5> Further work required</h5>
+<p>The column group objects need to be given pointers to the featureset styles instead of making copies of all the styles needed so that all the code access the same instances of each style</p>
+<p>Sub-features types are still processed by style lookup via the column group. and should be implemented as pointers: these extra styles would be accessable only though thier parent via each features style pointer </p>
+<p>See <a href="Design_notes/notes/optimise.html#gdata">below</a> for performance measurements.</p>
+
+</fieldset>
+
+<h4>Fixing zMapWindowFeatureStrand</h4>
+<p>This function decides which strand a feature belongs on which involves looking up the style in a window-global GData list, and attaching the style directly to the feature will save us another 1.7% on ZMap CPU.
+</p>
+
+<fieldset><legend>Action plan</legend>
+<p>Removed this functions' style lookup function after restructuring the data</p>
+<p><b>Expected gain 1.7% of zmap CPU 0.2% overall</b></p>
+<h5>Results</h5>
+<p>Apparently little change: is this % at the level of noise?</p>
+</fieldset>
+
+<h3>Removing Asserts</h3>
+<p>Arguably the Assert calls used in ZMap perform a valid function during development but when the code functions correctly they should never be called and they are a waste of CPU.
+</p>
+<p>The function zMapFeatureIsValid() is only called from Assert (38 times) and uses 1.3% of the zmap CPU.  There are many other calls to Assert (817 in total) and if we pro-rate this as 10%/ per call this implies a much greater saving of 15% of the zmap CPU. This seems quite high and most other calls are probably less frequent.
+</p>
+
+<h4>How can we justify removing Asserts?</h4>
+<p>These are already coded as macros and can be adjusted to be included only in development versions of code.  During development that are used to catch programming errors and are only valid where there is a logical error in the code that has broken an assumption about the data. They should not be used to detect errors in external data (from users/ other programs or other modules).  During testing we hope to find all these logical errors but on occasion we have reports from users.
+</p>
+<p>
+If would be advisable to create a test environment that can exercise ZMap functions and  be run automatically before releasing any build - this would give greater confidence and it should also be noted that Asserts do not prevent problems from occurring.
+</p>
+
+
+<fieldset><legend>Action plan</legend>
+<p>Implement a debug/ production build option to control how Asserts are compiled.<p>
+<p>Extend the x-remote or other test program to automatically exercise most of the ZMap code.  Note that here we are not testing for correct function but only that ZMap does not abort - the test can be done with user interaction.
+<p><b>Expected gain 1.7% of zmap CPU 0.2% overall, plus a few % more</b></p>
+</fieldset>
+
+<h3>Speeding up GLib</h3>
+<a name="gdata"></a>
+<h4>GData keyed data lists</h4>
+<p>Processing these (just the function g_datalist_id_get_data()) accounts for 14% of 17% of the total or approximately 3% CPU overall.</p>
+<p>They are used only for styles and feature contexts - lists of featuresets.  Given that we can easily have 300+ styles these would be better coded as a GHashTable.
+</p>
+<p>It appears that this function is only called from zMapFindStyle() which could be removed from most of the code if we did as <a href="Design_notes/notes/optimise.shtml#featurestyle">above</a>.
+Note that this function is called from processFeature(), (once directly and once via zmapWindowFeatureStrand()) which is called to display every feature, and has to search the window-global list of ~300 styles for each feature.
+</p>
+<fieldset><legend>Action plan</legend>
+<p>Remove the style GData list structures and replace then with small hashes and intergrate styles into the feature context.</p>
+<p><b>Expected gain 3% CPU overall, plus a few % more</b></p>
+<h5>Results</h5>
+<p>GData has been removed from styles and now is only used for feature sets.<p>
+<p>Significant changed in CPU use can be observed:
+<table border="1" cellpadding="3">
+<thead><tr><th>Function</th> <th>Before CPU %</th> <th>After CPU %</th></tr><thead>
+<tbody>
+<tr> <td> g_hash_table_lookup</td> <td>22.4 </td> <td>27.1 </td></tr>
+<tr> <td> g_datalist_id_get_data</td> <td> 14.7</td> <td>2.7 </td></tr>
+</tbody>
+</table>
+which equates to a saving of 7.3% of GLib CPU, whidh is approx 50% more significant than ZMap CPU.
+</p>
+</p>However real time used to display data is the same as before.</p>
+<h5>Further work</h5>
+<p>g_datalist_set_data() remains at 6% (from 7%) - this is used for 'multiline-features' in the GFF parser and while we would expect this  only to apply to a small fraction of the features it is identified as having 14M calls. It may be called fro every feature in which case replacing this last instace with a hash table may be worth while.
+</p>
+</fieldset>
+
+<h3>Speeding up GObject (a)</h3>
+<p>GObject takes up 25% of the total CPU and this is dominated by casts and type checking. We can gain 14% of 25% by replacing G_TYPE_CHECK_INSTANCE_CAST with a simple cast, although it might be good to have the option to switch this back on for development.
+
+<a name="gobj_build"></a>
+<fieldset><legend>Action plan</legend>
+<p>Implement a global header or build option to allow these macros to be changed easily. Click <a href="Design_notes/build/build.shtml">here</a> for some notes on how to operate the build system.</p>
+<p>This option is controlled by:
+<pre>
+#if GOBJ_CAST
+</pre>
+<p><b>Expected gain 4% CPU overall</b></p>
+
+<h4>Details</h4>
+These macros appear in:
+<pre>
+include/ZMap/zmapBase.h:2
+include/ZMap/zmapGUITreeView.h:2
+include/ZMap/zmapStyle.h:2
+libcurlobject/libcurlobject.h:2
+libpfetch/libpfetch.h:6
+zmapWindow/items/zmapWindowAlignmentFeature.h:2
+zmapWindow/items/zmapWindowAssemblyFeature.h:2
+zmapWindow/items/zmapWindowBasicFeature.h:2
+zmapWindow/items/zmapWindowCanvasItem.h:2
+zmapWindow/items/zmapWindowContainerAlignment.h:2
+zmapWindow/items/zmapWindowContainerBlock.h:2
+zmapWindow/items/zmapWindowContainerChildren.h:8
+zmapWindow/items/zmapWindowContainerContext.h:2
+zmapWindow/items/zmapWindowContainerFeatureSet.h:2
+zmapWindow/items/zmapWindowContainerGroup.h:2
+zmapWindow/items/zmapWindowContainerStrand.h:2
+zmapWindow/items/zmapWindowGlyphItem.h:2
+zmapWindow/items/zmapWindowLongItem.h:2
+zmapWindow/items/zmapWindowSequenceFeature.h:2
+zmapWindow/items/zmapWindowTextFeature.h:2
+zmapWindow/items/zmapWindowTextItem.h:2
+zmapWindow/items/zmapWindowTranscriptFeature.h:2
+zmapWindow/zmapWindowDNAList.h:2
+zmapWindow/zmapWindowFeatureList.h:4
+</pre>
+zmapStyle and zmapWindow/items/* will be changed.and the other files left unchanged.
+</fieldset>
+<h5>Results</h5>
+<p>There a was no change: further inspection reveals that this cast macro was never called for Basicfeatures which account for the bulk of CanvasItems.  It is thought that most of the calls to these dynamic cast functions are indirect and may be inside the foo canvas and GLib.
+</p>
+
+<h3>Speeding up GObject (b)</h3>
+
+<p>Another function G_TYPE_CHECK_INSTANCE_TYPE uses 5% of the total CPU, but cannot be easily removed as it it used to make choices about what code to run.  There are 140 of these but given that there are 140M call in out test data some major gains could be expected if we could remove a few of them - there are cases where this function is called when we can reasonably expect it to succeed in all cases.
+</p>
+
+<fieldset><legend>Action plan</legend>
+<p>Inspect calls to these macros and identify ones that can be removed.  Create new macros for these that can be switched on or off globally<p>
+
+<p><b>Expected gain 2-3% CPU overall</b>, but given that plan (a) above had no effect It's probably not worth the large effort involved.</p>
+
+</fieldset>
+
+<h3>GObject paramters</h3>
+<p> A lot of functions connected with GValue and GParam appear near the top of the list, but as foo-canvas items use these mechanisms it seem unlikely that this can be improved without a major re-design.  However, as we have control of the windowCanvasItem code it may be possible to make some significant gains.
+</p>
+<fieldset><legend>Action plan</legend>
+<p>Initially do nothing.  After investigating other issues review how the windowCanvasItems work.</p>
+</fieldset>
+
+</fieldset>
+
+<fieldset><legend>How much improvement can be acheived?</legend>
+<p>Most of the above is tinkering with micro efficiency and looks like gaining us about 10% and is unlikely to gain more than 20% even if extended, although it may be that an iterative process will highlight new bottlenecks as the most obvious are cleared.</p>
+<p>Given that all ZMap does is to draw boxes on a window, what is the best performance we can expect? We have data for foo-canvas performance and if we factor in an equivalent number of floating point operations then this may give us some idea of what should be achievable.
+</p>
+<p>The vast majority of features are 'basic features' ie a simple rectangle and the foo canvas handles drawing the lines and fill colour.  ZMap has to calculate the coordinates for each one and to estimate the work required we have:
+<ul>
+<li> top and bottom coordinates calculated from feature BP addresses and converted to world coordinates - two FP multiplications
+<li> left and right coordinates calculated from column width and score - 2 multiplications and two additions, and converted to world coordinates - 2 FP multplications
+<li> all coordinates offset by column coordinates - 4 FP additions per level = 20
+<li> long items to get clipped (not included here)
+</ul>
+If we add these up we get 6 multiplications and 22 additions amd 16 of the additions are arguably not necessary - they relative position of each level of the feature conntext is calcualted for each feature.
+</p>
+<p>Here's a summary of some real timings.  The foo canvas timing is for an 'expose' event which may not be the whole story.
+<table border="1" cellpadding="3">
+<thead><tr><th>Operation</th> <th>Time</th><th>Comment</th></tr><thead>
+<tbody>
+<tr> <td>100k x 16 FP additions </td> <td>0.013s </td> </tr>
+<tr> <td>100k x 6 FP multiplications </td> <td>0.005s </td> </tr>
+<tr> <td>expose 100k foo canvas items </td> <td>0.010s </td> </tr>
+<tr> <td>Revcomp 100k features </td> <td>0.050s </td> </tr>
+<tr> <td>Display 100k features </td> <td> 7 sec</td> </tr>
+<tr> <td>Lookup 300 item data list 50k times </td> <td> 0.180s</td> <td>(was thought to be a problem, equates to 360ms each</td></tr>
+<tr> <td>Create hash table of 50k items</td> <td> 0.100s</td> <td>Done for trembl column</td></tr>
+<tr> <td>Lookup 1M hash table entried in 50k table</td> <td> 0.050s</td> <td>not affected by table size</td></tr>
+</tbody>
+</table>
+</p>
+<p>
+<b>NOTE</b> Tests reveal that creating a hash table of 100k items fails - the code does not return for a very long time.
+</p>
+<fieldset><legend>Action plan</legend>
+<p>Implement a test environment using x-remote and perform various experiments as described above. Review where the CPU time is going what can be achieved.</p>
+</fieldset>
+
+<h3>Multiple foo-canavses</h3>
+<p>If we create one canvas per column then we avoid any need to re-calculate x-coordinates for columns that are already drawn, and if the foo canvas performance degrades significantly for large amount of data then this could  cretae a significant improvement. For example if it operates at O(n log n) for real data then splitting the canvas into 16 sections could give a 4x improvement in speed.  However as some columns (eg swissprot, trembl) hold the majority of the data this is unlikely to occur in practice.
+</p>
+<h3>Displaying bitmaps on the foo canvas</h3>
+<p>Currently we display individual feature items as foo canvas items and when these overlap (eg when viewing a whole clone) then much of the time is used to overlay existing features.  If we could generate our own bitmap quicker than via the foo canvas and then display the bitmap then we could avoid significant foo canvas/ glib overhead.  Mouse events would of course have to be translated by ZMap.
+<p>
+<h4>How quickly can we draw a bitmap?</h4>
+<p>Using G2 to paint 50k filled rectangles of up to 1k bp on a canvas of 150k takes...
+</p>
+<p>How to find out? Add a key handler to ZMap to call a function that does that for the trembl featureset from the feature context (not the foo-canvas) and writes the bitmap to a file using G2.  Also run it with no drawing to find out how long it takes to access the features and calculate coordinates.  Crib some code from screenshot/ print. Verify the ouput by viewing the file and test different formats.
+</p>
+<p>Is G2 efficient? A simple stand-alone test program would demonstrate how quickly a bitmap can be generated using random rectangles.  png may be an ineffcient format if it includes drawing instructions for each feature.
+</p>
+<p>
+How to determine the maximum size of a column's bitmap? Y is easy as we have seq start and end for the window.
+X is more complex as not all styles have a width set and features are sized according to a score, but max and min score or width have to be set and it must be possible to calculate this from the set of styles needed by a column. Removing blank space from around a column of features would also be simple if we keep a running min and max value - the bitmap can be moved and displayed partially.
+</p>
+<h5>GDK bitmaps</h5>
+<p>Cursory inspection of gdk_draw_pixbuf() reveals that bitmaps can be drawn with hardware acceleration using mediaLib in three different chipsets.
+</p>
+
+</fieldset>
+
+<a name="results"></a>
+<fieldset><legend>Initial Results</legend>
+<h3>Analysys of 3-Frame and RevComp</h3>
+<h4>Test protocol and documentation</h4>
+<p>ZMap is run with the command line argument '--conf-file=ZMap_time' on malcolm's PC (deskpro18979) and STDOUT redirected to a file and the following config option set:
+<pre>
+[debug]
+timing=true
+</pre>
+Data is provided by running the 'acepdf' alias.
+</p>
+<p>
+ZMap is allowed to finish loading data and the 3-Frame is selected and when complete RevComp and the Zmap is shut down.  The output file starts with a comment containing the config file name and the date.
+Output files are stored in <b>~mh17/zmap/timing/</b> are named to reflect mods made before testing and some more detailed information recorded in <b>~mh17/zmap/timing/optimise.log</b>.
+</p>
+
+<h3>Initial comments</h4>
+<p>
+Using a simple manually generated printout of timings for various parts of these functions it is clear that performance is dominated by <b>zMapWindowDrawFeatureSet()</b>, which calls <b>ProcessFeature()</b> for each feature, and this function has already been flagged above as inefficient.  In particular it can be seeen that displaying the Trembl columns (about 50k features) takes 5 seconds whether in 3-frame mode or not.
+</p>
+<p>Creating columns takes 0.2sec, which is suspiciously slow, but this is insignificant realted to drawing features, which equates to 12k floating point multiplications per feature.
+</p>
+<p>Processing the window takes 2.8 seconds.</p>
+
+<p><i>Reverse complementing the features themselves take only 50ms</i>.</p>
+
+<h3>Comments about timing methodology</h3>
+<p>Simply addition of timer functions to the code is easy but tedious and works well for major functions. Some automated procedure that gave cumulative times for all functions would be be a lot more efficient in terms of developer time, and would also provide higher quality information:
+<ul>
+<li> By counting execution times and printing out results afterwards we can gather timing information that is not affected by diagnostic I/O.  This is particularly relevant for functions called frequently such as ProcessFeature().
+<li> Functions that take little time need not have thier execution time reported (effectively we have a 4ms resolution), but simply the number of calls, and the calling functions used to infer the time used.
+<li> Unfortunately if we have a function like ProcessFeature that takes about 0.08ms to run we can't time this.
+</ul>
+</p>
+</fieldset>
+
+<fieldset><legend>Where does the time go?</legend>
+<p>Adding further data to ProcessFeature reveals that the trembl column take about 4 seconds to draw and then more than one second to bump, even though it is not bumped on startup. Possibly it is configured wihtout a valid bump mode as default (eg ZMAPBUMP_UNBUMP); however this is relatively unimportant.</p>
+
+<p>Experiments  with commenting out code show that almost all the time is used by <b>zMapWindowFeatureDraw()</b> which apart from some innocuous parent lookups calls <b>zmapWindowFToIFactoryRunSingle()</b>.  Inside this almost all the time is spent in <b>((method)->method)()</b>, and from within that almost the time is spent in:
+<ul>
+<li> <b>zMapWindowCanvasItemCreate().foo_canvas_item_new()</b> 1 sec
+<li> <b>zMapWindowCanvasItemCreate().item->post_create()</b> 1.2 sec
+<li> <b>zMapWindowCanvasItemAddInterval()</b> 1.5 sec
+</ul>
+</p>
+<p>post_create() is the function that adds lists of foo canvas items to features, background overlay and underlay.
+</p>
+<h4>Limits to speed</h4>
+<p>From this seems likely that wittout a major redesign we are limited to the speed of the foo canvas, which if we stripped out most of our code or made it run in minimal time would be about 4x as fast as the current ZMap.
+</p>
+<h4>Ways forwards</h4>
+<h5>Simplifying window canvas items</h5>
+<p> For the vast majority of features (alignments) a simple rectangle is enough and the current creation of a canvas item group for each feature consumes a lot of memory and time.  By removing this complexity we could expect to save 50%.
+</p>
+<h5>Using integer arithmetic</h5>
+<p>It may be possible to speed up the zmap and the foo canvas by modifying it to use integer arithmetic. Here's a comparison of floating point, long and long long on a 32 bit PC doing 60M operations:
+
+<table border="1" cellpadding="3">
+<thead><tr><th>Operation</th> <th>double</th><th>long long</th><th>long</th></tr><thead>
+<tbody>
+<tr> <td>Multiplication</td> <td>0.544</td> <td>0.396</td><td>0.356</td></tr>
+<tr> <td>Division</td> <td>1.240</td> <td>1.732</td><td>2.056</td></tr>
+<tr> <td>Addition</td> <td>0.536</td> <td>0.356</td><td>0.184</td></tr>
+</tbody>
+</table>
+<p>Some of this seems anomalous, but perhaps the long long division is compiled via conversion to double??
+If we can avoid large amounts of division (eg by pre-calculating reciprocals) and convert to long long arithmetic then there is a chance to save 30% plus the division bonus on arithmetic operations.
+</p>
+<p>However if most of the time is spent operating the foo canvas and Glib then this would likely be ineffective.
+</p>
+
+<h5>Reducing the GObject overhead</h5>
+<p>The vtune data suggests this may be where a lot of time is spent.  However changing this would be a lot of work.</p>
+
+</fieldset>
+
+

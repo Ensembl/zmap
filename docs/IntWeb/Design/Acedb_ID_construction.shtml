@@ -1,0 +1,407 @@
+<!--#set var="banner" value="Acedb ID construction"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<H2>ZMap: Constructing Unique IDs from Acedb Feature Data</H2>
+
+
+<br/>
+<fieldset>
+<legend id="Background">Background</legend>
+
+<p>ZMap displays large numbers of features which may potentially come from several different
+sources. All of these features must be uniquely displayed and while most of these features
+will never be modified by the user they must still be uniquely identified for
+operations such as selection and searching. This document describes a proposal for
+how to uniquely identify all the features exported from an acedb database.</p>
+
+<p>The proposal must take into account efficiency in terms of memory usage and feature
+look up because the number of some features can be very large.</p>
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
+<legend id="Acedb_Uniqueness">Acedb Uniqueness</legend>
+
+
+<p>Uniqueness in acedb occurs at various levels:</p>
+
+<ul>
+    <li>In the model:
+	<ul>
+	  <li><b>Class:</b> Class names must be unique in a models file
+	  <li><b>Tag:</b> Tag names must be unique within a class definition
+	</ul>
+    <li>In the data:
+	<ul>
+	  <li><b>Object level:</b> Object names must be unique within a class
+	  <li><b>Data field level:</b> Values must be unique for any one data field
+	</ul>
+</ul>
+
+<p>At first glance this seems a simple scheme but it can be used to represent features that
+have small or even essentially no differences, e.g. given the following models file:</p>
+
+<pre>
+?Sequence DNA UNIQUE ?DNA UNIQUE Int
+
+?Homol_A 
+	  Homol	DNA_homol ?Sequence ?Method Float Int Int Int Int
+
+?Homol_B
+	  Homol	DNA_homol ?Sequence ?Method Float Int Int Int Int
+</pre>
+
+
+<p>then this is perfectly legal:</p>
+
+<pre>
+Homol_A: "try this"
+DNA_homol "sequence_A" "My_method" 0.1 1000 1500 1 501
+
+Homol_B: "try this"
+DNA_homol "sequence_A" "My_method" 0.1 1000 1500 1 501
+</pre>
+
+
+<p>which interestingly would produce this GFF from Acedb:</p>
+
+<pre>
+XXXXX   My_method       similarity      1000    1500    0.1     +       .       Target "Sequence:sequence_A" 1 501
+
+XXXXX   My_method       similarity      1000    1500    0.1     +       .       Target "Sequence:sequence_A" 1 501
+</pre>
+
+<p>In the GFF the uniqueness has been lost because the enclosing object Class-objectname tuple has been lost.
+The proposal must be able to distinguish these as different features so must include the Class-objectname
+as additional tag/value fields in the exported GFF to distinguish these features.</p>
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
+<legend id="Encoding_uniqueness">Encoding Acedb's Uniqueness</legend>
+
+
+<p>Some features are represented in the database by an object (e.g. a transcript) while
+other features are represented by sets of tags/data within an Acedb
+object. Of these latter features, some will specify features that map to just one
+position (e.g. an allele) while others specify features that map to many positions (e.g. homologies).
+Uniqueness must be guaranteed for all of these.</p>
+
+
+<p>The types of feature that must be represented include three main variants:</p>
+
+
+<pre>
+Feature object:
+
+?Sequence 
+	  Structure  From	Source UNIQUE ?Sequence  // start/end given in parent ?Sequence object.
+          Method ?Method
+
+Simple features within an object:
+
+?Sequence
+	  Feature ?Method Int Int UNIQUE Float UNIQUE Text
+
+
+Alignment features within an object:
+
+?Sequence
+	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int Int Int Int
+</pre>
+
+<p>An initial representation of the most complex (alignment) type of feature would be:
+
+<pre>
+Model:
+
+?Sequence
+          Homol DNA_homol ?Sequence XREF DNA_homol ?Method Float Int Int Int Int
+
+
+Data:
+
+Sequence : "my_sequence"
+DNA_homol "some_sequence" "some_method" 0.994 10000 10500 1 501          
+
+
+Unique id:
+
+
+"Sequence" + "my_sequence" + "DNA_homol" + "some_method" + "0.994" + "10000" + "10500" + "1" + "501"
+</pre>
+
+<p>This representation would require around 60 bytes <b>per</b> homology feature just for the id,
+substantial memory can be saved however:</p>
+
+<ul>
+  <li>Firstly, in all cases the method can be removed as this is the key for the
+      containing feature set for that feature and hence does not need to be part of the id.
+  <li>Secondly, several of the qualifiers that make the entire feature description unique are
+      often constant from one feature to the next so these can be stored just once rather than for every
+      feature.
+</ul>
+
+<p>For each feature the id will be split into two parts:</p>
+
+<ol>
+  <li>The <font color=green>Constant</font> parts which do not contain position or score
+  <li>The <font color=red>Variable</font> parts consisting of position and score
+      which will change with every feature
+</ol>
+
+
+<p>Some examples (constant part is given in <font color=green>green</font> and the
+variable part in <font color=red>red</font>):</p>
+
+<pre>
+Object:
+
+Sequence : "A_sequence"
+Source "parent_sequence"         // parent object gives start/end as 15000 15250
+
+
+IDs:
+
+<font color=green>"Sequence" + "A_sequence"</font>
+<font color=red>15000 + 15250</font>
+</pre>
+
+<pre>
+Simple feature within an object:
+
+Sequence : "simple_features"
+Feature "some_method" 1500 10000 0.997
+
+
+IDs:
+
+<font color=green>"Sequence" + "simple_features" + "Feature"</font>
+<font color=red>15000 + 15250 + 0.997</font>
+</pre>
+
+
+<pre>
+Alignment feature within an object:
+
+Sequence : "xref_feature"
+DNA_homol "some_sequence" "some_method" 0.997 15000 15500 1 501
+
+
+IDs:
+
+<font color=green>"Sequence" + "xref_feature" + "DNA_homol" + "some_sequence"</font>
+<font color=red>0.997 15000 15500 1 501</font>
+</pre>
+
+
+<p>To give an example the operations to construct the two part id for an alignment feature would be:</p>
+
+<pre>
+Sequence : "xref_feature"
+DNA_homol "some_sequence" "some_method" 0.997 15000 15500 1 501
+
+1) Concatenate <font color=green>"Sequence" + "xref_feature" + "DNA_homol" + "some_sequence"</font>
+and hash the resulting string into an ID which will be shared between a number of alignments.
+
+2) Concatenate <font color=red>0.997 15000 15500 1 501</font> <b>directly</b> (i.e. do not convert to
+text representation) into a 21 byte string (5 * 4 + terminating NULL) and hash the resulting string
+into an ID which is unique to this alignment.
+</pre>
+
+<p>This scheme has several advantages:</p>
+
+<ul>
+  <li>The current scheme does not guarantee uniqueness and if extended to do so would consume
+      large amounts of memory as each feature would require all parts of the qualifier.
+  <li>For all features where the constant part can be shared then that will be a significant memory
+      saving.
+  <li>Encoding the position information directly will probably save overall as so much positional
+      and score information requires at least 4 digits.
+</ul>
+
+
+<p>Disadvantages are:</p>
+
+<p>All features will need a new 4 byte field to hold the position ID:</p>
+
+<pre>
+typedef struct ZMapFeatureAnyStruct_
+{
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* The parent struct of this one, NULL
+							     * if this is a feature context. */
+  GQuark unique_id ;					    /* Unique id of this feature. */
+  GQuark original_id ;					    /* Original id of this feature. */
+  <font color=red>GQuark position_id ;					    /* New variable/position ID. */</font>
+
+  GHashTable *children ;				    /* Child objects, e.g. aligns, blocks etc. */
+} ZMapFeatureAnyStruct ;
+</pre>
+
+<p><b>Note</b> that construction of the position_id requires that one of the score or positions are
+zero.</p>
+
+
+
+<p>The tree of hash tables used for searching for features will require another level
+of hash to give the <font color=green>Constant</font> followed by
+<font color=red>Variable</font> search for ids:</p>
+
+<pre>
+Previously:
+
+context -> alignment(s) -> block(s) -> featureset(s) -> feature
+
+
+Under new scheme:
+
+context -> alignment(s) -> block(s) -> featureset(s) -> <font color=green>Constant</font> -> <font color=red>Variable</font>
+</pre>
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
+<legend id="Tag_sets">Summary of Acedb Tag Sets that need to be Encoded</legend>
+
+<p>Where the feature is an acedb object the encoding will always be the same,
+the Class and object name and it's start and end. Where the feature is a subpart
+of an object the encoding is more complex and the following
+is a list of known tag sets with examples:</p>
+
+<pre>
+Pattern:          Tag Int Int
+Encoding:         <font color=green>"obj class" + "obj name" + "Tag"</font>
+                  <font color=red>Int + Int</font>
+
+Examples:	  Splices Confirmed_intron  Int Int #Splice_confirmation
+
+
+
+Pattern:          Tag ?Method Int Int Float
+Encoding:         <font color=green>"obj class" + "obj name" + "Tag"</font>
+                  <font color=red>Int + Int + Float</font>
+
+Examples:         Splices Predicted_5 ?Method Int Int UNIQUE Float
+                          Predicted_3 ?Method Int Int UNIQUE Float
+
+                  EMBL_feature  CAAT_signal	Int Int Text #EMBL_info
+			        GC_signal	Int Int Text #EMBL_info
+			        TATA_signal	Int Int Text #EMBL_info
+                                etc....
+
+                  Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
+
+
+Pattern:          Tag xref_obj Int Int
+Encoding:         <font color=green>"obj class" + "obj name" + "Tag" + "xref obj name"</font>
+                  <font color=red>Int + Int</font>
+
+Examples:	  Oligo ?Oligo XREF In_sequence Int UNIQUE Int
+                  Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int UNIQUE Text
+
+
+Pattern:          Tag xref_obj ?Method Float Int Int Int Int
+Encoding:         <font color=green>"obj class" + "obj name" + "Tag" + "xref obj name"</font>
+                  <font color=red>Float + Int + Int + Int + Int</font>
+
+Examples:	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int Int Int Int #Homol_info
+		        Pep_homol ?Protein XREF DNA_homol ?Method Float Int Int Int Int #Homol_info
+		        Motif_homol ?Motif XREF DNA_homol ?Method Float Int Int Int Int #Homol_info
+</pre>
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
+<legend id="GFF">Augmenting GFF v2 or v3 with Unique ID information</legend>
+
+<p>The GFFv2 exported by Acedb to ZMap does not currently contain enough information
+to support unique IDs for all features.</p>
+
+
+<p>Class and object name are already exported for feature objects so no augmentation
+is required to support unique ids:</p>
+
+
+<pre>
+B0250	Genomic_canonical	Sequence	1	100	.	+	.	Sequence "F48F5"
+
+B0250	Coding_transcript	Transcript	22869	23993	.	+	.	Transcript "B0250.1"
+</pre>
+
+
+<p>The situation is very different for sub-object features:</p>
+
+<pre>
+B0250	tandem	repeat	10485	10704	60	.	.	Note "10 copies of 20mer"
+
+B0250	Allele	SNP	10786	10786	.	+	.	Allele "snp_B0250.1"
+
+B0250	wublastx	similarity	87	389	6.769	+	0	Target "Protein:TR:Q98S91" 78 178
+</pre>
+
+<p>All of these lack the Class and object name of their enclosing object and they all lack the qualifying
+tag. The naieve solution would be to insert all of this information in each feature line but this will
+lead to substantial increases in the size of the GFF data stream.</p>
+
+<p>GFFv3 provides a partial solution via it's "Parent" and "ID" tags which allows records such as those
+above to be tied together, a combination of these tags and a few extra lines in the GFF output will
+enable features to be uniquely identified:</p>
+
+
+<p>Given the following in a models file:</p>
+
+<pre>
+?Sequence 
+          Homol DNA_homol ?Sequence ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+                EST_homol ?Sequence ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+</pre>
+
+<p>GFFv2 output for an object of this class is currently:</p>
+
+<pre>
+11.77933288-78164529	.	Sequence	1	231242	.	+	.	Sequence "AL591070"
+11.77933288-78164529	GIS_PET_ditags	similarity	40666	46799	.	+	.	Target "Sequence:SME005_r:U_913521" 2 35 	;
+11.77933288-78164529	EST_Mouse	similarity	2912	3344	99.8	+	.	Target "Sequence:Em:CJ054766.1" 1 432 	;
+</pre>
+
+<p>Note that there is no linking between these records even though in this case they are derived
+from the same object in the database.</p>
+
+<p>The records can be tied up with <font color=red>"Parent"</font> and <font color=red>"ID"</font> tags via an <font color=green>extra GFF record</font> to give the full Class, object name, feature type tuple:</p>
+
+<pre>
+11.77933288-78164529	.	Sequence	1	231242	.	+	.	Sequence "AL591070"  ;
+<font color=green>11.77933288-78164529	Acedb_tuple	region	1	231242	.	+	.	Tuple "Sequence" "AL591070" "STS_homol"  ;</font>   <font color=red>ID 1 ;</font>
+<font color=green>11.77933288-78164529	Acedb_tuple	region	1	231242	.	+	.	Tuple "Sequence" "AL591070" "EST_homol"  ;</font>   <font color=red>ID 2 ;</font>
+11.77933288-78164529	GIS_PET_ditags	similarity	40666	46799	.	+	.	Target "Sequence:SME005_r:U_913521" 2 35 	;  <font color=red>Parent 1 ;</font>
+11.77933288-78164529	EST_Mouse	similarity	2912	3344	99.8	+	.	Target "Sequence:Em:CJ054766.1" 1 432 	;   <font color=red>Parent 2 ;</font>
+</pre>
+
+<p>Now the records are unique as the Class:object:tag name tuple can be recovered using the "Parent" and "ID" tag link to the "tuple" record.</p>
+
+</fieldset>
+
+
+
+<!--#include virtual="/perl/footer"-->

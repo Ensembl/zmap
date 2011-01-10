@@ -1,0 +1,4465 @@
+<!--#set var="banner" value="The ZMap Remote Control Interface"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- some colours for our boxes etc. -->
+<style>
+
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+
+.request{ border-color: red;  border-width: medium }
+.response{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
+</style>
+
+
+
+
+<h1 align="center">ZMap Remote Control Interface</h1>
+
+
+<h2>The Request/Response Transport Protocol</h2>
+
+<p>Interactions between ZMap and it's peer application need to be simple and robust.
+Implementation of high reliability two-way communication of TCP-like quality is neither warranted for
+this kind of interaction nor desireable as it will discourage application writers
+from interfacing to ZMap.</p>
+
+
+<fieldset>
+<legend>Request/Response Rules</legend>
+
+<ul>
+  <li>Peer-to-Peer bidirectional communication as request/response transactions.
+  <li>Only one request/response transaction may be active at a time.
+  <li>All requests must receive a response.
+  <li>Outside of a request/response transaction the protocol is stateless.
+  <li>Both peers have a timeout after which any response
+      will be ignored.
+  <li>Requests are never queued.
+</ul>
+
+</fieldset>
+<br />
+
+<p>Note that in the following discussions to make the explanations easier
+to follow the peer making the request is referred to as the "client" and the
+peer servicing that request as the "server". Peers act as both clients and
+servers.</p>
+
+
+
+<!-- I think this is redundant now...we should not be talking about any specific
+apps here. We could talk about how one peer must bootstrap another with the atom....
+
+<p>While ZMap and it's peer application are equal in terms of this protocol,
+the peer application is the "parent" application and is responsible for
+starting ZMap and passing it the Atom strings that should be used for
+communication. In the following write up the term "parent peer" always refers to
+the other application and not to ZMap.</p>
+
+-->
+
+<p>While these basic rules are straight forward, issuing of responses and
+requests is complicated by two main factors:</p>
+
+<ul>
+  <li>The request/response must be sent between processes and is
+      asynchronous or inherently unpredictable, e.g. network time delays.
+  <li>Servicing of requests may itself rely on asychronous processing and
+      the associated uncertainty of request completion.
+</ul>
+
+<p>To deal with this we borrow from TCP protocols and specify that in normal
+processing all requests and responses must be acknowledged:</p>
+
+<img src="./Request_Response_ok.png" align="center">
+
+
+<p>On receiving a Request or a Response the ACK must be sent immediately before
+any other processing is undertaken (see section XXXX for what happens when an
+ACK is not received in a timely manner). What this guarantees is that the
+peer processes will know if a Request or Response was successfully
+delivered.</p>
+
+<p>This protocol essentially corresponds to the "Transport" layer in the OSI
+Model and therefore the format of the messages passed using this protocol is
+not specified, that is an application issue and covered in section YYYYY.  </p>
+
+<p>The implementation of the protocol must deal with two fundamental problems:</p>
+
+<ul>
+  <li><b>Collisions:</b> these occur where two peers simultaneously make a request,
+      perhaps to each other. In this case the first request issued will
+      be serviced the second will be aborted. The implementation must provide a way
+      of judging which is the "first" request.
+  <li><b>Timeouts:</b> To avoid peers going into deadlock waiting for requests and/or
+      responses which are for one reason or another not satisfied in a timely way
+      the protocol must deal gracefully with either peer giving up waiting and aborting
+      the transaction. Whichever peer gives up it must be able to reliably signal the other peer
+      that it should abort the current transaction and also ignore any subsequent communication
+      from the other peer if it has aborted the transaction correctly.
+</ul>
+
+<p>the following sections show how this is done using the X Windows Selection mechanism.</p>
+
+
+<h2>The Request/Response X Windows Selection-based Implementation</h2>
+
+<p>The X Windows Selection mechanism provides a reasonable mechanism for
+implementing the Request/Response protocol because the X Server provides:</p>
+
+<ol>
+  <li>An selection mechanism that can be used to listen for a request but then
+      ignore further requests utnil the current one terminates.
+  <li>Centralised time stamps for dealing with collisions.
+  <li>Provides Notify events that can be used to implement the ACK for both the request
+      and response stages of the transaction.
+</ol>
+
+
+centralised time stamps and also a mechanism for delivering an ACK for each
+Request or Response.</p>
+
+<p>The basis of the implementation is the X Windows "Selection" mechanism. This
+is a set of requests and events that enables applications to pass information
+from one to another in a controlled way. The chain of events is reasonably
+complicated at first sight and detailed commentary follows for both Requests
+and Responses.</p>
+
+<p>The essence of the mechanism is use of Selection ownership of atoms and
+associated callbacks with time stamping by the X server to ensure both peers
+know when requests and responses have been received and to resolve collisions
+and multiple requests. In particular:</p>
+
+
+<ul>
+  <li>Swopping of selection ownership is used to signal the other peer that there is a request to be
+      serviced.
+  <li>Time stamping on swopping of ownership is used to resolve collisions, i.e. if both
+      peers try to issue a request simultaneously, one must be serviced and the other aborted, the
+      earlier request according to time stamping will be serviced.
+  <li>The normal X Selection mechanism as described in Nye [1] is used to pass the request
+      and subsequent reply.
+</ul>
+
+<p>Each peer <b>process</b> has just one Selection atom which must be system
+unique (i.e. must involve the PID in it's encoding) which it advertises to any
+peer with which it wishes to communicate. All requests from other peers using
+this protocol come through this selection atom which has some distinct advantages:</p>
+
+<ul>
+  <li><b>Peer Simplicity:</b> each peer need only maintain it's own atom
+  <li><b>Processing Simplicity:</b> since only one request can be active at a time no
+      multiplexing of requests is required.
+  <li><b>Connection Simplicity:</b> connections between peers are only ever
+      through two unique atoms.
+  <li><b>Interface simplicity:</b> each peer advertises the commands it can service
+      and other clients use those commands.
+</ul>
+
+
+<p>When the client wants to issue a request it first gives up ownership of its own request
+atom so that it will no longer receive requests from other peers. Then it takes
+ownership of the servers request atom
+which results in the X Server signalling the server in effect telling it that there is a
+pending request. At this point neither the client or server peer own their selection atoms
+and hence neither can receive any requests from other peers. Once the client and server
+peers have finished (or aborted) the current transaction then they retake ownership
+of their selection atoms so that they can both receive requests again:</p>
+
+<img src="./Request_Response_ownership.png" align="center">
+
+
+<p>Note that ownership of atoms cannot be used to keep state about whether a
+request/response is active or not because other peers can take ownership at
+any time. The selection atoms provide a mechanism to receive a request but
+then ignore concurrent requests during the current transaction. Both peers
+must maintain internal state about what stage the transaction has reached:</p>
+
+
+<fieldset>
+<legend>Connection States And Transitions</legend>
+
+<pre><code>
+Client/Server States:
+
+INACTIVE           /* No request/reponse being serviced. */
+
+CLIENT_SENDING     /* Peer is client and is sending a request. */
+
+CLIENT_WAITING     /* Peer is client and is waiting for a response. */
+
+CLIENT_RETRIEVING  /* Peer is client and is retrieving response. */
+
+SERVER_RETRIEVING  /* Peer is server and is retrieving a request. */
+
+SERVER_PROCESSING  /* Peer is server and is processing a request. */
+
+SERVER_SENDING     /* Peer is server and is sending a response. */
+
+</code></pre>
+
+<img src="./Request_Response_state.png" align="center">
+
+</fieldset>
+<br />
+
+
+
+<h4>Initialisation</h4>
+
+<p>The implementation requires each pair of peers to communicate via a pair of unique
+atoms otherwise the selection ownership mechanism cannot be made to work for our purposes.
+It is not part of the protocol to describe how these atoms are created but a client must already
+know the atom of the server it wishes to communicate with, the client passes its Selection
+atom and an error atom to the server with each request so the server can determine the clients
+Selection atom dynamically.</p>
+
+
+<p>A suggested way for a parent and child peer to exchange atoms is given in
+section XXXXXX, need hyperlink here.
+
+
+<p>At the initialisation stage the peers must take ownership of their respective selection
+atoms for several reasons:</p>
+
+<ul>
+  <li>Atom ownership allows ZMap and the other application to retrieve each
+      others window ids which removes the need for these to be passed explicitly
+      between them.
+  <li>Atom ownership is essential for signalling/detecting the start of a request
+      and ignoring further concurrent requests from other clients until the transaction
+      is completed.
+</ul>
+
+<img src="./Request_Response_initialisation.png" align="center">
+
+
+<fieldset>
+<legend>Initialisation</legend>
+
+<p>Both peers create their Selection atoms and take ownership
+of them using the window that they will use for the duration of the Response/Request transaction:</p>
+
+<pre><code>
+/* parent uses the supplied unique atom and takes ownership
+   of it. Time MUST be the time of the action/event that originally
+   triggered this action. */
+XSetSelectionOwner(display, server_atom, our_window, event_time) ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<p>Peers must also set up functions to handle
+the following events on their windows:</p>
+
+<ul>
+  <li><b>SelectionClear</b> - used in SERVER context 
+  <li><b>SelectionRequest</b> - used in CLIENT context
+  <li><b>SelectionNotify</b> - used in SERVER & CLIENT context
+  <li><b>PropertyNotify</b> - used in SERVER & CLIENT context
+</ul>
+
+<p>Note that some handlers are used in both contexts meaning
+that the peer code must maintain sufficient state data to identify the context
+within which each handler(s) is called.</p>
+
+
+<h3>Implementation</h3>
+
+<p><b>Implementation diagrams:</b> in the following sections the pseudo-code
+and commentary show how to implement each step and the numbers for each
+paragraph/function correspond to the numbers in the implementation diagrams.
+Note that all of these functions need to be implemented in both peers
+and that some functions will be run in both client and server contexts.</p>
+
+
+
+
+<h4>Request Implementation</h4>
+
+<p>When the client needs a service from the server it passes the Request using the
+X Selection mechanism, essentially this involves the client announcing it has a request
+to make by taking ownership of it's peers selection atom. This atom is then referenced by
+both client and server to pass the request from one to the other and to signal that the
+request arrived:</p>
+
+<img src="./Request_implementation.png" align="center">
+
+
+<fieldset>
+<legend>1) Request Initiator</legend>
+
+<p>Client: when a peer needs a service it first reliquishes ownership
+of its own selection atom so that it cannot be called to by other peers
+while making its own request. It then takes ownership of the servers
+selection atom with a XSetSelectionOwner() call. Because the other peer owns
+the Selection atom the X Server will send it a SelectionClear event which
+is the signal that there is a request to be serviced:</p>
+
+<pre><code>
+Args: <font color="red">server_atom, original_event_time</font>
+
+if (state != INACTIVE)
+  {
+    /* we are already processing a command so log/error message
+       and do nothing, could happen through normal user actions,
+       e.g. clicking lots of things quickly. */
+  }
+else
+  {
+    /* First relinquish ownership of our own atom so we ignore other
+       peer requests until we have finished this one. */
+    XSetSelectionOwner(display, client_atom, None, <font color="red">original_event_time</font>) ;
+
+    /* To avoid race conditions the time MUST be the time of the
+       action/event that originally triggered this action and
+       _not_ the current X Server time. */
+    XSetSelectionOwner(display, <font color="red">server_atom</font>, our_window, <font color="red">original_event_time</font>) ;
+
+    /* Record that we have issued a command and make a record of
+       the time we just sent as we may need this in our SelectionClear
+       handler. */
+    state = CLIENT_SENDING ;
+    our_time = <font color="red">original_event_time</font> ;
+  }
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>2) SERVER - SelectionClear Handler</legend>
+
+
+<p>The callback to the SelectionClear handler tells the server that there is a
+request waiting to be serviced.</p>
+
+<p>To trap collisions this handler must check whether this peer has
+"simultaneously" issued its own request. If it has then it needs to look at the
+time this event was called with and compare it to the time it issued it's own
+request to resolve whether it should abort its own request or continue with
+it.</p>
+
+<p>If it continues then this handler retrieves this clients Selection and error
+atoms using the  and
+
+XConvertSelection() call on the <b>clients</b> Selection atom to signal the
+client that it wants the request. Note that this calls passes the client
+the property and the server window where that property should be placed. It
+seems more robust to use our own window here because we can choose which
+window is the most appropriate to use.</p>
+
+
+<pre><code>
+Args: <font color="red">server_atom, original_event_time</font>
+
+assert(state == INACTIVE || state == CLIENT_SENDING) ;
+
+if (state == INACTIVE)
+  {
+    state = SERVER_RETRIEVING ;
+  }
+else if (state == CLIENT_SENDING)
+  {
+    /* A peer has contacted us to make a request but we are "simultaneously"
+       making our own request to that peer. Look at time stamps to see who
+       was first. */
+    if (<font color="red">original_event_time</font> &lt; our_time)
+      {
+        /* Clients request was first so we must abort our request, resetting
+           any data that we need to but carry on as a server to the other
+           clients request and log the aborted request. */
+        freeRequestResources() ;
+        logErrMsg() ;
+
+        state = SERVER_RETRIEVING ;
+      }
+    else
+      {
+        /* Our request was first so other peer should detect this via
+           the same code and continue to service our request. */
+      }
+  }
+
+if (state == SERVER_RETRIEVING)
+  {
+    window = XGetSelectionOwner(display, client_atom) ;
+
+    /* Get the clients request and error atoms..need error checking. */
+    XGetWindowProperty(display,
+                       server_window, server_property,
+                       long_offset, long_length,
+                       TRUE,                               /* delete property after reading. */
+                       data_format_atom,
+                       &actual_type_return, &actual_format_return,
+                       &nitems_return, &bytes_return, &prop_return) ;
+    client_atom = bytes_return ;
+    error_atom = bytes_return + 4 ;
+
+    XConvertSelection(display,
+                      client_atom, data_format_atom,
+                      data_receiving_atom, server_window, <font color="red">original_event_time</font>) ;
+  }
+
+</code></pre>
+
+<p>Note that the server must pass an atom identifying the property where
+the request should be placed and the window to which the property is
+attached. The time argument must be the time passed into this handler.
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>3) CLIENT - SelectionRequest Handler</legend>
+
+
+<p>The XConvertSelection() call results in the clients SelectionRequest
+handler being called with information about where to send the request data.
+The client then puts the request into the property/window given by
+it's arguments and then tells the server about it by sending
+a SelectionNotify event using XSendEvent() to the server window.</p>
+
+
+<pre><code>
+assert(state == CLIENT_SENDING) ;
+
+/* Put the request into the property/window passed into us. */
+XChangeProperty(display,
+                server_window, server_property,
+                data_format_atom,
+                format, mode, data, nelements) ;
+
+/* Construct a SelectionNotify event using the data we were passed. */
+
+/* Tell the server that we've sent the request using a SelectionNotify event. */
+status = XSendEvent(display, server_window,
+                    True, event_mask, our_event) ;
+
+</code></pre>
+
+<p>NEED TO CHECK ABOUT PROPAGATE FLAG HERE AND ALSO EVENT_MASK.</p>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>4) SERVER - SelectionNotify Handler</legend>
+
+<p>The XSendEvent() call results in the servers SelectionNotify
+handler being called with information about where to retrieve the
+request data from. The handler uses this information to make a
+XGetWindowProperty() call to retrieve the request from the server
+window. The call is made requesting that the property data is
+deleted which causes a PropertyNotify event to be sent to the client
+telling it that the data is gone.</p>
+
+<pre><code>
+assert(STATE == SERVER_RETRIEVING) ;
+
+/* Get the request from the server (or client ?) window. */
+XGetWindowProperty(display,
+                   server_window, server_property,
+                   long_offset, long_length,
+                   TRUE,                               /* delete property after reading. */
+                   data_format_atom,
+                   &actual_type_return, &actual_format_return,
+                   &nitems_return, &bytes_return, &prop_return) ;
+
+/* Set our state. */
+state = SERVER_PROCESSING ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>5) CLIENT - PropertyNotify Handler</legend>
+
+<p><b> this turns out not to be that workable because we can't easily register it on the servers
+window and if we try to do it on our own window then the server needs to send us some kind
+of property related event which means it needs a property on our window...</b></p>
+
+
+<p>After the server has retrieved the request from the property, the property
+is automatically deleted which results in a call to this handler. This call
+acts as the 'ACK' to the clients original request so that it definitively
+knows that the server has received the request successfully, it also allows
+the client to free any resources used to construct the request.</p>
+
+<pre><code>
+assert(state == CLIENT_SENDING) ;
+
+/* We can now free our copy of the request as the server has a copy and
+   has deleted the copy on our window. */
+
+/* Record in our state that the server now has the request so
+   we are waiting for the reply. */
+state = CLIENT_WAITING ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<h4>Response Implementation</h4>
+
+<p>Once the client has delivered its request to the server it must wait for a
+response from the server. By this stage the client and server know each others
+selection atoms and windows so returning the response is much simpler:</p>
+
+<img src="./Response_implementation.png" align="center">
+
+
+<p><b>Implementation:</b> the following pseudo-code and commentary shows how to
+implement each step, the numbers for each paragraph/function correspond to the
+numbers in the implementation diagrams above:</p>
+
+
+<fieldset>
+<legend>1) SERVER - Response Initiator</legend>
+
+<p>Server: once the server has finished processing a request then the result
+must be returned to the client. The server does this using an XChangeProperty()
+call to put the request into the clients property/window and then tells the
+client about it by sending a SelectionNotify event using XSendEvent() to the
+client window.</p>
+
+
+<pre><code>
+assert(state == SERVER_PROCESSING) ;
+
+state = SERVER_SENDING ;
+
+/* Put the request into the property/window passed into us. */
+XChangeProperty(display,
+                client_window, client_property,
+                data_format_atom,
+                format, mode, data, nelements) ;
+
+/* Construct a SelectionNotify event using the data we were passed. */
+
+/* Tell the server that we've sent the request using a SelectionNotify event. */
+status = XSendEvent(display, client_window,
+                    True, event_mask, our_event) ;
+
+</code></pre>
+
+<p>NEED TO CHECK ABOUT PROPAGATE FLAG HERE AND ALSO EVENT_MASK.</p>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>2) CLIENT - SelectionNotify Handler</legend>
+
+<p>The XSendEvent() call results in the servers SelectionNotify
+handler being called with information about where to retrieve the
+request data from. The handler uses this information to make a
+XGetWindowProperty() call to retrieve the request from the server
+window. The call is made requesting that the property data is
+deleted which causes a PropertyNotify event to be sent to the client
+telling it that the data is gone. As this is the final action by
+the client in the request/response transacton the handler issues
+an XSetSelectionOwner() call to reclaim ownership of it's selection
+atom so it is ready for the next request.</p>
+
+
+<pre><code>
+assert(state = CLIENT_WAITING) ;
+
+state = CLIENT_RETRIEVING ;
+
+/* Get the request from the server (or client ?) window. */
+XGetWindowProperty(display,
+                   server_window, server_property,
+                   long_offset, long_length,
+                   TRUE,                               /* delete property after reading. */
+                   data_format_atom,
+                   &actual_type_return, &actual_format_return,
+                   &nitems_return, &bytes_return, &prop_return) ;
+
+/* Reclaim ownership of our Selection atom to be ready for the next
+   request. Time should be the time that this routine was called. */
+XSetSelectionOwner(display, server_atom, our_window, event_time) ;
+
+state = INACTIVE ;
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>3) SERVER - PropertyNotify Handler</legend>
+
+<p>After the client has retrieved the request from the property, the property
+is automatically deleted which results in a call to this handler which tells
+the server the client has received the reply and also allows it
+to free any resources used to construct the request. The server then reclaims
+ownership of its atom to be ready for the next request.</p>
+
+<pre><code>
+assert(state = SERVER_SENDING) ;
+
+/* We can now free our copy of the request as the server has a copy and
+   has deleted the copy on our window. */
+
+/* Reclaim ownership of our Selection atom ready for next request. */
+XSetSelectionOwner(display, server_atom, our_window, CurrentTime) ;
+
+state = INACTIVE ;
+</code></pre>
+
+</fieldset>
+<br />
+
+
+
+<h4>Request/Response Error Handling</h4>
+
+<p>This section covers errors in sending requests and responses i.e. transport
+layer errors, it does not cover errors in the actual commands that are sent
+back and forth between the peers (e.g. "zoom_to" etc. These latter types of
+errors are covered in the section XXXXXXX.</p>
+
+<p>The most likely type of error that will occur will be some kind of timeout
+perhaps because the network is slow, perhaps because of an error in ZMap or its
+parent program.  Regardless of the type of error there has to be a mechanism to
+signal that an error has occurred which allows both peers to handle it
+gracefully. Once again we borrow from TCP protocols using the idea of
+"Out-of-Band" data.</p>
+
+<p>Out-of-Band data is sent in addition to normal data and is sent before any
+pending normal data that might be queued. Both peers can unambiguously detect
+this data from normal data.</p>
+
+<p>Out-of-Band data is conveyed via error atoms, the atoms, like the
+Selection atoms are system-unique. The error atom names are are simply the
+Selection atom name with the string "_Error" appended:</p>
+
+<p>
+<pre><code>
+Selection atom:   "ZMap_33333" 
+
+    Error atom:   "ZMap_33333_Error"
+
+</code></pre>
+</p>
+
+
+<p>Each peer posts errors (e.g. timeout) to the <b>other</b> peer using the
+other peers error atom and posting the error into a property on the other peers
+window. This allows a peer to stop processing a transaction and even quit if
+it needs to and the other peer will still see the error.</p>
+
+<p>The below diagram shows a possible sequence of events:</p>
+
+<img src="./Error_implementation.png" align="center">
+
+
+<p><b>Implementation:</b> the following pseudo-code and commentary shows how to
+implement each step, the numbers for each paragraph/function correspond to the
+numbers in the implementation diagram above:</p>
+
+
+<fieldset>
+<legend>1) CLIENT - Request Initiator</legend>
+
+<p>Client: In this example the client initiates a request as before but is augmented
+with an initial timeout request, this asks the X Server/toolkit to call the client
+back after a specified time has elapsed. If the client timeout handler is called
+before the server can reply then the client aborts the request and signals
+the server that it has timed out:</p>
+
+<pre><code>
+if (state != INACTIVE)
+  {
+    /* we are already processing a command so log/error message
+       and do nothing, could happen through normal user actions,
+       e.g. clicking lots of things quickly. */
+  }
+else
+  {
+    <font color="red">/* Request a timeout in xxxx milliseconds, time out being configurable. */
+    requestTimeout(milliseconds) ;</font>
+
+    /* To avoid race conditions the time MUST be the time of the
+       action/event that originally triggered this action and
+       _not_ the current X Server time. */
+    XSetSelectionOwner(display, server_atom, our_window, original_event_time) ;
+
+    /* Record that we have issued a command and make a record of
+       the time we just sent as we may need this in our SelectionClear
+       handler. */
+    state = CLIENT_SENDING ;
+    our_time = original_event_time ;
+  }
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>2) CLIENT - Timeout Handler</legend>
+
+<p>The client was expecting to enter its SelectionNotify handler but is in the timeout
+handler instead. The client sets an error string on the servers window using
+the servers error atom to set the string in a property there. The client then
+aborts the request and takes back ownership of its selection atom and waits for the
+next request.</p>
+
+<pre><code>
+assert(state != INACTIVE) ;
+
+/* Put the request into the property/window passed into us. */
+data = "TIMEOUT - client info." ;
+
+XChangeProperty(display,
+                server_window, error_property,
+                data_format_atom,
+                format, mode, data, nelements) ;
+
+/* Reclaim ownership of our Selection atom to be ready for the next
+   request. Time should be the time that this routine was called. */
+XSetSelectionOwner(display, client_atom, our_window, event_time) ;
+
+state = INACTIVE ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+
+
+<fieldset>
+<legend>3) SERVER - SelectionClear Handler</legend>
+
+<p>The SelectionClear handler is as before but augmented with a check of the
+error atom. On receiving an error in the error atom the server aborts
+its processing and returns to the ready state for the next request. Note
+that the server should not try to reply to the client as the client may
+have terminated already.</p>
+
+<pre><code>
+assert(state == INACTIVE || state == CLIENT_SENDING) ;
+
+<font color="red">XGetWindowProperty(display,
+                   server_window, error_property,
+                   long_offset, long_length,
+                   TRUE,                               /* delete property after reading. */
+                   data_format_atom,
+                   &actual_type_return, &actual_format_return,
+                   &nitems_return, &bytes_return, &prop_return) ;
+
+if (isError(bytes_return))
+  {
+    /* abort all processing, reclaim ownership of selection atom and reset state. */
+    XSetSelectionOwner(display, client_atom, our_window, event_time) ;
+
+    state = INACTIVE ;
+  }
+else
+  {</font>
+    process request as in previous example
+<font color="red">  }</font>
+
+</code></pre>
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+
+
+
+
+<p>All functions in the peers must test the error atom before proceeding and
+if it returns an error must terminate processing and inform the layer above
+in the peer that there has been an error.</p>
+
+<p>The most likely cause of errors in the transport layer will be timeouts and peers
+whether in the client or server context should handle receiving a timeout error.</p>
+
+
+
+
+
+
+<h2>Exchanging Selection Atoms between Parent and Child peers</h2>
+
+
+The atoms are provided by the controller application as a command line parameter to ZMap.
+The atoms could be reused when the peers terminate but this would need to be policed by the controller peer.
+(Similarly if ZMap crashes then the controller peer can decide whether to reuse the current
+atoms or create new ones, there is no reason not to use the current atoms).</p>
+
+
+<img src="./Request_Response_atom_exchange.png" align="center">
+
+
+<fieldset>
+<legend>1) Parent Peer - Start child peer</legend>
+
+<p>The parent peer creates it's Selection atom and takes ownership
+of it. It then sets up handlers for SelectionClear
+and PropertyNotify events for the atom. The parent then forks the
+child program passing its atom in as a command line parameter. The child
+then uses the selection mechanism to pass the parent its own selection
+atom and the parent ends by signalling the child that it has received
+the atom:</p>
+
+<pre><code>
+/* parent constructs it's unique atom and then takes ownership
+   of it. Time MUST be the time of the action/event that originally
+   triggered this action. */
+XSetSelectionOwner(display, server_atom, our_window, event_time) ;
+
+/* parent sets up event handlers for SelectionClear and PropertyNotify events */
+
+/* parent forks the child peer passing it's atom (as a string) as a command
+   line argument. */
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>2) Child Peer - Set up Selection Atom</legend>
+
+<p>The child peer queries the Parent peers atom to retrieve the
+parents window id, it then takes ownership of the Parent peers atom
+which signals the parent peer that the child is alive and processing.
+The child peer creates it's own selection atom and takes ownership of
+it. It then passes its atom as a string to the peer parent by setting
+it as a property on the parents window:</p>
+
+<pre><code>
+/* Get the parent window for later use. */
+parent_window = XGetSelectionOwner(display, parent_atom) ;
+
+/* Take ownership of parent atom, this signals parent that we are active. */
+XSetSelectionOwner(display, parent_atom, our_window, event_time) ;
+
+/* construct our own unique id and take ownership of it on our window. */
+XSetSelectionOwner(display, our_atom, our_window, event_time) ;
+
+/* Put our atom as a string onto the parent property/window passed into us. */
+XChangeProperty(display,
+                parent_window, parent_atom,
+                data_format_atom,
+                format, mode, data, nelements) ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend>3) Parent Peer - SelectionClear handler</legend>
+
+<p>When we get the SelectionClear event we know that the child
+process has started so we can set any state we need to.</p>
+
+<pre><code>
+/* Record that child has started, set any timeout callbacks etc. */
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>4) Parent Peer - PropertyNotify Handler</legend>
+
+<p>The child peer passes its atom to us via a property on our window.
+We retrieve the property and delete it which signals the child that
+it can release any resources connected to creating the atom. We then
+retake ownership of our own Selection atom which signals the child
+that initialisation is complete. This is effect the ACK to the childs
+original taking of ownership of the parents Selection atom to transfer
+its own atom name to the parent.</p>
+
+<pre><code>
+/* Get the childs atom from our Selection atom. */
+XGetWindowProperty(display,
+                   parent_window, parent_atom,
+                   long_offset, long_length,
+                   TRUE,                               /* delete property after reading. */
+                   data_format_atom,
+                   &actual_type_return, &actual_format_return,
+                   &nitems_return, &bytes_return, &prop_return) ;
+
+/* Reclaim ownership of our Selection atom which signals the client
+   that we've finished, this ends initialisation. */
+XSetSelectionOwner(display, parent_atom, our_window, event_time) ;
+
+/* For the parent initialisation is now complete. */
+state = INACTIVE ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>5) Child Peer - PropertyNotify handler</legend>
+
+<p>When the child gets the PropertyNotify event this signals
+that the parent now has it's atom and the child can release
+any resources that it needs to.</p>
+
+<pre><code>
+/* Record that parent has atom, release associated resources. */
+
+</code></pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>6) Child Peer - SelectionClear handler</legend>
+
+<p>When we get the SelectionClear event we know that the parent
+has retaken ownership of its Selection atom and initialisation
+is complete.</p>
+
+<pre><code>
+/* Record that intialisation is complete. */
+state = INACTIVE ;
+
+</code></pre>
+
+</fieldset>
+<br />
+
+<p>NOTE how the result of initialisation is:</p>
+<ul>
+  <li>The parent and child peers know each others Selection atoms.
+  <li>The parent and child own their own Selection atoms.
+</ul>
+
+
+
+
+
+
+
+
+
+<h2>ZMap Command Interface</h2>
+
+
+<fieldset>
+<legend>Overview</legend>
+
+<p>
+It is  relatively easy  to control zmap  from another program  using a
+series of  X11 XAtoms.  These  XAtoms are held  on the server  and are
+window  specific.   ZMap   &quot;listens&quot;  to  these  XAtoms  and
+responds to  the commands which exist  as their values  by setting the
+value of a corresponding XAtom.  The convention in this document is to
+have  the requests  in  a box  surrounded  by a  blue  border and  the
+responses surrounded by a red border.
+</p>
+
+<p>
+It used  to be the case that  zmap had two windows  which would accept
+the requests  but there has been  some reorganisation in  the way zmap
+accepts requests so  that requests can be simplier  than was otherwise
+possible.
+</p>
+
+</fieldset>
+<br />
+
+
+<h2>Design Philosophy</h2>
+
+<p>The ZMap client protocol is a simple request/response protocol, every request must receive a
+response. Every request must include an <code>action</code> which specifies <b>what</b> processing
+should occur and every response must include a <code>result</code> which says <b>what</b> happened.</p>
+
+<p>The over-arching principle behind the protocol is that as much as possible is defaulted so as to reduce the
+burden on the client programmer to the minimum. If the client makes very simple use of zmap then the commands
+should be simple.</p>
+
+<p>For example, each command will be applied to a specific component of ZMap, in the simplest possible
+configuration of ZMap there is only one application window, one control window, one view and one window,
+therefore the client should not need to specify to which one of these the command will be delivered.
+In addition within each window zmap maps a context within which there is a set of aligns, within which
+there are a set of blocks, within which there are a set of featuresets within which there are a set of
+features. At its simplest the context contains a single align containing a single block containing a
+single featureset containing a single feature. The client can send a command to zmap to act on this
+feature without specifying any of the intervening levels.</p>
+
+
+<fieldset>
+<legend>How defaulting works</legend>
+
+<h3>Component Level:</h3>
+
+<p>ZMap components are nested:</p>
+
+<pre>
+
+App -&gt; Control -&gt; View -&gt; Window
+
+</pre>
+
+<p>The nesting is a DAG tree of single parent, multiple children.
+At each level there is an implicit ordering so that where
+multiple components exist the order in which they are registered will be the
+order in which defaulting occurs.</p>
+
+<p>In addition some commands are only valid at certain levels and hence will
+be interpreted at that level only.</p>
+
+
+<h3>Context Level:</h3>
+
+<p>ZMap contexts are nested:</p>
+
+<pre>
+
+Context -&gt; Align -&gt; Block -&gt; Featureset -&gt; Feature
+
+</pre>
+
+<p>The programmer should specify the minimum required to uniquely identify
+the target of the action, for instance to delete a particular feature in
+a particular featureset in a particular block would require:</p>
+
+<pre>
+
+Block -&gt; Featureset -&gt; Feature
+
+</pre>
+
+<p>Whereas to remove the very first feature in the very first featureset in
+the very first block in the very first alignment would require only:</p>
+
+<pre>
+
+Feature
+
+</pre>
+
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>How levels are specified</legend>
+
+<p>Each component at each level has a unique id provided by zmap which can be used
+to specify that component, for example:</p>
+
+<pre>
+
+App id = "0x00001d"
+Control id = "0x00001f"
+View id = "0x00001e"
+Window id = "0x00001c"
+
+</pre>
+
+<p>How context parts are specified:</p>
+
+<pre>
+
+&gt;Context&lt;
+   &gt;Align&lt;
+      &gt;Block&lt;
+         &gt;Featureset&lt;
+            &gt;Feature&lt;
+               stuff....
+            &gt;/Feature&lt;
+         &gt;/Featureset&lt;
+      &gt;/Block&lt;
+   &gt;/Align&lt;
+&gt;/Context&lt;
+
+</pre>
+
+<p>These are combined to specify component and context parts:</p>
+
+<pre class="request" target="0x00001c">
+&lt;zmap&gt;
+  &lt;request action="some_action"&gt;
+    &lt;Context&gt;
+       &lt;Align&gt;
+          &lt;Block&gt;
+             &lt;Featureset&gt;
+                &lt;Feature&gt;
+                   stuff....
+                &lt;/Feature&gt;
+             &lt;/Featureset&gt;
+          &lt;/Block&gt;
+       &lt;/Align&gt;
+    &lt;/Context&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The "target" attribute of the zmap tag specifies the component level while a hierachy
+of tags is used to specify the context level.</p>
+
+</fieldset>
+<br />
+
+
+
+<h2>Request/Response fundamentals</h2>
+
+<p>In the ZMap client protocol every request must receive a
+response and each request must include an <code><b>action</b></code> which specifies <b>what</b> processing
+should occur and every response must include a <code><b>result</b></code> which says <b>what</b> happened.
+This sections gives the details of the requests and responses.</p>
+
+<p>To keep the protocol simple there should be no overlapping of requests, it is the responsibility of
+ZMap and the client to ensure this, there is no mechanism within the protocol to police this. It may be worth including
+a request id in each request/response pair to allow detection of overlaps but this should probably be optional.</p>
+
+<p>ADD THIS IN TO THE ABOVE</p>
+
+<p>Using the Forward-Receiver pattern as our guide, the request/response protocol uses timeouts
+to detect when responses have not come back. On detecting that a response has not come back within
+the timeout period the peer must send a timeout exception to the requestee.</p>
+
+<p>We should have a default timeout, a global timeout which can be specified when a session is started,
+but also allow timeouts to be specified for individual stages.</p>
+
+
+<fieldset>
+<legend>"Request"/"Response" Format and Symmetry</legend>
+
+<p>The request includes an action and optionally a target to which the action will be applied:</p>
+
+<pre class="request" [ target="xxx" ]>
+&lt;zmap&gt;
+  &lt;request action="some_action"&gt;
+         .
+         .
+  &lt;request/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The response returns a result which is a return code which specifies whether the request
+was successful or not:</p>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200"&gt;
+          .
+          .
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>and with parameters:</p>
+
+<pre class="request" target="xxx">
+&lt;zmap&gt;
+  &lt;request action="new_zmap"&gt;
+    &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>ZMap Client Communication Protocol</legend>
+
+<p><i>(See UML "Sequence" Diagram for description of diagram syntax.)</i></p>
+
+<p>The Protocol is a peer-to-peer asynchronous "Request - Response" protocol. That is:</p>
+
+<ul>
+  <li><b>All</b> Requests must be replied to with a Response.
+  <li>Either side may send a Request at any time.
+  <li>The Response to a Request will come up to "timeout" seconds later, if no
+      Response arrives then the peer should send a "timeout" exception.
+  <li>It is an error to send a second Request before receiving the Response
+      to the first Request.
+</ul>
+
+
+<p>The normal request sequence will be:
+<img src="./request_response.png" align="center">
+</p>
+
+<p>
+<img src="./request_response2.png">
+</p>
+
+<p>with the transmitted xml being:
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request&gt;
+
+    request body
+
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response&gt;
+
+    response body
+
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+</p>
+
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Otterlace chain of events</legend>
+
+<p>
+Firstly  running zmap  with a  --win_id option  makes zmap  register a
+client  with  the  &quot;server&quot;  listening for  property  notify
+events on the window with the id supplied.
+</p>
+
+<pre>
+./zmap --win_id 0x20000a4
+</pre>
+
+<p>
+ZMap sends  the following  request to the  window, which  should reply
+with  a 200  all ok  message.   ZMap does  very little  else with  the
+response.
+</p>
+
+
+<pre class="request" title="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004" request_atom="_ZMAP_XREMOTE_COMMAND" response_atom="_ZMAP_XREMOTE_RESPONSE" &gt;
+    &lt;action&gt;register_client&lt;/action&gt;
+    &lt;action&gt;new_zmap&lt;/action&gt;
+    &lt;action&gt;shutdown&lt;/action&gt;
+  &lt;/client&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap /&gt;
+</pre>
+
+<p>
+Otterlace now  knows the window id  of the initial  ZMap window.  This
+window is quite  limited in the actions that it  supports and makes no
+attempt to pass  them on to any child ZMap windows  that it might know
+about.  This is  a decision that is carried on  throughout the rest of
+the communication in  order that requests can be  simplier and a level
+of  encapsulation can be  enforced.  It  is for  this reason  that the
+request includes a list of actions that the client understands.
+</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap" /&gt;
+</pre>
+
+<p>
+All going well there will be  a response from zmap which resembles the
+following example.  The  client has an xwid, and a  list of actions it
+understands.
+</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>
+From the  above examples  I hope  it's easy to  see how  the following
+tables fit in.
+</p>
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Stuff that needs sorting out.....</legend>
+
+
+<h4>Feature set usage</h4>
+
+<p>As this example from an otterlace log shows we don't give a name to the feature set which seems crazy.
+Instead we the use the "style" attribute to identify the feature set, looks like
+Roys xml has not caught up with the changes to feature_set and style usage.</p>
+
+<pre>
+Fri Jul 17 16:25:56 2009  &lt;zmap action="delete_feature"&gt;
+Fri Jul 17 16:25:56 2009    &lt;<font color=red>featureset</font>&gt;
+Fri Jul 17 16:25:56 2009      &lt;feature end_not_found="false" start_not_found="false" <font color=red>style="Putative_CDS"</font> strand="+" name="RP5-1120P11.2-001" locus="C6orf223" end="28241" start="25456"&gt;
+Fri Jul 17 16:25:56 2009      &lt;/feature&gt;
+Fri Jul 17 16:25:56 2009    &lt;/featureset&gt;
+Fri Jul 17 16:25:56 2009  &lt;/zmap&gt;
+Fri Jul 17 16:25:56 2009  &lt;zmap action="create_feature"&gt;
+Fri Jul 17 16:25:56 2009    &lt;<font color=red>featureset</font>&gt;
+Fri Jul 17 16:25:56 2009      &lt;feature end_not_found="false" start_not_found="false" <font color=red>style="Putative_CDS"</font> strand="+" name="RP5-1120P11.2-001" locus="C6orf223" end="28241" start="25468"&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="25536" start="25468" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="intron" end="26888" start="25537" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="26963" start="26889" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="intron" end="27516" start="26964" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="28241" start="27517" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="cds" end="27962" start="27570" /&gt;
+Fri Jul 17 16:25:56 2009      &lt;/feature&gt;
+Fri Jul 17 16:25:56 2009    &lt;/featureset&gt;
+Fri Jul 17 16:25:56 2009  &lt;/zmap&gt;
+</pre>
+
+
+
+<pre>
+Here are some typical context/align/block names...needs some sorting out...
+
+Feature Context:	b0250	b0250	b0250	SUPERLINK_CB_V	11462742	1	10995378	11034593	1	39216
+	Alignment:	b0250_master
+	Block:	1.0.+_1.0.+	1	39216	1	39216
+
+
+Currently we have:
+
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+
+
+I propose this is changed to:
+
+&lt;zmap action="create_feature"&gt;
+  &lt;align [name="xxx"]&gt;
+    &lt;block [name="xxx"]&gt;
+      &lt;featureset name="xxxxx"&gt;
+        &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+    &lt;/block&gt;
+  &lt;align/&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+<fieldset>
+<legend>Opening a Connection</legend>
+
+<p>The current protocol explicitly embeds X window IDs in the XML and implicitly assumes them at all levels.
+This needs to change for several reasons:</p>
+
+<ul>
+  <li>The means by which the protocol is transported should not be embedded in the protocol itself.</li>
+  <li>Currently four different levels of ZMap windows can independently receive protocol requests which
+  leads to duplicated code, less robust error handling and is much more complicated for the client
+  program to interface to.</li>
+</ul>
+
+<p>This requires a new style of request to open a connection, zmap sends the following
+request to the client:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="open" target="xxx"&gt;
+    &lt;connection target="yyy" application="ZMap" version="1.4.0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The Request target id ("xxx") is given to zmap as a start-up command line parameter to allow the connection
+to be bootstrapped, zmap specifies this in its request to the client allowing the client to verify the
+connection is the one it is expecting. zmap then passes it's application level target id ("yyy") over in the
+protocol and also some application and version information that the client can use to check that it
+can support this level of zmap.
+</p>
+
+<p>(Note that for a full implementation the command line parameters should really be in two parts to support multiple
+protocols: a parameter(s) to specify the required protocol information to establish a connection and an id parameter
+to specify the clients target id. Currently only the id needs to be specified as the transport
+mechanism for the protocol is assumed to be X Properties).</p>
+
+<p>The client then responds to confirm that the connection is made:</p>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" id="yyy"&gt;
+    &lt;connection target="yyy" application="ZMap" version="1.4.0"/&gt;
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the response target from the client should match the target that zmap
+passed to the client in the request and the connection target should match
+the target given in the original command line 
+parameter given when zmap was started. Once this symmetry has been verified
+the connection is established and communication can begin.</p>
+
+
+</fieldset>
+<br />
+
+
+<h2>Component Creation and Component IDs</h2>
+
+<p>Once ZMap is displaying features there are four levels of components that commands can be sent to
+and which may themselves generate commands to the client program:</p>
+
+<ul>
+  <li><b>application component</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control component</b> - the parent window to a set of views (can be more than one)
+  <li><b>view component</b> - the parent component of a set of sequences (can be more than one)
+  <li><b>features component</b> - the window displaying features (can be more than one)
+</ul>
+
+<p>Different commands will create this hierachy down to different levels according to the command
+and that commands parameters. For instance the "new_zmap" command will create just the control
+window if used with no attributes but will create the control, view and features windows if given
+the sequence and start/end attributes. When a command causes the creation of new components
+their ids must be returned in the response so that the client can use them if necessary.</p>
+
+<fieldset>
+<legend>Component Creation and Component IDs</legend>
+
+<p>Creates just the control window:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap" /&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="0"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Creates the control, view and sequence windows:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>The response needs changing to list <b>all</b> windows created:<p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+<fieldset>
+<legend>Columns, Methods and Styles</legend>
+
+<p>Some time ago we introduced the use of styles into the acedb database that is used to store the annotators
+local copy of the clone they are working on. Along with this change the way that acedb ?Method objects are
+used was changed completely. This could be summarised as:</p>
+
+<ul>
+  <li><b>Styles:</b> specify all aspects of feature processing from display to export.
+  <li><b>Method:</b> are only used to group features into sets and columns.
+</ul>
+
+<p>This change has not been reflected in the xml specification for communication with ZMap but now needs to be. Previously
+the Style name was the same as the feature set name which was the same as the column name. This is now no longer the
+necessarily the case.</p>
+
+
+<p>A typical example are features like PolyA types, previously these were specified with a style name only:</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>This xml would only produce the desired result if there were columns named "polyA_site" and "polyA_signal". This is no longer
+the case because otterlace is using the Column_parent tag to cluster different feature sets into the same column:</p>
+
+<pre>
+Method : "curated_features"
+Remark	 "Features curated by annotators"
+
+Method : "polyA_signal"
+Column_parent	 curated_features
+Style	 polyA
+Valid_length	 6
+Remark	 "PolyA signal"
+
+Method : "polyA_site"
+Column_parent	 curated_features
+Style	 polyA
+Valid_length	 2
+Remark	 "PolyA site"
+</pre>
+
+<p>The xml needs to be changed to specify feature set names for "polyA_signal" and
+"polyA_site":</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset name="polyA_site"&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+  &lt;featureset name="polyA_signal"&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>ZMap knows the mapping from a featureset to the column it should be displayed in so there is no
+need to specify the column.</p>
+
+<p>In addition this xml does not unambiguously identify the featureset, for this we need to add
+align and block information:</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;align [name="xxx"]&gt;
+    &lt;block [name="xxx"]&gt;
+      &lt;featureset name="polyA_site"&gt;
+        &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+      &lt;featureset name="polyA_signal"&gt;
+        &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+    &lt;/block&gt;
+  &lt;align/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the align, block and featureset names can all be defaulted, ZMap will add the
+features to the master align and the first block in the master align in the target zmap.</p>
+
+
+</fieldset>
+<br />
+
+
+
+
+<fieldset>
+<legend>Windows and Associated Actions</legend>
+
+
+<p>Different actions are sent to different windows, currently the actions for each window
+are listed in the response at window creation:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>This seems pointless though because the actions are not self-describing; the client program still
+has to have a record somewhere of all the attributes allowed for each action. It would be
+better to simply return the "type" of the window and the client will have to send the actions
+appropriate to that window.</p>
+
+<p>If the intention was to enable the client to "know" which version of zmap it was talking to then
+this is more easily accomplished via a version number.</p>
+
+<p>We should take the opportunity to rename the window types to something closer to their function:
+
+<ul>
+  <li><b>application window</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control window</b> - the window that controls processing and display of features (one to many),
+      parent to all views
+  <li><b>features window</b> - the window that contains the features (one to many), the parent of all display windows 
+  <li><b>display window</b> - the window that displays the features (one to many)
+</ul>
+
+
+<p>The responses should be changed to:</p>
+
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="control" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="features" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="display" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Sending Messages to Windows</legend>
+
+<p>Currently the client program must send requests to four different types of window, there are
+several problems with this:</p>
+
+<ul>
+  <li>The client program is more complicated to write and debug.
+  <li>If the client programs record of window ids gets out of step with the windows
+      that actually exist it has to handle "BadWindow" errors from the X server itself.
+  <li>ZMap itself is more complex to program and maintain.
+</ul>
+
+<p>ZMaps handling of requests should be rewritten so that all client requests are sent to the
+application window and ZMap ensures that from there they are routed to the correct subwindow. This
+will make handling of windows being closed by the user more straight forward and error handling
+will be considerably easier for the client program.</p>
+
+<p>Little will need to change in the interface except that each request from the client will need
+to specify the window id as an attribute so that ZMap can send the request to the correct
+window:</p>
+
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" xwid="0x2c00084" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>When ZMap replies it must specify which window the reply is coming from:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response xwid="0x2c00084" &gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>Similarly when ZMap issues a request to the client program it will need to specify which ZMap window
+the request is coming from:</p>
+
+<pre class="request">
+&lt;zmap action="feature_details"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>The Window hierachy and the Valid Actions for Each Window</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <tr>
+  <th>Window</th>
+  <th>Description</th>
+  <th>Actions accepted</th>
+  <th>Actions generated</th>
+  </tr>
+  <tr>
+    <td>application window</td>
+    <td>zmap initially starts with a window to get input from the user
+      as to which sequence to  display.  This may be hidden by configuration
+      in ~/.ZMap/ZMap. N.B. No register_client is available as zmap must be
+      started with --win_id option to register a client.</td>
+    <td>new_zmap<br />shutdown</td>
+    <td>finalised</td>
+  </tr>
+  <tr>
+    <td>display window</td>
+    <td>This is the top level window in which the different views are shown.</td>
+    <td>new_view<br />close_view<br />zoom_in<br />zoom_out<br />register_client</td>
+    <td>view_closed</td>
+  </tr>
+  <tr>
+    <td>view window</td>
+    <td>A sub window of the  display top level and conceptually exists
+      as one per sequence region</td>
+    <td>new_window<br />
+	find_feature<br />
+	create_feature<br />
+	delete_feature<br />
+	single_select<br />
+	multiple_select<br />
+	unselect<br />
+	list_windows<br />
+	register_client
+    </td>
+  </tr>
+  <tr>
+    <td>sequence window</td>
+    <td>This is a sub window of the view window and actually displays the sequence.</td>
+    <td>zoom_to<br />
+	load_features<br />
+	register_client
+    </td>
+  </tr>
+</table>
+</p>
+
+</fieldset>
+<br />
+
+
+
+
+
+
+<fieldset>
+<legend>The ZMap Application Window Actions</legend>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- new -->
+  <tr>
+    <td>new_zmap</td>
+    <td>create a new display window</td>
+    <td>
+	<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;</pre>
+	
+    <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00004"
+    application=""
+        version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;</pre>
+    </td>
+  </tr>
+
+  <!-- shutdown -->
+  <tr>
+    <td>shutdown</td>
+    <td>close zmap completely</td>
+    <td><pre class="request">&lt;zmap action="shutdown" /&gt;</pre></td>
+  </tr>
+
+</table>
+</p>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+
+  
+  <!-- finalised -->
+  <tr>
+    <td>finalised</td>
+    <td>Designed to notify the controlling
+	program zmap is shutting down.</td>
+    <td>
+	<pre class="request">
+&lt;zmap action="finalised" /&gt;                                  
+	</pre>
+	
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+	</pre>
+    </td>
+  </tr>
+
+</table>
+</p>
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>The ZMap Control Window Actions</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- new_view -->
+  <tr>
+    <td>new_view</td>
+    <td>Open and  load a  new view in  the current toplevel  window of
+zmap.  This splits  the window vertically loading the  new sequence in
+the resulting canvas.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="new_view"&gt;
+    &lt;segment sequence="1.123456-145678" start="1" end="0" &gt;
+[ZMap]
+sources = source
+[source]
+url = "acedb://any:any@localhost:12345"
+featuresets = "Coding Repeats BLASTX"
+
+    &lt;/segment&gt;
+&lt;/zmap&gt;</pre>
+        <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00084"
+    application=""
+        version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+    <!-- close_view -->
+  <tr>
+    <td>close_view</td>
+    <td>
+	Close a view.
+    </td>
+    <td><pre class="request">
+&lt;zmap action="close_view"&gt;
+    &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
+  </tr>
+
+
+  <!-- zoom_in -->
+  <tr>
+    <td>zoom_in</td>
+    <td>zoom the currently focused window by a multiple of 2</td>
+    <td><pre class="request">&lt;zmap action="zoom_in"/&gt;</pre></td>
+  </tr>
+
+  <!-- zoom_out -->
+  <tr>
+    <td>zoom_out</td>
+    <td>zoom the currently focused window by a multiple of 1/2</td>
+    <td><pre class="request">&lt;zmap action="zoom_out"/&gt;</pre></td>
+  </tr>
+</table>
+</p>
+
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+
+
+</table>
+<p>
+
+
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The ZMap View Window Actions</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+    <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- find_feature -->
+  <tr>
+    <td>find_feature</td>
+    <td>Find a feature on the zmap display.  **details need filling in here**</td>
+    <td><pre class="request">
+&lt;zmap action="find_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- create_feature -->
+  <tr>
+    <td>create_feature</td>
+    <td>Create a new feature on the zmap display.  The feature will be
+drawn with  the least amount of redrawing  possible.  The pathological
+case is creating the first feature of a column.</td>
+    <td><pre class="request">
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- delete_feature -->
+  <tr>
+    <td>delete_feature</td>
+    <td>Delete  a feature  on the  zmap display.  The least  amount of
+redrawing possible  will occur.  Frequently  this means that  just the
+feature  is   deleted  from  the  canvas.   Bumped   columns  and  the
+pathological case of  removing the last feature of  a column result in
+&quot;holes&quot; in the display.</td>
+    <td><pre class="request">
+&lt;zmap action="delete_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+    <!-- single_select -->
+  <tr>
+    <td>single_select</td>
+
+    <td>This will  do the equivalent of  a single mouse  select on the
+canvas.  This  is currently highlight  a feature.  It will  remove any
+previous  highlighting that may  exist.  It  is possible  to highlight
+whole  features  or just  subfeatures  with  this  request. The  first
+example  will  highlight  a  whole  feature,  while  the  second  will
+highlight an exon and an intron.   It may seem a little strange that a
+single select can highlight more than one item, but this is preferable
+to  having to  do  a single  select  with a  single  subfeature and  a
+separate multiple select call to highlight the second and so on.
+    </td>
+    <td><pre class="request">
+&lt;zmap action="single_select"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+      <pre class="request">
+&lt;zmap action="single_select"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="109934" end="112869" ontology="exon" /&gt;
+      &lt;subfeature start="112870" end="113900" ontology="intron" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- multiple_select -->
+  <tr>
+    <td>multiple_select</td>
+    <td>This will do the same as  the single select, but not clear the
+current selection.
+    </td>
+
+  <!-- unselect -->
+  <tr>
+    <td>unselect</td>
+    <td>Unselects currently highlighted/selected feautre.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="multiple_select"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- list_windows -->
+  <tr>
+    <td>list_windows</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="list_windows"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- new_window -->
+  <tr>
+    <td>new_window</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="new_window"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- export_content -->
+  <tr>
+    <td>export_content</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="export_content"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+
+</table>
+</p>
+
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+  <!-- feature_details -->
+  <tr>
+    <td>feature_details</td>
+
+    <td><p>Rather than  have all  the data in  directly in  ZMap, ZMap
+requests  extra   information  from  controlling   software  via  this
+mechanism.   ZMap  requests feature  details  for  a  feature and  the
+response  returned will  be processed  and displayed  in a  simple tag
+value widget.</p>
+      <p>The response  should be  as in the  examples and  comply with
+these notes:
+      <ul>
+        <li>The page, paragraph and tagvalue elements can be
+repeated as often as required but must be nested as shown.</li>
+
+<li><h5>Page element:</h5><p>The "name" attribute is compulsory.</p></li>
+<li><h5>Paragraph element:</h5>
+<p>The "name" attribute is optional.</p>
+<p>The type attribute must be one of:
+<ul>
+  <li>"simple"             tagvalues will be a simple vertical list.</li>
+  <li>"tagvalue_table"     tagvalues will be aligned in a table.</li>
+  <li>"homogenous"         as for "tagvalue_table" but all tagvalues should have the same tag which will only be displayed once.</li>
+</ul>
+(default is "simple")</p>
+
+<li><h5>Tagvalue element:</h5>
+<p>The "name" attribute is compulsory.</p>
+<p>The type attribute must be one of:
+<ul>
+  <li>"simple"             the value is displayed in a single line text widget</li>
+  <li>"scrolled_text"      the value is displayed in a multiline/scrolled window</li>
+</ul>
+(default is "simple")</p>
+<p>The content fo the tagvalue must be text.</p>
+</p>
+    </td>
+
+    <td>
+	<pre class="request">
+&lt;zmap action="feature_details"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;notebook&gt;
+      &lt;page name="OTTER"&gt;
+        &lt;paragraph name="Otter" type="tagvalue_table"&gt;
+          &lt;tagvalue name="Otter Gene ID" type="simple"&gt;OTTHUMG00000013596&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167640&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167641&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167643&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167642&lt;/tagvalue&gt;
+        &lt;/paragraph&gt;
+      &lt;/page&gt;
+    &lt;/notebook&gt;      
+  &lt;/response&gt;
+&lt;/zmap&gt;</pre>
+      <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="false" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
+
+
+
+  <!-- edit -->
+  <tr>
+    <td>edit</td>
+    <td>Designed to initiate editing in the controlling program.</td>
+    <td><pre class="request">
+&lt;zmap action="edit"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
+
+
+  
+
+</table>
+</p>
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The ZMap Sequence Window Actions</legend>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+  
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+    <!-- zoom_to -->
+  <tr>
+    <td>zoom_to</td>
+    <td>zoom the currently focused  window to display either the whole
+of  the feature  specified plus  a pre-specified  border both  top and
+bottom, or the co-ordinates specified.</td>
+    <td><pre class="request">
+&lt;zmap action="zoom_to"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="request">
+&lt;zmap action="zoom_to"&gt;
+  &lt;location start="" end="" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- load_features -->
+  <tr>
+    <td>load_features</td>
+    <td>Request ZMap to load the features for the specified feature
+	set in the current window. Optionally the loading will be for the "full" column
+	or just the "mark" extent in that column.</td>
+    <td><pre class="request">
+&lt;zmap action="load_features" load="mark" &gt;
+  &lt;featureset name="SomeFeatureSet"/&gt;
+  &lt;featureset name="SomeOtherFeatureSet"/&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- get_mark -->
+  <tr>
+    <td>get_mark</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.</td>
+    <td><pre class="request">
+&lt;zmap action="get_mark"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="request">
+&lt;zmap action="get_mark"&gt;
+  &lt;location start="" end="" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  
+</table>
+</p>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+
+
+</table>
+</p>
+
+
+</fieldset>
+<br />
+
+
+
+<p>(*)  initial =  the first  window zmap  displays. view  =  the zmap
+window which displays the sequence/features.</p>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+<fieldset>
+<legend>Table Width="100%" of Actions generated</legend>
+
+<p>ZMap will generate the actions (register_client, single_select, multiple_select) from the above table, plus those from the following table.</p>
+
+<table width="100%" class="zmap_actions">
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+  <!-- view closed -->
+  <tr>
+    <td>view_closed</td>
+    <td>Designed to notify the controlling program that a zmap view has closed.
+    This might be the precursor to emitting a "finalised" action.</td>
+    <td><pre class="request">
+&lt;zmap action="view_closed"&gt;
+  &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
+
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+
+</table>
+</fieldset>
+<br />
+
+
+
+
+<fieldset>
+<legend>The <b>xremote_gui</b> tool</legend>
+
+<p>ZMap provides a test application for testing the protocol and this
+section describes how to run the tool.</p>
+
+
+<p><b>1)</b> Edit the .ZMap config file and make sure the "default_sequence" and
+"show-mainwindow" options are commented out:</p>
+
+<pre>
+[ZMap]
+#default-sequence = b0250
+#show-mainwindow = false
+</pre>
+
+<p><b>2)</b> Start the tool (assumes bash shell for redirection syntax), note
+that subsequent steps assume that the sequence to be displayed is specified
+here:</p>
+
+<pre>
+./xremote_gui --no_timeout --sequence=b0250 ./zmap 2>&1 tee xremote_out.txt 
+</pre>
+
+
+<p><b>3)</b> Click "Run ZMap" from the buttons at the bottom of the tool and
+ZMap will start with just the main window displayed. This is a good time to
+attach a debugger to zmap if you want to debug zmap code.</p>
+
+<p><b>4)</b> Select the "newzmap" option from the "Commands" menu to put the
+correct xml into the request buffer, when you are ready click the "Send Command"
+button at the bottom of the tool. This displays a blank zmap window with zmaps
+response displayed in the "Response" window.</p>
+
+<p><b>5)</b> In the same way now select the "newview" option from the
+"Commands" menu and when you are ready click the "Send Command" button at the
+bottom of the tool. This tells zmap to load and display the data.</p>
+
+<p><b>6)</b> Now select the "register client" option from the
+"Commands" menu and when you are ready click the "Send Command" button at the
+bottom of the tool. This ensures that all windows are registered between zmap
+and xremote_gui.</p>
+
+
+<p>You can now enter your own html in the "Our Request" box and send it to
+ZMap and see ZMap's response. When you have finished then select the "shutdown"
+request and send it or just Exit the tool.</p>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+<h1 align="center">Design Changes to ZMap Remote Control Mechanism</h1>
+
+
+<fieldset>
+<legend>Terminology</legend>
+
+<ul>
+  <li><b>"Client":</b> the program that talks to ZMap.
+</ul>
+
+
+</fieldset>
+<br />
+
+
+
+
+<fieldset>
+<legend>"Request"/"Response" Format and Symmetry</legend>
+
+
+<p>The ZMap client protocol is a simple request/response protocol, every request must receive a
+response. In addition every request must include an <code>action</code> which specifies <b>what</b> processing
+should occur and a <code>target</code> id which identifies the zmap or client component <b>where</b> the processing
+should take place.</p>
+
+<p>The original request format had no "Request" tag or id attribute, the latter was given implicitly
+by sending the request to the relevant window:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>In the existing response format the result code is specified outside the zmap block:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>The protocol should be changed as below:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="some_action" target="xxx"&gt;
+         .
+         .
+  &lt;request/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+          .
+          .
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>and with parameters:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" target="xxx"&gt;
+    &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Opening a Connection</legend>
+
+<p>The current protocol explicitly embeds X window IDs in the XML and implicitly assumes them at all levels.
+This needs to change for several reasons:</p>
+
+<ul>
+  <li>The means by which the protocol is transported should not be embedded in the protocol itself.</li>
+  <li>Currently four different levels of ZMap windows can independently receive protocol requests which
+  leads to duplicated code, less robust error handling and is much more complicated for the client
+  program to interface to.</li>
+</ul>
+
+<p>This requires a new style of request to open a connection, zmap sends the following
+request to the client:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="open" target="xxx"&gt;
+    &lt;connection target="yyy" application="ZMap" version="1.4.0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The Request target id ("xxx") is given to zmap as a start-up command line parameter to allow the connection
+to be bootstrapped. zmap then passes it's application level target id ("yyy") over in the
+protocol and also some application and version information that the client can use to check that it
+can support this level of zmap.
+</p>
+
+<p>(Note that the command line parameters should really be in two parts to support multiple
+protocols: a parameter(s) to specify the required protocol information and an id parameter
+to specify the clients target id. Currently only the id needs to be specified as the transport
+mechanism for the protocol is assumed to be X Properties).</p>
+
+<p>The client then responds to confirm that the connection is made:</p>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" id="yyy"&gt;
+    &lt;connection target="yyy" application="ZMap" version="1.4.0"/&gt;
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the response target from the client should match the target that zmap
+passed to the client in the request and the conneciton target should match
+the target given in the original command line 
+parameter given when zmap was started. Once this symmetry has been specified
+the connection is established and communication can begin.</p>
+
+<p>The protocol should be changed as below:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="some_action" target="xxx"&gt;
+         .
+         .
+  &lt;request/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+          .
+          .
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>and with parameters:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" target="xxx"&gt;
+    &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+
+
+
+<fieldset>
+<legend>Columns, Methods and Styles</legend>
+
+<p>Some time ago we introduced the use of styles into the acedb database that is used to store the annotators
+local copy of the clone they are working on. Along with this change the way that acedb ?Method objects are
+used was changed completely. This could be summarised as:</p>
+
+<ul>
+  <li><b>Styles:</b> specify all aspects of feature processing from display to export.
+  <li><b>Method:</b> are only used to group features into sets and columns.
+</ul>
+
+<p>This change has not been reflected in the xml specification for communication with ZMap but now needs to be. Previously
+the Style name was the same as the feature set name which was the same as the column name. This is now no longer the
+necessarily the case.</p>
+
+
+<p>A typical example are features like PolyA types, previously these were specified with a style name only:</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>This xml would only produce the desired result if there were columns named "polyA_site" and "polyA_signal". This is no longer
+the case because otterlace is using the Column_parent tag to cluster different feature sets into the same column:</p>
+
+<pre>
+Method : "curated_features"
+Remark	 "Features curated by annotators"
+
+Method : "polyA_signal"
+Column_parent	 curated_features
+Style	 polyA
+Valid_length	 6
+Remark	 "PolyA signal"
+
+Method : "polyA_site"
+Column_parent	 curated_features
+Style	 polyA
+Valid_length	 2
+Remark	 "PolyA site"
+</pre>
+
+<p>The xml needs to be changed to specify feature set names for "polyA_signal" and
+"polyA_site":</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset name="polyA_site"&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+  &lt;featureset name="polyA_signal"&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>ZMap knows the mapping from a featureset to the column it should be displayed in so there is no
+need to specify the column.</p>
+
+<p>In addition this xml does not unambiguously identify the featureset, for this we need to add
+align and block information:</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;align [name="xxx"]&gt;
+    &lt;block [name="xxx"]&gt;
+      &lt;featureset name="polyA_site"&gt;
+        &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+      &lt;featureset name="polyA_signal"&gt;
+        &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+    &lt;/block&gt;
+  &lt;align/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the align, block and featureset names can all be defaulted, ZMap will add the
+features to the master align and the first block in the master align in the target zmap.</p>
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Window Creation and Window IDs</legend>
+
+<p>Once ZMap is displaying features there are four levels of windows that commands can be sent to
+and which may themselves generate commands to the client program:</p>
+
+<ul>
+  <li><b>application window</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control window</b> - the parent window of views (one to many)
+  <li><b>view window</b> - the parent window of sequences (one to many)
+  <li><b>sequence window</b> - the window displaying features (one to many)
+</ul>
+
+<p>Different commands will create this hierachy down to different levels according to the command
+and that commands parameters. For instance the "new_zmap" command will create just the control
+window if used with no attributes but will create the control, view and sequence windows if given
+the sequence and start/end attributes. Unfortunately at the moment only the control window id is
+ever returned.</p>
+
+<p>Creates just the control window:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap" /&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Creates the control, view and sequence windows:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>The response needs changing to list <b>all</b> windows created:<p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Windows and Associated Actions</legend>
+
+
+<p>Different actions are sent to different windows, currently the actions for each window
+are listed in the response at window creation:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>This seems pointless though because the actions are not self-describing; the client program still
+has to have a record somewhere of all the attributes allowed for each action. It would be
+better to simply return the "type" of the window and the client will have to send the actions
+appropriate to that window.</p>
+
+<p>If the intention was to enable the client to "know" which version of zmap it was talking to then
+this is more easily accomplished via a version number.</p>
+
+<p>We should take the opportunity to rename the window types to something closer to their function:
+
+<ul>
+  <li><b>application window</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control window</b> - the window that controls processing and display of features (one to many),
+      parent to all views
+  <li><b>features window</b> - the window that contains the features (one to many), the parent of all display windows 
+  <li><b>display window</b> - the window that displays the features (one to many)
+</ul>
+
+
+<p>The responses should be changed to:</p>
+
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="control" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="features" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="display" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Sending Messages to Windows</legend>
+
+<p>Currently the client program must send requests to four different types of window, there are
+several problems with this:</p>
+
+<ul>
+  <li>The client program is more complicated to write and debug.
+  <li>If the client programs record of window ids gets out of step with the windows
+      that actually exist it has to handle "BadWindow" errors from the X server itself.
+  <li>ZMap itself is more complex to program and maintain.
+</ul>
+
+<p>ZMaps handling of requests should be rewritten so that all client requests are sent to the
+application window and ZMap ensures that from there they are routed to the correct subwindow. This
+will make handling of windows being closed by the user more straight forward and error handling
+will be considerably easier for the client program.</p>
+
+<p>Little will need to change in the interface except that each request from the client will need
+to specify the window id as an attribute so that ZMap can send the request to the correct
+window:</p>
+
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" xwid="0x2c00084" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>When ZMap replies it must specify which window the reply is coming from:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response xwid="0x2c00084" &gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>Similarly when ZMap issues a request to the client program it will need to specify which ZMap window
+the request is coming from:</p>
+
+<pre class="request">
+&lt;zmap action="feature_details"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+
+<p>NEEDS MERGING WITH THE ABOVE....</p>
+
+
+<fieldset>
+<legend>Overview</legend>
+
+<p>
+It is  relatively easy  to control zmap  from another program  using a
+series of  X11 XAtoms.  These  XAtoms are held  on the server  and are
+window  specific.   ZMap   &quot;listens&quot;  to  these  XAtoms  and
+responds to  the commands which exist  as their values  by setting the
+value of a corresponding XAtom.  The convention in this document is to
+have  the requests  in  a box  surrounded  by a  blue  border and  the
+responses surrounded by a red border.
+</p>
+
+<p>
+It used  to be the case that  zmap had two windows  which would accept
+the requests  but there has been  some reorganisation in  the way zmap
+accepts requests so  that requests can be simplier  than was otherwise
+possible.
+</p>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The <b>xremote_gui</b> tool</legend>
+
+<p>ZMap provides a test application for testing the protocol and this
+section describes how to run the tool.</p>
+
+
+<p><b>1)</b> Edit the .ZMap config file and make sure the "default_sequence" and
+"show-mainwindow" options are commented out:</p>
+
+<pre>
+[ZMap]
+#default-sequence = b0250
+#show-mainwindow = false
+</pre>
+
+<p><b>2)</b> Start the tool (assumes bash shell for redirection syntax), note
+that subsequent steps assume that the sequence to be displayed is specified
+here:</p>
+
+<pre>
+./xremote_gui --no_timeout --sequence=b0250 ./zmap 2>&1 tee xremote_out.txt 
+</pre>
+
+
+<p><b>3)</b> Click "Run ZMap" from the buttons at the bottom of the tool and
+ZMap will start with just the main window displayed. This is a good time to
+attach a debugger to zmap if you want to debug zmap code.</p>
+
+<p><b>4)</b> Select the "newzmap" option from the "Commands" menu to put the
+correct xml into the request buffer, when you are ready click the "Send Command"
+button at the bottom of the tool. This displays a blank zmap window with zmaps
+response displayed in the "Response" window.</p>
+
+<p><b>5)</b> In the same way now select the "newview" option from the
+"Commands" menu and when you are ready click the "Send Command" button at the
+bottom of the tool. This tells zmap to load and display the data.</p>
+
+<p><b>6)</b> Now select the "register client" option from the
+"Commands" menu and when you are ready click the "Send Command" button at the
+bottom of the tool. This ensures that all windows are registered between zmap
+and xremote_gui.</p>
+
+
+<p>You can now enter your own html in the "Our Request" box and send it to
+ZMap and see ZMap's response. When you have finished then select the "shutdown"
+request and send it or just Exit the tool.</p>
+
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Stuff that needs sorting out.....</legend>
+
+
+<h4>Feature set usage</h4>
+
+<p>As this example from an otterlace log shows we don't give a name to the feature set which seems crazy.
+Instead we the use the "style" attribute to identify the feature set, looks like
+Roys xml has not caught up with the changes to feature_set and style usage.</p>
+
+<pre>
+Fri Jul 17 16:25:56 2009  &lt;zmap action="delete_feature"&gt;
+Fri Jul 17 16:25:56 2009    &lt;<font color=red>featureset</font>&gt;
+Fri Jul 17 16:25:56 2009      &lt;feature end_not_found="false" start_not_found="false" <font color=red>style="Putative_CDS"</font> strand="+" name="RP5-1120P11.2-001" locus="C6orf223" end="28241" start="25456"&gt;
+Fri Jul 17 16:25:56 2009      &lt;/feature&gt;
+Fri Jul 17 16:25:56 2009    &lt;/featureset&gt;
+Fri Jul 17 16:25:56 2009  &lt;/zmap&gt;
+Fri Jul 17 16:25:56 2009  &lt;zmap action="create_feature"&gt;
+Fri Jul 17 16:25:56 2009    &lt;<font color=red>featureset</font>&gt;
+Fri Jul 17 16:25:56 2009      &lt;feature end_not_found="false" start_not_found="false" <font color=red>style="Putative_CDS"</font> strand="+" name="RP5-1120P11.2-001" locus="C6orf223" end="28241" start="25468"&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="25536" start="25468" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="intron" end="26888" start="25537" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="26963" start="26889" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="intron" end="27516" start="26964" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="28241" start="27517" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="cds" end="27962" start="27570" /&gt;
+Fri Jul 17 16:25:56 2009      &lt;/feature&gt;
+Fri Jul 17 16:25:56 2009    &lt;/featureset&gt;
+Fri Jul 17 16:25:56 2009  &lt;/zmap&gt;
+</pre>
+
+
+
+<pre>
+Here are some typical context/align/block names...needs some sorting out...
+
+Feature Context:	b0250	b0250	b0250	SUPERLINK_CB_V	11462742	1	10995378	11034593	1	39216
+	Alignment:	b0250_master
+	Block:	1.0.+_1.0.+	1	39216	1	39216
+
+
+Currently we have:
+
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+
+
+I propose this is changed to:
+
+&lt;zmap action="create_feature"&gt;
+  &lt;align [name="xxx"]&gt;
+    &lt;block [name="xxx"]&gt;
+      &lt;featureset name="xxxxx"&gt;
+        &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+    &lt;/block&gt;
+  &lt;align/&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+<fieldset>
+<legend>ZMap Client Communication Protocol</legend>
+
+<p><i>(See UML "Sequence" Diagram for description of diagram syntax.)</i></p>
+
+<p>The Protocol is a peer-to-peer asynchronous "Request - Response" protocol. That is:</p>
+
+<ul>
+  <li><b>All</b> Requests must be replied to with a Response.
+  <li>Either side may send a Request at any time.
+  <li>The Response to a Request will come up to "timeout" seconds later, if no
+      Response arrives then the peer should send a "timeout" exception.
+  <li>It is an error to send a second Request before receiving the Response
+      to the first Request.
+</ul>
+
+
+<p>The normal request sequence will be:
+<img src="./request_response.png" align="center">
+</p>
+
+<p>
+<img src="./request_response2.png">
+</p>
+
+<p>with the transmitted xml being:
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request&gt;
+
+    request body
+
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response&gt;
+
+    response body
+
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+</p>
+
+
+
+</fieldset>
+<br />
+
+
+
+
+<fieldset>
+<legend>Otterlace chain of events</legend>
+
+<p>
+Firstly  running zmap  with a  --win_id option  makes zmap  register a
+client  with  the  &quot;server&quot;  listening for  property  notify
+events on the window with the id supplied.
+</p>
+
+<pre>
+./zmap --win_id 0x20000a4
+</pre>
+
+<p>
+ZMap sends  the following  request to the  window, which  should reply
+with  a 200  all ok  message.   ZMap does  very little  else with  the
+response.
+</p>
+
+
+<pre class="request" title="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004" request_atom="_ZMAP_XREMOTE_COMMAND" response_atom="_ZMAP_XREMOTE_RESPONSE" &gt;
+    &lt;action&gt;register_client&lt;/action&gt;
+    &lt;action&gt;new_zmap&lt;/action&gt;
+    &lt;action&gt;shutdown&lt;/action&gt;
+  &lt;/client&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap /&gt;
+</pre>
+
+<p>
+Otterlace now  knows the window id  of the initial  ZMap window.  This
+window is quite  limited in the actions that it  supports and makes no
+attempt to pass  them on to any child ZMap windows  that it might know
+about.  This is  a decision that is carried on  throughout the rest of
+the communication in  order that requests can be  simplier and a level
+of  encapsulation can be  enforced.  It  is for  this reason  that the
+request includes a list of actions that the client understands.
+</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap" /&gt;
+</pre>
+
+<p>
+All going well there will be  a response from zmap which resembles the
+following example.  The  client has an xwid, and a  list of actions it
+understands.
+</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>
+From the  above examples  I hope  it's easy to  see how  the following
+tables fit in.
+</p>
+
+</fieldset>
+<br />
+
+
+
+
+
+
+<fieldset>
+<legend>The Window hierachy and the Valid Actions for Each Window</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <tr>
+  <th>Window</th>
+  <th>Description</th>
+  <th>Actions accepted</th>
+  <th>Actions generated</th>
+  </tr>
+  <tr>
+    <td>application window</td>
+    <td>zmap initially starts with a window to get input from the user
+      as to which sequence to  display.  This may be hidden by configuration
+      in ~/.ZMap/ZMap. N.B. No register_client is available as zmap must be
+      started with --win_id option to register a client.</td>
+    <td>new_zmap<br />shutdown</td>
+    <td>finalised</td>
+  </tr>
+  <tr>
+    <td>display window</td>
+    <td>This is the top level window in which the different views are shown.</td>
+    <td>new_view<br />close_view<br />zoom_in<br />zoom_out<br />register_client</td>
+    <td>view_closed</td>
+  </tr>
+  <tr>
+    <td>view window</td>
+    <td>A sub window of the  display top level and conceptually exists
+      as one per sequence region</td>
+    <td>new_window<br />
+	find_feature<br />
+	create_feature<br />
+	delete_feature<br />
+	single_select<br />
+	multiple_select<br />
+	unselect<br />
+	list_windows<br />
+	register_client
+    </td>
+  </tr>
+  <tr>
+    <td>sequence window</td>
+    <td>This is a sub window of the view window and actually displays the sequence.</td>
+    <td>zoom_to<br />
+	load_features<br />
+	register_client
+    </td>
+  </tr>
+</table>
+</p>
+
+</fieldset>
+<br />
+
+
+
+
+
+
+<fieldset>
+<legend>The ZMap Application Window Actions</legend>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- new -->
+  <tr>
+    <td>new_zmap</td>
+    <td>create a new display window</td>
+    <td>
+	<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;</pre>
+	
+    <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00004"
+    application=""
+        version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;</pre>
+    </td>
+  </tr>
+
+  <!-- shutdown -->
+  <tr>
+    <td>shutdown</td>
+    <td>close zmap completely</td>
+    <td><pre class="request">&lt;zmap action="shutdown" /&gt;</pre></td>
+  </tr>
+
+</table>
+</p>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+
+  
+  <!-- finalised -->
+  <tr>
+    <td>finalised</td>
+    <td>Designed to notify the controlling
+	program zmap is shutting down.</td>
+    <td>
+	<pre class="request">
+&lt;zmap action="finalised" /&gt;                                  
+	</pre>
+	
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+	</pre>
+    </td>
+  </tr>
+
+</table>
+</p>
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>The ZMap Control Window Actions</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- new_view -->
+  <tr>
+    <td>new_view</td>
+    <td>Open and  load a  new view in  the current toplevel  window of
+zmap.  This splits  the window vertically loading the  new sequence in
+the resulting canvas.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="new_view"&gt;
+    &lt;segment sequence="1.123456-145678" start="1" end="0" &gt;
+[ZMap]
+sources = source
+[source]
+url = "acedb://any:any@localhost:12345"
+featuresets = "Coding Repeats BLASTX"
+
+    &lt;/segment&gt;
+&lt;/zmap&gt;</pre>
+        <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00084"
+    application=""
+        version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+    <!-- close_view -->
+  <tr>
+    <td>close_view</td>
+    <td>
+	Close a view.
+    </td>
+    <td><pre class="request">
+&lt;zmap action="close_view"&gt;
+    &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
+  </tr>
+
+
+  <!-- zoom_in -->
+  <tr>
+    <td>zoom_in</td>
+    <td>zoom the currently focused window by a multiple of 2</td>
+    <td><pre class="request">&lt;zmap action="zoom_in"/&gt;</pre></td>
+  </tr>
+
+  <!-- zoom_out -->
+  <tr>
+    <td>zoom_out</td>
+    <td>zoom the currently focused window by a multiple of 1/2</td>
+    <td><pre class="request">&lt;zmap action="zoom_out"/&gt;</pre></td>
+  </tr>
+</table>
+</p>
+
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+
+
+</table>
+<p>
+
+
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The ZMap View Window Actions</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+    <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- find_feature -->
+  <tr>
+    <td>find_feature</td>
+    <td>Find a feature on the zmap display.  **details need filling in here**</td>
+    <td><pre class="request">
+&lt;zmap action="find_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- create_feature -->
+  <tr>
+    <td>create_feature</td>
+    <td>Create a new feature on the zmap display.  The feature will be
+drawn with  the least amount of redrawing  possible.  The pathological
+case is creating the first feature of a column.</td>
+    <td><pre class="request">
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- delete_feature -->
+  <tr>
+    <td>delete_feature</td>
+    <td>Delete  a feature  on the  zmap display.  The least  amount of
+redrawing possible  will occur.  Frequently  this means that  just the
+feature  is   deleted  from  the  canvas.   Bumped   columns  and  the
+pathological case of  removing the last feature of  a column result in
+&quot;holes&quot; in the display.</td>
+    <td><pre class="request">
+&lt;zmap action="delete_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+    <!-- single_select -->
+  <tr>
+    <td>single_select</td>
+
+    <td>This will  do the equivalent of  a single mouse  select on the
+canvas.  This  is currently highlight  a feature.  It will  remove any
+previous  highlighting that may  exist.  It  is possible  to highlight
+whole  features  or just  subfeatures  with  this  request. The  first
+example  will  highlight  a  whole  feature,  while  the  second  will
+highlight an exon and an intron.   It may seem a little strange that a
+single select can highlight more than one item, but this is preferable
+to  having to  do  a single  select  with a  single  subfeature and  a
+separate multiple select call to highlight the second and so on.
+    </td>
+    <td><pre class="request">
+&lt;zmap action="single_select"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+      <pre class="request">
+&lt;zmap action="single_select"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="109934" end="112869" ontology="exon" /&gt;
+      &lt;subfeature start="112870" end="113900" ontology="intron" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- multiple_select -->
+  <tr>
+    <td>multiple_select</td>
+    <td>This will do the same as  the single select, but not clear the
+current selection.
+    </td>
+
+  <!-- unselect -->
+  <tr>
+    <td>unselect</td>
+    <td>Unselects currently highlighted/selected feautre.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="multiple_select"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- list_windows -->
+  <tr>
+    <td>list_windows</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="list_windows"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- new_window -->
+  <tr>
+    <td>new_window</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="new_window"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- export_content -->
+  <tr>
+    <td>export_content</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="export_content"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+
+</table>
+</p>
+
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+  <!-- feature_details -->
+  <tr>
+    <td>feature_details</td>
+
+    <td><p>Rather than  have all  the data in  directly in  ZMap, ZMap
+requests  extra   information  from  controlling   software  via  this
+mechanism.   ZMap  requests feature  details  for  a  feature and  the
+response  returned will  be processed  and displayed  in a  simple tag
+value widget.</p>
+      <p>The response  should be  as in the  examples and  comply with
+these notes:
+      <ul>
+        <li>The page, paragraph and tagvalue elements can be
+repeated as often as required but must be nested as shown.</li>
+
+<li><h5>Page element:</h5><p>The "name" attribute is compulsory.</p></li>
+<li><h5>Paragraph element:</h5>
+<p>The "name" attribute is optional.</p>
+<p>The type attribute must be one of:
+<ul>
+  <li>"simple"             tagvalues will be a simple vertical list.</li>
+  <li>"tagvalue_table"     tagvalues will be aligned in a table.</li>
+  <li>"homogenous"         as for "tagvalue_table" but all tagvalues should have the same tag which will only be displayed once.</li>
+</ul>
+(default is "simple")</p>
+
+<li><h5>Tagvalue element:</h5>
+<p>The "name" attribute is compulsory.</p>
+<p>The type attribute must be one of:
+<ul>
+  <li>"simple"             the value is displayed in a single line text widget</li>
+  <li>"scrolled_text"      the value is displayed in a multiline/scrolled window</li>
+</ul>
+(default is "simple")</p>
+<p>The content fo the tagvalue must be text.</p>
+</p>
+    </td>
+
+    <td>
+	<pre class="request">
+&lt;zmap action="feature_details"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;notebook&gt;
+      &lt;page name="OTTER"&gt;
+        &lt;paragraph name="Otter" type="tagvalue_table"&gt;
+          &lt;tagvalue name="Otter Gene ID" type="simple"&gt;OTTHUMG00000013596&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167640&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167641&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167643&lt;/tagvalue&gt;
+          &lt;tagvalue name="Otter Exon ID" type="simple"&gt;OTTHUME00000167642&lt;/tagvalue&gt;
+        &lt;/paragraph&gt;
+      &lt;/page&gt;
+    &lt;/notebook&gt;      
+  &lt;/response&gt;
+&lt;/zmap&gt;</pre>
+      <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="false" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
+
+
+
+  <!-- edit -->
+  <tr>
+    <td>edit</td>
+    <td>Designed to initiate editing in the controlling program.</td>
+    <td><pre class="request">
+&lt;zmap action="edit"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
+
+
+  
+
+</table>
+</p>
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The ZMap Sequence Window Actions</legend>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+  
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+    <!-- zoom_to -->
+  <tr>
+    <td>zoom_to</td>
+    <td>zoom the currently focused  window to display either the whole
+of  the feature  specified plus  a pre-specified  border both  top and
+bottom, or the co-ordinates specified.</td>
+    <td><pre class="request">
+&lt;zmap action="zoom_to"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="request">
+&lt;zmap action="zoom_to"&gt;
+  &lt;location start="" end="" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- load_features -->
+  <tr>
+    <td>load_features</td>
+    <td>Request ZMap to load the features for the specified feature
+	set in the current window. Optionally the loading will be for the "full" column
+	or just the "mark" extent in that column.</td>
+    <td><pre class="request">
+&lt;zmap action="load_features" load="mark" &gt;
+  &lt;featureset name="SomeFeatureSet"/&gt;
+  &lt;featureset name="SomeOtherFeatureSet"/&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- get_mark -->
+  <tr>
+    <td>get_mark</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.</td>
+    <td><pre class="request">
+&lt;zmap action="get_mark"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="request">
+&lt;zmap action="get_mark"&gt;
+  &lt;location start="" end="" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  
+</table>
+</p>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+
+
+</table>
+</p>
+
+
+</fieldset>
+<br />
+
+
+
+<p>(*)  initial =  the first  window zmap  displays. view  =  the zmap
+window which displays the sequence/features.</p>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+<fieldset>
+<legend>Table Width="100%" of Actions generated</legend>
+
+<p>ZMap will generate the actions (register_client, single_select, multiple_select) from the above table, plus those from the following table.</p>
+
+<table width="100%" class="zmap_actions">
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+  <!-- view closed -->
+  <tr>
+    <td>view_closed</td>
+    <td>Designed to notify the controlling program that a zmap view has closed.
+    This might be the precursor to emitting a "finalised" action.</td>
+    <td><pre class="request">
+&lt;zmap action="view_closed"&gt;
+  &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
+
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+
+</table>
+</fieldset>
+<br />
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h2>Glossary</h2>
+
+<fieldset>
+<legend>Technical Terminology</legend>
+
+<ul>
+  <li><b>"Client":</b> the program that talks to ZMap.
+</ul>
+
+
+</fieldset>
+<br />
+
+
+
+<pre>
+
+some examples:
+
+
+
+<zmap>
+<request action="create_feature">
+<align>
+<block>
+<featureset name="Retained_intron">
+<feature end_not_found="false" start_not_found="false" strand="-" name="AP003068.2-007" locus="NAALADL1" end="8549" start="5888">
+<subfeature ontology="exon" end="5980" start="5888" />
+<subfeature ontology="intron" end="6092" start="5981" />
+<subfeature ontology="exon" end="6180" start="6093" />
+<subfeature ontology="intron" end="6254" start="6181" />
+<subfeature ontology="exon" end="6428" start="6255" />
+<subfeature ontology="intron" end="7712" start="6429" />
+<subfeature ontology="exon" end="7804" start="7713" />
+<subfeature ontology="intron" end="8046" start="7805" />
+<subfeature ontology="exon" end="8114" start="8047" />
+<subfeature ontology="intron" end="8217" start="8115" />
+<subfeature ontology="exon" end="8549" start="8218" />
+</feature>
+</featureset>
+</block>
+</align>
+</request>
+</zmap>
+
+
+
+
+<zmap>
+  <request action="delete_feature">
+    <align>
+      <block>
+        <featureset name="genomic_canonical">
+          <feature name="b0250" start="1" end="39216" style="genomic_canonical"></feature>
+        </featureset>
+      </block>
+    </align>
+  </request>
+</zmap>
+
+
+
+<zmap>
+  <request action="zoom_to">
+    <align>
+      <block>
+        <featureset>
+          <feature end_not_found="false" start_not_found="false" style="curated_tsct"
+strand="-" name="RP1-283E3.5-004" locus="SLC35E2" end="45060" start="42044">
+          </feature>
+        </featureset>
+      </block>
+    </align>
+  </request>
+</zmap>
+
+
+
+
+
+
+get_mark
+
+
+
+<zmap>
+  <response>
+    <mark exists="true" start="x" end="y" />
+  </response>
+</zmap>
+
+for when there is a mark, and
+
+<zmap>
+  <response>
+    <mark exists="false" />
+  </response>
+</zmap>
+
+
+
+
+
+<zmap>
+  <request action="load_features" load="mark">
+<align>
+<block>
+<featureset name="wublastx_slimswissprot" />
+</block>
+</align>
+  </request>
+</zmap>
+
+
+<zmap>
+  <request action="load_features" load="full">
+    <align>
+      <block>
+        <featureset name="curated.eds_column" />
+      </block>
+    </align>
+  </request>
+</zmap>
+
+
+
+</pre>
+
+
+
+<h2>References</h2>
+
+
+<p>[1] Nye, Adrian. Chapt 12, Interclient Communicaton, XLib Programming Manual,
+Vol 1 of Definitive Guide to the X Window System. Publ O'Reilly & Assoc.
+
+
+
+<!--#include virtual="/perl/footer"-->

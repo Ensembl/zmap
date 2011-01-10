@@ -1,0 +1,84 @@
+<!-- $Id: performance.html,v 1.1 2011-01-10 13:47:48 edgrif Exp $ -->
+<h2>Performance: Making ZMap and Otterlace run faster</h2>
+<fieldset><legend>Ideas for speeding things up</legend>
+<p>
+<ul>
+<li>Otterlace (the new faster development version) currently gets GZipped data from its sources, waits till it has all arrived and then unzips this and then sends it out unzipped.  Break this zipped data into smaller chunks (eg 128k - 1MB) and forward this to ZMap to be assembled into a Gzip to be uncompressed.
+This will cut network delays by half, but note that there is a memory problem to be solved in ZMap as this process implies a doubling of space needed by ZMap.
+<li>Split each data request into sub-sequences and run these in parallel. ZMap could drive this resulting in no effort required by Otterlace. This can divide network delays by a factor of more than two but experiments may be necessary to tune the best way to split the sub requests (it would be easy to cause network overload, and we may hit diminishing returns). Some idea of data volumes would help: ZMap could create a config file recording previous instances of the same data.
+<li>Build a profiled version of ZMap and identify slow parts of the code and then resolve bottlenecks.
+</ul>
+</p>
+</fieldset>
+<fieldset><legend>Profiling ZMap</legend>
+<p>Click <a href="Design_notes/notes/profile.shtml">here</a> for some ideas on profiling.
+</p>
+</fieldset>
+
+<fieldset><legend>Network bandwidth: some fantasy figures</legend>
+<p>Currently, depending on the amount of data requested, it can take as much as 10 minutes (anecdotally) for Otterlace/ ZMap to load.  Because of this it is common for people to save thier ACEDB sessions locally to avoid this load time the following day.  By routing data directly to ZMap we loose this option and as a result we expect a large increase in network traffic from current levels at the start of the day.
+</p>
+<p>
+We also consider that users will request more data if it takes less time to load, and that new high volume fieldsets will become available and therefore required.
+</p>
+<p> We also aim to speed up startup by loading data in parallel - currently each featureset is loaded sequentially and where data is staged between source databases and target there is an additional sequential step. Of course it would be worth while getting some real statistics but let's invent some unsupported figures assuming 100 annotators and see how the peak network traffic might compare to current levels. The point here is not that these figures cannot be discredited, but that it is clear we need to consider these issues.
+</p>
+<table border="1" cellpadding="3" cellspacing="3">
+<thead><tr><td></td><td>Current</td><td>Estimates</td><td>Worst case</td><td>Factor</td></tr></thead>
+<tbody>
+<tr>
+<td>No of network startups</td><td>30</td><td>80</td><td>100</td><td>3</td>
+</tr>
+<tr>
+<td>Mean no of active fieldsets</td><td>1</td><td>30</td><td>50</td><td>50</td>
+</tr>
+<tr>
+<td>Stages: DB &gt; Otterlace &gt; ACE/ZMap</td><td>serial</td><td>parallel</td><td>parallel</td><td>2</td>
+</tr>
+<tr>
+<td>Compression</td><td>none</td><td>6:1</td><td>4:1</td><td>0.25</td>
+</tr>
+<tr>
+<td>No of clones</td><td>4</td><td>6</td><td>10</td><td>2</td>
+</tr>
+</tbody></table>
+
+<p>
+Which all implies an increase in peak network traffic by a factor of 90 - 150x.
+</p>
+
+<p>If we assume 512k per fieldset per clone then we have the following estmiates of network traffic per second:
+<table border="1" cellpadding="3" cellspacing="3">
+<thead><tr><td></td><td>Current</td><td>Estimates</td><td>Worst case</td></tr></thead>
+<tbody>
+<tr>
+<td>No of network startups</td><td>30</td><td>80</td><td>100</td>
+</tr>
+<tr>
+<td>Mean no of fieldsets</td><td>30</td><td>30</td><td>50</td>
+</tr>
+<tr>
+<td>No of clones</td><td>4</td><td>6</td><td>10</td>
+</tr>
+<r>
+<td>Data per user (MB)</td><td>60</td><td>90</td><td>250</td>
+</tr>
+<tr>
+<td>Data total (MB)</td><td>1800</td><td>7200</td><td>25000</td>
+</tr>
+<tr>
+<td>Ave time to load</td><td>2 min</td><td>10 sec</td><td>10 sec</td>
+</tr>
+<tr>
+<td>Traffic per second (MB)</td><td>15</td><td>720</td><td>2500</td>
+</tr>
+</tbody></table>
+
+</p>
+<p>One obvious remark is that not every will press the start button at the same instant, and also that not all users will request huge amounts of data, so we can divide the worse case by (eg) a factor of 10. However, considering that to achieve a given performance target it is necessary to design in spare capacity that still leaves us facing in rough terms a network requirement not far removed from GB per second if we just program it blindly.
+</p>
+<h3>Feedback from anacode</h3>
+<p>Experience with pipe servers is that moderately parallel used of server scripts soon reaches a performance bottleneck on the web servers.  Distant sources (eg DAS in Washington) can time out.
+Data is cached by the server scripts and this is exepcted to resolve this king of problem after an initial loading of data.
+</p>
+</fieldset>

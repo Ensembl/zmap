@@ -1,0 +1,233 @@
+<!--#set var="banner" value="ZMap - lace communication"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<H2>ZMap - lace communication</H2>
+
+
+<pre>
+
+ZMap - lace XML communication
+=============================
+
+
+The following describes changes to zmap and changes that need to be made
+to otterlace to support feature display.
+
+
+Overall structure
+-----------------
+
+My original (= naive) approach was that there would be some pages prepared by
+zmap and some by lace but actually this won't work if we are to produce what
+the annotators would like.
+
+We need to have pages that are mixtures of zmap and lace stuff.
+
+
+To support this I have introduced "subsection"s so that canonical xml looks
+like this (I've omitted the attributes and data for clarity):
+
+
+&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;notebook&gt;
+      &lt;chapter&gt;
+
+        &lt;!-- this the only bit that otter needs to address... --&gt;
+        &lt;page&gt;
+          &lt;subsection&gt;
+            &lt;paragraph&gt;
+              &lt;tagvalue&gt;
+              &lt;/tagvalue&gt;
+            &lt;/paragraph&gt;
+          &lt;/subsection&gt;
+        &lt;/page&gt;
+
+      &lt;/chapter&gt;
+    &lt;/notebook&gt;
+  &lt;/response&gt;
+&lt;/zmap&gt;
+
+
+The notebook and chapter parts need not be named because for feature display
+there will only be one notebook with one chapter.
+
+
+
+Merging
+-------
+
+Otterlace will need to send over a mixture of its own complete pages and also
+subsections to be displayed on existing pages. zmap will merge both into the
+feature display notebook.
+
+At the moment I am not proposing to support merging at the paragraph level as
+this introduces a number of semantic problems that I think we can avoid by
+simply saying that merging will only be supported from paragraphs upwards.
+
+The merging will require that we have an agreed set of names for any pages,
+subsections etc that are to be merged. We could have some incredibly dynamic
+system where zmap passes the names to lace and then lace passes them back but
+I think this is overkill and we should just agree on the names. The examples
+below will show currently supported names.
+
+
+
+New TagValue types
+------------------
+
+I have added multicolumn lists which require synchronisation between the
+paragraph and its tagvalues, an example will clarify:
+
+Let's assume we have a 3 column list consisting of start, end and ID data,
+here's an example of how to specify this:
+
+&lt;paragraph name="Exon" type="compound_table"
+           columns="'start' 'end' 'StableID'" column_types="int int string"&gt;
+
+   &lt;tagvalue type="compound"&gt;43491 43674 OTTHUME00000336182&lt;/tagvalue&gt;
+   &lt;tagvalue type="compound"&gt;41283 41369 OTTHUME00000336156&lt;/tagvalue&gt;
+   &lt;tagvalue type="compound"&gt;37289 37374 OTTHUME00000336151&lt;/tagvalue&gt;
+
+                          etc
+
+&lt;/paragraph&gt;
+
+"columns" is mandatory and gives the titles for the columns
+
+"column_types" is mandatory and gives the datatype for the column
+
+The number of values in the "compound" tagvalues must match the number of
+columns.
+
+
+
+Alignment Display
+-----------------
+
+XML data for requests for alignments from zmap should include:
+
+
+&lt;response handled="true"&gt;
+
+  &lt;!-- note that notebook and chapter are anonymous. --&gt;
+  &lt;notebook&gt;
+    &lt;chapter&gt;
+
+
+      &lt;!-- Predefined page name....only need to include this if below data exists
+	for this alignment. --&gt;
+      &lt;page name="Details"&gt;
+
+        &lt;!-- Predefined subsection name. --&gt;
+        &lt;subsection name="Align"&gt;
+
+          &lt;paragraph type="tagvalue_table"&gt;
+            &lt;tagvalue name="Accession" type="simple"&gt;accession number of match sequence&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+
+          &lt;paragraph type="tagvalue_table"&gt;
+            &lt;tagvalue name="Title" type="simple"&gt;title from "Visible Title" tags in acedb&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+
+        &lt;/subsection&gt;
+
+      &lt;/page&gt;
+
+    &lt;/chapter&gt;
+  &lt;/notebook&gt;
+&lt;/response&gt;
+
+
+
+
+Transcript Display
+------------------
+
+XML data for requests for transcripts from zmap should include:
+
+&lt;response handled="true"&gt;
+
+  &lt;!-- note that notebook and chapter are anonymous. --&gt;
+  &lt;notebook&gt;
+    &lt;chapter&gt;
+
+
+      &lt;!-- Predefined page name....only need to include this if Locus etc exist
+	for this feature. --&gt;
+      &lt;page name="Details"&gt;
+
+        &lt;!-- Predefined subsection name. --&gt;
+        &lt;subsection name="Feature"&gt;
+
+          &lt;paragraph name="Locus" type="tagvalue_table"&gt;
+            &lt;tagvalue name="Symbol" type="simple"&gt;short/object name&lt;/tagvalue&gt;
+            &lt;tagvalue name="Full Name" type="simple"&gt;longer descriptive name&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+
+        &lt;/subsection&gt;
+
+	
+	&lt;!-- Predefined subsection name, only need to include this if there is a remark
+	  and supporting evidence. --&gt;
+        &lt;subsection name="Annotation"&gt;
+
+          &lt;paragraph type="simple"&gt;
+            &lt;tagvalue name="Remark" type="scrolled_text"&gt;some kind of description&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+
+          &lt;paragraph name="Evidence" type="tagvalue_table"&gt;
+            &lt;tagvalue name="Trembl" type="simple"&gt;XXXXX.4&lt;/tagvalue&gt;
+            &lt;tagvalue name="EST" type="simple"&gt;sdkfjsdlkfjsljk.41&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+
+        &lt;/subsection&gt;
+
+      &lt;/page&gt;
+
+
+
+      &lt;!-- this page is completely Otters so you can change the title, names etc
+	as you like --&gt;
+      &lt;page name="Otter"&gt;
+        &lt;subsection name="Stable IDs"&gt;
+          &lt;paragraph name="Gene" type="tagvalue_table"&gt;
+            &lt;tagvalue name="Stable ID" type="simple"&gt;OTTHUMG00000031177&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+          &lt;paragraph name="Transcript" type="tagvalue_table"&gt;
+            &lt;tagvalue name="Stable ID" type="simple"&gt;OTTHUMT00000076345&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+          &lt;paragraph name="Exon" type="compound_table" columns="'start' 'end' 'StableID'"
+	             column_types="int int string"&gt;
+            &lt;tagvalue type="compound"&gt;43491 43674 OTTHUME00000336182&lt;/tagvalue&gt;
+            &lt;tagvalue type="compound"&gt;41283 41369 OTTHUME00000336156&lt;/tagvalue&gt;
+
+                                      etc....
+
+            &lt;tagvalue type="compound"&gt;29356 29460 OTTHUME00001470549&lt;/tagvalue&gt;
+          &lt;/paragraph&gt;
+        &lt;/subsection&gt;
+      &lt;/page&gt;
+
+
+    &lt;/chapter&gt;
+  &lt;/notebook&gt;
+&lt;/response&gt;
+
+
+
+
+</pre>
+
+
+<!--#include virtual="/perl/footer"-->
+
+

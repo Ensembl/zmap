@@ -1,0 +1,41 @@
+<!--#set var="banner" value="ZMap Plugin Design"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<H2>ZMap: Plugin Design</H2>
+
+
+
+<H3>Background</H3>
+
+<p>ZMap has been designed to allow the addition of an arbitrary number of
+data sources and types via a threaded server/client interface. The new data
+source must provide a set of functions defined by the server/client
+interface and it can then be accessed via server interface by the main zmap thread
+and the data displayed as it arrives. Currently the code for each new source
+must be compiled in which is tenable now but may become restricting if new
+users which to add their own sources.</p>
+
+<p>One solution is for ZMap to dynamically load code to handle data sources, this
+technique has become known as "plug-ins". This document describes an approach to
+providing this capability.</p>
+
+
+<H3>The Level of the Plug-in Interface</H3>
+
+<p>Choosing the right level for the plug-in interface is crucial to restricting
+the complexity for the implementor. They should not need to understand anything
+to do with the threaded server/client interface but instead should be able to
+read their data and easily and simply create transcripts and so on.</p>
+
+we need a diagram here of the right level......i.e. zmapServer.h
+
+
+<!--#include virtual="/perl/footer"-->

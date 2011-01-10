@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><umlet_diagram><help_text>// Uncomment the following line to change the fontsize:
+// fontsize=14
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Welcome to UMLet!
+//
+// Double-click on UML elements to add them to the diagram, or to copy them
+// Edit elements by modifying the text in this panel
+// Hold Ctrl to select multiple elements
+// Use Ctrl+mouse to select via lasso
+//
+// Use ± or Ctrl+mouse wheel to zoom
+// Drag a whole relation at its central square icon
+//
+// Press Ctrl+C to copy the whole diagram to the system clipboard (then just paste it to, eg, Word)
+// Edit the files in the "palettes" directory to create your own element palettes
+//
+// Select "Custom Elements &gt; New..." to create new element types
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// This text will be stored with each diagram;  use it for notes.</help_text><zoom_level>10</zoom_level><element><type>com.umlet.element.base.Class</type><coordinates><x>530</x><y>50</y><w>120</w><h>30</h></coordinates><panel_attributes>Peer2 - Server
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Relation</type><coordinates><x>360</x><y>50</y><w>50</w><h>830</h></coordinates><panel_attributes>lt=.</panel_attributes><additional_attributes>30;30;30;810</additional_attributes></element><element><type>com.umlet.element.base.Class</type><coordinates><x>330</x><y>50</y><w>120</w><h>30</h></coordinates><panel_attributes>Peer1 - Client
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.SeqObjectActive</type><coordinates><x>580</x><y>110</y><w>20</w><h>720</h></coordinates><panel_attributes>bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.SeqObjectActive</type><coordinates><x>380</x><y>110</y><w>20</w><h>720</h></coordinates><panel_attributes>bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>680</x><y>110</y><w>130</w><h>90</h></coordinates><panel_attributes>Owned by Peer2
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>40</x><y>110</y><w>130</w><h>90</h></coordinates><panel_attributes>INACTIVE</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Relation</type><coordinates><x>560</x><y>50</y><w>50</w><h>830</h></coordinates><panel_attributes>lt=.</panel_attributes><additional_attributes>30;30;30;810</additional_attributes></element><element><type>com.umlet.element.base.Relation</type><coordinates><x>370</x><y>180</y><w>230</w><h>70</h></coordinates><panel_attributes>lt=&lt;
+take ownership</panel_attributes><additional_attributes>210;50;30;50</additional_attributes></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>680</x><y>200</y><w>130</w><h>420</h></coordinates><panel_attributes>indeterminate
+</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>330</x><y>200</y><w>330</w><h>130</h></coordinates><panel_attributes>request processing</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>20</x><y>10</y><w>970</w><h>860</h></coordinates><panel_attributes>Changing state and atom ownership during a request/response cycle   </panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>180</x><y>110</y><w>130</w><h>90</h></coordinates><panel_attributes>Owned by Peer1
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>40</x><y>80</y><w>130</w><h>30</h></coordinates><panel_attributes>Peer1 State
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>180</x><y>80</y><w>130</w><h>30</h></coordinates><panel_attributes>Peer1 Atom
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>680</x><y>80</y><w>130</w><h>30</h></coordinates><panel_attributes>Peer2 Atom
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>330</x><y>460</y><w>330</w><h>160</h></coordinates><panel_attributes>reply processing</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Relation</type><coordinates><x>450</x><y>550</y><w>150</w><h>80</h></coordinates><panel_attributes>lt=&lt;
+reset ownership</panel_attributes><additional_attributes>130;60;80;60;80;30;130;30</additional_attributes></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>680</x><y>620</y><w>130</w><h>210</h></coordinates><panel_attributes>Owned by Peer2
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>40</x><y>200</y><w>130</w><h>130</h></coordinates><panel_attributes>CLIENT_SENDING
+bg=orange
+</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>40</x><y>330</y><w>130</w><h>130</h></coordinates><panel_attributes>CLIENT_WAITING
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>180</x><y>200</y><w>130</w><h>420</h></coordinates><panel_attributes>indeterminate
+</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Relation</type><coordinates><x>370</x><y>540</y><w>150</w><h>80</h></coordinates><panel_attributes>lt=&lt;
+reset ownership</panel_attributes><additional_attributes>30;60;80;60;80;30;30;30</additional_attributes></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>180</x><y>620</y><w>130</w><h>210</h></coordinates><panel_attributes>Owned by Peer1
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>40</x><y>620</y><w>130</w><h>210</h></coordinates><panel_attributes>INACTIVE</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>830</x><y>80</y><w>140</w><h>30</h></coordinates><panel_attributes>Peer2 State
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>830</x><y>110</y><w>140</w><h>90</h></coordinates><panel_attributes>INACTIVE</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>830</x><y>200</y><w>140</w><h>130</h></coordinates><panel_attributes>SERVER_RETRIEVING
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>830</x><y>460</y><w>140</w><h>160</h></coordinates><panel_attributes>SERVER_SENDING
+bg=magenta</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>830</x><y>620</y><w>140</w><h>210</h></coordinates><panel_attributes>INACTIVE</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>40</x><y>460</y><w>130</w><h>160</h></coordinates><panel_attributes>CLIENT_RETRIEVING
+bg=orange</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.custom.InteractionFrame</type><coordinates><x>830</x><y>330</y><w>140</w><h>130</h></coordinates><panel_attributes>SERVER_PROCESSING
+bg=magenta</panel_attributes><additional_attributes/></element></umlet_diagram>

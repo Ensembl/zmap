@@ -1,0 +1,237 @@
+<h2>Highlighting relevant evidence in ZMap</h2>
+<fieldset><legend>Introduction</legend>
+<p>A number of requests for features have been received and may involve significant interaction between Otterlace and Zmap.  Those requested following the recent annotation test (2009/10) are collated here.
+</p>
+<p>
+A common theme is the selection of features from a (marked) region and displaying or highlighting relevant ones according to variable criteria. The intention is to perform the necessary analysis in Otterlace as with a scripting interface more rapid development is possible.
+Similar functions may already exist in ZMap (eg colinear lines and homology markers on bumped alignments). Some of these could possibly be implemented in ZMap and this point is open to discussion.
+</p>
+<h3>Interface to Otterlace</h3>
+<p>Some notes are available <a href="Design_notes/notes/otter_zmap.shtml#otterface">below</a>.
+</p>
+
+</fieldset>
+
+<fieldset><legend>RT 69060 - Hide EST's that are covered by mRNA data</legend>
+<p>Some notes about how to do this in ZMap without interaction with otterlace can be found <a href="Design_notes/notes/EST_mRNA.shtml">here</a>.
+There is also the option of otterlace providing separate featuresets for masked and unmasked data, which would be a very neat solution.
+</p>
+Close reading of the ticket suggests that this is not intended to be an interactive process and simply applies to whole columns, in which case the interactive process below may not be relevant.
+</p>
+<p>Although not mentioned in the RT ticket there are plans for this to be driven by a button or menu option. An annotator will be working on a marked region (or an implied marked region related to a selected feature?) and will want to see related non-duplicated evidence.  For example given an mRNA there may be hundreds of EST features covering the same region and many of these may tell nothing new - the EST's may correspond exactly to some of the mRNA data.
+</p>
+<p>On selecting the feature/region, and the function (for example by a right click menu in ZMap or by a menu option in the otterlace Tools menu) otterlace will request or Zmap will send information about the features present in the relevant columns in the given range.  As ZMap has no way to know which columns/ featuresets are relevant (and hard coding this is a poor choice - the names can change) it makes sense for Otterlace to specify the featuresets (these could be specified in styles) and range.  Protocol already exists for otterlace to know the selected feature or marked region.  If necessary, ZMap can send a request to trigger the whole process.
+</p>
+<p>The end result of this process would be a list of features to display within the marked region - effectively like bumping a column (or several) but with only the relevant features displayed.
+</p>
+<h4>Sequence of events</h4>
+<p>
+<ul>
+<li> user selects an mRNA or marks a region
+<li> a) user selects the RC menu in ZMap - ZMap sends otterlace the region or feature and requests EST masking
+<li> b) user selects Tools/EST masking in otterlace and otterlace requests the region or feature (ZMap replies with the data)
+<li> otterlace requests EST features in the given range and specified columns
+<li> otterlace calculates which ones to mask and sends a list of EST features to remove from the display or a list of which ones to display
+<li> zmap automatically bumps the relevant columns and displays only the specified features
+</ul>
+</p>
+<p>This process does look complicated: is there any benefit in implementing this instead of <a href="Design_notes/notes/EST_mRNA.shtml">having ZMap calculate it</a>?
+</p>
+</fieldset>
+
+<a name="dotter"></a>
+<fieldset><legend>RT 69003 - Automating Dotter</legend>
+<p>
+For a series of EST's we wish to have an automated process to see if each of them is represented by any of a series of existing annotated transcripts.  As the number of combinations can be quite large it is not practical to do this by hand.  The original ticket mentions 'check to see of the dotter is an uninterrupted diagonal line', but the reality is that approximate matches are needed and that in most cases there will be that diagonal line but it will fade out and not be full length, or there will be breaks near the tail - it is necessary for the annotator to see the dotter output and interpret it.
+</p>
+<p>Initially individual transcripts will be compared with multiple EST's - this is already implemented in dotter.
+</p>
+
+<h4>Implementation</h4>
+
+<p>To provide a clean interface for selecting features and presenting results the following is suggested:
+<ul>
+<li> the user selects 'Compare ESTs and Transcripts' from the window RC menu
+<li> a popup is displayed with panes for lists of EST and transcript features
+<li> the user shift-selects EST and transcript features and clicking on a 'Load' button puts the selected features in the relevant lists. (Repeat till satisfied). This uses existing multiple feature selection (focus) functions which are restricted to one column at a time.
+<li> transcripts can be selected in this window
+<li> the user clicks on a 'Dotter' button and the ESTs and transcripts are processed.
+<li> clicking on any feature will highlight it in ZMap
+<li> features can be removed from the lists at any time.
+</ul>
+</p>
+
+<h4>Further developments</h4>
+<p>The above initial solution will be trialed for feedback.  Some idea for improving it have been suggested:
+<ul>
+<li> modify Dotter to provide a grid of results rather than a column and show all combinations at once
+<li> modify dotter to overlay multiple alignments using different colours. Clicking on a colour will select that EST
+<li> create an option for one EST to be aligned with many transcripts. To avoid confusion modify Dotter to produce a horizontal output (row not column).
+</ul>
+</p>
+</fieldset>
+
+<fieldset><legend>RT 111154 - Highlighting features sharing the same splice sites</legend>
+<p>As in 'Apollo' - given a selected transcript light up homologies that match.
+</p>
+<p>Given a transcript we can define the splice sites unambiguously via intron/exon boundaries in which case any analysis is clear cut.  If we can select a transcript, and then RC on a (bumped) alignment column to select a menu item then we also have a simple user interface.
+</p>
+<p>This is an obvious candidate for a new sub-feature glyph type where we can emulate the Apollo display.
+</p>
+
+</fieldset>
+
+
+<a name="evidence"></a>
+<fieldset><legend>RT 24526, 156650 - Highlighting evidence or transcripts</legend>
+<p><ul>
+<li> User selects evidence, related transcript is highlit.
+<li> User selects transcript, related evidence is highlit.
+</ul>
+This clearly needs a list of features to highlight from otterlace.
+</p>
+<p>Evidence and transcript will both be highlit.  As evidence can appear in several columns a single colour defined in the window will be used - this will identify all the evidence as one group. Defining different (contrasting) colours per style could be confusing for the user.  A 'washed out' version of the original feature's colour has been suggested but this would require more colour information per style - calculated colours are diffcult to make perfect.  The default is yellow in black and applies to all features/ columns affected.
+</p>
+<p>
+Configuration is done by:
+<pre>
+[ZMapWindow]
+colour-evidence-fill=pink
+colour-evidence-border=green
+</pre>
+
+</p>
+
+<h4>Sequence of events</h4>
+<ul>
+<li> user selects feature
+<li> user selects RC menu and chooses highlight transcript or highlight evidence
+<li> Zmap requests related features from otterlace
+<li> otterlace replies and ZMap highlights them
+</ul>
+<h4>Highlighting the features</h4>
+<p>ZMap styles provide normal and selected colours. To show related features such as evidence already used it has been suggested that these features 'go grey' which requires another colour spec or style.
+<b>zmapWindowFocus.c</b> mentions <b>window->colour_item_highlight</b> which is used for items that have no select colour defined and further colours can be defined in the window for 'used as evidence' features. Currently highlighting with window colours only affects the fill colour.
+</p>
+<p>
+As we are now dealing with two independant sets of highlit features (evidence and focus) we need to define how they interact.  Focus is at the top level and should always be visible. It is displayed by changing the fill colour, and the focus column is always shown. If we set the evidence colours to affect border and fill then it will be possible to see both at the same time.
+</p>
+<p>
+Window colours are set in <b>zmapWindowDrawFeatures.c/setColours()</b>.
+</p>
+<p>The WindowFocus code will be modified to handle multiple lists of related features; see <a href="Design_notes/notes/focus_list.shtml">here</a>.
+</p>
+
+<h4>Clearing evidence/transcript highlights</h4>
+<p>There is some value in having related features highlit semi-permanently.
+When do they get un-highlit? a) if another feature is used to request related data b) via the RC menu/'hide related features'. If a feature is selected (becomes the focus) and then used to select evidence related features and then loses focus the evidence is still highlit. We need to provide two menu options 1) to show evidence and 2) hide evidence, and 1) will also hide any evidence already highlit.  A further option will be provided to add more features for the evidence list.
+</p>
+<p> But it's a little more complicated. Requesting related features is a feature specific function and appears on the feature menu. Hide features must appear if some are highlit but cannot be in the feature menu as the option will not appear if there is no focus feature. The feature menu can offer 'highlight evidence' or 'highlight transcript' depending on the focus feature type. The column menu can offer 'hide xxxx' depending on the type highlit, but to avoid confusion (as hide implies removal from display) this will be expressed as a toggle item with a tick and be called 'highlight XXX', and by selecting this menu item the user is unticking the box.
+</p>
+
+<h5></h5>
+
+
+<h3>XML interface</h3>
+<p>
+The existing 'feature details' popup has a section for evidence features and this information could be used to drive this highlighting. Here is an example repsonse from Otterlace
+<pre>
+&lt;response handled="true"&gt;
+  &lt;notebook&gt;
+    &lt;chapter&gt;
+     &lt;page name="Details"&gt;
+       &lt;subsection name="Annotation"&gt;
+       &lt;paragraph type="tagvalue_table"&gt;
+         &lt;tagvalue name="Transcript Stable ID" type="simple"&gt;OTTHUMT00000326814&lt;/tagvalue&gt;
+         &lt;tagvalue name="Translation Stable ID" type="simple"&gt;OTTHUMP00000201976&lt;/tagvalue&gt;
+         &lt;tagvalue name="Transcript author" type="simple"&gt;jel&lt;/tagvalue&gt;
+       &lt;/paragraph&gt;
+       &lt;paragraph columns="&apos;Type&apos; &apos;Accession.SV&apos;" name="Evidence" type="compound_table" column_types="string string"&gt;
+         &lt;tagvalue type="compound"&gt;EST Em:BI909683.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;Protein Sw:P43626.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;Protein Sw:Q14954.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;cDNA Em:AF022046.1&lt;/tagvalue&gt;
+         &lt;tagvalue type="compound"&gt;cDNA Em:U24078.1&lt;/tagvalue&gt;
+       &lt;/paragraph&gt;
+       &lt;/subsection&gt;
+       &lt;subsection name="Locus"&gt;
+         &lt;paragraph type="tagvalue_table"&gt;
+           &lt;tagvalue name="Symbol" type="simple"&gt;KIR2DS1&lt;/tagvalue&gt;
+           ... etc ...
+       &lt;/paragraph&gt;
+       &lt;/subsection&gt;
+     &lt;/page&gt;
+    &lt;/chapter&gt;
+  &lt;/notebook&gt;
+&lt;/response&gt;
+</pre>
+</p>
+
+<h3>Parsing this data</h3>
+<p>The existing message handling code is tied in quite tightly to some other code that drives creating a popup window and this involves using a callback from the window to its owning view to actually request the data - the view is aware of external interfaces but the window is not.
+</p>
+<p><b>zmapWindowFeatureShow.c/featureShow()</b> supplies stacks of start and end handlers for XML tags which imply parent/child relationships and these mirror the structure of the XML document expected from otterlace. The easiest way to process this data and extract the list of supporting features will be to provide different tag handlers that simply accumulate a list of items to be used by the calling code.
+</p>
+<p>
+</p>NOTE that the XML as used contains composite values and the data we want to use consists of a data type then a space, then an accession number.  To find the data needed we need to trawl through &lt;notebook&gt;, &lt;chapter&gt;, &lt;subsection&gt;, &lt;paragraph name="Evidence"&gt;, and then we have a list of &lt;tagvalue&gt; items.  To extract the data we have to call:
+<pre>
+      char *content = zMapXMLElementStealContent(element);
+</pre>
+and this is done in the tagvalue_end callback.  This function also splits the text into data items as specified earlier, producing a GList of column_data which in the original popup generating code is fed into a ZMapGUINotebook.
+</p>
+<p>Ths code can be re-used with the addition of a couple of flags and can be made to return a list of accession quarks defining the evidence features.  Note that this necessarily creates data structures to drive the feature details popup and this must be freed.
+</p>
+</fieldset>
+
+
+<a name="otterface"></a>
+<fieldset><legend>Interface to Otterlace</legend>
+<h3>Strategy</h3>
+<p>There is a need for ZMap to operate on its own and some advanced features can be implemented in several ways.  If Otterlace is connected then we wish to have the option of alternate behaviour and a mechanism for this exists in the current 'Feature Show' requests.
+</p>
+<p>ZMap will make requests to Otterlace informing Otterlace what it is about to do and Otterlace will respond this a message like the following:
+<pre>
+&lt;response handled="false"&gt;&lt;/response<&gt;
+
+&lt;response handled="true"&gt; ... extra data ... &lt;/response&gt;
+</pre>
+In the first example ZMap will use default values and implement the fucntiobn itself; in the second ZMap will overwrite its default values with data given by otterlace and process any requests or commands included.
+</p>
+<p>Otterlace will have to choice of replying with a request for ZMap to do nothing and later follow up with a request to parform various actions.  This may be important if we wish to perform some extensive analysis of data in ZMap by default (eg masking ESTs by mRNAs) - it allows a quick decision to be made without having to wait for data.
+</p>
+
+<h3>Requests/ Commands needed</h3>
+<p>NB: All the following is subject to implementation - user requirements and time available.
+</p>
+<p>As most of the data will no longer be stored in ACEDB it becomes necessary for ZMap to provide Otterlace with information about what features are present and this will include:
+<ul>
+<li> what features are present in a range and featureset
+<li> what features are present in a range and column
+<li> what is highlighted
+<li> what is hidden
+<li> what is visible
+<li> column bump state
+</ul>
+</p>
+<p>Actions that Otterlace can request from ZMap will include:
+<ul>
+<li> un/highlight specified features or sub-features
+<li> hide/show features
+<li> un/bump colum
+<li> scroll to feature
+</ul>
+</p>
+<h4>Featuresets and Columns</h4>
+<p>There is possible confusion over the use of the words Featureset and Column. To avoid ambiguity we shall state the following:
+<ul>
+<li> A Featureset is a collection of features all of the same type and all from the same source. For technical/ historical reasons the name of the featureset and source are not necessarily the same but in most cases they are.
+<li> A Column is an area on the ZMap display where one or more featuresets can be displayed.
+<li> A featureset can contain data from both strands and several frames. Depending on configuration and use it is possible for all these features to be displayed in in column or several.
+</ul>
+</p>
+<h5>An example</h5>
+<p>The Column 'Repeats' is typically used to display the featuresets 'Repeatmasker_LINE' and 'Repeatmasker_SINE'.  Usually all these features are displayed in one column (not strand sensitive).
+</p>
+</fieldset>
+
+

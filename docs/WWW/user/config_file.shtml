@@ -1,0 +1,99 @@
+<!--#set var="banner" value="ZMap Feature Sets and Styles"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+<!-- $Id: config_file.shtml,v 1.1 2011-01-10 13:34:29 edgrif Exp $ -->
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+<h2>ZMap Config File Example</h2>
+<p>NB: this documentation may be quite old and need updating</p>
+<fieldset>
+<pre class="example">
+
+# -----------------------------------------------------------------------------
+#           ZMap config file format for views.
+#
+#
+
+
+
+# -----------------------------------------------------------------------------
+# "ZMap" stanza:
+#   Specifies general properties.
+#
+[ZMap]
+
+# replaced by views keyword and 'mapping' in the view stanza
+# default_sequence = b0250
+
+default_printer = n318bw
+
+
+# names of view stanzas.
+views = b0250
+
+# new keyword, display listed views, single means all in one window,
+# multiple means all in their own windows, default is multiple.
+view_windows = < single | multiple >
+
+
+
+# -----------------------------------------------------------------------------
+# "View" stanza:
+#   Specifies properties for fetching a feature context to display to the
+# the user.
+#
+# Currently we support one of these but in the future there can be multiple
+# views, all of which get displayed. Each view stanza must have a unique name
+# and it must in turn name the source stanzas which will specify servers
+# to fetch the view data.
+#
+[b0250]
+
+# List of featuresets to be displayed, the order is the column order on the screen,
+# reverse strand is displayed in reverse order.
+featuresets_display_order = GeneFinderFeatures ; eds_column ; 3 Frame ; 3 Frame Translation ; and many more...
+
+
+# features to be displayed in the navigator window.
+navigator_sets = Locus ; scale ; genomic_canonical
+
+# The _default_ mapping for the view (in the end this should specify blocks etc....)
+mapping = <assembly [start [end] ] >
+
+# list specifying all sources for this view.
+sources = b0250_acedb_server
+
+
+
+# -----------------------------------------------------------------------------
+# source stanzas specify the servers that fetch the data for sequence
+# display. Each stanza must have a unique name.
+#
+[b0250_acedb_server]
+
+url = acedb://any:any@cbi4c:20000
+
+# list of feature sets for this source
+# (optional, default list is featuresets_display_order from parent view stanza)
+featuresets = GeneFinderFeatures ; eds_column ; pseudogene ; curated
+
+# fetch styles ? (optional, default is true)
+styles = false
+
+# mapping for this source only (optional, default taken from parent view stanza)
+mapping = <sub-assembly [start [end] ] >
+
+# fetch sequence for mapping from this source (optional, default is true)
+sequence = false
+
+</pre>
+</fieldset>
+
+
+
+
+<!--#include virtual="/perl/footer"-->
+

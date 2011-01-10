@@ -1,0 +1,29 @@
+<h2> zmapXML - comms between ZMap and Otterlace usign XML and X-Atoms </h2>
+<fieldset> <legend>Summary</legend>
+<h3>Window initialisation</h3>
+<p>XAtoms are a property of Xwindows and until the window is mapped by X they cannot be used. This gives us a race condition to consider and this has not been programmed reliably in the existing code.
+</p>
+
+<h3>Window and Client IDs</h3>
+<p>ZMap is given Otterlace's window ID via a command line argument and Otterlace only ever uses this one ID.  ZMap operates three seperate event handlers/ contexts for XAtom events and each one has a protocol to register the client id which is always the same as the original command line argument. Due to the race condition mentioned above it is possible for the client registration to fail resulting in a cessation of communications.
+</p>
+<p>To avoid this race condition the XRemote code has been modified as follows:
+<ul>
+<li> The new_view request now does not repsond to otterlace. The XRemote code assumes that any request will be responded to immediately and the sender waits in a tight loop for the reply.
+<li> The new view creates a window as normal and when it receives a map event from X it sends the reply to Otterlace via a controlling view callback (<b>zmapView.c/viewStateChangeCB()</b>).
+</ul>
+Although Otterlace waits in a tight loop for the response this takes an indeterminate but normally short period of time and there is a 30 second timeout in case of any failure.
+</p>
+<p>This solution does break some of the design assumptions of the XRemote code (which were incompatable with correct fucntioning of the module).  In the near future the XRemote module will be replaced by a new one, which will operate using Xwindow Select functions instead of XAtoms.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Simplifying existing code</legend>
+<p>Out of the three XML contexts on the app/control and view are used; window fucntions were moved into the view some time previously.  To avoid confusion the window code has been removed by doing the following:
+<ul>
+<li> commenting out the call to <b>zMapWindowSetupXRemote()<b> in </b>zmapWIndow.c/myWindowCreate()</b>
+<li> commenting out all the code in <b>zmapWindowRemoteReceive.c</b> except for <b>zMapWindowRemoteReceiveAccepts()</b>, a very short function used by the view's 'list windows' request.
+</ul>
+</p>
+</fieldset>
