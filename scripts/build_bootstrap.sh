@@ -276,7 +276,7 @@ ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
 
 Find the file here when the build finishes (assuming it does).
 
-$RELEASE_LOCATION/ZMap/doc/Release_notes/$RELEASE_NOTES_OUTPUT
+$RELEASE_LOCATION/ZMap/doc/IntWeb/Release_notes/$RELEASE_NOTES_OUTPUT
 
 After modifying the file it needs  cvs updated and to be copied to the
 website.   Use  the  $RELEASE_LOCATION/ZMap/scripts/zmap_update_web.sh

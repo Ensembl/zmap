@@ -194,7 +194,7 @@ code itself so that all the next development session takes place with this
 new code version number for bug reporting etc.
 
 And we also create a set of release notes which need to be hand editted afterwards,
-they live in ZMap/doc/Release_notes, the -d flag tells zmapbuild to call
+they live in ZMap/doc/IntWeb/Release_notes, the -d flag tells zmapbuild to call
 zmapreleasenotes to make the notes. 
 
 Currently this is what you need to do to make such a release...
