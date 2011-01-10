@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Dec  8 12:27 2010 (edgrif)
+ * Last edited: Jan 10 16:49 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.48 2010-12-08 12:28:03 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.49 2011-01-10 16:50:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -492,18 +492,24 @@ gboolean zmapViewCallBlixem(ZMapView view, int position, ZMapFeature feature, GL
 
       if (debug_G)
 	{
+	  GString *args_str ;
 	  char **my_argp = argv ;
 
-	  printf("Blix args: ") ;
+	  args_str = g_string_new("Blix args: ") ;
 
 	  while (*my_argp)
 	    {
-	      printf("%s ", *my_argp) ;
+	      g_string_append_printf(args_str, "%s ", *my_argp) ;
 
 	      my_argp++ ;
 	    }
 
-	  printf("\n") ;
+	  zMapLogMessage("%s", args_str->str) ;
+
+	  printf("%s\n",  args_str->str) ;
+	  fflush(stdout) ;
+
+	  g_string_free(args_str, TRUE) ;
 	}
 
 
