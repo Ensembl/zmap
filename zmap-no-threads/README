@@ -1,6 +1,0 @@
-
-This code was originally intended to provide a non-threaded version of zmap which
-was going to be incorporated into acedb.
-
-This was a waste of time and misguided effort so the code has been archived here,
-it remains only as a record of how the thread stuff could be made to be non-threaded.
