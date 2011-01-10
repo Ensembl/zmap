@@ -1,0 +1,435 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '26 June 2008'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.50 </h5>
+
+
+<h5>Release Date: 26 June 2008</h5>
+
+
+<p>
+(Last release was on 06/06/2008)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=47361">47361</a>, Resolved (Thu Jun 12 12:32:58 2008)
+<p>Warnings in feature window</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=55982">55982</a>, Resolved (Fri Jun 06 11:56:15 2008)
+<p>Pfetch problem. Same as before (I think)</p>
+<p>cas@sanger.ac.uk, mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249">68249</a>, Resolved (Thu Jun 12 17:18:35 2008)
+<p>Zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69350">69350</a>, Resolved (Mon Jun 16 14:01:32 2008)
+<p>zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69421">69421</a>, Resolved (Thu Jun 12 11:44:42 2008)
+<p>Another zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69653">69653</a>, Resolved (Thu Jun 12 14:57:59 2008)
+<p>blixem prefs not saved</p>
+<p>ds8@sanger.ac.uk, jgrg@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69655">69655</a>, Resolved (Thu Jun 12 17:15:14 2008)
+<p>Feature info window sizing and column ordering</p>
+<p>jgrg@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69662">69662</a>, Resolved (Thu Jun 12 16:16:57 2008)
+<p>can't pfetch from zmap</p>
+<p>th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69860">69860</a>, Resolved (Fri Jun 13 16:51:12 2008)
+<p>zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69968">69968</a>, Resolved (Tue Jun 17 14:47:09 2008)
+<p>allow spaces in DNA search in zmap</p>
+<p>gkl@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=70010">70010</a>, Resolved (Mon Jun 16 14:00:33 2008)
+<p>zmap.log file is created with mode 0600</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=70038">70038</a>, Resolved (Mon Jun 16 15:22:01 2008)
+<p>DNA Search window RevComp coordinates</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=70883">70883</a>, Resolved (Tue Jun 24 16:58:26 2008)
+<p></p>
+<p></p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=71101">71101</a>, Resolved (Thu Jun 26 10:40:32 2008)
+<p>Column config dialog size</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>acedb</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=7010">7010</a>, Resolved (Mon Jun 09 15:38:59 2008)
+<p>Glib error</p>
+<p>ar2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=9342">9342</a>, Resolved (Mon Jun 09 16:31:47 2008)
+<p>2 for the price of 1: blixem and treeview text editing</p>
+<p>rcg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=10150">10150</a>, Resolved (Mon Jun 09 15:40:40 2008)
+<p>Geneace crash</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=56936">56936</a>, Resolved (Mon Jun 09 17:28:15 2008)
+<p>current db fmap keeps crashing</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=57679">57679</a>, Resolved (Mon Jun 09 15:47:34 2008)
+<p>blixem cut/paste + window title enhancements</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=62788">62788</a>, Resolved (Fri Jun 06 14:36:28 2008)
+<p>font used in pfetch window from blixem inconsistent</p>
+<p>jgrg@sanger.ac.uk, mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=64637">64637</a>, Resolved (Thu Jun 12 12:19:57 2008)
+<p>xremote does not detect inability to save</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68477">68477</a>, Resolved (Fri Jun 06 14:37:51 2008)
+<p>New parse command variant</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68900">68900</a>, Resolved (Fri Jun 06 14:32:13 2008)
+<p>[Fwd: Another xace ctrl key request - delete]</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68965">68965</a>, Resolved (Fri Jun 06 14:32:51 2008)
+<p>edit mode in xace - tabbing</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69087">69087</a>, Resolved (Mon Jun 09 15:37:47 2008)
+<p>Cutting and pasting into dialog box.</p>
+<p>pad@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=70740">70740</a>, Resolved (Mon Jun 23 16:33:08 2008)
+<p>Help! We are getting a segmentation fault in tace</p>
+<p>gw3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=70796">70796</a>, Resolved (Wed Jun 25 15:04:30 2008)
+<p>acedb crashed</p>
+<p>gw3@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureList.c: Some debug code to
+	  attempt to track down RT #66832
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: Quick bit of code to clear up the
+	  column in the window when using <clear> and closing window.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDNAList.c, zmapWindowDNAList.h: Fix
+	  mistake of getting str value for frame rather than the enum value
+	  (which we weren't storing anyway)
+
+
+  </li>
+  <li> src/configure.ac: Fix finding GLIB_GENMARSHAL when in location
+	  only in PATH set for configure...
+
+
+  </li>
+  <li> src/configure.ac: annoying....
+
+
+  </li>
+  <li> src/include/ZMap/zmapConfigStrings.h: strings for pfetch
+	  preferences
+
+
+  </li>
+  <li> src/: zmapWindow/zmapWindowFeature.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/zmapWindowPreferences.c, lib/Makefile.am: Use
+	  preferences from the ZMap config file rather than the hard coded
+	  ones.
+
+
+  </li>
+  <li> src/runconfig: 64 bit config
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_06_06.shtml: new zmap
+	  release notes for  6 June 2008
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2008_06_06.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 06/06/2008
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.17779/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/configure.ac: That was the wrong thing to do
+
+
+  </li>
+  <li> src/libpfetch/libpfetch.c: fix pedantic compiler
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtils.h: forgotten prototype
+
+
+  </li>
+  <li> src/zmapUtils/zmapLogging.c: fix pedantic compiler
+
+
+  </li>
+  <li> src/zmapServer/acedb/models.wrm: initial version of acedb classes
+	  to represent zmap styles.
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: authors change.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeature.c, zmapWindowPreferences.c,
+	  zmapWindow_P.h: more configurable pfetching
+
+
+  </li>
+  <li> src/include/ZMap/zmapConfigStrings.h: more configurable pfetching
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUrl.h, include/ZMap/zmapView.h,
+	  include/ZMap/zmapServerProtocol.h, zmapServer/zmapServer.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/zmapServer_P.h:
+	  zMapURL -> ZMapURL
+
+
+  </li>
+  <li> src/: zmapServer/zmapServer.c, zmapServer/das/dasServer.c,
+	  zmapServer/file/fileServer.c, zmapUtils/zmapUrl.c,
+	  zmapView/zmapView.c, zmapView/zmapViewUtils.c,
+	  zmapView/zmapView_P.h: zMapURL -> ZMapURL
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: zMapURL -> ZMapURL And
+	  additions for method parsing for Deferred tag
+
+
+  </li>
+  <li> src/zmapServer/acedb/models.wrm: New Deferred tag
+
+
+  </li>
+  <li> src/include/ZMap/zmapEnum.h: Borrowed code from gnu cash to do
+	  enum <-> string conversion including definition.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUITreeView.c: Fix for RT 69655 - resizing -
+	  column sort index bug
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUINotebook.c: Fix for RT 69655 - column
+	  sorting Fix for RT 69653 - blixem preferences not saved
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapFeature/zmapStyle.c: Use new
+	  zmapEnum.h #ifdef'd out gobject stuff
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyle_P.h: Use new zmapEnum.h #ifdef'd out
+	  gobject stuff temporarily include zmapStyle_I.h as this file will
+	  be removed.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyle_I.h: Use new zmapEnum.h previous
+	  contents of zmapStyle_P.h plus #ifdef'd out gobject stuff
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeatureTypes.c,
+	  zmapWindow/zmapWindowNavigator.c: incorporate slight struct name
+	  change in prep for gobject version
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: Add scrollability in case
+	  of more columns than vertical screen space.  Need refining!
+
+
+  </li>
+  <li> src/: zmapUtils/zmapBase.c, zmapUtils/zmapBase_I.h,
+	  include/ZMap/zmapBase.h: first commit of base class
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix for RT 69860, caused by bad
+	  order in resetCanvas
+
+
+  </li>
+  <li> src/zmapUtils/zmapFileUtils.c: fix for RT 70010, file mode
+	  requested to be 644 rather than 600...
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDNAList.c, zmapWindowDNAList.h: fix
+	  for RT 70038, a small mix up of zmap coords and screen coords...
+
+
+  </li>
+  <li> src/libpfetch/libpfetch.c: fix erroneous copy paste...
+
+
+  </li>
+  <li> src/libcurlobject/: libcurlobject_I.h, libcurlobject.c: add debug
+
+
+  </li>
+  <li> src/: zmapWindow/zmapWindowDNA.c, include/ZMap/zmapString.h,
+	  zmapUtils/zmapString.c: remove all spaces from entry string as
+	  per RT 69968.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: correctly resize the config
+	  widget.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapStyle.c, zmapFeature/zmapStyle_I.h,
+	  zmapFeature/zmapStyle_P.h: Styles implemented as GObjects,
+	  initial version...
+
+
+  </li>
+  <li> src/zmapUtils/: zmapBase.c, zmapBase_I.h: Small change to base
+	  object
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowNavigator.c: Fix  for multiple  drawing
+	  when	navigator  is not  drawn until	after reverse complementing
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowSearch.c: Remove leading and trailing
+	  white space from entry text.	Tidy up code a little
+
+
+  </li>
+  <li> src/lib/Makefile.am: compile all files added...
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w4/command.c: add unix like -c option to parse cmd. to specify a
+	  string to parse.
+
+
+  </li>
+  <li> w2/gex.c, wh/gex.h: add hack to allow turning on/off modality,
+	  alternative is to change many, many files.
+
+
+  </li>
+  <li> whelp/Tree.html: document new Alt-< short cut in tree display.
+
+
+  </li>
+  <li> w6/treedisp.c: add update mode edit/delete shortcuts, add Alt-<
+	  shortcut to jump to extreme leftmost of a branch.
+
+
+  </li>
+  <li> w7/fmapgene.c: make 'fix temp gene' dialog non-modal.
+
+
+  </li>
+  <li> w7/gmapconvert.c: Fix bug/oversite in tag 2 reading code for 2
+	  point data causing global likelihood to fail.
+
+
+  </li>
+  <li> w7/gmapdata.c: fix small bug in heap loop code.
+
+
+  </li>
+  <li> w3/gifacemain.c, wh/gex.h, wsocket/serverace.c: add missing
+	  entries for new gex modal calls.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+

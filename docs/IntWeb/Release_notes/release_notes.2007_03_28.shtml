@@ -1,0 +1,14 @@
+<!--#set var="banner" value="ZMap Release Notes For 28 March 2007"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h3>Release Version: ZMap 0.1.21</h3>
+
+<h3>Release Date: 28 March 2007</h3>
+
+<p>(Last release was on 28/02/2007)</p>
+
+actually they're <a href="release_notes.2007_03_29.shtml">here...</a>
+
+<!--#include virtual="/perl/footer"-->
+

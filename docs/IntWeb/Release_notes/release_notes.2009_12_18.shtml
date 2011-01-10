@@ -1,0 +1,96 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '18 December 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.76 </h5>
+
+
+<h5>Release Date: 18 December 2009</h5>
+
+
+<p>
+(Last release was on 17/12/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add data/funcs to support
+	  reporting the index of a feature subpart (exon
+	  etc).zmapFeature/zmapFeatureData.c
+
+
+  </li>
+  <li> src/: zmapControl/zmapControlWindowInfoPanel.c,
+	  zmapWindow/zmapWindow.c: add data/funcs to support reporting the
+	  index of a feature subpart (exon etc).
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: fix compiler warning.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: add code to store subpart
+	  (exon etc) index to subpart data on canvas item.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureData.c: add data/funcs to support
+	  reporting the index of a feature subpart (exon etc).
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_12_17.shtml: new zmap
+	  release notes for 17 December 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_12_17.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 17/12/2009
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.11241/ZMap/scripts/versioner run by zmap
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+

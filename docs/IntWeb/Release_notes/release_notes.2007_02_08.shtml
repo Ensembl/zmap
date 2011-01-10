@@ -1,0 +1,2539 @@
+<!--#set var="banner" value="ZMap Release Notes For  8 February 2007"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h3>Release Version: ZMap 0.1.19</h3>
+
+<h3>Release Date:  8 February 2007</h3>
+
+<h3>Release Overview</h3>
+
+<p>First, apologies for the huge lists of changes that follow, I've automated
+the whole release note production so I will do them more often in future and
+they will be shorted and more compact.
+
+<p>You don't need to read all of the below, probably just skimming the request tracker
+tickets will be enough. On that subject please try to give your request tracker tickets
+short but meaningful "Subject2 lines as that is what gets reported below !
+
+<p>Please also remember to see the user documentation at
+<A HREF="http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml">
+http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml</A> for tips
+on how to use ZMap and the definitive guide to keyboard shortcuts.
+
+<p>This release sees a lot of fixes and changes, the major ones being:
+
+<ul>
+  <li><b>Bumping:</b>
+      <ul>
+	<li>bumping alignments is now ordered by score for protein hits and by longest match for dna hits.
+	<li>bumping of alignments now shows whether mutliple matches are colinear/perfect matches and whether
+	    the start/end of the match is missing.
+      </ul>
+  <li><b>3 Frame:</b> should be working as in fmap now, the backgrounds of the columns in each frame can
+      be coloured to make it more obvious which columns are which frames.
+  <li><b>Alignments:</b>
+      <ul>
+	<li><b>Info:</b> all matches for a particular alignment are now highlighted and when double-clicked
+	    get displayed in a scrolled window. The length of the alignment sequence is now shown in the feature
+	    information bar at the top of the zmap window when you click on the alignment.
+	<li><b>Multiple Select and Hide:</b> multiple alignments can now be selected and hidden or reshown.
+      </ul>
+  <li><b>Performance:</b> Redrawing has been substantially speeded up when zooming in/out.
+  <li><b>Rev Comp Bugs:</b> a number of bugs in the reverse complement code have been fixed including
+      coordinate display on the scale bar, coordinate passing to Blixem and navigator panel display.
+  <li><b>Feature Creation:</b> bugs in new feature creation/editing/display are now fixed.
+  <li><b>Locus Name Display:</b> Locus names are now displayed so that they do not overlap in the
+      navigator and are clickable to enable you to zoom to locus positions on zmap.
+</ul>
+
+
+<p>This is not an exhaustive list so do come and see the ZMap developers or email them if your
+bug or something you want seems to be missing.
+
+
+
+<h3>Request Tracker Tickets Resolved</h3>
+
+
+<h4>ZMap</h4>
+
+<PRE>
+id: ticket/540
+Subject: zmap vs. fmap
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Dec 15 14:01:30 2006
+
+id: ticket/544
+Subject: print
+Requestors: rds@sanger.ac.uk
+Resolved: Thu Oct 19 11:12:31 2006
+
+id: ticket/547
+Subject: Focus change
+Requestors: rds@sanger.ac.uk
+Resolved: Wed Nov 22 14:09:03 2006
+
+id: ticket/553
+Subject: PANGO and FONTS
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Dec 15 14:04:02 2006
+
+id: ticket/556
+Subject: transcript display
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Nov 10 10:46:24 2006
+
+id: ticket/564
+Subject: Bumping
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Dec 15 14:30:16 2006
+
+id: ticket/6024
+Subject: Provide function to remove ests that have already been used in annotation
+Requestors: kj2@sanger.ac.uk
+Resolved: Tue Jan 09 13:58:45 2007
+
+id: ticket/6490
+Subject: Provide visual feedback to indicate est matches that are perfect
+Requestors: kj2@sanger.ac.uk
+Resolved: Wed Dec 06 11:56:56 2006
+
+id: ticket/6499
+Subject: Blixem
+Requestors: cas@sanger.ac.uk
+Resolved: Wed Nov 08 15:25:36 2006
+
+id: ticket/6975
+Subject: 'white out' in blixems run from xaxe using in test_otterlace (zmap_otterlace)
+Requestors: eah@sanger.ac.uk
+Resolved: Fri Dec 15 16:16:42 2006
+
+id: ticket/8507
+Subject: column bump and revcomp
+Requestors: jgrg@sanger.ac.uk
+Resolved: Mon Nov 13 10:23:40 2006
+
+id: ticket/8515
+Subject: DNA & 3FT columns
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Nov 10 10:41:01 2006
+
+id: ticket/8561
+Subject: Kerstins est/match highlighting request
+Requestors: edgrif@sanger.ac.uk
+Resolved: Wed Dec 06 12:00:10 2006
+
+id: ticket/8577
+Subject: 'show feature details' doesn't show all co-ordinates of EST's cDNA's or proteins
+Requestors: gkl@sanger.ac.uk
+Resolved: Wed Dec 06 12:07:05 2006
+
+id: ticket/8580
+Subject: bump/cluster near top of menu
+Requestors: sb7@sanger.ac.uk
+Resolved: Thu Oct 19 11:15:47 2006
+
+id: ticket/8582
+Subject: copying and pasting evidence names.
+Requestors: sb7@sanger.ac.uk
+Resolved: Fri Nov 10 11:01:22 2006
+
+id: ticket/8591
+Subject: Zooming in takes a long time
+Requestors: cas@sanger.ac.uk
+Resolved: Wed Dec 06 11:48:14 2006
+
+id: ticket/9297
+Subject: Zmap puts DNA, not coordinates, in clipboard
+Requestors: eah@sanger.ac.uk
+Resolved: Mon Oct 30 11:41:20 2006
+
+id: ticket/9833
+Subject: Overlap within columns
+Requestors: jgrg@sanger.ac.uk
+Resolved: Thu Nov 09 10:34:28 2006
+
+id: ticket/10151
+Subject: visual marking missing match sequence
+Requestors: lw2@sanger.ac.uk
+Resolved: Wed Dec 20 12:59:40 2006
+
+id: ticket/10152
+Subject: zmap multiple select
+Requestors: lw2@sanger.ac.uk
+Resolved: Tue Jan 09 14:05:05 2007
+
+id: ticket/10153
+Subject: locus name on locator bar
+Requestors: lw2@sanger.ac.uk
+Resolved: Fri Nov 10 11:11:24 2006
+
+id: ticket/10187
+Subject: odd redraw on zoom
+Requestors: lw2@sanger.ac.uk
+Resolved: Fri Dec 15 13:04:05 2006
+
+id: ticket/11936
+Subject: window state lost on reverse complement
+Requestors: edgrif@sanger.ac.uk
+Resolved: Wed Dec 06 12:03:45 2006
+
+id: ticket/12127
+Subject: exporting DNA sequences from Zmap
+Requestors: ca1@sanger.ac.uk, jm12@sanger.ac.uk
+Resolved: Mon Dec 18 12:25:19 2006
+
+id: ticket/13545
+Subject: ZMap Release
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Nov 10 10:55:38 2006
+
+id: ticket/13732
+Subject: Hidden columns reappear on zoom in
+Requestors: jgrg@sanger.ac.uk
+Resolved: Mon Nov 13 10:16:32 2006
+
+id: ticket/13733
+Subject: Double-clicking on a transcript doesn't open ExonCanvas
+Requestors: jgrg@sanger.ac.uk
+Resolved: Fri Nov 10 10:38:33 2006
+
+id: ticket/13734
+Subject: DNA button
+Requestors: jgrg@sanger.ac.uk
+Resolved: Wed Nov 08 15:23:02 2006
+
+id: ticket/13735
+Subject: Navigator rev-comp
+Requestors: jgrg@sanger.ac.uk
+Resolved: Mon Nov 13 15:17:32 2006
+
+id: ticket/14058
+Subject: blixem, rev. complemented - wrong co-ordinates
+Requestors: gkl@sanger.ac.uk
+Resolved: Mon Oct 30 11:39:26 2006
+
+id: ticket/15346
+Subject: gaps error factor
+Requestors: edgrif@sanger.ac.uk
+Resolved: Wed Dec 06 12:01:59 2006
+
+id: ticket/15782
+Subject: Default bump columns not bumped
+Requestors: jgrg@sanger.ac.uk
+Resolved: Tue Nov 14 10:39:39 2006
+
+id: ticket/16116
+Subject: rebump column when a new object is added to it
+Requestors: jgrg@sanger.ac.uk
+Resolved: Fri Nov 17 15:33:53 2006
+
+id: ticket/17820
+Subject: need "Histogram" display style
+Requestors: jla1@sanger.ac.uk
+Resolved: Thu Jan 04 10:49:54 2007
+
+id: ticket/17890
+Subject: Can't create new features via ZmapRemote without column
+Requestors: jgrg@sanger.ac.uk
+Resolved: Fri Dec 15 12:54:55 2006
+
+id: ticket/17897
+Subject: Single highlight colour bug
+Requestors: rds@sanger.ac.uk
+Resolved: Thu Jan 04 10:42:40 2007
+
+id: ticket/18213
+Subject: Fix glyph highlighting...
+Requestors: edgrif@sanger.ac.uk
+Resolved: Fri Dec 15 12:51:09 2006
+
+id: ticket/18509
+Subject: Zmap window unstable
+Requestors: eah@sanger.ac.uk
+Resolved: Wed Jan 10 11:52:59 2007
+
+id: ticket/20166
+Subject: email havana link to zmap help
+Requestors: rds@sanger.ac.uk
+Resolved: Tue Jan 16 15:14:53 2007
+
+id: ticket/20167
+Subject: Window to display all alignment details
+Requestors: rds@sanger.ac.uk
+Resolved: Fri Jan 19 10:56:32 2007
+
+id: ticket/20188
+Subject: Locus Name Readibility in Navigator
+Requestors: rds@sanger.ac.uk
+Resolved: Tue Jan 23 18:26:52 2007
+
+id: ticket/20599
+Subject: Clicking on align backgrounds crashes zmap.
+Requestors: edgrif@sanger.ac.uk
+Resolved: Fri Jan 19 12:54:24 2007
+
+id: ticket/20936
+Subject: allow different clones to be fetched from different servers.
+Requestors: edgrif@sanger.ac.uk
+Resolved: Mon Feb 05 11:26:43 2007
+
+id: ticket/20956
+Subject: Linker flags
+Requestors: edgrif@sanger.ac.uk
+Resolved: Mon Feb 05 11:24:01 2007
+
+</PRE>
+
+
+<h4>Acedb</h4>
+
+<PRE>
+id: ticket/14710
+Subject: Bug with ACEDB 4.9.32
+Requestors: pad@sanger.ac.uk
+Resolved: Tue Nov 07 09:41:18 2006
+
+id: ticket/15555
+Subject: 20ace locked
+Requestors: pa2@sanger.ac.uk
+Resolved: Wed Nov 08 16:36:16 2006
+
+id: ticket/17515
+Subject: sigfaceserver takes 60 sec to release port
+Requestors: jgrg@sanger.ac.uk
+Resolved: Thu Jan 04 12:22:06 2007
+
+id: ticket/17585
+Subject: Make sgifaceserver export lengths of dna/protein matches for zmap.
+Requestors: edgrif@sanger.ac.uk
+Resolved: Mon Jan 15 11:40:14 2007
+
+id: ticket/18266
+Subject: zebrafishdb ACEDB problem
+Requestors: gjt@sanger.ac.uk
+Resolved: Mon Jan 15 11:38:56 2007
+
+id: ticket/18400
+Subject: aceincard error
+Requestors: ar2@sanger.ac.uk
+Resolved: Wed Jan 10 11:48:48 2007
+
+id: ticket/19235
+Subject: Spelling mistake in acedb error :)
+Requestors: pad@sanger.ac.uk
+Resolved: Mon Jan 15 11:36:00 2007
+
+id: ticket/19614
+Subject: acedb binaries are all labelled 8th August 2006
+Requestors: jgrg@sanger.ac.uk
+Resolved: Mon Jan 15 11:34:47 2007
+
+id: ticket/21462
+Subject: text editor window
+Requestors: hks@sanger.ac.uk
+Resolved: Wed Jan 31 17:33:18 2007
+
+id: ticket/22759
+Subject: SANGER website feedback
+Requestors: jc3@sanger.ac.uk
+Resolved: Wed Feb 07 16:50:38 2007
+
+</PRE>
+
+
+<h3>ZMap Changes/Fixes</h3>
+
+2006-10-19 10:57  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-10-19 11:16  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-10-19 11:50  rds
+
+	<p> src/zmapUtils/zmapUtils_P.h: going back
+
+2006-10-19 12:01  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-10-19 14:15  rds
+
+	<p> src/zmapControl/zmapControlNavigator.c: change to title of
+	  navigator
+
+2006-10-19 14:16  rds
+
+	<p> src/zmapWindow/: zmapWindowItemFactory.c, zmapWindowFeature.c:
+	  added missing call to attach the data to an item
+
+2006-10-19 14:58  rds
+
+	<p> src/zmapWindow/zmapWindowFeature.c: remove debugging
+
+2006-10-19 17:56  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorWidget.c: initially hide the
+	  navigator
+
+2006-10-19 18:11  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-10-20 15:02  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: fix the expose handler to
+	  remove itself before it can possibly get called again.
+
+2006-10-20 17:28  edgrif
+
+	<p> doc/header.ini: add nav bar required for Sanger site.
+
+2006-10-20 17:32  edgrif
+
+	<p> doc/: Release_notes/header.ini, talks/header.ini: add nav bar
+	  required for Sanger site.
+
+2006-10-24 14:21  rds
+
+	<p> src/zmapFeature/zmapFeatureContext.c: error catching
+
+2006-10-24 14:22  rds
+
+	<p> src/zmapFeature/zmapFeatureXML.c: catching up with changes to
+	  FeatureContextExecute
+
+2006-10-24 14:27  rds
+
+	<p> src/zmapWindow/zmapWindowItem.c: stop putting dna in the cut
+	  buffer
+
+2006-10-24 14:59  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: check we have a feature set
+	  and style
+
+2006-10-30 11:36  edgrif
+
+	<p> src/zmapWindow/zmapWindowCallBlixem.c: we did not set blixem
+	  offset param correctly, we do now.
+
+2006-10-30 16:57  edgrif
+
+	<p> src/zmapGFF/zmapGFF2parser.c: remove debugging output.
+
+2006-10-31 16:37  edgrif
+
+	<p> src/zmapView/zmapView.c: debugging/minor tidying up.
+
+2006-10-31 16:38  edgrif
+
+	<p> src/zmapWindow/zmapWindowNavigatorWidget.c: remove debugging
+	  statement.
+
+2006-10-31 16:44  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: move the destroy callback so
+	  it is only called for the top/parent canvas item of each feature.
+
+2006-11-06 09:32  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: filter locus names so only
+	  one instance with same name is drawn.  correct initialisation and
+	  sizing of the locator.  better method for calculating x
+	  dimensions.
+
+2006-11-06 10:43  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorMenus.c: addition of bumping to
+	  the column menu
+
+2006-11-06 10:44  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorWidget.c: moving structure
+	  definition...  method to get text size...
+
+2006-11-06 10:44  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator_P.h: additional private
+	  definitions.
+
+2006-11-06 11:47  rds
+
+	<p> src/include/ZMap/zmapFeature.h: bumping type for text...
+
+2006-11-06 14:35  rds
+
+	<p> src/include/ZMap/zmapWindowNavigator.h: removing definitions
+
+2006-11-07 08:59  rds
+
+	<p> src/zmapWindow/: zmapWindowColConfig.c, zmapWindowContainer.c,
+	  zmapWindowContainer.h, zmapWindowDraw.c, zmapWindowItemFactory.c,
+	  zmapWindowNavigator.c, zmapWindowSearch.c: adding level to the
+	  ZMapContainerExecFunc typedef and all associated changes (we have
+	  it, we might as well pass it in rather than have to find it
+	  again!)
+
+2006-11-07 09:51  rds
+
+	<p> src/zmapWindow/zmapWindowDraw.c: Adding another bump type...
+	  Although it looks redundant I don't think it is.
+
+2006-11-07 11:54  edgrif
+
+	<p> src/lib/Makefile.am: add stats code to zmapwindow
+
+2006-11-07 11:55  edgrif
+
+	<p> src/include/ZMap/zmapFeature.h: add align error field, allows
+	  slop factor for gapped aligns for perfect match.
+
+2006-11-07 11:56  edgrif
+
+	<p> src/zmapFeature/zmapFeature.c: add code to support a slop factor
+	  for perfect gapped aligns.
+
+2006-11-07 11:56  edgrif
+
+	<p> src/zmapFeature/zmapFeatureTypes.c: add support for slop factor
+	  for perfect gapped aligns.
+
+2006-11-07 11:59  edgrif
+
+	<p> src/zmapGFF/zmapGFF2parser.c: minor changes, remove sortgaps and
+	  put in zmap feature code.
+
+2006-11-07 12:03  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: add code to only draw gapped
+	  aligns if they are a perfect fit, otherwise draw ungapped. Plus
+	  add some statistics.
+
+2006-11-07 12:03  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: add better assert.
+
+2006-11-07 12:05  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add a stats struct to the window
+	  struct + functions to use it.
+
+2006-11-07 12:09  edgrif
+
+	<p> src/zmapServer/acedb/acedbServer.c: disable mag factor, slows
+	  down zooming currently. add parsing of align_error factor.
+
+2006-11-07 13:57  rds
+
+	<p> src/zmapServer/acedb/acedbServer.c: adding this style type
+	  temporarily until we rejig it all.
+
+2006-11-07 13:57  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures_P.h: this is obsolete!
+
+2006-11-07 14:09  rds
+
+	<p> src/zmapXML/zmapXMLWriter.c: keeping gcc happy ;)
+
+2006-11-07 15:20  edgrif
+
+	<p> src/zmapWindow/zmapWindowStats.c: Add code to handle window
+	  stats.
+
+2006-11-07 17:00  edgrif
+
+	<p> src/include/ZMap/: zmapUtils.h, zmapUtilsCheck.h, zmapUtilsLog.h,
+	  zmapUtilsMesg.h: simplify file, function, line macro stuff.
+
+2006-11-07 17:00  edgrif
+
+	<p> src/include/ZMap/zmapUtilsDebug.h: simplify file, function, line
+	  macro stuff + add some timer macros.
+
+2006-11-07 17:01  edgrif
+
+	<p> src/zmapGFF/zmapGFF2Dumper.c: add missing default cases to switch
+	  statements.
+
+2006-11-07 17:02  edgrif
+
+	<p> src/zmapGFF/zmapGFF2parser.c: define out some debugging stuff.
+
+2006-11-07 17:05  edgrif
+
+	<p> src/: zmapServer/acedb/acedbServer.c,
+	  zmapWindow/zmapWindowDrawFeatures.c, zmapThreads/zmapSlave.c,
+	  zmapView/zmapView.c: add some timer calls for profiling.
+
+2006-11-07 17:05  edgrif
+
+	<p> src/zmapUtils/: zmapGLibUtils.c, zmapGUIutils.c, zmapPeptide.c:
+	  add missing system header.
+
+2006-11-07 17:07  edgrif
+
+	<p> src/zmapUtils/zmapUtils.c: add global timer variable optionally
+	  used by timer macros in zmapUtilsDebug.h
+
+2006-11-08 08:31  rds
+
+	<p> src/zmapWindow/: zmapWindowNavigator.c,
+	  zmapWindowNavigatorMenus.c, zmapWindowNavigatorWidget.c,
+	  zmapWindowNavigator_P.h: navigator/menu enhancements
+
+2006-11-08 08:35  rds
+
+	<p> src/zmapControl/zmapControlNavigator.c: navigator packed into
+	  scrolled window
+
+2006-11-08 09:23  edgrif
+
+	<p> src/: include/ZMap/zmapCmdLineArgs.h, include/ZMap/zmapConfig.h,
+	  include/ZMap/zmapConfigDir.h, include/ZMap/zmapConfigKeyboard.h,
+	  include/ZMap/zmapConfigStrings.h,
+	  include/ZMap/zmapConfigStyleDefaults.h,
+	  include/ZMap/zmapControl.h, include/ZMap/zmapDAS.h,
+	  include/ZMap/zmapDNA.h, include/ZMap/zmapDraw.h,
+	  include/ZMap/zmapFASTA.h, include/ZMap/zmapFeature.h,
+	  include/ZMap/zmapGFF.h, include/ZMap/zmapGLibUtils.h,
+	  include/ZMap/zmapManager.h, include/ZMap/zmapNavigator.h,
+	  include/ZMap/zmapPeptide.h, include/ZMap/zmapReadLine.h,
+	  include/ZMap/zmapServerProtocol.h, include/ZMap/zmapThreads.h,
+	  include/ZMap/zmapUtils.h, include/ZMap/zmapUtilsCheck.h,
+	  include/ZMap/zmapUtilsDebug.h, include/ZMap/zmapUtilsGUI.h,
+	  include/ZMap/zmapUtilsHandle.h, include/ZMap/zmapUtilsLog.h,
+	  include/ZMap/zmapUtilsMesg.h, include/ZMap/zmapView.h,
+	  include/ZMap/zmapWebPages.h, include/ZMap/zmapWindow.h,
+	  include/ZMap/zmapWindowDrawFeatures.h,
+	  include/ZMap/zmapWindowNavigator.h, include/ZMap/zmapXML.h,
+	  include/ZMap/zmapXRemote.h, zmapApp/zmapApp_P.h,
+	  zmapApp/zmapAppconnect.c, zmapApp/zmapAppmain_c.c,
+	  zmapApp/zmapAppmanage.c, zmapApp/zmapAppmenubar.c,
+	  zmapApp/zmapAppremote.c, zmapApp/zmapAppwindow.c,
+	  zmapConfig/zmapConfig.c, zmapConfig/zmapConfigGet.c,
+	  zmapConfig/zmapConfigRead.c, zmapConfig/zmapConfigUtils.c,
+	  zmapConfig/zmapConfigWrite.c, zmapConfig/zmapConfig_P.h,
+	  zmapControl/zmapControl.c, zmapControl/zmapControlNavigator.c,
+	  zmapControl/zmapControlRemote.c, zmapControl/zmapControlViews.c,
+	  zmapControl/zmapControlWindow.c,
+	  zmapControl/zmapControlWindowButtons.c,
+	  zmapControl/zmapControlWindowFrame.c,
+	  zmapControl/zmapControlWindowInfoPanel.c,
+	  zmapControl/zmapControlWindowMenubar.c,
+	  zmapControl/zmapControl_P.h, zmapControl/zmapNavigator_P.h,
+	  zmapControl/remote/zmapXRemote.c,
+	  zmapControl/remote/zmapXRemote_P.h, zmapDAS/zmapDAS1DSN.c,
+	  zmapDAS/zmapDAS1Parser.c, zmapDocs/ZMapMainPage.c,
+	  zmapDraw/zmapDraw.c, zmapDraw/zmapDraw_P.h,
+	  zmapFeature/zmapFeature.c, zmapFeature/zmapFeatureContext.c,
+	  zmapFeature/zmapFeatureFormatInput.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapFeatureUtils.c,
+	  zmapFeature/zmapFeatureXML.c, zmapFeature/zmapFeature_P.h,
+	  zmapGFF/gffparser.c, zmapGFF/zmapGFF2Dumper.c,
+	  zmapGFF/zmapGFF2parser.c, zmapGFF/zmapGFF_P.h,
+	  zmapManager/zmapManager.c, zmapManager/zmapManager_P.h,
+	  zmapServer/zmapServer.c, zmapServer/zmapServer.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/zmapServer_P.h,
+	  zmapServer/acedb/acedbServer.c, zmapServer/acedb/acedbServer_P.h,
+	  zmapServer/das/dasServer.c, zmapServer/das/dasServer_P.h,
+	  zmapServer/file/fileServer.c, zmapServer/file/fileServer_P.h,
+	  zmapThreads/zmapSlave.c, zmapThreads/zmapSlave.test.c,
+	  zmapThreads/zmapSlave_P.h, zmapThreads/zmapThreads.c,
+	  zmapThreads/zmapThreadsUtils.c, zmapThreads/zmapThreads_P.h,
+	  zmapUtils/zmapCmdLineArgs.c, zmapUtils/zmapCmdLineArgs_P.h,
+	  zmapUtils/zmapConfigDir.c, zmapUtils/zmapConfigDir_P.h,
+	  zmapUtils/zmapDNA.c, zmapUtils/zmapFASTA.c,
+	  zmapUtils/zmapFileUtils.c, zmapUtils/zmapGLibUtils.c,
+	  zmapUtils/zmapGUImenus.c, zmapUtils/zmapGUIutils.c,
+	  zmapUtils/zmapHandle.c, zmapUtils/zmapLogging.c,
+	  zmapUtils/zmapPeptide.c, zmapUtils/zmapReadLine.c,
+	  zmapUtils/zmapReadLine_P.h, zmapUtils/zmapUtils.c,
+	  zmapUtils/zmapUtilsConfig.c, zmapUtils/zmapUtils_P.h,
+	  zmapUtils/zmapWebBrowser.c, zmapView/zmapView.c,
+	  zmapView/zmapViewUtils.c, zmapView/zmapView_P.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowCallBlixem.c,
+	  zmapWindow/zmapWindowColConfig.c,
+	  zmapWindow/zmapWindowContainer.c,
+	  zmapWindow/zmapWindowContainer.h, zmapWindow/zmapWindowDNA.c,
+	  zmapWindow/zmapWindowDNAList.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c, zmapWindow/zmapWindowDump.c,
+	  zmapWindow/zmapWindowEditor.c, zmapWindow/zmapWindowExport.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureList.c, zmapWindow/zmapWindowFrame.c,
+	  zmapWindow/zmapWindowItem.c, zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemFactory.h,
+	  zmapWindow/zmapWindowItemHash.c,
+	  zmapWindow/zmapWindowItemHighlight.c,
+	  zmapWindow/zmapWindowItemHighlight.h,
+	  zmapWindow/zmapWindowList.c, zmapWindow/zmapWindowLongItems.c,
+	  zmapWindow/zmapWindowMenus.c, zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowNavigatorMenus.c,
+	  zmapWindow/zmapWindowNavigatorWidget.c,
+	  zmapWindow/zmapWindowNavigator_P.h, zmapWindow/zmapWindowPrint.c,
+	  zmapWindow/zmapWindowRuler.c, zmapWindow/zmapWindowSearch.c,
+	  zmapWindow/zmapWindowStats.c, zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/zmapWindowZoomControl.c,
+	  zmapWindow/zmapWindowZoomControl_P.h, zmapWindow/zmapWindow_P.h,
+	  zmapXML/zmapXMLAttribute.c, zmapXML/zmapXMLDocument.c,
+	  zmapXML/zmapXMLElement.c, zmapXML/zmapXMLParse.c,
+	  zmapXML/zmapXMLWriter.c, zmapXML/zmapXML_P.h: fix copyright
+	  statement.
+
+2006-11-08 11:55  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapServer/acedb/acedbServer.c:
+	  add code to support within and between alignment error threshold
+	  for perfect aligns.
+
+2006-11-08 11:56  edgrif
+
+	<p> src/zmapWindow/zmapWindowContainer.h: start adding types to
+	  support feature set subgroups.
+
+2006-11-08 11:57  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: remove column compress, results
+	  in badly drawn columns.
+
+2006-11-08 11:58  edgrif
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: remove faulty column
+	  position code, replace with newer zmapWindowNewReposition()
+
+2006-11-08 11:59  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: reduce space between columns, much
+	  easier for clicking and also better for viewing.
+
+2006-11-08 13:05  edgrif
+
+	<p> src/zmapWindow/: zmapWindow_P.h, zmapWindowItem.c,
+	  zmapWindowFeature.c: Fix bug in highlighting, did not set focus
+	  colomn corectly, exposed by highlighting features on both
+	  strands. Add option to list just names features.
+
+2006-11-08 15:20  edgrif
+
+	<p> src/zmapControl/: zmapControlWindowButtons.c, zmapControl_P.h:
+	  split out translation and dna display into separate buttons/menus
+	  as per user request.
+
+2006-11-09 10:10  edgrif
+
+	<p> src/include/ZMap/zmapUtilsDebug.h: fix buglet in timer printing +
+	  turn it off by default.
+
+2006-11-09 10:11  edgrif
+
+	<p> src/: zmapGFF/zmapGFF2parser.c, zmapFeature/zmapFeatureUtils.c:
+	  fix compile warning.
+
+2006-11-09 10:12  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureTypes.c,
+	  zmapWindow/zmapWindowDraw.c: fix up when a column is hidden,
+	  logic was wrong, this needs to override mag factor.
+
+2006-11-09 10:14  edgrif
+
+	<p> src/zmapControl/zmapControlWindowMenubar.c: fix some compile
+	  warnings.
+
+2006-11-09 10:14  edgrif
+
+	<p> src/: zmapServer/acedb/acedbServer.c,
+	  zmapWindow/zmapWindowDrawFeatures.c: fix up hidden options to
+	  match changes in style.
+
+2006-11-09 10:16  edgrif
+
+	<p> src/zmapWindow/: zmapWindowFeature.c, zmapWindowItem.c,
+	  zmapWindowItemHash.c, zmapWindow_P.h: move
+	  zmapWindowFindSameNameItems() to hash package as
+	  zmapWindowFToIFindSameNameItems()
+
+2006-11-09 10:33  rds
+
+	<p> src/zmapGFF/zmapGFF2parser.c: fix genomic canonical to be type
+	  basic...
+
+2006-11-09 12:02  rds
+
+	<p> src/zmapWindow/: zmapWindowNavigator.c,
+	  zmapWindowNavigatorMenus.c: menu alterations
+
+2006-11-09 12:03  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorWidget.c: effectively remove
+	  maximum width of scroll region
+
+2006-11-09 13:29  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator_P.h: prototype...
+
+2006-11-09 14:03  rds
+
+	<p> src/zmapControl/zmapControlNavigator.c: [no log message]
+
+2006-11-10 08:19  rds
+
+	<p> src/zmapWindow/: zmapWindowNavigator.c, zmapWindowItemFactory.h:
+	  factory interface change
+
+2006-11-10 08:20  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorWidget.c: set a tooltip for the
+	  navigator
+
+2006-11-10 08:20  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: - correct the
+	  zoomeventhandler type.  - collect the stats
+
+2006-11-10 08:22  rds
+
+	<p> src/zmapWindow/zmapWindowFeature.c: Move to factory. Code left in
+	  case of errors.
+
+2006-11-10 09:24  rds
+
+	<p> src/zmapView/zmapView.c: fix window splitting assert...
+
+2006-11-10 09:25  rds
+
+	<p> src/zmapWindow/: zmapWindowContainer.c, zmapWindowContainer.h:
+	  redraw column callback prototype change
+
+2006-11-10 09:25  rds
+
+	<p> src/zmapWindow/zmapWindowDraw.c: unused variable
+
+2006-11-10 09:25  rds
+
+	<p> src/zmapWindow/: zmapWindowItemFactory.c, zmapWindowNavigator.c,
+	  zmapWindowNavigatorMenus.c: compiler warnings...
+
+2006-11-10 09:48  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-11-10 17:26  rds
+
+	<p> src/zmapWindow/zmapWindow.c: close item factory at window destroy
+
+2006-11-10 17:27  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: better factory
+	  management...
+
+2006-11-13 09:52  edgrif
+
+	<p> src/runconfig: remove redundant dirs from paths.
+
+2006-11-13 09:53  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h,
+	  zmapFeature/zmapFeatureContext.c: sort out function to get a dna
+	  range from a file.
+
+2006-11-13 09:53  edgrif
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: fix bug, cols not bumped
+	  when first shown, caused by code rearrangement.
+
+2006-11-13 09:54  edgrif
+
+	<p> src/zmapWindow/zmapWindowMenus.c: improve menu label test + add
+	  new option to dump a dna range.
+
+2006-11-13 09:55  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add type for dialog types + new
+	  dna range chooser dialog.
+
+2006-11-13 09:55  edgrif
+
+	<p> src/zmapWindow/zmapWindowUtils.c: add function to return button
+	  text for dialog types.
+
+2006-11-13 09:56  edgrif
+
+	<p> src/lib/Makefile.am: add new dna range choosing function, not
+	  complete, needs visual indication added.
+
+2006-11-13 09:56  edgrif
+
+	<p> src/zmapWindow/zmapWindowDNAChoose.c: add code to allow user to
+	  choose dna from feature with flanking sequence.
+
+2006-11-13 10:58  rds
+
+	<p> src/include/ZMap/zmapView.h: get navigator from view
+
+2006-11-13 10:59  rds
+
+	<p> src/include/ZMap/zmapWindowNavigator.h: focus a navigator,
+	  (includes get/set size...)
+
+2006-11-13 11:02  rds
+
+	<p> src/perl/X11-XRemote-0.01/X11/XRemote/: XRemote.xs, test.c:
+	  important change to keep up-to-date with zmap code
+
+2006-11-13 11:04  rds
+
+	<p> src/zmapControl/zmapControl.c: - stop the navigator setting the
+	  pane position - focus the correct navigator.
+
+2006-11-13 11:06  rds
+
+	<p> src/: zmapView/zmapView.c, zmapWindow/zmapWindowNavigator.c:
+	  Redraw the navigator when the main canvas gets reverse
+	  complemented.  The Context gets rev-comped so it's just a case of
+	  a redraw.
+
+2006-11-13 11:07  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator_P.h: colour/size changes...
+
+2006-11-13 11:08  rds
+
+	<p> src/zmapWindow/: zmapWindowRuler.c, zmapWindow_P.h: display rev
+	  comped coords from navigator.
+
+2006-11-13 11:56  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-11-13 12:10  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix genefinder features
+	  ;)
+
+2006-11-13 12:26  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-11-13 13:07  edgrif
+
+	<p> src/runconfig: remove odd library path setting.
+
+2006-11-13 14:19  rds
+
+	<p> src/perl/build.sh: fix this build script so that it can be called
+	  from more directories...
+
+2006-11-14 10:27  rds
+
+	<p> src/zmapControl/: zmapControl.c, zmapControl_P.h: quick function
+	  to pass config string through when connecting a view
+
+2006-11-14 10:28  rds
+
+	<p> src/zmapControl/zmapControlRemote.c: code to alter protocol to
+	  accept multiple sequences/species/sources
+
+2006-11-14 10:29  rds
+
+	<p> src/: zmapXML/zmapXMLElement.c, include/ZMap/zmapXML.h: steal
+	  pointer to the contents of an element
+
+2006-11-14 10:35  rds
+
+	<p> src/zmapView/zmapView.c: return FALSE if config error
+
+2006-11-14 10:36  rds
+
+	<p> src/zmapApp/zmapAppremote.c: remove unused code
+
+2006-11-14 18:03  rds
+
+	<p> doc/Release_notes/index.shtml: updated index
+
+2006-11-14 18:03  rds
+
+	<p> doc/Release_notes/release_notes.2006_11_14.shtml: not quite
+	  finished
+
+2006-11-15 15:28  rds
+
+	<p> src/zmapWindow/: zmapWindow.c, zmapWindow_P.h: stop flashing
+	  effect on zoom.
+
+2006-11-15 15:42  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix cds drawing
+
+2006-11-15 16:34  edgrif
+
+	<p> src/include/ZMap/zmapConfigStrings.h: add configuration flag for
+	  using zmap styles instead of acedb methods.
+
+2006-11-15 16:35  edgrif
+
+	<p> src/zmapServer/acedb/acedbServer_P.h: add record of acedb port
+	  number, add flag for using zmap styles instead of acedb methods.
+
+2006-11-15 16:37  edgrif
+
+	<p> src/zmapServer/acedb/acedbServer.c: add start of code to parse
+	  new zmap styles instead of acedb methods. Fix bug in gaps tag
+	  parsing.
+
+2006-11-15 16:38  edgrif
+
+	<p> src/zmapUtils/zmapGUIutils.c: add critical message and improve
+	  formatting of window title.
+
+2006-11-15 16:38  edgrif
+
+	<p> src/include/ZMap/zmapUtilsMesg.h: add critical message.
+
+2006-11-15 16:40  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: really fix cds drawing
+
+2006-11-15 16:46  edgrif
+
+	<p> src/: zmapManager/zmapManager.c, include/ZMap/zmapManager.h,
+	  zmapApp/zmapAppconnect.c, zmapControl/zmapControl.c: improve
+	  error handling when stuff goes wrong on zmap create.
+
+2006-11-15 16:49  edgrif
+
+	<p> src/: zmapControl/zmapControl_P.h,
+	  zmapControl/zmapControlViews.c, zmapView/zmapView.c: make default
+	  window size 95% of screen depth.
+
+2006-11-15 16:54  edgrif
+
+	<p> src/zmapControl/zmapControlWindow.c: add code to maximise zmap
+	  window vertically for annotators.
+
+2006-11-16 08:14  rds
+
+	<p> src/zmapWindow/zmapWindow.c: fix the coords on the  ruler when
+	  reverse complementing at zoom levels after 32k barrier.
+
+2006-11-16 08:53  rds
+
+	<p> src/include/ZMap/zmapFeature.h: modified feature desc struct for
+	  info panel
+
+2006-11-16 08:55  rds
+
+	<p> src/: zmapControl/zmapControlWindowInfoPanel.c,
+	  zmapWindow/zmapWindow.c: modified feature desc struct for info
+	  panel query coords for align matches... some limitations still.
+
+2006-11-16 08:55  rds
+
+	<p> src/zmapControl/zmapControl_P.h: extra info panel widget
+
+2006-11-17 15:29  rds
+
+	<p> src/zmapWindow/zmapWindowFeature.c: re-bump of column when new
+	  feature added to the context [zMapWindowFeatureAdd]
+
+2006-11-17 17:31  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c: add
+	  func. to return length of feature (splice length for some.) + to
+	  support better feature description.
+
+2006-11-17 17:32  edgrif
+
+	<p> src/zmapControl/zmapControl.c: remove default screen height
+	  stuff, in wrong place. correct small cast problem.
+
+2006-11-17 17:33  edgrif
+
+	<p> src/zmapControl/zmapControl_P.h: add default window height stuff
+	  + stuff to support maximise funciton.
+
+2006-11-17 17:34  edgrif
+
+	<p> src/zmapControl/zmapControlWindow.c: add code to maximise zmap
+	  vertically when first shown.
+
+2006-11-17 17:35  edgrif
+
+	<p> src/zmapControl/zmapControlWindowInfoPanel.c: add code to show
+	  query coords for whole feature and internal blocks.
+
+2006-11-17 17:35  edgrif
+
+	<p> src/zmapFeature/zmapFeatureContext.c: fix stupid cast warnings.
+
+2006-11-17 17:36  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: add function to return true
+	  parent item of a feature item whether cmopound or not.
+
+2006-11-17 17:37  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add true parent func. +
+	  rationalisation of zoom functions.
+
+2006-11-17 17:38  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: make sure we store align data
+	  query start/end on feature item.
+
+2006-11-17 17:41  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: Add code to report query coords when
+	  clicking on aligns, add/rationalise zoom code to zoom to item(s),
+	  code to jump round columns.
+
+2006-11-20 09:45  rds
+
+	<p> src/zmapWindow/zmapWindow.c: fix cvs merge issue...
+
+2006-11-20 14:26  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix width scoring problem
+
+2006-11-22 13:46  rds
+
+	<p> src/zmapWindow/zmapWindow.c: crop long items in the expose
+	  handler
+
+2006-11-22 13:52  rds
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: couple of bugs in long
+	  items cropping/resetting fixed Added cache of cropped region
+	  (scroll region) to reduce processing...
+
+2006-11-24 13:42  rds
+
+	<p> src/zmapControl/zmapControlWindowFrame.c: stop the scroll region
+	  growing when coming from the navigator
+
+2006-11-24 13:48  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorWidget.c: simple changes
+
+2006-11-27 13:56  rds
+
+	<p> src/zmapWindow/zmapWindow.c: scroll region and long item crop
+	  issues
+
+2006-11-27 13:59  rds
+
+	<p> src/zmapWindow/zmapWindowList.c: Use feature coords rather than
+	  item's coords when zooming.  item's coords may be way off when it
+	  comes to fixed size items such as text...
+
+2006-11-27 14:48  rds
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: A few changes...  - try 2
+	  make the items list unique.  - assert that region is smaller than
+	  32k pixels - free points on destroy - use item coords in cropItem
+
+2006-11-27 14:50  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: - struct member renaming -
+	  stop scroll  region growing...  the border of  the locator  was
+	  making   significant size increases to the scroll region! - debug
+	  messages
+
+2006-11-27 14:51  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator_P.h: - struct member renaming
+
+2006-11-28 08:32  rds
+
+	<p> src/zmapWindow/zmapWindow.c: Actually add a border in the zoom to
+	  world coords function
+
+2006-11-28 09:48  rds
+
+	<p> src/zmapWindow/zmapWindowContainer.c: Container background size
+	  setting now does the long item check...
+
+2006-11-28 09:49  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: As container background
+	  size setting now does the long item check, remove extra calls in
+	  drawfeatures.
+
+2006-11-28 09:54  rds
+
+	<p> src/zmapWindow/zmapWindow_P.h: default size for the zoom border
+
+2006-11-28 10:18  edgrif
+
+	<p> doc/Release_notes/README: directory contents description.
+
+2006-11-28 11:43  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: fix no column warn NOT
+	  to warn if there is a valid reason... (style:hide_always == TRUE)
+
+2006-11-28 14:20  edgrif
+
+	<p> src/include/ZMap/zmapFeature.h: add bump type.
+
+2006-11-28 14:21  edgrif
+
+	<p> src/zmapControl/zmapControl_P.h: tidy up sub feature coords
+	  stuff.
+
+2006-11-28 14:22  edgrif
+
+	<p> src/zmapControl/zmapControlWindowInfoPanel.c: tidy up sub feature
+	  coords in info. display.
+
+2006-11-28 14:22  edgrif
+
+	<p> src/zmapUtils/zmapGUIutils.c: add a critical message type.
+
+2006-11-28 14:24  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: Tidy up info. panel stuff. Add
+	  shortcut to set feature to bump focus. Add code to jump round
+	  features/cols with cursor keys.
+
+2006-11-28 14:26  edgrif
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: add window to data
+	  stored on a column.
+
+2006-11-28 14:27  edgrif
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: fix small buglet in
+	  item_points
+
+2006-11-28 14:27  edgrif
+
+	<p> src/zmapWindow/zmapWindowMenus.c: add range bump to menu.
+
+2006-11-28 14:30  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: Add bump data to data held on
+	  column items. Add bump_range_item for new bump mocde.
+
+2006-11-28 14:32  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: temporary fix for cursoring
+	  through focus column features.
+
+2006-11-28 14:32  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: add menu entry to make a
+	  feature the 'range' feature for bumping.
+
+2006-11-28 14:35  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: add code to only display bumped
+	  features within a certain range, join up multiple homol matches
+	  for this and non-interleaved bumping.
+
+2006-11-28 14:42  rds
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: only change the extreme
+	  when re-entering longitemcheck for long items
+
+2006-11-28 14:45  rds
+
+	<p> src/zmapWindow/zmapWindowNavigatorMenus.c: quick fix to
+	  zmapWindowNavigatorShowSameNameList...  The	zmapWindowList	now
+	  contains   all  objects   with  the   same locus_id. This  is
+	  NOT in keeping  with the name of  the function, but needs must.
+
+2006-11-28 15:48  edgrif
+
+	<p> src/zmapWindow/: zmapWindowDraw.c, zmapWindow_P.h: Fix width of
+	  homol joining cols and their colour.
+
+2006-11-28 15:48  rds
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: correctly handle the points
+
+2006-11-29 11:10  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-11-29 14:16  rds
+
+	<p> src/: runbootstrap, runconfig: bash location change
+
+2006-11-30 09:51  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureTypes.c:
+	  add function to access join_align setting and threshold.
+
+2006-11-30 10:03  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: change sort of matches to be by
+	  span so longest come first. Add colour coded boxes to indicate
+	  colinearity of matches.
+
+2006-11-30 10:16  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-11-30 10:30  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-11-30 12:05  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureTypes.c:
+	  add function to access with HSP error threshold.
+
+2006-11-30 12:06  edgrif
+
+	<p> src/zmapWindow/: zmapWindowDraw.c, zmapWindow_P.h: make
+	  colinearity colours into #defines.
+
+2006-11-30 12:07  edgrif
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: add colour coding for
+	  gaps between align blocks so its the same as that for between
+	  HSPs.
+
+2006-11-30 14:44  rds
+
+	<p> src/zmapWindow/zmapWindow.c: Take account of the new zoom factor
+	  when calculating the coordinates to move to [ZoomToWorldPosition]
+
+2006-12-01 15:31  rds
+
+	<p> src/bootstrap: stop mac bombing
+
+2006-12-04 13:40  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add fields to window struct to
+	  support single colour highlighting, marking items for bumping.
+
+2006-12-04 13:41  edgrif
+
+	<p> src/zmapWindow/zmapWindowMenus.c: add code to make bumping
+	  default to complex or to marked feature if one is marked.
+
+2006-12-04 13:42  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: trivial structure item name
+	  change.
+
+2006-12-04 13:44  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: add code to make bumping default to
+	  complex or to marked feature if one is marked, support
+	  marking/unmarking of features and zooming to marked feature.
+
+2006-12-04 13:44  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: add code to make bumping default
+	  to complex or to marked feature if one is marked.
+
+2006-12-04 13:45  edgrif
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: add code for mark and
+	  item highlight colours.
+
+2006-12-04 13:46  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: add code to mark/unmark items,
+	  to highlight using a specific colour.
+
+2006-12-05 16:09  rds
+
+	<p> src/: zmapUtils/zmapGLibUtils.c, include/ZMap/zmapGLibUtils.h: a
+	  couple more g_list functions
+
+2006-12-05 16:13  rds
+
+	<p> src/zmapWindow/zmapWindowColOrder.c: column ordering code.
+	  orders columns according  to the feature set list,  and
+	  incorporates 3 frame/frame sensitive "set" sorting.  possibly not
+	  the fastest, nor bug free.
+
+2006-12-05 16:14  rds
+
+	<p> src/zmapWindow/zmapWindowContainer.c: removed dead code
+
+2006-12-05 16:17  edgrif
+
+	<p> src/include/ZMap/zmapWindow.h: add macro version of busy cursor,
+	  good for debugging.
+
+2006-12-05 16:18  edgrif
+
+	<p> src/zmapView/zmapView.c: add missing busy cursor call.
+
+2006-12-05 16:20  edgrif
+
+	<p> src/zmapView/zmapViewUtils.c: move busy cursor down into window.
+
+2006-12-05 16:21  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add counter for monitoring busy
+	  cursor on/off
+
+2006-12-05 16:22  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: add func. to turn busy cursor
+	  on/off, add calls to this func to long running funcs.
+
+2006-12-05 16:23  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: add some busy cursor calls, fix
+	  bug in align boxes when two matches overlap no box should be
+	  drawn.
+
+2006-12-05 16:24  edgrif
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: add some busy cursor
+	  calls.
+
+2006-12-06 08:57  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c: add
+	  total length of homol field to homol struct.
+
+2006-12-06 08:58  edgrif
+
+	<p> src/zmapGFF/zmapGFF2parser.c: add code to parse a total length
+	  field from attributes for homols.
+
+2006-12-06 08:59  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: add code to return total length of
+	  homol in feature info.
+
+2006-12-06 09:13  edgrif
+
+	<p> src/zmapControl/zmapControlWindowInfoPanel.c: fix minor bug in
+	  freeing text, make sure homol length is displayed in info. panel.
+
+2006-12-06 09:56  rds
+
+	<p> src/zmapWindow/zmapWindowColOrder.c: added some comments and
+	  tidied up the code.
+
+2006-12-06 10:07  rds
+
+	<p> src/zmapWindow/zmapWindowDraw.c: removed some dead code and fixed
+	  a small buglet in column ordering and the foocanvas cache of the
+	  item list.
+
+2006-12-06 10:14  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: fixed a small buglet in
+	  column ordering and strand group ordering.
+
+2006-12-06 10:16  rds
+
+	<p> src/zmapWindow/zmapWindow_P.h: column ordering prototype
+
+2006-12-06 10:25  rds
+
+	<p> src/lib/Makefile.am: column ordering file
+
+2006-12-06 11:44  edgrif
+
+	<p> doc/user_interface.shtml: add new keyboard shortcuts and some
+	  descriptive stuff.
+
+2006-12-08 15:37  rds
+
+	<p> src/zmapWindow/zmapWindowColOrder.c: use quick sort instead.
+
+2006-12-08 15:38  rds
+
+	<p> src/zmapWindow/zmapWindowDraw.c: better three frame translation.
+	  still not perfect
+
+2006-12-08 15:39  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: zoom handler needs to
+	  know strand.
+
+2006-12-08 15:39  rds
+
+	<p> src/zmapWindow/: zmapWindowItemFactory.h, zmapWindowNavigator.c:
+	  Runset altered
+
+2006-12-08 15:44  rds
+
+	<p> src/zmapWindow/: zmapWindowFeature.c: remove focus item if
+	  feature get removed
+
+2006-12-08 15:46  rds
+
+	<p> src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
+	  list lower and raise
+
+2006-12-08 15:46  rds
+
+	<p> src/include/ZMap/zmapXML.h: simple attribute to double
+
+2006-12-08 15:47  rds
+
+	<p> src/zmapFeature/zmapFeatureTypes.c: altered the default values in
+	  the 3 frame translation style
+
+2006-12-11 11:43  edgrif
+
+	<p> src/: include/ZMap/zmapWebPages.h,
+	  zmapControl/zmapControlWindowMenubar.c: add help menu items to
+	  display help on zmap usage/keyboard shortcuts.
+
+2006-12-11 11:44  edgrif
+
+	<p> src/: include/ZMap/zmapFeature.h,
+	  zmapFeature/zmapFeatureFormatInput.c: add a cds exon type to
+	  feature subparts.
+
+2006-12-13 08:26  rds
+
+	<p> src/zmapWindow/zmapWindowContainer.c: removed some dead code and
+	  made create a bit more intelligent
+
+2006-12-13 08:27  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: removed some unused code
+
+2006-12-13 08:28  rds
+
+	<p> src/zmapWindow/zmapWindowFeature.c: Window code to add a feature
+	  set to a) the context b) the display
+
+2006-12-13 08:30  rds
+
+	<p> src/zmapControl/zmapControlRemote.c: modifications to: a) xml
+	  parsing b) feature creation c) unify some code
+
+2006-12-13 08:31  rds
+
+	<p> src/include/ZMap/zmapFeature.h: feature set create id
+
+2006-12-13 08:32  rds
+
+	<p> src/include/ZMap/zmapView.h: get styles from view
+
+2006-12-13 08:34  rds
+
+	<p> src/include/ZMap/zmapWindow.h: removed get styles list code added
+	  feature set add changed ftoi query struct
+
+2006-12-13 08:34  rds
+
+	<p> src/include/ZMap/zmapWindowNavigator.h: silence gcc
+
+2006-12-13 08:35  rds
+
+	<p> src/include/ZMap/zmapXML.h: correct attribute to double macro
+
+2006-12-13 08:35  rds
+
+	<p> src/zmapView/zmapView.c: code to return a styles list
+
+2006-12-13 08:36  rds
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: featureset create id
+
+2006-12-13 09:38  rds
+
+	<p> src/zmapWindow/zmapWindowItemHash.c: alterations to public query
+	  function
+
+2006-12-13 11:52  edgrif
+
+	<p> doc/user_interface.shtml: tidy up short cuts and add new marking
+	  stuff.
+
+2006-12-13 13:27  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add some functions to get sequence
+	  bounds and world bounds from items. Add funcs to support marking
+	  items.
+
+2006-12-13 13:28  edgrif
+
+	<p> src/zmapWindow/zmapWindowMenus.c: add code to support marked
+	  objects on bumping.
+
+2006-12-13 13:29  edgrif
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix bug in unhighlighting
+	  of cds part of an exon.
+
+2006-12-13 13:33  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: add code to support marking of
+	  features and ranges. Add function to convert between world coords
+	  and sequence.
+
+2006-12-13 13:34  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: add code to support fixing
+	  bug in unhighlighting of cds part of exons.
+
+2006-12-13 13:38  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: add code to support bumping by
+	  range coords as set in the mark object.
+
+2006-12-13 13:40  edgrif
+
+	<p> src/zmapWindow/: zmapWindowContainer.c, zmapWindowContainer.h:
+	  add an overlay group to the containers.
+
+2006-12-13 13:43  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: add code to suport creating mark and
+	  marking objects. Zooming to marked features.
+
+2006-12-13 13:44  edgrif
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: add code to stick config
+	  file colour straight in to mark object.
+
+2006-12-13 14:19  edgrif
+
+	<p> doc/ZMap_XCode.shtml: first version
+
+2006-12-13 14:36  edgrif
+
+	<p> doc/ZMap_XCode.shtml: Add warning about not accidentally deleting
+	  xcode dir.
+
+2006-12-13 15:13  rds
+
+	<p> src/zmapWindow/zmapWindowColOrder.c: correct for column frame
+
+2006-12-13 15:14  rds
+
+	<p> src/zmapWindow/zmapWindowContainer.c: set and get data functions
+	  to do g_object versions on the container parent
+
+2006-12-13 15:14  rds
+
+	<p> src/zmapWindow/zmapWindowContainer.h: prototypes for set and get
+	  data functions to do g_object versions on the container parent
+
+2006-12-13 15:15  rds
+
+	<p> src/zmapWindow/: zmapWindowDraw.c, zmapWindowDrawFeatures.c,
+	  zmapWindowFeature.c, zmapWindow_P.h: reorganisation of column
+	  drawing, without the empty columns ...
+
+2006-12-13 15:17  rds
+
+	<p> src/zmapWindow/zmapWindowItemHash.c: removed debug message
+
+2006-12-13 15:18  rds
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: use new container call
+
+2006-12-13 16:34  rds
+
+	<p> src/zmapControl/zmapControlNavigator.c: removed some unused
+	  variables
+
+2006-12-13 16:34  rds
+
+	<p> src/zmapControl/zmapControlRemote.c: removed useless struct
+
+2006-12-13 16:35  rds
+
+	<p> src/zmapWindow/zmapWindowColOrder.c: removed debugging messages
+
+2006-12-13 16:35  rds
+
+	<p> src/zmapWindow/zmapWindowItemHash.c: set return type
+
+2006-12-14 11:55  rds
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: remove empty columns...
+	  removed some old code and renamed functions
+
+2006-12-14 11:55  rds
+
+	<p> src/zmapWindow/zmapWindow_P.h: remove empty columns prototype
+	  change...
+
+2006-12-15 08:05  rds
+
+	<p> src/zmapUtils/zmapGLibUtils.c: some sanity checks
+
+2006-12-15 09:18  edgrif
+
+	<p> src/: zmapDraw/zmapDraw.c, include/ZMap/zmapDraw.h: add code to
+	  draw an ovelay box and to change a boxes size + make box parent a
+	  group in params. list.
+
+2006-12-15 09:19  edgrif
+
+	<p> src/zmapWindow/: zmapWindowContainer.c, zmapWindowDraw.c,
+	  zmapWindowItemFactory.c: remove redundant item caste.
+
+2006-12-15 09:20  edgrif
+
+	<p> src/zmapWindow/zmapWindowStats.c: add missing system header for
+	  memset()
+
+2006-12-15 09:22  edgrif
+
+	<p> src/zmapWindow/zmapWindowDNAChoose.c: make chooser display extent
+	  of dna to be exported on the zmap, make dialog non-modal, make
+	  spinners consistent.
+
+2006-12-15 09:23  rds
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix off by one on dna
+	  drawing
+
+2006-12-15 09:43  edgrif
+
+	<p> src/: include/ZMap/zmapDraw.h, zmapDraw/zmapDraw.c,
+	  zmapWindow/zmapWindowContainer.c: rationalise solid box funcs
+	  name.
+
+2006-12-15 09:59  edgrif
+
+	<p> src/zmapDraw/zmapDraw.c: add documentation about how to free
+	  bitmaps.
+
+2006-12-15 10:00  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: make mark code use new
+	  zmapDrawBoxOverlay() and remove some long redundant code.
+
+2006-12-15 11:37  rds
+
+	<p> src/zmapWindow/zmapWindow.c: move columns around with Ctrl + ->
+	  and <-
+
+2006-12-15 11:39  rds
+
+	<p> src/zmapWindow/: zmapWindow_P.h, zmapWindowLongItems.c: long item
+	  bug fix
+
+2006-12-15 11:40  rds
+
+	<p> src/zmapWindow/zmapWindowContainer.c: overlays long item bug fix
+
+2006-12-15 11:51  rds
+
+	<p> src/zmapWindow/zmapWindowItem.c: check for glyph types when
+	  highlighting
+
+2006-12-15 12:15  zmap
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+2006-12-15 15:33  rds
+
+	<p> src/zmapWindow/zmapWindowColOrder.c: cleaned out complex, unused
+	  code
+
+2006-12-15 15:33  rds
+
+	<p> src/zmapWindow/zmapWindow_P.h:  another prototype
+
+2006-12-18 11:23  edgrif
+
+	<p> doc/user_interface.shtml: change binding for ruler to
+	  cnt-alt-left_button
+
+2006-12-18 11:36  edgrif
+
+	<p> src/include/ZMap/zmapUtilsGUI.h: add macros to correctly keyboard
+	  modifiers.
+
+2006-12-18 11:36  edgrif
+
+	<p> src/zmapUtils/zmapGUIutils.c: correct trivial compiler warning.
+
+2006-12-18 11:37  edgrif
+
+	<p> src/zmapView/zmapView.c: minor change for change of zmapwindow
+	  struct name.
+
+2006-12-18 11:37  edgrif
+
+	<p> src/zmapWindow/zmapWindow_P.h: add highlight item as well as
+	  original item to info. panel call.
+
+2006-12-18 11:40  edgrif
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix my own bug in setting
+	  up cds boxes so they get highlighted/unhighlighted correctly.
+
+2006-12-18 11:41  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: add highlight item as well as
+	  original item to info. panel call.
+
+2006-12-18 11:42  edgrif
+
+	<p> src/zmapWindow/zmapWindowFeature.c: change keyboard mapping so
+	  default is to highlight whole transcript, not just exon.
+
+2006-12-18 11:45  edgrif
+
+	<p> src/zmapWindow/zmapWindow.c: add highlight item as well as
+	  original item to info. panel func. Add new modifier macros for
+	  keyboard stuff.
+
+2006-12-18 11:58  edgrif
+
+	<p> doc/user_interface.shtml: add missing contl left/right modifier.
+
+2006-12-21 12:08  edgrif
+
+	<p> src/zmapControl/: zmapControlWindow.c, zmapControl_P.h: fix
+	  initial window size on systems that don't support window manager
+	  maximising.
+
+2006-12-21 12:14  edgrif
+
+	<p> src/include/ZMap/zmapFeature.h: add a graph style mode and some
+	  individual graph modes and a function to set the mode.
+
+2006-12-21 12:14  edgrif
+
+	<p> src/zmapFeature/zmapFeatureTypes.c: add function to set graph
+	  mode for graph drawing.
+
+2006-12-21 12:15  edgrif
+
+	<p> src/zmapServer/acedb/acedbServer.c: set style graph mode for
+	  methods which set ZMap_mode_graph.
+
+2006-12-21 13:42  edgrif
+
+	<p> src/zmapWindow/zmapWindowItem.c: fiddled about with highlighting
+	  but we need to be a lot more sophisticated.
+
+2006-12-21 14:57  edgrif
+
+	<p> src/zmapWindow/zmapWindowDraw.c: Add code to match highlighting
+	  code to show if start and/or end of a set of HSP's is truncated.
+
+2006-12-21 14:58  edgrif
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: add graph drawing
+	  function, very crude but working.
+
+2006-12-21 16:18  edgrif
+
+	<p> src/: include/ZMap/zmapUtilsGUI.h, zmapUtils/zmapGUIutils.c: add
+	  a non-modal version of gtk_run_dialog() function.
+
+2006-12-21 16:19  edgrif
+
+	<p> src/zmapWindow/zmapWindowDNAChoose.c: replace special case code
+	  with new general non-modal dialog run code.
+
+
+	<p> src/include/ZMap/zmapWindow.h: change name of struct item +
+	  correct conpiler warning.
+
+
+	<p> src/zmapWindow/zmapWindowList.c: fix new info panel args.
+
+
+	<p> src/zmapServer/acedb/acedbServer.c: additional check in
+	  parseMethod
+
+
+	<p> src/zmapFeature/zmapFeature.c: fix bug in return code from func.
+	  to add splice data.
+
+
+	<p> src/zmapGFF/zmapGFF2parser.c: make sure if adding splice data
+	  fails that we return an error message.
+
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: fix the size of the locator
+	  when the pane is exposed after zooming in a long way...
+
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix graph drawing to cope
+	  properly with baseline that is not zero.
+
+
+	<p> src/zmapGFF/zmapGFF2parser.c: make our parsing of the Note field
+	  more sophisticated so we can pick up more feature names.
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: moved some functions from
+	  Feature -> FeatureUtils
+
+
+	<p> src/: include/ZMap/zmapUtils.h, zmapUtils/zmapGUIutils.c,
+	  zmapUtils/zmapUtils.c, zmapUtils/zmapUtils_P.h: add website to
+	  the 'about dialog' and add mail addresses to authors text.
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: moved some more functions
+	  from Feature -> FeatureUtils
+
+
+	<p> src/zmapFeature/zmapFeature.c: moved some functions from Feature
+	  -> FeatureUtils
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: add missing header for
+	  peptide struct.
+
+
+	<p> src/zmapWindow/zmapWindowContainer.c: fix small buglet whereby we
+	  were positioning blocks like columns which is not correct.
+
+
+	<p> src/zmapWindow/zmapWindowItemHash.c: check align_id isn't 0
+	  before returning root!
+
+
+	<p> src/include/ZMap/zmapFeature.h: moved some functions from Feature
+	  -> FeatureUtils tidied up some prototypes that have no code...
+	  rationalised create/destroy, add/remove and find/get
+
+
+	<p> src/zmapFeature/zmapFeature.c: - moved some functions from
+	  Feature -> FeatureUtils - rationalised create/destroy, add/remove
+	  and find/get - made the merge code work again (I've not tested it
+	  with merging blocks & aligns, not sure much other code is written
+	  to deal with this anyway)
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: - moved some functions from
+	  Feature -> FeatureUtils
+
+
+	<p> src/zmapGFF/zmapGFF2parser.c: use the zMapFeature Calls
+
+
+	<p> src/zmapWindow/zmapWindow.c: check an expose handler hasn't
+	  already been set use the zMapFeature Calls
+
+
+	<p> src/zmapWindow/zmapWindowDraw.c: Keep up to date with feature
+	  changes
+
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: make the draw context
+	  code do the right thing when drawing diff contexts
+
+
+	<p> src/zmapWindow/zmapWindowEditor.c: Keep up to date with feature
+	  changes...
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: Keep up to date with feature
+	  changes...  Fix the main reason for all these feature changes.
+	  i.e. adding/removing single features via xremote
+
+
+	<p> src/zmapFeature/zmapFeature.c: remove debug prints
+
+
+	<p> src/zmapView/zmapView.c: merge contexts stuff
+
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: stopped setting item
+	  feature data for diff contexts when container wasn't created.
+
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: stopped creating
+	  containers for features that already exist.
+
+
+	<p> src/zmapFeature/zmapFeature.c: sequence stuff on merge
+
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: fix scale to actually draw.
+	  make bumping possible
+
+
+	<p> src/zmapWindow/: zmapWindowDNAChoose.c, zmapWindowSearch.c: use
+	  Roys new container call to get parent container.
+
+
+	<p> src/zmapControl/zmapControlWindowInfoPanel.c: fix memory free
+	  bug...ugghhh.
+
+
+	<p> src/: zmapView/zmapView.c, zmapWindow/zmapWindowList.c: add new
+	  params for highlight calls.
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: Make sure mark range includes
+	  complete object. Add to highlight multiple features.
+
+
+	<p> src/include/ZMap/zmapDNA.h: add screen coords to dna data, needed
+	  for reverse comp display.
+
+
+	<p> src/zmapWindow/zmapWindowDNA.c: correct coords displayed when
+	  sequence is reversed comp'd
+
+
+	<p> src/zmapWindow/zmapWindowDraw.c: make sure user hidden columns
+	  are not redisplayed by bumping. Allow user to click on colinear
+	  bars to select alignment features and show user the details.
+
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: small issue fixed
+
+
+	<p> src/zmapWindow/zmapWindowContainer.c: small issue fixed
+
+
+	<p> src/zmapWindow/zmapWindowLongItems.c: gcc silencing
+
+
+	<p> src/include/ZMap/zmapWindow.h: add extra param to highlight
+	  object call.
+
+
+	<p> src/zmapWindow/zmapWindow.c: Add extra param to update info. for
+	  whether to unfocus previous feature. Change bindings for rubber
+	  band and ruler. Add hide/show key bindings.
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: Add code to support multiple
+	  feature highlight.
+
+
+	<p> src/zmapWindow/zmapWindowFeatureList.c: add code to support
+	  negative coord display for revcomp'd feature.
+
+
+	<p> src/zmapWindow/zmapWindow_P.h: add code to support user hidden
+	  features, revcomp coord display, multiple object highlight.
+
+
+	<p> doc/user_interface.shtml: Change modifier descriptions to match
+	  code + add stuff about multiple select/hide/show.
+
+
+	<p> doc/index.shtml: add entry for xcode stuff.
+
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+
+	<p> src/include/ZMap/zmapDraw.h: add some types for basic drawing
+	  shapes.
+
+
+	<p> src/zmapWindow/zmapWindow.c: Fix Cntl left/right arrow to scroll
+	  fast. Fix Delete key to give sets of feature deletes.
+
+
+	<p> src/zmapWindow/: zmapWindowContainer.c, zmapWindowContainer.h:
+	  add simple function to return current background colour.
+
+
+	<p> src/zmapWindow/zmapWindowDraw.c: Reduce spacing between bumped
+	  features. Change homol joining blocks to be lines with clickable
+	  backgrounds.
+
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: change list of user
+	  hidden features to a stack of lists of features.
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: sort out some muddle about
+	  what item is highlighted.
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: add function to unhighlight
+	  multiple items.
+
+
+	<p> src/zmapWindow/zmapWindow_P.h: add defs for new queue of
+	  user_hidden items. And remove focus items call.
+
+
+	<p> src/zmapWindow/zmapWindow.c: Fix compiler warning + add new
+	  display coord function.
+
+
+	<p> src/zmapWindow/zmapWindowColConfig.c: fix trivial compiler
+	  warning.
+
+
+	<p> src/zmapWindow/zmapWindowFeatureList.c: fix missing include file.
+
+
+	<p> src/zmapWindow/: zmapWindowUtils.c, zmapWindow_P.h: fix up
+	  display <-> coord mapping funcs.
+
+
+	<p> src/zmapWindow/zmapWindowDNA.c: fix up coords for recomp in dna
+	  display.
+
+
+	<p> src/zmapWindow/zmapWindowDraw.c: make proteins be bumped on score
+	  and dna by span of all hits for a target.
+
+
+	<p> src/zmapWindow/zmapWindowDraw.c: fix stupid bug in perfect match
+	  code.
+
+
+	<p> src/zmapWindow/: zmapWindowDrawFeatures.c,
+	  zmapWindowNavigatorMenus.c, zmapWindowSearch.c: args to window
+	  list call have changed.
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: for double click on aligns
+	  show list of all matches, tidy up some confused code.
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: add function to return the focus
+	  list, surprising we haven't needed it before.
+
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: correct bad gap coords in
+	  align display.
+
+
+	<p> src/zmapWindow/zmapWindowList.c: make it optional to zoom in on
+	  features or just scroll to them.
+
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix bug in my perfect
+	  match code, fix bug in Roys subpart coords.
+
+
+	<p> src/zmapWindow/zmapWindow_P.h: add new focus item call to get all
+	  focus items.
+
+
+	<p> src/include/ZMap/zmapFeature.h: added prototype
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: added method to get a the
+	  extent of a feature list.
+
+
+	<p> src/zmapWindow/zmapWindowContainer.c: use the block extent to set
+	  the column height...
+
+
+	<p> src/zmapWindow/zmapWindowTextPositioner.c: code to unoverlap text
+
+
+	<p> src/zmapWindow/zmapWindowNavigatorMenus.c: goto locus extents
+	  addition
+
+
+	<p> src/zmapWindow/zmapWindowNavigator.c: - unoverlap locus names -
+	  fix seg fault when scale feature had no style
+
+
+	<p> src/zmapWindow/zmapWindowMark.c: just moving code to reduce the
+	  size of windowitem.c
+
+
+	<p> src/zmapWindow/zmapWindow.c: focus item changes...
+
+
+	<p> src/zmapWindow/: zmapWindow.c, zmapWindowDraw.c,
+	  zmapWindowDrawFeatures.c: function renaming in focus code
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: - function renaming in focus
+	  code - bug fix for adding feature via xremote
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: mainly code moving  - mark code
+	  into separate file  - focus code into separate file associated
+	  renaming...
+
+
+	<p> src/zmapWindow/zmapWindowNavigator_P.h: additional menu prototype
+
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: exclude broken code
+
+
+	<p> src/zmapWindow/zmapWindow_P.h: - focus prototypes...	-
+	  textpositioner prototypes
+
+
+	<p> src/lib/Makefile.am: new file zmapWindowTextPositioner.c new file
+	  zmapWindowFocus.c (just moved code) new file zmapWindowMark.c
+	  (just moved code)
+
+
+	<p> src/zmapWindow/zmapWindow_P.h: missed a few
+
+
+	<p> src/zmapWindow/zmapWindowFocus.c: focus code moved from
+	  windowitem.c
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: hopefully fix part of the
+	  issue in 20267
+
+
+	  milestones.
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: remove ref to non-existent
+	  header
+
+
+
+
+	  release notes script
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: file recording the date
+	  of the last set of release notes, used by
+	  scripts/zmapreleasenotes script.
+
+
+
+
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: correct date stamp.
+
+
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+
+
+	<p> src/include/ZMap/zmapConfig.h: add comment to say we don't
+	  currently support repeated elements within a stanza.
+
+
+	<p> src/include/ZMap/zmapConfigStrings.h: add sequence to server
+	  stanza keyword.
+
+
+	<p> src/: zmapFeature/zmapFeatureTypes.c, include/ZMap/zmapFeature.h:
+	  sort out style modes
+
+
+	<p> src/: include/ZMap/zmapThreads.h, zmapThreads/zmapThreads.c:
+	  pthread_t is defined very differently on different systems,
+	  return a string as a thread id.
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: fix up zMapFeatureGetStyle()
+	  to return feature or featureset style.
+
+
+	<p> src/zmapWindow/: zmapWindow.c, zmapWindowFeatureList.c,
+	  zmapWindowFeature.c: fix compiler warnings about lack of casts.
+
+
+	<p> src/include/ZMap/zmapWindow.h: add missing declare of
+	  zMapWindowHighlightFocusItems()
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: fix up some missing casts and a
+	  faulty int->pointer comparison.
+
+
+	<p> src/: include/ZMap/zmapView.h, zmapView/zmapView.c,
+	  zmapView/zmapView_P.h: add code to allow user to specify which
+	  sequence comes from which server, needed for lace. Fix stupid
+	  thread id defines.
+
+
+	<p> src/configure.ac: make LDFLAGS assignment _additive_ rather than
+	  replacing.
+
+
+	<p> src/runconfig: add linker flags to mac and linux builds
+
+
+	<p> src/include/ZMap/zmapSeqMatcher.h: functions to find dna or
+	  peptide sequence matches.
+
+
+	<p> src/zmapUtils/zmapSeqMatcher.c: functions to find dna or peptide
+	  matches.
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: [no log message]
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: [no log message]
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: zmapWindowFeatureAdd/Remove
+	  changes
+
+
+	<p> src/zmapUtils/zmapUtils.c: log a quak + its string
+
+
+	<p> src/zmapUtils/zmapGLibUtils.c: get a g_datalist's length ;)
+
+
+	<p> src/zmapFeature/zmapFeature.c: better merging and other new
+	  functions
+
+
+	<p> src/zmapControl/zmapControlRemote.c: moving xml parsing code out
+	  better drawing and deleting of features
+
+
+	<p> src/lib/Makefile.am: added files... bootstrap req.
+
+
+	<p> src/include/ZMap/zmapUtilsLog.h: log a quak + its string
+
+
+	<p> src/include/ZMap/zmapGLibUtils.h: get a g_datalist's length ;)
+
+
+	<p> src/include/Makefile.am: add my seqmatcher header.
+
+
+	<p> src/include/ZMap/zmapView.h: better context merge/draw and
+	  erase/undraw
+
+
+	<p> src/: include/ZMap/zmapWindow.h, zmapControl/zmapControl.c,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c: changes to the select
+	  callbacks, back to original style...
+
+
+	<p> src/lib/Makefile.am: add my seqmatcher code.
+
+
+	<p> src/zmapView/zmapView.c: changes to the select callbacks, back to
+	  original style...  better context merge/draw and erase/undraw
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: xml event callbacks...
+	  moved from ControlRemote.c
+
+
+	<p> src/zmapControl/zmapControlRemote_P.h: private header
+
+
+	<p> src/zmapControl/zmapControlRemote.c: quieter...
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: xml parsing fix
+
+
+	<p> src/zmapControl/zmapControlWindowButtons.c: zoom menu additions
+
+
+	<p> src/zmapFeature/zmapFeature.c: warning -> logwarning and removed
+	  reference to non-existent struct member
+
+
+	<p> src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
+	  get the first member of a datalist.
+
+
+	<p> src/zmapControl/zmapControlWindowFrame.c: small addition
+
+
+	<p> src/include/ZMap/: zmapView.h, zmapWindow.h: small addition to
+	  the select struct
+
+
+	<p> src/zmapControl/zmapControl.c: alert xremote clients if action
+	  was set
+
+
+	<p> src/zmapFeature/zmapFeatureXML.c: moved enum to be public
+
+
+	<p> src/zmapView/zmapView.c: copy over the action member in select
+
+
+	<p> src/zmapWindow/zmapWindow.c: make the updateXremote handle a
+	  featureset as well as a single feature...  ready for multiple
+	  selects -> otterlace
+
+
+	<p> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowItemHash.c:
+	  remove unused code
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: handle alterations to code in
+	  zmapWindow.c (updateXremote)
+
+
+	<p> src/: zmapWindow/zmapWindow_P.h, include/ZMap/zmapFeature.h: [no
+	  log message]
+
+
+	<p> src/: include/ZMap/zmapFeature.h,
+	  zmapControl/zmapControlRemoteXML.c, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureContext.c, zmapFeature/zmapFeatureUtils.c,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/acedb/acedbServer.c: change blocks GList -> GData
+
+
+	<p> src/zmapGFF/zmapGFF2Dumper.c: change blocks GList -> GData (some
+	  functionality removed. RDS to sort out)
+
+
+	<p> src/zmapServer/file/fileServer.c: change blocks GList -> GData
+	  (some functionality removed. RDS to sort out)
+
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: removed unused code
+
+
+	<p> src/zmapGFF/zmapGFF2Dumper.c: fixed what I'd broken
+
+
+	<p> src/zmapUtils/: zmapGLibUtils.c: reorganisation
+
+
+	<p> src/zmapServer/file/fileServer.c: fixed what I'd broken
+
+
+
+
+
+
+	<p> src/zmapWindow/: zmapWindowFeature.c, zmapWindowFocus.c: fix
+	  problem with focus items
+
+
+	<p> src/zmapWindow/zmapWindowFeatureList.c: use FOO_CANVAS_ITEM()
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: stop us running out of
+	  memory...
+
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: fix last release date
+
+
+
+<h3>Acedb Changes/Fixes</h3>
+
+2006-10-20 07:55  edgrif
+
+	<p> w4/dump.c, wh/dump.h: add little utility to dump an obj to
+	  stdout.
+
+2006-10-20 09:12  edgrif
+
+	<p> w4/dump.c: fix my stupid typos.
+
+2006-10-20 11:58  edgrif
+
+	<p> wtools/MAKE_INSTALL: change gtar to tar.
+
+2006-12-21 16:50  edgrif
+
+	<p> w7/gff.c: add code to export dna/peptide homol lengths for -zmap
+	  option.
+
+2006-12-21 16:55  edgrif
+
+	<p> w6/treedisp.c: fix small glitch in menu for treedisp.
+
+
+	<p> w6/bstree.c: correct trivial spelling mistake in warning message.
+
+
+	<p> wtools/MAKE_INSTALL: add belvu to the set of 'blixem' binaries.
+
+
+	<p> wmake/: makefile, truemake: sort out version stuff so that
+	  timestamp is redone just once for each and every make.
+
+
+	<p> wmake/makefile: fix stupid bug in ordering of dependencies, we
+	  need the bin dir first stupid.
+
+
+	<p> wmake/truemake: remove redundant references to aceversion.o
+
+
+	<p> wmake/makefile: make aceversion.c contain the build directory,
+	  this fixes Rob Clacks bugged method of doing this.
+
+
+	<p> w2/gex.c: in moving acedb to GTK2 I broke the directory choosing
+	  bit of file chooser, fixed now I hope.
+
+
+	<p> wnq/aceversion.c: a rather late change of version number for the
+	  .36 build.
+
+
+	<p> wnq/aceversion.c: increment build version.
+
+
+	<p> wh/gex.h, w6/treedisp.c: trivial text format change.
+
+
+	<p> w2/gex.c: fix null text bug, fix text wrapping in window to work
+	  as most things do.
+
+
+	<p> wnq/aceversion.c: bump up the update number for next set of
+	  development.
+
+
+
+<!--#include virtual="/perl/footer"-->
+

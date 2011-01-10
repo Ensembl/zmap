@@ -1,0 +1,172 @@
+
+============================
+Things to point out in zmap:
+============================
+
+
+Screen areas
+------------
+
+- Screen areas of zmap, modelled loosely on a browser:
+
+  menu bar
+
+  action buttons/information area
+
+  display area
+
+- tooltips where appropriate
+
+- buttons that have menus (zoom, dna)
+
+- buttons are inactive when they can't be used
+
+- view is fmap like, forward strand on right, reverse on left, yellow strand
+  separator
+
+- scale remains visible
+
+- usual scroll bars
+
+
+
+Zooming/scrolling
+-----------------
+
+- zoom 2x in/out or choose from menu
+
+- bottom/right scroll bars should give instaneous scrolling
+
+- go far enough and a second scroll bar appears on left, happens when window
+  exceeds X Windows upper limit. Scroll bar represents extent of section that
+  can be scrolled instaneously, move this to shift this section.
+
+
+
+Splitting
+---------
+
+- can split an aribtrary number of times
+
+- horizontal windows are locked horizontally by default
+
+- vertical windows are locked vertically by default
+
+- can unlock at any time
+
+- active window has highlighted border
+
+
+
+Selecting features/columns
+--------------------------
+
+- Clicking on a feature shows its details (with tooltips)
+
+- Clicking on a column shows its name
+
+- Double clicking a feature results in:
+
+	 an otterlace edit window if the feature is edittable
+
+	 otherwise a simple zmap feature display window
+
+
+Menu
+----
+
+- right click on a column or a feature
+
+- menus are context sensitive
+
+- should be most of the useful functions (e.g. blixem) but some new ones:
+
+	 smart bumping (default) is a combination of cluster and overlap with
+	 high to low scoring going left to right.
+
+         Several other bumping options avaiable.
+
+	 Column configuration allows interactive switching off of all columns
+	 (and in future will allow setting of column style (colour etc).
+
+	 List all features: gives a popup window listing all features in that
+	 column, can sort by position etc. Click on one to see it in the zmap.
+
+	 Search window: allows searching for single or sets of features using
+	 various criteria (see below for more info.).
+
+
+
+Keyboard shortcuts
+------------------
+
+shift-leftbut: shows horizontal ruler + position
+
+Cntl-W: close window
+Cntl-Q: quit zmap
+
+
+More to come....but we need your comments !
+
+
+
+List Window
+-----------
+
+- is shown as a result of various actions: from menu item, from search
+window etc.
+
+- can reorder features in window by clicking on relevant column header
+
+- clicking on a feature takes you to that feature in zmap
+
+- Operate: allows showing/hiding of features on zmap
+
+- Features can be exported as gff or otter xml.
+
+
+
+Search Window
+-------------
+
+- Something that was not easy in xace/fmap was searching and finding features
+displayed in fmap. You can use the search window to look for a single feature
+or find subsets of features. The result is a list window where you can click
+on features and zmap will scroll to and highlight that feature/column.
+
+- all names can be wild carded to find subsets
+
+- additional filters can be applied for strand, position, locus,
+  style (= method).
+
+
+
+Menubar operations
+------------------
+
+- File
+
+  New...don't use this ! its for choosing new sequences and otterlace will
+  do this.
+
+  Export...doesn't work currently
+
+  Print sends a postscript file of the zmap to the printer. 
+
+  Dump allows you to dump the zmap window to a file in various formats
+  and sizes.
+
+
+- Edit
+
+  Cut/Copy/Paste...not needed for otterlace
+
+  Redraw, sometimes the foocanvas doesn't quite draw everything correctly,
+     this option usually corrects it.
+
+
+- Help
+
+  The "About" button tells you which version of zmap you are using.
+
+

@@ -1,0 +1,286 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '16 May 2008'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h3>Release Version: ZMap 0.1.48</h3>
+
+<h3>Release Date: 16 May 2008</h3>
+
+<p>
+(Last release was on 06/05/2008)
+</p>
+
+<h3>Request Tracker Tickets Resolved</h3>
+
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<h4>zmap</h4>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=35057">35057</a>, Resolved (Fri May 09 09:31:12 2008)
+<p>migrate from popt library to glib  g_option() package</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=49965">49965</a>, Resolved (Wed May 14 09:50:56 2008)
+<p>Disappearing genes</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=55131">55131</a>, Resolved (Tue May 13 11:16:39 2008)
+<p>problems with marking areas</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=65362">65362</a>, Resolved (Mon May 12 19:36:34 2008)
+<p>scroll bar problem</p>
+<p>jla1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66077">66077</a>, Resolved (Fri May 09 12:00:11 2008)
+<p>Compress option alters bump mode</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66253">66253</a>, Resolved (Tue May 13 17:14:39 2008)
+<p>When revcomp all bumping is lost</p>
+<p>ca1@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66294">66294</a>, Resolved (Mon May 12 19:42:16 2008)
+<p>Zmap repositioning on saving</p>
+<p>af2@sanger.ac.uk</p>
+</li>
+</ul>
+
+<h4>acedb</h4>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=9300">9300</a>, Resolved (Tue May 13 16:57:06 2008)
+<p>Cursor problem on Mac with Acedb</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=11003">11003</a>, Resolved (Fri May 09 09:41:04 2008)
+<p>xace: assertion `GTK_IS_ADJUSTMENT (adjustment)' failed</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=27396">27396</a>, Resolved (Fri May 09 09:55:41 2008)
+<p>xace editing - remembering where you are in the model</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=47074">47074</a>, Resolved (Fri May 09 09:37:28 2008)
+<p>Bug</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=47618">47618</a>, Resolved (Fri May 09 09:23:08 2008)
+<p>The travelling right in xace bug</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=58519">58519</a>, Resolved (Fri May 09 09:22:24 2008)
+<p>Travelling right bug</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=58522">58522</a>, Resolved (Thu May 08 10:09:02 2008)
+<p>ctrl-u</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=63176">63176</a>, Resolved (Wed May 07 10:20:27 2008)
+<p>Feature highlighting screwy in latest fMap</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+</ul>
+
+<!-- End of tickets  --!>
+
+<h3>ZMap Changes/Fixes [from cvs]</h3>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_05_06.shtml: new zmap
+	  release notes for  6 May 2008
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 01/05/2008
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils.c: calculate length of version string
+
+
+  </li>
+  <li> src/zmapUtils/zmapLogging.c: include version in stack trace.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: trivial cover function to create
+	  toplevel windows with a "ZMap" title
+
+
+  </li>
+  <li> src/zmapUtils/: zmapCmdLineArgs.c, zmapCmdLineArgs_P.h: remove
+	  popt dependency
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowContainer.h: simplier redraw/recurse
+	  function
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDraw.c: simplier redraw/recurse function
+	  fix for rt ticket #66077
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemText.c: use simplier redraw/recurse
+	  function
+
+
+  </li>
+  <li> src/zmapUtils/zmapCmdLineArgs.c: Make sure strings are similar
+	  using quarks...
+
+
+  </li>
+  <li> src/zmapUtils/zmapCmdLineArgs.c: more information in the --help
+	  option
+
+
+  </li>
+  <li> src/zmapUtils/: zmapCmdLineArgs.c, zmapCmdLineArgs_P.h: fix the
+	  behaviour I had missed reimplementing when switching to g_option
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: unlock a pair of windows correctly
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDraw.c: Never shrink the width of
+	  h-split windows.  Actually... set the scroll region to be equal
+	  for h-split windows
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowState.c: Fix
+	  RT Ticket 66294 (ZMap Reposition on saving)
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowState.h: Fix RT Ticket 66294 (ZMap
+	  Reposition on saving)
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowMark.c, zmapWindowItem.c: Fix RT
+	  Ticket 55131 (Problems with marking when reverse complementing)
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowState.c, zmapWindow.c: Fix RT Ticket #
+	  66253 (When revcomp all bumping is lost)
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: Fix RT Ticket # 61379 (Dragging to
+	  extend marked area)
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark.c: quick check of coords
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.29519/ZMap/scripts/versioner run by zmap
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+<h3>Aceb Changes/Fixes [from cvs]</h3>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> wh/smap.h: change strand enum to be standard forward/reverse, add
+	  align struct which holds ref and match sequence strand.
+
+
+  </li>
+  <li> w6/smap_.h: change strand enums, add/correct documentation of
+	  smapkeyinfo struct.
+
+
+  </li>
+  <li> w7/smapconvert.c: make convertHomol record ref & match sequence
+	  strands in segs using new smap call.
+
+
+  </li>
+  <li> w6/smap.c: Make funcs like smapcomposemaps return a status. Add
+	  cigar line support, more to do here. Add support for new align
+	  struct. Improve smapdump output.
+
+
+  </li>
+  <li> w6/smap.c: def out debugging output but leave in code until cigar
+	  work finished.
+
+
+  </li>
+  <li> w7/smapconvert.c: fix really poor bug of mine giving wrong parent
+	  to homol segs...
+
+
+  </li>
+  <li> w6/display.c, wh/display.h: provide mechanism to automatically
+	  remove graphs e.g. keyset window, which result from tab
+	  displayblock interactions.
+
+
+  </li>
+  <li> whelp/Tree.html: add description of short cuts...
+
+
+  </li>
+  <li> w9/: gmapdata.c, gmapdatacol.c, gmapphys.c: moving these to be
+	  with other gmap files, no idea why they weren't.
+
+
+  </li>
+  <li> w7/: gmapdata.c, gmapdatacol.c, gmapphys.c: moved from w9, don't
+	  know why they were there but seems not logical.
+
+
+  </li>
+  <li> w2/colcontrol.c: moved to w7 where it is more relevant.
+
+
+  </li>
+  <li> w7/colcontrol.c: moved from w2, shouldn't be there, it is a level
+	  above.
+
+
+  </li>
+  <li> w7/: gmapdata.c, gmapdatacol.c, gmapphys.c: moved here from w9
+
+
+  </li>
+  <li> wmake/truemake: fix up gmap dependencies.
+
+
+  </li>
+  <li> w7/gmap_.h: add new gmap private header.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+
+<!--#include virtual="/perl/footer" -->
+

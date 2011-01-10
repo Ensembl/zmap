@@ -1,0 +1,15 @@
+<!--#set var="banner" value="ZMap Release Notes"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<ul>
+  <li><b>2006</b>
+      <ul>
+	<li> <A HREF="release_notes.2006_10_18.shtml">October</A>
+	<li> <A HREF="release_notes.2006_11_14.shtml">November</A>
+      </ul>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
+

@@ -1,0 +1,103 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 7 September 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.62 </h5>
+
+
+<h5>Release Date:  7 September 2009</h5>
+
+
+<p>
+(Last release was on 04/09/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: Documentation update
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: mostly formatting changes.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature.c: add debug output for memory
+	  dealloc.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: temp fix: def'd out the context erase as
+	  it's causing crashing.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: temp fix: def'd out the
+	  context erase, it's causing crashing.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_09_04.shtml: new zmap
+	  release notes for  4 September 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_09_04.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 04/09/2009
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature.c: there were several places where
+	  pointers to lists were used when it should have been copies of
+	  the whole list. Add some mem debug code.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: think I've fixed free problem.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: ok, I think I've fixed a
+	  memory corruption problem.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+

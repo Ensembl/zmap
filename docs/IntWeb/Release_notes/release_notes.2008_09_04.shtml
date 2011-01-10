@@ -1,0 +1,243 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 4 September 2008'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.54 </h5>
+
+
+<h5>Release Date:  4 September 2008</h5>
+
+
+<p>
+(Last release was on 25/07/2008)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66832">66832</a>, Resolved (Tue Sep 02 16:21:51 2008)
+<p>objects/features physically disappear</p>
+<p>ca1@sanger.ac.uk, mpk@sanger.ac.uk, th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=74468">74468</a>, Resolved (Fri Jul 25 15:50:48 2008)
+<p>I crashed zmap</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=74478">74478</a>, Resolved (Fri Jul 25 15:52:00 2008)
+<p>zmap crash</p>
+<p>jv2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=75034">75034</a>, Resolved (Thu Jul 31 13:06:59 2008)
+<p>Marking keeps disappearing when you try to adjust the marked area</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=76500">76500</a>, Resolved (Tue Aug 12 16:11:25 2008)
+<p>Cron <zmap@deskpro16113> ~/prefix/scripts/zmap_overnight.sh > ~/BUILDS/cron.log 2>&1</p>
+<p>root@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: comment out for now an
+	  assert that causes zmap to crash during bumping.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_07_25.shtml: new zmap
+	  release notes for 25 July 2008
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2008_07_25.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 25/07/2008
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.1153/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: Fix RT Ticket #75034.  Check the
+	  original size of the block instead of just the potentially
+	  resized version.  Useful for when one end of the mark is off the
+	  screen.
+
+
+  </li>
+  <li> src/zmapApp/: zmapApp_P.h, zmapAppremote.c, zmapAppwindow.c:
+	  Ensure the <zmap action="finalised" /> is only sent once.
+
+
+  </li>
+  <li> src/bootstrap: 64bit compile
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: fix small issue with getting dna
+	  text item
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindow_P.h: Busy cursor for
+	  the canvas.  We need the same for other gdk_windows...
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
+	  add a case insensitive version of strstr like g_ascii_XXX
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: add parsing code for Style and new
+	  column tag in gff from acedb.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: hack to avoid crashing
+	  during bumping (rt # 79058)
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: Fix for RT ticket
+	  #66832.  Possibly future issue with deferred loading.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: correctly initialise the busy cursor
+	  counter
+
+
+  </li>
+  <li> src/libcurlobject/libcurlobject.c: minor update, response code
+	  from curl
+
+
+  </li>
+  <li> src/zmapUtils/: zmapConfigDir.c, zmapConfigDir_P.h: removed  some
+	  old  code and  added	support for  pending config  (ini) changes.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUINotebook.c: zMapAssert change to help with
+	  RT #79387
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUITreeView.c: minor code reorganisation
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowColBump.c,
+	  zmapWindowColConfig.c, zmapWindowDraw.c,
+	  zmapWindowDrawFeatures.c, zmapWindowMenus.c,
+	  zmapWindowNavigator.c, zmapWindowNavigatorMenus.c,
+  </li>
+  <li> typo -
+	  Implement unbump all columns (RT #76121)
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_09_04.shtml: new zmap
+	  release notes for  4 September 2008
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2008_09_04.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 04/09/2008
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.12944/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: Stepping back to get all
+	  release notes after dodgy build...
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w9/gfcode.c: fix trivial compile warnings, add more program
+	  version info.
+
+
+  </li>
+  <li> w9/readseq.c: fix trivial compile warnings.
+
+
+  </li>
+  <li> wmake/makefile: add genefeatures prog. to normal build.
+
+
+  </li>
+  <li> w7/gff.c: add feature_set code for column and style tag export
+	  for zmap.
+
+
+  </li>
+  <li> wnq/aceversion.c: update number is out of step, increment and
+	  reset.
+
+
+  </li>
+  <li> wnq/aceversion.c: increment update number now we have done a
+	  build.
+
+
+  </li>
+  <li> w4/command.c: fix uninitialised variable (status) error.
+
+
+  </li>
+  <li> w6/smap.c: fix small bug in smapdump for when root has no parent.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+

@@ -1,0 +1,152 @@
+<!--#set var="banner" value="Coding Notes"-->
+<!--#set var="stylesheet" value="css/zmap-default.css" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!--#include virtual="/perl/header"-->
+
+
+<p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
+
+<h2>Indenting</h2>
+
+<P>A good way to maintain consistency is have the editor do the indenting/commenting
+etc. If you use the right profile code then there are some emacs functions
+to do this which include:</p>
+
+<ul>
+  <li><b>Alt-X indent-region</b> will indent the code for the marked region.
+  <li><b>TAB</b> indents the current line (or moves the cursor to the correct
+      indentation on a blank line.
+</ul>
+
+
+<P>The standard for code has been to indent by two for each block, there seems
+no reason to change it. Line length should be kept to somewhere between 80 and
+120 chars, i.e. something that will fit comfortably on to a screen with a reasonable
+font size. <b>BUT</b> exceeding this length occasionally is not a problem.</p>
+
+
+<pre><code>int func(void)
+{
+int some_var ;
+
+if (blah)
+{
+call_something() ;
+}
+
+return ;
+}
+</code></pre>
+
+
+
+<h2>Commenting Style</h2>
+
+<P>Block comments and line comments should be in this style:</P>
+
+
+<pre><code>
+if (blah)
+{
+/* This is quite a long block
+* comment that runs to more than one
+* line. */
+call_something() ;				    /* unknown function */
+}
+</code></pre>
+
+
+
+<h2>Type, Function and variable naming</h2>
+
+<P>General naming conventions:</p>
+
+
+<ul>
+  <li><b>Types:</b> ThisIsATypeName
+  <li><b>Functions:</b> aFunctionName
+  <li><b>Variables:</b> a_variable_name
+</ul>
+
+
+
+<h3>Function names</h3>
+
+<P>Its useful to adopt different naming styles for external interface functions, internal interface
+functions and static functions:</p>
+
+
+<ul>
+  <li><b>External interface functions</b> have external linkage, are declared in <b>public</b>
+      headers and should be named:
+      <ul>
+	<li><b>zMapXXXXX</b>
+      </ul>
+  <li><b>Internal interface functions</b> have external linkage, are declared in <b>private</b>
+      headers and should be named:
+      <ul>
+	<li><b>zmapXXXXX</b>
+      </ul>
+  <li><b>static functions</b> have internal linkage only, are declared within the file
+      where they are defined and should be named:
+      <ul>
+	<li><b>anythingYouLike</b>
+      </ul>
+</ul>
+
+
+
+<h3>Function return values</h3>
+
+<P>By convention the first local variable declared in a function should be the return value
+which should be correctly initialised:</p>
+
+<pre><code>
+gboolean someFunc(void)
+{
+  gboolean result = FALSE ;
+
+
+
+  return result ;
+}
+</code></pre>
+
+
+<p>This helps a lot with scanning the code.</p>
+
+
+
+
+<h3>Error handling vs. use of zMapAssert()</h3>
+
+<p>A standard way to test that program state is as you expect while debugging
+is via the assert macro or variants thereof. One problem with this kind of
+macro however is that it easily gets used where really the code should detect
+the error and handle it via a return code, user message or whatever.</p>
+
+
+<p>The following guidelines should be followed:</p>
+
+<ul>
+  <li><p><b>"Package" interface functions:</b> must handle errors in the supplied
+      parameters and return error codes when given faulty data.</p>
+  <li><p><b>"Package" internal functions:</b> should use the zMapAssert() macro
+      to test essential inputs and core dump if there are errors.</p>
+</ul>
+
+<p>The philosophy is that packages should "expect" and handle errors in their
+inputs while functions internal to packages should expect no errors in their
+essential inputs and should abort when this happens as it indicates a programming error
+within the package.</p>
+
+
+<p>Currently ZMap code has not adherred to this philosopy rigidly enough with
+the result that ZMap crashes in places where it should be handling errors 
+and ultimately logging an error and/or displaying an error to the user.</p>
+
+
+
+<!--#include virtual="/perl/footer"-->
+

@@ -1,0 +1,100 @@
+<!--#set var="banner" value="Integrating ZMap Into Mac OSX XCode"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<p><hr>
+<h2 id="overview">Overview</h2>
+
+<p>Apple Mac OSX provides a pretty good coding/debugging suite of software
+collectively named XCode. As with many other "integrated" development
+environments its easy to set up and use if you <b>start</b> your project
+from scratch in XCode. This document describes what to do to integrate
+an autoconf based project into XCode.
+
+<p>Nothing you read below will be rocket science but hopefully it will
+save you wasting the time that I did. I had one ally in the form of a
+very useful book all about XCode:
+
+<ul>
+  <li>Step into XCode Mac OS X Development
+  <li>Fritz Anderson
+  <li>Publ: Addison Wesley Professional
+</ul>
+
+<p>If you intend to use XCode a lot then you should get this book.
+
+
+<h2>Eight steps to heaven ?</h2>
+
+
+<h3>Setting single window mode</h3>
+
+<p>Before you create a project within XCode you are highly recommended to
+select the "single window" layout from within the general preferences
+in XCode as this makes navigation much easier and the following explanation
+assumes this setup (but can be used with the default multi-window setup).
+
+<p>To do this:
+
+<ol>
+  <li>Start XCode
+  <li>Select <b>"Preferences"</b>
+  <li>Select <b>"General"</b> in the <b>"Preferences"</b> window
+  <li>Select <b>"All-in-One"</b> from the <b>"Layout"</b> tab in <b>"General"</b>
+</ol>
+
+<p><b>NOTE</b> that you have to do this <b>before</b> you open any projects.
+
+
+<h3>Setting up the project</h3>
+
+
+<hr>
+<font color=red>
+<p><b>***WARNING***</b>
+
+<p>This way of setting up XCode, copied from Fritz Anderson's book, means that the XCode project directory
+ends up residing in your programs build directory. If as part of your build you completely wipe the contents
+of this directory (e.g. perhaps as part of the <b>"clean"</b> target), you will lose the XCode directory and have wasted
+all the below effort !
+</font>
+<hr>
+
+
+<ol>
+  <li>Set up the zmap build directories and do the autoconf bit as per usual and check its all compiling etc.
+  <li>Start XCode and select <b>"File -> New Project"</b>, call the project what you like <b>BUT</b> make sure the
+      project directory is set to the zmap build directory, e.g. ZMap/src/build/macosx, otherwise you will
+      not easily be able to get XCode to find your makefile to do a build.
+  <li>Drag the build directory from a Finder window onto the zmap project
+      icon in the projects list.
+  <li>Within the projects list you will see a ZMap.xcodeproj, delete this. also
+      a ZMap.Build, delete this as well. Otherwise you have circular references because XCode
+      expects the build directory to be a subdirectory of the project, not the project directory itself. 
+  <li>Now delete from within the projects list all the zmapApp, zmapConfig etc directory entries
+      that are in effect "dummy" entries from our build.
+  <li>Now drag from Finder all the real zmapApp, zmapConfig directories that do contain
+      the code in to the ZMap project.
+  <li>Tell XCode how to find the executable using the <b>"Project -> New Custom Executable"</b>
+      menu.
+      
+      <p>In the dialog you can set the working directory although this is not necessary
+      for zmap. You must however select the <b>"Arguments"</b> tab which allows you to set the executables
+      environment as you need to set the DISPLAY environment variable so zmap can find
+      the Xserver !
+
+      <p>(you can also do this later from <b>"Project -> Edit Active Executable"</b> dialog)
+  <li>One last <b>VITAL</b> setting, go to <b>"Preferences -> Debugging"</b> and turn
+      <i>OFF</i> <b>"Load symbols lazily"</b>. If you don't do this you will find that
+      while you can set breakpoints, GDB may return an error message about "no location for XXXX"
+      where "XXXX" is probably the function where you set the break point. This is because the
+      function symbol has not been resolved yet meaning that the debugger will <b>not</b> stop
+      at the break point.
+</ol>
+
+
+
+
+<!--#include virtual="/perl/footer"-->

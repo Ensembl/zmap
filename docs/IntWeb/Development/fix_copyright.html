@@ -1,0 +1,93 @@
+<h2>Writing the Right Copyright dates? Right</h2>
+
+<fieldset<legend>Ed says:</legend>
+<p>
+There is no way in cvs (or in svn either) to get just the year substituted in so it looks like some perl....
+</p>
+
+<p>
+We need to change the copyright line which is at the top of each of our source code files, currently it reads:
+<pre>
+ *  Copyright (c) XXXX: Genome Research Ltd.
+</pre>
+where XXXX is a number of different dates.
+</p>
+
+<p>
+It should all be changed to read:
+<pre>
+ *  Copyright (c) 2006 - 2010 Genome Research Ltd.
+</pre>
+</p>
+<p>
+Be good to report any .c or .h files that don't have a copyright line.
+</p>
+
+</fieldset>
+<fieldset><legend>The real copyright strings</legend>
+<p>The source code gets copyrighted but the executable also has a popup window via Help/About (top right of the window).  This data is in zmapUtils/zmapUtils_P.h and there are strings that appear in the about box and also another one that just sits in the executable.
+</p>
+<p>All these must be changed manually whenever the source copyright scripts are run.
+</p>
+</fieldset>
+
+<fieldset><legend>How to do this?</legend>
+<p>We can use find to pull out all the .c an .h files so that we can process then one by one.
+</p>
+<p>A script can process each file by:
+<ul>
+  <li>getting edit permission from CVS
+  <li>filtering the file via a perl script
+  <li>committing the file to CVS if successful
+</ul>
+</p>
+<p>Perhaps it would be simplest to write a shell script to operate the CVS, but surely perl can run commands?</p>
+</fieldset>
+<fieldset><legend>Where and How?</legend>
+<p>The script will live in the ZMap/scripts directory, as this is for build related functions, and be called 'CopyRight'. </p>
+<p>In the interests of a quite life it is recommended that all files should be returned to CVS and ZMap should acheive a clean build before starting.</p>
+</fieldset>
+
+<fieldset><legend>Use</legend>
+The script is called 'CopyRight' and lives in ZMap/scripts.
+It take two optional arguments and one file name:
+<pre>
+      ZMap/scripts/CopyRight [-many] [-no-CVS] filename
+</pre>
+<p>If <b>-many</b> is not specified then only the first Copyright line is changed.</p>
+<p>Only the first 50 lines of any file are subject to change.</p>
+<p>if <b>-no_CVS</b> is specified the the file is processed directly and CVS is not used.</p>
+
+<p>To process an entire source tree do something like the following:
+<pre>
+      cd ZMap/src
+      cvs update
+      (find . -wholename "./zmap*/*\.[ch]" -exec ../scripts/CopyRight \{\} \; ) | tee hee
+      cd include/ZMap
+      (find . -name "*.h" -exec ../scripts/CopyRight \{\} \; ) | tee hee
+</pre>
+Note that we don't want to change copyright dates in third party files!
+However, all third party software is in other directories at the same level as Zmap/src. so a find with -name is safe enough if you are brave.
+</p>
+<h3>Warning:</h3>
+<p>The above commands don't redirect STDERR, so maybe you want to run this inside bash and add in a 2>&amp;1 somewhere.</p>
+</fieldset>
+
+<fieldset><legend>Files needing a manual fix</legend>
+<pre>
+./include/ZMap/sysdep.h: No copyright date found
+./include/ZMap/zmapUrl.h: No copyright date found
+./include/ZMap/zmapUrlUtils.h: No copyright date found
+./zmapControl/remote/zmapXRemoteAPI.h: No copyright date found
+./zmapUtils/safe-ctype.c: No copyright date found
+./zmapUtils/safe-ctype.h: No copyright date found
+./zmapUtils/zmapUrl.c: No copyright date found
+./zmapUtils/zmapUrlOptions.h: No copyright date found
+./zmapUtils/zmapUrlUtils.c: No copyright date found
+./zmapUtils/zmapUrlUtils.h: No copyright date found
+./zmapWindow/items/zmapWindowTextItemCMarshal.h: No copyright date found
+./zmapWindow/items/zmapWindowTextItemCMarshal.c: No copyright date found
+./zmapWindow/items/zmapWindowSequenceFeatureCMarshal.h: No copyright date found
+./zmapWindow/items/zmapWindowSequenceFeatureCMarshal.c: No copyright date found
+</pre>
+</fieldset>

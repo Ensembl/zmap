@@ -1,0 +1,82 @@
+<!--#set var="banner" value="ZMapwindowContainers - More FooCanvasGroup subclasses"-->
+<!--#include virtual="/perl/header"-->
+
+
+<!-- We get the banner from above -->
+
+<h2>Inheriting from FooCanvasItems</h2>
+
+<p>As  for <a href="zmap_canvas_items.shtml">ZMapWindowCanvasItems</a>
+the containers inherit from FooCanvasItems.  </p>
+
+<h2>Architecture</h2>
+
+<p>As                   with                   the                  <a
+href="zmap_canvas_items.shtml">ZMapWindowCanvasItems</a>     Containers
+have a  base class  ZMapWindowContainerGroup, that they  inherit from,
+which itself inherits from FooCanvasGroup.</p>
+
+<p>The external interface for the containers remains largely the same,
+but has  been trimmed down to  remove unused functions  and ones which
+have been re-implemented by virtue of the GObject/inheritance.</p>
+
+<p> There  should be  less work for  the foocanvas  and user to  do in
+terms of repositioning and  redrawing as the containers themselves are
+more intelligent in  their update and draw cycles.   Multiple calls to
+what  was ContainerExecute  resulted in  quite laboured  update, draw,
+reposition, update, draw cycles.</p>
+
+<h2>Classes</h2>
+
+<p>
+There's a  rough one  to one relationship  between feature levels and
+containers.  This is reflected in the classes used to draw them. These are:
+</p>
+
+<ul>
+  <li>ZMapWindowContainerContext</li>
+  <li>ZMapWindowContainerAlignment</li>
+  <li>ZMapWindowContainerBlock</li>
+  <li>ZMapWindowContainerStrand</li>
+  <li>ZMapWindowContainerFeatureSet</li>
+</ul>
+
+<h2>Data</h2>
+
+<p>Each  of the classes  holds the  feature it  relates too,  plus any
+information that it must hold onto  in order to carry out functions of
+drawing or navigating or other operations e.g. bumping</p>
+
+<pre>
+
+</pre>
+
+FooCanvasGroup __parent__;
+
+ZMapFeatureAny feature_any;   /* The feature this container relates too. NULL for Strand*/
+
+GQueue *user_hidden_children; /* List of ZMapWindowCanvasItems a user may have hidden. */
+GdkColor orig_background;     /* Colour of the original background */
+ZMapContainerLevelType level; /* The level. Redundant information as the class type is equal to this. */
+
+GSList *pre_update_hooks;             /* list of ContainerUpdateHooks */
+GSList *post_update_hooks;            /* list of ContainerUpdateHooks */
+
+/* general house keeping of look and feel of the container */
+double child_spacing;         
+double this_spacing;
+double height;
+
+double reposition_x;          /* used to position child contianers */
+double reposition_y;          /* currently unused */
+
+struct
+{
+  unsigned int max_width  : 1;
+  unsigned int max_height : 1;
+  unsigned int column_redraw : 1;
+  unsigned int need_reposition : 1;
+  unsigned int debug_xml : 1;
+  unsigned int debug_text : 1;
+} flags;                     
+</pre>

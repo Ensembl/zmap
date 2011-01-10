@@ -1,0 +1,66 @@
+<h2>Building ZMap</h2>
+
+<fieldset><legend>Overview</legend>
+<p>Zmap is built using autotools and a number of scripts can be found in ZMap/scripts that help drive the configuration process.  Different scripts are used depending on the host operating system, which is discovered by the command 'uname'.
+</p>
+</fieldset>
+<fieldset><legend>More documentation</legend>
+.... is available in <b>ZMap/web/developer/build_system.shtml</b>.
+</fieldset>
+
+<fieldset><legend>How to make a release</legend>
+<h3>Some advice from Ed</h3>
+<p>
+Instructions are in ZMap/scripts/README; go to section "How to build a new release" which says:
+<pre>
+ssh into tviewsrv as user zmap, then:
+
+> cd ~/prefix/scripts
+> ./zmap_do_build.sh
+</pre>
+
+It takes a while and you should get emailed with the result which will fail but only on the final test step which you can ignore for now.
+</p>
+<p>
+If the build worked the results will be in:
+<pre>
+~zmap/BUILD.DEVELOPMENT
+</pre>
+which is a link into the BUILDS directory.
+</p>
+
+<p>
+In there you will see the results of the build:
+<pre>
+Darwin_i386
+Linux_i686
+Linux_x86_64
+</pre>
+
+The dist file which James needs is in
+
+<pre>
+Dist
+</pre>
+
+and the log files are also there.
+
+The build script copies acedb binaries so it should provide everything that Anacode need.
+</p>
+<p>For local use Anacode can use our binaries from tviewsrv for Linux builds. To build the mac version they need the Dist file and some libraires which are held in <b>~zmap/BUILDS/packages</b>.
+</fieldset>
+
+<fieldset><legend>Developer controlled build options</legend>
+<h3 Options not available</h3>
+<p> There appears to be no provison for this kind of thing.  To create a new build with some experimental code it is necessary to check out a new copy of ZMap and modify the build script for the relevant target machine.
+</p>
+<p> There is also no global header in the source tree. </p>
+
+<h3>A quick solution</h3>
+<p>The file <b>ZMap/scripts/build_config.sh</b> sets up global options for the build process and this includes compiler options.  Experimental code will be optionally compiled with '#if SOME_OPTION' and these may be set via command line arguments like '-DSOME_OPTION=1;
+</p>
+<p>This will make it safe to include experimental code in a current development version without fear of forking the CVS tree.  If the code is deemed OK the the options can be made permanent by committing the build script to the CVS, or by updating the source code itself.
+</p>
+<p><b>Note</b> that is is necessary to runbootstrap and runconfig after changing any compiler options in build_config.sh.
+</p>
+</fieldset>

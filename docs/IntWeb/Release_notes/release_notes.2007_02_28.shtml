@@ -1,0 +1,229 @@
+<!--#set var="banner" value="ZMap Release Notes For 28 February 2007"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h3>Release Version: ZMap 0.1.20</h3>
+
+<h3>Release Date: 28 February 2007</h3>
+
+<P>
+(Last release was on 08/02/2007)
+
+<h3>Request Tracker Tickets Resolved</h3>
+
+
+<h4>ZMap</h4>
+
+<PRE>
+id: ticket/20052
+Subject: Single exon transcripts are difficult to select!
+Requestors: jgrg@sanger.ac.uk
+Resolved: Thu Feb 08 12:02:32 2007
+
+id: ticket/20267
+Subject: saving objects in zmap
+Requestors: gkl@sanger.ac.uk
+Resolved: Wed Feb 14 16:38:56 2007
+
+id: ticket/22867
+Subject: error in blixem
+Requestors: gkl@sanger.ac.uk
+Resolved: Thu Feb 08 15:37:24 2007
+
+id: ticket/23031
+Subject: saving objects on the rev strand [and display is rev comped...]
+Requestors: gkl@sanger.ac.uk
+Resolved: Wed Feb 21 17:03:26 2007
+
+id: ticket/23902
+Subject: gmem.c alloc 6 billion bytes :)
+Requestors: rds@sanger.ac.uk
+Resolved: Thu Feb 22 09:45:20 2007
+
+</PRE>
+
+
+<h4>Acedb</h4>
+
+<PRE>
+None this time
+
+</PRE>
+
+
+<h3>ZMap Changes/Fixes</h3>
+
+
+
+
+	<p> src/include/ZMap/zmapWebPages.h: update for latest release notes
+
+
+	<p> src/zmapControl/zmapControlWindowMenubar.c: fix release notes
+	  directory path.
+
+
+	<p> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c,
+	  zmapView/zmapView.c, zmapControl/zmapControlRemote.c: changed the
+	  merge to work without a diff context...  uses less memory ;)
+
+
+	<p> src/zmapDraw/zmapDraw.c: slight hack to make single exon genes
+	  clickable...
+
+	<p> src/zmapDraw/zmapDraw.c: slight hack to make single exon genes
+	  clickable...	some explanation
+
+
+	<p> src/zmapServer/acedb/acedbServer.c: fix after a little bit of
+	  stupidity.  we now fetch dna and features rather than the
+	  features twice!
+
+
+	<p> src/zmapWindow/zmapWindow.c: make sure we paste feature sub
+	  coords into the selection buffer if they are selected.
+
+
+	<p> src/: runbootstrap, runconfig: add defines for 64 bit linux.
+
+
+	<p> src/: include/ZMap/zmapXML.h, lib/Makefile.am,
+	  zmapXML/zmapXMLWriter.c, zmapXML/zmapXML_P.h,
+	  zmapXML/zmapXMLUtils.c: more xml stuff, including some utils
+
+
+	<p> src/zmapFeature/zmapFeatureXML.c: fixing up mistakes with
+	  g_arrays and keeping up with xml changes
+
+
+	<p> src/zmapControl/zmapControlRemote.c: use xml utils
+
+
+	<p> src/zmapUtils/zmapGLibUtils.c: possibly unnecessary thread locks
+
+
+	<p> src/zmapControl/zmapControlRemote.c: more info about the view
+	  being created
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: create_client ->
+	  register_client
+
+
+	<p> src/zmapControl/remote/xremote_gui_test.c: program to test
+	  xremote
+
+
+	<p> src/zmapControl/zmapControlRemote.c: addition of zoom_to commands
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: parse location tag
+
+
+	<p> src/zmapWindow/zmapWindow.c: more zoom to position/feature
+	  functions
+
+
+	<p> src/include/ZMap/zmapWindow.h: more zoom to position/feature
+	  functions' prototypes
+
+
+	<p> src/Makefile.am: 2 new test programs, maybe we should have a
+	  separate directory for them...
+
+
+	<p> src/zmapXML/example_xml_writer.c: example xml writer
+
+
+	<p> src/zmapView/zmapView.c: don't recursively copy a null context.
+	  It doesn't work
+
+
+	<p> src/: zmapView/zmapView.c, zmapView/zmapView_P.h,
+	  include/ZMap/zmapWindow.h: kill blixem windows
+
+
+	<p> src/zmapControl/zmapControlRemote.c: make zoom to feature work!
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: consistency change to
+	  parsing register_client
+
+
+	<p> src/zmapControl/remote/xremote_gui_test.c: added list_clients
+	  button
+
+
+	<p> src/zmapWindow/zmapWindow.c: kill blixem windows
+
+
+	<p> src/zmapWindow/zmapWindowCallBlixem.c: use g_spawn_async instead
+	  of system call && kill blixem windows
+
+
+	<p> src/zmapWindow/zmapWindowMenus.c: record blicem pids so we can
+	  kill em later
+
+
+	<p> src/zmapWindow/zmapWindow_P.h: record blixem pids so we can kill
+	  em later
+
+
+	<p> src/zmapFeature/zmapFeature.c: copy enough of the context to
+	  reverse complement it
+
+
+	<p> src/zmapView/zmapView.c: reverse complement the input context if
+	  the display is reverse complemented.
+
+
+	<p> src/zmapWindow/zmapWindowItemFactory.c: fix for attempting to
+	  allocate HUGE amounts of memory... (Drawing Text)
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: single and multiple
+	  selections -> otterlace and clipboard changes
+
+
+	<p> src/zmapWindow/zmapWindow.c: single and multiple selections ->
+	  otterlace and clipboard changes
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: correct small mistake to stop
+	  multiple select across columns...
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: correct undisplay routines
+	  not to destroy features until they've finished going through ALL
+	  the windows in a view!
+
+
+	<p> src/: zmapWindow/zmapWindow.c, include/ZMap/zmapWindow.h: correct
+	  undisplay routines not to destroy features until they've finished
+	  going through ALL the windows in a view!
+
+
+	<p> src/zmapControl/zmapControlRemote.c: keep gcc quiet
+
+
+	<p> src/zmapUtils/: zmapGUIutils.c: correct minimum version for
+	  dialog...
+
+
+	<p> src/zmapThreads/zmapThreads.c: quick fix on Darwin
+
+
+	<p> src/zmapUtils/: zmapGUIutils.c: correct minimum version for
+	  dialog...
+
+
+
+<h3>Acedb Changes/Fixes</h3>
+
+
+	<p> w6/asubs.c: prevented listing dna after a dns kill operation in
+	  rare cases
+
+
+<!--#include virtual="/perl/footer"-->
+

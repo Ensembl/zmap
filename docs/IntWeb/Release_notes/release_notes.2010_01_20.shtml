@@ -1,0 +1,222 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '20 January 2010'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.80 </h5>
+
+
+<h5>Release Date: 20 January 2010</h5>
+
+
+<p>
+(Last release was on 15/01/2010)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=152345">152345</a>, Resolved (Wed Jan 20 11:42:30 2010)
+<p>doxygen docs not getting to dev. website.</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=153627">153627</a>, Resolved (Wed Jan 20 14:53:54 2010)
+<p>zmap crash on 'configure colum'</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=153980">153980</a>, Resolved (Tue Jan 19 18:20:25 2010)
+<p>test otterlace column hide not persistent between zooms</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=154773">154773</a>, Resolved (Tue Jan 19 14:19:35 2010)
+<p>from time to time my curated objects got overlapped</p>
+<p>ca1@sanger.ac.uk, vb1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=155595">155595</a>, Resolved (Sun Jan 17 10:25:15 2010)
+<p>Exon number display in top of Zmap - third panel</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=155812">155812</a>, Resolved (Wed Jan 20 10:45:55 2010)
+<p>testotterlace zmap crashes when exposing locator panel</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=155925">155925</a>, Resolved (Wed Jan 20 10:32:38 2010)
+<p>unused column in feature show window</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156034">156034</a>, Resolved (Tue Jan 19 17:18:37 2010)
+<p>Empty preferences dialog when blixem executable not found</p>
+<p>gb10@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156117">156117</a>, Resolved (Wed Jan 20 10:55:49 2010)
+<p>crashed on bumping ens_cdna</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> doc/Release_notes/release_notes.2010_01_15.shtml: new zmap
+	  release notes for 15 January 2010
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2010_01_15.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 15/01/2010
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.12481/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: reverted yesterdays non-fix
+
+
+  </li>
+  <li> doc/Grant/GRANT_APP.txt: sticking this here for now...
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: fix bug in exon number
+	  reporting when revcompd.
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: hack version to match lace
+	  version...temporary....
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: hack version to match lace
+	  version...temporary....
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: remove checking for
+	  existing feature as temp fix...
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowDraw.c,
+	  items/zmapWindowContainerFeatureSet.c,
+	  items/zmapWindowContainerGroup.c,
+	  items/zmapWindowContainerGroup.h: Fix setting of values in
+	  multiple styles so that zooming and hidden columns work again.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix my own stupid file
+	  permissions bug.
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeature.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerUtils.c,
+	  zmapWindow/zmapWindowItem.c: unsorted featuresets on new feature
+	  added to try to fix overlap bug - displayed format is now stable
+	  from first display. Difficult to test as cannot create overlap on
+	  demand
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: fixed indirection error
+	  in in windowDrawContextCB
+
+
+  </li>
+  <li> src/: zmapControl/zmapControlPreferences.c,
+	  zmapUtils/zmapGUINotebook.c, zmapView/zmapViewCallBlixem.c: fixed
+	  prefernces dialog for blixem path, now runs even if not
+	  congigured
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDraw.c: use new call to set display in
+	  feature set container.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowContainerFeatureSet.c,
+	  zmapWindowContainerFeatureSet.h: add new version of display mode
+	  setting code to fix bugs.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: fix up a few bugs in
+	  interactions between col dialog and menu hide.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.c: Silly
+	  uninitialized variable bug. Better now
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColBump.c, zmapWindowMenus.c,
+	  zmapWindow_P.h: made unbump all columns work as exepcted
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w9/blxFetch.c: Fixed a memory bug that was causing readConfigFile
+	  to fail on 64 bit machines
+
+
+  </li>
+  <li> w9/blxview.c: Added extra debug for the error in calcID where
+	  requested coords are out of range
+
+
+  </li>
+  <li> w7/smapconvert.c: add debug stuff to converthomol().
+
+
+  </li>
+  <li> w6/smap.c: fix stupid bug in sMapComposeMaps...got strand wrong
+	  for 1 base pair align blocks.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
