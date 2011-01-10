@@ -1,0 +1,211 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Wednesday 15th August 2007
+
+Attendees: th, edgrif, rds, jgrg, lw2, te3, st3
+
+
+1) otterlace + zmap progress
+============================
+
+High priority
+-------------
+
+
+0/ ZMap performance
+
+The only issue here is caused by the huge numbers of homologies.
+
+rds and edgrif have applied a number of fixes and we await feedback
+from users, initial feedback has been good.
+
+There is still a problem with the pipeline and pathological conditions
+that produce huge numbers of essentially useless homologies.
+
+
+
+1/ New zmap styles *************
+
+edgrif has now implemented this (with inheritance), jgrg needs
+to decide when to do the big swop. Waiting for jgrg.
+
+
+2/ Display of otter information
+
+edgrif and rds have implemented code in zmap to deal with otter ids etc but lace
+needs to export these so we can display them.
+
+3/ Vega
+
+can vega be built using the new otter schema ?
+
+
+4/ Ticket priority
+
+edgrif and rds need to sit down with Havana and reasign ticket priorities as there are
+too many on priority 7 making it impossible to prioritise.
+
+
+Medium priority
+---------------
+
+1/ DNA finder - Needs to show its find results location on the zmap as in
+fmap, would be nice to be colour coded depending on the strand. The finder
+needs to be extended to also do protein searches.  Searching should be
+restricted to any marked region is one is set, edgrif to do this.
+
+edgrif is implementing protein search now, location results to come (note that
+currently the user is shown a list of all hits and clicking on a hit takes
+the user to that hit).
+
+
+2/ There was a discussion about good ways to interact with
+alignments/transcripts for deletion and other actions. Leo and James have
+already worked out a lot of this with Leos transcript viewer. edgrif will get
+the rules from Leo and James and then we can discuss them and decide which to
+implement.
+
+
+3/ Annotation needs to have a history across assembly changes.
+
+kj2  requested that  when an  assembly changes  the objects  which get
+transferred  should have a  history as  to what  they were  (otter id)
+previously.  lw2 remarked that it's  possible to search for the old id
+in the lace  interface, but impossible to retrieve  the old object and
+display it.  jgrg  acknowledged there is a bug  in the lace searching,
+but  that   providing  the   history  would  be   difficult.   Further
+discussion/thought on how to implement this is needed.
+
+
+4/ look no mouse
+
+edgrif has implemented various ways of navigating which mean that
+zmap can largely be used without touching the mouse.
+
+
+5/ removing evidence already used
+
+annotators would like to be able to remove from display homologies that
+have already been used to annotate variants etc. Does this need to be
+persistent in the database in some way ??
+
+
+
+Low priority
+------------
+
+1/ jgrg suggested that short cuts should be given on menus/mouse-over popups
+to remind the user that they exist...edgrif to do this.
+
+
+2/ alternative translations: edgrif about half way through code to do this.
+
+edgrif is doing this as part of the protein search code since this code
+does translations itself. edgrif will talk to jgrg about how alternative
+genetic codes can be specified with acedb.
+
+We need a test database for this.
+
+
+3/ There was a discussion about how much a user should be able to
+configure. It was agreed that they should be able to configure which columns
+are initially hidden. They should also be able to "save" the current settings
+to set this up and to be able to restore the system or there currently saved
+defaults.
+
+edgrif or rds will do this.
+nothing  done, but  it  was  noted that  NO  enduser configuration  of
+colours should be possible!
+
+
+
+
+A new canvas
+------------
+
+
+rds has been looking at alternative canvas implementations which offer an MVC
+model. He has managed to get goocanvas developers to fix some bugs and make
+some changes to support our needs.
+
+the goocanvas MVC model will mean we do not have to copy data to split windows
+meaning greatly reduced memory usage.
+
+the goocanvas will cope automatically with the X Windows window size limit, this
+combined with changes in the gtk scrolling model means we will be able to do away
+with having two scroll bars.
+
+We plan to introduce this in the Autumn by which time it is likely to have become
+part of gtk as _the_ gtk canvas.
+
+
+
+Multiple alignments
+-------------------
+
+multiple alignments: edgrif is about a third of the way through implementing a
+more general way of displaying arbitrary blocks.  This will become a high
+priority item as we move to haplotypes etc.
+
+
+
+
+Changing the Assembly
+---------------------
+
+th made the good but frightening point that the world of annotation has
+changed to one where the annotator may well be making changes to the
+underlying assembly, he said that ensembl supports this and lace/zmap will
+need to. The consequences feel alarming.....
+
+edgrif and rds to think about this: would it mean that zmap would have to
+change the position of features on the fly as the user edits the
+assembly...some tricky pathological cases here....
+
+We will need smapping support in zmap to do this kind of thing. edgrif has
+a plan for extracting the smap code from acedb and making it a stand alone
+package.
+
+
+
+Builds
+------
+
+We now have a properly networked Mac, we need to include universal binaries.
+jgrg, edgrif & rds to work on this.
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite. Also protein searches
+will be added.
+
+- another issue is to incorporate James proxy into blixem and zmap, input
+needed from jgrg for this.
+
+
+
+2) Other matters
+================
+
+kj2 raised a question about how alignments were done for otter, jgrg said
+using BLAST and est2genome. Kerstin said that much more useful alignments
+could be made using BLAT or exonerate or ??? In particular, other alignment
+methods join up their matches where they are obviously "perfect" overall
+alignments (e.g. to consecutive exons) and cope with alignments where they go
+over clone boundaries.
+
+Mustapha is working on this.
+
+
+
+3) Next Meeting
+===============
+
+Will be at 2pm, 26th September 2007
+
+
+==============================================================================

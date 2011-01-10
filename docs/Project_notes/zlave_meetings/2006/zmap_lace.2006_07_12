@@ -1,0 +1,181 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Wens 12th July 2006
+
+Attendees: th, jla1, kj2, jgrg, edgrif
+
+
+1) otterlace + zmap progress
+============================
+
+
+new features
+------------
+
+- display of locus names, supposed to be done.
+
+- bumping, supposed to be done
+
+both these items require new version, this highlighted
+the following points:
+
+1) zmap team must deliver regular updates to anacode in a controlled
+and visible way (via RT ticket pointing James to latest release).
+
+2) anacode team must then release new zmap + their code quickly.
+
+3) havana guinea pig testers need to ensure zmap + anacode teams
+appreciate urgency/priority of requests, e.g. "I can't work without
+this item".
+
+
+
+- liz's treeview editing requests
+
+Liz needs to see extra data about objects when editting,
+James/Ed agreed that the correct way to do this is to have zmap
+communicate the selected object id to lace and then for lace to
+display the information in a separate window. This would mirror
+exactly the existing situation whereby Liz selects and object
+in fmap and its details are displayed in the acedb treeview display.
+
+This is a priority, since testing of zmap is blocked until this is
+done. Roy has done his bit so that feature information is passed
+back to lace, James to implement lace code in the next week.
+
+
+- RT queues
+
+We need zmap/anacode queues linked so tickets can be transferred
+between the two.
+
+James has started process of setting up RT - will be default for
+anacode email.  anacode-people for people.
+
+RT tickets: can't see other people's by default?  Would be better
+if you can.
+
+
+- match/alignment display
+
+kerstin would like to be able to cluster/join up alignments that clearly
+are all part of the same match. Ed says this will require a more generalised
+mechanism than exists in acedb currently. We could use the Join_homols tag
+with an Int field:
+
+        Join_homols nnnn  // where nnnn specfies an upper threshold in align
+                          // gap for joining two consecutive homols of the
+                          // same match.
+
+
+
+- blixem
+
+search for sequence string?  Horrible code, so just simple searching [ed]
+
+fetching sequences for blixem: pfetch quite fast now, but would be
+faster if pfetch cache?  either in acedb or separate []
+
+
+- acedb compilation [ed]:
+
+compiling to gtk2 - now working
+building for mac/linux; universal binaries soon.
+
+
+- external users:
+
+requires version checking [james]
+under apache can run multiple servers, so can handle version transition.
+
+- selenocysteine/alternative genetic codes :
+
+ed will check acedb code and make sure zmap can do the alternative
+translations.
+
+james will implement selenocysteine in new schema
+
+
+- zmap/otterlace demo
+
+In one weeks time: Wednesday 19th.
+
+
+- Zmap/otterlace new guinea pigs
+
+Charlie has been using it but stopped because he needs a bit of
+help in orientation...Ed/Roy need to help here.
+
+Gavin would also be good but needs the Gene Finder Features,
+Ed to expedite this...but will check with Kerstin/Gavin to
+make sure zmap provides the right display.
+
+
+- multiple alignments
+
+Ed said he has done more work on the flexibility of zmap to
+display these but is still unsure (as are we all ??) about
+exactly what sort of display is required. Zmap plan is to
+produce a straight forward display and get feedback.
+
+
+
+
+2) other matters
+================
+
+
+- DAS source and builds
+
+TH: DAS source for ditag data within 1 week (19th)
+TH: will build 19_36 mouse db + 19_36 human db
+
+
+- genelists were discussed:
+
+looked at genetracker developed by Roger/webteam:
+
+http://intweb.sanger.ac.uk/cgi-bin/utils/genetracker
+
+not being able to add extra columns a major issue.
+
+
+- extra tags
+
+Discussion about tags on clones and genes indicating status.  Need
+some long term solution for this.  Unclear if this should be in the
+gene list tracking system or in otterlace.
+
+For now, using Annotated_remark- annotated and Annotated_remark-
+inprogress for clones. Should be possible to set this status from
+the interface [James]
+
+Similar tags for states for genes should also be added.
+
+
+
+- EMBL dumping
+
+Needs to be possible for annotators to submit a clone on demand [James]
+
+EMBL dumping needs to be aware of gene + clone status tags.  If
+genes are annotated, but clone is not set to 'annotated' should add a
+comment to the header to warn that the annotation for the clone is
+currently partial.
+
+Need to be able to lock objects (transcripts) if a tag is set -
+i.e. CCDS tag [james says easy to fix]
+
+
+==============================================================================
+
+--
+ ------------------------------------------------------------------------
+| Ed Griffiths, Acedb development, Informatics Group,                    |
+|  The Morgan Building, Sanger Institute, Wellcome Trust Genome Campus   |
+|  Hinxton, Cambridge CB10 1HH                                           |
+|                                                                        |
+| email: edgrif@sanger.ac.uk  Tel: +44-1223-496844  Fax: +44-1223-494919 |
+ ------------------------------------------------------------------------

@@ -1,0 +1,174 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Thurs 2nd November 2006
+
+Attendees: th, jla1, jgrg, kj2, edgrif
+
+
+1) otterlace + zmap progress
+============================
+
+
+new features
+------------
+
+- Bug 14058, blixem reverse coords (reported by Gavin) is fixed.
+
+
+- Roy sat with Gavin (only) and that seemed to go well except for the above
+problem.
+
+BUT there is still a problem with turn around of bugs/fixes meaning that
+zmap is simply not being used enough.
+
+edgrif suggests that he and Roy sit with annotators this time to record bugs and
+then immediately go and fix them.
+
+
+- Navigator with clickable locus names and a display of the clone assembly
+is high priority. We need to allow the user to search for locus names within
+the navigator window. The locus names will also be displayed in the main
+column. 
+
+Roy pretty much has this finished now, will be in next release.
+
+
+- bumping of homols: Matches from the same est will have a background colour
+painted between them to make it obvious which matches go with which and perfect
+alignments will have "intron" connectors drawn between them. The intron conector
+code still needs to be written. This is a high priority item.
+
+edgrif raised performance as a problem when drawing _all_ homol matches as gapped.
+Problem is that zmap can end up drawing tens/hundreds of thousands of boxes, most
+of which are not needed.
+
+After some discussion it was agreed that code should sift out the "perfect" matches
+as defined by a "slop" factor set in the feature style and only draw those as
+gapped. They will need to be visually easily distinguishable by the annotators if
+this is to work. 
+
+edgrif agreed to do a prototype within 2 working days and demo to Jen/Kerstin/others.
+
+
+- the release notes for each release and the code version numbers are now
+available via the help menu in zmap. 
+
+They include:
+
+	- ZMap build version/release date
+
+	- ZMap Request Tracker tickets resolved
+
+	- acedb Request Tracker tickets resolved
+
+	- summary of ZMap Changes/Fixes
+
+	- summary of acedb Changes/Fixes
+
+this enables annotators to see what's been fixed and what code version they are
+running at a glance.
+
+
+- alternative translations: edgrif about half way through code to do this.
+
+- multiple alignments: edgrif is about a third of the way through implementing
+a more general way of displaying arbitrary blocks. This is a high priority item.
+
+- zmap needs to get sequences that are in acedb from there for blixem, means
+issuing a call to the server to get them but this is possible. NOTE that some
+sequences are _only_ in acedb.
+
+
+- we need a "back" button
+
+
+- DNA searching in zmap is done.
+
+- There is still a problem with the shutting down of the ace server which
+leads to a broken pipe message. edgrif will check that server shuts down
+in a timely way.
+
+edgrif said he had trouble reproducing but James has added new information to
+request tracker ticket and both jla1 and kj2 said it seemed to be linked to
+long running sessions. edgrif will investigate further.
+
+
+Builds
+------
+
+- we can now debug zmap using XCode environment + build universal binaries.
+
+- build system is still a problem as systems are dragging their feet about
+nfs mounts on mac boxes, edgrif will have another go and then th will
+help expedite.
+
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite.
+
+
+- pfetch: caching? NOT DONE + where should we cache ?
+
+
+
+multiple species
+----------------
+
+- James and Ed need to discuss how this will be done. Zmap can display
+multiple sequences in one zmap window but there will need to changes to
+the supporting infrastructure including:
+
+	- should the species go in one or multiple acedb databases
+
+	- the lace <-> zmap protocol needs to allow specification of
+	multiple sequence display.
+
+	- lace needs to allow the user to pick multiple species
+
+jla1 said a better test than Charlie and NOD mouse is Richard and haplotypes
+of which he may have up to 6 (!). jla1 said is there any limit to number, edgrif
+said "no, only machine memory....". To quickly test this edgrif will get data from
+Richard and try it out to look at performance. Simplest way is to just display
+data as is, this mimics what Richard does currently in fmap. edgrif said that
+if we used Compara alignment data we could just display the "sub-blocks" of the
+alignments that actually contained data. This would produce much more compact
+displays.
+
+
+Acedb
+-----
+
+- Treeview "preserve" bug is fixed.
+
+
+
+2) Other matters
+================
+
+
+sorry, this section is rather sparse...give me more information if you need to.
+
+- das - NOT DONE (th)
+
+
+- interface for tags: this is now done thanks to Leo/James.
+
+
+- submit button for EMBL dumping: needs testing by Jen.
+
+
+kj2 raised a question about how alignments were done for otter, jgrg said using
+BLAST and est2genome. Kerstin said that much more useful alignments could be made
+using BLAT or exonerate or ??? In particular, other alignment methods join up their
+matches where they are obviously "perfect" overall alignments (e.g. to consecutive
+exons) and cope with alignments where they go over clone boundaries.
+
+jgrg to think about this.
+
+
+==============================================================================

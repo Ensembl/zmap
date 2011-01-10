@@ -1,0 +1,324 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Thursday 22nd November 2007
+
+Attendees: edgrif, eah, jgrg, br2, st3, jla1, lw2
+
+
+1) otterlace + zmap progress
+============================
+
+
+High priority
+-------------
+
+
+0/ ZMap performance - contd.....
+
+There is still a problem with the pipeline and pathological conditions
+that produce huge numbers of essentially useless homologies. jgrg is
+thinking about how to do this. 
+
+edgrif investigating two possibilities for improving performance:
+
+	- make sgifaceserver stream data rather than batch it up, would
+	  save a lot of memory.
+
+	- deferred loading, only load features when needed and load in
+	  zone requested by user....design done...now need to implement.
+
+Have found X performance tools, very comprehensive. Plan is to run them
+on my machine as a benchmark and compare. Will produce noddy script that
+records the machines configuration, runs the X performance tool and produces
+a comparison with the benchmark. This way we can profile anyones machine
+who is having problems with performance.
+
+
+
+1/ New zmap styles *************
+
+edgrif has now implemented this (with inheritance), jgrg needs
+to decide when to do the big swop. jgrg said with the new schema
+work now almost done he is in a position to do this.
+
+should be done this week. edgrif to mail jgrg with info. about how
+to turn styles "on" in zmap.
+
+
+2/ Display of otter information
+
+Otter ids are now displayed. edgrif is reworking the feature display to match
+requirements from Mark who coordinated Havana input on this. ZMap code should be
+done this week and should include:
+
+lw2 also asked about DE line information display, edgrif asked lw2 to collect
+together requirements for information to be displayed. jla1 to chase up.
+
+39329:  PFAM info
+Possible to show a description associated with Halfwise (Pfam) objects in Zmap?
+Currently in lace we see the domain description as well as the pfam accession number
+(EAH) jgrg will pass this information over to zmap, in particular Ensembl URLs will
+be passed over.
+
+BLAST evidence info:
+Would it be possible to see what organism a piece of evidence belongs to, without
+having to pfetch each one individually? Also no info (field Title in Fmap) on EST/mRNA
+hits unless you pfetch (RJK, AF2, MT4) We need species and taxon data but some of
+this needs new database fields (jgrg to implement).
+
+
+3/ CDS translation
+
+Will be in next build which is early next week.
+
+
+
+4/ There was a discussion about how much a user should be able to
+configure. It was agreed that they should be able to configure which columns
+are initially hidden. They should also be able to "save" the current settings
+to set this up and to be able to restore the system or there currently saved
+defaults.
+
+edgrif has implemented code for this but now need eah and lw2 to report back with
+list of what users would like to be able to configure.
+
+jla1 said that configuration is required more at the group or DB level, we can
+already do this via lace setting up zmaps configuration files.
+
+
+5/ parsing names with embedded spaces...
+
+jgrg said there is a problem with zmap parsing gff where there are feature names
+with embedded spaces, edgrif to fix this asap. Also, the text following the object
+name needs to be displayed in the info. line when the feature is selected.
+
+
+6/ Consistency Test using ZMap
+
+jla1 said there will be a test in February using zmap, not xace. edgrif said he
+and Roy will make sure there is a stable version for then.
+
+
+
+Medium priority
+---------------
+
+0/ 5'and 3' EST read pairs
+
+we need these to be marked in zmap as in acedb, requires new tags in database in
+the same way as in worm database.
+
+
+1/ locator column: zmap needs a locator column as per fmap which could be
+used to display dna and peptide search results and other information.
+
+
+3/ Annotation needs to have a history across assembly changes.
+
+kj2  requested that  when an  assembly changes  the objects  which get
+transferred  should have a  history as  to what  they were  (otter id)
+previously.  lw2 remarked that it's  possible to search for the old id
+in the lace  interface, but impossible to retrieve  the old object and
+display it.  jgrg  acknowledged there is a bug  in the lace searching,
+but  that   providing  the   history  would  be   difficult.   Further
+discussion/thought on how to implement this is needed.
+
+jgrg said that this should be more possible with the new ensembl schema.
+
+
+4/ clone overlap display
+
+lw2 said users need to see more clone overlap data, jgrg has provided a
+suggestion for how this might be displayed.
+
+They would also like to be able to list features by clone rather than just
+by hit name or whatever.
+
+They would also like to see the clone name in lists of hsps....
+
+
+
+5/ removing evidence already used
+
+TOP PRIORITY
+
+annotators would like to be able to remove from display homologies that
+have already been used to annotate variants etc. Does this need to be
+persistent in the database in some way ?? edgrif & jgrg will get
+together to arrange this via styles so it can persist in a natural way
+in the database.
+
+**24526: Showing which evidence has been used
+Differential coloring of matches that have been used already as evidence
+for a transcript
+
+
+6/ Multiple alignments
+
+multiple alignments: edgrif is about a third of the way through implementing a
+more general way of displaying arbitrary blocks.  This will become a high
+priority item as we move to haplotypes etc.
+
+th said this would be needed soon so it should be moved up the priority list.
+
+
+7/ pfetch proxy
+
+jgrg has provided pseudo code, rds to implement.
+
+
+8/ Interface issues:
+
+
+extending marked region:
+
+jla1, eah and lw2 said users would like some way of interactively extending the
+marked area. edgrif to look at this perhaps using mouse action over the marked area.
+
+jla1 and lw2 said they would like the marked area to be less obvious an also to
+be a "greying" out rather than blue. edgrif to implement.
+
+jla1 said she would like to be able to click on an exon and see evidence (and
+transcripts ?) with the same splice be highlighted.
+
+
+Zooming set up:
+It would be very useful for large genes if the evidence, ensembl objects etc. did not
+disappear when you zoom out.  This happens faster in Zmap than in Fmap, but the havana
+objects do not disappear in either case. (MMS)
+
+edgrif explained that we need the new styles to fix this.
+
+
+
+Would it be possible to have an undo or back (like on a web browser) button? (AF2)
+
+rds is implementing this.
+
+
+9/ Future stuff
+
+edgrif said he would like annotators to start thinking/reporting two things:
+
+- repetitive tasks that could be automated.
+
+- new ways to highlight/select data to help build/annotate transcripts.
+
+
+
+
+Low priority
+------------
+
+
+1/ jgrg suggested that short cuts should be given on menus/mouse-over popups
+to remind the user that they exist...edgrif to do this.
+
+
+2/ alternative translations: edgrif about half way through code to do this.
+
+edgrif is doing this as part of the protein search code since this code
+does translations itself. edgrif will talk to jgrg about how alternative
+genetic codes can be specified with acedb.
+
+We need a test database for this. jgrg said this would come soon.
+
+
+3/ loutre schema and data representation changes
+
+We need some way to make sure st3 knows about changes anacode are making.
+jgrg and st3 to communicate more over this.
+
+
+
+2) Back To The Future
+=====================
+
+
+Leo's transcript display
+------------------------
+
+There was a discussion about good ways to interact with
+alignments/transcripts for deletion and other actions. Leo and James have
+already worked out a lot of this with Leos transcript viewer. edgrif will get
+the rules from Leo and James and then we can discuss them and decide which to
+implement. edgrif suggested that it might be good to have a separate window
+but jgrg said he thought it could be done within existing zmap by adding
+some new features.
+
+
+A new canvas
+------------
+
+rds has been looking at alternative canvas implementations which offer an MVC
+model. He has managed to get goocanvas developers to fix some bugs and make
+some changes to support our needs.
+
+the goocanvas MVC model will mean we do not have to copy data to split windows
+meaning greatly reduced memory usage.
+
+the goocanvas will cope automatically with the X Windows window size limit, this
+combined with changes in the gtk scrolling model means we will be able to do away
+with having two scroll bars.
+
+We plan to introduce this in the Autumn when it has become part of gtk
+as _the_ gtk canvas.
+
+
+
+Changing the Assembly
+---------------------
+
+th made the good but frightening point that the world of annotation has
+changed to one where the annotator may well be making changes to the
+underlying assembly, he said that ensembl supports this and lace/zmap will
+need to. The consequences feel alarming.....
+
+edgrif and rds to think about this: would it mean that zmap would have to
+change the position of features on the fly as the user edits the
+assembly...some tricky pathological cases here....
+
+We will need smapping support in zmap to do this kind of thing. edgrif has
+started work on an autoconf'd package to do this.
+
+
+Builds
+------
+
+rds has done the universal binary builds. So we can provide hand builds of them
+but still need to incorporate the system into our overnight build procedure.
+A labour of love not helped by fairly poor docs from Apple. But it is now
+working.
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite. Also protein searches
+will be added.
+
+
+
+2) Other matters
+================
+
+kj2 raised a question about how alignments were done for otter, jgrg said
+using BLAST and est2genome. Kerstin said that much more useful alignments
+could be made using BLAT or exonerate or ??? In particular, other alignment
+methods join up their matches where they are obviously "perfect" overall
+alignments (e.g. to consecutive exons) and cope with alignments where they go
+over clone boundaries.
+
+Mustapha is working on this.
+
+
+
+3) Next Meeting
+===============
+
+Will be at 2pm, 3rd January 2008
+
+
+==============================================================================
