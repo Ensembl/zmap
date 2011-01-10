@@ -1,0 +1,50 @@
+<!--#set var="banner" value="Genome Annotation Tools (GAT)"-->
+<!--#include virtual="/perl/header"-->
+
+<br />
+<h5>Workshop 9th/10th September 2008</h5>
+
+<br />
+<h6>
+<a href="./program.shtml">Program</a>
+| <a href="./proceedings.shtml">Proceedings</a>
+</h6>
+<br />
+
+<fieldset style="width:600px;">
+<legend>Organisers:</legend>
+<ul>
+  <li><a href="mailto:jla1@sanger.ac.uk">Jennifer Harrow</a> - Wellcome Trust Sanger Institute</li>
+  <li><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> - Wellcome Trust Sanger Institute</li>
+</ul>
+
+</fieldset>
+
+<br />
+<fieldset style="width:600px;" id="overview">
+<legend>Overview:</legend>
+<p>
+There are a number of different software systems that have
+grown up over the years and while there has been some convergence we seem to have
+reached some kind of steady state in many laboratories. It seems a good time for some
+"cross fertilisation" or even "hybridisation".....
+</p>
+
+<p>
+The aim of the workshop was to compare and contrast the different annotation
+software packages that genome centres use to see what they did well and less well,
+what we could learn and improve on and to look for possible collaborations in
+important areas of mutual interest.
+</p>
+
+<p>
+The format of the workshop was short demonstrations and talks on the various
+annotation systems followed by discussions as a group on
+important issues of mutual interest.
+</p>
+</fieldset>
+
+
+<br />
+
+<!--#include virtual="/perl/footer"-->

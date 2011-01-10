@@ -1,0 +1,572 @@
+<!--#set var="banner" value="Genome Annotation Tools (GAT)"-->
+<!--#include virtual="/perl/header"-->
+
+<h5>Proceedings of GAT Workshop 9th/10th September 2008</h5>
+
+<br />
+<h6>
+<a href="#talks">Talks</a>
+| <a href="#sessions">Chaired Sessions</a>
+| <a href="#actions">Actions</a>
+| <a href="#futures">Futures</a>
+</h6>
+
+
+<br />
+<fieldset style="width:600px;" id="overview">
+
+<legend>Overview:</legend>
+<p>
+There are a number of different software systems that have
+grown up over the years and while there has been some convergence we seem to have
+reached some kind of steady state in many laboratories. It seems a good time for some
+"cross fertilisation" or even "hybridisation".....
+</p>
+
+<p>
+The aim of the "workshop" was to compare and contrast the different annotation
+software packages that genome centres use to see what they do well
+and less well and what we could learn and improve on and collaborate on.
+</p>
+</fieldset>
+
+
+
+<br />
+<fieldset style="width:600px;" id="participants">
+
+<legend>Participants:</legend>
+<p>
+<pre>
+Tim Carver <tjc@sanger.ac.uk>
+James Gilbert <jgrg@sanger.ac.uk>
+Ed Griffiths <edgrif@sanger.ac.uk>
+Gregg Helt <gregghelt@gmail.com>
+Jennifer Harrow <jla1@sanger.ac.uk>
+Matt Holden <mh3@sanger.ac.uk>
+Felix Kokocinski <fsk@sanger.ac.uk>
+Dan Lawson <lawson@ebi.ac.uk>
+Suzanna Lewis <suzi@fruitfly.org>
+Anthony Rogers <ar2@sanger.ac.uk>
+Roy Storey <rds@sanger.ac.uk>
+David Swarbreck <dswarbreck@stanford.edu>
+Gary Williams <gw3@sanger.ac.uk>
+</pre>
+</p>
+
+</fieldset>
+
+
+
+<br />
+<h2 id="talks">Talks</h2>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Introduction - <a href="mailto:jla1@sanger.ac.uk">Jen Harrow</a></legend>
+
+<ul>
+  <li><a href="./slides/Jen_Harrow_summary.ppt">Slides</a></li>
+</ul>
+
+<p>TEXT NEEDED</p>
+
+</fieldset>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Otterlace/ZMap - <a href="mailto:jgrg@sanger.ac.uk">James Gilbert</a>
+&amp; <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a></legend>
+
+<ul>
+  <li><a href="./slides/GAT_jgrg_edgrif.ppt">Slides</a></li>
+</ul>
+
+<p>TEXT NEEDED</p>
+
+</fieldset>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Apollo/Flybase - <a href="mailto:suzi@fruitfly.org">Suzie Lewis</a></legend>
+
+<ul>
+  <li><a>No Slides</a></li>
+</ul>
+
+<h6>Apollo features</h6>
+
+<ul>
+  <li>horizontal tracks</li>
+  <li>uses chado db</li>
+  <li>supports a number of input/output formats: (chado, chadoxml, gff3, ensembl gff, genback/embl
+      game xml, blast etc...</li>
+  <li>edit window for creating/modifying transcripts
+  <li>has "undo" for edit actions
+</ul>
+      
+
+<h6>Issues</h6>
+
+<ul>
+  <li>How to represent SNP and other population data well.</li>
+  <li>Would really like to be able to run dynamic analysis from within apollo</li>
+</ul>
+
+
+<h6>Futures</h6>
+
+<ul>
+  <li>Developing use in education in schools but also for serious
+      bioinformatics courses.</li>
+  <li>improve integration with gbrowse (Ian Holmes with Lincoln...)</li>
+  <li>Would like to separate out the DB editting in Apollo from the display so apollo
+      editing could be used with gbrowse display engine. (Mitch Skinner is programmer)</li>
+  <li>Would like to support community annotation better:
+      Editing by many: have a cvs like system and notify when people are working on the
+      same section or do locking like we do now ??
+      Google source code system built on subversion, any good for annotation.</li>
+</ul>
+
+
+<h6>Demo</h6>
+
+
+<p>Main features</p>
+
+<ul>
+  <li>window is clearly divided into edittable and non-edittable features,  so you have a clearer
+      annotation area...but not that different from what we have anyway.
+  <li>showed the undo button.
+  <li>There are merge and split operations for exons and other useful annotation operations.
+  <li>have a separate exon viewer/editor, can drag exon boundaries on main window, can move around
+      easily between main and exon window.
+  <li>Easy to link out to urls.
+  <li>Apollo seems more intuitive because there are no coords in it, just look at the sequence and
+      the exon positions.
+  <li>You can drag and drop evidence blocks to build genes, e.g. add some evidence to create a new
+      exon. You can drag and drop start and stop features into a gene to truncate it or force reading
+      through, e.g. for selenocysteine. Can add frame shifts and allow for sequence errors
+      and rna editing.
+  <li>Has a bookmarking facility to go back to places.
+  <li>Can search the space for features.
+  <li>restriction digests kind of works but doesn't include wobble bases.
+</ul>
+
+
+</fieldset>
+
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>IGB - <a href="mailto:gregghelt@gmail.com">Gregg Helt</a></legend>
+
+<ul>
+  <li><a>No Slides</a></li>
+</ul>
+
+
+<h6>IGB Features</h6>
+
+<ul>
+  <li>Java code application so good portability.
+  <li>Semantic zooming gives summary data at lower magnifications moving
+      to detailed feature display as user zooms in, e.g.
+      shows "heat" maps of feature distribution.
+  <li>fast zooming via slider control + dialogs to override semantic zooming
+  <li>very rapid redisplay after columns are turned on/off
+  <li>uses deferred loading extensively to reduce amount of data loaded and
+      also custom data formats which are compressed allowing quicker loading.
+  <li>"splice" viewer, shows each exon with about 50 base pairs either side.
+  <li>For tracks with lots of data just loads into the visible region, can zoom out
+      and get more data...does not reload the same data.
+  <li>Semantic display: user can also do "logical" operations, e.g.
+      "show me areas where there is an 'a' match but not a 'b'"
+  <li>IGB is open source, repository in source forge.
+  <li>COPY NUmber viewer is an afymetrix spin off of IGB,  tuned to that project and non-computer literate people.
+</ul>
+
+
+</fieldset>
+
+
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Artemis & ACT - <a href="mailto:tjc@sanger.ac.uk">Tim Carver</a>
+&amp; <a href="mailto:mh3@sanger.ac.uk">Matt Holden</a></legend>
+
+<ul>
+  <li><a href="./slides/GAT-Artemis_ACT.ppt">Slides</a></li>
+</ul>
+
+<p>Artemis is the sequence viewer, ACT is the multiple sequence
+viewer which has Artemis integrated into it.
+
+<h6>Artemis Features</h6>
+
+<ul>
+  <li>Java program so good portability.
+  <li>Used at Sanger for pathogen annotation but used at other labs (mostly
+      Artemis, not ACT).
+  <li>runs off embl, genbank, gffv3 files.
+  <li>allows editing, navigation, dynamic blast runs.
+  <li>has analysis graphs (gc content etc)
+  <li>Has been used as  teaching tool (n.b. an interesting parallel with apollo)
+      for workshops all over the world. Especially in developing world.
+  <li>Gene builder window gives you a picture of the transcript for editing,
+      constrains data entry to make it more accurate.
+</ul>
+
+
+<h6>ACT Features</h6>
+
+<ul>
+  <li>ACT is artemis comparison tool, allows you to compare regions of similarity
+      and difference, has all of artemis stuff + can laucnch artemis from act.
+  <li>shows an overview of chromosomal rearrangements which shows how closely
+      related two organisms are...
+  <li>Very useful for rapid analysis...and then tozoom in to interesting sections.
+  <li>artemis and act communicate via a chado DB, under development
+  <li>Shows 3 frames automatically.
+  <li>artemis has a file loader dialog to get data from different sources.
+  <li>Good links from artemis to web data
+  <li>has some display of snip data and artemis can plot as graphs or 
+      individually, can create pseudo features to represent hot spots
+      for features.
+</ul>
+
+
+<h6>Issues</h6>
+
+<ul>
+  <li>Have been doing comparative analysis for years but horizontal layout a problem,
+      run out of screen space for comparison....
+  <li>now developing artemis to use chado to avoid problems of current system wtih
+      flat files...moving to server.
+  <li>Moving to community annotation:
+      <ul>
+	<li>artemis is doing the checking of features for multiple annotations
+	    of same feature and warns that it's happening.
+	<l>No rollback as yet. transacations and rollback remain an issue.
+      </ul>
+</ul>
+
+
+
+</fieldset>
+
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Wormbase tools - <a href="mailto:gw3@sanger.ac.uk">Gary Williams</a></legend>
+
+<ul>
+  <li><a href="./slides/Gary_Williams.ppt">Slides</a></li>
+</ul>
+
+
+<h6>Anomalies Spotter</h6>
+
+<p>The Wormbase curation strategy relies on gene predictors a lot but these are
+at best about 80% accurate. But these are checked against other data sources
+(e.g. homol data). But it's hard to find areas that are a problem by hand so
+automation is required.</p>
+
+
+<p>This system checks for incorrect structures e.g. frameshifts where there shouldn't
+be. overlapping exons, genes in repeat regions and so on.  The program takes this data and makes
+an "anomalies track which can then be displayed alongside other data. The annotator then
+investigates these and checks them off. Provides a good tool to flag up problem area so they don't
+slip through the cracks.</p>
+
+<p>The tool produces data that is database independent and it could interface
+to any program, currently acedb/xace is supported and a prototype for Artemis.
+This makes it applicable to any database that has need for a tool to
+monitor and flag up curation anomolies.
+
+
+<h6>Protein Display</h6>
+
+<p>horizontal layout, amalgamating mass spec data and much else
+to allow better and more detailed examination of protein
+evidence. gives better idea of which exons need work.
+</p>
+
+</fieldset>
+
+
+
+<br />
+<h2 id="sessions">Chaired Sessions</h2>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Data Interchange session -  chaired by <a href="mailto:gregghelt@gmail.com">Gregg Helt</a></legend>
+
+<ul>
+  <li><a>No Slides</a></li>
+</ul>
+
+
+<h6>DAS keypoints</h6>
+
+<ul>
+  <li>das 1 jgrg: frustrating because no set way of defining a transcript.
+  <li>das 1 vs das 2: how much effort to swop...? Not backwards compatible which has caused
+      a problem.
+  <li>das 3 would be a merge of specs that would please everyone....e.g. 3d stucture
+      in das 1
+  <li>das2 often incomplete: filtering by type.....often not implemented.
+      Feels like there isn't much push for das2....the ontology stuff feels
+      like hard work and the format is pretty complex.
+  <li>There are about 600 das sources so perhaps its better to make das 1 better ?
+</ul>
+
+<h6>SO keypoints</h6>
+
+<ul>
+  <li>SO terms are used sometimes....but correct usage ??
+  <li>we could use SO without all of it...Dan uses 6 or 7 terms...,
+      we could gradually move over to using SO stuff.
+  <li>Ed Griffiths will produce some exemplars....Dan has some examples but they
+use their own parser...so try it with our parser....use suzy and Karen
+as well.
+</ul>
+      
+<p>Examples would help with the uptake of newer more constrained (i.e. parseable)
+formats that use SO, e.g. GFF3.
+
+</fieldset>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>interclient communication -  chaired by <a href="mailto:suzi@fruitfly.org">????</a></legend>
+
+<ul>
+  <li><a href="./slides/IGB_HTTP_API.ppt">Slides - IGB Http Protocol</a></li>
+  <li><a href="./slides/interclient_api_rough_draft_2005.doc">Document - DAS 2 Protocol rough draft</a></li>
+  <li><a href="./slides/interclient_comms.ppt">Slides - ZMap Protocol</a></li>
+</ul>
+
+
+<h6>Different transport mechanisms</h6>
+
+<ul>
+  <li>http for IGB, accepts http requests to do stuff.
+  <li>we XAtoms, but also we use sockets to ace server.
+  <li>temp files
+</ul>
+
+<h6>Different protocols</h6>
+
+
+<ul>
+  <li>data protocol
+  <li>editor protocol
+  <li>viewer protocol
+</ul>
+
+<p>Common data formats do exist but a common interclient communication protocol does
+not exist so that components cannot be easily glued together.</p>
+
+
+<p>artemis, apollo and zmap would be a good starting pool of programs.</p>
+
+
+</fieldset>
+
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Data Display session -  chaired by <a href="mailto:suzi@fruitfly.org">Suzie Lewis</a></legend>
+
+<ul>
+  <li><a>No Slides</a></li>
+</ul>
+
+
+<p>TEXT NEEDED</p>
+
+</fieldset>
+
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>High Throughput Data session -  chaired by <a href="mailto:jgrg@sanger.ac.uk">James Gilbert</a></legend>
+
+<ul>
+  <li><a>No Slides</a></li>
+</ul>
+
+
+<h6>Reducing the data load</h6>
+
+
+<ul>
+  <li>lazy loading, active unloading ?
+  <li>How to filter many, many matches
+  <li>Suzi/apollo allow user to set filter levels
+  <li>Smarter display: EST viewing, 20 copies of the same one, display a density plot ?
+</ul>
+
+<h6>Difficult data</h6>
+
+<ul>
+  <li>displaying data where the species is unknown, just find genes
+      that they recognise on any bit of dna they have.
+  <li>using multiple aligns to check anomalies
+  <li>solexa reads are very short and harder to analyse across exons.
+  <li>Publications handling.....to make access easier...
+  <li>CNV display and snp display....snp not too bad but CNVs....??
+ 10% of genes could be CNV's how are they to be displayed ?
+</ul>
+
+
+
+</fieldset>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Syntenic alignments session -  chaired by <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a></legend>
+
+<ul>
+  <li><a href="./slides/Syntenic_annotation.ppt">Slides</a></li>
+</ul>
+
+
+</fieldset>
+
+
+
+<br />
+<h2 id="actions">Actions</h2>
+
+
+<br />
+<fieldset style="width:600px;">
+<legend>GFFv3 exemplars catalogue</legend>
+
+<p><b>Owners:</b> Ed Griffiths <edgrif@sanger.ac.uk></p>
+
+<p><b>Goal:</b> Produce a set of GFFv3 examples for common annotation features.</p>
+
+<p><b>Overview:</b></p>
+
+<p>GFFv3 is the most commonly supported data formats of the software at this workshop
+but presents some difficulties in it's adoption of SO to identify the types of
+features and feature subparts. SO is quite big and relations are not always obvious.
+Having some common examples will help people to get over this barrier and prevent
+the problems of GFFv2 and DASv1 where the same features can be represented in a number
+of different ways.</p>
+
+</fieldset>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>Interclient Communication Protocol</legend>
+
+<p><b>Owners:</b>roy, gregg, suzy, tim</p>
+
+<p><b>Goal:</b> Produce a protocol to allow annotation programs to communicate</p>
+
+<p><b>Overview:</b></p>
+
+<p>Annotation has some clearly emerging common data formats but the area of how
+annotation programs communicate directly is not well supported:
+
+<ul>
+  <li>The acedb xace program can be sent a small set of commands via it's xremote
+      mechanism.
+  <li>DASv2 has a draft protocol.
+  <li>ZMap and Otterlace communicate via an unpublished protocol.
+</ul>
+
+
+A formal protocol would allow programs to interoperate more easily enabling
+annotation centres to swop programs as required.
+</p>
+
+<p>Protocol aims:
+
+<ul>
+  <li>be independent of the communication mechanism (e.g. xatoms, http)
+  <li>Allow common annotation operations:
+      <ul>
+	<li>scrolling, zooming, moving to features.
+	<li>adding, removing of features
+      </ul>
+</ul>
+
+</p>
+
+Action: roy, gregg, suzy, tim to design a protocol for xatoms, http
+
+
+</fieldset>
+
+
+
+<br />
+<h2 id="futures">Futures</h2>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>"Off the shelf" pipelines</legend>
+
+<p>Suzie Lewis raised an essential issue: it's all very well providing
+browsers etc but what about the pipelines that provide the data ?</p>
+
+<p>Many small places just don't have the resources to program and maintain
+a pipeline, it's a missing link that could be filled if we had really good
+das sources....</p>
+
+<p>She knows of places that would use Apollo but they don't have a pipeline set up.</p>
+
+</fieldset>
+
+
+<br />
+<fieldset style="width:600px;">
+
+<legend>A blixem alternative</legend>
+
+<p>Dave Swarbreck said they were working on a blixem replacement because
+blixem cannot be run on windows machines. The Windows connection is difficult but
+it seems a shame to reinvent the wheel.
+
+
+</fieldset>
+
+
+
+
+
+<br />
+<!--#include virtual="/perl/footer"-->
