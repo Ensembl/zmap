@@ -1,0 +1,13 @@
+#!/bin/sh
+# generate a blank-ish html file
+# <!-- $Id: new,v 1.1 2011-01-10 15:43:19 edgrif Exp $ -->
+# need to sneak past cvs...
+(echo -n "<!-- $"; echo "Id$ -->") > $1.html
+echo "<h2>" $1 - $2 "</h2>" >> $1.html
+echo "<fieldset> <legend>Summary</legend>" >>$1.html
+echo "Forthcoming..."  >>$1.html
+echo "</fieldset>" >>$1.html
+
+docgen $1
+
+echo now update scripts/navbar.rel and design/index.html
