@@ -1,6 +1,6 @@
---- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-12-17 17:07:36.734545000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-12-17 17:12:10.157982000 +0000
-@@ -1,70 +1,69 @@
+--- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2011-01-11 11:47:51.847139000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2011-01-11 11:47:41.080006000 +0000
+@@ -1,70 +1,65 @@
 -AM_CPPFLAGS = \
 -	-I$(top_srcdir) 				\
 -	-I$(top_builddir)				\
@@ -25,29 +25,22 @@
 +include $(top_srcdir)/Makefile.common
  
 -libfoocanvasinclude_HEADERS =			\
+-	foo-canvas-line.h			\
+-	foo-canvas-pixbuf.h			\
+-	foo-canvas-polygon.h			\
+-	foo-canvas-rect-ellipse.h		\
+-	foo-canvas-text.h			\
+-	foo-canvas-util.h			\
+-	foo-canvas-widget.h			\
+-	foo-canvas.h				\
+-	libfoocanvas.h
 +SUBDIRS = .
 +
-+
 +noinst_LTLIBRARIES = libzmapfoocanvas.la
-+
-+
-+libzmapfoocanvasincludedir = $(INCLUDE_COMMON)/libzmapfoocanvas
-+
-+libzmapfoocanvasinclude_HEADERS =			\
- 	foo-canvas-line.h			\
-+	foozmap-canvas-line-glyph.h		\
- 	foo-canvas-pixbuf.h			\
- 	foo-canvas-polygon.h			\
- 	foo-canvas-rect-ellipse.h		\
- 	foo-canvas-text.h			\
-+	foozmap-canvas-text.h			\
-+	foozmap-canvas-floating-group.h		\
- 	foo-canvas-util.h			\
- 	foo-canvas-widget.h			\
- 	foo-canvas.h				\
- 	libfoocanvas.h
  
 -libfoocanvas_la_SOURCES =			\
++libzmapfoocanvasincludedir = $(top_srcdir)/libzmapfoocanvas
++
 +libzmapfoocanvas_la_SOURCES =			\
  	$(libfoocanvasinclude_HEADERS)		\
 -	foo-canvas-marshal.list			\
@@ -63,8 +56,21 @@
  	foo-canvas-util.c			\
  	foo-canvas-widget.c			\
  	foo-canvas.c				\
- 	libfoocanvastypes.c
- 
+-	libfoocanvastypes.c
++	libfoocanvastypes.c                     \
++	foo-canvas-line.h			\
++	foozmap-canvas-line-glyph.h		\
++	foo-canvas-pixbuf.h			\
++	foo-canvas-polygon.h			\
++	foo-canvas-rect-ellipse.h		\
++	foo-canvas-text.h			\
++	foozmap-canvas-text.h			\
++	foozmap-canvas-floating-group.h		\
++	foo-canvas-util.h			\
++	foo-canvas-widget.h			\
++	foo-canvas.h				\
++	libfoocanvas.h                          \
++	$(NULL)
 +
 +libzmapfoocanvas_la_CFLAGS = $(INCLUDE_COMMON)
 +
@@ -82,7 +88,7 @@
 +CLEANFILES = $(BUILT_SOURCES)
 +EXTRA_DIST = $(libzmapfoocanvas_la_marshal)   
 +
-+
+ 
  GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=foo_canvas_marshal
 -SUFFIXES = .list
  
