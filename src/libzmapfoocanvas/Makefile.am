@@ -7,7 +7,8 @@ SUBDIRS = .
 noinst_LTLIBRARIES = libzmapfoocanvas.la
 
 
-libzmapfoocanvasincludedir = $(INCLUDE_COMMON)/libzmapfoocanvas
+#libzmapfoocanvasincludedir = $(INCLUDE_COMMON)/libzmapfoocanvas
+libzmapfoocanvasincludedir = $(top_srcdir)/libzmapfoocanvas
 
 libzmapfoocanvasinclude_HEADERS =			\
 	foo-canvas-line.h			\
