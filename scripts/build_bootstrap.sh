@@ -114,8 +114,9 @@ if [ "x$gen_checkout_script" != "x" ]; then
   # unfortunately this needs recreating...
   _checkout_mk_cd_dir $zmap_tmp_dir
 
+  # Need -P prune flag to ensure we don't get a load of old empty directories.
   _checkout_message_out "Running cvs checkout $CVS_MODULE"
-  cvs -d$CVS_ROOT checkout -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
+  cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
   _checkout_message_out "cp -r $CVS_MODULE.master $CVS_MODULE"
   cp -r $CVS_MODULE.master $CVS_MODULE
 fi
