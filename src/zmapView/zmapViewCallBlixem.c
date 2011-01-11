@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jan 11 12:23 2011 (edgrif)
+ * Last edited: Jan 11 15:43 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.50 2011-01-11 12:26:31 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.51 2011-01-11 15:48:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -590,7 +590,8 @@ static gboolean initBlixemData(ZMapView view, int position, ZMapFeature feature,
   zMapAssert(block) ;
   blixem_data->block = block ;
 
-  blixem_data->file_format = BLX_FILE_FORMAT_EXBLX ;
+  /* ZMap uses the new blixem so default format is GFF by default. */
+  blixem_data->file_format = BLX_FILE_FORMAT_GFF ;
 
   if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
@@ -1006,10 +1007,8 @@ static gboolean setTmpPerms(char *path, gboolean directory)
 static gboolean buildParamString(blixemData blixem_data, char **paramString)
 {
   gboolean status = TRUE ;
-  int start, end ;
   int missed = 0;					    /* keep track of options we don't specify */
 
-  start = end = blixem_data->position ;
 
   /* we need to do this as blixem has pretty simple argv processing */
 
@@ -1037,8 +1036,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
 
   /* Start with blixem centred here. */
-  if (start)
+  if (blixem_data->position)
     {
+      int start, end ;
+
+      start = end = blixem_data->position ;
+
       if (blixem_data->view->revcomped_features)
 	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
