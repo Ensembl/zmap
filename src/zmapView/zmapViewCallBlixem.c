@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jan 10 16:49 2011 (edgrif)
+ * Last edited: Jan 11 12:23 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.49 2011-01-10 16:50:27 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.50 2011-01-11 12:26:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1006,10 +1006,10 @@ static gboolean setTmpPerms(char *path, gboolean directory)
 static gboolean buildParamString(blixemData blixem_data, char **paramString)
 {
   gboolean status = TRUE ;
-  int start ;
+  int start, end ;
   int missed = 0;					    /* keep track of options we don't specify */
 
-  start = blixem_data->position ;
+  start = end = blixem_data->position ;
 
   /* we need to do this as blixem has pretty simple argv processing */
 
@@ -1039,6 +1039,9 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* Start with blixem centred here. */
   if (start)
     {
+      if (blixem_data->view->revcomped_features)
+	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
+
       paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-S");
       paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start);
     }
