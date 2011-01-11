@@ -3,26 +3,13 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = .
 
-
 noinst_LTLIBRARIES = libzmapfoocanvas.la
 
 
+# should we have this...??? check where pfetch stuff is specified....???
 #libzmapfoocanvasincludedir = $(INCLUDE_COMMON)/libzmapfoocanvas
 libzmapfoocanvasincludedir = $(top_srcdir)/libzmapfoocanvas
 
-libzmapfoocanvasinclude_HEADERS =			\
-	foo-canvas-line.h			\
-	foozmap-canvas-line-glyph.h		\
-	foo-canvas-pixbuf.h			\
-	foo-canvas-polygon.h			\
-	foo-canvas-rect-ellipse.h		\
-	foo-canvas-text.h			\
-	foozmap-canvas-text.h			\
-	foozmap-canvas-floating-group.h		\
-	foo-canvas-util.h			\
-	foo-canvas-widget.h			\
-	foo-canvas.h				\
-	libfoocanvas.h
 
 libzmapfoocanvas_la_SOURCES =			\
 	$(libfoocanvasinclude_HEADERS)		\
@@ -38,8 +25,20 @@ libzmapfoocanvas_la_SOURCES =			\
 	foo-canvas-util.c			\
 	foo-canvas-widget.c			\
 	foo-canvas.c				\
-	libfoocanvastypes.c
-
+	libfoocanvastypes.c                     \
+	foo-canvas-line.h			\
+	foozmap-canvas-line-glyph.h		\
+	foo-canvas-pixbuf.h			\
+	foo-canvas-polygon.h			\
+	foo-canvas-rect-ellipse.h		\
+	foo-canvas-text.h			\
+	foozmap-canvas-text.h			\
+	foozmap-canvas-floating-group.h		\
+	foo-canvas-util.h			\
+	foo-canvas-widget.h			\
+	foo-canvas.h				\
+	libfoocanvas.h                          \
+	$(NULL)
 
 libzmapfoocanvas_la_CFLAGS = $(INCLUDE_COMMON)
 
