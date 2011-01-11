@@ -5,11 +5,7 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libzmapfoocanvas.la
 
-
-# should we have this...??? check where pfetch stuff is specified....???
-#libzmapfoocanvasincludedir = $(INCLUDE_COMMON)/libzmapfoocanvas
 libzmapfoocanvasincludedir = $(top_srcdir)/libzmapfoocanvas
-
 
 libzmapfoocanvas_la_SOURCES =			\
 	$(libfoocanvasinclude_HEADERS)		\
