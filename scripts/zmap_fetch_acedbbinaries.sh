@@ -34,6 +34,9 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
+zmap_message_out "Running $0 script...."
+
+
 zmap_message_out "Starting copying acedb source/binaries, Seqtools and AceConn dist files."
 
 
