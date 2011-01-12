@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov  4 16:04 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.300 2011-01-04 11:10:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.301 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -278,6 +278,8 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapAssert(window && full_context && diff_context) ;
 
+  zMapWindowCanvasBusy(window->canvas);
+
   zMapWindowBusy(window, TRUE) ;
 
   if(!window->item_factory)
@@ -474,6 +476,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   zmapWindowContainerRequestReposition(root_group);
 
   zMapWindowBusy(window, FALSE) ;
+  zMapWindowCanvasUnBusy(window->canvas);
 
   return ;
 }
@@ -740,7 +743,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
 
   /* Now draw all the features in the column. */
-  zMapStartTimer("DrawFeatureSet","ProcessFeature");
+//   zMapStartTimer("DrawFeatureSet","ProcessFeature");
 
   if(zMapWindowContainerSummarise(window,feature_set->style))
   {
@@ -837,11 +840,9 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
   	      /* Some columns are hidden initially, could be mag. level, 3 frame only display or
 	       * set explicitly in the style for the column. */
-	  zMapStartTimer("DrawFeatureSet","SetState");
 
 	  zmapWindowColumnSetState(window, forward_col_wcp, display, redraw_needed) ;
 
-	  zMapStopTimer("DrawFeatureSet","SetState");
     	}
 
       if (reverse_col_wcp)
@@ -1905,6 +1906,8 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id
 }
 
 
+
+
 /*
  * Create a Single Column.
  * This column is a Container, is created for one of the 6 possibilities of STRAND and FRAME.
@@ -2055,6 +2058,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	     g_quark_to_string(original_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       /* needs to accept style_list */
+
       zmapWindowContainerFeatureSetAugment((ZMapWindowContainerFeatureSet)container, window,
 					   align->unique_id,
 					   block->unique_id,

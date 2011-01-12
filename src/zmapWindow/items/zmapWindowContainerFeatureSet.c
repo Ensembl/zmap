@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.40 2011-01-04 11:10:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.41 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -201,6 +201,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 
   if(ZMAP_IS_CONTAINER_FEATURESET(container_set))
     {
+      gboolean visible;
 
       container_set->window    = window;
       container_set->strand    = strand;
@@ -212,8 +213,9 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 
       container_set->style = style;
 
+      visible = zmapWindowGetColumnVisibility(window,(FooCanvasGroup *) container_set);
 
-      zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, FALSE);
+      zmapWindowContainerSetVisibility((FooCanvasGroup *)container_set, visible);
     }
 
   return container_set;
@@ -481,7 +483,7 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
  */
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set)
 {
-  ZMapStyleColumnDisplayState display = ZMAPSTYLE_COLDISPLAY_SHOW;
+  ZMapStyleColumnDisplayState display;
 
   display = container_set->display_state ;
   if(display == ZMAPSTYLE_COLDISPLAY_INVALID)

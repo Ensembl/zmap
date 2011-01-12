@@ -73,6 +73,11 @@
 
 #include "foo-canvas-marshal.h"
 
+void (*foo_log_stack)(void) = NULL;
+int n_group_draw = 0;
+int n_item_pick = 0;
+void (*foo_timer)(char *, char *, char *) = NULL;
+
 static void foo_canvas_request_update (FooCanvas      *canvas);
 static void group_add                   (FooCanvasGroup *group,
 					 FooCanvasItem  *item, FooCanvasGroupPosition position);
@@ -351,6 +356,7 @@ redraw_and_repick_if_mapped (FooCanvasItem *item)
 	if (item->object.flags & FOO_CANVAS_ITEM_MAPPED) {
 		foo_canvas_item_request_redraw (item);
 		item->canvas->need_repick = TRUE;
+            item->canvas->need_redraw = TRUE;
 	}
 }
 
@@ -372,12 +378,14 @@ foo_canvas_item_dispose (GObject *object)
 		if (item == item->canvas->current_item) {
 			item->canvas->current_item = NULL;
 			item->canvas->need_repick = TRUE;
+                  item->canvas->need_redraw = TRUE;
 		}
 
 		if (item == item->canvas->new_current_item) {
 			item->canvas->new_current_item = NULL;
 			item->canvas->need_repick = TRUE;
-		}
+	            item->canvas->need_redraw = TRUE;
+      	}
 
 		if (item == item->canvas->grabbed_item) {
 			GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (item->canvas));
@@ -412,10 +420,10 @@ foo_canvas_item_realize (FooCanvasItem *item)
 {
 	if (item->parent && !(item->parent->object.flags & FOO_CANVAS_ITEM_REALIZED))
 		(* FOO_CANVAS_ITEM_GET_CLASS (item->parent)->realize) (item->parent);
-	
+
 	if (item->parent == NULL && !GTK_WIDGET_REALIZED (GTK_WIDGET (item->canvas)))
 		gtk_widget_realize (GTK_WIDGET (item->canvas));
-	
+
 	GTK_OBJECT_SET_FLAGS (item, FOO_CANVAS_ITEM_REALIZED);
 
 	foo_canvas_item_request_update (item);
@@ -427,7 +435,7 @@ foo_canvas_item_unrealize (FooCanvasItem *item)
 {
 	if (item->object.flags & FOO_CANVAS_ITEM_MAPPED)
 		(* FOO_CANVAS_ITEM_GET_CLASS (item)->unmap) (item);
-	
+
 	GTK_OBJECT_UNSET_FLAGS (item, FOO_CANVAS_ITEM_REALIZED);
 }
 
@@ -489,7 +497,7 @@ foo_canvas_item_invoke_update (FooCanvasItem *item,
 		if (FOO_CANVAS_ITEM_GET_CLASS (item)->update)
 			FOO_CANVAS_ITEM_GET_CLASS (item)->update (item, i2w_dx, i2w_dy, child_flags);
 	}
- 
+
 	/* If this fail you probably forgot to chain up to
 	 * FooCanvasItem::update from a derived class */
  	g_return_if_fail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
@@ -553,6 +561,7 @@ foo_canvas_item_set_valist (FooCanvasItem *item, const gchar *first_arg_name, va
 #endif
 
 	item->canvas->need_repick = TRUE;
+      item->canvas->need_redraw = TRUE;
 }
 
 
@@ -581,8 +590,12 @@ foo_canvas_item_move (FooCanvasItem *item, double dx, double dy)
 
         (* FOO_CANVAS_ITEM_GET_CLASS (item)->translate) (item, dx, dy);
 
-	if (item->object.flags & FOO_CANVAS_ITEM_MAPPED) 
-		item->canvas->need_repick = TRUE;
+	if (item->object.flags & FOO_CANVAS_ITEM_MAPPED)
+	{
+      	item->canvas->need_repick = TRUE;
+            item->canvas->need_redraw = TRUE;
+      }
+
 
 	if (!(item->object.flags & FOO_CANVAS_ITEM_NEED_DEEP_UPDATE)) {
 		item->object.flags |= FOO_CANVAS_ITEM_NEED_DEEP_UPDATE;
@@ -835,7 +848,7 @@ foo_canvas_item_show (FooCanvasItem *item)
 
 	if (!(item->object.flags & FOO_CANVAS_ITEM_VISIBLE)) {
 		item->object.flags |= FOO_CANVAS_ITEM_VISIBLE;
-		
+
 		if (!(item->object.flags & FOO_CANVAS_ITEM_REALIZED))
 			(* FOO_CANVAS_ITEM_GET_CLASS (item)->realize) (item);
 
@@ -870,7 +883,7 @@ foo_canvas_item_hide (FooCanvasItem *item)
 		item->object.flags &= ~FOO_CANVAS_ITEM_VISIBLE;
 
 		redraw_and_repick_if_mapped (item);
-		
+
 		if (item->object.flags & FOO_CANVAS_ITEM_MAPPED)
 			(* FOO_CANVAS_ITEM_GET_CLASS (item)->unmap) (item);
 
@@ -1091,14 +1104,14 @@ foo_canvas_item_grab_focus (FooCanvasItem *item)
 	item->canvas->focused_item = item;
 	gtk_widget_grab_focus (GTK_WIDGET (item->canvas));
 
-	if (focused_item) {                                                     
-		ev.focus_change.type = GDK_FOCUS_CHANGE;                        
+	if (focused_item) {
+		ev.focus_change.type = GDK_FOCUS_CHANGE;
 		ev.focus_change.window = GTK_LAYOUT (item->canvas)->bin_window;
-		ev.focus_change.send_event = FALSE;                             
-		ev.focus_change.in = TRUE;                                      
+		ev.focus_change.send_event = FALSE;
+		ev.focus_change.in = TRUE;
 
-		emit_event (item->canvas, &ev);                          
-	}                               
+		emit_event (item->canvas, &ev);
+	}
 }
 
 
@@ -1202,7 +1215,7 @@ enum {
 
 static void foo_canvas_group_class_init  (FooCanvasGroupClass *klass);
 static void foo_canvas_group_init        (FooCanvasGroup      *group);
-static void foo_canvas_group_set_property(GObject               *object, 
+static void foo_canvas_group_set_property(GObject               *object,
 					    guint                  param_id,
 					    const GValue          *value,
 					    GParamSpec            *pspec);
@@ -1258,7 +1271,7 @@ foo_canvas_group_get_type (void)
 			0,              /* n_preallocs */
 			(GInstanceInitFunc) foo_canvas_group_init
 
-	
+
 		};
 
 		group_type = g_type_register_static (foo_canvas_item_get_type (),
@@ -1438,7 +1451,7 @@ foo_canvas_group_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int 
 	bbox_x1 = 0;
 	bbox_y1 = 0;
 
-       if(item->object.flags & FOO_CANVAS_ITEM_VISIBLE){ 
+       if(item->object.flags & FOO_CANVAS_ITEM_VISIBLE){
 	for (list = group->item_list; list; list = list->next) {
 		i = list->data;
 
@@ -1505,7 +1518,7 @@ foo_canvas_group_map (FooCanvasItem *item)
 		    !(i->object.flags & FOO_CANVAS_ITEM_MAPPED)) {
 			if (!(i->object.flags & FOO_CANVAS_ITEM_REALIZED))
 				(* FOO_CANVAS_ITEM_GET_CLASS (i)->realize) (i);
-				
+
 			(* FOO_CANVAS_ITEM_GET_CLASS (i)->map) (i);
 		}
 	}
@@ -1542,6 +1555,8 @@ foo_canvas_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
 	GList *list;
 	FooCanvasItem *child = NULL;
 
+n_group_draw++;
+
 	group = FOO_CANVAS_GROUP (item);
 
 	for (list = group->item_list; list; list = list->next) {
@@ -1550,7 +1565,7 @@ foo_canvas_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
 		if ((child->object.flags & FOO_CANVAS_ITEM_MAPPED) &&
 		    (FOO_CANVAS_ITEM_GET_CLASS (child)->draw)) {
 			GdkRectangle child_rect;
-			
+
 			child_rect.x = child->x1;
 			child_rect.y = child->y1;
 			child_rect.width = child->x2 - child->x1 + 1;
@@ -1697,7 +1712,7 @@ foo_canvas_group_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2
 		maxx += group->xpos;
 		maxy += group->ypos;
 	}
-	
+
 	*x1 = minx;
 	*y1 = miny;
 	*x2 = maxx;
@@ -1736,7 +1751,7 @@ group_add (FooCanvasGroup *group, FooCanvasItem *item, FooCanvasGroupPosition po
 	    group->item.object.flags & FOO_CANVAS_ITEM_MAPPED) {
 		if (!(item->object.flags & FOO_CANVAS_ITEM_REALIZED))
 			(* FOO_CANVAS_ITEM_GET_CLASS (item)->realize) (item);
-		
+
 		if (!(item->object.flags & FOO_CANVAS_ITEM_MAPPED))
 			(* FOO_CANVAS_ITEM_GET_CLASS (item)->map) (item);
 	}
@@ -1861,7 +1876,7 @@ foo_canvas_get_type (void)
 }
 
 static void
-foo_canvas_get_property (GObject    *object, 
+foo_canvas_get_property (GObject    *object,
 			   guint       prop_id,
 			   GValue     *value,
 			   GParamSpec *pspec)
@@ -1874,7 +1889,7 @@ foo_canvas_get_property (GObject    *object,
 }
 
 static void
-foo_canvas_set_property (GObject      *object, 
+foo_canvas_set_property (GObject      *object,
 			   guint         prop_id,
 			   const GValue *value,
 			   GParamSpec   *pspec)
@@ -1899,12 +1914,12 @@ foo_canvas_accessible_adjustment_changed (GtkAdjustment *adjustment,
 }
 
 static void
-foo_canvas_accessible_initialize (AtkObject *obj, 
+foo_canvas_accessible_initialize (AtkObject *obj,
 				  gpointer   data)
 {
 	FooCanvas *canvas;
 
-	if (ATK_OBJECT_CLASS (accessible_parent_class)->initialize != NULL) 
+	if (ATK_OBJECT_CLASS (accessible_parent_class)->initialize != NULL)
 		ATK_OBJECT_CLASS (accessible_parent_class)->initialize (obj, data);
 
 	canvas = FOO_CANVAS (data);
@@ -1916,7 +1931,7 @@ foo_canvas_accessible_initialize (AtkObject *obj,
 			  "value_changed",
 			  G_CALLBACK (foo_canvas_accessible_adjustment_changed),
 			  obj);
-	
+
 	obj->role = ATK_ROLE_LAYERED_PANE;
 }
 
@@ -1970,9 +1985,9 @@ foo_canvas_accessible_ref_child (AtkObject *obj,
 	g_return_val_if_fail (root_group, NULL);
 	atk_object = atk_gobject_accessible_for_object (G_OBJECT (root_group));
 	g_object_ref (atk_object);
-	
+
 	g_warning ("Accessible support for FooGroup needs to be implemented");
-	
+
 	return atk_object;
 }
 
@@ -2062,7 +2077,7 @@ foo_canvas_accessible_factory_class_init (AtkObjectFactoryClass *klass)
 	klass->create_accessible = foo_canvas_accessible_factory_create_accessible;
 	klass->get_accessible_type = foo_canvas_accessible_factory_get_accessible_type;
 }
- 
+
 static GType
 foo_canvas_accessible_factory_get_type (void)
 {
@@ -2134,7 +2149,7 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      G_STRUCT_OFFSET (FooCanvasClass, draw_background),
 			      NULL, NULL,
 			      foo_canvas_marshal_VOID__INT_INT_INT_INT,
-			      G_TYPE_NONE, 4, 
+			      G_TYPE_NONE, 4,
 			      G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
 
 	canvas_signals[DRAWN_ITEMS] =
@@ -2144,7 +2159,7 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      0,
 			      NULL, NULL,
 			      foo_canvas_marshal_VOID__INT_INT_INT_INT,
-			      G_TYPE_NONE, 4, 
+			      G_TYPE_NONE, 4,
 			      G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
 
 	canvas_signals[BEGIN_UPDATE] =
@@ -2154,7 +2169,7 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      0,
 			      NULL, NULL,
 			      foo_canvas_marshal_VOID__VOID,
-			      G_TYPE_NONE, 0); 
+			      G_TYPE_NONE, 0);
 
 	canvas_signals[END_UPDATE] =
 		g_signal_new ("end_update",
@@ -2163,7 +2178,7 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      0,
 			      NULL, NULL,
 			      foo_canvas_marshal_VOID__VOID,
-			      G_TYPE_NONE, 0); 
+			      G_TYPE_NONE, 0);
 
 	canvas_signals[BEGIN_MAP] =
 		g_signal_new ("begin_map",
@@ -2172,7 +2187,7 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      0,
 			      NULL, NULL,
 			      foo_canvas_marshal_VOID__VOID,
-			      G_TYPE_NONE, 0); 
+			      G_TYPE_NONE, 0);
 
 	canvas_signals[END_MAP] =
 		g_signal_new ("end_map",
@@ -2181,7 +2196,7 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      0,
 			      NULL, NULL,
 			      foo_canvas_marshal_VOID__VOID,
-			      G_TYPE_NONE, 0); 
+			      G_TYPE_NONE, 0);
 
 
 	atk_registry_set_factory_type (atk_get_default_registry (),
@@ -2237,6 +2252,7 @@ foo_canvas_init (FooCanvas *canvas)
 		"destroy", G_CALLBACK (panic_root_destroyed), canvas);
 
 	canvas->need_repick = TRUE;
+      canvas->need_redraw = TRUE;
 	canvas->doing_update = FALSE;
 }
 
@@ -2511,7 +2527,7 @@ scroll_to (FooCanvas *canvas, int cx, int cy)
 	if ((scroll_width != (int) canvas->layout.width) || (scroll_height != (int) canvas->layout.height)) {
 		gtk_layout_set_size (GTK_LAYOUT (canvas), scroll_width, scroll_height);
 	}
-	
+
 	/* Signal GtkLayout that it should do a redraw. */
 	if (changed_x)
 		g_signal_emit_by_name (G_OBJECT (canvas->layout.hadjustment), "value_changed");
@@ -2677,7 +2693,7 @@ emit_event (FooCanvas *canvas, GdkEvent *event)
 		g_signal_emit (
 		       G_OBJECT (item), item_signals[ITEM_EVENT], 0,
 			&ev, &finished);
-		
+
 		parent = item->parent;
 		g_object_unref (GTK_OBJECT (item));
 
@@ -2699,6 +2715,7 @@ pick_current_item (FooCanvas *canvas, GdkEvent *event)
 	int retval;
 
 	retval = FALSE;
+n_item_pick++;
 
 	/* If a button is down, we'll perform enter and leave events on the
 	 * current item, but not enter on any other item.  This is more or less
@@ -2917,8 +2934,14 @@ foo_canvas_motion (GtkWidget *widget, GdkEventMotion *event)
 		return FALSE;
 
 	canvas->state = event->state;
-	pick_current_item (canvas, (GdkEvent *) event);
-	return emit_event (canvas, (GdkEvent *) event);
+
+#if MH17_PROCESS_MOTION       /* this is very slow with 300k features and only the canvas processes it */
+      pick_current_item (canvas, (GdkEvent *) event);
+printf("foo_canvas_motion: pick returns %p\n",canvas->current_item);
+      return emit_event (canvas, (GdkEvent *) event);
+#else
+      return FALSE;
+#endif
 }
 
 /* Key event handler for the canvas */
@@ -2926,12 +2949,12 @@ static gint
 foo_canvas_key (GtkWidget *widget, GdkEventKey *event)
 {
 	FooCanvas *canvas;
-	
+
 	g_return_val_if_fail (FOO_IS_CANVAS (widget), FALSE);
 	g_return_val_if_fail (event != NULL, FALSE);
 
 	canvas = FOO_CANVAS (widget);
-	
+
 	if (emit_event (canvas, (GdkEvent *) event))
 		return TRUE;
 	if (event->type == GDK_KEY_RELEASE)
@@ -3004,15 +3027,20 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 #ifdef VERBOSE
 	g_print ("Expose\n");
 #endif
-	/* If there are any outstanding items that need updating, do them now */
+n_group_draw = n_item_pick = 0;
+
+      /* If there are any outstanding items that need updating, do them now */
 	if (canvas->idle_id) {
 		g_source_remove (canvas->idle_id);
 		canvas->idle_id = 0;
 	}
+
 	if (canvas->need_update) {
 		g_return_val_if_fail (!canvas->doing_update, FALSE);
 
 		g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_UPDATE], 0);
+
+            if(foo_timer) foo_timer("Start","canvas_expose","do_update");
 
 		canvas->doing_update = TRUE;
 		foo_canvas_item_invoke_update (canvas->root, 0, 0, 0);
@@ -3021,6 +3049,8 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 
 		canvas->doing_update = FALSE;
 
+            if(foo_timer) foo_timer("Stop","canvas_expose","do_update");
+
 		canvas->need_update = FALSE;
 
 		g_signal_emit(G_OBJECT (canvas), canvas_signals[END_UPDATE], 0);
@@ -3028,25 +3058,39 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 
 	/* Hmmm. Would like to queue antiexposes if the update marked
 	   anything that is gonna get redrawn as invalid */
-	
-	
-	g_signal_emit (G_OBJECT (canvas), canvas_signals[DRAW_BACKGROUND], 0, 
+
+
+	g_signal_emit (G_OBJECT (canvas), canvas_signals[DRAW_BACKGROUND], 0,
 		       event->area.x, event->area.y,
 		       event->area.width, event->area.height);
-	
+
 	if (canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
-		(* FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->draw) (canvas->root,
+      {
+//            if(canvas->need_redraw)
+// we get a flicker then a blank window
+                  if(foo_timer) foo_timer("Start","canvas_expose","draw");
+
+		      (* FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->draw) (canvas->root,
 								      canvas->layout.bin_window,
 								      event);
+                  if(foo_timer) foo_timer("Stop","canvas_expose","draw");
 
-
+            canvas->need_redraw = FALSE;
+      }
 
 	/* Chain up to get exposes on child widgets */
 	GTK_WIDGET_CLASS (canvas_parent_class)->expose_event (widget, event);
 
-	g_signal_emit (G_OBJECT (canvas), canvas_signals[DRAWN_ITEMS], 0, 
+	g_signal_emit (G_OBJECT (canvas), canvas_signals[DRAWN_ITEMS], 0,
 		       event->area.x, event->area.y,
 		       event->area.width, event->area.height);
+
+if(foo_timer)
+{
+       printf("expose complete: %d items picked, %d groups drawn in %d,%d-%d,%d\n",
+            n_item_pick, n_group_draw,
+            event->area.x, event->area.y,event->area.width, event->area.height);
+}
 
 	return FALSE;
 }
@@ -3076,12 +3120,15 @@ update_again:
 
 		g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_UPDATE], 0);
 
+            if(foo_timer) foo_timer("Start","do_update","");
+
 		canvas->doing_update = TRUE;
 		foo_canvas_item_invoke_update (canvas->root, 0, 0, 0);
 
 		g_return_if_fail (canvas->doing_update);
 
 		canvas->doing_update = FALSE;
+            if(foo_timer) foo_timer("Stop","do_update","");
 
 		canvas->need_update = FALSE;
 
@@ -3203,6 +3250,8 @@ foo_canvas_set_scroll_region (FooCanvas *canvas, double x1, double y1, double x2
 	scroll_to (canvas, xofs, yofs);
 
 	canvas->need_repick = TRUE;
+      canvas->need_redraw = TRUE;
+
 
 	if (!(canvas->root->object.flags & FOO_CANVAS_ITEM_NEED_DEEP_UPDATE)) {
 		canvas->root->object.flags |= FOO_CANVAS_ITEM_NEED_DEEP_UPDATE;
@@ -3331,14 +3380,14 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 		attributes.visual = gtk_widget_get_visual (widget);
 		attributes.colormap = gtk_widget_get_colormap (widget);
 		attributes.event_mask = GDK_VISIBILITY_NOTIFY_MASK;
-		
+
 		attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
-		
+
 		window = gdk_window_new (gtk_widget_get_parent_window (widget),
 					 &attributes, attributes_mask);
 		gdk_window_set_back_pixmap (window, NULL, FALSE);
 		gdk_window_set_user_data (window, widget);
-		
+
 		gdk_window_show (window);
 	}
 
@@ -3358,6 +3407,7 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 	}
 
 	canvas->need_repick = TRUE;
+      canvas->need_redraw = TRUE;
 }
 
 /**
@@ -3511,10 +3561,10 @@ foo_canvas_w2c (FooCanvas *canvas, double wx, double wy, int *cx, int *cy)
 	double zoom_x, zoom_y;
 
 	g_return_if_fail (FOO_IS_CANVAS (canvas));
-	
+
 	zoom_x = canvas->pixels_per_unit_x;
 	zoom_y = canvas->pixels_per_unit_y;
-	
+
 	if (cx)
 		*cx = floor ((wx - canvas->scroll_x1)*zoom_x + canvas->zoom_xofs + 0.5);
 	if (cy)
@@ -3564,7 +3614,7 @@ foo_canvas_w2c_d (FooCanvas *canvas, double wx, double wy, double *cx, double *c
 
 	zoom_x = canvas->pixels_per_unit_x;
 	zoom_y = canvas->pixels_per_unit_y;
-	
+
 	if (cx)
 		*cx = (wx - canvas->scroll_x1)*zoom_x + canvas->zoom_xofs;
 	if (cy)
@@ -3591,7 +3641,7 @@ foo_canvas_c2w (FooCanvas *canvas, int cx, int cy, double *wx, double *wy)
 
 	zoom_x = canvas->pixels_per_unit_x;
 	zoom_y = canvas->pixels_per_unit_y;
-	
+
 	if (wx)
 		*wx = (cx - canvas->zoom_xofs)/zoom_x + canvas->scroll_x1;
 	if (wy)
@@ -3753,11 +3803,11 @@ boolean_handled_accumulator (GSignalInvocationHint *ihint,
 {
 	gboolean continue_emission;
 	gboolean signal_handled;
-	
+
 	signal_handled = g_value_get_boolean (handler_return);
 	g_value_set_boolean (return_accu, signal_handled);
 	continue_emission = !signal_handled;
-	
+
 	return continue_emission;
 }
 
@@ -3779,7 +3829,7 @@ foo_canvas_item_accessible_add_focus_handler (AtkComponent    *component,
                                                        G_CALLBACK (handler), NULL,
                                                        (GClosureNotify) NULL),
                                                        FALSE);
-	} 
+	}
 	return 0;
 }
 
@@ -3993,7 +4043,7 @@ foo_canvas_item_accessible_ref_state_set (AtkObject *accessible)
 	} else {
                 if (item->object.flags & FOO_CANVAS_ITEM_VISIBLE) {
 			atk_state_set_add_state (state_set, ATK_STATE_VISIBLE);
-			
+
 			if (foo_canvas_item_accessible_is_item_on_screen (item)) {
   				atk_state_set_add_state (state_set, ATK_STATE_SHOWING);
        			}
@@ -4104,7 +4154,7 @@ foo_canvas_item_accessible_factory_class_init (AtkObjectFactoryClass *klass)
 	klass->create_accessible = foo_canvas_item_accessible_factory_create_accessible;
 	klass->get_accessible_type = foo_canvas_item_accessible_factory_get_accessible_type;
 }
- 
+
 static GType
 foo_canvas_item_accessible_factory_get_type (void)
 {
@@ -4147,7 +4197,7 @@ foo_canvas_item_class_init (FooCanvasItemClass *klass)
 		 g_param_spec_object ("parent", NULL, NULL,
 				      FOO_TYPE_CANVAS_ITEM,
 				      G_PARAM_READWRITE));
-	
+
 	g_object_class_install_property
 		(gobject_class, ITEM_PROP_VISIBLE,
 		 g_param_spec_boolean ("visible", NULL, NULL,
@@ -4175,7 +4225,7 @@ foo_canvas_item_class_init (FooCanvasItemClass *klass)
                                        foo_canvas_item_accessible_factory_get_type ());
 }
 
-void 
+void
 foo_canvas_zmap(void)
 {
 	/* dummy function, used simply to test that this is the zmap

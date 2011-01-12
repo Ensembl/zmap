@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 12 11:28 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.347 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.348 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,7 +56,8 @@
 
 //#include <ZMap/zmapGFF.h>     // for featureset structs
 
-
+#include <zmapWindowCanvasItem_I.h>     // for debugging
+#include <zmapWindowAlignmentFeature_I.h>       //for debugging
 
 
 /* Local struct to hold current features and new_features obtained from a server and
@@ -824,8 +825,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   zMapStopTimer("WindowFeatureRedraw","Revcomp");
 
   /* wrap the resetCanvas and set scroll region in a expose free cape */
-  zmapWindowInterruptExpose(window);
 
+  zmapWindowInterruptExpose(window);
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
   zMapStopTimer("WindowFeatureRedraw","ResetCanvas");
@@ -4324,12 +4325,15 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
     case GDK_D:
-      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
+//      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
+      printf("sizes: gtkobject %d foocanvasitem %d foocanvasgroup %d zmapcanvasitem %d zmapwindowcontainergroup %d zmapwindowalignmentfeature %d\n",
+            sizeof(GtkObject),sizeof(struct _FooCanvasItem),sizeof(struct _FooCanvasGroup),
+            sizeof(zmapWindowCanvasItemStruct),sizeof(zmapWindowContainerGroupStruct), sizeof(zmapWindowAlignmentFeatureStruct));
       break;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #if MH17_DONT_INCLUDE

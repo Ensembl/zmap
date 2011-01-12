@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.18 2010-11-01 09:59:07 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.19 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,8 +98,6 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowConta
 								 ZMapFeatureTypeStyle         style2copy);
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
 							      GQuark                       style_unique_id);
-ZMapFeatureTypeStyle zmapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container_set,
-							   ZMapFeature                  feature);
 GQuark               zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeatureSet container_set);
 GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set);
 

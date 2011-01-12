@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.30 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.31 2011-01-12 16:56:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -145,12 +145,26 @@ static gboolean enable_core_dumping_G = TRUE;
  * routines inside threads.
  * Note that the package expects the caller to have called  g_thread_init() before calling this
  * function. */
+
+void zmapfoo_print_time(char *x, char *y, char *z)
+{
+      zMapPrintTime(x,y,z);   /* is a macro */
+}
+
 gboolean zMapLogCreate(char *logname)
 {
   gboolean result = FALSE ;
   ZMapLog log = log_G ;
 
   zMapAssert(!log) ;
+
+#if 1 // MH17_debug_foo_canvas
+extern void (*foo_log_stack)(void);
+extern void (*foo_timer)(char *, char *, char *);
+
+foo_log_stack = zMapPrintStack;
+foo_timer = zmapfoo_print_time;;
+#endif
 
   log_G = log = createLog() ;
 

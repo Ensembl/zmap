@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.134 2011-01-04 11:10:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.135 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -308,6 +308,62 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
  */
 
 
+/* return state column should be in
+ * so that we can set the initial state to what we want to avoid focanvasing it twice
+ */
+gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_group)
+{
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) column_group;
+  ZMapFeatureTypeStyle style = zMapWindowContainerFeatureSetGetStyle(container);
+  ZMapStyleColumnDisplayState curr_col_state ;
+  ZMapStyle3FrameMode frame_mode ;
+  gboolean frame_sensitive ;
+  gboolean visible = TRUE;
+  gboolean mag_visible, frame_visible, frame_displayed = TRUE ;
+
+  zMapAssert(style);
+
+  if(!style->displayable)
+      return(FALSE);
+
+  curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+
+  switch(curr_col_state)
+  {
+  case ZMAPSTYLE_COLDISPLAY_HIDE:
+      visible = FALSE;
+      break;
+
+  case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
+
+      frame_sensitive = zmapWindowContainerFeatureSetIsFrameSpecific(container, &frame_mode) ;
+
+      mag_visible = zmapWindowColumnIsMagVisible(window, column_group);
+
+      frame_visible = zmapWindowColumnIs3frameVisible(window, column_group) ;
+
+      if (IS_3FRAME(window->display_3_frame) && frame_sensitive)
+            frame_displayed = zmapWindowColumnIs3frameDisplayed(window, column_group) ;
+
+          /* Check mag, mark, compress etc. etc....probably need some funcs in compress/mark/mag
+           * packages to return whether a column should be hidden.... */
+      if (mag_visible && frame_visible && (!frame_sensitive || frame_displayed))
+            visible = TRUE;
+      break;
+
+  case ZMAPSTYLE_COLDISPLAY_SHOW:
+      visible = TRUE;
+      break;
+
+  default:
+      /* set to INVALID (ie 0) on column creation */
+      visible = TRUE;
+      break;
+  }
+
+  return(visible);
+}
+
 /* This function sets the current visibility of a column according to the column state,
  * this may be easy (off or on) or may depend on current mag state/mark, frame state or compress
  * state. If !new_col_state then the current column state is used to set the show/hide state,
@@ -320,15 +376,13 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 {
   ZMapWindowContainerFeatureSet container;
   ZMapStyleColumnDisplayState curr_col_state ;
-  ZMapStyle3FrameMode frame_mode ;
-//  gboolean test_mag = TRUE;
-  gboolean frame_sensitive ;
+  gboolean cur_visible,new_visible;
+
+  zMapStartTimer("SetState","");
 
   container = (ZMapWindowContainerFeatureSet)column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
-
-  frame_sensitive = zmapWindowContainerFeatureSetIsFrameSpecific(container, &frame_mode) ;
 
   /* Do we need a redraw....not every time..... */
   if (!new_col_state || new_col_state != curr_col_state || redraw_if_needed)
@@ -336,77 +390,46 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       gboolean redraw = FALSE ;
 
       if (!new_col_state)
-        {
-//          test_mag = FALSE;
-          // we are creating the column: mag not vis due to no features
-          // but we still want it to be visible
-          // a bit hacky, but less grief than adding a new flag
-
-	    new_col_state = curr_col_state ;
+      {
+          new_col_state = curr_col_state ;
+          cur_visible = FALSE;
         }
+      else
+      {
+            cur_visible = zmapWindowGetColumnVisibility(window,column_group);
+      }
 
-      switch (new_col_state)
-	{
-	case ZMAPSTYLE_COLDISPLAY_HIDE:
-	  {
-	    /* Always hide column. */
-	    zmapWindowContainerSetVisibility(column_group, FALSE) ;
-
-	    redraw = TRUE ;
-	    break ;
-	  }
-	case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
-	  {
-	    gboolean mag_visible, frame_visible, frame_displayed = TRUE ;
-
-// ha ha ... this runs nearly 2x slower and we get blank columns
-//	    mag_visible = test_mag ? zmapWindowColumnIsMagVisible(window, column_group) : TRUE ;
-	    mag_visible = zmapWindowColumnIsMagVisible(window, column_group);;
-
-	    frame_visible = zmapWindowColumnIs3frameVisible(window, column_group) ;
-
-	    if (IS_3FRAME(window->display_3_frame) && frame_sensitive)
-	      frame_displayed = zmapWindowColumnIs3frameDisplayed(window, column_group) ;
-
-	    /* Check mag, mark, compress etc. etc....probably need some funcs in compress/mark/mag
-	     * packages to return whether a column should be hidden.... */
-	    if ((curr_col_state == ZMAPSTYLE_COLDISPLAY_HIDE || curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-		&& mag_visible && frame_visible && (!frame_sensitive || frame_displayed))
-	      {
-		zmapWindowContainerSetVisibility(column_group, TRUE) ;
-		redraw = TRUE ;
-	      }
-	    else if ((curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW || curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-		     && (!mag_visible || !frame_visible || (frame_sensitive && !frame_displayed)))
-	      {
-		zmapWindowContainerSetVisibility(column_group, FALSE) ;
-		redraw = TRUE ;
-	      }
-
-	    break ;
-	  }
-	default: /* ZMAPSTYLE_COLDISPLAY_SHOW */
-	  {
-	    /* Always show column. */
-	    zmapWindowContainerSetVisibility((FooCanvasGroup *)container, TRUE) ;
-
-	    redraw = TRUE ;
-	    break ;
-	  }
-	}
-      zMapStopTimer("DrawFeatureSet","SetVis");
-
-      /* Set the new display for the column _and_ all styles within the column. */
       zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
+
+      new_visible = zmapWindowGetColumnVisibility(window,column_group);
+
+      if(new_visible)
+      {
+            if(!cur_visible)
+            {
+                  zMapStartTimer("SetState","SetVis show");
+                  redraw = TRUE;
+                  zmapWindowContainerSetVisibility(column_group, TRUE) ;
+            }
+      }
+      else
+      {
+            if(!cur_visible)
+            {
+                  zMapStartTimer("SetState","SetVis show");
+                  redraw = TRUE;
+                  zmapWindowContainerSetVisibility(column_group, FALSE) ;
+            }
+      }
+      if(redraw)
+            zMapStopTimer("SetState","SetVis");
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
-	zmapWindowFullReposition(window) ;
-    }
-
-
-  return ;
+            zmapWindowFullReposition(window) ;
+   }
 }
+
 
 
 
@@ -616,18 +639,19 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
   gboolean visible = TRUE ;
+  ZMapWindowContainerGroup container = (ZMapWindowContainerGroup)col_group;
+  ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)col_group;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-  if ((visible = zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)col_group)))
+  if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
       double min_mag = 0.0, max_mag = 0.0 ;
       double curr_bases ;
 
       curr_bases = zMapWindowGetZoomMagAsBases(window) ;
 
-      if (zmapWindowContainerFeatureSetGetMagValues((ZMapWindowContainerFeatureSet)col_group,
-						    &min_mag, &max_mag))
+      if (zmapWindowContainerFeatureSetGetMagValues(featureset, &min_mag, &max_mag))
 	{
 	  if ((min_mag && curr_bases < min_mag)
 	      || (max_mag && curr_bases > max_mag))

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  4 15:53 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.274 2010-12-08 09:03:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.275 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -45,6 +45,7 @@
 #include <zmapWindowTextPositioner.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
+
 
 
 /* set a KNOWN initial size for the foo_canvas!
@@ -1086,6 +1087,9 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
 			ZMapWindowContainerFeatureSet container, ZMapFeatureTypeStyle style) ;
+
+gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_group);
+
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_required) ;
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,

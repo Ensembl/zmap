@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Dec 15 13:58 2010 (edgrif)
  * Created: Wed Apr 29 14:45:58 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.h,v 1.6 2010-12-20 12:19:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvas.h,v 1.7 2011-01-12 16:56:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_H
@@ -63,9 +63,12 @@ GType      zMapWindowCanvasGetType(void) ;
 GtkWidget *zMapWindowCanvasNew          (double max_zoom) ;
 gboolean   zMapWindowCanvasBusy         (ZMapWindowCanvas canvas) ;
 gboolean   zMapWindowCanvasUnBusy       (ZMapWindowCanvas canvas) ;
-void       zMapWindowCanvasLongItemCheck(ZMapWindowCanvas canvas, 
+void       zMapWindowCanvasLongItemCheck(ZMapWindowCanvas canvas,
 					 FooCanvasItem   *item,
 					 double start, double end) ;
 void zMapWindowCanvasLongItemRemove(ZMapWindowCanvas canvas, FooCanvasItem *item_to_remove);
+
+gboolean zMapWindowCanvasUnBusy(ZMapWindowCanvas canvas);
+gboolean zMapWindowCanvasBusy(ZMapWindowCanvas canvas);
 
 #endif /* ZMAP_WINDOW_CANVAS_H */
