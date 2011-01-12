@@ -234,6 +234,11 @@ done
 
 zmap_message_out "Copying Seqtools dist file..."
 
+
+# Horrible naming mismatch in dir names....note the use of "-" instead of "_" in the sed...
+ZMAP_ARCH=$(uname -ms | sed -e 's/ /-/g')
+
+
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
 seqtools_bin_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/bin"
@@ -246,7 +251,7 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     for binary in $ZMAP_SEQTOOLS_BINARIES;
       do
-      zmap_message_out "Running cp $seqtools_bin_dir/$binary $TARGET/$binary"
+      zmap_message_out "Running scp $seqtools_bin_dir/$binary $TARGET/$binary"
       scp $seqtools_bin_dir/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
 
       # check locally written files.
