@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 10 09:58 2010 (edgrif)
+ * Last edited: Jan 13 12:00 2011 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.25 2010-06-25 10:19:02 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.26 2011-01-13 12:07:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -508,6 +508,31 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
   return result ;
 }
 
+
+
+/* GROSS HACK UNTIL I FIX THE MARK STUFF...what should happen is that we use 
+ * zmapWindowMarkGetSequenceRange() but both calls are bugged... */
+gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end)
+{
+  gboolean result = FALSE ;
+  ZMapWindowMark mark = window->mark ;
+
+  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+
+  if ((result = zmapWindowMarkGetSequenceRange(mark, start, end)))
+    {
+      /* TERRIBLE BACK...COORDS SHOULD BE DONE RIGHT.... */
+
+      if (*start < window->seq_start)
+	*start = window->seq_start ;
+      if (*end > window->seq_end)
+	*end = window->seq_end ;
+    }
+
+  return result ;
+}
+
+
 /*!
  * \brief Get the sequence range of the mark
  *
@@ -525,13 +550,14 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 
   if (mark->mark_set)
     {
-      if(!mark->seq_start)    // ie it has never been set
-      {
-            // fix for RT161721 bumped col diappears in hsplit/vsplit
-            // start and end are 0 in mark so no features displayed
-        mark->seq_start = (int) mark->world_y1 - 1 ;
-        mark->seq_end   = (int) mark->world_y2 + 1 ;
-      }
+      if (!mark->seq_start)    // ie it has never been set
+	{
+	  // fix for RT161721 bumped col diappears in hsplit/vsplit
+	  // start and end are 0 in mark so no features displayed
+	  mark->seq_start = (int) mark->world_y1 - 1 ;
+	  mark->seq_end   = (int) mark->world_y2 + 1 ;
+	}
+
       *start = mark->seq_start ;
       *end   = mark->seq_end ;
 
@@ -673,6 +699,9 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
   tmp_y1 = y1 ;
   tmp_y2 = y2 ;
 
+  /* SOMETHING HAS GONE COMPLETELY WRONG HERE....block_y1/y2 are NOT INITIALISED !!!!!!!!!! */
+
+
   /* This seems wierd but it only really happens when we get marks very close to the end of blocks
    * and it's because items can be slightly bigger than blocks because of the thickness of their
    * lines and foocanvas does not pick this up. So by reversing coords we can calculate these
@@ -699,7 +728,7 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
   mark->world_y2 = y2;
   mark->mark_set = TRUE ;
 
-  if(mark->block_container)
+  if (mark->block_container)
     {
       /* Hey, we've got the block.  We'll just mark that block rather
        * than go to each one and potentially mark one. */
