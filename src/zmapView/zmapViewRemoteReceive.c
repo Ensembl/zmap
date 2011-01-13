@@ -30,9 +30,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Nov 12 09:23 2010 (edgrif)
+ * Last edited: Jan 13 11:59 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.58 2010-12-08 08:55:43 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.59 2011-01-13 12:08:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1853,7 +1853,7 @@ static void reportWindowMark(ZMapView view, RequestData input_data, ResponseData
   view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
   window = view_window->window ;
 
-  if (zMapWindowGetMark(window, &start, &end))
+  if (zMapWindowMarkGetSequenceSpan(window, &start, &end))
     {
       g_string_append_printf(output_data->messages,
 			     "<mark exists=\"true\" start=\"%d\" end=\"%d\" />", start, end) ;
@@ -1870,6 +1870,8 @@ static void reportWindowMark(ZMapView view, RequestData input_data, ResponseData
 
       output_data->code = ZMAPXREMOTE_FAILED;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
       output_data->code = ZMAPXREMOTE_OK ;
     }
 
