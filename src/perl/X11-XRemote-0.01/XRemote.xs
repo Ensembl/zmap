@@ -13,6 +13,12 @@
 #include "perl.h"
 #include "XSUB.h"
 
+
+// hacks to prevent dynamic load error
+void (*foo_log_stack)(void) = NULL; 
+void (*foo_timer)(char *, char *, char *) = NULL;
+
+
 char *ZMAP_X_PROGRAM_G = "X11::XRemote";
 
 typedef struct _X11__XRemote__HandleStruct
