@@ -3085,13 +3085,14 @@ n_group_draw = n_item_pick = 0;
 		       event->area.x, event->area.y,
 		       event->area.width, event->area.height);
 
+#if DONT_INCLUDE
 if(foo_timer)
 {
        printf("expose complete: %d items picked, %d groups drawn in %d,%d-%d,%d\n",
             n_item_pick, n_group_draw,
             event->area.x, event->area.y,event->area.width, event->area.height);
 }
-
+#endif
 	return FALSE;
 }
 
