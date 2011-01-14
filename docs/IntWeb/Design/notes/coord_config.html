@@ -1,6 +1,102 @@
 </div>
 <div style="margin-right:5em;margin-left:11em;">
 <h2>Coordinate systems and configuration</h2>
+<fieldset><legend>Coordinate systems for generic daatbases</legend>
+<h3>What's the problem?</h3>
+<p>
+It is common (especially in model organism databases) to use chromosome coordinates to refer to sequence information but many databases exist which are based on fragments eg BAC (clones), and these are typically based from 1.  ZMap implements a mapping process to define what coordinates are presented to the user and what coordinates are used when referring to the underlying database.
+</p>
+<p> ZMap will display coordinates on the Scale bar and on the Ruler as block relative - the first base in any block will be 1 and the last will be the length of the block + 1.  The Ruler will also display coordinates in the parent span if these differ from block relative.  The Status bar will show coordinates as block relative (which will be consistent with the scale bar). Currently there is no way to display parent (eg chromosome) coordinates in the status bar.
+</p>
+<p>ZMap stores sequence and feature data in a <b>FeatureContext</b> which contains typically a single <b>Align</b> which contains a single contiguous <b>Block</b> of features.  There is provision to have multiple aligns and blocks and in this case the blocks of features could be mapped from any genomic region, for example to model genome rearrangements.   Note however that each align contains blocks from the same strand. Each align may be flagged as being in the reverse strand relative to the parent sequence.
+</p>
+<p>Requests for data from servers can be made for single blocks only.
+</p>
+<p>Much of the top level interface to ZMap specifies a sequence as start to end, which implies a single align and block, and at present multiple blocks and aligns are not supported.
+</p>
+
+
+<h3>Data used to perform coordinate mapping</h3>
+<h4>ZMapFeatureContext->parent_span</h4>
+<p>
+This defines the genomic region the sequence(s) being viewed are extracted from. Note that at present it is assumed that this is a single contiguous sequence of DNA (eg a single chromosome or a database holding a sequence based on some other coordinate system.  If more than one chromosome is to be represented then it is necessary to concatenate these into a single sequence; this will be reviewed in future and is likely to change.  Parent span coordinates are always forward strand.
+<pre>
+typedef struct
+{
+  Coord x1, x2 ;
+} ZMapSpanStruct, *ZMapSpan ;
+
+(in ZMapFeatureContextStruct)
+ZMapSpanStruct parent_span;
+</pre>
+</p>
+
+<h4>ZMapFeatureAlignment->seq_to_parent</h4>
+<p>This defines the genomic region within the parent span that a series of blocks cover.  It contains the subsection of the parent span that is included, and the coordinates that are used to refer to the data being viewed internally by ZMap. There is a flag to say whether or not the region is reversed (ie reverse strand relative to the parent span)
+<pre>
+typedef struct
+{
+      /* NOTE even if reversed coords are as start < end */
+  ZMapSpanStruct sequence;          /* start/end in parent span (context) */
+  ZMapSpanStruct block;             /* start,end in align, aka child seq */
+  gboolean reversed;
+} ZMapMapAlignStruct, *ZMapMapAlign ;
+
+
+(in ZMapFeatureAlignmentStruct)
+  ZMapMapBlockStruct sequence_to_parent ;
+</pre>
+</p>
+
+<h4>ZMapFeatureBlock->block_to_sequence</h4>
+<p>This defines the part of the containing align that is covered by a block of features. It is simply start and end coordinates and it is assumed that it is on the same strand as the containing align.
+<pre>
+(in ZMapFeatureBlockStruct)
+ZMapSpanStruct block_to_sequence ;
+</pre>
+</p>
+
+<h4>Overall structure</h4>
+<p>Some examples, note that we do not limit ZMap to these two options)
+</p>
+
+<p>If the parent sequence and requested data are based from 1  (ACEDB model):
+<pre>
+  1  S                   E    X      chromosome bases
+  =============================      ZMapFeatureContext.parent_span.x1,x2 = 1,X
+
+     1                   Y           our sequence
+     =====================           ZMapFeatureAlign.sequence_to_parent
+                                       sequence.x1,x2 = S,E
+                                       block.x1,x2    = 1,Y
+
+        BS        BE                 displayed block
+        ============                 ZMapFeatureBlockStruct.block_to_sequence.x1,x2 = BS,BE
+</pre>
+<p>If the parent sequence and requested data are chromosome coordinates (Otterlace model):
+<pre>
+  1  S                   E    X      chromosome bases
+  =============================      ZMapFeatureContext.parent_span.x1,x2 = 1,X
+
+     S                   E           our sequence
+     =====================           ZMapFeatureAlign.sequence_to_parent
+                                       sequence.x1,x2 = S,E
+                                       block.x1,x2    = S,E
+
+        BS        BE                 displayed block
+        ============                 ZMapFeatureBlockStruct.block_to_sequence.x1,x2 = BS,BE
+</pre>
+</p>
+
+<h3>Mapping versus Alignment</h3>
+<p>
+When mapping a genomic sequence to an underlying database both forward and reverse strands are mapped together.  This is different from alignment which is where a sequence on one strand of a DNA segment is aligned with a sequence on another region and strand (although the strands may in fact be the same).
+</p>
+<p>Note that there are two different data structures defined in <b>zmapFeature.h</b>: <b>ZMapAlignBlock</b> which is used to process gapped alignments, and <b>ZMapMapAlign</b> which is used to specify the mapping between Align and parent sequence.
+</p>
+</fieldset>
+
+
 <fieldset><legend>Chromosome and ZMap coordinates</legend>
 <p>Chromosome coordinates are useful when dealing with external sources and people but are unwieldy when annotating and ZMap has traditionally held features based on slice coordinates ie based from 1.
 </p>
