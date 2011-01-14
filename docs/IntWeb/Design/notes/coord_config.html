@@ -37,8 +37,8 @@ ZMapSpanStruct parent_span;
 typedef struct
 {
       /* NOTE even if reversed coords are as start < end */
-  ZMapSpanStruct sequence;          /* start/end in parent span (context) */
-  ZMapSpanStruct block;             /* start,end in align, aka child seq */
+  ZMapSpanStruct parent;          /* start/end in parent span (context) */
+  ZMapSpanStruct align;             /* start,end in align, aka child seq */
   gboolean reversed;
 } ZMapMapAlignStruct, *ZMapMapAlign ;
 
