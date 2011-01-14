@@ -1,0 +1,5919 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '14 January 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.110 </h1>
+
+<p>Last Release Date: 05/02/2010</p>
+
+
+<h3>Current Release Date: 14 January 2011</h3>
+
+
+<p>This report covers 2010-02-05 to 2011-01-14</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=516">516</a>, Resolved (Wed Oct 06 11:25:45 2010)
+<p>Shape Diversity</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=522">522</a>, Resolved (Wed Oct 06 11:26:20 2010)
+<p>drag and drop column positions</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=525">525</a>, Resolved (Wed Oct 06 11:27:01 2010)
+<p>colour by score</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=532">532</a>, Resolved (Tue Oct 05 09:41:00 2010)
+<p>Active pane highlight</p>
+<p>jgrg@sanger.ac.uk, rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=543">543</a>, Resolved (Tue Oct 05 09:48:36 2010)
+<p>Exporting  Feature Context in XML and GFF3</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=555">555</a>, Resolved (Tue Oct 05 09:54:40 2010)
+<p>Long item bug (Wide items)</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=557">557</a>, Resolved (Tue Oct 05 09:52:32 2010)
+<p>file server interface code</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=558">558</a>, Resolved (Tue Oct 05 09:58:59 2010)
+<p>Threading code... [Mac OS X and general pthreads code]</p>
+<p>edgrif@sanger.ac.uk, rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=568">568</a>, Resolved (Tue Oct 05 09:59:36 2010)
+<p>Alternative Data Sources</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=571">571</a>, Resolved (Tue Oct 05 13:26:11 2010)
+<p>local blast execution</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=1104">1104</a>, Resolved (Tue Oct 05 13:27:16 2010)
+<p>dialog window to specify new sequence to display</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=1197">1197</a>, Resolved (Tue Oct 05 13:28:40 2010)
+<p>Try gtkhtml for showing help docs...</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=1501">1501</a>, Resolved (Thu Feb 18 10:16:09 2010)
+<p>Incorrect display when start and end supplied</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=3568">3568</a>, Resolved (Wed Sep 08 15:58:25 2010)
+<p>dh-make-perl X11::XRemote</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=5843">5843</a>, Resolved (Wed Oct 06 11:28:09 2010)
+<p>ZMap external/internal web site</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=6207">6207</a>, Resolved (Tue Oct 05 13:30:04 2010)
+<p>Building zmap.app [mac os x]</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=11588">11588</a>, Resolved (Tue Oct 05 13:32:26 2010)
+<p>Copying and pasting co-ordinates from zmap to object lace window</p>
+<p>sb7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=16959">16959</a>, Resolved (Tue Oct 05 13:33:46 2010)
+<p>alternative to foocanvas</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=17250">17250</a>, Resolved (Tue Oct 05 13:35:05 2010)
+<p>Feature Backgrounds [Multipart Feature]</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=20174">20174</a>, Resolved (Thu Apr 22 13:58:13 2010)
+<p>Locking arbritrary windows</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=24949">24949</a>, Resolved (Tue Oct 05 13:36:04 2010)
+<p>Improve busy cursor code</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=25524">25524</a>, Resolved (Tue Oct 05 13:40:10 2010)
+<p>configuration of keyboard short cuts</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=28343">28343</a>, Resolved (Tue Oct 05 13:41:06 2010)
+<p>Styles in feature context vs. display styles....</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=38532">38532</a>, Resolved (Tue Oct 05 13:41:57 2010)
+<p>All canvas items we create should have a "type"</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=44809">44809</a>, Resolved (Wed Oct 06 11:23:51 2010)
+<p>alterations to our RT script for submitted tickets</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=45458">45458</a>, Resolved (Wed Oct 06 11:24:30 2010)
+<p>Ensure dna and peptide are canonical internally</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=49668">49668</a>, Resolved (Tue Oct 05 13:43:10 2010)
+<p>short cut keys for dna, peptide/3 frame</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=49832">49832</a>, Resolved (Tue Oct 05 13:44:09 2010)
+<p>blank -3 protein translation</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=57746">57746</a>, Resolved (Thu Apr 22 13:58:20 2010)
+<p>relock function</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=60966">60966</a>, Resolved (Wed Oct 06 11:30:53 2010)
+<p>Styles need to have a font.</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=65409">65409</a>, Resolved (Wed Oct 06 11:29:35 2010)
+<p>persistent high-lighting</p>
+<p>hks@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66274">66274</a>, Resolved (Wed Oct 06 11:32:23 2010)
+<p>Show translation in Zmap column</p>
+<p>af2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66832">66832</a>, Resolved (Wed Oct 06 11:34:04 2010)
+<p>objects/features physically disappear</p>
+<p>ca1@sanger.ac.uk, ib2@sanger.ac.uk, mpk@sanger.ac.uk,</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68777">68777</a>, Resolved (Wed Oct 06 11:35:54 2010)
+<p>dynamically adding a column to Zmap</p>
+<p>lg4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=75696">75696</a>, Resolved (Wed Oct 06 14:41:16 2010)
+<p>memory leak ?</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=77264">77264</a>, Resolved (Wed Oct 06 14:42:19 2010)
+<p>frozen zmap after back button</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=77667">77667</a>, Resolved (Wed Oct 06 11:38:34 2010)
+<p>DNA column spontaneously emptying</p>
+<p>af2@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=77934">77934</a>, Resolved (Wed Oct 06 11:40:48 2010)
+<p>coding problems exposed by 64bit binaries</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=78029">78029</a>, Resolved (Wed Oct 06 11:41:51 2010)
+<p>Zmap for worms</p>
+<p>gw3@sanger.ac.uk, rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=78087">78087</a>, Resolved (Wed Oct 06 11:42:34 2010)
+<p>crash log</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=83597">83597</a>, Resolved (Wed Oct 06 11:44:39 2010)
+<p>zmap destroy functions & memset</p>
+<p>rds@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=83928">83928</a>, Resolved (Wed Oct 06 11:45:35 2010)
+<p>bad font size/colour</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=98198">98198</a>, Resolved (Fri Apr 23 15:52:25 2010)
+<p>Crashing when using navigation slide bar</p>
+<p>jel@sanger.ac.uk, jpa@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=104518">104518</a>, Resolved (Wed Oct 06 11:46:28 2010)
+<p>large font size on zmap</p>
+<p>sb7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=115511">115511</a>, Resolved (Wed Oct 06 14:37:44 2010)
+<p>Dynamically add columns to zmap</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=117581">117581</a>, Resolved (Wed Oct 06 14:38:21 2010)
+<p>Zmap Styles - no gaps between columns in some bump modes</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=117913">117913</a>, Resolved (Wed Oct 06 14:39:08 2010)
+<p>[/Applications/otterlace.app/Contents/Resources/otter_home/ensembl-otter/tk/otterlace] error log /Users/cas/.otter/otterlace.261-a.log</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=122481">122481</a>, Resolved (Wed Oct 06 14:42:49 2010)
+<p>Zmap styles: Can't display gapped alignments</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=122813">122813</a>, Resolved (Wed Oct 06 14:53:30 2010)
+<p>saving objects on ZMAP doesn't work!!!</p>
+<p>vb1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=127573">127573</a>, Resolved (Thu Apr 22 13:59:54 2010)
+<p>Selecting blast hits in marked region to use in exonerate</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=129628">129628</a>, Resolved (Thu Apr 22 13:57:12 2010)
+<p>selectable/copyable aa seq in show translation in zmap column</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=133578">133578</a>, Resolved (Fri Aug 20 12:12:20 2010)
+<p>Request change in size of splice site Glyphs in test_otterlace</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=148110">148110</a>, Resolved (Tue Feb 09 09:59:33 2010)
+<p>zmap starts drawing the sequence region too early</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=148126">148126</a>, Resolved (Mon Mar 22 09:58:43 2010)
+<p>zmap does not support reading featursets from a GFF file</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=153617">153617</a>, Resolved (Mon Apr 12 16:11:54 2010)
+<p>zmap styles file config</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=154447">154447</a>, Resolved (Mon Apr 12 11:11:58 2010)
+<p>Glyph styles default colours</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156300">156300</a>, Resolved (Wed Feb 10 10:25:29 2010)
+<p>zmap libraries do not end up right directories for release build</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156649">156649</a>, Resolved (Thu Aug 19 14:36:44 2010)
+<p>Columns disappear in new test_otterlace when you reverse comp</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156982">156982</a>, Resolved (Wed Feb 10 11:31:53 2010)
+<p>GFF files (eg file:// or pipe://) do not load DNA</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=157023">157023</a>, Resolved (Tue Feb 09 14:22:51 2010)
+<p>Error message and Zmap crash</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=157674">157674</a>, Resolved (Mon Mar 29 17:40:51 2010)
+<p>OTF error with fasta seq</p>
+<p>gr5@sanger.ac.uk, jel@sanger.ac.uk, jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=157704">157704</a>, Resolved (Tue Feb 09 09:57:14 2010)
+<p>zmap crashes when trying to show the dna of a transcript</p>
+<p>th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=157952">157952</a>, Resolved (Mon Mar 01 12:26:22 2010)
+<p>crash on column bump/more opts</p>
+<p>jgrg@sanger.ac.uk, mh17@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=158315">158315</a>, Resolved (Tue Feb 09 09:39:50 2010)
+<p>Zmap crash: assertion failure:  zmapFeatureContext.c: line 799</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=158364">158364</a>, Resolved (Tue Feb 09 15:59:03 2010)
+<p>Mark not drawing</p>
+<p>dml@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=158994">158994</a>, Resolved (Wed Feb 10 15:02:07 2010)
+<p>zmap crashes on "show DNA transcript"</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=159350">159350</a>, Resolved (Fri Feb 26 13:37:03 2010)
+<p>coliner rlines and glyphs don't paint</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=159495">159495</a>, Resolved (Tue Aug 10 15:13:03 2010)
+<p>delete_feature display glitch</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=159606">159606</a>, Resolved (Tue Feb 16 14:42:57 2010)
+<p>long items exist even when zoomed out</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=159677">159677</a>, Resolved (Wed Mar 03 17:15:29 2010)
+<p>zmap does not launch on Macbook Pro 100410</p>
+<p>gr5@sanger.ac.uk, jgrg@sanger.ac.uk, mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=159798">159798</a>, Resolved (Fri Mar 12 12:45:33 2010)
+<p>blixem shows wrong genomic sequence shifted by 36 bp for part of display</p>
+<p>ds8@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160138">160138</a>, Resolved (Fri Feb 19 11:37:57 2010)
+<p>"found not equal name lists"</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160177">160177</a>, Resolved (Fri Feb 26 14:49:00 2010)
+<p>Configure column crashes zmap</p>
+<p>jgrg@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160341">160341</a>, Resolved (Mon Apr 26 13:42:48 2010)
+<p>Open in a Zmap</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160653">160653</a>, Resolved (Wed Mar 03 17:14:41 2010)
+<p>Vsplit and curated_features</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160866">160866</a>, Resolved (Wed Mar 03 17:13:02 2010)
+<p>otterlace_mac_intel_52-6: exonerate and lassoing</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161001">161001</a>, Resolved (Wed Mar 03 17:13:38 2010)
+<p>otterlace_mac_intel_52-06: V-splitting; exonerate; lassoing</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161203">161203</a>, Resolved (Mon Mar 01 12:27:54 2010)
+<p>new bump mode: compact  interleaved colinear</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161721">161721</a>, Resolved (Fri Jun 25 11:20:11 2010)
+<p>V-Split caused bumped column to disappear in new pane</p>
+<p>jgrg@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161817">161817</a>, Resolved (Mon Jun 28 15:23:15 2010)
+<p>Gobject errors on feature search</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161845">161845</a>, Resolved (Fri Mar 05 17:19:17 2010)
+<p>pig clone blixem alignment error</p>
+<p>jgrg@sanger.ac.uk, jla1@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161902">161902</a>, Resolved (Thu May 13 16:50:36 2010)
+<p>Zmap crashing....</p>
+<p>claire.rogel-gaillard@jouy.inra.fr, ml6@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=162237">162237</a>, Resolved (Mon Apr 12 11:10:56 2010)
+<p>statically link foocanvas and g2 to zmap</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=162629">162629</a>, Resolved (Tue Jun 15 14:33:44 2010)
+<p>V-split did not generate an exact duplicate window</p>
+<p>ca1@sanger.ac.uk, gm5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=163164">163164</a>, Resolved (Mon Mar 29 11:28:08 2010)
+<p>zmap crash when switching desktops</p>
+<p>th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=163464">163464</a>, Resolved (Mon Mar 29 14:04:20 2010)
+<p>show feature list not working in zmap.</p>
+<p>erb@sanger.ac.uk, gr5@sanger.ac.uk, mh17@sanger.ac.uk,</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=163465">163465</a>, Resolved (Wed Mar 31 16:50:21 2010)
+<p>Clickability problems with 0 and 1 length features</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=163590">163590</a>, Resolved (Wed Oct 13 15:22:22 2010)
+<p>zmapWindowContainerFeatureSetColumnDisplayName()</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=164278">164278</a>, Resolved (Thu Mar 25 15:27:55 2010)
+<p>load_features xremote request fails</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=164420">164420</a>, Resolved (Mon Mar 29 16:28:58 2010)
+<p>zmap crashed when I closed down the "feature search" window</p>
+<p>th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=164610">164610</a>, Resolved (Wed Apr 07 14:39:40 2010)
+<p>x-remote log report</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=164619">164619</a>, Resolved (Mon Jun 28 10:51:28 2010)
+<p>3frame suprious log messages?</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=164624">164624</a>, Resolved (Tue Aug 10 15:11:50 2010)
+<p>Zmap + otterlace crash</p>
+<p>gm5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=165654">165654</a>, Resolved (Fri Apr 23 15:48:20 2010)
+<p>The libzmapfoocanvas pkg-config file is installed to the wrong place.</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=166074">166074</a>, Resolved (Fri Apr 23 17:28:49 2010)
+<p>Possible bug displaying exon/intron colours in Zmap</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=166085">166085</a>, Resolved (Fri Apr 23 15:56:59 2010)
+<p>highlighting DNA</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=167517">167517</a>, Resolved (Fri Apr 23 15:46:53 2010)
+<p>zmap crashed when clicking on LH navigator pane</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=167656">167656</a>, Resolved (Fri Apr 23 15:44:49 2010)
+<p>zmapGFF2Parser.c needs to be updated before the next build</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=167841">167841</a>, Resolved (Fri Apr 23 15:33:36 2010)
+<p>Zmap crashes when clicking on a single domain structure in halfwise predictions</p>
+<p>ca1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=167865">167865</a>, Resolved (Mon Jun 28 15:20:12 2010)
+<p>spurious messages in log file</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=167971">167971</a>, Resolved (Fri Apr 23 14:14:47 2010)
+<p>zmap crash on show variant list</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168006">168006</a>, Resolved (Fri Apr 23 16:27:46 2010)
+<p>pfetch from zmap broken?</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168021">168021</a>, Resolved (Wed Aug 11 10:13:01 2010)
+<p>free on invalid pointer</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168161">168161</a>, Resolved (Thu Sep 16 13:19:32 2010)
+<p>race condition on ZMap startup/ x-remote load features</p>
+<p>edgrif@sanger.ac.uk, mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168340">168340</a>, Resolved (Wed May 05 16:39:59 2010)
+<p>Zmap crash</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168756">168756</a>, Resolved (Wed May 26 16:01:45 2010)
+<p>the order of styles in a zmap stylesfile matters</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168868">168868</a>, Resolved (Mon Jul 12 08:56:53 2010)
+<p>DNA search should match U to T and handle degeneracy</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=169778">169778</a>, Resolved (Wed Aug 11 10:11:13 2010)
+<p>Zmap crash</p>
+<p>gm5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=170146">170146</a>, Resolved (Thu May 13 10:50:58 2010)
+<p>Zmap won't open</p>
+<p>ek1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=170347">170347</a>, Resolved (Fri Jun 25 11:26:19 2010)
+<p>disappering column after v-split</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=170830">170830</a>, Resolved (Wed Aug 11 10:09:03 2010)
+<p>evidence track misconfigured in zmap</p>
+<p>mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=171529">171529</a>, Resolved (Wed May 26 16:28:57 2010)
+<p>zmap crash when bumping unbumpable column</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=172332">172332</a>, Resolved (Thu Jun 03 13:22:53 2010)
+<p>zmap didn't update when new column data loaded</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=172343">172343</a>, Resolved (Thu Jul 29 13:57:42 2010)
+<p>mark-bumped homol features lost red diamonds</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=172652">172652</a>, Resolved (Thu Jun 03 10:40:28 2010)
+<p>BLIXEM problems</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=172867">172867</a>, Resolved (Thu Jul 29 11:50:58 2010)
+<p>peptide search window crashes zmap</p>
+<p>ca1@sanger.ac.uk, cas@sanger.ac.uk, gm5@sanger.ac.uk,</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=173555">173555</a>, Resolved (Fri Jun 11 17:19:25 2010)
+<p>zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=174053">174053</a>, Resolved (Mon Jun 28 15:45:31 2010)
+<p>command line option --conf dir not perfect</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=174138">174138</a>, Resolved (Mon Jun 14 15:54:20 2010)
+<p>zmapXRemote.h should #include ZMap/zmapUtils.h</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=174875">174875</a>, Resolved (Mon Jun 28 09:31:30 2010)
+<p>3 frame translation display unreadable</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=175852">175852</a>, Resolved (Fri Nov 12 09:40:53 2010)
+<p>Move to gtk 2.18</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=175933">175933</a>, Resolved (Wed Jun 30 12:44:05 2010)
+<p>Shift select and sub selects do not work in new zmap</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=176591">176591</a>, Resolved (Wed Sep 01 13:47:42 2010)
+<p>RC menu not cleaned up</p>
+<p>jel@sanger.ac.uk, mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=177508">177508</a>, Resolved (Tue Aug 10 15:14:29 2010)
+<p>zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=177536">177536</a>, Resolved (Wed Aug 11 10:43:58 2010)
+<p>annotated exons missing from blixem in test otterlace</p>
+<p>huenishi@affrc.go.jp, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=177573">177573</a>, Resolved (Thu Jul 29 13:50:04 2010)
+<p>deleting a piece of evidence in zmap to reduce the width of a column</p>
+<p>ds8@sanger.ac.uk, erb@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=177600">177600</a>, Resolved (Tue Aug 10 17:19:30 2010)
+<p>show feature list>File>Export>GFFv2 crashes test zmap</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=177617">177617</a>, Resolved (Mon Jul 12 10:03:50 2010)
+<p>Pipe server fails to fork</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=178377">178377</a>, Resolved (Thu Jul 29 12:41:33 2010)
+<p>Blixem is not showing annotated objects (test_otterlace)</p>
+<p>cas@sanger.ac.uk, gm5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=178592">178592</a>, Resolved (Fri Jul 16 15:59:02 2010)
+<p>Highlighted features are gray.</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=179391">179391</a>, Resolved (Thu Jul 29 12:03:12 2010)
+<p>**URGENT** Selecting multiple single exons for OTF or single exons for building 'transcript object' variants or copying 'EUCOMM exons' in 'genomics features'</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180187">180187</a>, Resolved (Wed Aug 04 09:21:46 2010)
+<p>Auto-reply: Re: "ZMap Tests Failure on cbi4b "</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180270">180270</a>, Resolved (Fri Jul 30 10:41:44 2010)
+<p>Blixem + zmap question</p>
+<p>dml@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180602">180602</a>, Resolved (Tue Aug 10 11:15:04 2010)
+<p>unable to select individuals exons from a piece of evidence in zmap</p>
+<p>ds8@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=181605">181605</a>, Resolved (Wed Aug 18 11:09:30 2010)
+<p>Single highlighted exon not shown correctly in dna or 3 frame translation</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=182107">182107</a>, Resolved (Wed Aug 18 13:40:45 2010)
+<p>numerical feature size shown doesn't correspond to box size</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=182182">182182</a>, Resolved (Fri Aug 20 12:06:59 2010)
+<p>thoughts about custom fields</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=182622">182622</a>, Resolved (Wed Aug 18 14:07:37 2010)
+<p>test - ticket going somewhere</p>
+<p>zhu@iastate.edu</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=182663">182663</a>, Resolved (Mon Aug 23 13:34:04 2010)
+<p>gdk destroy object upwards chain broken</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=183173">183173</a>, Resolved (Tue Aug 31 16:36:08 2010)
+<p>zmap queue doesn't have severity settings anymore</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=184372">184372</a>, Resolved (Fri Nov 12 09:39:28 2010)
+<p>reliable crash: bump column "repeats"</p>
+<p>mca@sanger.ac.uk, mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=185617">185617</a>, Resolved (Wed Sep 15 13:36:46 2010)
+<p>3 frame broken</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=186416">186416</a>, Resolved (Fri Sep 24 14:08:06 2010)
+<p>Renaming an exon fails in ZMap</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=187626">187626</a>, Resolved (Wed Sep 29 08:50:28 2010)
+<p>test</p>
+<p>th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=187838">187838</a>, Resolved (Fri Oct 08 15:18:43 2010)
+<p>sudden crash</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=188834">188834</a>, Resolved (Wed Nov 17 11:01:31 2010)
+<p>columns dialog shows/hides only one strand</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=188901">188901</a>, Resolved (Wed Oct 13 15:09:45 2010)
+<p>Feature search is broken</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=190073">190073</a>, Resolved (Mon Oct 18 10:41:17 2010)
+<p>Pipe error message is difficult to read</p>
+<p>gb10@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=190274">190274</a>, Resolved (Wed Oct 20 10:25:23 2010)
+<p>deletion feature rejected by pipe server</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=190635">190635</a>, Resolved (Fri Oct 29 15:47:51 2010)
+<p>parse error on ensembl-variation data</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=191172">191172</a>, Resolved (Tue Oct 26 16:48:01 2010)
+<p>delete (hide feature) leaves alignment homology markers</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=191395">191395</a>, Resolved (Tue Oct 26 13:18:43 2010)
+<p>crash loading das_WashU_PASA_humat_ESTs</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=191748">191748</a>, Resolved (Fri Oct 29 09:47:54 2010)
+<p>nph- URLs generated by zmap?</p>
+<p>mca@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=191890">191890</a>, Resolved (Fri Nov 05 09:43:03 2010)
+<p>failed then successful load column flagged as red</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=192019">192019</a>, Resolved (Fri Nov 12 09:52:49 2010)
+<p>legacy-styles still needed</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=194374">194374</a>, Resolved (Fri Nov 19 11:39:29 2010)
+<p>Feature Details window: Description field is bogus.</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=195619">195619</a>, Resolved (Thu Dec 02 11:08:17 2010)
+<p>DNA search window not working 100% in zmap (test otterlace)</p>
+<p>mms@sanger.ac.uk, mpk@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196069">196069</a>, Resolved (Thu Dec 02 11:06:17 2010)
+<p>dna search fails to draw seperator features</p>
+<p>mh17@sanger.ac.uk, th2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196350">196350</a>, Resolved (Wed Dec 08 13:59:54 2010)
+<p>selecting single exons broken</p>
+<p>ca1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=197010">197010</a>, Resolved (Fri Dec 10 11:10:46 2010)
+<p>ZMap RPATH is broken</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=197051">197051</a>, Resolved (Fri Dec 10 14:36:57 2010)
+<p>Thread request failed - server terminated</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=199635">199635</a>, Resolved (Thu Jan 13 12:09:50 2011)
+<p>marked region reported 1 bp longer than sequence</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>seqtools</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=58135">58135</a>, Resolved (Thu Aug 05 13:01:53 2010)
+<p>blixem pfetch protein variant</p>
+<p>lw2@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=75078">75078</a>, Resolved (Thu Apr 22 10:55:17 2010)
+<p>Manual Dotter Parameter window too small</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=131812">131812</a>, Resolved (Thu Jul 08 16:03:07 2010)
+<p>suggestion: dynamic zooming in blixem</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=131813">131813</a>, Resolved (Thu Apr 22 10:50:08 2010)
+<p>suggestion: scrolling in blixem using scroll bar</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=154723">154723</a>, Resolved (Thu Apr 22 10:47:20 2010)
+<p>Blixem bug when using GTK v2.18</p>
+<p>gb10@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=155006">155006</a>, Resolved (Thu Apr 22 10:46:50 2010)
+<p>testotterlace blixem homology click centers</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160196">160196</a>, Resolved (Thu Apr 22 10:45:02 2010)
+<p>dragging stops working after clicking on items in blixem</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=162224">162224</a>, Resolved (Fri Mar 26 17:47:46 2010)
+<p>blixem feature request: direct selection of nucleotide seq in protein blixem</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=162240">162240</a>, Resolved (Fri Mar 26 17:47:18 2010)
+<p>experimental blixem: pfetch window blocks acces to blixem</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=164371">164371</a>, Resolved (Fri Mar 26 10:22:09 2010)
+<p>Blixemh dies after failing to find a system font</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=165950">165950</a>, Resolved (Thu Apr 22 10:41:28 2010)
+<p>Resizing of zoom buttons for big picture in new blixem</p>
+<p>mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168348">168348</a>, Resolved (Wed Jul 14 14:41:04 2010)
+<p></p>
+<p>mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168424">168424</a>, Resolved (Wed Apr 28 12:16:49 2010)
+<p>cursor key usage in blixem</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=168869">168869</a>, Resolved (Thu Jul 08 15:59:28 2010)
+<p>zoom buttons in blixem too small</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=169955">169955</a>, Resolved (Fri Jul 30 11:07:39 2010)
+<p>blixem error message.tiff</p>
+<p>mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=170884">170884</a>, Resolved (Wed Jul 14 14:44:38 2010)
+<p>Blixem or analysis problems</p>
+<p>mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=183500">183500</a>, Resolved (Wed Aug 25 12:50:19 2010)
+<p>can't blixem proteins</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=189807">189807</a>, Resolved (Thu Oct 14 10:55:55 2010)
+<p>[/software/anacode/otter/otter_rel52.3/ensembl-otter/tk/otterlace] error log /nfs/users/nfs_c/cas/.otter/otterlace.32424-a.log</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=191522">191522</a>, Resolved (Mon Jan 10 09:49:53 2011)
+<p>dotter range problem within blixem</p>
+<p>mpk@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=197366">197366</a>, Resolved (Tue Dec 14 17:29:27 2010)
+<p>Dotter in otterlace_mac_intel_52-21 (ZMap - 0.1.109)</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>acedb</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=71981">71981</a>, Resolved (Wed Feb 24 12:03:22 2010)
+<p>sgifaceserver crashes during normal lace session exit</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=78180">78180</a>, Resolved (Fri Feb 19 11:52:49 2010)
+<p>zmap fails to load sequence</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=137411">137411</a>, Resolved (Tue Jan 04 13:57:11 2011)
+<p>acediff modification - produces errors as sort has changed it's syntax</p>
+<p>pad@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=158725">158725</a>, Resolved (Fri Feb 19 11:46:04 2010)
+<p>libgd warnings when running blixem</p>
+<p>gb10@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=162180">162180</a>, Resolved (Thu Jan 06 17:26:55 2011)
+<p>geneace navigation bug</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=163988">163988</a>, Resolved (Fri Mar 26 08:39:39 2010)
+<p>OTF problem...</p>
+<p>mpk@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=165752">165752</a>, Resolved (Fri Jan 07 11:44:20 2011)
+<p>Geneace crash</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=165783">165783</a>, Resolved (Mon Apr 19 08:57:29 2010)
+<p>HELP! Alias-fuse mistake</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=174616">174616</a>, Resolved (Tue Jan 04 13:53:47 2011)
+<p>Problems using ACEDB 4.9.39 xace with 4.9.39 xremote</p>
+<p>wnash@watson.wustl.edu</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=177837">177837</a>, Resolved (Thu Jan 06 17:26:17 2011)
+<p>Geneace crash
+</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=179215">179215</a>, Resolved (Fri Jan 07 11:43:02 2011)
+<p>FMap to display Variation object Public_name</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180475">180475</a>, Resolved (Wed Aug 18 13:27:30 2010)
+<p>acedb moved?
+</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=189561">189561</a>, Resolved (Tue Jan 04 11:43:00 2011)
+<p>xremote problem on Mac 64-bit build</p>
+<p>klh@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: clarify parent_span meaning.
+
+
+  </li>
+  <li> src/zmapControl/zmapControl.c: reverse change allowing start = 0
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: fix bug in setting up locus
+	  obj. for new feature which has a locus.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2010_02_05.shtml
+
+
+  </li>
+  <li> src/zmapServer/: acedb/acedbServer.c, das/dasServer.c: removed
+	  featureContext->length
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.21341/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/Makefile.common: re-instate the installation of static
+	  libraries
+
+
+  </li>
+  <li> src/bootstrap: add in warnings flag from aclocal.
+
+
+  </li>
+  <li> src/zmapControl/: zmapControlRemoteReceive.c, zmapControl_P.h:
+	  fix my own stupid mistake, wrong params for map-event callback.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h,
+	  zmapFeature/zmapFeatureContext.c, zmapFeature/zmapFeature_P.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/pipe/pipeServer.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowNavigator.c, zmapWindow/zmapWindowState.c:
+	  restored  partial sequence display (not starting from 1)
+
+
+  </li>
+  <li> src/bootstrap: remove --warnings flag that I put in, not
+	  supported on all platforms.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: added a comment after checking
+	  rev comp related code
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeature3FrameTranslation.c,
+	  zmapWindow/zmapWindowDNA.c, zmapWindow/zmapWindowDNAChoose.c: set
+	  block sequence to be inner loaded protion not logical seq from 1
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: fix logging messages to go
+	  to stderr when code compiled into non-zmap prog.
+
+
+  </li>
+  <li> src/runconfig: allow setting of --prefix=dir arg.
+
+
+  </li>
+  <li> src/zmapServer/pipe/pipeServer.c: suspected glitch in CVS:
+	  addMapping function returned to spec
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix bug causing us to ask for
+	  wrong type of local sequence from acedb.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowFeature.c,
+	  zmapWindowItemFactory.c: removed debug printfs
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerBlock.c: fix small bug in
+	  mark setting, mark coords are zero-based, not sequence-based.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark.c: fix small bug in setting
+	  seq_start/end, clamp to block coords.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapServerProtocol.h,
+	  zmapGFF/zmapGFF2parser.c, zmapServer/zmapServer.c,
+	  zmapServer/zmapServer.h, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/acedb/acedbServer.c,
+	  zmapServer/das/dasServer.c, zmapServer/pipe/pipeServer.c,
+	  zmapServer/pipe/pipeServer_P.h: fixed DNA from pipe/file server -
+	  RT 156982
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix short cut keys for doing blixem
+	  aligns.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureContext.c: removed debug message
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: fix shortcut text for blixems
+	  to match code.
+
+
+  </li>
+  <li> src/zmapControl/remote/: zmapXRemote.c, zmapXRemote_P.h: turn on
+	  extra debug info.
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsDebug.h: make debugprint macro deal
+	  with var args.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix bug on mac in handling mouse
+	  events, we were not getting the motion events. Needs testing on
+	  linux.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColBump.c, zmapWindowItem.c: include
+	  new items header.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDraw.c: remove colinearity enum,
+	  replicates enum in windows header.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowNavigatorWidget.c: remove bad piece of
+	  code doing an undefined test in C !
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowTextPositioner.c: clean up item header
+	  include.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add colinearity type, used in
+	  several places in Window.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowAlignmentFeature.h: remove
+	  redundant stuff.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowAlignmentFeature_I.h: trivial
+	  commenting change.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowAssemblyFeature.h: remove
+	  redundant stuff
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowBasicFeature.c: tidy up comments.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowBasicFeature.h: fix up headers and
+	  typedef enums.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowBasicFeature_I.h: tidy up headers.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowCanvas.h,
+	  zmapWindowCanvasItem_I.h: tidy up enum typedef.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: tidy up enum typedef
+	  and included headers.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowCanvasItem.h,
+	  zmapWindowCollectionFeature.c, zmapWindowCollectionFeature_I.h:
+	  tidy up included headers.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCollectionFeature.h: tidy up
+	  included headers and also remove redundant enum.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerChildren.c: tidy up
+	  include headers.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.h: remove redundant
+	  comments, now in README.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup_I.h: tidy up
+	  headers.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils_P.h: remove
+	  redundant stuff.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.c: minor code
+	  tidying up.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowSequenceFeature.h,
+	  zmapWindowSequenceFeature_I.h: fix enum.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextFeature_I.h: fix up header
+	  include.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem_I.h: fix up some enum
+	  typedefs.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTranscriptFeature.h: fix up an
+	  enum typedef.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTranscriptFeature_I.h: fix up an
+	  include.
+
+
+  </li>
+  <li> src/zmapWindow/items/README: add a README describing some of this
+	  code.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowFeatures.h: Add a general header
+	  for item features.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix up item headers and remove some
+	  redundant code.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: fix up item include header.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: add missing items header.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.h: cvs merge
+	  conflict
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtilsUsers.c: fix buglet in getting hostname, I
+	  didn't think this could fail...ah well.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDump.c, zmapWindowItem.c,
+	  zmapWindowItemFactory.c, zmapWindow_P.h,
+	  items/zmapWindowCanvasItem.c, items/zmapWindowCanvasItem.h,
+	  items/zmapWindowCollectionFeature.c,
+	  items/zmapWindowContainerUtils.c, items/zmapWindowGlyphItem.c,
+	  items/zmapWindowLongItem.c: fixes to screenshot file/print output
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowGlyphItem.h,
+	  zmapWindowLongItem.h: tidied up headers slightly
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: tidied up headers
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote_P.h: turn off debugging.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDump.c,
+	  items/zmapWindowContainerUtils.c: save screenshot works except
+	  for text items, 3 frams shows features not visible on screen.
+	  Sources put back as interim measure
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindowDrawFeatures.h: Removed private header
+	  (NB:file is not used)
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColOrder.c: tidied up private headers
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: tidied up headers and iffed
+	  out 'default' radio as per RT 160187
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtilsUsers.c: commented out call to zmap log
+	  before log created which causes crash
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: restored to sensible state,
+	  auto not default
+
+
+  </li>
+  <li> src/: include/ZMap/zmapBase.h, include/ZMap/zmapGUITreeView.h,
+	  zmapFeature/zmapStyle_I.h, zmapUtils/zmapBase_I.h,
+	  zmapUtils/zmapGUITreeView_I.h, zmapWindow/zmapWindowDNAList.c,
+	  zmapWindow/zmapWindowDNAList_I.h,
+	  zmapWindow/zmapWindowFeatureList.c,
+	  zmapWindow/items/zmapWindowCanvasItem_I.h,
+	  zmapWindow/items/zmapWindowCanvas_I.h,
+	  zmapWindow/items/zmapWindowCollectionFeature.c,
+	  zmapWindow/items/zmapWindowContainerUtils_P.h: reviewed header
+	  usage
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUITreeView.c: woops, left over from yesterdays
+	  commit, was looking at poor header use
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColBump.c,
+	  items/zmapWindowCanvasItem.c,
+	  items/zmapWindowCollectionFeature.c: RT 159350: bump col lines
+	  and glyphs restored. Seems to work but I have reservations re the
+	  fix
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColConfig.c,
+	  items/zmapWindowContainerUtils.c: RT 160177: RC/configure this
+	  column crash
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.1405/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/zmapWindowMenus.c: interim fix for RT 157952 (bump-col
+	  name no interleave crash)
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColBump.c,
+	  items/zmapWindowCollectionFeature.c: bump name no interleave now
+	  works again
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.25829/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c: add xremote debug flag.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapXRemote.h,
+	  zmapControl/remote/zmapXRemote.c,
+	  zmapControl/remote/zmapXRemote_P.h: add code to support turning
+	  on/off debug messages.
+
+
+  </li>
+  <li> src/zmapApp/: zmapApp_P.h, zmapAppwindow.c: add code for
+	  --xremote-debug flag to turn debug messages on/off.
+
+
+  </li>
+  <li> src/zmapControl/remote/xremote_gui_test.c: fix wrong map event
+	  handler, add support for various debug output options.
+
+
+  </li>
+  <li> src/zmapUtils/zmapWebBrowser.c: try to fix getting links shown in
+	  a new window of a running browser, still not right for firefox.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapWindow/zmapWindow_P.h: move
+	  colinearity type from window_P to feature.h.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: replace direct access of item
+	  object with functions/get_data calls.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: make sure we can get at
+	  the window from our callbacks for the group containers.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowCollectionFeature.h,
+	  zmapWindowCollectionFeature.c: get rid of use of zmapWindow_P.h,
+	  should not be here.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.c: add new
+	  properties so caller can access them without poking into struct.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: formatting
+	  changes only.
+
+
+  </li>
+  <li> src/zmapServer/pipe/pipeServer_P.h: trying 4th time to commit
+	  this file! - using -f
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGUITreeView.h,
+	  zmapUtils/zmapGUITreeView.c, zmapUtils/zmapGUITreeView_I.h,
+	  zmapWindow/zmapWindowDNAList.c, zmapWindow/zmapWindowDNAList_I.h,
+	  zmapWindow/zmapWindowFeatureList.c: de-branched the tree
+
+
+  </li>
+  <li> src/zmapServer/pipe/pipeServer_P.h: CopyRight date set
+
+
+  </li>
+  <li> src/zmapServer/: acedb/acedbServer_P.h, zmapServer.h,
+	  zmapServerPrototype.h, zmapServer_P.h, das/dasServer_P.h,
+	  file/fileServer_P.h: CopyRight date set
+
+
+  </li>
+  <li> src/canvas_choice/: containers.c, crcanvas_demo.c,
+	  foocanvas_demo.c, goocanvas_demo.c, goocanvas_mv_demo.c, gui.c:
+	  CopyRight date set
+
+
+  </li>
+  <li> src/: zmapApp/zmapApp_P.h, zmapApp/zmapAppconnect.c,
+	  zmapApp/zmapAppmain_c.c, zmapApp/zmapAppmanage.c,
+	  zmapApp/zmapAppmenubar.c, zmapApp/zmapAppremote.c,
+	  zmapApp/zmapAppwindow.c, zmapConfig/zmapConfigDir.c,
+	  zmapConfig/zmapConfigDir_P.h, zmapConfig/zmapConfigFile.c,
+	  zmapConfig/zmapConfigIni.c, zmapConfig/zmapConfigIni_P.h,
+	  zmapConfig/zmapConfigKey.c, zmapConfig/zmapConfigLoader.c,
+	  zmapControl/remote/xremote_gui_test.c,
+	  zmapControl/remote/zmapXRemote.c,
+	  zmapControl/remote/zmapXRemote_P.h, zmapControl/zmapControl.c,
+	  zmapControl/zmapControlNavigator.c,
+	  zmapControl/zmapControlPreferences.c,
+	  zmapControl/zmapControlRemoteReceive.c,
+	  zmapControl/zmapControlRemoteSend.c,
+	  zmapControl/zmapControlViews.c, zmapControl/zmapControlWindow.c,
+	  zmapControl/zmapControlWindowButtons.c,
+	  zmapControl/zmapControlWindowFrame.c,
+	  zmapControl/zmapControlWindowInfoPanel.c,
+	  zmapControl/zmapControlWindowMenubar.c,
+	  zmapControl/zmapControl_P.h, zmapControl/zmapNavigator_P.h,
+	  zmapDAS/zmapDAS1DSN.c, zmapDAS/zmapDAS1Parser.c,
+	  zmapDocs/ZMapMainPage.c, zmapDraw/zmapDraw.c,
+	  zmapDraw/zmapDraw_P.h, zmapFeature/tests/check_zmapFeature.c,
+	  zmapFeature/tests/check_zmapFeature.h,
+	  zmapFeature/tests/check_zmapFeature_P.c,
+	  zmapFeature/tests/check_zmapFeature_P.h,
+	  zmapFeature/tests/check_zmapStyle.c,
+	  zmapFeature/tests/check_zmapStyle.h,
+	  zmapFeature/tests/check_zmapStyle_P.c,
+	  zmapFeature/tests/check_zmapStyle_P.h, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeature3FrameTranslation.c,
+	  zmapFeature/zmapFeatureContext.c,
+	  zmapFeature/zmapFeatureContextUtils.c,
+	  zmapFeature/zmapFeatureDNA.c, zmapFeature/zmapFeatureData.c,
+	  zmapFeature/zmapFeatureFormatInput.c,
+	  zmapFeature/zmapFeatureOutput.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapFeatureUtils.c, zmapFeature/zmapFeatureXML.c,
+	  zmapFeature/zmapFeature_P.h, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyleUtils.c, zmapFeature/zmapStyle_I.h,
+	  zmapFeature/zmapStyle_P.h, zmapGFF/gffparser.c,
+	  zmapGFF/zmapGFF2Dumper.c, zmapGFF/zmapGFF2parser.c,
+	  zmapGFF/zmapGFF_P.h, zmapManager/zmapManager.c,
+	  zmapManager/zmapManager_P.h, zmapServer/acedb/acedbServer.c,
+	  zmapServer/zmapServer.c, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/das/dasServer.c, zmapServer/file/fileServer.c,
+	  zmapServer/pipe/pipeServer.c, zmapThreads/zmapSlave.c,
+	  zmapThreads/zmapSlave.test.c, zmapThreads/zmapSlave_P.h,
+	  zmapThreads/zmapThreads.c, zmapThreads/zmapThreadsUtils.c,
+	  zmapThreads/zmapThreads_P.h,
+	  zmapUtils/tests/check_zmapConfigLoader.c,
+	  zmapUtils/tests/check_zmapConfigLoader.h, zmapUtils/zmapBase.c,
+	  zmapUtils/zmapBase_I.h, zmapUtils/zmapCmdLineArgs.c,
+	  zmapUtils/zmapCmdLineArgs_P.h, zmapUtils/zmapCoords.c,
+	  zmapUtils/zmapDNA.c, zmapUtils/zmapFASTA.c,
+	  zmapUtils/zmapFileUtils.c, zmapUtils/zmapFooUtils.c,
+	  zmapUtils/zmapGLibUtils.c, zmapUtils/zmapGUINotebook.c,
+	  zmapUtils/zmapGUITreeView.c, zmapUtils/zmapGUITreeView_I.h,
+	  zmapUtils/zmapGUImenus.c, zmapUtils/zmapGUIutils.c,
+	  zmapUtils/zmapHandle.c, zmapUtils/zmapIOOut.c,
+	  zmapUtils/zmapIO_P.h, zmapUtils/zmapLogging.c,
+	  zmapUtils/zmapPeptide.c, zmapUtils/zmapReadLine.c,
+	  zmapUtils/zmapReadLine_P.h, zmapUtils/zmapSeqBitmap.c,
+	  zmapUtils/zmapSequence.c, zmapUtils/zmapString.c,
+	  zmapUtils/zmapUtils.c, zmapUtils/zmapUtilsConfig.c,
+	  zmapUtils/zmapUtilsSpawn.c, zmapUtils/zmapUtilsUsers.c,
+	  zmapUtils/zmapUtils_P.h, zmapUtils/zmapWebBrowser.c,
+	  zmapUtils/zmapXRemoteUtils.c, zmapView/zmapView.c,
+	  zmapView/zmapViewCallBlixem.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapView/zmapViewRemoteSend.c, zmapView/zmapViewUtils.c,
+	  zmapView/zmapView_P.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature.c,
+	  zmapWindow/items/zmapWindowAlignmentFeature.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature_I.h,
+	  zmapWindow/items/zmapWindowAssemblyFeature.c,
+	  zmapWindow/items/zmapWindowAssemblyFeature.h,
+	  zmapWindow/items/zmapWindowAssemblyFeature_I.h,
+	  zmapWindow/items/zmapWindowBasicFeature.c,
+	  zmapWindow/items/zmapWindowBasicFeature.h,
+	  zmapWindow/items/zmapWindowBasicFeature_I.h,
+	  zmapWindow/items/zmapWindowCanvas.c,
+	  zmapWindow/items/zmapWindowCanvas.h,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowCanvasItem.h,
+	  zmapWindow/items/zmapWindowCanvasItem_I.h,
+	  zmapWindow/items/zmapWindowCanvas_I.h,
+	  zmapWindow/items/zmapWindowCollectionFeature_I.h,
+	  zmapWindow/items/zmapWindowContainerAlignment.c,
+	  zmapWindow/items/zmapWindowContainerAlignment.h,
+	  zmapWindow/items/zmapWindowContainerAlignment_I.h,
+	  zmapWindow/items/zmapWindowContainerBlock.c,
+	  zmapWindow/items/zmapWindowContainerBlock.h,
+	  zmapWindow/items/zmapWindowContainerBlock_I.h,
+	  zmapWindow/items/zmapWindowContainerChildren.c,
+	  zmapWindow/items/zmapWindowContainerChildren.h,
+	  zmapWindow/items/zmapWindowContainerChildren_I.h,
+	  zmapWindow/items/zmapWindowContainerContext.c,
+	  zmapWindow/items/zmapWindowContainerContext.h,
+	  zmapWindow/items/zmapWindowContainerContext_I.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet_I.h,
+	  zmapWindow/items/zmapWindowContainerGroup.h,
+	  zmapWindow/items/zmapWindowContainerGroup_I.h,
+	  zmapWindow/items/zmapWindowContainerStrand.c,
+	  zmapWindow/items/zmapWindowContainerStrand.h,
+	  zmapWindow/items/zmapWindowContainerStrand_I.h,
+	  zmapWindow/items/zmapWindowContainerUtils.c,
+	  zmapWindow/items/zmapWindowContainerUtils.h,
+	  zmapWindow/items/zmapWindowContainerUtils_P.h,
+	  zmapWindow/items/zmapWindowContainers.h,
+	  zmapWindow/items/zmapWindowFeatures.h,
+	  zmapWindow/items/zmapWindowGlyphItem.c,
+	  zmapWindow/items/zmapWindowGlyphItem.h,
+	  zmapWindow/items/zmapWindowGlyphItem_I.h,
+	  zmapWindow/items/zmapWindowLongItem.c,
+	  zmapWindow/items/zmapWindowLongItem.h,
+	  zmapWindow/items/zmapWindowLongItem_I.h,
+	  zmapWindow/items/zmapWindowLongItems_P.h,
+	  zmapWindow/items/zmapWindowSequenceFeature.c,
+	  zmapWindow/items/zmapWindowSequenceFeature.h,
+	  zmapWindow/items/zmapWindowSequenceFeature_I.h,
+	  zmapWindow/items/zmapWindowTextFeature.c,
+	  zmapWindow/items/zmapWindowTextFeature.h: CopyRight date set
+
+
+  </li>
+  <li> src/: zmapWindow/items/zmapWindowTextFeature_I.h,
+	  zmapWindow/items/zmapWindowTextItem.c,
+	  zmapWindow/items/zmapWindowTextItem.h,
+	  zmapWindow/items/zmapWindowTextItem_I.h,
+	  zmapWindow/items/zmapWindowTranscriptFeature.c,
+	  zmapWindow/items/zmapWindowTranscriptFeature.h,
+	  zmapWindow/items/zmapWindowTranscriptFeature_I.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowColConfig.c,
+	  zmapWindow/zmapWindowColOrder.c, zmapWindow/zmapWindowDNA.c,
+	  zmapWindow/zmapWindowDNAChoose.c, zmapWindow/zmapWindowDNAList.c,
+	  zmapWindow/zmapWindowDNAList.h, zmapWindow/zmapWindowDNAList_I.h,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDump.c,
+	  zmapWindow/zmapWindowExport.c, zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureList.c,
+	  zmapWindow/zmapWindowFeatureList.h,
+	  zmapWindow/zmapWindowFeatureList_I.h,
+	  zmapWindow/zmapWindowFeatureShow.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/zmapWindowFrame.c, zmapWindow/zmapWindowItem.c,
+	  zmapWindow/zmapWindowItemDebug.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemFactory.h,
+	  zmapWindow/zmapWindowItemHash.c, zmapWindow/zmapWindowItemText.c,
+	  zmapWindow/zmapWindowItemTextFillColumn.h,
+	  zmapWindow/zmapWindowList.c, zmapWindow/zmapWindowLongItems.c,
+	  zmapWindow/zmapWindowMark.c, zmapWindow/zmapWindowMark_P.h,
+	  zmapWindow/zmapWindowMenus.c, zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowNavigatorMenus.c,
+	  zmapWindow/zmapWindowNavigatorWidget.c,
+	  zmapWindow/zmapWindowNavigator_P.h,
+	  zmapWindow/zmapWindowOverlays.c, zmapWindow/zmapWindowOverlays.h,
+	  zmapWindow/zmapWindowPreferences.c, zmapWindow/zmapWindowPrint.c,
+	  zmapWindow/zmapWindowRemoteReceive.c,
+	  zmapWindow/zmapWindowRuler.c, zmapWindow/zmapWindowSearch.c,
+	  zmapWindow/zmapWindowState.c, zmapWindow/zmapWindowState.h,
+	  zmapWindow/zmapWindowStats.c,
+	  zmapWindow/zmapWindowTextPositioner.c,
+	  zmapWindow/zmapWindowTextPositioner.h,
+	  zmapWindow/zmapWindowUtils.c, zmapWindow/zmapWindowZoomControl.c,
+	  zmapWindow/zmapWindowZoomControl_P.h,
+	  zmapXML/example_xml_writer.c, zmapXML/zmapXMLAttribute.c,
+	  zmapXML/zmapXMLDocument.c, zmapXML/zmapXMLElement.c,
+	  zmapXML/zmapXMLParse.c, zmapXML/zmapXMLUtils.c,
+	  zmapXML/zmapXMLWriter.c, zmapXML/zmapXML_P.h,
+	  include/ZMap/zmapBase.h, include/ZMap/zmapCmdLineArgs.h,
+	  include/ZMap/zmapConfig.h, include/ZMap/zmapConfigDir.h,
+	  include/ZMap/zmapConfigIni.h, include/ZMap/zmapConfigKeyboard.h,
+	  include/ZMap/zmapConfigStanzaStructs.h,
+	  include/ZMap/zmapConfigStrings.h,
+	  include/ZMap/zmapConfigStyleDefaults.h,
+	  include/ZMap/zmapControl.h, include/ZMap/zmapDAS.h,
+	  include/ZMap/zmapDNA.h, include/ZMap/zmapDraw.h,
+	  include/ZMap/zmapEnum.h, include/ZMap/zmapFASTA.h,
+	  include/ZMap/zmapGFF.h, include/ZMap/zmapGLibUtils.h,
+	  include/ZMap/zmapGUITreeView.h, include/ZMap/zmapIO.h,
+	  include/ZMap/zmapManager.h, include/ZMap/zmapNavigator.h,
+	  include/ZMap/zmapPeptide.h, include/ZMap/zmapReadLine.h,
+	  include/ZMap/zmapSeqBitmap.h, include/ZMap/zmapSequence.h,
+	  include/ZMap/zmapServerProtocol.h, include/ZMap/zmapString.h,
+	  include/ZMap/zmapStyle.h, include/ZMap/zmapThreads.h,
+	  include/ZMap/zmapUtils.h, include/ZMap/zmapUtilsCheck.h,
+	  include/ZMap/zmapUtilsDebug.h, include/ZMap/zmapUtilsFoo.h,
+	  include/ZMap/zmapUtilsGUI.h, include/ZMap/zmapUtilsHandle.h,
+	  include/ZMap/zmapUtilsLog.h, include/ZMap/zmapUtilsMesg.h,
+	  include/ZMap/zmapUtilsXRemote.h, include/ZMap/zmapView.h,
+	  include/ZMap/zmapWebPages.h, include/ZMap/zmapWindow.h,
+	  include/ZMap/zmapWindowDrawFeatures.h,
+	  include/ZMap/zmapWindowNavigator.h, include/ZMap/zmapXML.h:
+	  CopyRight date set
+
+
+  </li>
+  <li> src/include/ZMap/: zmapXMLHandler.h, zmapXRemote.h: CopyRight
+	  date set
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/zmapWindowDrawFeatures.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowCollectionFeature.c,
+	  zmapWindow/items/zmapWindowCollectionFeature.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerGroup.c: committing after
+	  update after copyright fix
+
+
+  </li>
+  <li> src/include/ZMap/zmapUrl.h: added copyright header
+
+
+  </li>
+  <li> src/zmapUtils/zmapDNA.c: agghh...reverse complement did not do
+	  '-' or 'n'...stupid error by me cvs diff zmapUtils/zmapDNA.c
+
+
+  </li>
+  <li> src/zmapConfig/zmapConfigLoader.c: added missing data to logging
+	  key struct
+
+
+  </li>
+  <li> src/zmapUtils/zmapDNA.c: add rest of iupac codes.
+
+
+  </li>
+  <li> src/include/ZMap/: zmapConfigStanzaStructs.h,
+	  zmapConfigStrings.h: added delayed option for sources
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsDebug.h: beef up the debug macro with
+	  function name.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapWindow.h, zmapWindow/zmapWindow.c: fix up
+	  busy cursor stuff so we only use two funcs. Add debug.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: add missing cursor busy
+	  call.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvas.c: remove busy cursor
+	  calls, wrong place.
+
+
+  </li>
+  <li> src/zmapUtils/zmapDNA.c: add iupac ambiguity codes to rev
+	  complement code.
+
+
+  </li>
+  <li> src/zmapView/: zmapViewUtils.c, zmapView_P.h: add
+	  zmapviewbusyfull call.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: partly fix the busy cursor bug.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.16546/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapBase.h, include/ZMap/zmapServerProtocol.h,
+	  include/ZMap/zmapStyle.h, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyle_I.h, zmapFeature/zmapStyle_P.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/pipe/pipeServer.c, zmapUtils/zmapBase.c,
+	  zmapUtils/zmapGUITreeView.c, zmapUtils/zmapGUITreeView_I.h,
+	  zmapView/zmapView.c, zmapView/zmapViewUtils.c,
+	  zmapView/zmapView_P.h, zmapWindow/zmapWindowDNAList.c:
+	  implemented delayed server
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: allowed view to request data from
+	  existing connection
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h,
+	  include/ZMap/zmapConfigStanzaStructs.h,
+	  include/ZMap/zmapConfigStrings.h, include/ZMap/zmapFeature.h,
+	  include/ZMap/zmapView.h, zmapConfig/zmapConfigFile.c,
+	  zmapConfig/zmapConfigIni_P.h, zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapFeature.c, zmapFeature/zmapFeatureOutput.c,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapThreads/zmapThreads.c, zmapView/zmapView.c,
+	  zmapView/zmapViewRemoteReceive.c, zmapView/zmapViewUtils.c,
+	  zmapView/zmapView_P.h, zmapWindow/zmapWindowItem.c: delayed
+	  threads debugged
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeature.c, zmapView/zmapView.c: feature set
+	  debugging removed
+
+
+  </li>
+  <li> src/: zmapServer/pipe/pipeServer.c, zmapThreads/zmapThreads.c,
+	  zmapView/zmapView.c, zmapView/zmapViewUtils.c: removed the rest
+	  of my debug log messages
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: merge the changes I made for busy cursor
+	  with Malcolms, correct now I think.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add some logging but turn off debug
+	  messages for busy cursor.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.11509/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/configure.ac: remove md5 dependency.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: now finds features sources from ACE
+	  source to featureset table
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/XRemote.xs: added Display parameter to
+	  remote call, must be NULL from here.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureOutput.c: fix trivial compiler casting
+	  bug.
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: Add display pointer to create
+	  call, needed to avoid opening new display.
+
+
+  </li>
+  <li> src/: zmapApp/zmapAppremote.c,
+	  zmapControl/zmapControlRemoteReceive.c,
+	  zmapControl/remote/xremote_gui_test.c,
+	  zmapView/zmapViewRemoteReceive.c: add display pointer to xremote
+	  create.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: fix int to pointer cast warning and some
+	  code formatting.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: remove code that removes
+	  feature from FToI hash, this is the wrong place.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.c: remove
+	  redundant warning message.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils.c: just formatting
+	  chnages, didn't need to alter code in the end.
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: add display pointer to
+	  create call, only open new display if running from perl. Fix
+	  badwindow bug by not deleteing properties.
+
+
+  </li>
+  <li> src/zmapUtils/zmapXRemoteUtils.c: change realize to map-event and
+	  test for drawable, makes sure window is there. sort out property
+	  notify - wrong event string.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapConfig/zmapConfigLoader.c,
+	  zmapControl/zmapControlWindowButtons.c,
+	  zmapFeature/zmapFeature.c, zmapFeature/zmapFeatureOutput.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapFeatureUtils.c,
+	  zmapFeature/zmapStyle.c, zmapFeature/zmapStyleUtils.c,
+	  zmapFeature/zmapStyle_I.h, zmapGFF/zmapGFF2parser.c,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/acedb/acedbServer.c, zmapServer/das/dasServer.c,
+	  zmapUtils/zmapBase.c, zmapUtils/zmapBase_I.h,
+	  zmapView/zmapView.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemText.c, zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/items/zmapWindowAlignmentFeature.c,
+	  zmapWindow/items/zmapWindowAssemblyFeature.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowSequenceFeature.c,
+	  zmapWindow/items/zmapWindowTextFeature.c,
+	  zmapWindow/items/zmapWindowTranscriptFeature.c: tidied up styles
+	  handling - new data structe and 2000 lines of code less: handle
+	  with care!
+
+
+  </li>
+  <li> src/configure.ac: switch to zmapfoocanvas
+
+
+  </li>
+  <li> src/: include/ZMap/zmapBase.h, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapStyle.c: fixed mode specific style parameter and
+	  struct initialisation mistake
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowList.c: fix bug where we returned no
+	  search results but pretended we had.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: minor code
+	  clarification.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: fix rounding error
+	  leading to non-clickable length one/two objects.
+
+
+  </li>
+  <li> src/: Makefile.am, configure.ac: disable libtool from trying to
+	  build shared libs for zmap stuff.
+
+
+  </li>
+  <li> src/zmapView/: zmapView.c, zmapView_P.h: fix timing bug in
+	  recording window id for xremote in view.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h,
+	  include/ZMap/zmapConfigStrings.h, include/ZMap/zmapStyle.h,
+	  zmapConfig/zmapConfigLoader.c, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyleUtils.c, zmapFeature/zmapStyle_I.h,
+	  zmapGFF/zmapGFF2parser.c, zmapServer/acedb/acedbServer.c,
+	  zmapWindow/zmapWindowDump.c,
+	  zmapWindow/items/zmapWindowBasicFeature.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowCollectionFeature.c,
+	  zmapWindow/items/zmapWindowGlyphItem.c,
+	  zmapWindow/items/zmapWindowGlyphItem.h,
+	  zmapWindow/items/zmapWindowGlyphItem_I.h: interim new glyph
+	  config: print screen= no gylphs, previous function is preserved
+	  5' and 3' variants allowed, score not handled
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c, zmapView/zmapView.c: stylesfile
+	  now moved to servers, can use instead of ACE styles
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowCanvasItem.c,
+	  zmapWindowCollectionFeature.c: removed compiler warnigns
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: parse new class/name/align
+	  tag/values from acedb, changed to make name parsing more certain.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: remove debugging output.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h,
+	  include/ZMap/zmapConfigStrings.h, include/ZMap/zmapStyle.h,
+	  zmapConfig/zmapConfigLoader.c, zmapDraw/zmapDraw.c,
+	  zmapFeature/zmapFeature.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapStyle.c, zmapFeature/zmapStyleUtils.c,
+	  zmapFeature/zmapStyle_I.h, zmapServer/acedb/acedbServer.c,
+	  zmapView/zmapView.c, zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/zmapWindowItemFactory.c, zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/items/zmapWindowBasicFeature.c,
+	  zmapWindow/items/zmapWindowCollectionFeature.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowGlyphItem.c,
+	  zmapWindow/items/zmapWindowGlyphItem.h,
+	  zmapWindow/items/zmapWindowGlyphItem_I.h: new glyphs code interim
+	  development release
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyleUtils.c, zmapFeature/zmapStyle_I.h,
+	  zmapView/zmapView.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapWindow/items/zmapWindowGlyphItem.c: more glyph tweaks and
+	  pipe stuff
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapFeature/zmapStyle.c: fixed to
+	  default bump mode
+
+
+  </li>
+  <li> src/zmapUtils/zmapFASTA.c: clarify who frees string returned by
+	  fasta func.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowFeature.c: fix reporting
+	  of clicks on dna sequence so that they report coords again...bug
+	  from Roys changes.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem_I.h: add ypos select
+	  state, needed for highlighting. Remove redundant fields.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem.c: fix bug that caused
+	  highlighting to be drawn in wrong position when scrolled window
+	  changes.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyleUtils.c, zmapFeature/zmapStyle_I.h,
+	  zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet_I.h: fixed for
+	  styles glyph-align, unmarked-colinear and some other options
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsLogical.h: add some macros for logical
+	  bit ops.
+
+
+  </li>
+  <li> src/: zmapUtils/zmapReadLine.c, include/ZMap/zmapReadLine.h: make
+	  readline package return the length of the line it has just read.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: read line returns length so
+	  pass this to gff parser.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2Dumper.c: fix const compiler warnings.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGFF.h, zmapGFF/zmapGFF2parser.c,
+	  zmapGFF/zmapGFF_P.h: make parsing buffer size and associated
+	  format string size fully dynamic. allow parser to accept a given
+	  line size for efficiency.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, include/ZMap/zmapView.h,
+	  zmapConfig/zmapConfigLoader.c, zmapControl/zmapControl.c,
+	  zmapFeature/zmapFeature.c, zmapFeature/zmapFeatureDNA.c,
+	  zmapServer/pipe/pipeServer.c, zmapView/zmapView.c,
+	  zmapWindow/zmapWindowFeature.c: fixed DNA not there bug where
+	  ACEDB is second server running
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: add some issing asserts.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: add code to handle getting
+	  feature from a feature sub item.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowNavigator.c: we need to be able to get
+	  the zmap window from a canvas item in the navigator so add the
+	  set_data to do it.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: remove redundant code.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: fix off by one like error
+	  in test for whether intron is within cds.
+
+
+  </li>
+  <li> src/runconfig: fixed gprof compile flags
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStanzaStructs.h,
+	  include/ZMap/zmapConfigStrings.h, zmapConfig/zmapConfigLoader.c,
+	  zmapControl/zmapControl.c, zmapFeature/zmapFeature.c,
+	  zmapView/zmapView.c, zmapView/zmapView_P.h: update for new build,
+	  pipework in progress
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvas.c: fix bug that lead to
+	  checking of long items when nothing has changed on canvas.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: just format changes
+	  to make more legible.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.22918/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.9789/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix small buglet in Gaps parsing
+	  caused by acedb gff format being tightened up.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowItemFactory.c,
+	  items/zmapWindowCollectionFeature.c: remove debugging printfs
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.1973/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix up bug in init'ing featuredata
+	  class. partially fix tabbing through cols, all broken.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: put static functions where
+	  they should be in the 'internal routines' section.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: remove class init from here,
+	  wrong place to do it.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFocus.c: reinstate code to make sure
+	  items are put back in right place in their container list when
+	  unhighlighted.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.h: add missing
+	  declare.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFocus.c: add missing test for result of
+	  moving item in container.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils.h: add missing
+	  defines for get/set item position..reinstated from code
+	  erroneously removed.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils.c: fix up stepping
+	  through containers...all broken when it's a collectionfeature or
+	  when it's empty.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: remove debugging code, correct
+	  missing casts.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: correct missing casts,
+	  comment out unused function.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFocus.c, zmapWindowItem.c,
+	  items/zmapWindowContainerUtils.c: correct missing casts.
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/XRemote.xs: moved C comment from perl
+	  code zone to C zone in XS file
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: add comment to document a
+	  design flaw in this code which needs fixing.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: some style code got removed
+	  to support the pipe server but this caused a crash for feature
+	  saving.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteSend.c: minor code format change.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: make sure button releases are passed
+	  through as other routines need them.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: make double click work on
+	  button release NOT button press as then xremote loses our button
+	  release events.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: change blix match type to bit
+	  field.
+
+
+  </li>
+  <li> src/: zmapView/zmapView.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowMenus.c: make multi set code for blixem
+	  matches work, wasnt' working before.
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: remove redundant stuff and force
+	  change of version.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.27842/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtils.h, zmapUtils/zmapUtils_P.h: make
+	  version macros public.
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote_P.h: adjust header order
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: introduce a version number for
+	  xremote interface.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyle_I.h: minor format changes.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: updates featureset/style ids and
+	  de-branched the file
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h,
+	  include/ZMap/zmapConfigStanzaStructs.h,
+	  include/ZMap/zmapConfigStrings.h, include/ZMap/zmapGFF.h,
+	  include/ZMap/zmapGLibUtils.h, include/ZMap/zmapServerProtocol.h,
+	  include/ZMap/zmapThreads.h, zmapApp/zmapAppwindow.c,
+	  zmapConfig/zmapConfigLoader.c, zmapFeature/zmapFeatureContext.c,
+	  zmapServer/zmapServer.c, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/acedb/acedbServer.c,
+	  zmapServer/das/dasServer.c, zmapServer/file/fileServer.c,
+	  zmapServer/pipe/pipeServer.c, zmapServer/pipe/pipeServer_P.h,
+	  zmapThreads/zmapSlave.c, zmapThreads/zmapThreads.c,
+	  zmapUtils/zmapGLibUtils.c, zmapView/zmapView.c,
+	  zmapView/zmapViewCallBlixem.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapView/zmapViewUtils.c, zmapView/zmapView_P.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowDump.c, zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/items/zmapWindowCollectionFeature.c: pipe server +
+	  featureset config and threads updated and debugged
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyle.c: added a comment
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDraw.c,
+	  items/zmapWindowBasicFeature.c: 3F slice markers restored to
+	  former glory
+
+
+  </li>
+  <li> src/zmapConfig/zmapConfigLoader.c: bug fix for zmap config
+	  columns/ featuresets: cures an assert
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGFF.h, zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapStyle.c, zmapGFF/zmapGFF2parser.c,
+	  zmapServer/acedb/acedbServer.c, zmapUtils/zmapUtils_P.h,
+	  zmapView/zmapView.c, zmapWindow/zmapWindowColOrder.c: fixed
+	  column ordering and updated about box
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c,
+	  zmapWindow/items/zmapWindowCollectionFeature.c: fixed homology
+	  glyphs glyph-strand=flip-y (3 bugs)
+
+
+  </li>
+  <li> src/: zmapFeature/zmapStyle.c,
+	  zmapWindow/items/zmapWindowBasicFeature.c,
+	  zmapWindow/items/zmapWindowGlyphItem.c: tidied up glyphs, was a
+	  bit hard coded
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigKey.c, zmapFeature/zmapStyle.c,
+	  zmapWindow/items/zmapWindowBasicFeature.c: fixed glyph config for
+	  min-score (glib bug)
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDraw.c, zmapWindowDrawFeatures.c,
+	  items/zmapWindowContainerFeatureSet.c: fixed gf-splice style
+	  config
+
+
+  </li>
+  <li> src/zmapWindow/Makefile.am: remove collectionFeature files, their
+	  code has been subsumed into featureset in the new utils file.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: remove colinear colours, in
+	  featureset item now, add mark header.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowAlignmentFeature.c: remove
+	  unwanted colour stuff, add support for object stats.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowAssemblyFeature.c,
+	  zmapWindowBasicFeature.c, zmapWindowContainerAlignment.c: add
+	  support for object stats.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerAlignment_I.h: remove
+	  unwanted header.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowContainerBlock.c,
+	  zmapWindowContainerBlock_I.h, zmapWindowContainerContext.c,
+	  zmapWindowContainerContext_I.h: add object stats support, remove
+	  unwanted headers.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowTranscriptFeature.c,
+	  zmapWindowTranscriptFeature_I.h: move some code about and
+	  rationalise.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerChildren_I.h: remove
+	  unwanted header.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerChildren.c: no real
+	  changes, move code around into internal/external blocks.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: remove
+	  collectionfeature related stuff, add stats code.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem_I.h: add my new allbase
+	  header and some object stats fields.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowAllBase.h: add a common object
+	  header file.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: add object stats
+	  support.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.h: add comment
+	  about bad looking header includes.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup_I.h: add various
+	  container types that were all over the place.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils.c: remove redundant
+	  feature collection stuff, add some commenting.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils.h: add missing
+	  header comment.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils_P.h: remove some
+	  types that were in the wrong place.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowFeatures.h: remove
+	  collectionfeature
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.c: add object
+	  stats code and code to remove sub features (colinear lines etc.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.h: add
+	  functions moved from defunct collectionfeature code.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet_I.h: add state
+	  to keep track of subfeatures added to column, e.g. colinear
+	  markers.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowLongItem.c: remove hard coded
+	  max-zoom, get from canvas dynamically.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: remove any collectionfeature
+	  stuff, i.e. go back to where bump was before collectionfeatures
+	  were introduced.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: remove hack for collectionfeatures,
+	  fix small bug in highlighting when cursoring.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureList.c: add trenchant comment
+	  about an include.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: add
+	  utilities including code to draw colinear markers etc, moved from
+	  collectionfeatures.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowCollectionFeature_I.h,
+	  zmapWindowCollectionFeature.h: no longer needed, code moved to
+	  featureset.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCollectionFeature.c: no longer
+	  needed, code moved to featureset.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowLongItem.c: correct stupid typo.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGLibUtils.h,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapStyle_I.h,
+	  zmapUtils/zmapGLibUtils.c, zmapUtils/zmapUtils_P.h,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet_I.h: fixed
+	  recursive style def bug and speeded up inheritance
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyle_I.h, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: fixed col
+	  not displayed bug in 3-frame mode
+
+
+  </li>
+  <li> src/zmapWindow/Makefile.am: Add new items headers and code.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowAlignmentFeature.c,
+	  zmapWindowAssemblyFeature.c, zmapWindowTranscriptFeature.c: add
+	  new stats calls.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowAllBase.c, zmapWindowAllBase.h:
+	  add new stats functions.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowBasicFeature.c,
+	  zmapWindowBasicFeature.h, zmapWindowBasicFeature_I.h,
+	  zmapWindowCanvasItem.c, zmapWindowCanvasItem_I.h: add new stats
+	  calls.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowFeatures.h,
+	  zmapWindowContainers.h, zmapWindowContainers_I.h,
+	  zmapWindowFeatures_I.h: update common header files and add ones
+	  for private headers.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: fixed crash on bump
+	  umbumpable column
+
+
+  </li>
+  <li> src/zmapView/: zmapView.c, zmapViewRemoteReceive.c: RT172332
+	  column not displayed after OTF loading
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h,
+	  include/ZMap/zmapConfigStrings.h, include/ZMap/zmapFeature.h,
+	  include/ZMap/zmapGFF.h, include/ZMap/zmapServerProtocol.h,
+	  include/ZMap/zmapStyle.h, include/ZMap/zmapUtilsDebug.h,
+	  include/ZMap/zmapView.h, include/ZMap/zmapWindow.h,
+	  include/ZMap/zmapWindowNavigator.h,
+	  zmapConfig/zmapConfigLoader.c, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureContext.c,
+	  zmapFeature/zmapFeatureOutput.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapFeatureUtils.c, zmapFeature/zmapFeature_P.h,
+	  zmapFeature/zmapStyle.c, zmapFeature/zmapStyleUtils.c,
+	  zmapFeature/zmapStyle_I.h, zmapGFF/gffparser.c,
+	  zmapGFF/zmapGFF2Dumper.c, zmapGFF/zmapGFF2parser.c,
+	  zmapGFF/zmapGFF_P.h, zmapServer/zmapServer.c,
+	  zmapServer/zmapServer.h, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/acedb/acedbServer.c,
+	  zmapServer/das/dasServer.c, zmapServer/das/dasServer_P.h,
+	  zmapServer/pipe/pipeServer.c, zmapUtils/zmapGLibUtils.c,
+	  zmapUtils/zmapUtils.c, zmapUtils/zmapUtilsConfig.c,
+	  zmapView/zmapView.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapView/zmapView_P.h, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowColBump.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c, zmapWindow/zmapWindowDump.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowRemoteReceive.c,
+	  zmapWindow/zmapWindowSearch.c, zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature.c,
+	  zmapWindow/items/zmapWindowAlignmentFeature.h,
+	  zmapWindow/items/zmapWindowAssemblyFeature.h,
+	  zmapWindow/items/zmapWindowBasicFeature.c,
+	  zmapWindow/items/zmapWindowBasicFeature.h,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowCanvasItem.h,
+	  zmapWindow/items/zmapWindowContainerAlignment.h,
+	  zmapWindow/items/zmapWindowContainerBlock.h,
+	  zmapWindow/items/zmapWindowContainerChildren.h,
+	  zmapWindow/items/zmapWindowContainerContext.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c,
+	  zmapWindow/items/zmapWindowContainerGroup.c,
+	  zmapWindow/items/zmapWindowContainerGroup.h,
+	  zmapWindow/items/zmapWindowContainerStrand.h,
+	  zmapWindow/items/zmapWindowGlyphItem.h,
+	  zmapWindow/items/zmapWindowLongItem.h,
+	  zmapWindow/items/zmapWindowSequenceFeature.h,
+	  zmapWindow/items/zmapWindowTextFeature.h,
+	  zmapWindow/items/zmapWindowTextItem.h,
+	  zmapWindow/items/zmapWindowTranscriptFeature.h: removed
+	  g_datalist from styles and speeded up access to parameters
+
+
+  </li>
+  <li> src/zmapApp/zmapAppwindow.c: fix up const error message.
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigKey.c,
+	  zmapFeature/zmapFeatureOutput.c, zmapGFF/zmapGFF2parser.c: fix up
+	  bad gsize errors for 64 operation.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureUtils.c: a comment
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: fix up formatting but more importantly
+	  fix 32/64 bit pointer/int conversion.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemText.c: fix 64 bit cast bug.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: fix missing hash table
+	  creation after conversion from datalists....
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: temp. fix for crashing on mac on view
+	  kill.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: on the mac enter/leave doesn't work
+	  for an implicit enter like when a window is created under the
+	  mouse. So make button_press be the enter.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix bug of mine in creating format
+	  string using gsize, now uses portable G_GSSIZE_FORMAT
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindow.c: fix 64-bit problem in
+	  reading properties.
+
+
+  </li>
+  <li> src/: zmapView/zmapViewRemoteReceive.c,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c: fixed empty
+	  3frame columns on startup
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: removed debugging
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowDrawFeatures.c,
+	  zmapWindowFeature.c, zmapWindowFocus.c: fixed crash on destroy
+	  focus of 3 frame when going revcomp
+
+
+  </li>
+  <li> src/zmapThreads/zmapSlave.c: added comments
+
+
+  </li>
+  <li> src/zmapThreads/zmapSlave.c: fix silly typos from checkin.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowDrawFeatures.c,
+	  zmapWindowFeature.c: fix bug causing us not to detect double
+	  click, really gdk's problem for not reporting it reliably. Also
+	  fix holes in mouse handling.
+
+
+  </li>
+  <li> src/: zmapThreads/zmapThreads.c, zmapView/zmapView.c: wortk round
+	  to posix pthread_kill bug on the mac
+
+
+  </li>
+  <li> src/: zmapApp/zmapAppmain_c.c, zmapApp/zmapAppremote.c,
+	  zmapConfig/zmapConfigDir.c, zmapControl/remote/zmapXRemote.c,
+	  zmapControl/zmapControlNavigator.c,
+	  zmapControl/zmapControlViews.c, zmapControl/zmapControlWindow.c:
+	  author added
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: add missing utils header for
+	  version number stuff.
+
+
+  </li>
+  <li> src/include/ZMap/zmap.h: global header for source wide options
+
+
+  </li>
+  <li> src/: zmapApp/zmapApp_P.h, zmapApp/zmapAppconnect.c,
+	  zmapApp/zmapAppmain_c.c, zmapApp/zmapAppmanage.c,
+	  zmapApp/zmapAppmenubar.c, zmapApp/zmapAppremote.c,
+	  zmapApp/zmapAppwindow.c, zmapConfig/zmapConfigDir.c,
+	  zmapConfig/zmapConfigDir_P.h, zmapConfig/zmapConfigFile.c,
+	  zmapConfig/zmapConfigIni.c, zmapConfig/zmapConfigIni_P.h,
+	  zmapConfig/zmapConfigKey.c, zmapConfig/zmapConfigLoader.c,
+	  zmapControl/zmapControl.c, zmapControl/zmapControlNavigator.c,
+	  zmapControl/zmapControlPreferences.c,
+	  zmapControl/zmapControlRemoteReceive.c,
+	  zmapControl/zmapControlRemoteSend.c,
+	  zmapControl/zmapControlViews.c, zmapControl/zmapControlWindow.c,
+	  zmapControl/zmapControlWindowButtons.c,
+	  zmapControl/zmapControlWindowFrame.c,
+	  zmapControl/zmapControlWindowInfoPanel.c,
+	  zmapControl/zmapControlWindowMenubar.c,
+	  zmapControl/zmapControl_P.h, zmapControl/zmapNavigator_P.h,
+	  zmapControl/remote/xremote_gui_test.c,
+	  zmapControl/remote/zmapXRemote.c,
+	  zmapControl/remote/zmapXRemote_P.h, zmapDAS/zmapDAS1DSN.c,
+	  zmapDAS/zmapDAS1Parser.c, zmapDocs/ZMapMainPage.c,
+	  zmapDraw/zmapDraw.c, zmapDraw/zmapDraw_P.h,
+	  zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeature3FrameTranslation.c,
+	  zmapFeature/zmapFeatureContext.c,
+	  zmapFeature/zmapFeatureContextUtils.c,
+	  zmapFeature/zmapFeatureDNA.c, zmapFeature/zmapFeatureData.c,
+	  zmapFeature/zmapFeatureFormatInput.c,
+	  zmapFeature/zmapFeatureOutput.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapFeatureUtils.c, zmapFeature/zmapFeatureXML.c,
+	  zmapFeature/zmapFeature_P.h, zmapFeature/zmapStyle.c,
+	  zmapFeature/zmapStyleUtils.c, zmapFeature/zmapStyle_I.h,
+	  zmapFeature/zmapStyle_P.h, zmapFeature/tests/check_zmapFeature.c,
+	  zmapFeature/tests/check_zmapFeature.h,
+	  zmapFeature/tests/check_zmapFeature_P.c,
+	  zmapFeature/tests/check_zmapFeature_P.h,
+	  zmapFeature/tests/check_zmapStyle.c,
+	  zmapFeature/tests/check_zmapStyle.h,
+	  zmapFeature/tests/check_zmapStyle_P.c,
+	  zmapFeature/tests/check_zmapStyle_P.h, zmapGFF/gffparser.c,
+	  zmapGFF/zmapGFF2Dumper.c, zmapGFF/zmapGFF2parser.c,
+	  zmapGFF/zmapGFF_P.h, zmapManager/zmapManager.c,
+	  zmapManager/zmapManager_P.h, zmapServer/zmapServer.c,
+	  zmapServer/zmapServer.h, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/zmapServer_P.h,
+	  zmapServer/acedb/acedbServer.c, zmapServer/acedb/acedbServer_P.h,
+	  zmapServer/das/dasServer.c, zmapServer/das/dasServer_P.h,
+	  zmapServer/file/fileServer.c, zmapServer/file/fileServer_P.h,
+	  zmapServer/pipe/pipeServer.c, zmapServer/pipe/pipeServer_P.h,
+	  zmapThreads/zmapSlave.c, zmapThreads/zmapSlave.test.c,
+	  zmapThreads/zmapSlave_P.h, zmapThreads/zmapThreads.c,
+	  zmapThreads/zmapThreadsUtils.c, zmapThreads/zmapThreads_P.h,
+	  zmapUtils/safe-ctype.c, zmapUtils/zmapBase.c,
+	  zmapUtils/zmapBase_I.h, zmapUtils/zmapCmdLineArgs.c,
+	  zmapUtils/zmapCmdLineArgs_P.h, zmapUtils/zmapCoords.c,
+	  zmapUtils/zmapDNA.c, zmapUtils/zmapFASTA.c,
+	  zmapUtils/zmapFileUtils.c, zmapUtils/zmapFooUtils.c,
+	  zmapUtils/zmapGLibUtils.c, zmapUtils/zmapGUINotebook.c,
+	  zmapUtils/zmapGUITreeView.c, zmapUtils/zmapGUITreeView_I.h,
+	  zmapUtils/zmapGUImenus.c, zmapUtils/zmapGUIutils.c,
+	  zmapUtils/zmapHandle.c, zmapUtils/zmapIOOut.c,
+	  zmapUtils/zmapIO_P.h, zmapUtils/zmapLogging.c,
+	  zmapUtils/zmapPeptide.c, zmapUtils/zmapReadLine.c,
+	  zmapUtils/zmapReadLine_P.h, zmapUtils/zmapSeqBitmap.c,
+	  zmapUtils/zmapSequence.c, zmapUtils/zmapString.c,
+	  zmapUtils/zmapUrl.c, zmapUtils/zmapUrlUtils.c,
+	  zmapUtils/zmapUtils.c, zmapUtils/zmapUtilsConfig.c,
+	  zmapUtils/zmapUtilsSpawn.c, zmapUtils/zmapUtilsUsers.c,
+	  zmapUtils/zmapUtils_P.h, zmapUtils/zmapWebBrowser.c,
+	  zmapUtils/zmapXRemoteUtils.c,
+	  zmapUtils/tests/check_zmapConfigLoader.c,
+	  zmapUtils/tests/check_zmapConfigLoader.h, zmapView/zmapView.c,
+	  zmapView/zmapViewCallBlixem.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapView/zmapViewRemoteSend.c, zmapView/zmapViewUtils.c,
+	  zmapView/zmapView_P.h, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowColBump.c, zmapWindow/zmapWindowColConfig.c,
+	  zmapWindow/zmapWindowColOrder.c, zmapWindow/zmapWindowDNA.c,
+	  zmapWindow/zmapWindowDNAChoose.c, zmapWindow/zmapWindowDNAList.c,
+	  zmapWindow/zmapWindowDNAList.h, zmapWindow/zmapWindowDNAList_I.h,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowDump.c, zmapWindow/zmapWindowExport.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureList.c,
+	  zmapWindow/zmapWindowFeatureList.h,
+	  zmapWindow/zmapWindowFeatureList_I.h,
+	  zmapWindow/zmapWindowFeatureShow.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/zmapWindowFrame.c, zmapWindow/zmapWindowItem.c,
+	  zmapWindow/zmapWindowItemDebug.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemFactory.h,
+	  zmapWindow/zmapWindowItemHash.c, zmapWindow/zmapWindowItemText.c,
+	  zmapWindow/zmapWindowItemTextFillColumn.h,
+	  zmapWindow/zmapWindowList.c, zmapWindow/zmapWindowLongItems.c,
+	  zmapWindow/zmapWindowMark.c, zmapWindow/zmapWindowMark_P.h,
+	  zmapWindow/zmapWindowMenus.c, zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowNavigatorMenus.c,
+	  zmapWindow/zmapWindowNavigatorWidget.c,
+	  zmapWindow/zmapWindowNavigator_P.h,
+	  zmapWindow/zmapWindowOverlays.c, zmapWindow/zmapWindowOverlays.h,
+	  zmapWindow/zmapWindowPreferences.c, zmapWindow/zmapWindowPrint.c,
+	  zmapWindow/zmapWindowRemoteReceive.c,
+	  zmapWindow/zmapWindowRuler.c, zmapWindow/zmapWindowSearch.c,
+	  zmapWindow/zmapWindowState.c, zmapWindow/zmapWindowState.h,
+	  zmapWindow/zmapWindowStats.c,
+	  zmapWindow/zmapWindowTextPositioner.c,
+	  zmapWindow/zmapWindowTextPositioner.h,
+	  zmapWindow/zmapWindowUtils.c, zmapWindow/zmapWindowZoomControl.c,
+	  zmapWindow/zmapWindowZoomControl_P.h, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature.c,
+	  zmapWindow/items/zmapWindowAlignmentFeature.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature_I.h,
+	  zmapWindow/items/zmapWindowAllBase.c,
+	  zmapWindow/items/zmapWindowAllBase.h,
+	  zmapWindow/items/zmapWindowAssemblyFeature.c,
+	  zmapWindow/items/zmapWindowAssemblyFeature.h,
+	  zmapWindow/items/zmapWindowAssemblyFeature_I.h,
+	  zmapWindow/items/zmapWindowBasicFeature.c,
+	  zmapWindow/items/zmapWindowBasicFeature.h,
+	  zmapWindow/items/zmapWindowBasicFeature_I.h,
+	  zmapWindow/items/zmapWindowCanvas.c,
+	  zmapWindow/items/zmapWindowCanvas.h,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowCanvasItem.h,
+	  zmapWindow/items/zmapWindowCanvasItem_I.h,
+	  zmapWindow/items/zmapWindowCanvas_I.h,
+	  zmapWindow/items/zmapWindowContainerAlignment.c,
+	  zmapWindow/items/zmapWindowContainerAlignment.h,
+	  zmapWindow/items/zmapWindowContainerAlignment_I.h,
+	  zmapWindow/items/zmapWindowContainerBlock.c,
+	  zmapWindow/items/zmapWindowContainerBlock.h,
+	  zmapWindow/items/zmapWindowContainerBlock_I.h,
+	  zmapWindow/items/zmapWindowContainerChildren.c,
+	  zmapWindow/items/zmapWindowContainerChildren.h,
+	  zmapWindow/items/zmapWindowContainerChildren_I.h,
+	  zmapWindow/items/zmapWindowContainerContext.c,
+	  zmapWindow/items/zmapWindowContainerContext.h,
+	  zmapWindow/items/zmapWindowContainerContext_I.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet_I.h,
+	  zmapWindow/items/zmapWindowContainerGroup.c,
+	  zmapWindow/items/zmapWindowContainerGroup.h,
+	  zmapWindow/items/zmapWindowContainerGroup_I.h,
+	  zmapWindow/items/zmapWindowContainerStrand.c,
+	  zmapWindow/items/zmapWindowContainerStrand.h,
+	  zmapWindow/items/zmapWindowContainerStrand_I.h,
+	  zmapWindow/items/zmapWindowContainerUtils.c,
+	  zmapWindow/items/zmapWindowContainerUtils.h,
+	  zmapWindow/items/zmapWindowContainerUtils_P.h,
+	  zmapWindow/items/zmapWindowContainers.h,
+	  zmapWindow/items/zmapWindowContainers_I.h,
+	  zmapWindow/items/zmapWindowFeatures.h,
+	  zmapWindow/items/zmapWindowFeatures_I.h,
+	  zmapWindow/items/zmapWindowGlyphItem.c,
+	  zmapWindow/items/zmapWindowGlyphItem.h,
+	  zmapWindow/items/zmapWindowGlyphItem_I.h,
+	  zmapWindow/items/zmapWindowLongItem.c,
+	  zmapWindow/items/zmapWindowLongItem.h,
+	  zmapWindow/items/zmapWindowLongItem_I.h,
+	  zmapWindow/items/zmapWindowLongItems_P.h,
+	  zmapWindow/items/zmapWindowSequenceFeature.c,
+	  zmapWindow/items/zmapWindowSequenceFeature.h,
+	  zmapWindow/items/zmapWindowSequenceFeature_I.h,
+	  zmapWindow/items/zmapWindowTextFeature.c,
+	  zmapWindow/items/zmapWindowTextFeature.h,
+	  zmapWindow/items/zmapWindowTextFeature_I.h,
+	  zmapWindow/items/zmapWindowTextItem.c,
+	  zmapWindow/items/zmapWindowTextItem.h,
+	  zmapWindow/items/zmapWindowTextItem_I.h,
+	  zmapWindow/items/zmapWindowTranscriptFeature.c,
+	  zmapWindow/items/zmapWindowTranscriptFeature.h,
+	  zmapWindow/items/zmapWindowTranscriptFeature_I.h,
+	  zmapXML/example_xml_writer.c, zmapXML/zmapXMLAttribute.c,
+	  zmapXML/zmapXMLDocument.c, zmapXML/zmapXMLElement.c,
+	  zmapXML/zmapXMLParse.c, zmapXML/zmapXMLUtils.c,
+	  zmapXML/zmapXMLWriter.c, zmapXML/zmapXML_P.h: global addition of
+	  mh17's name and also #include zmap.h
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/XRemote.xs: XRemote: define
+	  ZMAP_X_PROGRAM_G.
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/: XRemote.xs, lib/X11/XRemote.pm:
+	  XRemote: add the x_program() getter/setter subroutine.
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/lib/X11/XRemote.pm: XRemote.pm: pod
+	  formatting and typo fixes.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: fix to v-split
+	  spontaneous unlocking of panes
+
+
+  </li>
+  <li> src/zmapWindow/Makefile.am: fix stupid mistake in including some
+	  new header files.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.11433/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: zmapGFF/zmapGFF2parser.c, zmapGFF/zmapGFF_P.h,
+	  zmapWindow/zmapWindowDrawFeatures.c: fixed bug introduced by
+	  style optimisation: all featureset in a col used same style
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowDrawFeatures.c,
+	  zmapWindowUtils.c: (temp) fix for new object not displayed
+
+
+  </li>
+  <li> src/: zmapView/zmapView.c, zmapWindow/zmapWindow.c: fixed OTF
+	  alignment display ordering
+
+
+  </li>
+  <li> src/zmapServer/pipe/pipeServer.c: fixed double free on pipe
+	  warning message
+
+
+  </li>
+  <li> src/: include/Makefile.am, libcurlobject/Makefile.am,
+	  libpfetch/Makefile.am, zmapApp/Makefile.am,
+	  zmapConfig/Makefile.am, zmapControl/Makefile.am,
+	  zmapWindow/Makefile.am: insert missing source files from
+	  Makefile.am's.
+
+
+  </li>
+  <li> src/configure.ac: remove canvas_choice from build, screws up
+	  'make dist' target.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: comment out call to see if thread has
+	  died, it doesn't work on the mac.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add fix for lack of Enter signal on
+	  mac when window appears under the mouse pointer.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: comment out some
+	  debugging info.
+
+
+  </li>
+  <li> src/configure.ac: patch gtk version, need to go to newer one.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark.c: fixed RT161721 bumped cols
+	  dissappear on hsplit
+
+
+  </li>
+  <li> src/: INSTALL, configure.ac, include/ZMap/zmapWindow.h,
+	  zmapControl/zmapControlWindowButtons.c, zmapView/zmapView.c,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowState.c: tidied up 3FT mess and updated
+	  comments in bump cols on vsplit
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColOrder.c, zmapWindowDrawFeatures.c:
+	  made columns create-on-demand
+
+
+  </li>
+  <li> src/: include/ZMap/zmapDNA.h, zmapUtils/zmapDNA.c,
+	  zmapUtils/zmapPeptide.c: added ambguous codes to DNA search
+
+
+  </li>
+  <li> src/zmapConfig/zmapConfigDir.c: fix for poor error message for
+	  --conf_dir errors
+
+
+  </li>
+  <li> src/configure.ac: revert to previous autoconf prereq, none of us
+	  are sure why it got changed.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: fix up our testing of button
+	  state, incredibly the state is different between button press and
+	  release...sigh.
+
+
+  </li>
+  <li> src/: bootstrap, configure.ac: fix our bootstrap/configure macros
+	  to dynamically look up/ include the zmap version.
+
+
+  </li>
+  <li> src/: zmapView/zmapView.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindow_P.h: added chromo coords to window ruler
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowAllBase.c, zmapWindowAllBase.h:
+	  add funcs to print out all the class derivations for our items.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapDNA.h, zmapUtils/zmapDNA.c: added x to
+	  degenerate DNA
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  include/ZMap/zmapUtilsDebug.h, zmapConfig/zmapConfigLoader.c,
+	  zmapUtils/zmapUtils.c, zmapUtils/zmapUtilsConfig.c: added
+	  debug/development config option
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: put
+	  nc-splice back to use proper markers
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
+	  added quark list to string function
+
+
+  </li>
+  <li> src/: include/ZMap/zmapThreads.h, zmapServer/pipe/pipeServer.c,
+	  zmapThreads/zmapThreads.c: mutex added to pipeserver spawn for
+	  glib bug
+
+
+  </li>
+  <li> src/: zmapWindow/zmapWindowFeature.c, zmapThreads/zmapSlave.c,
+	  zmapThreads/zmapThreads.c, zmapView/zmapViewCallBlixem.c: tidied
+	  up g_spawn_ mutex calls
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowItem.c, zmapWindow_P.h, zmapWindow.c,
+	  zmapWindowFocus.c: modularised WindowFocus - moved functions and
+	  struct from window_p.h, WindowItem.c and Window.c
+
+
+  </li>
+  <li> src/: INSTALL, include/ZMap/zmapConfigStrings.h,
+	  include/ZMap/zmapFeature.h, include/ZMap/zmapStyle.h,
+	  zmapConfig/zmapConfigLoader.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapStyle.c, zmapFeature/zmapStyle_I.h,
+	  zmapView/zmapView.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/zmapWindowItem.c, zmapWindow/zmapWindowMenus.c,
+	  zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature.c,
+	  zmapWindow/items/zmapWindowAssemblyFeature.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowCanvasItem.h,
+	  zmapWindow/items/zmapWindowCanvasItem_I.h,
+	  zmapWindow/items/zmapWindowTextFeature.c,
+	  zmapWindow/items/zmapWindowTranscriptFeature.c: refactored focus
+	  code, tweaks to styles and feature structs and hidden debug code
+	  added
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: took hard default out of
+	  focus colour
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureMask.c: functions to flag features as
+	  non-display
+
+
+  </li>
+  <li> src/zmapView/zmapViewFeatureMask.c: moved from feature
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureMask.c: verify removal of
+	  featuremask.c from feature dir
+
+
+  </li>
+  <li> src/fred: test
+
+
+  </li>
+  <li> src/fred: ok
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add frame field for translated
+	  peptides where we know the frame.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapSequence.h, zmapUtils/zmapSequence.c: add
+	  functions to do dna <-> pep coord stuff and get pep frame.
+
+
+  </li>
+  <li> src/zmapUtils/zmapDNA.c: add code to get correct frame.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: add sequence start/end to
+	  sequence feature creation.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: fix some compiler warnings for
+	  unused code, may be used in future.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: fix alloc/free bug for err_msg
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindowButtons.c: remove over
+	  complicated block based menus for showing dna and translations.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTypes.c: change mode of 3 frame
+	  translations to be only shown when 3 frame mode is on.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyle.c: minor format changes.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature3FrameTranslation.c: add code to
+	  record frame of translated peptide and fix bug in recording
+	  length of peptide.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: fix for new macro to test 3
+	  frame mode.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNAList.c: replace dna/pep highlighting
+	  code with function calls to common routines.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowSearch.c: fix for new macro to test 3
+	  frame mode.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowList.c: add new start/end params to
+	  updateinfo call.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: init new 3 frame fields, add
+	  start/end to updateinfo calls, add dna/pep code to updateinfo
+	  func.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: add new 3 frame state and toggle
+	  functions.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDraw.c: redo 3 frame toggling calls to
+	  toggle translations and features together. Redo tests/setting of
+	  3 frame state.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: add function to remove
+	  features from hash for 3 frame cols. Add new 3 frame mode tests.
+	  Redo 3 frame toggling calls to use new sequence highlight code.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: unify dna/pep updateinfo
+	  panel code into zmapWindow.c func. Fix problem with general event
+	  handling code not getting seq item events, needed for focus
+	  changes.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFocus.c: fix bug in hot item setting for
+	  focus. Don't unhighlight item unless requested.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: completely redo dna/pep
+	  highlighting, all was broken. fix bug in scrollto func, did not
+	  work with changed scrolled region.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add new 3 frame state stuff.
+	  rationalise/add new sequence highlighting calls. add new focus
+	  item call, does not unhighlight.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowContainerGroup.c,
+	  zmapWindowContainerGroup.h: add function to return background
+	  item size.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.c: add comment
+	  about hash etc, encapsulation seems broken.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowSequenceFeature.c,
+	  zmapWindowSequenceFeature.h, zmapWindowSequenceFeature_I.h: fix
+	  whole load of coord problems with displaying peptides. fix memory
+	  free bug. Add missing deselect calls.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowTextItem.c,
+	  zmapWindowTextItem.h, zmapWindowTextItem_I.h: add defines for
+	  prop strings, add code to support chars/base mapping, essentially
+	  to zooming. Fix endless bugs with text coords. Fix bugs in
+	  property setting.
+
+
+  </li>
+  <li> src/: zmapUtils/zmapSequence.c,
+	  zmapWindow/zmapWindowDrawFeatures.c, zmapWindow/zmapWindowItem.c:
+	  remove debug output.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix bad name look up for
+	  transcript sets.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4711/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.29125/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: zmapApp/zmapAppwindow.c, zmapControl/zmapControl.c,
+	  zmapFeature/zmapFeature.c,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapWindow/zmapWindowPrint.c: fix printf errors, should _always_
+	  have a format string.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureData.c: convert a whole load of
+	  g_value UINTs to INTs, this is a bad mistake, the rest of our
+	  code expects INTs.
+
+
+  </li>
+  <li> src/bootstrap: add comment warning that this is a generated file
+	  so should not be edited.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix bug in hiding features, wrongly
+	  rebumped. Add 'Update' shortcut.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: fix bug, wrong widget passed in
+	  to file chooser.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureOutput.c: need features dumped, not
+	  just featuresets.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2Dumper.c: fix bug causing gff export to
+	  crash, missing styles list, fix bugs in formatting _phase_ (not
+	  frame !).
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: document that we need to remove
+	  the common phase field from zmapfeature.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c: add
+	  function to test whether an alignment is gapped.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTypes.c: add default fill colour for 3
+	  frame translation.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add code to display text to say an
+	  alignment is gapped but we have no gap data.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: fix calls to sequencefeature
+	  object to supply current item.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: add func. to test
+	  whether an item is a subpart item.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTranscriptFeature.c: add trivial
+	  comments.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowSequenceFeature.c,
+	  zmapWindowSequenceFeature.h: add code to feature highlight func.
+	  to allow highlighting of subpart of a feature (e.g. exon).
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: change default alignment type to
+	  dna for motifs...this is a hack, some will be protein.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c: add new resource strings for
+	  blixem file format.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureUtils.c:
+	  add function to return cds/phase of a given exon.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: Add gffv3 format to blixem
+	  temp file formats, some restructuring of code.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureUtils.c:
+	  fix bug in cds finding function.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: add polyA and snp dumping to
+	  files for blixem.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.24693/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h,
+	  include/ZMap/zmapConfigStrings.h, include/ZMap/zmapFeature.h,
+	  include/ZMap/zmapGFF.h, include/ZMap/zmapGLibUtils.h,
+	  include/ZMap/zmapStyle.h, include/ZMap/zmapUtilsGUI.h,
+	  include/ZMap/zmapWindow.h, zmapConfig/zmapConfigLoader.c,
+	  zmapControl/zmapControl.c,
+	  zmapControl/zmapControlWindowInfoPanel.c,
+	  zmapFeature/zmapFeature.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapStyle.c, zmapGFF/zmapGFF2parser.c,
+	  zmapGFF/zmapGFF_P.h, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/acedb/acedbServer.c, zmapServer/pipe/pipeServer.c,
+	  zmapUtils/zmapGLibUtils.c, zmapUtils/zmapGUImenus.c,
+	  zmapView/Makefile.am, zmapView/zmapView.c,
+	  zmapView/zmapViewCallBlixem.c, zmapView/zmapViewFeatureMask.c,
+	  zmapView/zmapViewRemoteReceive.c, zmapView/zmapView_P.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/zmapWindowColOrder.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/zmapWindowMenus.c,
+	  zmapWindow/zmapWindowRemoteReceive.c,
+	  zmapWindow/zmapWindowUtils.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowAlignmentFeature.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowCanvasItem.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet_I.h,
+	  zmapWindow/items/zmapWindowContainerUtils.c: added EST masking
+	  via styles
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.12998/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerSummarise.c: new-file
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, include/ZMap/zmapStyle.h,
+	  zmapConfig/zmapConfigLoader.c, zmapFeature/zmapStyle.c,
+	  zmapGFF/zmapGFF2parser.c, zmapView/zmapView.c,
+	  zmapView/zmapViewFeatureMask.c, zmapView/zmapView_P.h,
+	  zmapWindow/Makefile.am, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowItemFactory.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowContainerSummarise.c: added  first
+	  part of column summarise code - not used if not configured.
+	  bootstrap and runconfig required
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: fix to XRemote queue
+	  throw-away
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c,
+	  zmapWindow/items/zmapWindowContainerSummarise.c: removed debug
+
+
+  </li>
+  <li> src/: include/ZMap/zmapView.h, zmapControl/zmapControl.c,
+	  zmapControl/zmapControlWindowButtons.c,
+	  zmapControl/remote/zmapXRemote.c,
+	  zmapControl/remote/zmapXRemote_P.h, zmapView/zmapView.c,
+	  zmapView/zmapViewRemoteReceive.c,
+	  zmapWindow/zmapWindowDrawFeatures.c: debugging messages and
+	  tweaks - put back for fix to reach jeremy
+
+
+  </li>
+  <li> src/zmapUtils/zmapLogging.c: glib critcial logging fixes
+
+
+  </li>
+  <li> src/include/ZMap/zmapConfigStrings.h: mod
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c, zmapUtils/zmapLogging.c:
+	  catch-glib config
+
+
+  </li>
+  <li> src/zmapUtils/zmapLogging.c: stack trace added to glib warnings
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c,
+	  include/ZMap/zmapConfigStrings.h, zmapUtils/zmapLogging.c: more
+	  config for catch-glib errors
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapControl/zmapControl.c,
+	  zmapControl/remote/zmapXRemote.c, zmapFeature/zmapFeature.c,
+	  zmapGFF/zmapGFF2parser.c, zmapView/zmapView.c,
+	  zmapView/zmapViewRemoteReceive.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureList.c, zmapWindow/zmapWindowItem.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemHash.c, zmapWindow/zmapWindowState.c,
+	  zmapWindow/zmapWindow_P.h: fixed FtoI hash lookup for aliased
+	  columns: focus now set ok and DNA highlit
+
+
+  </li>
+  <li> src/: zmapFeature/zmapStyle.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerUtils.c: fixed crash on 3
+	  frame
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDrawFeatures.c,
+	  items/zmapWindowCanvasItem.c: fixes to 3-frame basic features
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: default masked features
+	  to not visible
+
+
+  </li>
+  <li> src/: include/ZMap/zmapXRemote.h, perl/build.sh,
+	  zmapControl/zmapControl.c,
+	  zmapControl/zmapControlRemoteReceive.c,
+	  zmapControl/zmapControl_P.h,
+	  zmapControl/remote/xremote_gui_test.c,
+	  zmapControl/remote/zmapXRemote.c,
+	  zmapControl/remote/zmapXRemote_P.h, zmapUtils/zmapXRemoteUtils.c,
+	  zmapView/zmapViewRemoteReceive.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowRemoteReceive.c: fixed view startup w/
+	  otterlace
+
+
+  </li>
+  <li> src/: zmapApp/zmapAppremote.c, zmapControl/zmapControl.c: removed
+	  debug
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.2112/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapServer/das/README: stuff
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapGFF/zmapGFF2Dumper.c,
+	  zmapGFF/zmapGFF2parser.c, zmapServer/pipe/pipeServer.c,
+	  zmapView/zmapView.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowItem.c: fixed
+	  xremote rename bug, plus one hash_list_foreach assert, plus
+	  GFFDumper code, plust featureset/style mapping config
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowNavigator.c: navigator now works, even
+	  through locus rename
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: commented out unused function
+	  zmapWindowItemGetTranslationColumnFromBlock
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c, zmapView/zmapView.c: navigatorsets
+	  config now in [ZMap]
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtils.h, zmapUtils/zmapFileUtils.c: add
+	  function to do tilde expansion in filepaths.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigIni.h, zmapConfig/zmapConfigIni.c:
+	  add call to get a filepath doing tilde expansion on it.
+
+
+  </li>
+  <li> src/: zmapView/zmapViewCallBlixem.c,
+	  zmapWindow/zmapWindowPreferences.c: replace string calls with
+	  calls to get tilde expanded file paths for config strings.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix bugs in gffv3 output of
+	  alignments.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
+	  add dataformat argument to our hash table print function.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: minor commenting changes.
+
+
+  </li>
+  <li> src/zmapConfig/zmapConfigLoader.c: minor format changes.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.26848/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/configure.ac: comment out check test for now until we can
+	  work out how to make it optional.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, include/ZMap/zmapGFF.h,
+	  include/ZMap/zmapStyle.h, include/ZMap/zmapWindow.h,
+	  zmapConfig/zmapConfigLoader.c, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureOutput.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapStyle.c, zmapFeature/zmapStyleUtils.c,
+	  zmapGFF/zmapGFF2Dumper.c, zmapGFF/zmapGFF2parser.c,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/acedb/acedbServer.c, zmapServer/pipe/pipeServer.c,
+	  zmapUtils/zmapGLibUtils.c, zmapView/zmapView.c,
+	  zmapView/zmapViewFeatureMask.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapView/zmapViewUtils.c, zmapView/zmapView_P.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/zmapWindowColConfig.c, zmapWindow/zmapWindowDNA.c,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureList.c,
+	  zmapWindow/zmapWindowFeatureList.h,
+	  zmapWindow/zmapWindowFeatureShow.c, zmapWindow/zmapWindowItem.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemHash.c, zmapWindow/zmapWindowItemText.c,
+	  zmapWindow/zmapWindowList.c, zmapWindow/zmapWindowMenus.c,
+	  zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowNavigatorMenus.c,
+	  zmapWindow/zmapWindowRemoteReceive.c,
+	  zmapWindow/zmapWindowSearch.c, zmapWindow/zmapWindowState.c,
+	  zmapWindow/zmapWindowUtils.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet_I.h,
+	  zmapWindow/items/zmapWindowContainerUtils.c,
+	  zmapWindow/items/zmapWindowContainerUtils.h: big fixes for
+	  containerfeatureset and column organisiation - and feature search
+	  now works
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemHash.c: removed debugging
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowNavigator.c: restored the navigator
+	  display
+
+
+  </li>
+  <li> src/: include/ZMap/zmapWindow.h,
+	  zmapControl/zmapControlWindowButtons.c, zmapView/zmapView.c,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c:
+	  fixed 3FT and lower cased column names
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowItemHash.c, zmapWindowSearch.c,
+	  items/zmapWindowContainerFeatureSet.c: fixed same name search
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeature.c, zmapWindowItemHash.c,
+	  zmapWindowNavigatorMenus.c: fixed another list named features bug
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapWindow/zmapWindowColConfig.c: removed columns deferred page
+	  till we attach it to server config
+
+
+  </li>
+  <li> src/zmapUtils/zmapSO.c: package to handle SO ids/terms etc.
+
+
+  </li>
+  <li> src/include/ZMap/zmapSO.h: package to support SO id/terms.
+
+
+  </li>
+  <li> src/zmapUtils/Makefile.am: add zmapSO.c to build.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: removed assert from column
+	  style merge
+
+
+  </li>
+  <li> src/zmapServer/: zmapServerPrototype.h, pipe/pipeServer.c: split
+	  long pipe server message into two
+
+
+  </li>
+  <li> src/: zmapView/zmapViewCallBlixem.c,
+	  zmapWindow/zmapWindowUtils.c, zmapWindow/zmapWindow_P.h: expanded
+	  blixen transcript columns
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: expanded blixen transcript
+	  columns (protiens too)
+
+
+  </li>
+  <li> src/: include/ZMap/zmapSO.h, zmapUtils/zmapSO.c: add some SO term
+	  handling functions.
+
+
+  </li>
+  <li> src/zmapUtils/zmapFileUtils.c: add fix for Mac OSX stupidness
+	  over wordexp_t struct, thanks to Matt Astley.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapCmdLineArgs.h, zmapApp/zmapAppwindow.c,
+	  zmapUtils/zmapCmdLineArgs.c, zmapUtils/zmapCmdLineArgs_P.h: add
+	  sleep arg to cmdline args for zmap, good for attaching a
+	  debugger.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureData.c, zmapFeature/zmapFeatureUtils.c:
+	  add support to feature for SO term and variation strings.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: trivial formatting change.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2Dumper.c: moved ontology to SO field in
+	  feature.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix name finding func for when name
+	  is given. add variation and SO support.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: add support for SO terms and
+	  sequence variants.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindowInfoPanel.c: document that the
+	  info showing code needs changing.
+
+
+  </li>
+  <li> src/include/Makefile.am: add so header to build.
+
+
+  </li>
+  <li> src/zmapApp/zmapAppwindow.c: add missing header for sleep().
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureData.c: add missing SO header.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2Dumper.c: ifdef out unused func. dec.
+
+
+  </li>
+  <li> src/zmapUtils/zmapSO.c: agh...my rubbish coding, cut and paste
+	  wrongly, fixed now.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix a cvs update that I
+	  missed, fix gtk version problem, fix unused variables.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureUtils.c,
+	  zmapView/zmapView.c, zmapView/zmapViewCallBlixem.c,
+	  zmapWindow/zmapWindowDraw.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c, zmapWindow/zmapWindowItemHash.c,
+	  zmapWindow/zmapWindowNavigatorMenus.c,
+	  zmapWindow/zmapWindowSearch.c, zmapWindow/zmapWindowState.c,
+	  zmapWindow/zmapWindow_P.h: tidied up feature search to include
+	  featureset
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeature.c, zmapGFF/zmapGFF2parser.c: fixed
+	  flaky GFF data assertion on null Name attribute
+
+
+  </li>
+  <li> src/runbootstrap: this script no longer needed now autoconf
+	  working well.
+
+
+  </li>
+  <li> src/runzmap: this script no longer required now we set -rpath
+	  option.
+
+
+  </li>
+  <li> src/zmapApp/zmapAppwindow.c: add -sleep=<seconds> command line
+	  option.
+
+
+  </li>
+  <li> src/zmapUtils/zmapSO.c: add ifdef check so we can compile on
+	  older versions of glib.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureUtils.c: fix stupid bug in array
+	  bounds for going backwards/forwards in an array.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix bug in gff exon/cds
+	  dumping.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: remove debug output.
+
+
+  </li>
+  <li> src/: zmapView/zmapView.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowColBump.c, zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h: fixed del/shift
+	  del auto bump and added control Del and control select options as
+	  in RT 191172
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: updated about/credits
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix stupid bug in calculating
+	  length of delete.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.11970/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: remove erroneous error message for
+	  optional known_name attribute.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: remove old ifdefs, add variation
+	  string to basic feature names.
+
+
+  </li>
+  <li> src/zmapConfig/zmapConfigLoader.c: removed legacy column self
+	  refernence from featureset_2_col
+
+
+  </li>
+  <li> src/: INSTALL, configure.ac, zmapGFF/zmapGFF2parser.c,
+	  zmapWindow/zmapWindowUtils.c: cosmetic log file tweaks
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: cosmetic change to error
+	  message
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFocus.c,
+	  items/zmapWindowContainerFeatureSet.c,
+	  items/zmapWindowContainerFeatureSet.h: tightened up a weakness in
+	  focus code after new features added
+
+
+  </li>
+  <li> src/zmapConfig/zmapConfigLoader.c: removed useless error message
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.16361/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.32589/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapView/zmapViewFeatureMask.c: fixed bug in masking single
+	  feature and bug in not takling strand into account
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTranscriptFeature.c: improved log
+	  message
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4375/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: tweaked server terminate return code for
+	  normal quit to be treated as good status
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.28780/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4346/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: fixed crash on bump repeats
+	  RT 184372
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeatureTypes.c, zmapGFF/zmapGFF2parser.c,
+	  zmapServer/zmapServerProtocolHandler.c, zmapView/zmapView.c:
+	  fixed need for legacy styles
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.9848/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUrlUtils.h: removed duplicate file
+
+
+  </li>
+  <li> src/: zmapControl/zmapControl.c, include/ZMap/zmapUrlUtils.h:
+	  quoted external error message in XML features loaded message
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeature3FrameTranslation.c,
+	  zmapFeature/zmapFeatureDNA.c, zmapFeature/zmapFeatureOutput.c:
+	  remove phase from main feature struct, add percent id to
+	  alignment features.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: parse out percent ID from alignment
+	  features line.
+
+
+  </li>
+  <li> src/zmapControl/zmapControl.c: remove spurious extra dash from
+	  title.
+
+
+  </li>
+  <li> src/: zmapServer/das/dasServer.c,
+	  zmapView/zmapViewRemoteReceive.c, zmapWindow/zmapWindowDNA.c:
+	  remove redundant phase param from feature create calls.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUrlUtils.h, zmapControl/zmapControl.c,
+	  zmapUtils/zmapUtilsUsers.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureShow.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/zmapWindowItemHash.c, zmapWindow/zmapWindowMenus.c,
+	  zmapWindow/zmapWindowSearch.c, zmapWindow/zmapWindow_P.h: added
+	  highlight evidence RC menu item
+
+
+  </li>
+  <li> src/zmapUtils/zmapUrlOptions.h: removed duplicate file
+
+
+  </li>
+  <li> src/include/ZMap/: safe-ctype.h, zmapUrlOptions.h: added files
+	  moved from zmapUtils directory
+
+
+  </li>
+  <li> src/: include/Makefile.am, zmapUtils/Makefile.am: update for
+	  moved headers.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix stupid initialisation bug.
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeatureTypes.c,
+	  zmapUtils/zmapGUINotebook.c, zmapWindow/zmapWindowFeatureShow.c:
+	  fixed feature details dialog to show description from otterlace
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: fixed dna search failure to
+	  draw separator features and subsequent crash
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: commented out 1 line of code
+	  for retro build version
+
+
+  </li>
+  <li> src/zmapUtils/Makefile.am: removed duplicate header file
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4410/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapView/zmapViewFeatureMask.c: switched on exact splicing
+	  fopr SET/mRNA masking
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.30505/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapDNA.c: fix bad cast and also make code easier
+	  to debug.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindowInfoPanel.c: add score and
+	  percent id to info. for alignments.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h,
+	  zmapFeature/zmapFeatureContext.c: add some reverse complementing
+	  utilities.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapServerProtocol.h,
+	  zmapServer/zmapServerProtocolHandler.c: add position parameter to
+	  sequence get call.
+
+
+  </li>
+  <li> src/zmapView/: zmapView.c, zmapViewRemoteReceive.c, zmapView_P.h:
+	  add start position information to calls to get/reverse complement
+	  sequences.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapWindow.h, zmapWindow/zmapWindowUtils.c:
+	  add func. to get visible section of dna sequence.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add code to add percent id, add
+	  blixem position information.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowFeature.c:
+	  record where button was clicked on the column, e.g. for blixem.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: record position on sequence
+	  where user clicked, e.g. for blixem.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add menu click position data.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowRemoteReceive.c: add new context reverse
+	  call.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: temporary commit, I've lost
+	  come code, it will be restored shortly, ignore these changes.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: ah, the proper verion.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.24191/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2010_12_09.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.26757/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: zmapView/zmapView.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c: attempted fix
+	  for RT 196488
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: editign error!
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.30222/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapThreads.h, zmapThreads/zmapSlave.c,
+	  zmapView/zmapView.c: sanitised pipe terminated message, now says
+	  OK
+
+
+  </li>
+  <li> src/zmapUtils/safe-ctype.h: removed duplicate file
+
+
+  </li>
+  <li> src/zmapUtils/safe-ctype.c: fixed ref to duplicate header
+
+
+  </li>
+  <li> src/libzmapfoocanvas/README: README to explain what this
+	  directory is for.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/README: correct some ambiguous stuff.
+
+
+  </li>
+  <li> src/Makefile.am: add foocanvas to basic build, change to
+	  referencing our .a files directly.
+
+
+  </li>
+  <li> src/Makefile.common: add foocanvas .a file directly to build.
+
+
+  </li>
+  <li> src/configure.ac: remove check for foocanvas lib, no longer
+	  needed.
+
+
+  </li>
+  <li> src/runconfig: formatting only.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapDraw.h, include/ZMap/zmapUtilsFoo.h,
+	  include/ZMap/zmapUtilsGUI.h, include/ZMap/zmapWindow.h,
+	  zmapWindow/items/zmapWindowAllBase.h,
+	  zmapWindow/items/zmapWindowCanvas.h,
+	  zmapWindow/items/zmapWindowCanvasItem.h,
+	  zmapWindow/items/zmapWindowContainerAlignment.h,
+	  zmapWindow/items/zmapWindowContainerBlock.h,
+	  zmapWindow/items/zmapWindowContainerChildren.h,
+	  zmapWindow/items/zmapWindowContainerContext.h,
+	  zmapWindow/items/zmapWindowContainerGroup.h,
+	  zmapWindow/items/zmapWindowContainerGroup_I.h,
+	  zmapWindow/items/zmapWindowContainerStrand.h,
+	  zmapWindow/items/zmapWindowGlyphItem_I.h,
+	  zmapWindow/items/zmapWindowLongItem_I.h,
+	  zmapWindow/items/zmapWindowSequenceFeature.h,
+	  zmapWindow/items/zmapWindowTextItem.h,
+	  zmapWindow/items/zmapWindowTextItem_I.h: fix include file to
+	  point at new foocanvas build dir.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/: foo-canvas-i18n.h, foo-canvas-line.h,
+	  Makefile.am, foo-canvas-line.c, foo-canvas-marshal.list,
+	  foo-canvas-pixbuf.c, foo-canvas-pixbuf.h, foo-canvas-polygon.c,
+	  foo-canvas-polygon.h, foo-canvas-rect-ellipse.c,
+	  foo-canvas-rect-ellipse.h, foo-canvas-text.c, foo-canvas-text.h,
+	  foo-canvas-util.c, foo-canvas-util.h, foo-canvas-widget.c,
+	  foo-canvas-widget.h, foo-canvas.c, foo-canvas.h,
+	  foozmap-canvas-floating-group.c, foozmap-canvas-floating-group.h,
+	  foozmap-canvas-line-glyph.c, foozmap-canvas-line-glyph.h,
+	  foozmap-canvas-text.c, foozmap-canvas-text.h, libfoocanvas.h,
+	  libfoocanvastypes.c: these files are copied form
+	  ZMap/foocanvas/tmp_merged_foocanvas/libfoocanvas, we need to copy
+	  to make checkouts bearable.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/README: fix up README for making changes.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/: Makefile.am, README, foo-canvas-i18n.h,
+	  foo-canvas-line.c, foo-canvas-line.h, foo-canvas-marshal.list,
+	  foo-canvas-pixbuf.c, foo-canvas-pixbuf.h, foo-canvas-polygon.c,
+	  foo-canvas-polygon.h, foo-canvas-rect-ellipse.c,
+	  foo-canvas-rect-ellipse.h, foo-canvas-text.c, foo-canvas-text.h,
+	  foo-canvas-util.c, foo-canvas-util.h, foo-canvas-widget.c,
+	  foo-canvas-widget.h, foo-canvas.c, foo-canvas.h,
+	  foozmap-canvas-floating-group.c, foozmap-canvas-floating-group.h,
+	  foozmap-canvas-line-glyph.c, foozmap-canvas-line-glyph.h,
+	  foozmap-canvas-text.c, foozmap-canvas-text.h, libfoocanvas.h,
+	  libfoocanvastypes.c: dummy test.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/: Makefile.am, README, foo-canvas-i18n.h,
+	  foo-canvas-line.c, foo-canvas-line.h, foo-canvas-marshal.list,
+	  foo-canvas-pixbuf.c, foo-canvas-pixbuf.h, foo-canvas-polygon.c,
+	  foo-canvas-polygon.h, foo-canvas-rect-ellipse.c,
+	  foo-canvas-rect-ellipse.h, foo-canvas-text.c, foo-canvas-text.h,
+	  foo-canvas-util.c, foo-canvas-util.h, foo-canvas-widget.c,
+	  foo-canvas-widget.h, foo-canvas.c, foo-canvas.h,
+	  foozmap-canvas-floating-group.c, foozmap-canvas-floating-group.h,
+	  foozmap-canvas-line-glyph.c, foozmap-canvas-line-glyph.h,
+	  foozmap-canvas-text.c, foozmap-canvas-text.h, libfoocanvas.h,
+	  libfoocanvastypes.c: Updated files from ZMap/foocanvas.
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c,
+	  zmapFeature/zmapFeatureTypes.c, zmapFeature/zmapStyle.c,
+	  zmapServer/acedb/acedbServer.c, zmapUtils/zmapLogging.c,
+	  zmapView/zmapView.c, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowColBump.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemText.c, zmapWindow/zmapWindowMenus.c,
+	  zmapWindow/zmapWindowNavigator.c, zmapWindow/zmapWindowSearch.c,
+	  zmapWindow/zmapWindowUtils.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: removed
+	  iffed out code re style tables etc
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: make sure blix args report
+	  goes to stdout and to zmap log.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/Makefile.am: try to fix makefile bug....
+
+
+  </li>
+  <li> src/libzmapfoocanvas/Makefile.am: try to fix more junk with
+	  makefile stuff.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/Makefile.am: minor comment change.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix -S flag for revcomp'd
+	  sequence.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: make gff default file format
+	  for blixem, tidy up -S code fix.
+
+
+  </li>
+  <li> src/: libzmapfoocanvas/foo-canvas.c, zmapUtils/zmapLogging.c,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowCanvas.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h: speed up paint:
+	  foo cursor move, col state correct 30% faster
+
+
+  </li>
+  <li> src/: include/ZMap/zmapWindow.h, zmapWindow/zmapWindowMark.c: add
+	  new call to get the sequence spanned by the mark.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: replace getmark call with
+	  getmarksequence call as we want the sequence coords here.
+
+
+  </li>
+  <li> src/libzmapfoocanvas/foo-canvas.c: removed debug message
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> wmake/DARWIN_MACPORTS_DEF: add new build for using macports gtk
+	  etc which are found in /opt/local.
+
+
+  </li>
+  <li> wmake/MACOSX_4_DEF: redundant, see DARWIN_XXX files
+
+
+  </li>
+  <li> wmake/: DARWIN_4_DEF, DARWIN_FINK_DEF, DARWIN_MACPORTS_DEF,
+	  DARWIN_UNIVERSAL_DEF: add comments about what each DARWIN_XXX_DEF
+	  file is for.
+
+
+  </li>
+  <li> w1/messubs.c, w9/blxview.c: fix bad bug in string pointer
+	  testing.
+
+
+  </li>
+  <li> w7/fmapsegdump.c: small initialisation bug.
+
+
+  </li>
+  <li> w3rdparty/libpfetch/Makefile: make pfetch build repect where
+	  local libs are, sort out ranlib test.
+
+
+  </li>
+  <li> wmake/DARWIN_MACPORTS_DEF: point at /opt/local, fix graph lib
+	  references, fix ar options.
+
+
+  </li>
+  <li> wmake/LINUX_4_DEF: point at /software/acedb which we weren't
+	  doing ! fix ranlib test.
+
+
+  </li>
+  <li> wmake/LINUX_64_DEF: fix ranlib test.
+
+
+  </li>
+  <li> wmake/truemake: fix up way our libs are added, fix ranlib test
+	  and ar options for mac.
+
+
+  </li>
+  <li> w1/acein.c: fix bad bug in aceInExtend() causing crash on 64 bit
+	  systems + fix readline compiler warning
+
+
+  </li>
+  <li> w9/blxparser.c: Fixed a bug where blixem was crashing or not
+	  starting if there is an 'n' in the sequence
+
+
+  </li>
+  <li> w1/acein.c: we seem to need stdio.h on the mac for readline
+	  headers.
+
+
+  </li>
+  <li> w7/smapconvert.c: fix bug in seqinfo_index recording.
+
+
+  </li>
+  <li> w7/fmapsegdump.h: add macro to do obj name formatting for gff
+	  record.
+
+
+  </li>
+  <li> w7/: fmapsegdump.c, fmapsegdumpgff.c: use macro to do obj name
+	  formatting, for zmap format with 'Name' tag.
+
+
+  </li>
+  <li> wnq/aceversion.c: update version number, first time for ages.
+
+
+  </li>
+  <li> wnq/aceversion.c: increment as usual.
+
+
+  </li>
+  <li> w7/fmapsegdump.h: improve macro for outputting name/class of
+	  objects.
+
+
+  </li>
+  <li> w7/fmapsegdump.c: fix NULL warning from format macro, tidy up
+	  separation of tag/values in attributes.
+
+
+  </li>
+  <li> w7/fmapsegdumpgff.c: tidy up separation of tag/values in
+	  attributes.
+
+
+  </li>
+  <li> wmake/: DARWIN_BLXNEW_DEF, LINUX_BLXNEW_64_DEF, LINUX_BLXNEW_DEF,
+	  truemake: Makefile now builds new blixem
+
+
+  </li>
+  <li> w7/fmapsegdump.c: change zmap dump to use Note contents as the
+	  name of the feature.
+
+
+  </li>
+  <li> w7/fmapsegdump.c: remove debug message.
+
+
+  </li>
+  <li> w7/fmapsegdump.c: fix stupid bug.
+
+
+  </li>
+  <li> wmake/truemake: fix small buglet introduced by Gemma.
+
+
+  </li>
+  <li> wnq/aceversion.c: increment update level.
+
+
+  </li>
+  <li> wmake/: DARWIN_BLXNEW_DEF, LINUX_BLXNEW_64_DEF, LINUX_BLXNEW_DEF,
+	  DARWIN_MACPORTS_BLXNEW_DEF, LINUX_4_BLXNEW_DEF,
+	  LINUX_64_BLXNEW_DEF: Renaming DEF files for new blixem in order
+	  to make the build system easier
+
+
+  </li>
+  <li> wmake/: LINUX_4_BLXNEW_DEF, LINUX_4_DEF, LINUX_64_BLXNEW_DEF: fix
+	  up small details in blxnew def files.
+
+
+  </li>
+  <li> w7/fmapsegdumpgff.c: fix buglet in outputting gaps attribute.
+
+
+  </li>
+  <li> wtools/aceSetReleaseDir: trigger edit to test file perms in
+	  repository.
+
+
+  </li>
+  <li> wmake/: DARWIN_MACPORTS_BLXNEW_DEF, truemake: Renamed MainWindow
+	  to BlxWindow
+
+
+  </li>
+  <li> wmake/: LINUX_4_BLXNEW_DEF, LINUX_64_BLXNEW_DEF: Renamed
+	  MainWindow to BlxWindow
+
+
+  </li>
+  <li> wnq/aceversion.c: last minute update.
+
+
+  </li>
+  <li> w4/gifcommand.c: add new gif command to get active zone of fmap.
+
+
+  </li>
+  <li> w7/fmapcontrol.c, wh/fmap.h: add gif command to get active zone
+	  and report it in coord system of top key in zmap.
+
+
+  </li>
+  <li> wmake/: DARWIN_MACPORTS_BLXNEW_DEF, LINUX_4_BLXNEW_DEF,
+	  LINUX_64_BLXNEW_DEF, truemake: Added GFF3 parser
+
+
+  </li>
+  <li> wnq/aceversion.c: update number.
+
+
+  </li>
+  <li> wnq/aceversion.c: catch up on update numbers.
+
+
+  </li>
+  <li> wace/acediff.c: update sort flags to current posix sort version.
+
+
+  </li>
+  <li> wmake/: DARWIN_MACPORTS_BLXNEW_DEF, LINUX_4_BLXNEW_DEF,
+	  LINUX_64_BLXNEW_DEF, truemake: Added better code for calling a
+	  web browser and used this for pfetch-www mode
+
+
+  </li>
+  <li> wmake/DARWIN_MACPORTS_64_DEF: add align stuff for our memory
+	  allocator.
+
+
+  </li>
+  <li> w9/blxview.c: change func name as clashes with latest glib.
+
+
+  </li>
+  <li> wh/mystdlib.h: move stuff more into posix/non-posix split.
+
+
+  </li>
+  <li> w4/picksubs.c, wh/pick.h: add new pick function to get hold of an
+	  alternative name for a feature.
+
+
+  </li>
+  <li> w7/fmapcontrol.c: make fmap display an alternative name for a
+	  feature if there is one.
+
+
+  </li>
+  <li> w6/smap.c, wh/smap.h: make smap deal with misaligns properly,
+	  ignore if user wants to do that.
+
+
+  </li>
+  <li> w7/smapconvert.c: fix up faulty handing of clipped alignment
+	  features and misaligned features.
+
+
+  </li>
+  <li> wmake/: DARWIN_MACPORTS_BLXNEW_DEF, LINUX_4_BLXNEW_DEF,
+	  LINUX_64_BLXNEW_DEF, truemake: Changed to new, GTK-based dotter
+
+
+  </li>
+  <li> wmake/: LINUX_4_BLXNEW_DEF, LINUX_64_BLXNEW_DEF: Build against
+	  software in /usr instead of /software/acedb
+
+
+  </li>
+  <li> wmake/LINUX_64_BLXNEW_DEF: Reverted the linux 64 build script
+	  back to using /software/acedb because the linux 64 machines are
+	  still on etch and have a very old version of GTK
+
+
+  </li>
+  <li> w2/: graphdev.h, graphgtk.c: fix up small bug in standard
+	  cut/copy keys, add documentation.
+
+
+  </li>
+  <li> w7/maputils.c, wh/maputils.h: utils functions for fmap, gmap etc.
+
+
+  </li>
+  <li> wmake/truemake: add maputils.c to build.
+
+
+  </li>
+  <li> wh/bs_.h: formatting/comment changes.
+
+
+  </li>
+  <li> wh/key.h: improve/correct comments.
+
+
+  </li>
+  <li> w2/: graphcon.c, graphsub.c: try to make keyboards short cuts
+	  work properly this time...sigh.
+
+
+  </li>
+  <li> w6/treedisp.c: fix bug where we didn't relocate correctly after
+	  edit of field in subobject if tag had same name as in object.
+
+
+  </li>
+  <li> w7/: gmap_.h, gmapdata.c, gmapdatacol.c, gmapdisp.c,
+	  gmaplocuscol.c: replace gmapGetPubKey with geneGetPubKey.
+
+
+  </li>
+  <li> w7/fmapcontrol.c: get public_name used for reportline and add
+	  debug for worm testing.
+
+
+  </li>
+  <li> w6/smap.c, wh/smap.h: add map_gaps parameter to align mapping
+	  func.
+
+
+  </li>
+  <li> w7/fmap_.h, w7/fmapcontrol.c, wh/fmap.h, wh/smapconvert.h: add
+	  control of whether homols/introns are weeded out of segs.
+
+
+  </li>
+  <li> w7/smapconvert.c: add control of whether homols/introns are
+	  weeded out of segs. partially fix est reads bug.
+
+
+  </li>
+  <li> wnq/aceversion.c: increment update level, must automate this.
+
+
+  </li>
+  <li> wnq/aceversion.c: bump update level.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Removed an unused variable
+</li>
+
+<li>
+Fix size of feedback box so feedback area is larger
+</li>
+
+<li>
+Fixed a bug with middle-click highlighting.
+</li>
+
+<li>
+This was a regression introduced in the recent column changes; the column width was not being calculated correctly.
+</li>
+
+<li>
+Refresh columns properly after loading optional data.
+</li>
+
+<li>
+Fixed a bug with calculating the Organism alias.
+</li>
+
+<li>
+Added help info for new column functionality.
+</li>
+
+<li>
+Improvements to Blixem columns.
+</li>
+
+<li>
+All columns now have a default width set. There is a tick button to show/hide the column on the Settings dialog. The organism column is on by default whenever the data is loaded for it.
+</li>
+
+<li>
+Fixed a bug in the mouse-move handler for the greyramp tool.
+</li>
+
+<li>
+Incremented version to 4.1.4
+</li>
+
+<li>
+Changes to colour scheme.
+</li>
+
+<li>
+Made the background colour for matching bases a slightly bluer and less garish cyan (as requested in RT19950). Tidied up the colour definitions in utilities.h and made their use more consistent. Made some improvements to print colours.
+</li>
+
+<li>
+Allow negated coords in go-to-position dialog.
+</li>
+
+<li>
+Allow the user to enter a negated coord in the go-to dialog. (Previously, real coords were assumed, which was unintuitive when the display is showing negated coords.) Also added bounds checking and proper error messages if the value is out of range.
+</li>
+
+<li>
+Fixed a bug with initialising the selected base index.
+</li>
+
+<li>
+The bug was to do with -1 being used to indicate that the base index was not set. However, this was ambiguous because -1 can be a real coordinate. This was the cause of the problems seen in RT199350, where Blixem was showing an incorrect coordinate for the selected base index in protein mode, if the user had not previously selected an index. Also in this change are a small fix to some help page text and the removal of a (currently) unused menu item.
+</li>
+
+<li>
+Small modification to the usage info
+</li>
+
+<li>
+Added documentation for the --reverse-strand argument.
+</li>
+
+<li>
+Prefixed window titles with application name.
+</li>
+
+<li>
+Added application name to all window titles. Tidied up some function calls that were passed a lot of arguments unnecessarily.
+</li>
+
+<li>
+Added to-do comment
+</li>
+
+<li>
+Updated source file header comments
+</li>
+
+<li>
+Updated copyright info and authors for the new SeqTools packaging of Blixem and Dotter. Updated file descriptions.
+</li>
+
+<li>
+Incremented version to 4.1.3
+</li>
+
+<li>
+Made --compiled flag output to stdout so build script can pick it up
+</li>
+
+<li>
+Added --compiled option to blixem and dotter
+</li>
+
+<li>
+Added long options to dotter
+</li>
+
+<li>
+Added --version option.
+</li>
+
+<li>
+Improved Blixem and Dotter usage text
+</li>
+
+<li>
+Added Dotter -h option. Removed some unnecessary globals.
+</li>
+
+<li>
+Improved Blixem usage text
+</li>
+
+<li>
+Added --version option.
+</li>
+
+<li>
+Incremented version to 4.1.2
+</li>
+
+<li>
+Fixed some bugs with dotter batch mode
+</li>
+
+<li>
+Fixed some bugs with loading dotter plots. Created a new dotplot file format '3' because the zoom factor has changed from an int to a double.
+</li>
+
+<li>
+Increased version number to 4.1.1
+</li>
+
+<li>
+Blixem and Dotter now use the package version number, which is specified in version.m4.  I upped this to 4.1.0 so that it is a sensible progression for each program (blixem from 4.0.4 and dotter from 4.0.0).
+</li>
+
+<li>
+Incremented version number
+</li>
+
+<li>
+Added version.m4 file to control package version number
+</li>
+
+<li>
+Set initial version number for the SeqTools package
+</li>
+
+<li>
+Small change to the README file
+</li>
+
+<li>
+Small change to the AUTHORS file
+</li>
+
+<li>
+Added gitignore file
+</li>
+
+<li>
+Changed includes etc. to work with the new build system
+</li>
+
+<li>
+Added build scripts
+</li>
+
+<li>
+Moved source files to src subdirectory
+</li>
+
+<li>
+Separated files into subdirectories
+</li>
+
+<li>
+Removed old files
+</li>
+
+<li>
+Added help for new features
+</li>
+
+<li>
+Fixed reading frame calculation for reverse strand. Fixed a bug where polya signals were not being shown. Fixed a bug where CDS/UTRs were not being shown in the correct tree.
+</li>
+
+<li>
+Fixed an incorrect error message
+</li>
+
+<li>
+Improved message handlingwd
+</li>
+
+<li>
+Improved message handling
+</li>
+
+<li>
+Removed ACEDB compile option. Fixed a bug with piping X options from blixem to dotter. Improved message handling.wd
+</li>
+
+<li>
+Removed ACEDB compile option. Fixed a bug with piping X options from blixem to dotter. Improved message handling.
+</li>
+
+<li>
+Added percentID tag in GFF parser
+</li>
+
+<li>
+Fixed a potential crash where an incorrect frame could be returned for nucleotide matches
+</li>
+
+<li>
+Fixed a warning message that was too long
+</li>
+
+<li>
+Fixed a bug where the reference sequence was being offset incorrectly when the display is at the end of the reference sequence range
+</li>
+
+<li>
+Fixed a bug where protein gap coords were being messed up because blast mode wasn't being set
+</li>
+
+<li>
+Improved warnings when calling dotter with a bad range
+</li>
+
+<li>
+Fixed a small bug where the preview box was not being positioned accurately when the display is reversed
+</li>
+
+<li>
+Fixed a bug with resizing columns
+</li>
+
+<li>
+Fixed a bug with long options. Fixed a bug with the highlight-diffs argument
+</li>
+
+<li>
+Made some improvements to the key file (can now pass separate colors for UTR and CDS regions of the same source)
+</li>
+
+<li>
+Implemented the reverse-strand command-line argument
+</li>
+
+<li>
+Implemented negate-coords option
+</li>
+
+<li>
+Changed blixem command-line arguments. Added long options.wd
+</li>
+
+<li>
+Changed blixem command-line arguments. Added long options.
+</li>
+
+<li>
+For GFF3, get percent ID from parsed tag
+</li>
+
+<li>
+Fixed a potential memory bug when starting dotter
+</li>
+
+<li>
+Use start coord as centre of display rather than left edge
+</li>
+
+<li>
+More removal of acedb code
+</li>
+
+<li>
+Removed more acedb code from dotter
+</li>
+
+<li>
+Fixed a regression where dotter was failing to start because of a programming error (invalid pointer passed to getFontCharSize). Removed some more acedb code from dotter.
+</li>
+
+<li>
+Added parsing of a sequence-region comment line for exblx and seqbl file formats. Use the parsed range as the reference sequence range in blixem (i.e. if a ref seq range is passed, all feature coords in the file must be in that range; otherwise, coords are assumed to be 1-based). Note that if an offset is supplied via the -O argument, the offset will be applied on top of this, i.e. both the ref seq range and all feature coords will be offset.
+</li>
+
+<li>
+Check that parsed sequence range is the same length as the FASTA sequence
+</li>
+
+<li>
+Set a default ref seq range if none was parsed
+</li>
+
+<li>
+GFF3 parser now reads reference sequence range from file.
+</li>
+
+<li>
+Made detail-view alignment positions more accurate if characters are not an exact number of pixels wide
+</li>
+
+<li>
+Make tree widgets use same font description as detail view
+</li>
+
+<li>
+Improved blixem responsiveness when variation and polyA data is included
+</li>
+
+<li>
+Improved use of font selection dialog
+</li>
+
+<li>
+Fix for RT ticket 165740: fixed-width fonts were not displaying properly on certain machines. Also added a font selection option in the Settings dialog.
+</li>
+
+<li>
+Fixed a bug where sorting by ID is ambiguous if the IDs are within 1 of each other
+</li>
+
+<li>
+Fixed a bug in dotter where HSP lines were drawn in the wrong place when the display is reversed
+</li>
+
+<li>
+Fixed a bug in dotter where the dotplot was not always initialised correctly
+</li>
+
+<li>
+Fixed a bug where the calculated dotter range was being clipped too much for a large object. Added a warning if the clipped range no longer contains any matches. Blixem now calls dotter as an external process and kills all spawned dotters on exit. Fixed a bug with drawing HSP lines in dotter where they were being drawn in the wrong place if they extend outside the visible range.
+</li>
+
+<li>
+Fixed a typo
+</li>
+
+<li>
+Fixed a bug where MSPs were not being passed from blixem to dotter
+</li>
+
+<li>
+Added -H option when calling dotter externally from blixem)
+</li>
+
+<li>
+Call dotter as an external process from blixem
+</li>
+
+<li>
+Fixed a bug when calling dotter in HSP-only mode
+</li>
+
+<li>
+Fixed a bug in the new dotter where artefacts were appearing in the dot-plot for protein matches. This was because the sum arrays were not being cleared between the calculations for each frame. Also fixed a bug where HSPs were shown the wrong way round when the display is reversed.
+</li>
+
+<li>
+Consolidated more dotter code
+</li>
+
+<li>
+Consolidated some duplicated dotter code
+</li>
+
+<li>
+Changed to new, GTK-based dotter
+</li>
+
+<li>
+Changed to new, GTK-based dotter
+</li>
+
+<li>
+Use reading frame from file for exblx file format rather than calculating it
+</li>
+
+<li>
+Fixed a regression where the reading frame was being calculated incorrectly
+</li>
+
+<li>
+Added code to unescape the URL tag that is passed in the GFF file for variations
+</li>
+
+<li>
+Added variant_sequence to parsed tags
+</li>
+
+<li>
+Fixed a bug with calculating the reading frame for CDSs on the reverse strand. Also removed some unnecessary warnings from the gff3 parser
+</li>
+
+<li>
+Fixed a couple of potential memory bugs
+</li>
+
+<li>
+Renamed the 'GSettings' function to avoid a clash with Glib (glib2 port, version 2.26.0_0)
+</li>
+
+<li>
+Double-click a variation to open its URL
+</li>
+
+<li>
+Added better code for calling a web browser and used this for pfetch-www mode
+</li>
+
+<li>
+Added parsing of URL for variations. Added variation alternatives to feedback box when user clicks on a variation
+</li>
+
+<li>
+Fixed a small bug with SNP positioning
+</li>
+
+<li>
+Added copy_number_variation type
+</li>
+
+<li>
+Added support for zero-length variations. Also we now only highlight a base in orange if it is part of a selected variation (before it used to highlight if the base index was selected).
+</li>
+
+<li>
+Fixed a regression where grid labels weren't being displayed when the display is reversed
+</li>
+
+<li>
+Added a type for BlxSequence
+</li>
+
+<li>
+Added support for variations
+</li>
+
+<li>
+Fixed a bug with drawing clipped intron lines
+</li>
+
+<li>
+Fixed a bug where introns were being drawn with more acute angles if the end goes out of the edge of the view
+</li>
+
+<li>
+Changed the big picture to show coords on a per-nucleotide basis rather than per-peptide, which fixes a bug where there were sometimes gaps between adjacent exons and introns.
+</li>
+
+<li>
+Changed the big picture to show coords on a per-nucleotide basis rather than per-peptide, which fixes a bug where there were sometimes gaps between adjacent exons and introns.
+</li>
+
+<li>
+Fixed a bug where the exon view was not displaying exons that span more than the width of the view
+</li>
+
+<li>
+Fixed an off-by-one error when calculating intron start/end positions
+</li>
+
+<li>
+Fixed a bug with middle-dragging on the exon view when caps lock is on
+</li>
+
+<li>
+Fixed some bugs with calculating introns and sorting by position on the reverse strand
+</li>
+
+<li>
+Fixed a bug where CDS/UTR boundaries were calculated incorrectly for exons on the reverse strand. Also fixed a bug where exon view was not redrawing on window resize
+</li>
+
+<li>
+Made the big picture scrollable, which fixes some issues where the big picture section can get too large when exons are bumped or the grid scale is changed
+</li>
+
+<li>
+Added polyA signal highlighting in the reference sequence
+</li>
+
+<li>
+Added flag for highlighting polyA signals in the reference sequence. Made higlighting of special bases in the reference sequence more generic
+</li>
+
+<li>
+Fixed a bug with drawing exons introduced in previous changes
+</li>
+
+<li>
+Highlight polyA tails in red
+</li>
+
+<li>
+Can now view polyA tails
+</li>
+
+<li>
+Added poly_site and polya_signal_sequence GFF types. Consolidated some code that calculates the full display range of an MSP including any unaligned portions of the match sequence
+</li>
+
+<li>
+Fixed a few bugs with gff input
+</li>
+
+<li>
+Fixed a bug where pfetch was being called multiple times when starting dotter. Changed the client name sent to pfetch from 'acedb' to the application name
+</li>
+
+<li>
+Fixed a bug with getting dotter coords from the current big-picture display range in protein blixem
+</li>
+
+<li>
+Added bounds-checking on manual dotter coords. Changed several dialogs so that they are not closed if there is an error with the data entered.
+</li>
+
+<li>
+Removed some redundant code from dotter
+</li>
+
+<li>
+Replaced messcrash with g_error
+</li>
+
+<li>
+Dotter: replaced messalloc/messfree by g_malloc/g_free. Removed some unused items from dotter_.h and removed use of dotter_.h from belvu because it doesn't seem to contain anything that is being used.
+</li>
+
+<li>
+Small error-checking improvements
+</li>
+
+<li>
+Added a prefix to the 'organism' data field so that a narrow column width can be used that displays just the prefix
+</li>
+
+<li>
+Fixed some GTK warnings that happen if all of the detail-view panes are hidden
+</li>
+
+<li>
+Fixed a couple of bugs with squash matches: go-to-next was highlighting the wrong frame for protein matches; MSPs for both strands were being added to each tree.
+</li>
+
+<li>
+Removed the need for the -F command line option when a single input file is used. If blixem is called with one input file, it is assumed to contain both alignment data and the reference sequence. If it is called with two files, the first is assumed to contain the reference sequence and the second the alignment data. The -F option has been left in for now for backwards compatibility.
+</li>
+
+<li>
+Fixed a couple of bugs with the GFF parser: sequence name was not being read from the header; fixed a problem with constructing introns
+</li>
+
+<li>
+Fixed a bug in the GFF parser to allow consecutive I and D's in CIGAR string
+</li>
+
+<li>
+Added range checking for big picture scale
+</li>
+
+<li>
+A few improvements to GFF parsing
+</li>
+
+<li>
+Updated blixem version and help
+</li>
+
+<li>
+Fixed a bug with the detail-view statusbar when 'squash matches' is enabled
+</li>
+
+<li>
+Added two status bars: one for messages and one for feeding back info about the currently moused-over item. Fixed a bug with parsing peptide sequence data from seqbl files. Fixed some bugs with negative offset: some termini were being shown as splice sites; go-to-next match was sometimes messing up.
+</li>
+
+<li>
+Parse actual name out of Gene Name field rather than including the whole line
+</li>
+
+<li>
+Added support for grouping exons by parent transcript ID (i.e. as passed in GFF format). Added full support for CDS/UTR types. Calculate the reading frame, using the given phase, if applicable. Changed score and ID to be decimal values rather than integers and allow grid scale to show fractions of an integer per cell. Reduced exon size and padding when the exon view is bumped. Added GT-AG to list of canonical splice sites. Removed incorrect splice-site highlighting which was being shown at the termini.
+</li>
+
+<li>
+Fixed a bug where blixem was quitting if pfetch returned 'no match' on startup
+</li>
+
+<li>
+Fixed some bugs with GFF parser
+</li>
+
+<li>
+Added a iist of supported GFF types
+</li>
+
+<li>
+Fixed a bug with parsing EMBL tags that span multiple lines
+</li>
+
+<li>
+Fixed a bug where the default response was being lost on the second call for some dialogs
+</li>
+
+<li>
+Removed a spurious popup message that happens when pfetching full entries on startup fails (because pfetching just the fasta sequence may still work fine)
+</li>
+
+<li>
+Fixed a bug with the clipped-match marker where it was drawn the wrong side of the base when the display is reversed
+</li>
+
+<li>
+Added pfetch of additional EMBL info for pfetch-http mode. Added marker to indicate if a match has a missing section where it has been clipped to the reference sequence range. Created a replacement for the old acedb message system. Made relevant dialogs persistent and added functionality to make them refresh their data when necessary.
+</li>
+
+<li>
+fixed some uninitialised value warnings
+</li>
+
+<li>
+Added missing function definition for showInfoDialog
+</li>
+
+<li>
+Added sequence-info dialog
+</li>
+
+<li>
+Fixed a bug where the detail-view-trees were scrolling vertically on a middle- or right- click
+</li>
+
+<li>
+Removed more of the acedb package from blixem. Fixed a bug in the new pfetch code where it was getting data in the wrong order when data was loaded from the settings dialog rather than at startup.
+</li>
+
+<li>
+Renamed ColumnId to BlxColumnId
+</li>
+
+<li>
+Removed an unused variable
+</li>
+
+<li>
+Added help for the fetch-additional-data option.
+</li>
+
+<li>
+Added a warning if pfetch net id and port are not provided in the command line, env vars or config file.
+</li>
+
+<li>
+Fixed an issue where pfetch port and net_id were not being set if user changes to the pfetch mode from a different default mode.
+</li>
+
+<li>
+Added functionality to parse additional info from the EMBL files such as organism and tissue-type. Added a command-line option to fetch this on startup and an option in the settings dialog to populate the data later, since it may be slower fetching the full EMBL files. (Although for nucleotide sequences it does not seem to be slower so in that case it always fetches the extra info.). Also fixed a bug where a crash was possible if the input s coords were out of the range of the given s sequence.
+</li>
+
+<li>
+Fixed a bug where middle-clicking in the tree headers was sometimes not working. Improved middle-clicking so that it now works on empty trees as well.
+</li>
+
+<li>
+Added basic type for polyA tails
+</li>
+
+<li>
+Added option to select fetch mode. Fixed an issue where the background color changed slightly if you hit ok on the settings dialog.
+</li>
+
+<li>
+RT58135: When pfetching a protein variant, pfetch with the -F option fails, so re-try without the -F option so that at least we get the fasta sequence. Also fixed a bug where the show-unaligned-sequence option was not working when Blixem was run in pfetch-http mode
+</li>
+
+<li>
+Removed use of the Gex package from blxFetch.c
+</li>
+
+<li>
+Fixed a bug where pfetch was sometimes failing to display the results because it was trying to apply pango markup
+</li>
+
+<li>
+added comments
+</li>
+
+<li>
+Made creation of tree columns more generic. Added Group and Source columns.
+</li>
+
+<li>
+Added 'source' column
+</li>
+
+<li>
+Rearranged tree column code to more easily allow additional columns to be added
+</li>
+
+<li>
+Replaced custom cell-renderer properties with a generic text property
+</li>
+
+<li>
+Rearranged detail-view column code
+</li>
+
+<li>
+Added more help text
+</li>
+
+<li>
+Fixed a memory bug caused by the opts string not having a terminating null character.
+</li>
+
+<li>
+Added splice-site highlighting. Fixed a bug where the bottom cell of the grid was not visible.
+</li>
+
+<li>
+Made the highlight box extend over the exon view (previously it was just shown on the grids, which is not adequate now that the exon view can be bumped and can take up quite a large area). To facilitate this and make it less cluttered I changed the highlight box from a blue outline (shown separately on each grid) to a shaded region that spans across all of the visible big picture widgets.
+</li>
+
+<li>
+Added code to get MSP colors from key file
+</li>
+
+<li>
+Fixed a bug in searching for sequence names
+</li>
+
+<li>
+Fixed bug where sequence name prefix was not being shown in feedback box
+</li>
+
+<li>
+Fixed bug with new key file option not being read from command line
+</li>
+
+<li>
+Added colors/styles key file parser
+</li>
+
+<li>
+Added Help documentation for new features. Added code to allow GtkTextView to use pango markup
+</li>
+
+<li>
+Added DNA search facility and tweaked some colours.
+</li>
+
+<li>
+Moved addBlxSequenceData and mspHasFs to blxview.c so they can be found by the xace build
+</li>
+
+<li>
+Added option to view unaligned parts of match sequences
+</li>
+
+<li>
+Fixed bug in color parser code
+</li>
+
+<li>
+Added basic facility to parse colors in GFF files
+</li>
+
+<li>
+Fixed an incorrect SO value in the GFF parser. Misc tidying.
+</li>
+
+<li>
+Added match set type
+</li>
+
+<li>
+GFF 3 parser now handles SO numbers and frameshift operators
+</li>
+
+<li>
+Fixed some bugs with the GFF3 parser. Added the 'R|r' option back in (to show/hide the reverse strand grid)
+</li>
+
+<li>
+Added GFF3 parser
+</li>
+
+<li>
+Added GFF3 parser
+</li>
+
+<li>
+Added GFF3 parser. Removed g_prefix_error and g_propagate_prefixed_error because they're not in our current linux GTK version
+</li>
+
+<li>
+More refactoring of parser code. Fixed a bug where an invalid match frame was being set when reading old format exblx files
+</li>
+
+<li>
+More refactoring of parser code
+</li>
+
+<li>
+Added a proper MSP type. Separated this out from the data type used by the parser, which is only used to record what kind of data is currently being parsed.
+</li>
+
+<li>
+Tidied Feature Series code
+</li>
+
+<li>
+Started tidying dotter code
+</li>
+
+<li>
+Tidied help text code
+</li>
+
+<li>
+Fixed a bug in the refactored parser code
+</li>
+
+<li>
+Added dotter vs self and hsps-only options
+</li>
+
+<li>
+More tidying of the parser code
+</li>
+
+<li>
+Improved error handling. Started replacing acedb messages with GLib messages
+</li>
+
+<li>
+Removed some unused code
+</li>
+
+<li>
+Related to RT ticket 169930: blixem was passing an incorrect offset to dotter
+</li>
+
+<li>
+Code tidying: renamed Strand to BlxStrand and SortByType to BlxSortMode; rearranged parser code
+</li>
+
+<li>
+Removed call to gdk_color_to_string, which is incompatible with our current version of GDK
+</li>
+
+<li>
+Code tidying
+</li>
+
+<li>
+Destroy colors properly
+</li>
+
+<li>
+Fix for RT169901: make exons the same direction as their ref seq strand
+</li>
+
+<li>
+Fixed a few bugs with selections
+</li>
+
+<li>
+Made coord conversion functions more robust against invalid input
+</li>
+
+<li>
+Changed the way selections work because this was causing a bug where sometimes the cell renderer would not render a row that should have been visible
+</li>
+
+<li>
+Made SNP stuff more flexible so they can be drawn with different colour outline and fill colours
+</li>
+
+<li>
+Added black-and-white colour option for printing. Added facility to color exons according to whether they are CDS or UTR (and made all exons CDS for now until we pass this info in). Added colors to settings dialog. Made STOPs red and METs green in the three-frame translation for protein matches.
+</li>
+
+<li>
+Colour METs green and STOPs red
+</li>
+
+<li>
+Added bump options to view dialog box
+</li>
+
+<li>
+Added bump options to view dialog box
+</li>
+
+<li>
+Added ability to bump exon view
+</li>
+
+<li>
+Added additional info to SequenceStruct
+</li>
+
+<li>
+Automatically calculate the lowest ID of all matches and cut off the grid range at that value (to the nearest grid cell) to save space in the big picture. Also refactored the code so that sequences can be passed as objects rather than just referred to by name
+</li>
+
+<li>
+Added About dialog
+</li>
+
+<li>
+Fixed a bug where running dotter on protein matches was sometimes getting the wrong q strand
+</li>
+
+<li>
+Moved some generic utility functions to utilities.c
+</li>
+
+<li>
+Added option to use big picture display range for dotter
+</li>
+
+<li>
+Refactored dotter dialog code to make it easier to add new widgets
+</li>
+
+<li>
+Made dotter dialog non-modal
+</li>
+
+<li>
+Added a blxview context; code tidying; fixed a bug with SNPs not showing when display reversed.
+</li>
+
+<li>
+Renamed MainWindow to BlxWindow, and created blixem context
+</li>
+
+<li>
+Renamed MainWindow to the more informative BlxWindow
+</li>
+
+<li>
+Allow user to select a SNP by clicking the DNA coord. Show/hide SNP track by double-clicking DNA header
+</li>
+
+<li>
+Added option in Settings dialog to show/hide SNP track
+</li>
+
+<li>
+Added SNP track. Also improved highlight colours
+</li>
+
+<li>
+Added new version number and copyright info to usage info
+</li>
+
+<li>
+Don't add introns to alignment trees
+</li>
+
+<li>
+Fix related to RT166076: avoid a crash if an invalid frame number is given. Also still draw MSPs in the grid even if they are not in an alignment list, and colour exons/introns by group colour
+</li>
+
+<li>
+Added a basic method for getting SNP data in to Blixem via the exblx_x or seqbl_x file formats
+</li>
+
+<li>
+When jumping to the start/end of a match, make sure we jump to the exact DNA base (not the first/last base in the msp's reading frame, which may be different for exons)
+</li>
+
+<li>
+Made Blixem calculate the reading frame that it should belong to and check this agains the reading frame passed in the input file
+</li>
+
+<li>
+New blixem: fixed a bug where go-to-position was failing for protein matches with negative coords. Also removed some nasty offset code
+</li>
+
+<li>
+Improved char width calculations
+</li>
+
+<li>
+Added keyboard shortcut to scroll one page left/right
+</li>
+
+<li>
+Fixed a memory bug which was causing a crash on 64 bit linux
+</li>
+
+<li>
+New blixem: removed unnecessary stuff from public header. Put padseq back in use.
+</li>
+
+<li>
+RT165950: made big picture zoom buttons bigger
+</li>
+
+<li>
+RT165945: do not change text colour when row selected; darken row colour instead.
+</li>
+
+<li>
+New blixem: make sure we don't find a non-monospace font in our prefered list of font families
+</li>
+
+<li>
+New blixem: fixed issues with protein alignments misaligning when first base is not base1. Fixed an issues with dotter not rev comping the s seq for some fetch methods
+</li>
+
+<li>
+New blixem: fixed bugs with protein matches not aligning if first coord is not base 1
+</li>
+
+<li>
+New blixem: typo fix
+</li>
+
+<li>
+New blixem: bug fixes
+</li>
+
+<li>
+New blixem: more dotter fixes
+</li>
+
+<li>
+New blixem: dotter bug fixes
+</li>
+
+<li>
+New blixem: made dotter call work for reverse s strands (as well as it worked before...)
+</li>
+
+<li>
+New blixem: small bug fix with shortcuts
+</li>
+
+<li>
+New blixem: toolbar and dialog improvements
+</li>
+
+<li>
+New blixem: added Home/End shortcut keys
+</li>
+
+<li>
+New blixem: better left/right scrolling
+</li>
+
+<li>
+New blixem: go to next/prev match now works on current selection
+</li>
+
+<li>
+New blixem: added find dialog
+</li>
+
+<li>
+New blixem: got rid of hard-coded special sequence characters
+</li>
+
+<li>
+New blixem: replaced deprecated combo box used for sort list
+</li>
+
+<li>
+New blixem: added proper destroy functions
+</li>
+
+<li>
+New blixem: added match sets. Tidied dialogs. Fixed some leaks
+</li>
+
+<li>
+New blixem: added ability to create a group from zmap selections
+</li>
+
+<li>
+New blixem: improved dialogs
+</li>
+
+<li>
+New blixem: improvements to settings dialog
+</li>
+
+<li>
+New blixem: improved column resizing
+</li>
+
+<li>
+New blixem: added basic ability to change column sizes
+</li>
+
+<li>
+New blixem: don't resize column headers unless necessary
+</li>
+
+<li>
+New blixem: got rid of global fetchMode variable
+</li>
+
+<li>
+New blixem: re-enabled printing. Misc tidy-up.
+</li>
+
+<li>
+New blixem: added tree gridlines
+</li>
+
+<li>
+New blixem: improved help
+</li>
+
+<li>
+New blixem: added functionality to middle-click the nucleotide header to select a nucleotide in protein matches
+</li>
+
+<li>
+New blixem: made grid headers show round values. Fixed some bugs with msp lines and exon boxes not lining up
+</li>
+
+<li>
+New blixem: fixed uninitialised value bugs
+</li>
+
+<li>
+New blixem: fixed problem with dotter getting the ref seq the wrong way round
+</li>
+
+<li>
+New blixem: removed more unnecessary code
+</li>
+
+<li>
+New blixem: general code tidying
+</li>
+
+<li>
+New blixem: fixed a bug where MSP lines were not being displayed if both ends extended beyond the display range
+</li>
+
+<li>
+New blixem: fixed initial zoom level for big picture (used to just zoom to the whole range)
+</li>
+
+<li>
+New blixem: removed some unnecessary debug output
+</li>
+
+<li>
+New blixem: fixed a bug with rows disappearing when squash/unsquashing matches
+</li>
+
+<li>
+New blixem: selected sequence names are now copied to primary clipboard. Also added Ctrl-C shortcut to copy sequence names to default clipboard
+</li>
+
+<li>
+New blixem: added second exon view for reverse strand
+</li>
+
+<li>
+New blixem: made dialogs non-modal
+</li>
+
+<li>
+New blixem: fixed memory corruption bug where string lengths were being calculated incorrectly for negative coord values
+</li>
+
+<li>
+New blixem: temporarily removed some newer GTK calls to make it compatible with previous versions of GTK
+</li>
+
+<li>
+Graph package replacement: fixed bug with go-to coords
+</li>
+
+<li>
+Graph package replacement: fixed small bug
+</li>
+
+<li>
+Graph package replacement: misc fixes and usability improvements
+</li>
+
+<li>
+Graph package replacement: improvements to selection highlighting
+</li>
+
+<li>
+Graph package replacement: fixed a bug with exon boundary colours
+</li>
+
+<li>
+Graph package replacement: fixed bugs with selection coords when strands toggled
+</li>
+
+<li>
+Graph package replacement: completed previous change to the way the display range works. Also improved colours.
+</li>
+
+<li>
+Graph package replacement: changed the way display range works. This fixes the scroll bar being the wrong way round for reverse strand. Also fixed some issues with protein matches when the length is not an exact number of triplets. Work in progress.
+</li>
+
+<li>
+Graph package replacement: various bug fixes
+</li>
+
+<li>
+Graph package replacement: fixed a bug with selecting a sequence that has msps in different reading frames. Added highlight colour for exons.
+</li>
+
+<li>
+Graph package replacement: fixed bugs with sorting and squash matches.
+</li>
+
+<li>
+Graph package replacement: added Highlight Differences option. Fixed colour of insertion marker when base is selected. Fixed a bug with exon boundary showing in wrong place.
+</li>
+
+<li>
+Graph package replacement: abbreviate sequence names to fit column size and append strand and frame number
+</li>
+
+<li>
+Graph package replacement: added basic help
+</li>
+
+<li>
+Graph package replacement: enable middle clicking on tree headers
+</li>
+
+<li>
+Graph package replacement: fixed bugs with sorting and start coord
+</li>
+
+<li>
+Graph package replacement: now uses input coord and offset. Fixed some issues with sorting
+</li>
+
+<li>
+Fixed linux 64 bug that was causing config file read to fail
+</li>
+
+<li>
+Graph package replacement: fixed another backwards compatibility issue
+</li>
+
+<li>
+Graph package replacement: fixed typo
+</li>
+
+<li>
+Graph package replacement: fixed incompatibilities with older versions of GTK
+</li>
+
+<li>
+Graph package replacement: sorted out a bug with colours
+</li>
+
+<li>
+Graph package replacement: improved scrolling when a row is selected
+</li>
+
+<li>
+Graph package replacement: added sort-by-group. Added group color picker.
+</li>
+
+<li>
+Graph package replacement: added Select Features menu option. Added confirmation message for deleting groups
+</li>
+
+<li>
+Graph package replacement: bug fixes with grouping and selections
+</li>
+
+<li>
+Graph package replacement: search by sequence name; hide groups
+</li>
+
+<li>
+Graph package replacement: small bug fix with grouping
+</li>
+
+<li>
+Graph package replacement: added basic grouping. Improved row selection.
+</li>
+
+<li>
+Graph package replacement: added subject sequence struct
+</li>
+
+<li>
+Graph package replacement: allow multiple selections
+</li>
+
+<li>
+Graph package replacement: improved performance of grid preview box by drawing grid to pixmap. Also added pfetch.
+</li>
+
+<li>
+Graph package replacement: bug fixes. Fixed scrolling on linux. Fixed missing grid header. Fixed prev/next match for protein matches.
+</li>
+
+<li>
+Graph package replacement: fixed bug where s index was not being shown for protein matches
+</li>
+
+<li>
+Graph package replacement: squash matches now working
+</li>
+
+<li>
+Graph package replacement: squash matches
+</li>
+
+<li>
+Graph package replacement: further small performance improvement
+</li>
+
+<li>
+Graph package replacement: improved speed of squash-matches view
+</li>
+
+<li>
+Graph package replacement: squash matches (work in progress). Also added (mostly empty) settings dialog.
+</li>
+
+<li>
+Graph package replacement: squash matches (work in progress)
+</li>
+
+<li>
+Graph package replacement: fixed a couple of bugs with scrolling and row selections
+</li>
+
+<li>
+Graph package replacement: work in progress: squash matches
+</li>
+
+<li>
+Graph package replacement: small improvement to middle-mouse scrolling
+</li>
+
+<li>
+Graph package replacement: highlight selected triplet for protein matches
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
