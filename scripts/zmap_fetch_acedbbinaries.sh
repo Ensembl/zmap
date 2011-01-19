@@ -34,14 +34,16 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
-zmap_message_out "Running $0 script...."
+this_host=`hostname`
 
-
-if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
-
-    zmap_message_out "This is the MASTER HOST: $ZMAP_MASTER_HOST..."
-
+if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
+    host_type="MASTER"
+else
+    host_type="SLAVE"
 fi
+
+
+zmap_message_out "Running $0 script on $host_type node $this_host...."
 
 
 zmap_message_out "Starting copying acedb source/binaries, Seqtools and AceConn dist files."
@@ -191,7 +193,7 @@ fi
 
 
 
-if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
     zmap_message_out "Copying acedb source..."
 
@@ -284,7 +286,7 @@ fi
 # The AceConn library.
 #
 
-if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
     zmap_message_out "Copying AceConn dist file..."
 
