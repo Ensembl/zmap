@@ -1,11 +1,13 @@
 #!/bin/bash
 #
 #
-# Usage
-# zmap_fetch_acedbbinaries.sh <Target Release Dir> [acedb level]
+# Usage:     zmap_fetch_acedbbinaries.sh <Target Release Dir> [acedb level]
 #
 # Script to copy acedb source and binaries from an acedb release directory to a
 # local directory.
+#
+# Some files only need to be copied once (e.g. dist files) and so are only done
+# on the master host.
 #
 # In the build this is the local install prefix.
 #
@@ -140,6 +142,7 @@ else
     zmap_message_out "$TARGET_RELEASE_DIR/$ZMAP_ARCH points at $symlink"
 fi
 
+
 #if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 #    ssh $ZMAP_MASTER_HOST "readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL > /dev/null || exit 1" || \
 #	zmap_message_exit "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL is either not a symlink, or it's target does not exist."
@@ -170,7 +173,7 @@ DIST_DIR="$TAR_TARGET_PATH/Dist"
 
 zmap_mkdir $DIST_DIR
 
-if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+if [ "$ZMAP_MASTER_HOST" != "$this_host" ]; then
     ssh $ZMAP_MASTER_HOST "[ -d $SOURCE ] || exit 1" || \
 	zmap_message_exit "$SOURCE _must_ be a directory that exists on $ZMAP_MASTER_HOST!"
 else
@@ -214,8 +217,10 @@ if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
     # We first copy the source so we can rename it's directory.
     cp -R $RELEASE_SRC/w* $tar_dir || zmap_message_exit "Failed to copy acedb source files."
 
-    zmap_message_out "Running tar -cf $tar_file $RELEASE_SRC/w*"
-    tar -cf $tar_file $tar_dir || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
+    zmap_cd $DIST_DIR
+
+    zmap_message_out "Running tar -cf $tar_file ./$release_file"
+    tar -cf $tar_file ./$release_file || zmap_message_exit "Failed to make tar file $tar_file of acedb source in ./$release_file"
     gzip $tar_file || zmap_message_exit "Failed to gzip $tar_file of acedb source in $RELEASE_SRC"
 
     # Now remove the copied source directory.
@@ -235,8 +240,9 @@ zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 
 for binary in $ZMAP_ACEDB_BINARIES;
   do
+
   # Copy from remote to local.
-  if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+  if [ "$ZMAP_MASTER_HOST" != "$this_host" ]; then
       zmap_message_out "Running scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary"
       scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
   else
@@ -250,6 +256,7 @@ for binary in $ZMAP_ACEDB_BINARIES;
       [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
       [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
   fi
+
 done
 
 
@@ -269,23 +276,23 @@ seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only 
 seqtools_bin_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/bin"
 
 
-if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
     zmap_message_out "Running cp $seqtools_dist_file $DIST_DIR"
     cp $seqtools_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $seqtools_dist_file"
 
-    for binary in $ZMAP_SEQTOOLS_BINARIES;
-      do
-      zmap_message_out "Running scp $seqtools_bin_dir/$binary $TARGET/$binary"
-      scp $seqtools_bin_dir/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+fi
+
+for binary in $ZMAP_SEQTOOLS_BINARIES;
+  do
+  zmap_message_out "Running scp $seqtools_bin_dir/$binary $TARGET/$binary"
+  scp $seqtools_bin_dir/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
 
       # check locally written files.
       #zmap_message_out "Testing $binary was copied..."
       #[ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
       #[ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
-    done
-
-fi
+done
 
 
 #
