@@ -202,6 +202,9 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     tar_file="$DIST_DIR/$release_file.src.tar"	# Put tar file in Dist directory.
 
+    # make a directory....
+    mkdir ./$release_file || zmap_message_exit "Failed to mdkir ./$release_file."
+
     # We first copy the source so we can rename it's directory.
     cp -R $RELEASE_SRC/w* ./$release_file || zmap_message_exit "Failed to copy acedb source files."
 
