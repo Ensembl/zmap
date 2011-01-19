@@ -37,6 +37,13 @@ set -o history
 zmap_message_out "Running $0 script...."
 
 
+if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+
+    zmap_message_out "This is the MASTER HOST..."
+
+fi
+
+
 zmap_message_out "Starting copying acedb source/binaries, Seqtools and AceConn dist files."
 
 
@@ -182,9 +189,11 @@ fi
 # copy acedb source code, we only do this once from the master host.
 #
 
-zmap_message_out "Copying acedb source..."
+
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+
+    zmap_message_out "Copying acedb source..."
 
     zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
 
@@ -272,12 +281,12 @@ fi
 # The AceConn library.
 #
 
-zmap_message_out "Copying AceConn dist file..."
-
-aceconn_dist_dir="$ZMAP_ACECONN_RELEASE_CONTAINER/$ZMAP_ACECONN_RELEASE_DIR"
-aceconn_dist_file=`ls $aceconn_dist_dir/libAceConn-*.tar.gz` # Should match only one file.
-
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+
+    zmap_message_out "Copying AceConn dist file..."
+
+    aceconn_dist_dir="$ZMAP_ACECONN_RELEASE_CONTAINER/$ZMAP_ACECONN_RELEASE_DIR"
+    aceconn_dist_file=`ls $aceconn_dist_dir/libAceConn-*.tar.gz` # Should match only one file.
 
     zmap_message_out "Running cp $aceconn_dist_file $DIST_DIR"
     cp $aceconn_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $aceconn_dist_file"
