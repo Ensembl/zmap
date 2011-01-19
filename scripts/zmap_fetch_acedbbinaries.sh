@@ -39,7 +39,7 @@ zmap_message_out "Running $0 script...."
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
-    zmap_message_out "This is the MASTER HOST..."
+    zmap_message_out "This is the MASTER HOST: $ZMAP_MASTER_HOST..."
 
 fi
 
