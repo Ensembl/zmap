@@ -197,6 +197,8 @@ if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
     zmap_message_out "Copying acedb source..."
 
+    this_dir=`pwd`
+
     zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
 
     release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
@@ -204,18 +206,22 @@ if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
     tar_file="$DIST_DIR/$release_file.src.tar"	# Put tar file in Dist directory.
 
+    tar_dir="$DIST_DIR/$release_file"
+
     # make a directory....
-    mkdir ./$release_file || zmap_message_exit "Failed to mdkir ./$release_file."
+    mkdir $tar_dir || zmap_message_exit "Failed to mdkir $tar_dir."
 
     # We first copy the source so we can rename it's directory.
-    cp -R $RELEASE_SRC/w* ./$release_file || zmap_message_exit "Failed to copy acedb source files."
+    cp -R $RELEASE_SRC/w* $tar_dir || zmap_message_exit "Failed to copy acedb source files."
 
     zmap_message_out "Running tar -cf $tar_file $RELEASE_SRC/w*"
-    tar -cf $tar_file ./$release_file || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
+    tar -cf $tar_file $tar_dir || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
     gzip $tar_file || zmap_message_exit "Failed to gzip $tar_file of acedb source in $RELEASE_SRC"
 
     # Now remove the copied source directory.
-    rm -rf ./$release_file || zmap_message_exit "Failed to remove copy of acedb source files."
+    rm -rf $tar_dir || zmap_message_exit "Failed to remove copy of acedb source files directory $tar_dir."
+
+    zmap_cd $this_dir
 
 fi
 
