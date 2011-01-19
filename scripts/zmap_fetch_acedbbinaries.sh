@@ -241,14 +241,20 @@ zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 for binary in $ZMAP_ACEDB_BINARIES;
   do
 
+  # this doesn't work because on the master host we still get passed a remote location as $1
   # Copy from remote to local.
-  if [ "$ZMAP_MASTER_HOST" != "$this_host" ]; then
-      zmap_message_out "Running scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary"
-      scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
-  else
-      zmap_message_out "Running cp $SOURCE/$binary $TARGET/$binary"
-      cp $SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
-  fi
+#  if [ "$ZMAP_MASTER_HOST" != "$this_host" ]; then
+#      zmap_message_out "Running scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary"
+#      scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+#  else
+#      zmap_message_out "Running cp $SOURCE/$binary $TARGET/$binary"
+#      cp $SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+#  fi
+
+  zmap_message_out "Running scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary"
+  scp $ZMAP_MASTER_HOST:$SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+
+
 
   # check locally written files.
   if [ "x$TAR_TARGET_HOST" == "x" ]; then
