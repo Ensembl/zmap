@@ -194,7 +194,7 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
     tar_file="$DIST_DIR/$release_file.src.tar"	# Put tar file in Dist directory.
 
     # We first copy the source so we can rename it's directory.
-    cp -r $RELEASE_SRC/w* ./$release_file || zmap_message_exit "Failed to copy acedb source files."
+    cp -R $RELEASE_SRC/w* ./$release_file || zmap_message_exit "Failed to copy acedb source files."
 
     zmap_message_out "Running tar -cf $tar_file $RELEASE_SRC/w*"
     tar -cf $tar_file ./$release_file || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
