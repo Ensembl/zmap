@@ -188,15 +188,20 @@ if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
 
     zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
 
-
     release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
     release_file=`basename $release_file`
 
     tar_file="$DIST_DIR/$release_file.src.tar"	# Put tar file in Dist directory.
 
+    # We first copy the source so we can rename it's directory.
+    cp -r $RELEASE_SRC/w* ./$release_file || zmap_message_exit "Failed to copy acedb source files."
+
     zmap_message_out "Running tar -cf $tar_file $RELEASE_SRC/w*"
-    tar -cf $tar_file $RELEASE_SRC/w* || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
+    tar -cf $tar_file ./$release_file || zmap_message_exit "Failed to make tar file $tar_file of acedb source in $RELEASE_SRC"
     gzip $tar_file || zmap_message_exit "Failed to gzip $tar_file of acedb source in $RELEASE_SRC"
+
+    # Now remove the copied source directory.
+    rm -rf ./$release_file || zmap_message_exit "Failed to remove copy of acedb source files."
 
 fi
 
