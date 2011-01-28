@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 24 10:17 2010 (edgrif)
+ * Last edited: Jan 28 08:51 2011 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.163 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.164 2011-01-28 09:02:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1577,10 +1577,9 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
 
-	  feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
-						dna_sequence, dna_length);
+	  feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
 
-	  if(temp_style)
+	  if (temp_style)
 	    zMapStyleDestroy(temp_style);
 	}
 
@@ -1676,7 +1675,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 {
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
-  ZMapMapBlockStruct sequence_to_parent = {0, 0, 0, 0}, parent_to_self = {0, 0, 0, 0} ;
+  ZMapMapBlockStruct sequence_to_parent = {0} ;
   int parent_length = 0 ;
 
 
@@ -1697,28 +1696,18 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
   if (getSMapping(server, NULL, (char *)g_quark_to_string(server->req_context->sequence_name),
 		  server->req_context->sequence_to_parent.c1, server->req_context->sequence_to_parent.c2,
 		  &parent_class, &parent_name, &sequence_to_parent)
-      && ((server->req_context->sequence_to_parent.c2 - server->req_context->sequence_to_parent.c1 + 1) == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
+      && ((server->req_context->sequence_to_parent.c2 - server->req_context->sequence_to_parent.c1 + 1)
+	  == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
-//      feature_context->length = sequence_to_parent.c2 - sequence_to_parent.c1 + 1 ;
-
-      parent_to_self.p1 = parent_to_self.c1 = 1 ;
-      parent_to_self.p2 = parent_to_self.c2 = parent_length ;
-
       feature_context->parent_name = g_quark_from_string(parent_name) ;
       g_free(parent_name) ;
 
-      if (feature_context->sequence_to_parent.p1 < feature_context->sequence_to_parent.p2)
-	{
-	  feature_context->parent_span.x1 = parent_to_self.p1 ;
-	  feature_context->parent_span.x2 = parent_to_self.p2 ;
-	}
-      else
-	{
-	  feature_context->parent_span.x1 = parent_to_self.p2 ;
-	  feature_context->parent_span.x2 = parent_to_self.p1 ;
-	}
-
+      /* Set the top level span. */
+      feature_context->parent_span.x1 = 1 ;
+      feature_context->parent_span.x2 = parent_length ;
+     
+      /* Set the mapping from this sequence to the top level. */
       feature_context->sequence_to_parent.c1 = sequence_to_parent.c1 ;
       feature_context->sequence_to_parent.c2 = sequence_to_parent.c2 ;
       feature_context->sequence_to_parent.p1 = sequence_to_parent.p1 ;
