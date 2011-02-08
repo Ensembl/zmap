@@ -42,7 +42,7 @@ This could work as a master copy similar to the existing CVS repository.  The do
 </p>
 
 <h3>Hosting the git repository</h3>
-<p>Our use of  CVS is to provide a master copy of the source with individual checkouts being made by developers that are uploaded to the master copy when tasks are completed.  For distribution we make a tarball of the soucre - there is no public access to the repository.
+<p>Our use of  CVS is to provide a master copy of the source with individual checkouts being made by developers that are uploaded to the master copy when tasks are completed.  For distribution we make a tarball of the source - there is no public access to the repository.
 </p>
 <p>To emulate this with git the following is proposed:
 <ul>
@@ -52,13 +52,16 @@ This could work as a master copy similar to the existing CVS repository.  The do
 <li> official builds will only be created from the master copy in ~zmap/git.  Note that this is not the distributed model espoused by git but instead the 'person-independant' philosophy practiced by the Zmap team.  It also imples that the master copy only contains stable tested code
 <li> distribution tarballs are made by 'offcial' builds from ~zmap/git
 </ul>
-Note that due to file permissioning issues developers need to be in a 'zmapteam' group to upload their work. An alternative way would be for them to log in as zmap and pull thier updates for thier clones instead of pushing them.
+Note that due to file permissioning issues developers need to be in a 'zmapteam' group to upload their work. An alternative way would be for them to log in as zmap and pull their updates for thier clones instead of pushing them.
+</p>
+<p>
+Note that repositories in this location will be available on gitweb (<code>http://git.internal.sanger.ac.uk</code>) unless you remove world-read permission.
 </p>
 
 <h3>Simple differences between CVS and git</h3>
 <p>Note should be take of the following:
 <ul>
-<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.1 2011-01-10 15:13:26 edgrif Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
+<li> unlike CVS git does not add a version/timestanp in the files themsleves (in CVS via $Id: cvs_git.html,v 1.2 2011-02-08 13:10:42 gb10 Exp $), which is arguably better in that the version control is externs the what is being controlled - CVS cannot do this for binary files for instance.
 <li> CVS has been set up to checkout files as read only and to require files to be explicitly opened for editing whereas git records file permissions and therefore emulating this kind of behaviour is not ideal. Instead git is aware of changes to files and only those changes that have been explictly added will be committed to the repository (you have to add chenges in content rather than files) - so git provides a similar kind of control but allows instant editing.  Use git-show to see what files have been changed or added.
 </ul>
 </p>
@@ -96,6 +99,9 @@ git --bare fetch ~zmap/git master:master
 </pre>
 </p>
 The --shared option makes the repository group-writable.
+</p>
+<p>
+Edit the <code>description</code> file in <code>zmap.git</code> to set the description that will be visible on gitweb.
 </p>
 
 <h3>Setting up access permissions</h3>
