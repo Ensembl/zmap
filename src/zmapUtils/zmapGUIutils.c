@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun  9 15:02 2009 (edgrif)
+ * Last edited: Feb 10 15:45 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.59 2010-10-27 08:15:02 mh17 Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.60 2011-02-10 16:09:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,19 @@
 #include <zmapUtils_P.h>
 
 
+/* Because we need to cast to the function type to call it without debugger complaints... */
+typedef void (*g_object_notify_callback)(GObject *pane, GParamSpec *scroll, gpointer user_data);
+
+/* data for our proxying */
+typedef struct
+{
+  g_object_notify_callback callback;
+  gpointer user_data;
+  gulong handler_id;
+} PaneMaxPositionStruct, *PaneMaxPosition;
+
+
+
 typedef struct
 {
   int value;
@@ -66,6 +79,14 @@ typedef struct
   gulong     original_parent_signal_id;
 } PopOutDataStruct, *PopOutData;
 
+
+typedef struct CursorNameStructName
+{
+  GdkCursorType cursor_id ;
+  char *cursor_name ;
+} CursorNameStruct, *CursorName ;
+
+
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 			    gboolean modal, int display_timeout, gboolean close_button,
@@ -75,8 +96,18 @@ static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
 
-
 static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
+
+static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
+static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosure *unused_closure);
+
+static void handle_popout_destroy_cb(GtkWidget *toplevel, gpointer cb_data) ;
+static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_data) ;
+
+static void radioButtonCB(GtkWidget *button, gpointer radio_data) ;
+static void radioButtonCBDataDestroy(gpointer data) ;
+
+
 
 
 /* Holds an alternative URL for help pages if set by the application. */
@@ -239,41 +270,6 @@ GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text)
     }
 
   return toplevel;
-}
-
-static void handle_popout_destroy_cb(GtkWidget *toplevel, gpointer cb_data)
-{
-  PopOutData popout_data = (PopOutData)cb_data;
-
-  if(toplevel == popout_data->popout_toplevel)
-    {
-      if(popout_data->original_parent)
-	{
-	  g_signal_handler_disconnect(popout_data->original_parent,
-				      popout_data->original_parent_signal_id);
-	  gtk_widget_reparent(popout_data->popout_child,
-			      popout_data->original_parent);
-	}
-      else			/* just free the data */
-	{
-	  popout_data->popout_child = NULL;
-	  popout_data->popout_toplevel = NULL;
-	  g_free(popout_data);
-	}
-    }
-
-  return ;
-}
-
-static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_data)
-{
-  PopOutData popout_data = (PopOutData)cb_data;
-
-  popout_data->original_parent = NULL;
-
-  gtk_widget_destroy(popout_data->popout_toplevel);
-
-  return ;
 }
 
 /*! zMapGUIPopOutWidget
@@ -967,42 +963,6 @@ void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, 
 }
 
 
-/* Handle creating a radio group.
- * pass in a vbox or hbox and the buttons will get packed in order.
- */
-
-/* Callback to set the value and call any user specified callback */
-static void radioButtonCB(GtkWidget *button, gpointer radio_data)
-{
-  RadioButtonCBData data = (RadioButtonCBData)radio_data;
-  gboolean active;
-
-  if((active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-     && data->output)
-    *(data->output) = data->value;
-
-  if(data->callback)
-    (data->callback)(button, data->user_data, active);
-
-  return ;
-}
-
-/* GDestroyNotify for the RadioButtonCBData attached to radio buttons
- * for "clicked" signal */
-static void radioButtonCBDataDestroy(gpointer data)
-{
-  RadioButtonCBData button_data = (RadioButtonCBData)data;
-
-  /* clear pointers */
-  button_data->output    = NULL;
-  button_data->callback  = NULL;
-  button_data->user_data = NULL;
-  /* and free .. */
-  g_free(button_data);
-
-  return ;
-}
-
 /* Possibly sensible to make value_out point to a member of clickedData if you are setting clickedCB. */
 void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
                              ZMapGUIRadioButton all_buttons,
@@ -1142,22 +1102,9 @@ void zMapGUISetClipboard(GtkWidget *widget, char *text)
   return ;
 }
 
+
+
 /* GtkPaned Widget helper functions... */
-
-/* Because we need to cast to the function type to call it without debugger complaints... */
-typedef void (*g_object_notify_callback)(GObject *pane, GParamSpec *scroll, gpointer user_data);
-
-/* data for our proxying */
-typedef struct
-{
-  g_object_notify_callback callback;
-  gpointer user_data;
-  gulong handler_id;
-} PaneMaxPositionStruct, *PaneMaxPosition;
-
-static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
-static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosure *unused_closure);
-
 
 /*!
  * \brief To safely set a maximum position of a paned handle from the
@@ -1194,6 +1141,121 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
   return ;
 }
 
+
+
+GdkCursor *zMapGUIGetCursor(char *cursor_name)
+{
+  GdkCursor *cursor = NULL ;
+  CursorNameStruct cursors[] =
+    {
+      {GDK_X_CURSOR, "X_CURSOR"},
+      {GDK_ARROW, "ARROW"},
+      {GDK_BASED_ARROW_DOWN, "BASED_ARROW_DOWN"},
+      {GDK_BASED_ARROW_UP, "BASED_ARROW_UP"},
+      {GDK_BOAT, "BOAT"},
+      {GDK_BOGOSITY, "BOGOSITY"},
+      {GDK_BOTTOM_LEFT_CORNER, "BOTTOM_LEFT_CORNER"},
+      {GDK_BOTTOM_RIGHT_CORNER, "BOTTOM_RIGHT_CORNER"},
+      {GDK_BOTTOM_SIDE, "BOTTOM_SIDE"},
+      {GDK_BOTTOM_TEE, "BOTTOM_TEE"},
+      {GDK_BOX_SPIRAL, "BOX_SPIRAL"},
+      {GDK_CENTER_PTR, "CENTER_PTR"},
+      {GDK_CIRCLE, "CIRCLE"},
+      {GDK_CLOCK, "CLOCK"},
+      {GDK_COFFEE_MUG, "COFFEE_MUG"},
+      {GDK_CROSS, "CROSS"},
+      {GDK_CROSS_REVERSE, "CROSS_REVERSE"},
+      {GDK_CROSSHAIR, "CROSSHAIR"},
+      {GDK_DIAMOND_CROSS, "DIAMOND_CROSS"},
+      {GDK_DOT, "DOT"},
+      {GDK_DOTBOX, "DOTBOX"},
+      {GDK_DOUBLE_ARROW, "DOUBLE_ARROW"},
+      {GDK_DRAFT_LARGE, "DRAFT_LARGE"},
+      {GDK_DRAFT_SMALL, "DRAFT_SMALL"},
+      {GDK_DRAPED_BOX, "DRAPED_BOX"},
+      {GDK_EXCHANGE, "EXCHANGE"},
+      {GDK_FLEUR, "FLEUR"},
+      {GDK_GOBBLER, "GOBBLER"},
+      {GDK_GUMBY, "GUMBY"},
+      {GDK_HAND1, "HAND1"},
+      {GDK_HAND2, "HAND2"},
+      {GDK_HEART, "HEART"},
+      {GDK_ICON, "ICON"},
+      {GDK_IRON_CROSS, "IRON_CROSS"},
+      {GDK_LEFT_PTR, "LEFT_PTR"},
+      {GDK_LEFT_SIDE, "LEFT_SIDE"},
+      {GDK_LEFT_TEE, "LEFT_TEE"},
+      {GDK_LEFTBUTTON, "LEFTBUTTON"},
+      {GDK_LL_ANGLE, "LL_ANGLE"},
+      {GDK_LR_ANGLE, "LR_ANGLE"},
+      {GDK_MAN, "MAN"},
+      {GDK_MIDDLEBUTTON, "MIDDLEBUTTON"},
+      {GDK_MOUSE, "MOUSE"},
+      {GDK_PENCIL, "PENCIL"},
+      {GDK_PIRATE, "PIRATE"},
+      {GDK_PLUS, "PLUS"},
+      {GDK_QUESTION_ARROW, "QUESTION_ARROW"},
+      {GDK_RIGHT_PTR, "RIGHT_PTR"},
+      {GDK_RIGHT_SIDE, "RIGHT_SIDE"},
+      {GDK_RIGHT_TEE, "RIGHT_TEE"},
+      {GDK_RIGHTBUTTON, "RIGHTBUTTON"},
+      {GDK_RTL_LOGO, "RTL_LOGO"},
+      {GDK_SAILBOAT, "SAILBOAT"},
+      {GDK_SB_DOWN_ARROW, "SB_DOWN_ARROW"},
+      {GDK_SB_H_DOUBLE_ARROW, "SB_H_DOUBLE_ARROW"},
+      {GDK_SB_LEFT_ARROW, "SB_LEFT_ARROW"},
+      {GDK_SB_RIGHT_ARROW, "SB_RIGHT_ARROW"},
+      {GDK_SB_UP_ARROW, "SB_UP_ARROW"},
+      {GDK_SB_V_DOUBLE_ARROW, "SB_V_DOUBLE_ARROW"},
+      {GDK_SHUTTLE, "SHUTTLE"},
+      {GDK_SIZING, "SIZING"},
+      {GDK_SPIDER, "SPIDER"},
+      {GDK_SPRAYCAN, "SPRAYCAN"},
+      {GDK_STAR, "STAR"},
+      {GDK_TARGET, "TARGET"},
+      {GDK_TCROSS, "TCROSS"},
+      {GDK_TOP_LEFT_ARROW, "TOP_LEFT_ARROW"},
+      {GDK_TOP_LEFT_CORNER, "TOP_LEFT_CORNER"},
+      {GDK_TOP_RIGHT_CORNER, "TOP_RIGHT_CORNER"},
+      {GDK_TOP_SIDE, "TOP_SIDE"},
+      {GDK_TOP_TEE, "TOP_TEE"},
+      {GDK_TREK, "TREK"},
+      {GDK_UL_ANGLE, "UL_ANGLE"},
+      {GDK_UMBRELLA, "UMBRELLA"},
+      {GDK_UR_ANGLE, "UR_ANGLE"},
+      {GDK_WATCH, "WATCH"},
+      {GDK_XTERM, "XTERM"},
+      {GDK_LAST_CURSOR, NULL}				    /* end of array marker. */
+    } ;
+  CursorName curr_cursor ;
+
+  curr_cursor = cursors ;
+  while (curr_cursor->cursor_id != GDK_LAST_CURSOR)
+    {
+      if (g_ascii_strcasecmp(cursor_name, curr_cursor->cursor_name) == 0)
+	{
+	  break ;
+	}
+      else
+	{
+	  curr_cursor++ ;
+	}
+    }
+
+  if (curr_cursor->cursor_id < GDK_LAST_CURSOR)
+    cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
+
+  return cursor ;
+}
+
+
+
+
+/*
+ *                      Internal functions
+ */
+
+
 static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
   PaneMaxPosition pane_data = (PaneMaxPosition)user_data;
@@ -1222,16 +1284,6 @@ static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosur
 
   return ;
 }
-
-
-
-/*! @} end of zmapguiutils docs. */
-
-
-
-/*
- *                      Internal functions
- */
 
 
 /* Callback for my_gtk_run_dialog_nonmodal(). Records the response from
@@ -1514,5 +1566,82 @@ static gboolean timeoutHandler(gpointer data)
   gtk_widget_destroy(dialog) ;
 
   return FALSE ;
+}
+
+
+
+
+static void handle_popout_destroy_cb(GtkWidget *toplevel, gpointer cb_data)
+{
+  PopOutData popout_data = (PopOutData)cb_data;
+
+  if(toplevel == popout_data->popout_toplevel)
+    {
+      if(popout_data->original_parent)
+	{
+	  g_signal_handler_disconnect(popout_data->original_parent,
+				      popout_data->original_parent_signal_id);
+	  gtk_widget_reparent(popout_data->popout_child,
+			      popout_data->original_parent);
+	}
+      else			/* just free the data */
+	{
+	  popout_data->popout_child = NULL;
+	  popout_data->popout_toplevel = NULL;
+	  g_free(popout_data);
+	}
+    }
+
+  return ;
+}
+
+static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_data)
+{
+  PopOutData popout_data = (PopOutData)cb_data;
+
+  popout_data->original_parent = NULL;
+
+  gtk_widget_destroy(popout_data->popout_toplevel);
+
+  return ;
+}
+
+
+
+
+/* Handle creating a radio group.
+ * pass in a vbox or hbox and the buttons will get packed in order.
+ */
+
+/* Callback to set the value and call any user specified callback */
+static void radioButtonCB(GtkWidget *button, gpointer radio_data)
+{
+  RadioButtonCBData data = (RadioButtonCBData)radio_data;
+  gboolean active;
+
+  if((active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+     && data->output)
+    *(data->output) = data->value;
+
+  if(data->callback)
+    (data->callback)(button, data->user_data, active);
+
+  return ;
+}
+
+/* GDestroyNotify for the RadioButtonCBData attached to radio buttons
+ * for "clicked" signal */
+static void radioButtonCBDataDestroy(gpointer data)
+{
+  RadioButtonCBData button_data = (RadioButtonCBData)data;
+
+  /* clear pointers */
+  button_data->output    = NULL;
+  button_data->callback  = NULL;
+  button_data->user_data = NULL;
+  /* and free .. */
+  g_free(button_data);
+
+  return ;
 }
 

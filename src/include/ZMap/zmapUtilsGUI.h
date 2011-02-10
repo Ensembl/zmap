@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Dec 15 13:49 2010 (edgrif)
+ * Last edited: Feb 10 15:45 2011 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.42 2010-12-20 12:19:50 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.43 2011-02-10 16:09:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -431,6 +431,8 @@ void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 
+GdkCursor *zMapGUIGetCursor(char *cursor_name) ;
+
 GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
 
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
@@ -490,10 +492,9 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book) ;
 void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new) ;
-
-
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
+
 
 
 
