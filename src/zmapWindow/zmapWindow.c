@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 12 11:28 2010 (edgrif)
+ * Last edited: Feb 10 16:00 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.348 2011-01-12 16:56:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.349 2011-02-10 16:08:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2857,11 +2857,17 @@ static gboolean getConfiguration(ZMapWindow window)
   window->keep_empty_cols = FALSE;
   window->display_forward_coords = TRUE;
   window->show_3_frame_reverse = FALSE;
+  window->normal_cursor = zMapGUIGetCursor(DEFAULT_CURSOR) ;
 
   if((context = zMapConfigIniContextProvide()))
     {
       int tmp_int;
       gboolean tmp_bool;
+      char *tmp_str ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_CURSOR, &tmp_str))
+	window->normal_cursor = zMapGUIGetCursor(tmp_str) ;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				    ZMAPSTANZA_WINDOW_MAXSIZE, &tmp_int))
@@ -3076,7 +3082,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		  mark_updater.in_mark_move_region = FALSE;
 		  mark_updater.closest_to = NULL;
 
-		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
 		  gdk_cursor_unref(mark_updater.arrow_cursor);
 		  mark_updater.arrow_cursor = NULL;
 		}
@@ -3112,7 +3118,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		  mark_updater.in_mark_move_region = FALSE;
 		  mark_updater.closest_to = NULL;
 
-		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
 		  gdk_cursor_unref(mark_updater.arrow_cursor);
 		  mark_updater.arrow_cursor = NULL;
 
@@ -3309,7 +3315,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		mark_updater.in_mark_move_region = FALSE;
 		mark_updater.closest_to = NULL;
 
-		gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+		gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
 		gdk_cursor_unref(mark_updater.arrow_cursor);
 		mark_updater.arrow_cursor = NULL;
 
@@ -3423,7 +3429,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 					    mark_updater.mark_y2);
 	      }
 
-	    gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+	    gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
 	    gdk_cursor_unref(mark_updater.arrow_cursor);
 	    mark_updater.arrow_cursor = NULL;
 	    mark_updater.closest_to = NULL;
@@ -5582,7 +5588,7 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 
       if (window->cursor_busy_count == 0)
 	{
-	  gdk_window_set_cursor(window->toplevel->window, NULL);
+	  gdk_window_set_cursor(window->toplevel->window, window->normal_cursor) ;
 	}
 
       zMapDebugPrint(busy_debug_G, "%s - %s: window %p busy cursor %s, %d",

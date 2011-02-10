@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Nov  4 15:53 2010 (edgrif)
+ * Last edited: Feb 10 16:00 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.275 2011-01-12 16:56:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.276 2011-02-10 16:08:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -234,6 +234,8 @@ typedef struct
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
+
+#define DEFAULT_CURSOR "LEFT_PTR"
 
 
 /* All settable from configuration file. */
@@ -538,6 +540,8 @@ typedef struct _ZMapWindowStruct
   FooCanvasGroup *tooltip;
   FooCanvasItem  *mark_guide_line;
 
+  GdkCursor *normal_cursor ;
+  GdkCursor *busy_cursor ;
   int cursor_busy_count ;				    /* Used to turn cursor on/off... */
 
 
@@ -723,9 +727,6 @@ typedef struct _ZMapWindowStruct
   Display3FrameMode display_3_frame ;
   gboolean show_3_frame_reverse ;			  /* 3 frame displayed on reverse col ? */
 
-
-
-  GdkCursor *busy_cursor ;
 
   gboolean interrupt_expose;
 
