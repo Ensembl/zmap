@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov  4 13:59 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.203 2011-01-04 11:10:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.204 2011-02-10 15:38:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1000,8 +1000,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	{
 	  /* multiple selections */
 
-	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item)
-	      && window->multi_select)
+	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
 	    {
 	      replace_highlight = FALSE ;
 	      externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "multiple_select", highlight_item);
