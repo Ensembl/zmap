@@ -30,9 +30,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
  * HISTORY:
- * Last edited: Sep 24 10:19 2010 (edgrif)
+ * Last edited: Feb 10 15:36 2011 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.39 2011-01-04 11:10:20 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.40 2011-02-10 16:06:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1554,6 +1554,7 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
+    { ZMAPSTANZA_WINDOW_CURSOR,       G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_MAXSIZE,      G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_WINDOW_MAXBASES,     G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_WINDOW_COLUMNS,      G_TYPE_BOOLEAN, NULL, FALSE },

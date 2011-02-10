@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Aug 18 12:04 2010 (edgrif)
+ * Last edited: Feb 10 15:35 2011 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.40 2010-10-14 10:05:22 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.41 2011-02-10 16:06:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -646,6 +646,7 @@
  *
  *  */
 #define ZMAPSTANZA_WINDOW_CONFIG       "ZMapWindow"
+#define ZMAPSTANZA_WINDOW_CURSOR       "cursor"
 #define ZMAPSTANZA_WINDOW_MAXSIZE      "canvas-maxsize"
 #define ZMAPSTANZA_WINDOW_MAXBASES     "canvas-maxbases"
 #define ZMAPSTANZA_WINDOW_FWD_COORDS   "display-forward-coords"
