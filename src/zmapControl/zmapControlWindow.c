@@ -30,7 +30,7 @@ name
  * HISTORY:
  * Last edited: Jun 10 10:48 2010 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.41 2011-02-11 15:17:08 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.42 2011-02-11 16:05:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,7 +253,7 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
 
   frame = gtk_frame_new(NULL) ;
   gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
-  event_box = gtk_event_box_new() ;
+  zmap->status_entry = gtk_entry_new();
   gtk_container_add(GTK_CONTAINER(frame), zmap->status_entry) ;
 
   return status_box ;

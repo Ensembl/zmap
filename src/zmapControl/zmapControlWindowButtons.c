@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:24 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.62 2011-02-11 15:17:08 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.63 2011-02-11 16:05:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -341,7 +341,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	      break ;
 
 	  case ZMAPVIEW_LOADED:
-            if(view_state == ZMAP_VIEW_LOADED)
+            if(view_state == ZMAPVIEW_LOADED)
                   revcomp = TRUE;
 	      general = TRUE ;
             frame3 = TRUE;

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.31 2011-01-12 16:56:34 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.32 2011-02-11 16:05:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,7 +158,7 @@ gboolean zMapLogCreate(char *logname)
 
   zMapAssert(!log) ;
 
-#if 1 // MH17_debug_foo_canvas
+#if MH17_debug_foo_canvas
 extern void (*foo_log_stack)(void);
 extern void (*foo_timer)(char *, char *, char *);
 
