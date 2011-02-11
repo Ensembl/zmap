@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:15 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.88 2011-01-04 11:10:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.89 2011-02-11 10:48:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -531,7 +531,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  break;
 	}
 
-      summarise = zMapStyleGetSummarise(style);
+      summarise = zMapStyleGetSummarise(style);  /* get zoom level - not coded yet */
 
       /* NOTE: temporarily accept any non zero zoom level
        * need to compare style config with window zoom level

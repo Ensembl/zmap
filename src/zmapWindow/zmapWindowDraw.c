@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.135 2011-01-12 16:56:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.136 2011-02-11 10:48:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -309,7 +309,7 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
 
 
 /* return state column should be in
- * so that we can set the initial state to what we want to avoid focanvasing it twice
+ * so that we can set the initial state to what we want to avoid foocanvasing it twice
  */
 gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_group)
 {
@@ -318,7 +318,7 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
   ZMapStyleColumnDisplayState curr_col_state ;
   ZMapStyle3FrameMode frame_mode ;
   gboolean frame_sensitive ;
-  gboolean visible = TRUE;
+  gboolean visible = FALSE;
   gboolean mag_visible, frame_visible, frame_displayed = TRUE ;
 
   zMapAssert(style);
@@ -402,7 +402,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
 
       new_visible = zmapWindowGetColumnVisibility(window,column_group);
-
+zMapLogWarning("set state %s: %d", g_quark_to_string(container->unique_id),new_visible);
       if(new_visible)
       {
             if(!cur_visible)
@@ -414,7 +414,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       }
       else
       {
-            if(!cur_visible)
+            if(cur_visible)
             {
                   zMapStartTimer("SetState","SetVis show");
                   redraw = TRUE;
@@ -643,6 +643,11 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
   ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)col_group;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
+
+if(featureset->unique_id == g_quark_from_string("chip_pet_ditags"))
+{
+zMapLogWarning("is mag vis %s %d: %d %d", g_quark_to_string(featureset->unique_id),featureset->strand, zmapWindowContainerHasFeatures(container),zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
+}
 
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
