@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov  5 09:08 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.67 2010-12-08 08:55:43 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.68 2011-02-11 15:17:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -244,6 +244,9 @@ typedef struct _ZMapViewStruct
 							       fetchable from some servers. */
 #endif /* NOT_REQUIRED_ATM */
 
+
+  int sources_loading;        /* how many active/ queued requests */
+                              /* this is not very neat as failures are dealt with in a complex way */
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.60 2010-09-06 08:48:08 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.61 2011-02-11 15:17:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -227,7 +227,7 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
-char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
+char *zMapViewGetStatusStr(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;

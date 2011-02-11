@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:24 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.61 2010-10-13 14:08:33 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.62 2011-02-11 15:17:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,9 +304,9 @@ void zmapControlButtonTooltips(ZMap zmap)
 void zmapControlWindowSetButtonState(ZMap zmap)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean general, unsplit, unlock, stop, reload, frame3, dna, back ;
+  gboolean general, revcomp,  unsplit, unlock, stop, reload, frame3, dna, back ;
 
-  general = unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
+  general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
 
   switch(zmap->state)
     {
@@ -337,9 +337,13 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	  case ZMAPVIEW_LOADING:
         case ZMAPVIEW_UPDATING:
 	    stop = TRUE ;
-	    break ;
+          if(!zMapViewGetFeatures(view))       /* can revcomp one column while others are arriving */
+	      break ;
+
 	  case ZMAPVIEW_LOADED:
-	    general = TRUE ;
+            if(view_state == ZMAP_VIEW_LOADED)
+                  revcomp = TRUE;
+	      general = TRUE ;
             frame3 = TRUE;
             dna = TRUE;
 	    /* If we are down to the last view and that view has a single window then

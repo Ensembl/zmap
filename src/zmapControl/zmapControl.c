@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 12 09:05 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.110 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.111 2011-02-11 15:17:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -623,14 +623,16 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-  if(!view_data)
+//  if(!view_data)
+/* need to update per column loaded for exciting feedback to the user */
   {
       /* Update title etc. */
       updateControl(zmap, view) ;
 
       zmapControlWindowSetGUIState(zmap) ;
   }
-  else
+//  else
+  if(view_data)
   {
     if(zmap->xremote_client)
     {

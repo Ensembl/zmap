@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  5 12:33 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.228 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.229 2011-02-11 15:17:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -820,6 +820,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	    {
 
 	      ZMapViewConnection view_con ;
+            gboolean terminate = TRUE;
 
 	      current_server = (ZMapConfigSource)settings_list->data ;
 	      // if global            current_server->stylesfile = g_strdup(stylesfile);
@@ -917,6 +918,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		    else
 		      dna_requested = FALSE ;
 
+                terminate = !g_str_has_prefix(current_server->url,"pipe://");
+
 		    if ((view_con = createConnection(zmap_view, NULL, context,
 						     current_server->url,
 						     (char *)current_server->format,
@@ -926,9 +929,10 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 						     current_server->stylesfile,
 						     con_featuresets,
 						     dna_requested,             // current_server->sequence,
-						     current_server->delayed )))  // has to be false or else we are not here
+						     terminate )))
 		      {
 			connections++ ;
+                  zmap_view->sources_loading++;
 
 			/* If at least one connection succeeded then we are up and running, if not then the zmap
 			 * returns to the init state. */
@@ -1253,7 +1257,9 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 {
   gboolean result = FALSE ;
 
-  if (zmap_view->state == ZMAPVIEW_LOADED)
+//  if (zmap_view->state == ZMAPVIEW_LOADED)
+// data is processed only when idle so this should be safe
+    if(zmap_view->features)
     {
       GList* list_item ;
 
@@ -1479,7 +1485,7 @@ ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
   return zmap_view->state ;
 }
 
-char *zMapViewGetStatusStr(ZMapViewState state)
+char *zMapViewGetStatusStr(ZMapView view)
 {
   /* Array must be kept in synch with ZmapState enum in zmapView.h */
   static char *zmapStates[] = {"Initialising", "Mapped",
@@ -1487,11 +1493,16 @@ char *zMapViewGetStatusStr(ZMapViewState state)
 			       "Data loading", "Data loaded","Columns loading",
 			       "Resetting", "Dying"} ;
   char *state_str ;
+  ZMapViewState state = view->state;
 
   zMapAssert(state >= ZMAPVIEW_INIT);
   zMapAssert(state <= ZMAPVIEW_DYING) ;
 
-  state_str = zmapStates[state] ;
+  if(state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
+      state_str = g_strdup_printf("%s (%d)", zmapStates[state], view->sources_loading);
+  else
+      state_str = g_strdup(zmapStates[state]) ;
+
 
   return state_str ;
 }
@@ -1893,6 +1904,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 			      !existing ))
 	    {
 	      requested = TRUE;
+            view->sources_loading ++;
 	    }
 	  // g_list_free(req_featuresets); no! this list gets used by threads
 	  req_featuresets = NULL;
@@ -2682,6 +2694,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
        * This accounts for failures as well as completed loads
        */
       zmap_view->state = ZMAPVIEW_LOADED ;
+      zmap_view->sources_loading = 0;
       state_change = TRUE;
     }
 
@@ -3111,6 +3124,8 @@ printf("\nview styles lists after merge:\n");
 
 	    getFeatures(zmap_view, get_features, connect_data->curr_styles) ;
 
+            /* we record succcessful requests, if some fail they will get zapped in checkstateconnections() */
+          zmap_view->sources_loading--;
 	  }
 
 	break ;

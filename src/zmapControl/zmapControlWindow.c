@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,12 +25,12 @@
 name
  *
  * Description: Creates the top level window of a ZMap.
- *              
+ *
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
  * Last edited: Jun 10 10:48 2010 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.40 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.41 2011-02-11 15:17:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,7 +82,7 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
 
 
-  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
 
@@ -151,19 +151,18 @@ void zmapControlWindowDestroy(ZMap zmap)
 void zmapControlWindowSetStatus(ZMap zmap)
 {
   char *status_text ;
-
+  char *free_this = NULL;
 
   switch(zmap->state)
     {
     case ZMAP_DYING:
       {
-	status_text = "Dying..." ;
+	status_text = "Dying...";
 	break ;
       }
     case ZMAP_VIEWS:
       {
 	ZMapView view ;
-	ZMapViewState view_state ;
 	gboolean revcomped ;
 	char *strand_txt ;
 	int start = 0, end = 0 ;
@@ -187,8 +186,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	    g_free(coord_txt) ;
 	  }
 
-	view_state = zMapViewGetStatus(view) ;
-	status_text = zMapViewGetStatusStr(view_state) ;
+	free_this = status_text = zMapViewGetStatusStr(view) ;
 
 	break ;
       }
@@ -201,6 +199,18 @@ void zmapControlWindowSetStatus(ZMap zmap)
     }
 
   gtk_entry_set_text(GTK_ENTRY(zmap->status_entry), status_text) ;
+  /* display instantly, else we don't update due to other stuff using idle time */
+  /* except it doesn't work */
+  {
+      GdkWindow * win;
+
+      win = gtk_widget_get_window(zmap->status_entry);
+      if(win)
+           gdk_window_process_updates(win,TRUE);
+  }
+
+  if(free_this)
+      g_free(status_text);
 
   return ;
 }
@@ -217,7 +227,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 
 /* this panel displays revcomp, sequence coord and status information for
  * the selected view.
- * 
+ *
  * Note that the labels have to be parented by an event box because we want
  * them to have tooltips which require a window in order to work and this
  * is provided by the event box. */
@@ -243,7 +253,7 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
 
   frame = gtk_frame_new(NULL) ;
   gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
-  zmap->status_entry = gtk_entry_new() ;
+  event_box = gtk_event_box_new() ;
   gtk_container_add(GTK_CONTAINER(frame), zmap->status_entry) ;
 
   return status_box ;
@@ -258,7 +268,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
 
-  zmap->toplevel = NULL ; 
+  zmap->toplevel = NULL ;
 
   zmapControlDoKill(zmap) ;
 
@@ -310,10 +320,10 @@ static void makeStatusTooltips(ZMap zmap)
  * buttons etc along the top of the window which results in a good horizontal size. The vertical
  * size is more tricky as lots of window managers provide tool bars etc which take up screen
  * space. We try various ways to deal with this:
- * 
+ *
  * If the window manager supports _NET_WORKAREA then we get that property and use it to
  * set the height/width.
- * 
+ *
  * Otherwise if the window manager supports the _NET_WM_ stuff then we use that to set the window max
  * as it will automatically take into account any menubars etc. created by the window manager.
  * But it doesn't work that reliably....under KDE it does the right thing, but _not_ under GNOME
@@ -324,7 +334,7 @@ static void makeStatusTooltips(ZMap zmap)
  * If someone displays a really short piece of dna this will make the window
  * too big so really we should readjust the window size to fit the sequence
  * but this will be rare.
- * 
+ *
  */
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 {
@@ -345,14 +355,14 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
       /* We want to get these properties....
        *   _NET_DESKTOP_GEOMETRY(CARDINAL) = 1600, 1200
        *   _NET_WORKAREA(CARDINAL) = 0, 0, 1600, 1154, 0, 0, 1600, 1154,...repeated for all workspaces.
-       * 
+       *
        * In fact we don't use the geometry (i.e. screen size) but its useful
        * to see it.
-       * 
-       * When retrieving 32 bit items, these items will be stored in _longs_, this means 
+       *
+       * When retrieving 32 bit items, these items will be stored in _longs_, this means
        * that on a 32 bit machine they come back in 32 bits BUT on 64 bit machines they
        * come back in 64 bits.
-       * 
+       *
        *  */
       int window_width_guess = 300, window_height_guess ;
       gboolean result ;
@@ -441,7 +451,7 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 	window = gtk_window->frame;
       else
 	window = toplevel->window ;
-      
+
       xev.xclient.type = ClientMessage;
       xev.xclient.serial = 0;
       xev.xclient.send_event = True;
@@ -457,18 +467,18 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
       xev.xclient.data.l[2] = 0 ;
       xev.xclient.data.l[3] = 0;
       xev.xclient.data.l[4] = 0;
-  
+
       XSendEvent(GDK_WINDOW_XDISPLAY(window),
 		 GDK_WINDOW_XID(root_window),
 		 False,
 		 SubstructureRedirectMask | SubstructureNotifyMask,
-		 &xev) ; 
+		 &xev) ;
     }
   else
     {
       /* OK, here we just guess some appropriate size, note that the window width is kind
        * of irrelevant, we just set it to be a bit less than it will finally be and the
-       * widgets will resize it to the correct width. We don't use gtk_window_set_default_size() 
+       * widgets will resize it to the correct width. We don't use gtk_window_set_default_size()
        * because it doesn't seem to work. */
       int window_width_guess = 300, window_height_guess ;
 
