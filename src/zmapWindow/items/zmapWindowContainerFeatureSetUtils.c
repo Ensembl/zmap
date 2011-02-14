@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.8 2011-01-04 11:10:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.9 2011-02-14 11:45:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -392,9 +392,17 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
       y1 = floor(py2);
       y2 = ceil (cy1);
 
+#if MH17_WHY_IS_YPOS_0
+#warning empirical bug fix here
+/* these line just disappeared!
+   experiment to see if they come back, then try ro explain
+*/
+      y1 = prev_feature->x2;
+      y2 = curr_feature->x1 - 1.0; /* Ext2Zero */
+#else
       y1 = prev_feature->x2 - canvas_group->ypos;
       y2 = curr_feature->x1 - canvas_group->ypos - 1.0; /* Ext2Zero */
-
+#endif
       mid_x = get_glyph_mid_point(previous) ;
 
       coords[0] = mid_x ;
@@ -512,11 +520,27 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 	  if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
 	      || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
 	    {
+#if MH17_WHY_IS_YPOS_0
+#warning empirical bug fix here
+/* these line just disappeared!
+   experiment to see if they come back, then try ro explain
+*/
+                  y_coord = feature->x1 - 1.0 ; /* Ext2Zero */
+#else
       	      y_coord = feature->x1 - ((FooCanvasGroup *)feature_set)->ypos - 1.0 ; /* Ext2Zero */
+#endif
 	    }
 	  else
 	    {
+#if MH17_WHY_IS_YPOS_0
+#warning empirical bug fix here
+/* these line just disappeared!
+   experiment to see if they come back, then try ro explain
+*/
+                  y_coord = feature->x2;
+#else
       	      y_coord = feature->x2 - ((FooCanvasGroup *)feature_set)->ypos;
+#endif
 	    }
 
 	  diff = end - start;
