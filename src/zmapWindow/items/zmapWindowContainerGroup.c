@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul  2 15:31 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.16 2010-07-29 10:07:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.17 2011-02-14 13:25:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -297,6 +297,10 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
   /* Check this is a container group. Any FooCanvasGroup could be passed. */
   if(ZMAP_IS_CONTAINER_GROUP(container_parent))
     {
+      ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) container_parent;
+
+      group->flags.visible = visible;
+
       if(visible)
 	foo_canvas_item_show((FooCanvasItem *)container_parent);
       else

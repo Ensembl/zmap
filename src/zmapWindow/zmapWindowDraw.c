@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.136 2011-02-11 10:48:08 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.137 2011-02-14 13:25:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -396,13 +396,16 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
         }
       else
       {
-            cur_visible = zmapWindowGetColumnVisibility(window,column_group);
+            ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) column_group;
+
+            cur_visible = group->flags.visible; /* actual current state */
       }
 
       zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
 
       new_visible = zmapWindowGetColumnVisibility(window,column_group);
-zMapLogWarning("set state %s: %d", g_quark_to_string(container->unique_id),new_visible);
+            /* state we want rather than what's current */
+
       if(new_visible)
       {
             if(!cur_visible)
@@ -480,6 +483,9 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 
 
 /* checks to see if a column is 3 frame visible. */
+/* NOTE (mh17) this function name is a misnomer, it means 'ShouldBe3FrameVisible'
+ * if you want to know what the visibility state really is try group->flags.visible
+ */
 gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowContainerFeatureSet container;
@@ -619,7 +625,6 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
    but we can patch up from the [ZMap] columns list
 */
       if(container->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
-
 	{
 	  if (IS_3FRAME_TRANS(window->display_3_frame))
 	    displayed = TRUE ;
