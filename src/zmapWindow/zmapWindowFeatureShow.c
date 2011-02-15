@@ -33,18 +33,13 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 12 23:10 2009 (rds)
+ * Last edited: Feb 15 11:45 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.27 2010-11-19 11:48:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.28 2011-02-15 11:50:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <ZMap/zmapFeature.h>
@@ -95,6 +90,7 @@
 #define XML_TAGVALUE_SIMPLE        "simple"
 #define XML_TAGVALUE_COMPOUND      "compound"
 #define XML_TAGVALUE_SCROLLED_TEXT "scrolled_text"
+
 
 
 typedef struct ZMapWindowFeatureShowStruct_
@@ -238,10 +234,15 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 
 static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data) ;
-
 static void getAllMatches(ZMapWindow window,
 			  ZMapFeature feature, FooCanvasItem *item, ZMapGuiNotebookSubsection subsection) ;
 static void addTagValue(gpointer data, gpointer user_data) ;
+static ZMapGuiNotebook makeTranscriptExtras(ZMapFeature feature) ;
+
+
+/*
+ *                           Globals
+ */
 
 
 /* menu GLOBAL! */
@@ -263,9 +264,44 @@ static GtkItemFactoryEntry menu_items_G[] =
 static gboolean alert_client_debug_G = FALSE ;
 
 
+/* Start and end tag handlers for converting zmap notebook style xml into a zmap notebook. */
+static  ZMapXMLObjTagFunctionsStruct starts[] =
+  {
+    {XML_TAG_ZMAP,       xml_zmap_start_cb     },
+    {XML_TAG_RESPONSE,   xml_response_start_cb },
+    {XML_TAG_NOTEBOOK,   xml_notebook_start_cb },
+    {XML_TAG_CHAPTER,    xml_chapter_start_cb },
+    {XML_TAG_PAGE,       xml_page_start_cb },
+    {XML_TAG_PARAGRAPH,  xml_paragraph_start_cb },
+    {XML_TAG_SUBSECTION, xml_subsection_start_cb },
+    {XML_TAG_TAGVALUE,   xml_tagvalue_start_cb },
+    {NULL, NULL}
+  } ;
+
+static ZMapXMLObjTagFunctionsStruct ends[] =
+  {
+    {XML_TAG_ZMAP,       xml_zmap_end_cb  },
+    {XML_TAG_RESPONSE,   xml_response_end_cb },
+    {XML_TAG_NOTEBOOK,   xml_notebook_end_cb },
+    {XML_TAG_PAGE,       xml_page_end_cb },
+    {XML_TAG_CHAPTER,    xml_chapter_end_cb },
+    {XML_TAG_SUBSECTION, xml_subsection_end_cb },
+    {XML_TAG_PARAGRAPH,  xml_paragraph_end_cb },
+    {XML_TAG_TAGVALUE,   xml_tagvalue_end_cb },
+    {XML_TAG_ERROR,      xml_error_end_cb },
+    {NULL, NULL}
+  } ;
+
+
+
 
 /* MY GUT FEELING IS THAT ROB LEFT STUFF ALLOCATED AND DID NOT CLEAR UP SO I NEED TO CHECK UP ON
- * ALL THAT.... */
+ * ALL THAT....
+ * 
+ * This sentiment is correct, particularly in some of the compound tagvalue creation
+ * there are GLists and probably other data allocated which is not free'd.....
+ * 
+ *  */
 
 
 
@@ -414,44 +450,24 @@ static gboolean windowIsReusable(void)
 
 /* Parse a feature into a text version in a notebook structure.
  *
- *
+ * In a perfect world this code would be rationalised so that the only way
+ * we constructed our feature details window would be:
+ * 
+ * feature details ---> xml string ---> xml parse ---> zmapguinotebook
+ * 
+ * currently we do this with data returned by the external program
+ * but internally we just do:
+ * 
+ * feature details ---> zmapguinotebook
+ * 
+ * meaning there has to be some duplicate code......
+ * 
  *  */
-
-    ZMapXMLObjTagFunctionsStruct starts[] =
-      {
-      {XML_TAG_ZMAP,       xml_zmap_start_cb     },
-      {XML_TAG_RESPONSE,   xml_response_start_cb },
-      {XML_TAG_NOTEBOOK,   xml_notebook_start_cb },
-      {XML_TAG_CHAPTER,    xml_chapter_start_cb },
-      {XML_TAG_PAGE,       xml_page_start_cb },
-      {XML_TAG_PARAGRAPH,  xml_paragraph_start_cb },
-      {XML_TAG_SUBSECTION, xml_subsection_start_cb },
-      {XML_TAG_TAGVALUE,   xml_tagvalue_start_cb },
-      {NULL, NULL}
-      } ;
-    ZMapXMLObjTagFunctionsStruct ends[] =
-      {
-      {XML_TAG_ZMAP,       xml_zmap_end_cb  },
-      {XML_TAG_RESPONSE,   xml_response_end_cb },
-      {XML_TAG_NOTEBOOK,   xml_notebook_end_cb },
-      {XML_TAG_PAGE,       xml_page_end_cb },
-      {XML_TAG_CHAPTER,    xml_chapter_end_cb },
-      {XML_TAG_SUBSECTION, xml_subsection_end_cb },
-      {XML_TAG_PARAGRAPH,  xml_paragraph_end_cb },
-      {XML_TAG_TAGVALUE,   xml_tagvalue_end_cb },
-      {XML_TAG_ERROR,      xml_error_end_cb },
-      {NULL, NULL}
-      } ;
-
-
 
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					 ZMapFeature feature, FooCanvasItem *item)
 {
   ZMapGuiNotebook feature_book = NULL ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapGuiNotebookCBStruct call_backs ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapGuiNotebookChapter dummy_chapter ;
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
@@ -461,9 +477,10 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   char *chapter_title, *page_title, *description ;
   char *tmp ;
   char *notes ;
+  ZMapGuiNotebook extras_notebook = NULL ;
+
 
   feature_book = zMapGUINotebookCreateNotebook(name, FALSE, cleanUp, NULL) ;
-
 
   /* The feature fundamentals page. */
   switch(feature->type)
@@ -636,32 +653,49 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						NULL) ;
     }
 
+
   /* If we have an external program driving us then ask it for any extra information.
-   * This will come as xml which we decode via the callbacks listed in the following structs. */
-  {
-    show->xml_parsing_status = TRUE ;
-    show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
-    show->xml_curr_chapter = NULL ;
-    show->xml_curr_page = NULL ;
+   * This will come as xml which we decode via the callbacks listed in the following structs.
+   * If that fails then we may have extra stuff to add anyway. */
+  show->xml_parsing_status = TRUE ;
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+  show->xml_curr_chapter = NULL ;
+  show->xml_curr_page = NULL ;
 
-    if (zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-					(ZMapFeatureAny)feature,
-					"feature_details",
-					show->item,
-					starts, ends, show))
-      {
-	/* If all went well and we got a valid xml format notebook back then
-	 * merge into our existing notebook for the feature. */
+  if (zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
+				      (ZMapFeatureAny)feature,
+				      "feature_details",
+				      show->item,
+				      starts, ends, show))
+    {
+      extras_notebook = show->xml_curr_notebook ;
+    }
+  else
+    {
+      /* Clear up any half finished stuff from failed remote call. */
+      if (show->xml_curr_chapter)
+	zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
 
-	zMapGUINotebookMergeNotebooks(feature_book, show->xml_curr_notebook) ;
-      }
-    else
-      {
-	/* Clean up if something went wrong...  */
-	if (show->xml_curr_chapter)
-	  zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
-      }
-  }
+      /* For transcripts create our own extras (e.g. exons), add code for new feature
+       * types as necessary here. */
+      switch(feature->type)
+	{
+	case ZMAPSTYLE_MODE_TRANSCRIPT:
+	  {
+	    extras_notebook = makeTranscriptExtras(feature) ;
+	    break ;
+	  }
+	default:
+	  {
+	    break ;
+	  }
+	}
+    }
+
+  /* If there is any extra information then do the merge. */
+  if (extras_notebook)
+    zMapGUINotebookMergeNotebooks(feature_book, extras_notebook) ;
+
 
   return feature_book ;
 }
@@ -866,8 +900,6 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list)
  * a notebook page.
  *
  */
-
-
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
                                   ZMapXMLParser parser)
 {
@@ -1645,6 +1677,66 @@ static void addTagValue(gpointer data, gpointer user_data)
 					   NULL) ;
 
   return ;
+}
+
+
+
+static ZMapGuiNotebook makeTranscriptExtras(ZMapFeature feature)
+{
+  ZMapGuiNotebook extras_notebook = NULL ;
+  ZMapGuiNotebookChapter dummy_chapter ;
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookSubsection subsection ;
+  ZMapGuiNotebookParagraph paragraph ;
+  GList *headers = NULL, *types = NULL ;
+  int i ;
+
+  extras_notebook = zMapGUINotebookCreateNotebook(NULL, FALSE, cleanUp, NULL) ;
+
+  dummy_chapter = zMapGUINotebookCreateChapter(extras_notebook, NULL, NULL) ;
+
+  page = zMapGUINotebookCreatePage(dummy_chapter, "Exons") ;
+
+
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+
+  headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Start"))) ;
+  headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("End"))) ;
+
+  types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
+  types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE, headers, types) ;
+
+  for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+    {
+      ZMapSpan exon_span ;
+      GList *column_data = NULL ;
+      ZMapGuiNotebookTagValue tag_value ;
+
+      exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+
+      column_data = g_list_append(column_data, GINT_TO_POINTER(exon_span->x1)) ;
+      column_data = g_list_append(column_data, GINT_TO_POINTER(exon_span->x2)) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph,
+						NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
+						"compound", column_data,
+						NULL) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Looks like our page code probably leaks as we don't clear stuff up.... */
+      g_list_free(column_data) ;
+      column_data = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+
+  return extras_notebook ;
 }
 
 
