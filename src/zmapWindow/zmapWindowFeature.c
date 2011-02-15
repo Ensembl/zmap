@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  4 13:59 2010 (edgrif)
+ * Last edited: Feb 15 08:12 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.204 2011-02-10 15:38:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.205 2011-02-15 11:49:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -891,7 +891,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  /* Gdk defines double clicks as occuring within 250 milliseconds of each other
 	   * but unfortunately if on the first click we do a lot of processing,
 	   * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
-	   * hack looking for the different in time. This can happen if user clicks on
+	   * hack looking for the difference in time. This can happen if user clicks on
 	   * a very large feature causing us to paste a lot of text to the selection
 	   * buffer. */
 	  guint but_threshold = 500 ;			    /* Separation of clicks in milliseconds. */
