@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  4 16:21 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.80 2011-01-04 11:10:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.81 2011-02-16 11:11:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -307,7 +307,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       if(zmapWindowFocusHasType(menu_data->window->focus,WINDOW_FOCUS_GROUP_EVIDENCE))
       {
             item->type = ZMAPGUI_MENU_TOGGLEACTIVE;
-            item->name = "Highlight Evidence";
+            item->name = "Highlight Evidence/ Transcript";
       }
       else
       {

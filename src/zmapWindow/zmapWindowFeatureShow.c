@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:45 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.28 2011-02-15 11:50:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.29 2011-02-16 11:11:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,7 +126,7 @@ typedef struct ZMapWindowFeatureShowStruct_
        */
 
   gboolean get_evidence;
-#define WANT_EVIDENCE   1     /* constructung the list */
+#define WANT_EVIDENCE   1     /* constructing the list */
 #define GOT_EVIDENCE    2     /* in the right paragraph */
   int evidence_column;        /* in the composite free-text data */
   GList *evidence;
@@ -297,10 +297,10 @@ static ZMapXMLObjTagFunctionsStruct ends[] =
 
 /* MY GUT FEELING IS THAT ROB LEFT STUFF ALLOCATED AND DID NOT CLEAR UP SO I NEED TO CHECK UP ON
  * ALL THAT....
- * 
+ *
  * This sentiment is correct, particularly in some of the compound tagvalue creation
  * there are GLists and probably other data allocated which is not free'd.....
- * 
+ *
  *  */
 
 
@@ -452,16 +452,16 @@ static gboolean windowIsReusable(void)
  *
  * In a perfect world this code would be rationalised so that the only way
  * we constructed our feature details window would be:
- * 
+ *
  * feature details ---> xml string ---> xml parse ---> zmapguinotebook
- * 
+ *
  * currently we do this with data returned by the external program
  * but internally we just do:
- * 
+ *
  * feature details ---> zmapguinotebook
- * 
+ *
  * meaning there has to be some duplicate code......
- * 
+ *
  *  */
 
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
@@ -703,9 +703,9 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
 /* get evidence feature names from otterlace, reusing code from createFeatureBook() above
- * the show code does some complet stuff with reusable lists of windows,
+ * the show code does some complex stuff with reusable lists of windows,
  * probably to stop these accumulating
- * but as we donlt diasplay a window we don't care
+ * but as we don't display a window we don't care
  */
 
 GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
@@ -1440,6 +1440,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 								  show->xml_curr_tagvalue_name, show->xml_curr_type,
 								  "string", content,
 								  NULL) ;
+
+            show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(content)));
 	}
       else if((type = g_list_first(show->xml_curr_paragraph->compound_types)))
 	{
@@ -1526,7 +1528,6 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                               new_col = p + 1;
 #endif
                         show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(new_col)));
-
                     }
 			  status = TRUE ;
 			}

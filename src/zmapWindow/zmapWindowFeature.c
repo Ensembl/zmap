@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 15 08:12 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.205 2011-02-15 11:49:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.206 2011-02-16 11:11:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,6 +79,7 @@ enum
     ITEM_MENU_SHOW_EVIDENCE,
     ITEM_MENU_ADD_EVIDENCE,
     ITEM_MENU_SHOW_TRANSCRIPT,
+    ITEM_MENU_ADD_TRANSCRIPT,
 
     ITEM_MENU_ITEMS
   };
@@ -1287,7 +1288,8 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     case ITEM_MENU_SHOW_EVIDENCE:
     case ITEM_MENU_ADD_EVIDENCE:
-
+    case ITEM_MENU_SHOW_TRANSCRIPT:       /* XML formats are different for evidence and transcripts */
+    case ITEM_MENU_ADD_TRANSCRIPT:        /* but we handle that in zmapWindowFeatureGetEvidence() */
       {
             // show evidence for a transcript
         ZMapWindowFocus focus = menu_data->window->focus;
@@ -1359,10 +1361,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
       break;
 
-    case ITEM_MENU_SHOW_TRANSCRIPT:
-      {
-      }
-      break;
 
 #ifdef RDS_DONT_INCLUDE
     case 101:
@@ -1419,15 +1417,16 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
                   menu[i].name = "Highlight Evidence (add more)";
                   menu[i].id = ITEM_MENU_ADD_EVIDENCE;
             }
-#if MH17_NOT_IMPLEMENTED
-            else
+            else if (md->feature->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
             {
                   menu[i].type = ZMAPGUI_MENU_NORMAL;
                   menu[i].name = "Highlight Transcript";
                   menu[i].id = ITEM_MENU_SHOW_TRANSCRIPT;
+                  i++;
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Transcript (add more)";
+                  menu[i].id = ITEM_MENU_ADD_TRANSCRIPT;
             }
-#endif
-
       }
       else
       {
