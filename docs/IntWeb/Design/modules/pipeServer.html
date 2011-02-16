@@ -8,9 +8,11 @@ Scripts are to be installed locally with ZMap and the directory itself will be i
 </p>
 <p>Although the intention is to load much of the data direct from database sources instead of passing it via ACEDB it is stll necessary for ZMAP to load the essential data from ACE - transcripts and featuresets-to-styles, style information, as GFF does not allow definition of styles.  ZMap can also run from pipes/ files only if styles are specifed in another file.
 </p>
-<p>The pipeServer module replace the old fileServer module and supports both kinds of input.
+<p>The pipeServer module replaces the old fileServer module and supports both kinds of input.
 </p>
 </fieldset>
+
+
 
 <fieldset>
 <legend>Configuration</legend>
@@ -31,8 +33,8 @@ data-dir = /nfs/users/nfs_m/mh17/ZMap/scripts
 # later in the ZMap file each source must be defined in its own stanza.
 sources = acedb ; other-feed ; yet_another_one
 
-# If styles are not defined via ACEDB the a file must be given in the
-# ZMap stanza (not the source stanza) eg:
+# If styles are not defined via ACEDB then a file must be given in the
+# source stanza eg:
 stylesfile = /nfs/users/nfs_m/mh17/zmap/styles/ZMap.b0250.file.styles
 
 [other-feed]
@@ -45,7 +47,7 @@ When configured, ZMap will request data from each source in parallel, hopefully 
 </p>
 <p>Each source stanza has a 'delayed' option, whcih allows data to be requested on demand rather than at startup:
 <pre>
-# delayed == conect from X-Remote request, otherwise connect on startup
+# delayed == conect from X-Remote request or load columns dialog, otherwise connect on startup
 delayed = true
 </pre>
 </p>
@@ -135,6 +137,40 @@ wait=9                        # delay some seconds before sending data
 </fieldset>
 
 
+<a name=servergroup></a>
+<fieldset><legend>Speed of data retrieval and overloading servers</legend>
 
+<h3>A problem</h3>
+<p>Running 40 requests in parallel does reduce the amount of time needed to retrieve data but has the drawback that many requests to a single server can be detrimental and it is necessary tp provide the ability to group some pipe servers together and request data in series.
+</p>
+<p>In conjunction with this it is also necessary to allow each single featureset to be requested individually.  Note that although most pipe Servers will be confgured for a single featureset it is possible to serve many from a single script.
+</p>
+
+<h3>Intricacies of the request protocol and configuration</h3>
+<p>ZMap will request data by featureset and optionally a coordinate range, but the data is displayed in columns which may contain several.  Servers are configured to request one or more featuresets and while there is no advantage in defining servers and columns such that a server provides featuresets for several columns and most columns require data from several servers this is still possible and needs to be handled.
+</p>
+
+<p>When presented with a request for a featureset ZMap will determine which servers to request the data from and if this has the side effect of requesting extra featuresets these will be stored automatically.
+Existing configuration (Feb 2011) links a featureset list to a single URL in a pipe server stanza and to prevent overlapping requests for given featuresets it is simplest to group pipe servers (stanzas) together.
+</p>
+
+<h3>Implementation</h3>
+<p>
+An extra stanza will be provided in ZMap config:
+<pre>
+[Server-groups]
+group1 = ensembl_bodymap_breast ; ensembl_bodymap_heart ; etc
+group2 = Exonerate_EST_Human ; EST_Mouse ; Exonerate_EST_Mouse ; etc
+</pre>
+Which defines servers that should not be active at the same time.  The group names are not used by ZMap except to facilitate configuration.  When ZMap queues requests it will only start up one server per group and hold the remaining ones in a list and request them as active servers complete.  Note that we assume that each server in a group will terminate after supplying data (this is how pipe servers work) and because of this an ACEDB or other long term database connections should not be configured into a Server group with any other servers.
+</p>
+<p><b>Note that:</b>
+<ul>
+<li> the ordering of servers in groups is not significant and servers may be activated in any order.
+<li> some servers can take a long time to respond an it may be unwise to group these with other servers as they can delay the others.
+</ul>
+</p>
+
+</fieldset>
 
 
