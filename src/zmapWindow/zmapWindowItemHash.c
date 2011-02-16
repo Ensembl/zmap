@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.54 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.55 2011-02-16 10:02:57 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1589,7 +1589,12 @@ static GQuark feature_same_name_id(ZMapFeature feature)
   /* I use a GString because it lowercases in place. */
   reg_ex_name    = g_string_new(NULL) ;
 
-  g_string_append_printf(reg_ex_name, "%s*", (char *)g_quark_to_string(feature->original_id)) ;
+      /* need a wildcard for matching as unique id's have seq coords attached
+       * and the searching uses unique id's
+       * unique ids are constructed as original-id_stuff
+       * so by adding an _ we get unique original id's
+       */
+  g_string_append_printf(reg_ex_name, "%s_*", (char *)g_quark_to_string(feature->original_id)) ;
 
   reg_ex_name    = g_string_ascii_down(reg_ex_name) ;
   reg_ex_name_id = g_quark_from_string(reg_ex_name->str) ;
