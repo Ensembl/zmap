@@ -1,11 +1,11 @@
-<!-- $Id: canvas_tweaks.html,v 1.1 2011-01-10 13:47:48 edgrif Exp $ -->
+<!-- $Id: canvas_tweaks.html,v 1.2 2011-02-16 12:27:48 mh17 Exp $ -->
 
 <h2>Speeding up the use of the Foo Canvas</h2>
 
 <fieldset><legend>Basic Features made simple again</legend>
 <h3>The problem: Basic features have been made complex</h3>
 <p>
-All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of features for background underlay feature and overlay and changing these to be simple FooCanvasItems may offer a significant performance improvement and simplify a lot of code and free up a lot of memory.  The initial display of ZMap is dominated by alignments (eg SwissProt and TrEMBL) which typically contain 90% of all features on display.
+All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of features for background, underlay, feature, and overlay and changing these to be simple FooCanvasItems may offer a significant performance improvement and simplify a lot of code and free up a lot of memory.  The initial display of ZMap is dominated by alignments (eg SwissProt and TrEMBL) which typically contain 90% of all features on display.
 </p>
 <h3>Caveats</h3>
 <h4>Complexity is not used? </h4>
@@ -15,6 +15,61 @@ All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of fea
 <p>When alignments get bumped their x-coordinate is changed and extra lines and glyphs are drawn on the canvas.  Use of the complex ZMapWindowCanvasItem structure may be necessary to do this.
 </p>
 
+<h3>Implementation</h3>
+<h4>General comments about existing data and code</h4>
+<p>
+<ul>
+<li> Currently all ZMap canvas items are constructed by inheriting foo_canvas_item (actually foo_canvas_group) and we have to preserve this as the item factory code works by creating a foo_canvas_item which is actually a derived object but refenced as a foo_canvas_item.
+<li> We cannot use foo_canvas_items directly as we must also have a pointer to the relevant feature in the feature context.
+<li>There are 25 instances in the source of ZMAP_IS_CANVAS_ITEM() which implies that we may be forced to have a base ZMapCanvasItem class with simple features and groups derived from it.  25 is not very many so modifying the code for this will be simple, and we can handle adding items  and groups as distinct class hierachies if necessary.
+<li> the existing ZMapCanvasItem class is misnamed as it is really a canvas group, which is a shame as this means we have to edit 283 lines of code to use meaningful names.
+<li> zmapWindowItemFactory.c contains functions to draw all types of ZMapCanvasItem and these all call zMapWindowCanvasItemAddInterval() which calls a class function to add a foo canvas item (or more) to the base class, so the interface is fairly modular and can be changed relatively easily.
+</ul>
+</p>
+<h4>Canvas Item Class Structure</h4>
+<p>Due to the technicalities of object instantiation in GLib it's not practical to derive groups and simple items from a single base class.  However as foo_canvas_group derives from foo_canvas_item they will all derive from foo_canvas_item so we do have a single base class at the bottom.  Note that we cannot have simple canvas items derived from foo_canvas_group and just not use the group data as the foo canvas code treats groups differently from items.
+</p>
+<p>
+A simple canvas item (eg basic feature or ungapped alignment) will derive from a foo_canvas_item and have no additional lists of features.
+<pre>
+ZMapWindowCanvasItem    (contains ->feature, ->item_type)
+    foo_canvas_item
+</pre>
+</p>
+
+<p>
+A complex canvas item (eg transcript, gapped alignment)  will derive from a foo_canvas_group (which derives from a foo_canvas_item) and will have a single list of subfeatures, rather than four as at present.  Note that this implies complex features may interleave on the display, but this is not thought to be an issue as transcripts are normally bumped as no overlap and alignments are only displayed complexly (eg with glyphs and colinear lines) when bumped.
+<pre>
+ZMapWindowCanvasGroup (contains ->feature, ->item_type, ->item_list)
+  foo_canvas_group
+    foo_canvas_item
+</pre>
+The item_list is a list of foo_canvas_items.
+</p>
+
+<p>The different types of ZMap canvas item (eg basic feature, transcript_feature) will derive from either ZMapWindowCanvasItem or zmapWindowCanvasGroup.  Note that alignments displayed as ungapped will be ZMapWindowCanvasItem and gapped as ZMapWindowCanvasGroup.
+</p>
+
+<h4>Container Classes</h4>
+<p>These will derive from ZMapWindowContainerGroup as at present.  This derives from foo_canvas_group and contains a list of canvas items which in this case contains four foo_canvas_groups for the background, underlay, features, and overlay.  Some remarks in passing:
+<ul>
+<li> Mostly these groups in the items list will be empty and perhaps the code could be optimised by deriving from ZMapWindowCanvasGroup and using the item_type field.  There are access functions for each of these, so we could scan the short list and return NULL if not found.
+<li> As all containers derive from ZMapWindowContainerGroup we can display all four levels of items for aligns, strand, blocks, featureset (column), but it's not clear what use this is. Some background rectangles do get drawn and soem are added to pick up mouse events, but ordering and handling of items in foo suggests that this could get very confused.
+<li>ZMapWindowContainerFeatureset has seperate lists of:
+<pre>
+  GList *colinear_markers ;
+  GList *incomplete_markers ;
+  GList *splice_markers ;
+</pre>
+Are these needed?
+<li> As we aim here just to make basic features into simple foo_canvas_items it would be unwise to alter any of this code.
+</ul>
+</p>
+
+<h4>Operating the item factory</h4>
+<p>Existing code adds canvas items by first creating a ZMapWindowCanvasItem (a foo_canvas_group) and then adding one or mor items to it via the class->add_interval function.  Necessarily for simple canvas items we will have to combine these two functions and the drawXXXFeature functions in zmapWindowItemfactory.c can be used to drive this with minimal effort.
+</p>
+
 </fieldset>
 
 <a name="summarise"></a>
@@ -22,7 +77,7 @@ All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of fea
 <p>See also RT #177032, where this text orginated.</p>
 <h3>Displaying invisible features slows ZMap down</h3>
 <p>
-Display time in ZMap is dominated by a few heavily populated columns eg trembl may have 50k features but the majority of these features are obscured by others and cannot be seen. As operating the foo canvas takes 90% of the display time and a complete feature context can be scanned very quickly (eg 50ms to reverse complement all features, compared with 10sec to display) it may be possible to speed up this display by not adding invisible features to the canvas.  Note that due to the display format of alignments (centered rectangles) we can resonably expect to loose up to 98% of features off the display for a column like TrEMBL - if the column is 1000 pixels deep we cannot need to display more than 1000 features to give the same visual appearance.  There may still be some overlap caused by the simple scan algorithm.
+Display time in ZMap is dominated by a few heavily populated columns eg Trembl may have 50k features but the majority of these features are obscured by others and cannot be seen. As operating the foo canvas takes 90% of the display time and a complete feature context can be scanned very quickly (eg 50ms to reverse complement all features, compared with 10sec to display) it may be possible to speed up this display by not adding invisible features to the canvas.  Note that due to the display format of alignments (centered rectangles) we can resonably expect to loose up to 98% of features off the display for a column like TrEMBL - if the column is 1000 pixels deep we cannot need to display more than 1000 features to give the same visual appearance.  There may still be some overlap caused by the simple scan algorithm.
 </p>
 <p>
 This is a similar process to the idea of a summary display as to be provided by otterlace on request, but the difference is that ZMap would still have all the data and only real features will be used. The argument for having ZMap perform the necessary calculations is that ZMap knows when features become obscured at different zoom levels as it knows about pixel coordinates.

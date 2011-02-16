@@ -2,7 +2,7 @@
 <h2>Performance issues with Big Data</h2>
 
 <fieldset><legend>Background</legend>
-<p>Historically ZMap has requested all its data sequenctially fromACEDB and more recently this has been expedited by the avdent of pipe Servers whcih allows data from different columns to be requested in parallel and displayed piecemeal.  This allows low volumne columns to be displayed quickly and allow the user to interact with ZMap while high volume columns are loading (Caveat: there is a noticable speed reduction due to processor use).
+<p>Historically ZMap has requested all its data sequenctially fromACEDB and more recently this has been expedited by the avdent of pipe Servers which allows data from different columns to be requested in parallel and displayed piecemeal.  This allows low volumne columns to be displayed quickly and allow the user to interact with ZMap while high volume columns are loading (Caveat: there is a noticable speed reduction due to processor use).
 </p>
 <p>Data volumnes have increased and we expect these to continue to increase at an accelerating rate. To provide a usably fast response
 it it probably not feasable to continue with the current strategy which is to display all the data and allow fast scrolling via X. Note that the existing implementation using the foo canvas appears not to provide this fast scrolling (via an internal static bitmap) and instead draws features via an X expose event.
@@ -367,6 +367,8 @@ This would give 24% from not operating the foo canvas except for minimal numbers
 </p>
 <p>It should also be possible to lose the need for long items code.
 </p>
+<p>NOTE that if we are to avoid continually redrawing features whenever another column is displayed then we must implement something like this. See <a href="Design/notes/foo_perf.html#pixmap">here</a> for a discussion of how to do this with minimum effort.
+</p>
 
 <h3>Getting the foo canvas to operate pixmaps</h3>
 <p>This (or Zmap supplied pixmaps) is essential to allow efficient scrolling. It is also essential to allow columns to be hidden or shown or moved without repainting half the screen - Either we have one foo canvsa per column or one pixmap per column.
@@ -384,18 +386,18 @@ This would give 24% from not operating the foo canvas except for minimal numbers
 
 
 <h3>Optimisation: A Summary</h3>
-<h4>Inital display</h4>
+<h4>Initial display</h4>
 <p>Currently, to display 100k canvas items requires 12 seconds<br />
 By setting column state appropriately we can reduce this to 9 seconds<br />
 </p>
 <p>
-If we create and display our own pixmaps instead of displaying features direct on the foo canvas the this gains us another 3 seconds. Tests need to be made to determine if using pixmaps is a workable strategy, and what performance gains we can make in the drawing process.
+If we create and display our own pixmaps instead of displaying features direct on the foo canvas then this gains us another 3 seconds. Tests need to be made to determine if using pixmaps is a workable strategy, and what performance gains we can make in the drawing process.
 </p>
 <p>By displaying summary data rather than all the features for high volume columns we can set a practical limit (related to the number of columns with more than 1000 features) of approx 2.5 seconds  (see above for assumptions), and with the improvements above this would be halved (1.25 seconds). Compared with 72 seconds this is a <b>speed up of 56x</b>.
 Thsi would require little change to the existing canvas operation but would require new styles (as already being designed for heatmaps etc) and sundry changes to some ZMap code.
 <p>
 <p>With data loaded via pipes the initial 2 minutes of 'Data Loading' will effectively disappear and many columns will be displayed very quickly, with Trembl still taking 2 minutes to arrive.
-Note that to avoid subsequent long delays on requesting other columns it is essential to prevent repainting of high volumne columns, either by using summary data of by implementing pixmaps per column.
+Note that to avoid subsequent long delays on requesting other columns it is essential to prevent repainting of high volume columns, either by using summary data or by implementing pixmaps per column.
 </p>
 
 <h4>Zoomed in</h4>
@@ -403,6 +405,54 @@ Note that to avoid subsequent long delays on requesting other columns it is esse
 We could opt to set the canvas size to the full size and only paint around the visible region, which would reduce drawing time significantly, depending on the zoom level.
 </p>
 <p>At high zooms summary data is not possible or useful and we cannot achive any gains from this.  However as we know that the number of visible features is small we could operate a paint on demand policy and provide usable worst case performance.
-Test on a smaller data set show 120k groups painted in 1.7 seconds.
+Tests on a smaller data set show 120k groups painted in 1.7 seconds.
+
+</fieldset>
+
+<fieldset><legend>Results</legend>
+<table border="1" spacing="1">
+<tr><th>What</th> <th> Initial display </th><th> RevComp</th><th>Comments</th></tr>
+<tr> <td>Correct column state</td> <td>39% </td> <td>26%</td> <td>Better than expected - previous code redisplayed data even of the old and new visibility state was the same.
+<br />
+Note: we often get a double expose, and one cause is thought to be the title bar expanding as seq coordinates are shown. It should be possible to prevent this by displaying copordinates correctly before painting features but note that this is releveant only to ACEDB only configurations as with a pipe server configuration the sequence coordinates will be set by the first column loaded regardles of whether or not we can determine these from the config file.
+</td> </tr>
+
+</table>
+</fieldset>
+
+<a name="pixmap"></a>
+<fieldset><legend>Implementing pixmaps in the foo canvas</legend>
+<h3>Foo canvas pixbufs</h3>
+<p>The foo canvas has support for pixbufs which appear to be static images.  A cursory scan og GDK pixbuf documenation give the impression these are not much used these days, and arfe authored by the same person as the foo canvas.  There is a library which is 11 years old.
+</p>
+<h3>GDK pixmaps</h3>
+<p>These are Drawable objects and can be treated as off screen windows and look like a much better option - existing code can be used to draw on them.  Note that they are already deprecated  and we are advised to use  Cairo instead, but given that that applies to most of the foo canvas this is hardly an issue. (NB we would not be able to upgrade to GTK 3).
+</p>
+<h3>One pixmap per column</h3>
+<p>
+Without changing the overall structure of the ZMap code it should be possible to create a pixmap per column  and have existing code paint features on it. We would have to add in an extra layer to place pixmaps onto the canvas, but then scrolling should be instant and re-ordering and moving columns would not require features to be repainted, which will become important very soon when pipe servers make it out into the real world.
+</p>
+<h4>Work needed</h4>
+<p>Here we try to preserve existing code and data with the aim of inserting pixmaps with the minumum code written/ changed.
+<ul>
+<li> copy the foo canvas pixbuf code and translate into pixmap
+<li> create a foo canvas for each column and give each canvas a pixmap (offscreen drawable) as its window
+<li> change all ZMapCanvasItem code to paint to a feature's column's pixmap rather than the existing canvas
+<li> add these pixmaps as foo canvas items in createColumnFull() and move then to the right position in zMapWindowFullReposition()  <b>NB</b> these two functions are just an initial guess.
+<li> handle mouse events for pixmaps and generate mouse events in the relevant canvas - this will select feature for example as normal, but there may be some tweaking of window code to get from offscreen drawable to window
+<li> review all the search functions, which will now have to operate on several ZMapCanvas objects if a global search is required.
+</ul>
+</p>
+
+<h4>Speeding up the lasso and ruler</h4>
+<p>These are drawn as foo canvas items and require a redraw of the whole region when changed: ie they are not blitted.  Without changing code if we operate pixmaps as the display technology this will be significantly faster.
+</p>
+<p>Another way to speed up the ruler would be to implement a 1-pixel deep tooltip (if possible), assuming that this would be displayed by X with bit-blitting.  (if not then no performance improvement).
+</p>
+
+<h4>Resolving issues on focus code</h4>
+<p>Currently when a column is selected the Canvas items are sorted and a selected feature is highlit a) by changing the colour and b) moving it to the start of the column's list of features.  When unhighlit it is moved back into place, but with multiple highlight this is a problem.  Highlit items can be displayed on top of pixmaps in the window's foo canvas and this provides a way to add or remove highlight without affectng the order of features in the canvas.  These features would be flagged to not respond to mouse events and pass them onto the underlying pixmap/ foo canvas combo.
+</p>
+
 
 </fieldset>

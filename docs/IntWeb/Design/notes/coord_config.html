@@ -1,19 +1,78 @@
 </div>
 <div style="margin-right:5em;margin-left:11em;">
 <h2>Coordinate systems and configuration</h2>
-<fieldset><legend>Coordinate systems for generic daatbases</legend>
+<fieldset><legend>Coordinate systems for generic databases</legend>
 <h3>What's the problem?</h3>
 <p>
 It is common (especially in model organism databases) to use chromosome coordinates to refer to sequence information but many databases exist which are based on fragments eg BAC (clones), and these are typically based from 1.  ZMap implements a mapping process to define what coordinates are presented to the user and what coordinates are used when referring to the underlying database.
 </p>
-<p> ZMap will display coordinates on the Scale bar and on the Ruler as block relative - the first base in any block will be 1 and the last will be the length of the block + 1.  The Ruler will also display coordinates in the parent span if these differ from block relative.  The Status bar will show coordinates as block relative (which will be consistent with the scale bar). Currently there is no way to display parent (eg chromosome) coordinates in the status bar.
+
+<p>
+There is also a lot of code based on the idea of several blocks of sequence data and possible several aligns (which contain the blocks) sourced from different organisms.  Because this code was not completed there are a few incomplatabiliites in the code, and there is code present that assumes that only a single align and block exist.
 </p>
-<p>ZMap stores sequence and feature data in a <b>FeatureContext</b> which contains typically a single <b>Align</b> which contains a single contiguous <b>Block</b> of features.  There is provision to have multiple aligns and blocks and in this case the blocks of features could be mapped from any genomic region, for example to model genome rearrangements.   Note however that each align contains blocks from the same strand. Each align may be flagged as being in the reverse strand relative to the parent sequence.
+
+<p> This introduces complexity with reverse complement and also simply displaying the data on the foo canvas and it is in these two areas that assumptions have been made wrt one block.  Note also that drawing the  scale bar also assumes a single contiguous sequence which is also incompatable with multiple blocks.
 </p>
-<p>Requests for data from servers can be made for single blocks only.
+
+<h3>A Strategy</h3>
+<p>Attempts to move ZMap from 1-based coordinate to chromosome have proved quite difficult and to achieve a working system in a reasonable time it is proposed to re-implement and debug a <b>single align and block</b> system with data structures that may be compatable with multiple blocks and to abandon the idea of multiple aligns and blocks for the present.
+</p>
+
+<p>Some of the problems to solve are:
+<ul>
+<li> To implement multiple blocks features have to be displayed as block relative - if there are two disjunct blocks then to display these  without a huge gap between them it is not possible to use feature coordinates directly.  This may appear simple but the interface to the foo canvas requires translation from feature to world and the reverse and a large amount of code may be implicated.  Note that although ZMapWindowCanvasItems are groups with features at relative coordinates this process does not apply to ContainerGroups and features are currently drawn directly at feature coordinates despite commets to the contrary.
+<li> RevComp currently operates on the whole feature context and there are a few choices in how to reverse the coordinates: relative to block, align, parent_span, and based on block relative or whole sequence.
+<li> The foo canvas is restricted to a 32k range of pixel coordinates and real world coordinates (using doubles) are mapped onto these. With a single block this can be clipped at high zoom, and with multiple blocks this becomes more complex.  Blocks are implemented as foo canvas groups and the features contained can be clipped as normal, but again this needs to be block relative, and more code is implicated by this.
+</ul>
+</p>
+
+<h3>Coordinate display</h3>
+<p>Typical chromosome coordinates are quite large and are not easy for annotators to use. ZMap will display coordinates on the Scale bar and on the Ruler as block relative - the first base in any block will be 1 and the last will be the length of the block.  The Ruler will also display coordinates in the parent span if these differ from block relative.  The Status bar will show coordinates as block relative (which will be consistent with the scale bar). Currently there is no way to display parent (eg chromosome) coordinates in the status bar.
+</p>
+
+<p> For reverse complement ZMap currently inverts the coordinates relative to the block end and displays coordinates as negative.  For a sequence that is not 1-based this implies a possible large shift in coordinates and if multiple blocks existed collissions could occur.  ZMap will present a single block in this format and chromosiome coordinates will always be displayed as forward strand, as at present we do not know chromosome size.
+</p>
+
+
+<h3>Feature display and sequence coordinates - implementation</h3>
+<p>ZMap stores sequence and feature data in a <b>FeatureContext</b> which contains a single <b>Align</b> which contains a single contiguous <b>Block</b> of features.  There is provision to have multiple aligns and blocks and in this case the blocks of features could be mapped from any genomic region, for example to model genome rearrangements.
+</p>
+<p>Note that at present each feature item on the foo canvas is draw explicitly at  sequence coordinates and the x-coordinate is set expelicitly for each one; therse are not block relative ofr column relative. Foo canvas groups, although they are containers and have an extent may overlap and the items displayed may appear anywhere on the canvas.
+</p>
+<h4>Multiple aligns and blocks - some historical notes</h4>
+<p>This was a ZMap feature that was started but not finished.</p>
+<p>A single align corresponds to data from a single organism and is displayed with blocks containing columns of features arranged vertically. The first align is known as the master align and block are displayed in order as specifed by configuration (when implemented). Any further aligns are displayed to the right and blocks are positioned as specified in configuration (when implemented).  These blocks map to the master align but as the sequences will include re-arrangements and indels it will not be possible to map the whole block accurately.  At present it is thought that multiple aligns  are too cumbersome for practical use as very large windows (and monitors) will be needed, and remarks here about configuration and use are speculative.  <i>For the moment we restrict ZMap to handle a single block in a single align.</i>
+</p>
+<p>NOTE: Requests for data from servers can be made for single blocks only.
 </p>
 <p>Much of the top level interface to ZMap specifies a sequence as start to end, which implies a single align and block, and at present multiple blocks and aligns are not supported.
 </p>
+<h3>Overall structure - a summary</h3>
+<p>
+<ul>
+<li><b>ZMapFeatureContext</b> is a container for all the features data and has the sequence name and a master align.
+<li><b>ZMapFeatureAlignment</b> is a container for all the blocks in the sequence and has the parent span data,
+<li><b>ZMapFeatureBlock</b> contains columns of features in a contiguous region of genomic DNA and maps this data to the parent span via the block_to_sequence data.  Note that a block can be considered reversed in which case this will be flagged in the block_to_sequence structure, but the start and end coordinates will always be as start &lt; end.
+</ul>
+</p>
+
+<h4>Reverse Complement</h4>
+<p>ZMap implements reverse complement by reversing the entire feature context and features are RevComp'd relative to thier containing block, which means that each feature's start and end coordinates are swapped and the coordinates are reflected in the block's end coordinate.
+</p>
+<p>
+If a block is RevComp'd then coordnates are displayed as -ve block relative and the ordering of features reversed on the display.  This interacts with the block_to_sequence.reversed flag - if a reversed block is RevComp'd it will be displayed as forward strand.
+</p>
+<p>Each block will have a RevComp'd flag - note that at present the Window has this and it may be worth preserving a global Revcomp function for the window.
+</p>
+
+<h5>What happens when we reverse complement a block?</h5>
+<p>
+Previous code performed RevComp by reflecting coordinates in the end coordinate for a region, and for 1-based sequences from ACEDB with no parent span defined the result was incorrect chromosome coordinates.
+Without a defintion of chromosome size it is not possible to calculate correct reverse strand cooridnates and therefore chromosome coordinates will always be displayed as forward strand.
+</p>
+<p>ZMap displays forward strand coordinates as 1-based and block relative (ie 1-block size) as these are much smaller and easier for user to use.  Reverse strand coordinates in ZMap are the distance from the end of the current block and are expressed as negative and 1-based at the end opf the displayed sequence.
+</p>
+
 
 
 <h3>Data used to perform coordinate mapping</h3>
@@ -29,63 +88,82 @@ typedef struct
 (in ZMapFeatureContextStruct)
 ZMapSpanStruct parent_span;
 </pre>
+If parent_span is not defined then ZMap will define it as 1-based and treat it as the concatenation of all the blocks in the align.
 </p>
 
-<h4>ZMapFeatureAlignment->seq_to_parent</h4>
-<p>This defines the genomic region within the parent span that a series of blocks cover.  It contains the subsection of the parent span that is included, and the coordinates that are used to refer to the data being viewed internally by ZMap. There is a flag to say whether or not the region is reversed (ie reverse strand relative to the parent span)
+<h4>ZMapFeatureAlignment->sequence_span</h4>
+<p>
+This defines the extent of the sequence data held in blocks and is the min to max block coordinate.  It is calculated automatically as blocks are loaded.
 <pre>
-typedef struct
-{
-      /* NOTE even if reversed coords are as start < end */
-  ZMapSpanStruct parent;          /* start/end in parent span (context) */
-  ZMapSpanStruct align;             /* start,end in align, aka child seq */
-  gboolean reversed;
-} ZMapMapAlignStruct, *ZMapMapAlign ;
-
-
 (in ZMapFeatureAlignmentStruct)
-  ZMapMapBlockStruct sequence_to_parent ;
+ZMapSpanStruct sequence_span;
 </pre>
 </p>
 
 <h4>ZMapFeatureBlock->block_to_sequence</h4>
-<p>This defines the part of the containing align that is covered by a block of features. It is simply start and end coordinates and it is assumed that it is on the same strand as the containing align.
+<p>This defines the genomic region within the parent span that a block covers.  It contains the subsection of the parent span that is included, and the coordinates that are used to refer to the data being viewed internally by ZMap. There is a flag to say whether or not the region is reversed (ie reverse strand relative to the parent span).
 <pre>
+typedef struct
+{
+      /* NOTE even if reversed coords are as start &lt; end */
+  ZMapSpanStruct parent;          /* start/end in parent span (context) */
+  ZMapSpanStruct block;           /* start,end in align, aka child seq */
+  gboolean reversed;
+} ZMapMapBlockStruct, *ZMapMapBlock ;
+
+
 (in ZMapFeatureBlockStruct)
-ZMapSpanStruct block_to_sequence ;
+  ZMapMapBlockStruct sequence_to_parent ;
 </pre>
 </p>
 
-<h4>Overall structure</h4>
+
+
+<h4>Overall structure - examples</h4>
 <p>Some examples, note that we do not limit ZMap to these two options)
 </p>
+Currently we have this:
 
-<p>If the parent sequence and requested data are based from 1  (ACEDB model):
 <pre>
-  1  S                   E    X      chromosome bases
-  =============================      ZMapFeatureContext.parent_span.x1,x2 = 1,X
+top level coords      1-------------------------------------------------n
+                               |                    |
+                               |                    |
+sequence coords                1------x-------y-----m
+                                      |       |
+                                      |       |
+block coords                          x-------y
+                                      |       |
+                                      |       |
+display coords                        x-------y
 
-     1                   Y           our sequence
-     =====================           ZMapFeatureAlign.sequence_to_parent
-                                       sequence.x1,x2 = S,E
-                                       block.x1,x2    = 1,Y
 
-        BS        BE                 displayed block
-        ============                 ZMapFeatureBlockStruct.block_to_sequence.x1,x2 = BS,BE
+ZMapFeatureAlign.parent_span.x1,x2 = 1,n
+ZMapFeatureBlockStruct.block_to_sequence.parent.x1,x2 = x,y
+ZMapFeatureBlockStruct.block_to_sequence.block.x1,x2 = x,y
 </pre>
-<p>If the parent sequence and requested data are chromosome coordinates (Otterlace model):
+
+but we want to go to this (using chromosome coordinates internally):
 <pre>
-  1  S                   E    X      chromosome bases
-  =============================      ZMapFeatureContext.parent_span.x1,x2 = 1,X
+top level coords      1--------a------x-------y-----b-------------------n
+                               |      |       |     |
+                               |      |       |     |
+sequence coords                a------x-------y-----b
+                                      |       |
+                                      |       |
+block coords                          x-------y
+                                      |       |
+                                      |       |
+display coords                      x-a+1   y-a+1
 
-     S                   E           our sequence
-     =====================           ZMapFeatureAlign.sequence_to_parent
-                                       sequence.x1,x2 = S,E
-                                       block.x1,x2    = S,E
+ZMapFeatureAlign.parent_span.x1,x2 = 1,n
+ZMapFeatureBlockStruct.block_to_sequence.parent.x1,x2 = x,y
+ZMapFeatureBlockStruct.block_to_sequence.block.x1,x2 = x,y
 
-        BS        BE                 displayed block
-        ============                 ZMapFeatureBlockStruct.block_to_sequence.x1,x2 = BS,BE
 </pre>
+
+i.e. everything is in the coord system of the top level sequence which in otterlace would be the chromosome but in another database could be a clone, contig or whatever.
+
+NOTE that for a single align and block x == a and y == b.
 </p>
 
 <h3>Mapping versus Alignment</h3>
@@ -94,7 +172,25 @@ When mapping a genomic sequence to an underlying database both forward and rever
 </p>
 <p>Note that there are two different data structures defined in <b>zmapFeature.h</b>: <b>ZMapAlignBlock</b> which is used to process gapped alignments, and <b>ZMapMapAlign</b> which is used to specify the mapping between Align and parent sequence.
 </p>
+
+<h3>Reverse Complementing</h3>
+<p>This occurs per block and we display coordinates as negative forward strand coordinates (block relative) wiht the corresponding parent (eg chromosome) coordinate as for normal forward strand.
+</p>
+
+<h3>Loose Ends</h3>
+<p>The following items have been noted while updating the source to reflect the above:
+<ul>
+<li> <b>zmapFeatureReverseComplementCoords()</b> is used by <b>zmapViewCallBlixem.c</b> and used the master align as there is no way to choose a 'current' one.
+<li> <b>zMapFeatureContextCreate()</b> used to set up some of sequence_to_parent but not parent_span, which is all backwards. sequence_to_parent is now part of the align, so a few functions have to be adjusted for this. eg <b>zMapFeatureAlignmentCreate()</b> and <b>zMapFeatureBlockCreate()</b>.
+<li> <b>zmapFeatureUtils.c/zMapFeature2MasterCoords()</b> is commented as translating coordinates into the master alignment but does not refer to it. The code looks more like translating to the parent sequence.  It is called by code that is commented as getting the canvas coordinates from a canvas item that does this by referring to the feature context. Looks very confused.
+<li> <b>zmapFeatureUtils.c/feature_block_frame_offset()</b> allows for block coordinates (now should be align coordinates where start > end - needs considering esp wrt previous loose end.
+<li> <b>zmapWindowDNA.c/searchCB()</b> does calculations on coordinates but has no '+/- 1' involved
+
+</ul>
+</p>
 </fieldset>
+
+
 
 
 <fieldset><legend>Chromosome and ZMap coordinates</legend>
@@ -137,7 +233,112 @@ ZMap will store features with chromosome coordinates and Pipe servers and ACEDB 
 <h3>Implications for ZMap</h3>
 <p>Data requests will always be in the native coordinate system.
 </p>
-<p>The scale display must be adjusted when choromosome coords are configured.
+<p>The scale display must be adjusted when chromosome coords are configured.
 </p>
 
 <fieldset>
+
+
+<fieldset><legend>Window and sequence coordinates</legend>
+<h3>Nomenclature</h3>
+<p>
+<table border="1" spacing="1">
+<tr><td> world </td> <td>FooCanvas</td> <td>real world coordinate relating to sequence/ feature </td> </tr>
+<tr><td> canvas </td> <td>FooCanvas</td> <td>pixel coordinate relating to the scroll region</td> </tr>
+<tr><td> window </td> <td>FooCanvas</td> <td>same as canvas coordinates</td> </tr>
+<tr><td> display </td> <td>ZMap</td>  <td> 1-based coordinates shown on the Ruler and ScaleBar<br />Also equivalent to the position of a feature on the canvas </td> </tr>
+<tr><td> sequence </td> <td>ZMap</td> <td> coordinates corresponding to loaded data<br />(may be 1-based or not depending on the database) </td>
+<tr><td> chromosome </td> <td>ZMap</td> <td> external (physical) coordinates relating to where the loaded data has come from </td> </tr>
+</table>
+</p>
+<p>The FooCanvas code comments that window and canvas coordinates are the same, but note that canvas are integer and window are real. The code suggests that they are both pixel coordinates.
+</p>
+
+<h3>Sequence coordinates and RevComp</h3>
+<p>Sequence coordinates correspond to our raw data ie the sequence and features loaded from servers (see above for details of how real-world chromosome data can be mapped into ZMap cooridnates depending on configuration).  On RevComp this data is complemented (all sequence and feature data) and this means reflecting start and end coordinates in the end of the parent span.  The MVC paradigm suggestes that this is wrong: to create a new view of the data there should be no need to alter the model, but this is how ZMap has been implemented. To change this so that the data remain static and the view changes would need consideration of at least the following:
+<ul>
+<li> There may be assumptions about start and end coordinates such as start &lt; end (very likely) and start &gt; 0.  Simply making feature coordinates -ve may cause some code to fail.
+<li> There are 119 occurences of ZMAPSTRAND_REVERSE and ZMAPSTRAND_FORWARD in at least 32 files and all these would have to be changed.  Likewise there are call to functions like zMapStyleIsShowReverseStrand() which would have to be checked.  There are 47 files that contain the string 'reverse'.
+</ul>
+</p>
+
+
+<p>Note that to date ZMap has not known the extent of the parent span (eg the size of the chromosome the loaded sequence has been taken from) and typically the end of the loaded sequence has been used instead.
+</p>
+<p>Note also that historically sequence data has beed loaded as 1-based.
+</p>
+
+<h3>Window coordinates</h3>
+<p>
+Integer sequence coordinates are used to specify the position of features on the display and these are expressed as real numbers for addition to the canvas.  The canvas implements zoom and these real number coordinates correspond to pixel coordinates on the user's screen depending on the zoom level.  There is a maximum range of 30,000 pixels supported by the canvas and at high zooms not all data can be displayed.  The canvas has a <b>scroll region</b> which corresponds to the extent of the data displayed in real number coordinates.  The data actually visible on the canvas widget is determined by the <b>scroll offset</b> which is linked to the scrollbar position.
+</p>
+
+<h3>Coordinates: Usage</h3>
+<h4>Things to be aware of</h4>
+<p>As historically coordinates received from ACEDB were 1-based and the parent span was unkmown much of the ZMap code has hade to deal with only special cases:  Reverse complementing a sequence of 1-N in a parent span of 1-N gives a reversed sequenc of 1-N.
+</p>
+
+<p> If the parent span is unknonw and the loaded sequence span is used instead then a sequence of X-Y in a span of 1-Y will give a reversed sequence if 1-(Y-X), ie a sequence that is 1-based and this is another special case.
+</p>
+
+<p>Historically the Window and also the Scale bar have implented a display 'origin' which have been used to calculate display coordinates.  This is quite confusing as for a typical 1-based RevComp'd sequence the origin is the sequence length and the start display coordinate is (-sequence_length) and the start real world coordinate is 1.
+</p>
+
+<p>Previous abandoned implementations of multiple blocks would not work well with a window->origin as this related to the whole window not a series of disjunct blocks.  If features were displayed as block relative perhaps this would be workable, but they are not.  To be future proof any display 'origin' must be connected to the containing block not the window.
+</p>
+
+
+<h4>Display of features</h4>
+<p>Each feature has sequence start and end (feature->x1,x2) expressed as <b>sequence</b> coordinates. When a feature is added to the canvas these are expressed as real numbers (<b>world</b> coordinates). The canvas <b>scroll region</b> is set to the extent of all the features on the canvas and clipped to the 30,000 pixel foo canvas limit.  The canvas <b>scroll offset</b> controls which part of the <b>scroll region</b> is visible in the canvas widget.
+</p>
+<h4>ScaleBar</h4>
+<p>This provides an indication of <b>display</b> coordinates on the left of the ZMap display and occupies a separate foo canvas.  Displayed coordinates are 1-based, and when RevComped these are displayed as -ve and ends at -1.
+</p>
+<p>Note: the ScaleBar is variously referred to as the Ruler in the ZMap source code (and is coded in zmapWindowRuler.c) and should not be confused with the Ruler, which is a horizontal line drawn as a cursor when the middle mouse button is held down.
+</p>
+
+<h4>Ruler</h4>
+<p>This allows the user to see if features line up by drawing a horizontal line accross the display where the cursor is. When active the display and chromosome coordinates are displayed in a tooltip.
+</p>
+
+<h4>Status Bar</h4>
+<p>
+Coordinates of whole or sub-features are displayed in some of these boxes and these are the display coordinates, which must correspond to the coordinates shown on the Scale Bar.
+</p>
+
+<h4>Requests for data from servers</h4>
+<p>
+To implement request from mark (and the corresponding function via an XRemote request) ZMap will use chromosome coordinates, as this is unambiguous and will operate with separately hosted and unrelated servers.
+</p>
+<p>To get chromosome coordinates from the mark we have to:
+<ul>
+<li> get the mouse coordinates
+<li> express these as canvas coordinates corresponding to the whole scroll region.
+<li> express these as world coordinates (real) and convert to integer
+</ul>
+</p>
+
+<p>For reverse strand data we also have to:
+<ul>
+<li> reverse complement the coordinates relative to the end of the parent span.
+</ul>
+</p>
+
+</fieldset>
+
+<fieldset><legend>Implementation</legend>
+<p>
+<ul>
+<li>The feature context will remain reverse complemented instead of keeping it static and reversing the display as there would eb a lot of work needed to fix this.  This means that feature stats and end coordinate will always be +ve and start &lt; end.
+<li>Functions will be provided to calculate coordinates as needed:
+<ul>
+<li> mouse, display -> sequence
+<li> mouse, display -> chromosome
+</ul>
+ and these will take into account revcomp status and display preferences of the window.  If multiple blocks are to be implemented then display to world translations must be relative to the relevant block, but initially we will use the master alignment span.
+
+<li>Window->origin and ScaleBar->origin will be removed and coordinates calculated with standard functions. Note that we only need to know the sequence range to generate a scale bar, as by design/ user requirement we want to display 1-based coordinates (which are made -ve  and inverted on RevComp).
+
+</ul>
+</p>
+</fieldset>
