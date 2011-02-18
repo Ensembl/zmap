@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 18 10:55 2011 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.44 2011-02-18 11:05:08 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.45 2011-02-18 15:48:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -213,7 +213,11 @@ void zmapControlWindowSetStatus(ZMap zmap)
   {
       GdkWindow * win;
 
+#if GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION < 14
+            win = zmap->status_entry->window;
+#else
       win = gtk_widget_get_window(zmap->status_entry);
+#endif
       if(win)
            gdk_window_process_updates(win,TRUE);
   }
