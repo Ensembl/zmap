@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Jan 13 11:57 2011 (edgrif)
+ * Last edited: Feb  2 15:43 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.119 2011-01-13 12:07:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.120 2011-02-18 10:06:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -286,8 +286,14 @@ void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rooty1,
                                    double rootx2, double rooty2);
 
+void zmapWindowCoordPairToDisplay(ZMapWindow window,
+				  int start_in, int end_in,
+				  int *display_start_out, int *display_end_out) ;
+
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) ;
+void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
+
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
