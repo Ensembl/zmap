@@ -28,9 +28,9 @@
  *              other item classes include this class.
  *
  * HISTORY:
- * Last edited: May 26 10:29 2010 (edgrif)
+ * Last edited: Feb  4 09:12 2011 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.12 2010-07-15 10:49:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.13 2011-02-18 10:27:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -117,25 +117,26 @@ typedef struct _zmapWindowCanvasItemClassStruct
  *  */
 typedef struct _zmapWindowCanvasItemStruct
 {
-  FooCanvasGroup __parent__;	/*!< \extends FooCanvasGroup  */
+  FooCanvasGroup __parent__;				    /* extends FooCanvasGroup  */
 
-  ZMapFeature feature;		/*!< \property The Feature that this Canvas Item represents  */
-
+  ZMapFeature feature ;					    /* The Feature that this Canvas Item represents  */
 
   /* These items (underlay etc.) are separate from the group and need to be mapped,
    * realized and drawn by us. */
   FooCanvasItem *items[WINDOW_ITEM_COUNT];
 
-  FooCanvasItem *mark_item;
+  /* It feels instinctively wrong to me that every single feature is going to carry this mark
+   * stuff. I feel we should be adding/removing dynamically the mark item as things are used
+   * to mark or not. */
+  FooCanvasItem *mark_item ;
 
+  unsigned int interval_type ;
 
-  unsigned int interval_type;
+  /* Item flags. */
+  unsigned int auto_resize_background : 1 ;
+  unsigned int debug : 1 ;
 
-  unsigned int auto_resize_background : 1;
-
-  unsigned int debug : 1;
-
-} zmapWindowCanvasItemStruct;
+} zmapWindowCanvasItemStruct ;
 
 
 #endif /* ZMAP_WINDOW_CANVAS_ITEM_I_H */
