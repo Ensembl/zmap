@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  2 15:31 2010 (edgrif)
+ * Last edited: Feb 18 10:34 2011 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.17 2011-02-14 13:25:06 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.18 2011-02-18 10:34:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,6 +112,9 @@ static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_dat
 static FooCanvasGroupClass *group_parent_class_G = NULL;
 #endif
 static FooCanvasItemClass  *item_parent_class_G  = NULL;
+
+gboolean print_debug_G = TRUE ;
+
 
 
 /*!
@@ -833,8 +836,20 @@ static void maximise_background_rectangle(ZMapWindowContainerGroup this_containe
 {
   FooCanvasItem *rect_item;
   double irx1, irx2, iry1, iry2;
-  int container_x2, container_y2; /* container canvas coords, calculated from group->update above. */
+  int container_x2, container_y2; /* container canvas coords, calculated from group->update
+				     above. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  GString *buf ;
+
+  buf = g_string_new("") ;
+
+  zmapWindowItemDebugItemToString(container_item, buf) ;
+  printf("%s\n", buf->str) ;
+
+  g_string_free(buf, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /* We can't trust item->x1 and item->y1 as empty child
    * groups return 0,0->0,0 hence extend all parents to
@@ -846,10 +861,12 @@ static void maximise_background_rectangle(ZMapWindowContainerGroup this_containe
 
   irx1 = iry1 = 0.0;	/* placed @ 0,0 */
   foo_canvas_item_i2w(rect_item, &irx1, &iry1);
+
   foo_canvas_c2w(rect_item->canvas, container_x2, container_y2, &irx2, &iry2);
 
-  if((iry2 - iry1 + 1) < this_container->height)
-    iry2 = this_container->height + iry1 ;
+  /* We just want to use our container height. */
+  iry2 = this_container->height + iry1 ;
+
 
   rect->x1 = irx1;
   rect->y1 = iry1;
@@ -1143,7 +1160,6 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   if(doing_reposition)
     {
       GList *list, *list_end, tmp_features = {NULL}, tmp_background = {NULL};
-      gboolean print_debug = FALSE;
 
       if((item_list = canvas_group->item_list))
 	{
@@ -1182,7 +1198,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	}
 
 
-      if(print_debug)
+      if(print_debug_G)
 	{
 	  switch(this_container->level)
 	    {
