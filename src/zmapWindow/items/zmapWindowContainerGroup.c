@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 18 10:34 2011 (edgrif)
+ * Last edited: Feb 18 10:39 2011 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.18 2011-02-18 10:34:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.19 2011-02-18 10:40:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,7 +113,7 @@ static FooCanvasGroupClass *group_parent_class_G = NULL;
 #endif
 static FooCanvasItemClass  *item_parent_class_G  = NULL;
 
-gboolean print_debug_G = TRUE ;
+gboolean print_debug_G = FALSE ;
 
 
 
