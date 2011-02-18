@@ -22,184 +22,114 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 09:38 2009 (rds)
+ * Last edited: Feb 14 09:11 2011 (edgrif)
  * Created: Tue Nov  6 16:33:44 2007 (rds)
- * CVS info:   $Id: zmapWindowItemDebug.c,v 1.5 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemDebug.c,v 1.6 2011-02-18 10:09:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-
-
-
 #include <string.h>
-#include <zmapWindow_P.h>
-#include <zmapWindowContainerUtils.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapWindowContainers.h>
+#include <zmapWindowCanvasItem_I.h>
+#include <zmapWindowFeatures.h>
+#include <zmapWindow_P.h>
+
+
+
+
+
 
 #define STRING_SIZE 50
-#ifdef NO_NEED
-static gboolean get_container_type_as_string(FooCanvasItem *item, char *str_inout)
+
+
+
+static void printGroup(FooCanvasGroup *group, int indent, GString *buf) ;
+static void printItem(FooCanvasItem *item) ;
+static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out) ;
+static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out) ;
+static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out) ;
+static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out) ;
+
+
+
+/* We just dip into the foocanvas struct for some data, we use the interface calls where they
+ * exist. */
+void zmapWindowPrintCanvas(FooCanvas *canvas)
 {
-  ContainerType container_type = CONTAINER_INVALID;
-  gboolean has_type = FALSE;
+  double x1, y1, x2, y2 ;
 
-  if((container_type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(item), CONTAINER_TYPE_KEY) )))
-    {
-      char *col_text;
-      int   len;
-      switch(container_type)
-        {
-        case CONTAINER_ROOT:
-          col_text = "ROOT";
-          break;
-        case CONTAINER_PARENT:
-          col_text = "PARENT";
-          break;
-        case CONTAINER_OVERLAYS:
-          col_text = "OVERLAYS";
-          break;
-        case CONTAINER_FEATURES:
-          col_text = "FEATURES";
-          break;
-        case CONTAINER_BACKGROUND:
-          col_text = "BACKGROUND";
-          break;
-        case CONTAINER_UNDERLAYS:
-          col_text = "UNDERLAYS";
-          break;
-        default:
-          col_text = "INVALID";
-          break;
-        }
-      len = strlen(col_text);
-      has_type = TRUE;
-      memcpy(str_inout, col_text, len);
-      str_inout[len] = '\0';
-    }
 
-  return has_type;
+  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+
+  printf("Canvas stats:\n\n") ;
+
+  printf("Zoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
+
+  printf("Scroll region bounds: %f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
+
+  zmapWindowPrintGroups(canvas) ;
+
+  return ;
 }
 
-static gboolean get_item_feature_type_as_string(FooCanvasItem *item, char *str_inout)
+
+void zmapWindowPrintGroups(FooCanvas *canvas)
 {
-  ZMapWindowItemFeatureType feature_type = ITEM_FEATURE_INVALID;
-  gboolean has_type = FALSE;
+  FooCanvasGroup *root ;
+  int indent ;
+  GString *buf ;
 
-  if((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE))))
-    {
-      char *feature_text;
-      int   len;
-      switch(feature_type)
-        {
-        case ITEM_FEATURE_SIMPLE:
-          feature_text = "SIMPLE";
-          break;
-        case ITEM_FEATURE_PARENT:
-          feature_text = "PARENT";
-          break;
-        case ITEM_FEATURE_CHILD:
-          feature_text = "CHILD";
-          break;
-        case ITEM_FEATURE_BOUNDING_BOX:
-          feature_text = "BOUNDING_BOX";
-          break;
-        case ITEM_FEATURE_GROUP:
-          feature_text = "GROUP";
-          break;
-        default:
-          feature_text = "INVALID";
-          break;
-        }
-      len = strlen(feature_text);
-      has_type = TRUE;
-      memcpy(str_inout, feature_text, len);
-      str_inout[len] = '\0';      
-    }
+  printf("Groups:\n") ;
 
-  return has_type;
+  root = foo_canvas_root(canvas) ;
+
+  indent = 0 ;
+  buf = g_string_sized_new(1000) ;
+
+  printGroup(root, indent, buf) ;
+
+  g_string_free(buf, TRUE) ;
+
+  return ;
 }
 
-static gboolean get_feature_type_as_string(FooCanvasItem *item, char *str_inout)
-{
-  ZMapFeatureAny feature_any;
-  gboolean has_type = FALSE;
 
-  if((feature_any = zmapWindowItemGetFeatureAny(item)))
-    {
-      char *text;
-      int   len;
-      switch(feature_any->struct_type)
-        {
-        case ZMAPFEATURE_STRUCT_CONTEXT:
-          text = "CONTEXT";
-          break;
-        case ZMAPFEATURE_STRUCT_ALIGN:
-          text = "ALIGN";
-          break;
-        case ZMAPFEATURE_STRUCT_BLOCK:
-          text = "BLOCK";
-          break;
-        case ZMAPFEATURE_STRUCT_FEATURESET:
-          text = "FEATURESET";
-          break;
-        case ZMAPFEATURE_STRUCT_FEATURE:
-          text = "FEATURE";
-          break;
-        case ZMAPFEATURE_STRUCT_INVALID:
-        default:
-          zMapAssertNotReached();
-          break;
-        }
-      len = strlen(text);
-      has_type = TRUE;
-      memcpy(str_inout, text, len);
-      str_inout[len] = '\0';
-    }
-
-  return has_type;
-}
-#endif /* NO_NEED */
 void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
 {
-  gboolean has_feature = FALSE, is_container = FALSE;
+  gboolean has_feature = FALSE, is_container = FALSE ;
+  char *str = NULL ;
 
-#ifdef NO_NEED
-  char tmp_string[STRING_SIZE] = {0};
+  if ((is_container = get_container_type_as_string(item, &str)))
+    g_string_append_printf(string, " %s", str) ;
+  else if (get_item_type_as_string(item, &str))
+    g_string_append_printf(string, " %s", str) ;
 
-  if((has_feature = get_feature_type_as_string(item, &tmp_string[0])))
-    g_string_append_printf(string, "Feature Type = '%s' ",   &tmp_string[0]);
+  if ((has_feature = get_feature_type_as_string(item, &str)))
+    g_string_append_printf(string, " %s", str) ;
 
-  if(get_item_feature_type_as_string(item, &tmp_string[0]))
-    g_string_append_printf(string, "Item Type = '%s' ",      &tmp_string[0]);
-
-  if((is_container = get_container_type_as_string(item, &tmp_string[0])))
-    g_string_append_printf(string, "Container Type = '%s' ", &tmp_string[0]);
-
-  if (g_object_get_data(G_OBJECT(item), "my_range_key"))
-    g_string_append_printf(string, "Item is a mark item ") ;
-#endif /* NO_NEED */
-
-  if(has_feature)
+  if (has_feature)
     {
       ZMapFeatureAny feature_any;
+
       feature_any = zmapWindowItemGetFeatureAny(item);
-      g_string_append_printf(string, "Feature UID = '%s' ", (char *)g_quark_to_string(feature_any->unique_id));
+      g_string_append_printf(string, " \"%s\"", (char *)g_quark_to_string(feature_any->unique_id));
     }
 
-  if(is_container)
+  if (is_container)
     {
       FooCanvasItem *container;
+
       container = FOO_CANVAS_ITEM( zmapWindowContainerCanvasItemGetContainer(item) );
-      if(container != item)
+      if (container != item)
 	{
 	  g_string_append_printf(string, "Parent Details... ");
 	  zmapWindowItemDebugItemToString(container, string);
@@ -208,3 +138,346 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
 
   return ;
 }
+
+
+
+/* Prints out an items coords in local coords, good for debugging.... */
+void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item)
+{
+  double x1, y1, x2, y2 ;
+
+  /* Gets bounding box in parents coord system. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  printf("%s:\t%f,%f -> %f,%f\n",
+	 (msg_prefix ? msg_prefix : ""),
+	 x1, y1, x2, y2) ;
+
+
+  return ;
+}
+
+/* Prints out an items coords in world coords, good for debugging.... */
+void zmapWindowPrintItemCoords(FooCanvasItem *item)
+{
+  double x1, y1, x2, y2 ;
+
+  /* Gets bounding box in parents coord system. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  printf("P %f, %f, %f, %f -> ", x1, y1, x2, y2) ;
+
+  foo_canvas_item_i2w(item, &x1, &y1) ;
+  foo_canvas_item_i2w(item, &x2, &y2) ;
+
+  printf("W %f, %f, %f, %f\n", x1, y1, x2, y2) ;
+
+  return ;
+}
+
+
+/* Converts given world coords to an items coord system and prints them. */
+void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1_in)
+{
+  double x1 = x1_in, y1 = y1_in;
+
+  my_foo_canvas_item_w2i(item, &x1, &y1) ;
+
+  if (!text)
+    text = "Item" ;
+
+  printf("%s -  world(%f, %f)  ->  item(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+
+  return ;
+}
+
+/* Converts coords in an items coord system into world coords and prints them. */
+/* Prints out item coords position in world and its parents coords.... */
+void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1_in)
+{
+  double x1 = x1_in, y1 = y1_in;
+
+  my_foo_canvas_item_i2w(item, &x1, &y1) ;
+
+  if (!text)
+    text = "Item" ;
+
+  printf("%s -  item(%f, %f)  ->  world(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+
+
+  return ;
+}
+
+
+
+/* 
+ *                  Internal functions
+ */
+
+
+/* Recursive function to print out all the child groups of the supplied group. */
+static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
+{
+  int i ;
+  GList *list ;
+
+  buf = g_string_set_size(buf, 0) ;
+
+  for (i = 0 ; i < indent ; i++)
+    printf("\t") ;
+
+
+  /* Print this group. */
+  if (ZMAP_IS_CONTAINER_GROUP(group) || ZMAP_IS_CANVAS_ITEM(group))
+    {
+      zmapWindowItemDebugItemToString((FooCanvasItem *)group, buf) ;
+      printf("%s", buf->str) ;
+    }
+  else if (FOO_IS_CANVAS_GROUP(group))
+    {
+      printf("%s ", "FOOCANVAS_GROUP") ;
+    }
+  else if (FOO_IS_CANVAS_ITEM(group))
+    {
+      printf("%s ", "FOOCANVAS_ITEM") ;
+    }
+  else
+    {
+      printf("%s ", "**UNKNOWN ITEM TYPE**") ;
+    }
+
+  printItem(FOO_CANVAS_ITEM(group)) ;
+
+  if (ZMAP_IS_CONTAINER_GROUP(group))
+    {
+      GList *item_list ;
+
+      if ((item_list = group->item_list))
+	{
+	  do
+	    {
+	      char *str ;
+	      FooCanvasGroup *sub_group = (FooCanvasGroup *)(item_list->data) ;
+	      FooCanvasItem *sub_item = (FooCanvasItem *)(item_list->data) ;
+	      
+
+	      if (get_container_child_type_as_string(sub_item, &str))
+		{
+		  for (i = 0 ; i < indent ; i++)
+		    printf("\t") ;
+		  printf("  ") ;
+
+		  printf("%s ", str) ;
+
+		  printItem(FOO_CANVAS_ITEM(sub_group)) ;
+		}
+	      else
+		{
+		  if (FOO_IS_CANVAS_GROUP(sub_group))
+		    printGroup(sub_group, indent + 1, buf) ;
+		  else
+		    printItem(FOO_CANVAS_ITEM(group)) ;
+		}
+	    }
+	  while((item_list = item_list->next)) ;
+	}
+    }
+  else if (ZMAP_IS_CANVAS_ITEM(group))
+    {
+      ZMapWindowCanvasItem canvas_item ;
+      int i ;
+
+      canvas_item = ZMAP_CANVAS_ITEM(group) ;
+
+      for (i = 0 ; i < WINDOW_ITEM_COUNT ; ++i)
+	{
+	  char *str = NULL ;
+
+	  if (canvas_item->items[i])
+	    {
+	      switch(i)
+		{
+		case WINDOW_ITEM_BACKGROUND:
+		  str = "ITEM_BACKGROUND" ;
+		  break ;
+		case WINDOW_ITEM_UNDERLAY:
+		  str = "ITEM_UNDERLAY" ;
+		  break ;
+		case WINDOW_ITEM_OVERLAY:
+		  str = "ITEM_OVERLAY" ;
+		  break ;
+		default:
+		  break ;
+		}
+
+	      if (str)
+		{
+		  int j ;
+
+		  for (j = 0 ; j < indent ; j++)
+		    printf("\t") ;
+		  printf("\t") ;
+
+		  printf("%s ", str) ;
+
+		  printItem(canvas_item->items[i]) ;
+
+		  str = NULL ;
+		}
+	    }
+	}
+    }
+  else
+    {
+      /* We appear to have groups that have no children...is this empty cols ? */
+      /* Print all the child groups of this group. */
+      if ((list = g_list_first(group->item_list)))
+	{
+	  do
+	    {
+	      if (FOO_IS_CANVAS_GROUP(list->data))
+		printGroup(FOO_CANVAS_GROUP(list->data), indent + 1, buf) ;
+	    }
+	  while ((list = g_list_next(list))) ;
+	}
+    }
+
+
+  buf = g_string_set_size(buf, 0) ;
+
+  return ;
+}
+
+
+static void printItem(FooCanvasItem *item)
+{
+  double x1, y1, x2, y2 ;
+
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  if (FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group = (FooCanvasGroup *)item ;
+
+      printf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %f, %f    Bounds: %f -> %f,  %f -> %f\n",
+	     group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2) ;
+    }
+  else
+    {
+      printf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %f -> %f,  %f -> %f\n",
+	     item->parent, item, x1, x2, y1, y2) ;
+    }
+
+  return ;
+}
+
+
+
+
+
+
+
+
+static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out)
+{
+  gboolean has_type = TRUE ;
+
+  if (ZMAP_IS_CONTAINER_CONTEXT(item))
+    *str_out = "ZMAP_CONTAINER_CONTEXT" ;
+  else if (ZMAP_IS_CONTAINER_ALIGNMENT(item))
+    *str_out = "ZMAP_CONTAINER_ALIGNMENT" ;
+  else if (ZMAP_IS_CONTAINER_BLOCK(item))
+    *str_out = "ZMAP_CONTAINER_BLOCK" ;
+  else if (ZMAP_IS_CONTAINER_STRAND(item))
+    *str_out = "ZMAP_CONTAINER_STRAND" ;
+  else if (ZMAP_IS_CONTAINER_FEATURESET(item))
+    *str_out = "ZMAP_CONTAINER_FEATURESET" ;
+  else
+    has_type = FALSE ;
+
+  return has_type ;
+}
+
+
+static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out)
+{
+  gboolean has_type = TRUE ;
+
+  if (ZMAP_IS_CONTAINER_OVERLAY(item))
+    *str_out = "ZMAP_CONTAINER_OVERLAY" ;
+  else if (ZMAP_IS_CONTAINER_UNDERLAY(item))
+    *str_out = "ZMAP_CONTAINER_UNDERLAY" ;
+  else if (ZMAP_IS_CONTAINER_BACKGROUND(item))
+    *str_out = "ZMAP_CONTAINER_BACKGROUND" ;
+  else
+    has_type = FALSE ;
+
+  return has_type ;
+}
+
+
+static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
+{
+  gboolean has_type = TRUE ;
+
+  if (ZMAP_IS_WINDOW_ALIGNMENT_FEATURE(item))
+    *str_out = "ZMAP_WINDOW_ALIGNMENT_FEATURE" ;
+  if (ZMAP_IS_WINDOW_ASSEMBLY_FEATURE(item))
+    *str_out = "ZMAP_WINDOW_ASSEMBLY_FEATURE" ;
+  if (ZMAP_IS_WINDOW_BASIC_FEATURE(item))
+    *str_out = "ZMAP_WINDOW_BASIC_FEATURE" ;
+  if (ZMAP_IS_WINDOW_GLYPH_ITEM(item))
+    *str_out = "ZMAP_WINDOW_GLYPH_ITEM" ;
+  if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(item))
+    *str_out = "ZMAP_WINDOW_SEQUENCE_FEATURE" ;
+  if (ZMAP_IS_WINDOW_TEXT_FEATURE(item))
+    *str_out = "ZMAP_WINDOW_TEXT_FEATURE" ;
+  if (ZMAP_IS_WINDOW_TEXT_ITEM(item))
+    *str_out = "ZMAP_WINDOW_TEXT_ITEM" ;
+  if (ZMAP_IS_WINDOW_TRANSCRIPT_FEATURE(item))
+    *str_out = "ZMAP_WINDOW_TRANSCRIPT_FEATURE" ;
+  else
+    has_type = FALSE ;
+
+  return has_type ;
+}
+
+
+static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out)
+{
+  ZMapFeatureAny feature_any ;
+  gboolean has_type = FALSE ;
+
+  if ((feature_any = zmapWindowItemGetFeatureAny(item)))
+    {
+      has_type = TRUE ;
+
+      switch(feature_any->struct_type)
+        {
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+          *str_out = "ZMapFeatureContext";
+          break ;
+        case ZMAPFEATURE_STRUCT_ALIGN:
+          *str_out = "ZMapFeatureAlign" ;
+          break ;
+        case ZMAPFEATURE_STRUCT_BLOCK:
+          *str_out = "ZMapFeatureBlock" ;
+          break ;
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          *str_out = "ZMapFeatureSet" ;
+          break ;
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          *str_out = "ZMapFeature" ;
+          break ;
+
+        default:
+          has_type = FALSE ;
+          break ;
+        }
+    }
+
+  return has_type ;
+}
+
+
+
