@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 14 12:06 2010 (edgrif)
+ * Last edited: Feb 18 10:56 2011 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.42 2010-10-14 10:05:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.43 2011-02-18 11:05:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1434,6 +1434,11 @@ static void deferred_page_destroy(NotebookPage notebook_page)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* NOT USED ANYWHERE... */
+
 static NotebookPage deferred_page_create(ColConfigure configure_data, char **page_name_out)
 {
   NotebookPage page_data = NULL;
@@ -1457,6 +1462,8 @@ static NotebookPage deferred_page_create(ColConfigure configure_data, char **pag
 
   return page_data;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
