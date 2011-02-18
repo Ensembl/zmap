@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 12:12 2010 (edgrif)
+ * Last edited: Feb 18 09:40 2011 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.31 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.32 2011-02-18 09:58:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,10 +51,11 @@
 
 typedef struct
 {
-  GQuark align_id, block_id, column_id, fset_id, feature_id;
-  ZMapFrame frame;
-  ZMapStrand strand;
-} SerializedItemStruct;
+  gboolean strand_specific ;
+  GQuark align_id, block_id, column_id, fset_id, feature_id ;
+  ZMapFrame frame ;
+  ZMapStrand strand ;
+} SerializedItemStruct ;
 
 typedef struct
 {
@@ -192,12 +193,14 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
       zMapWindowZoom(window, factor);
     }
 
-  if(state->mark_set)
+  if (state->mark_set)
     {
-      state_mark_restore(window, window->mark, &(state->mark));
+      state_mark_restore(window, window->mark, &(state->mark)) ;
     }
   else
-    zmapWindowMarkReset(window->mark);
+    {
+      zmapWindowMarkReset(window->mark) ;
+    }
 
   if(state->position_set)
     {
@@ -323,18 +326,19 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
   return state->mark_set;
 }
 
+
 gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
 				       ZMapWindow      window)
 {
-  FooCanvasItem *focus_item;
+  FooCanvasItem *focus_item ;
 
-  if((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+  if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       state->focus_items_set = serialize_item(focus_item, &(state->focus.item));
       state->rev_comp_state = state->focus.rev_comp_state = window->revcomped_features;
     }
 
-  return state->focus_items_set;
+  return state->focus_items_set ;
 }
 
 static void get_bumped_columns(ZMapWindowContainerGroup container,
@@ -374,8 +378,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
   return ;
 }
 
-gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
-					  ZMapWindow window)
+gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow window)
 {
 #warning save bumped commented out temproarily while tweaking CFS code
 #if MH17_NO_RECOVER
@@ -401,7 +404,7 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
       else
 	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
-      state->bump.compress  = compress_mode;
+4      state->bump.compress  = compress_mode;
       state->rev_comp_state = state->bump.rev_comp_state = window->revcomped_features;
 
       state->bump_state_set = TRUE;
@@ -468,49 +471,61 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
   ZMapWindowMarkSerialStruct restore = {};
   restore = *serialized;	/* n.b. struct copy */
 
-  if(window->revcomped_features != restore.rev_comp_state)
+  if (window->revcomped_features != restore.rev_comp_state)
     {
-      rev_comp_region(window, &(restore.y1), &(restore.y2));
+      rev_comp_region(window, &(restore.y1), &(restore.y2)) ;
+
+      /* There's a problem with positions here, we get called before everything
+       * has been drawn and therefore the block can be smaller than the original
+       * x1, x2 position of the mark causing the zmapWindowMarkSetWorldRange()
+       * call to fail because it can't find the block....
+       * 
+       * We hack this by setting x1 to zero, this will fail if have multiple
+       * blocks horizontally but then so will a lot of things. */
+      restore.x1 = 0.0 ;
     }
 
-  if(serialized->item.align_id != 0 && serialized->item.feature_id != 0)
+  if (serialized->item.align_id != 0 && serialized->item.feature_id != 0)
     {
       FooCanvasItem *mark_item;
       GList *possible_mark_items;
 
       /* We're not completely accurate here.  SubPart features are not remarked correctly. */
-      if((mark_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						 restore.item.align_id,
-						 restore.item.block_id,
-						 restore.item.fset_id,
-						 restore.item.strand,
-						 restore.item.frame,
-						 restore.item.feature_id)))
+      if ((mark_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
+						  restore.item.align_id,
+						  restore.item.block_id,
+						  restore.item.fset_id,
+						  restore.item.strand,
+						  restore.item.frame,
+						  restore.item.feature_id)))
 	{
 	  zmapWindowMarkSetItem(mark, mark_item);
 	}
-      else if((possible_mark_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
-								   restore.item.align_id,
-								   restore.item.block_id,
-								   restore.item.column_id,
-                                                   0,
-								   "*",	/* reverse complement... */
-								   "*",	/* laziness */
-								   restore.item.feature_id,
-								   NULL, NULL)))
+      else if ((possible_mark_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
+								    restore.item.align_id,
+								    restore.item.block_id,
+								    restore.item.column_id,
+								    0,
+								    "*",	/* reverse complement... */
+								    "*",	/* laziness */
+								    restore.item.feature_id,
+								    NULL, NULL)))
 	{
 	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
 	}
       else
-	zmapWindowMarkSetWorldRange(mark,
-				    restore.x1, restore.y1,
-				    restore.x2, restore.y2);
-
+	{
+	  zmapWindowMarkSetWorldRange(mark,
+				      restore.x1, restore.y1,
+				      restore.x2, restore.y2) ;
+	}
     }
   else
-    zmapWindowMarkSetWorldRange(mark,
-				restore.x1, restore.y1,
-				restore.x2, restore.y2);
+    {
+      zmapWindowMarkSetWorldRange(mark,
+				  restore.x1, restore.y1,
+				  restore.x2, restore.y2) ;
+    }
 
   return ;
 }
@@ -574,41 +589,76 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 
 static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized)
 {
-  ZMapWindowFocusSerialStruct restore = {};
-  restore = *serialized;	/* n.b. struct copy */
+  ZMapWindowFocusSerialStruct restore = {} ;
+  restore = *serialized ;				    /* n.b. struct copy */
 
-  if(serialized->item.align_id != 0 &&
-     serialized->item.feature_id != 0)
+  if (serialized->item.align_id != 0 && serialized->item.feature_id != 0)
     {
       FooCanvasItem *focus_item = NULL;
       GList *possible_focus_items;
 
-      if((focus_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
+      /* Forming the search correctly when a reverse complement has happened is not trivial
+       * because of strand issues. */
+      if (window->revcomped_features != serialized->rev_comp_state)
+	{
+	  if (restore.item.strand_specific)
+	    restore.item.strand = ZMAPFEATURE_SWOP_STRAND(restore.item.strand) ;
+	}
+
+      if ((focus_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						  restore.item.align_id,
 						  restore.item.block_id,
 						  restore.item.fset_id,
 						  restore.item.strand,
 						  restore.item.frame,
-						  restore.item.feature_id)))
+						  restore.item.feature_id))
+	  && zmapWindowItemIsShown(focus_item))
 	{
 	  zmapWindowFocusAddItem(window->focus, focus_item);
+
 	  zMapWindowHighlightFocusItems(window);
 	}
-      else if((possible_focus_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
-								    restore.item.align_id,
-								    restore.item.block_id,
-								    restore.item.column_id,
-                                                    0,
-								    "*",	/* reverse complement... */
-								    "*",	/* laziness */
-								    restore.item.feature_id,
-								    NULL, NULL)))
+      else if ((possible_focus_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
+								     restore.item.align_id,
+								     restore.item.block_id,
+								     restore.item.column_id,
+								     0,
+								     "*",	/* reverse complement... */
+								     "*",	/* laziness */
+								     restore.item.feature_id,
+								     NULL, NULL)))
 	{
 	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data);
+
 	  zMapWindowHighlightFocusItems(window);
+
+	  /* Need single hot item here for focus below.... */
 	}
       else
-	zMapLogWarning("%s", "Failed to find serialized focus item.");
+	{
+	  /* this can happen if something is strand specific and is not shown on the reverse
+	     strand ?? or maybe not...actually we should be checking if something is visible !!!! */
+
+	  /* Blank the info panel if we can't find the feature. */
+	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, NULL, TRUE, FALSE) ;
+
+
+	  zMapLogWarning("%s", "Failed to find serialized focus item.");
+	}
+
+
+      if (focus_item)
+	{
+	  ZMapFeature feature ;
+	  FooCanvasItem *sub_item = focus_item, *highlight_item = focus_item ;
+	  gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
+
+	  feature = zMapWindowCanvasItemGetFeature(focus_item) ;
+
+	  /* Pass information about the object clicked on back to the application. */
+	  zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0,
+				    NULL, replace_highlight, highlight_same_names) ;
+	}
     }
 
   return ;
@@ -715,29 +765,35 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
   return ;
 }
 
+
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize)
 {
-  ZMapWindowContainerGroup container_group;
-  ZMapFeature feature;
-  gboolean serialized = FALSE;
+  ZMapWindowContainerGroup container_group ;
+  ZMapFeature feature ;
+  gboolean serialized = FALSE ;
 
   feature = zMapWindowCanvasItemGetFeature(item) ;
 
   if ((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
     {
       ZMapWindowContainerFeatureSet container_set;
-      ZMapFeatureSet fset;
 
-      container_set = (ZMapWindowContainerFeatureSet)container_group;
+      container_set = (ZMapWindowContainerFeatureSet)container_group ;
+
+
+      /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
+      serialize->strand_specific = zMapStyleIsStrandSpecific(feature->style) ;
+
 
       serialize->strand     = container_set->strand;
       serialize->frame      = container_set->frame;
+      serialize->column_id  = container_set->unique_id;
+
       serialize->align_id   = feature->parent->parent->parent->unique_id;
       serialize->block_id   = feature->parent->parent->unique_id;
-      fset = (ZMapFeatureSet) feature->parent;
-      serialize->column_id  = container_set->unique_id;
-      serialize->fset_id    = fset->unique_id;
+      serialize->fset_id    = feature->parent->unique_id;
       serialize->feature_id = feature->unique_id;
+
       serialized = TRUE;
     }
 
