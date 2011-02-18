@@ -33,9 +33,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 15 11:45 2011 (edgrif)
+ * Last edited: Feb 15 15:57 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.29 2011-02-16 11:11:52 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.30 2011-02-18 10:07:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,6 +91,12 @@
 #define XML_TAGVALUE_COMPOUND      "compound"
 #define XML_TAGVALUE_SCROLLED_TEXT "scrolled_text"
 
+
+typedef struct AddParaStructName
+{
+  ZMapWindow window ;
+  ZMapGuiNotebookParagraph paragraph ;
+} AddParaStruct, *AddPara ;
 
 
 typedef struct ZMapWindowFeatureShowStruct_
@@ -237,7 +243,7 @@ static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void getAllMatches(ZMapWindow window,
 			  ZMapFeature feature, FooCanvasItem *item, ZMapGuiNotebookSubsection subsection) ;
 static void addTagValue(gpointer data, gpointer user_data) ;
-static ZMapGuiNotebook makeTranscriptExtras(ZMapFeature feature) ;
+static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature) ;
 
 
 /*
@@ -682,7 +688,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 	{
 	case ZMAPSTYLE_MODE_TRANSCRIPT:
 	  {
-	    extras_notebook = makeTranscriptExtras(feature) ;
+	    extras_notebook = makeTranscriptExtras(show->zmapWindow, feature) ;
 	    break ;
 	  }
 	default:
@@ -1604,12 +1610,13 @@ static void getAllMatches(ZMapWindow window,
   result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
   zMapAssert(result) ;
 
-  if ((list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+  if ((list = zmapWindowFToIFindSameNameItems(window, window->context_to_item,
 					      zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
 					      feature)))
     {
       ZMapGuiNotebookParagraph paragraph ;
       GList *headers = NULL, *types = NULL ;
+      AddParaStruct para_data ;
 
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Strand: Sequence/Match"))) ;
@@ -1631,7 +1638,9 @@ static void getAllMatches(ZMapWindow window,
       paragraph = zMapGUINotebookCreateParagraph(subsection, "Matches",
 						 ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE, headers, types) ;
 
-      g_list_foreach(list, addTagValue, paragraph) ;
+      para_data.window = window ;
+      para_data.paragraph = paragraph ;
+      g_list_foreach(list, addTagValue, &para_data) ;
     }
 
   return ;
@@ -1641,12 +1650,14 @@ static void getAllMatches(ZMapWindow window,
 static void addTagValue(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
+  AddPara para_data = (AddPara)user_data ;
+  ZMapGuiNotebookParagraph paragraph = para_data->paragraph ;
   ZMapFeature feature ;
-  ZMapGuiNotebookParagraph paragraph = (ZMapGuiNotebookParagraph)user_data ;
   GList *column_data = NULL ;
   ZMapGuiNotebookTagValue tagvalue ;
   int tmp = 0 ;
   char *clone_id, *strand ;
+  int display_start, display_end ;
 
 
   feature = getFeature(item) ;
@@ -1663,8 +1674,11 @@ static void addTagValue(gpointer data, gpointer user_data)
 			   zMapFeatureStrand2Str(feature->feature.homol.strand)) ;
   column_data = g_list_append(column_data, strand) ;
 
-  column_data = g_list_append(column_data, GINT_TO_POINTER(feature->x1)) ;
-  column_data = g_list_append(column_data, GINT_TO_POINTER(feature->x2)) ;
+  zmapWindowCoordPairToDisplay(para_data->window, feature->x1, feature->x2,
+			       &display_start, &display_end) ;
+
+  column_data = g_list_append(column_data, GINT_TO_POINTER(display_start)) ;
+  column_data = g_list_append(column_data, GINT_TO_POINTER(display_end)) ;
   column_data = g_list_append(column_data, GINT_TO_POINTER(feature->feature.homol.y1)) ;
   column_data = g_list_append(column_data, GINT_TO_POINTER(feature->feature.homol.y2)) ;
 
@@ -1682,7 +1696,7 @@ static void addTagValue(gpointer data, gpointer user_data)
 
 
 
-static ZMapGuiNotebook makeTranscriptExtras(ZMapFeature feature)
+static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature)
 {
   ZMapGuiNotebook extras_notebook = NULL ;
   ZMapGuiNotebookChapter dummy_chapter ;
@@ -1716,11 +1730,20 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapFeature feature)
       ZMapSpan exon_span ;
       GList *column_data = NULL ;
       ZMapGuiNotebookTagValue tag_value ;
+      int display_start, display_end, index ;
 
-      exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+      if (window->revcomped_features)
+	index = feature->feature.transcript.exons->len - (i + 1) ;
+      else
+	index = i ;
 
-      column_data = g_list_append(column_data, GINT_TO_POINTER(exon_span->x1)) ;
-      column_data = g_list_append(column_data, GINT_TO_POINTER(exon_span->x2)) ;
+      exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, index);
+
+      zmapWindowCoordPairToDisplay(window, exon_span->x1, exon_span->x2,
+				   &display_start, &display_end) ;
+
+      column_data = g_list_append(column_data, GINT_TO_POINTER(display_start)) ;
+      column_data = g_list_append(column_data, GINT_TO_POINTER(display_end)) ;
 
       tag_value = zMapGUINotebookCreateTagValue(paragraph,
 						NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
