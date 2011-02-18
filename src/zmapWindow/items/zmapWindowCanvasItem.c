@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindowCanvas.h
  * HISTORY:
- * Last edited: Feb 18 10:31 2011 (edgrif)
+ * Last edited: Feb 18 11:03 2011 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.36 2011-02-18 10:32:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.37 2011-02-18 11:06:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2212,13 +2212,7 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
 					  FooCanvasItem *canvas_item,
 					  FooCanvasRE *rect)
 {
-  FooCanvasItem *rect_item ;
   double x1, x2, y1, y2 ;
-  double tmp_x1, tmp_x2, tmp_y1, tmp_y2, tmp_diff_x, tmp_diff_y ;
-  double canvas_x1, canvas_x2, canvas_y1, canvas_y2, canvas_diff_x, canvas_diff_y ;
-  FooCanvasGroup *parent ;
-  FooCanvasItem *child ;
-  double c_x1, c_y1, c_x2, c_y2 ;
 
   if (window_canvas_item->debug)
     {
