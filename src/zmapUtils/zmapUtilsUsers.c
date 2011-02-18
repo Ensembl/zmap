@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Feb 17 12:02 2010 (edgrif)
+ * Last edited: Feb 11 08:30 2011 (edgrif)
  * Created: Fri Dec 12 13:14:55 2008 (edgrif)
- * CVS info:   $Id: zmapUtilsUsers.c,v 1.7 2010-11-15 10:55:34 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsUsers.c,v 1.8 2011-02-18 09:53:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,7 @@ static gboolean developer_status_G = FALSE ;
 
 /* Currently developers are limited to certain ids in certain domains. */
 static char *developers_G[] = {"edgrif", "zmap", "not_mh17", NULL} ;      /* MH17: i need to see what the users get */
-static char *domain_G[] = {"localhost", "sanger.ac.uk", NULL} ;
+static char *domain_G[] = {"local", "localhost", "sanger.ac.uk", NULL} ;
 
 
 /* GLib 2.16 has the GChecksum package which we could use to encrypt this, otherwise we need
