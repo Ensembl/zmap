@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 10 16:00 2011 (edgrif)
+ * Last edited: Feb 18 10:21 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.349 2011-02-10 16:08:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.350 2011-02-18 10:22:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,8 +187,6 @@ static void scrollWindow(ZMapWindow window, GdkEventKey *key_event) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
 
 static void zoomWindow(ZMapWindow window, GdkEventKey *key_event) ;
-
-static void printGroup(FooCanvasGroup *group, int indent) ;
 
 static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
@@ -892,7 +890,7 @@ void zMapWindowBack(ZMapWindow window)
    * However I think that logic isn't completely necessary to fix RT #55388
    * Anyway we still need to update the view via visibility change...
    */
-  if(zmapWindowStateGetPrevious(window, &prev_state, FALSE))
+  if (zmapWindowStateGetPrevious(window, &prev_state, FALSE))
     {
       ZMapWindowVisibilityChangeStruct change = {};
 
@@ -1360,7 +1358,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  end   = current_index ;
 
 	  seq_term = "DNA" ;
-
 	}
       else
 	{
@@ -1371,7 +1368,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 	  start = origin_index ;
 	  end = current_index ;
-
 
 	  /* I'm guessing we should be using zMapSequencePep2DNA */
 	  /* Do some monkeying to get the dna coords */
@@ -1409,8 +1405,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", dna_end - dna_start + 1);
 	}
 
-      display_start = zmapWindowCoordToDisplay(window, origin_index);
-      display_end   = zmapWindowCoordToDisplay(window, current_index);
+      zmapWindowCoordPairToDisplay(window, origin_index, current_index, &display_start, &display_end) ;
 
       select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id) ;
       select.feature_desc.feature_term   = g_strdup_printf("%s", seq_term) ;
@@ -1511,11 +1506,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  if (feature_total_length)
 	    select.feature_desc.feature_total_length = g_strdup_printf("%d", feature_total_length) ;
 
-	  if (window->display_forward_coords)
-	    {
-	      feature_start = zmapWindowCoordToDisplay(window, feature_start) ;
-	      feature_end   = zmapWindowCoordToDisplay(window, feature_end) ;
-	    }
+	  zmapWindowCoordPairToDisplay(window, feature_start, feature_end, &feature_start, &feature_end) ;
 
 	  select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
 	  select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
@@ -1557,7 +1548,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	}
       else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
-	  select.feature_desc.sub_feature_none_txt = g_strdup("NO INTRONS") ;
+	  if (!(feature->feature.transcript.introns))
+	    select.feature_desc.sub_feature_none_txt = g_strdup("NO INTRONS") ;
 	}
 
 
@@ -1575,13 +1567,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 				 "term",   &sub_feature_term,
 				 NULL))
 	    {
-
-	      if (window->display_forward_coords)
-		{
-		  sub_feature_start = zmapWindowCoordToDisplay(window, sub_feature_start) ;
-		  sub_feature_end   = zmapWindowCoordToDisplay(window, sub_feature_end) ;
-		}
-
+	      zmapWindowCoordPairToDisplay(window, sub_feature_start, sub_feature_end,
+					   &sub_feature_start, &sub_feature_end) ;
 
 	      select.feature_desc.sub_feature_index  = g_strdup_printf("%d", sub_feature_index) ;
 	      select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
@@ -1818,57 +1805,6 @@ void zMapWindowSiblingWasRemoved(ZMapWindow window)
 
 
 
-/* We just dip into the foocanvas struct for some data, we use the interface calls where they
- * exist. */
-void zmapWindowPrintCanvas(FooCanvas *canvas)
-{
-  double x1, y1, x2, y2 ;
-
-
-  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
-
-  printf("Canvas stats:\n") ;
-
-  printf("Zoom x,y:\n\t %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
-
-  printf("Scroll region bounds:\n\t%f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
-
-  zmapWindowPrintGroups(canvas) ;
-
-  return ;
-}
-
-
-void zmapWindowPrintGroups(FooCanvas *canvas)
-{
-  FooCanvasGroup *root ;
-  int indent ;
-
-  printf("Groups:\n") ;
-
-  root = foo_canvas_root(canvas) ;
-
-  indent = 1 ;
-  printGroup(root, indent) ;
-
-  return ;
-}
-
-
-void zmapWindowPrintGroup(FooCanvasGroup *group)
-{
-  double x1, y1, x2, y2 ;
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(group), &x1, &y1, &x2, &y2) ;
-  printf("Pos: %f, %f  Bounds: %f -> %f,  %f -> %f\n",
-	 group->xpos, group->ypos, x1, x2, y1, y2) ;
-
-  return ;
-}
-
-
-
-
 /*
  *  ------------------- Internal functions -------------------
  */
@@ -2085,8 +2021,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
    * wasn't always correct. */
   zmapWindowLongItemsInitialiseExpose(window->long_items, window->canvas);
 
-  window->busy_cursor = gdk_cursor_new(GDK_WATCH);
-  window->cursor_busy_count = 0;
+  if (!(window->normal_cursor))
+    window->normal_cursor = zMapGUIGetCursor(DEFAULT_CURSOR) ;
+  window->busy_cursor = zMapGUIGetCursor(BUSY_CURSOR) ;
+  window->cursor_busy_count = 0 ;
 
   /* These signals are now the way to handle the long items cropping.
    * begin update is the place to do this.
@@ -2357,32 +2295,6 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   /* Recreate focus object. */
 //  zmapWindowFocusDestroy(window->focus) ;
   window->focus = zmapWindowFocusCreate(window) ;
-
-  return ;
-}
-
-
-
-/* Recursive function to print out all the child groups of the supplied group. */
-static void printGroup(FooCanvasGroup *group, int indent)
-{
-  int i ;
-  GList *list ;
-
-  for (i = 0 ; i < indent ; i++)
-    printf("\t") ;
-
-  /* Print this group. */
-  zmapWindowPrintGroup(group) ;
-
-  /* Print all the child groups of this group. */
-  list = g_list_first(group->item_list) ;
-  do
-    {
-      if (FOO_IS_CANVAS_GROUP(list->data))
-	printGroup(FOO_CANVAS_GROUP(list->data), indent + 1) ;
-    }
-  while ((list = g_list_next(list))) ;
 
   return ;
 }
@@ -2759,7 +2671,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
 
-      if(feature_sets->state != NULL)
+      if (feature_sets->state != NULL)
 	{
 	  zmapWindowStateRestore(feature_sets->state, window);
 
@@ -2857,7 +2769,6 @@ static gboolean getConfiguration(ZMapWindow window)
   window->keep_empty_cols = FALSE;
   window->display_forward_coords = TRUE;
   window->show_3_frame_reverse = FALSE;
-  window->normal_cursor = zMapGUIGetCursor(DEFAULT_CURSOR) ;
 
   if((context = zMapConfigIniContextProvide()))
     {
@@ -4335,9 +4246,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_d:
     case GDK_D:
 //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
-      printf("sizes: gtkobject %d foocanvasitem %d foocanvasgroup %d zmapcanvasitem %d zmapwindowcontainergroup %d zmapwindowalignmentfeature %d\n",
-            sizeof(GtkObject),sizeof(struct _FooCanvasItem),sizeof(struct _FooCanvasGroup),
-            sizeof(zmapWindowCanvasItemStruct),sizeof(zmapWindowContainerGroupStruct), sizeof(zmapWindowAlignmentFeatureStruct));
+      printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
+	     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
+	     " zmapwindowalignmentfeature %zu\n",
+	     sizeof(GtkObject), sizeof(struct _FooCanvasItem), sizeof(struct _FooCanvasGroup),
+	     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
+	     sizeof(zmapWindowAlignmentFeatureStruct)) ;
       break;
 //#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -4975,11 +4889,21 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
 	  for (i = 0 ; i < item_feature->feature.transcript.exons->len ; i++)
 	    {
-	      span = &g_array_index(item_feature->feature.transcript.exons, ZMapSpanStruct, i) ;
+	      int display_start, display_end, index ;
+
+	      if (window->revcomped_features)
+		index = item_feature->feature.transcript.exons->len - (i + 1) ;
+	      else
+		index = i ;
+
+	      span = &g_array_index(item_feature->feature.transcript.exons, ZMapSpanStruct, index) ;
+
+	      zmapWindowCoordPairToDisplay(window, span->x1, span->x2,
+					   &display_start, &display_end) ;
 
 	      g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
 				     name,
-				     span->x1, span->x2, (span->x2 - span->x1),
+				     display_start, display_end, (span->x2 - span->x1 + 1),
 				     (i < item_feature->feature.transcript.exons->len ? "\n" : "")) ;
 	    }
 	}
@@ -5055,16 +4979,8 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
   item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
   zMapAssert(item_data) ;
 
-  if (window->display_forward_coords)
-    {
-      fstart = zmapWindowCoordToDisplay(window, item_data->start) ;
-      fend   = zmapWindowCoordToDisplay(window, item_data->end) ;
-    }
-  else
-    {
-      fstart = item_data->start ;
-      fend   = item_data->end ;
-    }
+  zmapWindowCoordPairToDisplay(window, item_data->start, item_data->end,
+			       &fstart, &fend) ;
 
   flength = (item_data->end - item_data->start + 1) ;
 
@@ -5150,28 +5066,10 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
       break ;
     }
 
+  zmapWindowCoordPairToDisplay(window, feature->x1, feature->x2,
+			       selected_start, selected_end) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (feature_item == highlight_item)
-    {
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      if (window->display_forward_coords)
-        {
-          *selected_start  = zmapWindowCoordToDisplay(window, feature->x1) ;
-          *selected_end    = zmapWindowCoordToDisplay(window, feature->x2) ;
-        }
-      else
-        {
-          *selected_start  = feature->x1 ;
-          *selected_end    = feature->x2 ;
-        }
-      *selected_length = *feature_length ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  *selected_length = *feature_length ;
 
   return populated ;
 }
