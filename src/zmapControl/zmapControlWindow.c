@@ -21,16 +21,15 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
-name
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Creates the top level window of a ZMap.
  *
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jun 10 10:48 2010 (edgrif)
+ * Last edited: Feb 18 10:05 2011 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.42 2011-02-11 16:05:23 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.43 2011-02-18 10:05:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,7 +146,8 @@ void zmapControlWindowDestroy(ZMap zmap)
 
 
 
-/* Currently only sets forward/revcomp status. */
+/* Called to update the user information sections of the zmapControl sections
+ * of the display. Currently sets forward/revcomp status and coords. */
 void zmapControlWindowSetStatus(ZMap zmap)
 {
   char *status_text ;
@@ -163,6 +163,8 @@ void zmapControlWindowSetStatus(ZMap zmap)
     case ZMAP_VIEWS:
       {
 	ZMapView view ;
+	ZMapViewState view_state ;
+	ZMapWindow window ;
 	gboolean revcomped ;
 	char *strand_txt ;
 	int start = 0, end = 0 ;
@@ -172,6 +174,8 @@ void zmapControlWindowSetStatus(ZMap zmap)
 
 	view = zMapViewGetView(zmap->focus_viewwindow) ;
 
+	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
 	revcomped = zMapViewGetRevCompStatus(view) ;
 	if (revcomped)
 	  strand_txt = " - " ;
@@ -179,8 +183,14 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	  strand_txt = " + " ;
 	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
+
+
 	if (zMapViewGetFeaturesSpan(view, &start, &end))
 	  {
+	    zmapWindowCoordPairToDisplay(window,
+					 start, end,
+					 &start, &end) ;
+
 	    coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
 	    gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
 	    g_free(coord_txt) ;
