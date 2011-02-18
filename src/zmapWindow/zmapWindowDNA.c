@@ -21,24 +21,19 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: dialog for searching for dna strings.
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 11 15:07 2010 (edgrif)
+ * Last edited: Feb 18 09:54 2011 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.28 2010-11-12 09:20:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.29 2011-02-18 09:56:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
@@ -161,7 +156,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
     }
 
-  if(proceed)
+  if (proceed)
     {
       search_data = g_new0(DNASearchDataStruct, 1) ;
 
@@ -172,8 +167,9 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       search_data->search_end    = block->block_to_sequence.t2 ;
 
       /* Get block coords in screen coords, saving for min & max of spin buttons */
-      screen_search_start = zmapWindowCoordToDisplay(search_data->window, search_data->search_start) ;
-      screen_search_end   = zmapWindowCoordToDisplay(search_data->window, search_data->search_end) ;
+      zmapWindowCoordPairToDisplay(window, search_data->search_start, search_data->search_end,
+				   &screen_search_start, &screen_search_end) ;
+
 
       /* Set the initial screen start & end based on no mark */
       search_data->screen_search_start = screen_search_start;
@@ -185,10 +181,12 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 	  zmapWindowMarkGetSequenceRange(search_data->window->mark,
 					 &(search_data->screen_search_start),
 					 &(search_data->screen_search_end));
-	  search_data->screen_search_start = zmapWindowCoordToDisplay(search_data->window,
-								      search_data->screen_search_start);
-	  search_data->screen_search_end   = zmapWindowCoordToDisplay(search_data->window,
-								      search_data->screen_search_end);
+
+	  zmapWindowCoordPairToDisplay(window,
+				       search_data->screen_search_start,
+				       search_data->screen_search_end,
+				       &(search_data->screen_search_start),
+				       &(search_data->screen_search_end)) ;
 	}
 
       /* Clamp to length of sequence, useless to do that but possible.... */
@@ -773,18 +771,10 @@ static void remapCoords(gpointer data, gpointer user_data)
   match_data->start = match_data->start + block->block_to_sequence.t1 ;
   match_data->end = match_data->end + block->block_to_sequence.t1 ;
 
-  if (search_data->window->display_forward_coords)
-    {
-      match_data->screen_start = zmapWindowCoordToDisplay(search_data->window, match_data->start) ;
-      match_data->screen_end = zmapWindowCoordToDisplay(search_data->window, match_data->end) ;
-    }
-  else
-    {
-      match_data->screen_start = match_data->start ;
-      match_data->screen_end = match_data->end ;
-    }
+  zmapWindowCoordPairToDisplay(search_data->window, match_data->start, match_data->end,
+			       &(match_data->screen_start), &(match_data->screen_end)) ;
 
-  if(search_data->window && search_data->window->revcomped_features)
+  if (search_data->window && search_data->window->revcomped_features)
     {
       /* switch the strand to fix rt bug # 77224 */
       switch(match_data->strand)

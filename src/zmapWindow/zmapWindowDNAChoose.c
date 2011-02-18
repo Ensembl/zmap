@@ -32,9 +32,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 09:26 2009 (rds)
+ * Last edited: Feb 18 09:55 2011 (edgrif)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.12 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.13 2011-02-18 09:56:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,14 +163,10 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   else
     dna_data->revcomp = FALSE ;
     
+  zmapWindowCoordPairToDisplay(window, block_start, block_end, &block_start, &block_end) ;
+  zmapWindowCoordPairToDisplay(window, dna_data->dna_start, dna_data->dna_end,
+			       &(dna_data->dna_start), &(dna_data->dna_end)) ;
 
-  if(window->display_forward_coords)
-    {
-      block_start = zmapWindowCoordToDisplay(window, block_start);
-      block_end   = zmapWindowCoordToDisplay(window, block_end);
-      dna_data->dna_start = zmapWindowCoordToDisplay(window, dna_data->dna_start);
-      dna_data->dna_end   = zmapWindowCoordToDisplay(window, dna_data->dna_end);
-    }
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
   container = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
@@ -387,18 +383,11 @@ static gboolean checkCoords(DNASearchData dna_data)
   block_start = dna_data->block->block_to_sequence.t1;
   block_end   = dna_data->block->block_to_sequence.t2;
 
-  if(dna_data->window->display_forward_coords)
-    {
-      block_start = zmapWindowCoordToDisplay(dna_data->window, block_start);
-      block_end   = zmapWindowCoordToDisplay(dna_data->window, block_end);
-    }
+  zmapWindowCoordPairToDisplay(dna_data->window, block_start, block_end, &block_start, &block_end) ;
 
-  if ((start <= end)             &&
-      ((start >= block_start) &&
-       (start <= block_end))     &&
-      ((end >= block_start)   &&
-       (end <= block_end))
-      )
+  if ((start <= end)
+      && ((start >= block_start) && (start <= block_end))
+      && ((end >= block_start) && (end <= block_end)))
     result = TRUE ;
 
   return result ;
@@ -418,7 +407,7 @@ static void getDNA(DNASearchData dna_data)
 
   block_start = dna_data->block->block_to_sequence.t1;
 
-  if(dna_data->window->display_forward_coords)
+  if (dna_data->window->display_forward_coords)
     {
       block_start = zmapWindowCoordToDisplay(dna_data->window, block_start);
     }
@@ -639,11 +628,7 @@ static void updateSpinners(DNASearchData dna_data)
   min_start =  dna_data->block->block_to_sequence.t1;
   max_end   =  dna_data->block->block_to_sequence.t2;
 
-  if(dna_data->window->display_forward_coords)
-    {
-      min_start = zmapWindowCoordToDisplay(dna_data->window, min_start);
-      max_end   = zmapWindowCoordToDisplay(dna_data->window, max_end);
-    }
+  zmapWindowCoordPairToDisplay(dna_data->window, min_start, max_end, &min_start, &max_end) ;
 
   /* Set the ranges for all spin buttons according to current values, this causes the spinners
    * to reset any wayward values entered by the user. */
