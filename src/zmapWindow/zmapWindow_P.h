@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Feb 10 16:00 2011 (edgrif)
+ * Last edited: Feb 10 16:17 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.276 2011-02-10 16:08:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.277 2011-02-18 10:17:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -236,6 +236,7 @@ typedef struct
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
 
 #define DEFAULT_CURSOR "LEFT_PTR"
+#define BUSY_CURSOR    "WATCH"
 
 
 /* All settable from configuration file. */
@@ -540,9 +541,10 @@ typedef struct _ZMapWindowStruct
   FooCanvasGroup *tooltip;
   FooCanvasItem  *mark_guide_line;
 
+  /* Handle cursor changes showing when zmap is busy. */
   GdkCursor *normal_cursor ;
   GdkCursor *busy_cursor ;
-  int cursor_busy_count ;				    /* Used to turn cursor on/off... */
+  int cursor_busy_count ;
 
 
   ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
@@ -710,13 +712,15 @@ typedef struct _ZMapWindowStruct
   /* Holds the marked region or item. */
   ZMapWindowMark mark ;
 
-  ZMapWindowStateQueue history;
+  ZMapWindowStateQueue history ;
 
   /* We need to be able to find out if the user has done a revcomp for coordinate display
-   * and other reasons, the display_forward_coords flag controls whether coords are displayed
+   * and other reasons. */
+  gboolean revcomped_features ;
+
+  /* The display_forward_coords flag controls whether coords are displayed
    * always as if for the original forward strand or for the whichever is the current forward
    * strand. origin is used to transform coords for revcomp if display_forward_coords == TRUE */
-  gboolean revcomped_features ;
   gboolean display_forward_coords ;
   int origin ;
 
@@ -726,7 +730,6 @@ typedef struct _ZMapWindowStruct
    * is on and what is currently displayed. etc etc. */
   Display3FrameMode display_3_frame ;
   gboolean show_3_frame_reverse ;			  /* 3 frame displayed on reverse col ? */
-
 
   gboolean interrupt_expose;
 
@@ -856,6 +859,9 @@ gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
 
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
+void zmapWindowCoordPairToDisplay(ZMapWindow window,
+				  int start_in, int end_in,
+				  int *display_start_out, int *display_end_out) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
 int zmapWindowCoordFromOriginRaw(int origin, int start) ;
 ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
