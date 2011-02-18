@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 09:32 2010 (edgrif)
+ * Last edited: Feb 13 08:35 2011 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.12 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.13 2011-02-18 10:32:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,7 +264,7 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 
   container = (ZMapWindowContainerGroup)container_block;
 
-  if((background = zmapWindowContainerGetBackground(container)))
+  if ((background = zmapWindowContainerGetBackground(container)))
     {
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = zmapWindowMarkGetStipple(mark);
@@ -281,7 +281,7 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
       /* If the coords look valid, at least one is > zero, then we can just attempt to 
        * update the mark items and show them here.
        */
-      if(coords[0] > 0.0 || coords[1] > 0.0 || coords[2] > 0.0 || coords[3] > 0.0)
+      if (coords[0] > 0.0 || coords[1] > 0.0 || coords[2] > 0.0 || coords[3] > 0.0)
 	{
 	  /* A FooCanvasPoints on the stack, while we update the mark items */
 	  bounds.coords     = &coords[0];
@@ -441,7 +441,7 @@ ZMapWindowContainerBlock zmapWindowContainerBlockDestroy(ZMapWindowContainerBloc
 
 
 /*
- * INTERNAL
+ *                           INTERNAL
  */
 
 static ZMapSeqBitmap get_bitmap_for_key(ZMapWindowContainerBlock block_data,
@@ -474,7 +474,7 @@ static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 {
   ZMapWindowContainerBlock container_block = (ZMapWindowContainerBlock)group_updated;
   FooCanvasRE *mark_item_rectangle;
-  gboolean status = TRUE;
+  gboolean status = FALSE ;
 
   zMapAssert(group_level == ZMAPCONTAINER_LEVEL_BLOCK);
 
@@ -503,13 +503,11 @@ static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 	}
 
       mark_items_show(container_block);
-    }
-  else
-    {
-      status = FALSE;
+
+      status = TRUE ;
     }
 
-  return status;
+  return status ;
 }
 
 /* Create the two mark items in the overlay, without a size and we'll update all that later */
@@ -711,10 +709,10 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 
       block_points.coords = &block_coords[0];
 
-      start = end = 0.0;
 
       /* check the intersection */
-      if(mark_intersects_block(mark, &block_points, &start, &end))
+      start = end = 0.0;
+      if (mark_intersects_block(mark, &block_points, &start, &end))
 	{
 	  double world_start, world_end;
 
