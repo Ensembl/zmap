@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Nov 12 10:49 2010 (edgrif)
+ * Last edited: Feb  1 08:47 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.189 2010-12-07 16:43:11 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.190 2011-02-18 09:52:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -53,6 +53,13 @@
 					    ((FEATURE)->feature.transcript.exons->len > (guint)0))
 
 #define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
+
+#define ZMAPFEATURE_SWOP_STRAND(STRAND) \
+  ((STRAND) == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE :                                       \
+   ((STRAND) == ZMAPSTRAND_REVERSE ? ZMAPSTRAND_FORWARD : ZMAPSTRAND_NONE))
+
+
+
 
 /* Macro for the Feature Data class */
 #define ZMAP_TYPE_FEATURE_DATA  (zMapFeatureDataGetType())
