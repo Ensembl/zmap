@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jul 29 10:15 2010 (edgrif)
+ * Last edited: Feb 18 10:15 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.89 2011-02-11 10:48:08 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.90 2011-02-18 10:15:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,7 @@ typedef struct
 
 typedef struct _ZMapWindowFToIFactoryStruct
 {
-  guint line_width;            /* window->config.feature_line_width */
+  guint line_width ;
   ZMapWindowFToIFactoryMethodsStruct *methods;
   GHashTable                         *ftoi_hash;
   ZMapWindowLongItems                 long_items;
@@ -719,7 +719,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
 
 
-  if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
+  if ((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
     {
       zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
 
@@ -1378,7 +1378,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
   if (status)
     {
-      if(!feature_item)
+      if (!feature_item)
 	{
 	  canvas_item = zMapWindowCanvasItemCreate(parent, feature_start, feature, style);
 	  feature_item = FOO_CANVAS_ITEM(canvas_item);
@@ -1386,6 +1386,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
       else
 	{
 	  canvas_item = ZMAP_CANVAS_ITEM(feature_item);
+
 	  zMapWindowCanvasItemClear(canvas_item);
 	  foo_canvas_item_set(feature_item, "y", feature_start, NULL);
 	}
@@ -1408,7 +1409,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
     }
 
   item_left  = x1;
-  item_right = x2 - factory->line_width;
+  item_right = x2 ;
 
   if (status && feature_item
       && feature->feature.transcript.introns && feature->feature.transcript.exons)
