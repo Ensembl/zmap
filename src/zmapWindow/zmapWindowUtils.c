@@ -21,25 +21,19 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for the zMapWindow code.
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  4 13:33 2010 (edgrif)
+ * Last edited: Feb 18 10:00 2011 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.75 2011-01-04 11:10:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.76 2011-02-18 10:01:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
-
 #include <string.h>
 #include <math.h>
 #include <gdk/gdkkeysyms.h>
@@ -47,10 +41,11 @@
 #include <zmapWindow_P.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
 #include <zmapWindowCanvasItem.h>
 
 //#include <ZMap/zmapGFF.h>
+
+
 
 
 /* Struct for style table callbacks. */
@@ -63,6 +58,7 @@ typedef struct
 
 
 
+
 //static void styleDestroyCB(gpointer data) ;
 //static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
 
@@ -71,7 +67,6 @@ typedef struct
 
 /* Some simple coord calculation routines, if these prove too expensive they
  * can be replaced with macros. */
-
 
 
 /* Transforming coordinates for a revcomp'd sequence:
@@ -88,10 +83,36 @@ int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 {
   int new_coord ;
 
-  new_coord = coord - (window->origin - 1) ;
+  if (window->revcomped_features && window->display_forward_coords)
+    new_coord = coord - (window->origin - 1) ;
+  else
+    new_coord = coord ;
 
   return new_coord ;
 }
+
+
+void zmapWindowCoordPairToDisplay(ZMapWindow window,
+				  int start_in, int end_in,
+				  int *display_start_out, int *display_end_out)
+{
+  int start, end ;
+
+  start = zmapWindowCoordToDisplay(window, start_in) ;
+  end = zmapWindowCoordToDisplay(window, end_in) ;
+
+  /* Note that the start/ends get swopped if we are reversed complemented and
+   * display forwards coords so their order fits the "forwards" display. */
+  if (window->revcomped_features && window->display_forward_coords)
+    ZMAP_SWAP_TYPE(int, start, end) ;
+
+  *display_start_out = start ;
+  *display_end_out = end ;
+
+  return ;
+}
+
+
 
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
 {
@@ -669,6 +690,11 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 {
   FooCanvasItem *focus_item ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowMarkPrint(window, "Starting mark toggle") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   if (zmapWindowMarkIsSet(window->mark))
     {
       zMapWindowStateRecord(window);
@@ -772,6 +798,12 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 	  zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
 	}
     }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowMarkPrint(window, "Ending mark toggle") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
