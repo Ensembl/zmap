@@ -1,0 +1,899 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '18 February 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.111 </h1>
+
+<p>Last Release Date: 14/01/2011</p>
+
+
+<h3>Current Release Date: 18 February 2011</h3>
+
+
+<p>This report covers 2011-01-14 to 2011-02-18</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=158542">158542</a>, Resolved (Mon Jan 17 11:03:15 2011)
+<p>Reverse complement should apply to block not feature context
+</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=178196">178196</a>, Resolved (Mon Feb 14 14:31:47 2011)
+<p>initial zmap window drawing bug</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180198">180198</a>, Resolved (Mon Feb 14 14:26:09 2011)
+<p>Zmap getting a bit stuck and atom</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196304">196304</a>, Resolved (Wed Feb 16 09:58:23 2011)
+<p>L1_Opos + L1_Opos2 repeat highlighting bug</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196488">196488</a>, Resolved (Mon Feb 14 14:05:31 2011)
+<p>sudden crash</p>
+<p>cas@sanger.ac.uk, gdr@sanger.ac.uk, ib2@sanger.ac.uk,</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=199065">199065</a>, Resolved (Wed Feb 16 09:47:29 2011)
+<p>Spontaneous Zmap crash</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=200918">200918</a>, Resolved (Mon Jan 24 09:16:23 2011)
+<p>ZMap crashes due to a missing symbol</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=201123">201123</a>, Resolved (Thu Jan 27 13:40:41 2011)
+<p>Auto-reply: Re: "ZMap Tests Failure on tviewsrv "</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=201865">201865</a>, Resolved (Tue Feb 15 12:41:35 2011)
+<p>feature show match coords don't match zmap</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=201890">201890</a>, Resolved (Tue Feb 15 11:52:21 2011)
+<p>No exons if feature_details request for transcript not handled</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=202039">202039</a>, Resolved (Tue Feb 15 11:59:33 2011)
+<p>Wrong coordinates on clipboard for reverse strand transcript</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=202148">202148</a>, Resolved (Fri Feb 11 10:49:01 2011)
+<p>Column hiding does not function</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=202150">202150</a>, Resolved (Thu Feb 10 15:39:58 2011)
+<p>Shift-clicking to extend selection should not require first selection to be done using shift</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=204254">204254</a>, Resolved (Mon Feb 14 11:49:03 2011)
+<p>colinear lines and homolgy glyhps appear to have dissappeared</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=204986">204986</a>, Resolved (Fri Feb 18 08:42:29 2011)
+<p>zoom in then zoom out rebases the view to 1 from start coord</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>seqtools</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=48626">48626</a>, Resolved (Mon Feb 14 12:14:23 2011)
+<p>second large dotter launched crashes blixem</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69650">69650</a>, Resolved (Mon Feb 14 12:21:06 2011)
+<p>REQUEST for 'CLOSE ALL' dotter associated windows in BLIXEM</p>
+<p>ib2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=115304">115304</a>, Resolved (Mon Feb 14 12:41:54 2011)
+<p>Highlighting multiple evidence in Blixem from multiple transcripts</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=115501">115501</a>, Resolved (Mon Feb 14 12:48:15 2011)
+<p>Colour coding for codons in Blixem</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=150531">150531</a>, Resolved (Mon Feb 14 11:59:24 2011)
+<p>Make blixem's extended file format more consistent</p>
+<p>gb10@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=162222">162222</a>, Resolved (Mon Feb 14 12:54:29 2011)
+<p>blixem feature request: hilite selected feature seq extent on genome seq</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/libzmapfoocanvas/foo-canvas.c: removed debug message
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_01_14.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.5971/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/XRemote.xs:
+	  Temporary hack to enable compile for otterlace 53.02
+
+
+  </li>
+  <li> src/perl/X11-XRemote-0.01/XRemote.xs: rollback of temporary hack
+	  for otterlace release 53.02
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: fix small buglet in
+	  parent_span and remove reversing of coords.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: fixed shift select initial
+	  click bug
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c: add cursor resource to zmapwindow
+	  stanza in config file.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindow_P.h: add user-settable
+	  normal cursor to canvas window.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtilsGUI.h, zmapUtils/zmapGUIutils.c: add
+	  function to return standard cursor from standard string.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDraw.c, zmapWindowItemFactory.c,
+	  items/zmapWindowContainerFeatureSet_I.h: RT202148 hide column now
+	  fixed, plus some cosmetic changes to comments
+
+
+  </li>
+  <li> src/: include/ZMap/zmapView.h, zmapControl/zmapControl.c,
+	  zmapControl/zmapControlWindow.c,
+	  zmapControl/zmapControlWindowButtons.c, zmapView/zmapView.c,
+	  zmapView/zmapView_P.h: attempts to make re-load more user
+	  friendly, status includes # featuresets pending
+
+
+  </li>
+  <li> src/: zmapControl/zmapControlWindow.c,
+	  zmapControl/zmapControlWindowButtons.c, zmapUtils/zmapLogging.c:
+	  fixes to some crazy typos
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSetUtils.c:
+	  restored colinear line and glyphs that mysteriuosly disappeared
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDraw.c,
+	  items/zmapWindowContainerGroup.c,
+	  items/zmapWindowContainerGroup_I.h: restored 3frame - was lost
+	  due to col visiblity mix up, added real visible flag to column
+	  group
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: fix bad english in comment.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureShow.c: reinstate (when did the
+	  old code go ?) code to show exons when we don't have an external
+	  client.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemHash.c: fixed find same name to only
+	  match same original id items
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeature.c, zmapWindowFeatureShow.c,
+	  zmapWindowMenus.c: added show transcript to alignment features
+	  menu
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add strand swopping macro.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtilsUsers.c: add extra pattern for local
+	  domains for checking developer user.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDNA.c, zmapWindowDNAChoose.c: fix up
+	  coord stuff for when revcomp'd.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowState.c: add strand to item save
+	  otherwise can't find it again correctly, fix bug in mark restore.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: add new coord pair swopping
+	  func, saves a lot of work by caller.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindow.c: update overall sequence
+	  coords for revcomp.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: add prototypes for new coord
+	  transform func + mark printing func.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureShow.c: fix so that if remote
+	  program does not return exons then we still show them.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: various coord printing funcs
+	  moved to zmapWindowItemDebug.c.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemDebug.c: some funcs moved from
+	  zmapWindow/zmapWindowItem.c and code added to print out item
+	  groups.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: fix bug in transcript
+	  width, wrong place for it to be adjusted here.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add default busy cursor, prototype
+	  for zmapWindowCoordPairToDisplay.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add calls to
+	  zmapWindowCoordPairToDisplay, move some debug funcs to
+	  zmapWindowItemDebug.c
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark.c: fix bug in finding block for
+	  mark, fix bugs in position, size and restore of mark.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: try to fix sizes of
+	  groups which were mostly wrong...still some work to do here.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem_I.h: add some
+	  commenting to struct.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: completely redo
+	  background sizing code, was all wrong.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerBlock.c: just commenting
+	  stuff.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: fix bug in
+	  background size.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: remove debug
+	  output.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark_P.h: fix missing func prototype
+	  change.
+
+
+  </li>
+  <li> src/: zmapControl/zmapControlWindow.c,
+	  zmapWindow/zmapWindowMenus.c: remove unused var.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: def out unused func.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: add missing header,
+	  remove unused vars.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: remove unused vars.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> wmake/: makefile, truemake: add custom otterlace build target
+	  which does not build blixem/dotter stuff.
+
+
+  </li>
+  <li> wmake/DARWIN_MACPORTS_DEF: remove X and libgd.a dependencies out
+	  of tace etc.
+
+
+  </li>
+  <li> wtools/MAKE_INSTALL: fix blxnew problems, find too many dirs...
+
+
+  </li>
+  <li> wtools/MAKE_INSTALL: fix blxnew problems, find too many dirs...
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Fixed a bug with populating optional data for protein variants
+</li>
+
+<li>
+Also fixed an issue where the column sizes were not being refreshed when optional data was loaded from the Settings dialog.
+</li>
+
+<li>
+Incremented version to 4.1.10
+</li>
+
+<li>
+Fixed a bug with splice sites being shown incorrectly at termini
+</li>
+
+<li>
+Fixed a crash when dottering multiple sequences
+</li>
+
+<li>
+The MSPs for the breaklines were not being initialised fully so a crash was sometimes occuring when accessing its members.
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+Updated test plan
+</li>
+
+<li>
+Fixed a bug where invalid UTR sections were sometimes being created
+</li>
+
+<li>
+Fixed a bug with UTRs not always showing in the detail-view
+</li>
+
+<li>
+UTRs that are part of the same exon as a CDS are now allocated the same reading-frame as the CDS. Previously they were being allocated the wrong reading frame but still being placed in the same row as the CDS; the row was not being shown unless the CDS was also in range.
+</li>
+
+<li>
+Added shortcut tip for Close menu item on greyramp tool
+</li>
+
+<li>
+Fixed a typo (incorrect keyboard shortcut tip)
+</li>
+
+<li>
+Removed some unnecessary calls to access object properties
+</li>
+
+<li>
+Fixed a bug with scrolling in Blixem
+</li>
+
+<li>
+The dynamic column width was not always being updated correctly.
+</li>
+
+<li>
+Added a note about the key file option to the Blixem user manual
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+Fixed a potential crash when bounds-checking dotter coords
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+Added options to dotter settings to turn breaklines on/off
+</li>
+
+<li>
+Only provide space for breakline labels if applicable
+</li>
+
+<li>
+Added breaklines for multiple sequences in Dotter
+</li>
+
+<li>
+Updated Dotter manual
+</li>
+
+<li>
+Improvements to docs
+</li>
+
+<li>
+Fixed a potential crash where the name column is too narrow to display the abbreviated name
+</li>
+
+<li>
+Don't allow printing to scale an image to be larger
+</li>
+
+<li>
+Alignment tool now refreshes when its size is changed
+</li>
+
+<li>
+Fixed a typo (incorrect keyboard shortcut tip)
+</li>
+
+<li>
+Added the ability to print the alignment tool
+</li>
+
+<li>
+Added the 'use print colors' option to the File menu. Also fixed some bugs where the display was not being updated correctly when settings are changed.
+</li>
+
+<li>
+Printing from Dotter now includes the crosshair and labels
+</li>
+
+<li>
+Fixed a bug with printing where background was not being cleared
+</li>
+
+<li>
+Removed page-setup option from Blixem menu
+</li>
+
+<li>
+Added basic printing for Dotter
+</li>
+
+<li>
+Fixed a bug with printing in Blixem where label background colour was wrong
+</li>
+
+<li>
+Removed some commented-out code
+</li>
+
+<li>
+Printing in Blixem now scales to fit to page
+</li>
+
+<li>
+Improvements to printing in Blixem
+</li>
+
+<li>
+Incremented version to 4.1.9
+</li>
+
+<li>
+Fixed a bug with pfetched sequences getting the wrong length
+</li>
+
+<li>
+The sequence data was including a newline char on the end, which was causing dotter a problem for reversed match sequence strands when it tried to reverse-complement them.
+</li>
+
+<li>
+Incremented version to 4.1.8
+</li>
+
+<li>
+Fixed a bug with unaligned sequence coords when display is reversed
+</li>
+
+<li>
+Incremented version to 4.1.7
+</li>
+
+<li>
+Added help for new navigation functionality in dotter
+</li>
+
+<li>
+Fixed a bug with selecting variations in protein mode
+</li>
+
+<li>
+The wrong base was being identified as the base that the variation applies to when reading-frame 2 or 3 was active.
+</li>
+
+<li>
+Fixed a bug with calculating match seq coordinates for unaligned portions of sequence
+</li>
+
+<li>
+Added convenience script to run ./configure with machine-specific arguments
+</li>
+
+<li>
+Fixed some bugs with dottering the reverse strand vs itself
+</li>
+
+<li>
+The auto coords were being calculated incorrectly for protein mode (needed to convert to DNA coords). The wrong strand was being passed to dotter (we should always pass the forward strand). The vertical sequence scale was not being reversed - I added some options to dotter to be able to specify whether each scale should be reversed.
+</li>
+
+<li>
+Fixed a bug where the selected coord was changing when the strand is toggled
+</li>
+
+<li>
+Fixed a bug with go-to-position on the reverse strand
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+Fixed a bug with dotter coords
+</li>
+
+<li>
+Coords were not being converted to display coords for the case where auto coords could not be calculated and the big picture range was being used instead.
+</li>
+
+<li>
+Fixed a bug with dotter dialog coords when display reversed
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+Vertical exon view in Dotter is now working
+</li>
+
+<li>
+It now draws the exons and introns correctly in the vertical view. Also fixed a bug where MSP information was not being set/destroyed consistently for introns.
+</li>
+
+<li>
+Fixed a regression where introns were not being shown in Dotter
+</li>
+
+<li>
+This was because we now check for the correct reference sequence name but this was not being set for introns.
+</li>
+
+<li>
+Fixed some bugs with the vertical exon view in Dotter
+</li>
+
+<li>
+Fixed the height of the vertical exon view. Made the default window size include the vertical exon view. Fixed a compile error with some debug output.
+</li>
+
+<li>
+Updated to-do list
+</li>
+
+<li>
+More work on the right-hand-side exon view in Dotter
+</li>
+
+<li>
+Fixed the crosshair so it is drawn horizontally. Fixed the size of the exon view.
+</li>
+
+<li>
+Added exon view for vertical sequence in Dotter (WIP)
+</li>
+
+<li>
+Work in progress. Added widgets to show exons for the vertical sequence in Dotter as well as the horizontal sequence. Fixed a bug so that an exon view only shows exons for the relevant sequence. Fixed a bug with calling Dotter on the reference sequence vs itself where it was passing the incorrect range for the second sequence. Reorganised code so that Dotter can call the finaliseBlxSequences function to construct any missing transcript data.
+</li>
+
+<li>
+Added ability to copy coords from dotter
+</li>
+
+<li>
+Fixed a regression with the alignment tool
+</li>
+
+<li>
+The second strand was not being reverse-complemented in DNA mode
+</li>
+
+<li>
+Fixed a bug with the alignment tool coords for the reverse strand in protein mode
+</li>
+
+<li>
+Fixed a bug with sub-dottering a self-comparison
+</li>
+
+<li>
+If the horizontal and vertical ranges were not equal it was being treated as a mirror comparison when it shouldn't be.
+</li>
+
+<li>
+Display CDS/UTR features from the same exon on the same row
+</li>
+
+<li>
+Fixed a bug where out-of-range exons were being displayed
+</li>
+
+<li>
+The problem was that the cell renderer was not filtering exons by display range. The bug was only apparent with the 'squash matches' option enabled because otherwise there is only one exon per row and the row gets filtered out by the tree if that exon is out of range.
+</li>
+
+<li>
+Fixed a regression with moving the selected coord in Blixem by one nucleotide
+</li>
+
+<li>
+The coord was jumping to the wrong place if the active reading frame had just been changed.
+</li>
+
+<li>
+Tidied alignment tool coord code and fixed a bug where dotter was not exiting
+</li>
+
+<li>
+Made alignment tool display same reading frame order as blixem
+</li>
+
+<li>
+More improvements to alignment tool coord display
+</li>
+
+<li>
+Improvements to alignment tool coord display
+</li>
+
+<li>
+Fixed a bug with scrolling in the alignment tool
+</li>
+
+<li>
+The sequence was not scrolling in the alignment tool when the user pressed the '<' or '>' key at the particular coord where the start of the sequence hits the start of the alignment tool.
+</li>
+
+<li>
+Incremented version to 4.1.6
+</li>
+
+<li>
+Fixed a crash caused by the alignment tool indexing out of range
+</li>
+
+<li>
+Renamed close/quit menu options and added Close option for greyramp tool
+</li>
+
+<li>
+Fixed a crash when sub-dottering in dotter-vs-self
+</li>
+
+<li>
+When starting a new dotter on a region within an existing dotter, when dotter is in self-comparison mode, there was a crash if the new sequence ranges are not both the same.
+</li>
+
+<li>
+Added Close item to the Dotter right-click menu
+</li>
+
+<li>
+Fixed a performance issue with middle-dragging on the big picture
+</li>
+
+<li>
+Previously the code was pushing the cached pixmap to screen for every mouse-motion and drawing the preview box on top. This was causing very slow re-draw on some deskpros (I think this is a GDK issue on Lenny deskpros with an external graphics card). I've changed it to just draw the preview box using XOR. (Unfortunately this means the colours are not so nice while dragging.)
+</li>
+
+<li>
+Fixed a bug with changing the range of a self-comparison in Dotter
+</li>
+
+<li>
+Both horizontal and vertical ranges are now updated simultaneously when changing the range for self-comparisons.
+</li>
+
+<li>
+Added 'negate coords' option to Dotter
+</li>
+
+<li>
+Dotter now negates the displayed coords in the same manner as blixem when the display is reversed, if the -N argument is passed on startup. Blixem passes the -N argument if it has the 'negate coords' option enabled itself.
+</li>
+
+<li>
+Fixed a bug with the Dotter crosshair getting out of range
+</li>
+
+<li>
+The crosshair position was not being limited to the new range when the user changed the sequence range via the Settings dialog.
+</li>
+
+<li>
+Added to-do page to design notes
+</li>
+
+<li>
+Updated test plan
+</li>
+
+<li>
+Make sure we save all Dotter parameters
+</li>
+
+<li>
+Previously Blixem did not save the "call on self" and "HSPs only" settings from the Dotter dialog.
+</li>
+
+<li>
+Fixed a crash running Dotter in HSP-only mode
+</li>
+
+<li>
+Fixed a const-cast warning
+</li>
+
+<li>
+Limit the column size a user can enter in Blixem
+</li>
+
+<li>
+Fixes a problem where the user could accidentally enter a column size much larger than the screen width, which can cause Blixem to hang/crash.
+</li>
+
+<li>
+Added 'Close all Dotters' option to Blixem
+</li>
+
+<li>
+Added a 'Close all Dotters' option to the menu in Blixem. Fixed a bug where messages were not being displayed in the statusbar. Improved the status message that is displayed in Blixem on starting Dotter.
+</li>
+
+<li>
+Added to design notes: calling dotter from blixem
+</li>
+
+<li>
+Added Dotter manual to dist
+</li>
+
+<li>
+Added user manual for Dotter
+</li>
+
+<li>
+Added Close menu option in Dotter.
+</li>
+
+<li>
+Fixed a typo in the Blixem manual
+</li>
+
+<li>
+Added design/user docs to dist
+</li>
+
+<li>
+Added user manual for Blixem
+</li>
+
+<li>
+Added design docs
+</li>
+
+<li>
+Added config directory for Autotools intermediate files
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
