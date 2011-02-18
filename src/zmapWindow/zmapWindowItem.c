@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 18 10:21 2010 (edgrif)
+ * Last edited: Feb 11 08:17 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.141 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.142 2011-02-18 10:08:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1451,82 +1451,6 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-
-
-/*
- *              some coord printing funcs.
- */
-
-
-
-/* Prints out an items coords in local coords, good for debugging.... */
-void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item)
-{
-  double x1, y1, x2, y2 ;
-
-  /* Gets bounding box in parents coord system. */
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
-
-  printf("%s:\t%f,%f -> %f,%f\n",
-	 (msg_prefix ? msg_prefix : ""),
-	 x1, y1, x2, y2) ;
-
-
-  return ;
-}
-
-
-
-/* Prints out an items coords in world coords, good for debugging.... */
-void zmapWindowPrintItemCoords(FooCanvasItem *item)
-{
-  double x1, y1, x2, y2 ;
-
-  /* Gets bounding box in parents coord system. */
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
-
-  printf("P %f, %f, %f, %f -> ", x1, y1, x2, y2) ;
-
-  foo_canvas_item_i2w(item, &x1, &y1) ;
-  foo_canvas_item_i2w(item, &x2, &y2) ;
-
-  printf("W %f, %f, %f, %f\n", x1, y1, x2, y2) ;
-
-  return ;
-}
-
-
-/* Converts given world coords to an items coord system and prints them. */
-void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1_in)
-{
-  double x1 = x1_in, y1 = y1_in;
-
-  my_foo_canvas_item_w2i(item, &x1, &y1) ;
-
-  if (!text)
-    text = "Item" ;
-
-  printf("%s -  world(%f, %f)  ->  item(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
-
-  return ;
-}
-
-/* Converts coords in an items coord system into world coords and prints them. */
-/* Prints out item coords position in world and its parents coords.... */
-void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1_in)
-{
-  double x1 = x1_in, y1 = y1_in;
-
-  my_foo_canvas_item_i2w(item, &x1, &y1) ;
-
-  if (!text)
-    text = "Item" ;
-
-  printf("%s -  item(%f, %f)  ->  world(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
-
-
-  return ;
-}
 
 
 /* moves a feature to new coordinates */
