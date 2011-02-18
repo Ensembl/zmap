@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Nov  4 16:21 2010 (edgrif)
+ * Last edited: Feb 18 10:58 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.81 2011-02-16 11:11:52 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.82 2011-02-18 11:06:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,7 +143,6 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
 static void peptideMenuCB(int menu_item_id, gpointer callback_data) ;
-static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void developerMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;

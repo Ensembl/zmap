@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Feb 18 10:05 2011 (edgrif)
+ * Last edited: Feb 18 10:55 2011 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.43 2011-02-18 10:05:51 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.44 2011-02-18 11:05:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,7 +163,6 @@ void zmapControlWindowSetStatus(ZMap zmap)
     case ZMAP_VIEWS:
       {
 	ZMapView view ;
-	ZMapViewState view_state ;
 	ZMapWindow window ;
 	gboolean revcomped ;
 	char *strand_txt ;
