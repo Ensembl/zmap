@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Feb 18 07:44 2011 (edgrif)
+ * Last edited: Feb 18 10:59 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.302 2011-02-18 10:26:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.303 2011-02-18 11:06:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,7 @@
 #include <ZMap/zmapConfigStrings.h>
 
 #include <zmapWindow_P.h>
+#include <zmapWindowCanvas.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
@@ -1419,7 +1420,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         ZMapWindowContainerGroup align_parent;
         FooCanvasItem  *align_hash_item;
         double x, y;
-        int start,end;
         feature_align = (ZMapFeatureAlignment)feature_any;
 #ifdef MH17_REVCOMP_DEBUG
         printf("drawFeatures align");
@@ -1500,7 +1500,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	ZMapWindowContainerBlock container_block;
         FooCanvasItem *block_hash_item;
         GdkColor *for_bg_colour, *rev_bg_colour ;
-        double x, y;
         gboolean block_created = FALSE;
 	double start, end, height ;
 
