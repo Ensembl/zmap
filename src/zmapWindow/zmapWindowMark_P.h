@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 21 21:59 2010 (roy)
+ * Last edited: Feb 18 10:51 2011 (edgrif)
  * Created: Thu Jan 21 21:57:30 2010 (roy)
- * CVS info:   $Id: zmapWindowMark_P.h,v 1.3 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMark_P.h,v 1.4 2011-02-18 10:51:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ void       zmapWindowMarkSetStipple(ZMapWindowMark mark, GdkBitmap *stipple);
 GdkBitmap *zmapWindowMarkGetStipple(ZMapWindowMark mark);
 
 /* Get/Set the item to use as src for mark coords */
-void           zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item) ;
+gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark) ;
 
 /* Get/Set the mark coords (_world_) */
