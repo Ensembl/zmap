@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov 12 10:45 2010 (edgrif)
+ * Last edited: Feb  1 16:54 2011 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.29 2010-12-07 16:41:58 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.30 2011-02-21 10:54:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -224,7 +224,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 					(feature_desc->feature_percent_id ? " / " : ""),
 					(feature_desc->feature_percent_id ? feature_desc->feature_percent_id : "")) ;
 	    }
-	  else
+	  else if (feature_desc->feature_score)
 	    {
 	      text[5] = g_strdup_printf("%s", feature_desc->feature_score) ;
 	    }
@@ -302,7 +302,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 
 	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
 	    tooltip[5] = g_strdup("Score / percent ID") ;
-	  else
+	  else if (feature_desc->feature_score)
 	    tooltip[5] = g_strdup("Score") ;
 
 	  tooltip[6] = "Feature Type" ;
@@ -332,8 +332,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    case 0:
 	    case 3:
 	      /* some tooltips need freeing! */
-            if(tooltip[i])
-	            g_free(tooltip[i]);
+	      if (tooltip[i])
+		g_free(tooltip[i]);
 	      break;
 	    default:
 	      /* no freeing */
