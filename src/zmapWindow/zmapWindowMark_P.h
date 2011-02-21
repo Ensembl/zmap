@@ -24,13 +24,12 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description: Internal header for the window mark stuff.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 18 10:51 2011 (edgrif)
+ * Last edited: Feb 21 11:00 2011 (edgrif)
  * Created: Thu Jan 21 21:57:30 2010 (roy)
- * CVS info:   $Id: zmapWindowMark_P.h,v 1.4 2011-02-18 10:51:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark_P.h,v 1.5 2011-02-21 11:01:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
