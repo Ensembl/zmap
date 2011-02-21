@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Feb 18 10:58 2011 (edgrif)
+ * Last edited: Feb 21 11:04 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.82 2011-02-18 11:06:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.83 2011-02-21 11:04:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,6 +143,9 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
 static void peptideMenuCB(int menu_item_id, gpointer callback_data) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void developerMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -1094,6 +1097,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                  0, NULL,       NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Style"         , 1, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas"       , 2, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -1125,28 +1129,34 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
 	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
-          ZMapFeatureTypeStyle style;
+	    ZMapFeatureTypeStyle style ;
 
-	    container = (ZMapWindowContainerFeatureSet)(menu_data->item);
+	    container = (ZMapWindowContainerFeatureSet)(menu_data->item) ;
 
 	    /*zmapWindowStyleTableForEach(container->style_table, show_all_styles_cb, NULL);*/
-          style = container->style;
-          zmapWindowShowStyle(style);
+	    style = container->style ;
+	    zmapWindowShowStyle(style) ;
     	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
-	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent->parent);
-	    if(container)
+	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent->parent) ;
+	    if (container)
 	      {
-		ZMapFeatureTypeStyle style;
-		ZMapFeature feature;
+		ZMapFeatureTypeStyle style ;
+		ZMapFeature feature ;
 
-		feature = (ZMapFeature)feature_any;
-            style = feature->style;
+		feature = (ZMapFeature)feature_any ;
+		style = feature->style ;
 
-		zmapWindowShowStyle(style);
+		zmapWindowShowStyle(style) ;
 	      }
 	  }
+
+	break ;
+      }
+    case 2:
+      {
+	zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
 	break ;
       }
