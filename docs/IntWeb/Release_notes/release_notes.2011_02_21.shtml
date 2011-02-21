@@ -1,0 +1,221 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '21 February 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.112 </h1>
+
+<p>Last Release Date: 18/02/2011</p>
+
+
+<h3>Current Release Date: 21 February 2011</h3>
+
+
+<p>This report covers 2011-02-18 to 2011-02-21</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add strand swopping macro.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtilsUsers.c: add extra pattern for local
+	  domains for checking developer user.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDNA.c, zmapWindowDNAChoose.c: fix up
+	  coord stuff for when revcomp'd.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowState.c: add strand to item save
+	  otherwise can't find it again correctly, fix bug in mark restore.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: add new coord pair swopping
+	  func, saves a lot of work by caller.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindow.c: update overall sequence
+	  coords for revcomp.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: add prototypes for new coord
+	  transform func + mark printing func.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureShow.c: fix so that if remote
+	  program does not return exons then we still show them.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: various coord printing funcs
+	  moved to zmapWindowItemDebug.c.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemDebug.c: some funcs moved from
+	  zmapWindow/zmapWindowItem.c and code added to print out item
+	  groups.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: fix bug in transcript
+	  width, wrong place for it to be adjusted here.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add default busy cursor, prototype
+	  for zmapWindowCoordPairToDisplay.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add calls to
+	  zmapWindowCoordPairToDisplay, move some debug funcs to
+	  zmapWindowItemDebug.c
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark.c: fix bug in finding block for
+	  mark, fix bugs in position, size and restore of mark.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: try to fix sizes of
+	  groups which were mostly wrong...still some work to do here.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem_I.h: add some
+	  commenting to struct.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: completely redo
+	  background sizing code, was all wrong.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerBlock.c: just commenting
+	  stuff.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: fix bug in
+	  background size.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerGroup.c: remove debug
+	  output.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark_P.h: fix missing func prototype
+	  change.
+
+
+  </li>
+  <li> src/: zmapControl/zmapControlWindow.c,
+	  zmapWindow/zmapWindowMenus.c: remove unused var.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColConfig.c: def out unused func.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: add missing header,
+	  remove unused vars.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: remove unused vars.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_02_18.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.14584/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindow.c: patch to gtk widget call for
+	  old libs on CBI4
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Fixed a bug with populating optional data for protein variants
+</li>
+
+<li>
+Also fixed an issue where the column sizes were not being refreshed when optional data was loaded from the Settings dialog.
+</li>
+
+<li>
+Incremented version to 4.1.10
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
