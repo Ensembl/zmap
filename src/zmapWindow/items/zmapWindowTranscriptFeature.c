@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 17 09:36 2010 (edgrif)
+ * Last edited: Feb  4 17:04 2011 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.12 2010-11-02 15:57:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.13 2011-02-21 10:58:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -352,10 +352,10 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
                      zmapStyleColourType2ExactStr(colour_type));
 	  }
 
-	if((intron_follow_cds == TRUE) &&
-	   (sub_feature->subpart == ZMAPFEATURE_SUBPART_INTRON_CDS) &&
-	   !(zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, colour_type,
-				 NULL, NULL, &xon_border)))
+	if((intron_follow_cds == TRUE)
+	   && (sub_feature->subpart == ZMAPFEATURE_SUBPART_INTRON_CDS)
+	   && !(zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, colour_type,
+				    NULL, NULL, &xon_border)))
 	  {
 	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has a CDS but it's style, \"%s\","
 			   "has no CDS %s colour set.",
@@ -373,6 +373,7 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
 			    NULL);
       }
       break;
+
     default:
       g_warning("Invalid ZMapWindowItemFeature->subpart for ZMapWindowTranscriptFeature object.");
       break;
@@ -464,24 +465,30 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 				   "x1", width_a, "y1", point_a,
 				   "x2", width_b, "y2", point_b,
 				   NULL);
+
+	break;
       }
-      break;
+
     case ZMAPFEATURE_SUBPART_INTRON:
     case ZMAPFEATURE_SUBPART_INTRON_CDS:
       {
+	/* Draw the intron lines, they go from the middle of the exons out to
+	 * nearly the right hand edge of the exons. */
 	FooCanvasPoints points;
 	double coords[6];
 	double mid_short, mid_long;
 	int line_width = DEFAULT_LINE_WIDTH;
 
 	mid_short = width_a + ((width_b - width_a) / 2.0);
+
 	mid_long  = point_a + ((point_b - point_a) / 2.0);
 
 	coords[0] = mid_short;
 	coords[1] = point_a;
 
-	coords[2] = width_b;
-	coords[3] = mid_long;
+	coords[2] = width_b - line_width ;		    /* Make sure line does not extend past
+							       edge of exon. */
+	coords[3] = mid_long ;
 
 	coords[4] = mid_short;
 	coords[5] = point_b;
@@ -497,10 +504,13 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 				   "join_style",     GDK_JOIN_BEVEL,
 				   "cap_style",      GDK_CAP_BUTT,
 				   NULL);
+
+	break;
       }
-      break;
     default:
-      break;
+      {
+	break;
+      }
     }
 
   return item;
