@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 18 10:15 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.90 2011-02-18 10:15:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.91 2011-02-23 16:09:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,9 @@
 #include <zmapWindowItemFactory.h>
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
+
+// tmep include for timing test
+#include <zmapWindowCanvasItem_I.h>
 
 typedef struct _RunSetStruct *RunSet;
 
@@ -404,8 +407,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 	    method_table = factory->methods;
 
-	    if (feature->flags.has_score)
-	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+          if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
+            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+          else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
+          {
+            /* if is homol then must have percent, see gff2parser getHomolAttrs() */
+            zmapWindowGetPosFromScore(style, feature->feature.homol.percent_id, &(points[0]), &(points[2])) ;
+          }
 
 
 	    if (!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align))
@@ -552,11 +560,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             run_data.set       = set;
 
             run_data.canvas_item = current_item;
-
+#if !MH17_TEST_WITHOUT_FOO
             item   = ((method)->method)(&run_data, feature, limits[1],
 				  points[0], points[1],
 				  points[2], points[3],
 				  style);
+#else
+            item = g_new0(zmapWindowCanvasItemStruct,0);
+#endif
       }
 
       /* if(!run_data.item_in && item) */
