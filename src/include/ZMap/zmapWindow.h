@@ -19,16 +19,17 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Defines interface to code that creates/handles a
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Feb  2 15:43 2011 (edgrif)
+ * Last edited: Feb 23 16:47 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.120 2011-02-18 10:06:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.121 2011-02-24 11:11:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -44,6 +45,7 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapXMLHandler.h>
 
 
@@ -121,7 +123,11 @@ typedef struct
 
   char *secondary_text ;				    /* Simple string description. */
 
+  
+
   /* For Xremote XML actions/events. */
+  ZMapXRemoteSendCommandError remote_result ;
+
   ZMapXMLHandlerStruct xml_handler ;
 
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
@@ -368,8 +374,16 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
                                       ZMapGUIMenuItem each_block,
                                       char *root,
                                       GArray **items_array_out);
+
+gboolean zMapWindowXRemoteRegister(ZMapWindow window) ;
+
+/* It's possible these are defunct now..... */
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
+
+
+
+
 void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text);
 
 ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
