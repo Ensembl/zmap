@@ -30,9 +30,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jan 13 11:59 2011 (edgrif)
+ * Last edited: Feb 22 12:15 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.59 2011-01-13 12:08:15 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.60 2011-02-24 11:16:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -205,6 +205,9 @@ static void findUniqueCB(gpointer data, gpointer user_data) ;
 static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 
+static void setWindowXremote(ZMapView view) ;
+static void setXremoteCB(gpointer list_data, gpointer user_data) ;
+
 
 
 #if NOT_USED
@@ -308,7 +311,7 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
   ZMapView view = (ZMapView)user_data;
   char *response = NULL;
 
-  if(zMapXRemoteIsPingCommand(command_text, statusCode, &response) != 0)
+  if (zMapXRemoteIsPingCommand(command_text, statusCode, &response) != 0)
     {
       goto HAVE_RESPONSE;
     }
@@ -333,6 +336,10 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 
       switch (input.common.action)
         {
+        case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
+          createClient(view, &input, &output_data);
+          break;
+
         case ZMAPVIEW_REMOTE_ZOOM_TO:
           zoomWindowToFeature(view, &input_data, &output_data);
           break;
@@ -394,9 +401,6 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 	      }
           break;
 	  }
-        case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
-          createClient(view, &input, &output_data);
-          break;
         case ZMAPVIEW_REMOTE_LIST_WINDOWS:
           getChildWindowXID(view, &input_data, &output_data);
           break;
@@ -498,16 +502,21 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
   char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
   int created, exists;
 
-  if(!(view->xremote_client) && (client = zMapXRemoteNew(GDK_DISPLAY())) != NULL)
+  if (!(view->xremote_client) && (client = zMapXRemoteNew(GDK_DISPLAY())) != NULL)
     {
-      zMapXRemoteInitClient(client, client_params->xid);
-      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request));
-      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(client_params->response));
+      zMapXRemoteInitClient(client, client_params->xid) ;
+      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request)) ;
+      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(client_params->response)) ;
 
-      view->xremote_client = client;
-      created = 1; exists = 0;
+      view->xremote_client = client ;
+
+      /* We need to tell any windows we have that there is now an external client. */
+      setWindowXremote(view) ;
+
+      created = 1 ;
+      exists = 0 ;
     }
-  else if(view->xremote_client)
+  else if (view->xremote_client)
     {
       created = 0;
       exists  = 1;
@@ -519,6 +528,7 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
 
   g_string_append_printf(output_data->messages, format_response,
 			 zMapXRemoteWidgetGetXID(view->xremote_widget), created, exists);
+
   output_data->code = ZMAPXREMOTE_OK;
 
   return;
@@ -2023,6 +2033,26 @@ static void copyAddFeature(gpointer key, gpointer value, gpointer user_data)
 	  request_data->feature_list = g_list_append(request_data->feature_list, feature_copy) ;
 	}
     }
+
+  return ;
+}
+
+
+
+/* run through windows registering that there is a remote client with each. */
+static void setWindowXremote(ZMapView view)
+{
+  g_list_foreach(view->window_list, setXremoteCB, NULL) ;
+
+  return ;
+}
+
+static void setXremoteCB(gpointer list_data, gpointer user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)list_data ;
+
+  if (!zMapWindowXRemoteRegister(view_window->window))
+    zMapLogWarning("Remote Client register failed for window %p", view_window->window) ;
 
   return ;
 }
