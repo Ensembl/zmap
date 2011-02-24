@@ -33,9 +33,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 15 15:57 2011 (edgrif)
+ * Last edited: Feb 24 10:34 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.30 2011-02-18 10:07:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.31 2011-02-24 11:19:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -484,6 +484,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   char *tmp ;
   char *notes ;
   ZMapGuiNotebook extras_notebook = NULL ;
+  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
 
 
   feature_book = zMapGUINotebookCreateNotebook(name, FALSE, cleanUp, NULL) ;
@@ -663,25 +664,38 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   /* If we have an external program driving us then ask it for any extra information.
    * This will come as xml which we decode via the callbacks listed in the following structs.
    * If that fails then we may have extra stuff to add anyway. */
-  show->xml_parsing_status = TRUE ;
-  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
-  show->xml_curr_chapter = NULL ;
-  show->xml_curr_page = NULL ;
-
-  if (zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-				      (ZMapFeatureAny)feature,
-				      "feature_details",
-				      show->item,
-				      starts, ends, show))
+  if ((show->zmapWindow->xremote_client))
     {
-      extras_notebook = show->xml_curr_notebook ;
+      show->xml_parsing_status = TRUE ;
+      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+      show->xml_curr_chapter = NULL ;
+      show->xml_curr_page = NULL ;
+
+      if ((externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
+								(ZMapFeatureAny)feature,
+								"feature_details",
+								show->item,
+								starts, ends, show))
+	  == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+	{
+	  extras_notebook = show->xml_curr_notebook ;
+	}
+      else
+	{
+	  /* Temp code...as we don't know for sure that remote client supports feature_details... */
+	  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+	    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
+			" only incomplete feature details will be displayed",
+			g_quark_to_string(feature->original_id)) ;
+
+	  /* Clear up any half finished stuff from failed remote call. */
+	  if (show->xml_curr_chapter)
+	    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
+	}
     }
-  else
-    {
-      /* Clear up any half finished stuff from failed remote call. */
-      if (show->xml_curr_chapter)
-	zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
 
+  if (!(show->zmapWindow->xremote_client) || externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+    {
       /* For transcripts create our own extras (e.g. exons), add code for new feature
        * types as necessary here. */
       switch(feature->type)
@@ -716,35 +730,42 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
 {
-    ZMapWindowFeatureShow show;
-    GList *evidence;
+  ZMapWindowFeatureShow show;
+  GList *evidence;
+  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
 
-    show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
-    show->reusable = windowIsReusable() ;
-    show->zmapWindow = window ;
+  show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
+  show->reusable = windowIsReusable() ;
+  show->zmapWindow = window ;
 
-    show->xml_parsing_status = TRUE ;
-    show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
-    show->xml_curr_chapter = NULL ;
-    show->xml_curr_page = NULL ;
-    show->item = NULL;  /* is not used anyway */
+  show->xml_parsing_status = TRUE ;
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+  show->xml_curr_chapter = NULL ;
+  show->xml_curr_page = NULL ;
+  show->item = NULL;  /* is not used anyway */
 
-    show->get_evidence = WANT_EVIDENCE;
-    show->evidence_column = -1;     /* invalid */
+  show->get_evidence = WANT_EVIDENCE;
+  show->evidence_column = -1;     /* invalid */
 
-    zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-                              (ZMapFeatureAny)feature,
-                              "feature_details",
-                              show->item,
-                              starts, ends, show);
-    evidence = show->evidence;
+  externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
+						       (ZMapFeatureAny)feature,
+						       "feature_details",
+						       show->item,
+						       starts, ends, show) ;
 
-    if(show->xml_curr_notebook)
-      zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
+  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
+		" only incomplete feature details will be displayed",
+		g_quark_to_string(feature->original_id)) ;
+  else if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+    evidence = show->evidence ;
 
-    g_free(show);
+  if (show->xml_curr_notebook)
+    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
+    
+  g_free(show) ;
 
-    return(evidence);
+  return(evidence) ;
 }
 
 

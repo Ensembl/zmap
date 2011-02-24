@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 18 10:21 2011 (edgrif)
+ * Last edited: Feb 23 16:33 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.350 2011-02-18 10:22:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.351 2011-02-24 11:19:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -494,6 +494,16 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
   return ;
 }
 
+
+/* Tells zmapwindow that there is an external client that can be queried. */
+gboolean zMapWindowXRemoteRegister(ZMapWindow window)
+{
+  gboolean result = FALSE ;
+
+  result = window->xremote_client = TRUE ;
+
+  return result ;
+}
 
 
 /* This routine is called by the code in zmapView.c that manages the slave threads.
@@ -1718,10 +1728,10 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 }
 
 
-gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
-				     char *action, FooCanvasItem *real_item)
+ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
+							char *action, FooCanvasItem *real_item)
 {
-  gboolean result = FALSE ;
+  ZMapXRemoteSendCommandError result = FALSE ;
 
   result = zmapWindowUpdateXRemoteDataFull(window, feature_any,
 					   action, real_item, NULL, NULL, NULL) ;
@@ -1729,12 +1739,13 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_a
   return result ;
 }
 
-gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
-					 char *action, FooCanvasItem *real_item,
-					 ZMapXMLObjTagFunctions start_handlers,
-					 ZMapXMLObjTagFunctions end_handlers,
-					 gpointer handler_data)
+ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
+							    char *action, FooCanvasItem *real_item,
+							    ZMapXMLObjTagFunctions start_handlers,
+							    ZMapXMLObjTagFunctions end_handlers,
+							    gpointer handler_data)
 {
+  ZMapXRemoteSendCommandError result = FALSE ;
   ZMapWindowSelectStruct select = {0};
   ZMapFeatureSetStruct feature_set = {0};
   ZMapFeatureSet multi_set;
@@ -1765,7 +1776,7 @@ gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny featu
       break;
     }
 
-  select.type        = ZMAPWINDOW_SELECT_DOUBLE;
+  select.type = ZMAPWINDOW_SELECT_DOUBLE;
 
   /* Set up xml/xremote request. */
   select.xml_handler.zmap_action = g_strdup(action);
@@ -1783,15 +1794,23 @@ gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny featu
 
   (*(window->caller_cbs->select))(window, window->app_data, &select) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  result = select.xml_handler.handled ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  result = select.remote_result ;
+
   /* Free xml/xremote stuff. */
   if (select.xml_handler.zmap_action)
     g_free(select.xml_handler.zmap_action);
   if (select.xml_handler.xml_events)
     g_array_free(select.xml_handler.xml_events, TRUE);
 
-
-  return select.xml_handler.handled;
+  return result ;
 }
+
+
+
+
 
 /* I'm not convinced of this. */
 void zMapWindowSiblingWasRemoved(ZMapWindow window)

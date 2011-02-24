@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Feb 10 16:17 2011 (edgrif)
+ * Last edited: Feb 23 16:50 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.277 2011-02-18 10:17:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.278 2011-02-24 11:19:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -540,6 +540,9 @@ typedef struct _ZMapWindowStruct
   FooCanvasItem *horizon_guide_line;
   FooCanvasGroup *tooltip;
   FooCanvasItem  *mark_guide_line;
+
+  gboolean xremote_client ;				    /* Is there a remote client ? */
+
 
   /* Handle cursor changes showing when zmap is busy. */
   GdkCursor *normal_cursor ;
@@ -1175,15 +1178,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
 
-gboolean zmapWindowUpdateXRemoteData(ZMapWindow window,
-                                     ZMapFeatureAny feature_any,
-                                     char *action,
-                                     FooCanvasItem *real_item);
-gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
-					 char *action, FooCanvasItem *real_item,
-					 ZMapXMLObjTagFunctions start_handlers,
-					 ZMapXMLObjTagFunctions end_handlers,
-					 gpointer handler_data) ;
+ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteData(ZMapWindow window,
+							ZMapFeatureAny feature_any,
+							char *action,
+							FooCanvasItem *real_item);
+ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
+							    char *action, FooCanvasItem *real_item,
+							    ZMapXMLObjTagFunctions start_handlers,
+							    ZMapXMLObjTagFunctions end_handlers,
+							    gpointer handler_data) ;
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

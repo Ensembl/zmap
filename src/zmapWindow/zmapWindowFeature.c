@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 15 08:12 2011 (edgrif)
+ * Last edited: Feb 24 10:39 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.206 2011-02-16 11:11:52 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.207 2011-02-24 11:19:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -902,14 +902,22 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	      /* Second click of a double click means show feature details. */
 	      if (but_event->button == 1)
 		{
-		  gboolean externally_handled = FALSE ;
+		  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
 
 		  highlight_item = item;
 
-		  /* If no external handling then show what we can. */
-		  if (!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
-									 "edit", highlight_item)))
+		  /* If external client then call them to do editing. */
+		  if (window->xremote_client)
+		    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
+								     "edit", highlight_item) ;
+
+		  /* If there is no external client or the external client times out then show what we can. */
+		  if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
 		    {
+		      if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+			zMapWarning("Request failed to external client to edit feature \"%s\"",
+				    g_quark_to_string(feature->original_id)) ;
+
 		      zmapWindowFeatureShow(window, highlight_item) ;
 		    }
 		}
@@ -967,7 +975,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
   if (but_event->button == 1 || but_event->button == 3)
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
-      gboolean replace_highlight = TRUE, highlight_same_names = TRUE, externally_handled = FALSE;
+      gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
+      ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
       ZMapFeatureSubPartSpan sub_feature ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
@@ -990,33 +999,48 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    {
 	      highlight_item = sub_item ;
 
-            /* monkey around to get feature_copy to be the right correct data */
-            featureCopySelectedItem(feature, &feature_copy, highlight_item);
-            my_feature = (ZMapFeatureAny) &feature_copy;
+	      /* monkey around to get feature_copy to be the right correct data */
+	      featureCopySelectedItem(feature, &feature_copy, highlight_item);
+	      my_feature = (ZMapFeatureAny) &feature_copy;
 	    }
-
       }
 
       if (zMapGUITestModifiers(but_event, shift_mask))
 	{
 	  /* multiple selections */
-
 	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
 	    {
 	      replace_highlight = FALSE ;
-	      externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "multiple_select", highlight_item);
+
+	      if ((window->xremote_client)
+		  && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
+									"multiple_select", highlight_item))
+		      == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
+		zMapWarning("Multi-select call to external client failed for feature \"%s\"",
+			    g_quark_to_string(feature->original_id)) ;
 	    }
 	  else
 	    {
-	      externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "single_select", highlight_item);
+	      if ((window->xremote_client)
+		  && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
+									"single_select", highlight_item))
+		      == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
+		zMapWarning("Single-select call to external client failed for feature \"%s\"",
+			    g_quark_to_string(feature->original_id)) ;
+
 	      window->multi_select = TRUE ;
 	    }
 	}
-
       else
 	{
 	  /* single select */
-	  externally_handled = zmapWindowUpdateXRemoteData(window, my_feature, "single_select", highlight_item);
+	  if ((window->xremote_client)
+	      && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
+								    "single_select", highlight_item))
+		  == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
+	    zMapWarning("Single-select call to external client failed for feature \"%s\"",
+			g_quark_to_string(feature->original_id)) ;
+
 	  window->multi_select = FALSE ;
 	}
 
