@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 17 11:14 2010 (edgrif)
+ * Last edited: Feb 24 09:46 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.128 2010-11-17 11:58:01 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.129 2011-02-24 09:47:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1408,8 +1408,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
-
-
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only) // && parser_feature_set)
@@ -1636,48 +1634,62 @@ GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
 /* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are
  * presented as space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is
  * wherever we are in the gff and is set to NULL when strstr can't find another comma. fields must
- * be 4 for a gap so either way we drop out of the loop at the end. i.e. gapPos should equal
- * something like this (incl "")
+ * be 4 for a gap so either way we drop out of the loop at the end. i.e. gaps string should be this
+ * format:
  *
  *                             "34758 34799 531 544,34734 34751 545 550"
  *
  * Gap coords are positive, 1-based, start < end and in the order: ref_start ref_end match_start match_end
  */
-static gboolean loadGaps(char *gapsPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand)
+static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand)
 {
   gboolean valid = TRUE ;
-  gboolean avoidFirst_strstr = TRUE ;
+  char *attr_str = attributes ;
   ZMapAlignBlockStruct gap = { 0 };
   char *gaps_format_str = "%d%d%d%d" ;
   int fields;
 
-  while (avoidFirst_strstr == TRUE || ((gapsPos = strstr(gapsPos, ",")) != NULL))
+  /* Check rather rigidly that we are at start of number string. */
+  if (((attr_str = strstr(attr_str, "\"")) != NULL) && g_ascii_isdigit(*(attr_str + 1)))
     {
-      avoidFirst_strstr = FALSE; /* Only to get here to start with */
+      do
+	{
+	  attr_str++ ;					    /* Skip the leading '"' or ',' */	  
 
-      /* ++gapsPos to skip the '"' or the ',' */
-      if ((fields = sscanf(++gapsPos, gaps_format_str, &gap.t1, &gap.t2, &gap.q1, &gap.q2)) == 4)
-        {
-	  if (gap.q1 < 1 || gap.q2 < 1 || gap.t1 < 1 || gap.t2 < 1 || gap.q1 > gap.q2 || gap.t1 > gap.t2)
+	  /* We should be looking at "number number number number , ....more stuff....." */
+	  if ((fields = sscanf(attr_str, gaps_format_str, &gap.t1, &gap.t2, &gap.q1, &gap.q2)) == 4)
 	    {
-	      valid = FALSE ;
-	      break ;
+	      if (gap.q1 < 1 || gap.q2 < 1 || gap.t1 < 1 || gap.t2 < 1 || gap.q1 > gap.q2 || gap.t1 > gap.t2)
+		{
+		  valid = FALSE ;
+		  break ;
+		}
+	      else
+		{
+		  gap.t_strand = ref_strand ;
+		  gap.q_strand = match_strand ;
+
+		  gaps = g_array_append_val(gaps, gap) ;
+		}
 	    }
 	  else
 	    {
-	      gap.t_strand = ref_strand ;
-	      gap.q_strand = match_strand ;
+	      /* anything other than 4 is not a gap */
+	      valid = FALSE ;
 
-	      gaps = g_array_append_val(gaps, gap);
+	      break ;
 	    }
-	}
-      else
-        {
-          valid = FALSE;
-          break;  /* anything other than 4 is not a gap */
-        }
-    }
 
+	  /* Skip to ',' ending this set of numbers or to '"' marking end of Gap string. */
+	  do
+	    {
+	      attr_str++ ;
+	    }
+	  while (*attr_str != ',' && *attr_str != '"') ;
+
+	}
+      while (*attr_str != '"') ;
+    }
 
   return valid ;
 }
