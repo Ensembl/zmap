@@ -22,34 +22,33 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Handles sending xml messages to any connected client.
  *
  * Exported functions: See zmapView_P.h
+ *              
  * HISTORY:
- * Last edited: May  5 10:50 2010 (edgrif)
+ * Last edited: Feb 24 11:02 2011 (edgrif)
  * Created: Mon Jul 16 13:48:20 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteSend.c,v 1.7 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteSend.c,v 1.8 2011-02-24 11:17:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
-
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsXRemote.h>
 #include <zmapView_P.h>
 
-static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser, 
-                                GString *command_string, ZMapXMLTagHandler tag_handler);
-static int  xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data);
+
+
+static ZMapXRemoteSendCommandError send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser, 
+						       GString *command_string, ZMapXMLTagHandler tag_handler) ;
+static int  xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data) ;
+
+
 
 /* xml event callbacks */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser);
@@ -101,14 +100,14 @@ static gboolean view_remote_send_debug_G = FALSE;
 
 
 
-gboolean zmapViewRemoteSendCommand(ZMapView view,
-                                   char *action, GArray *xml_events,
-                                   ZMapXMLObjTagFunctions start_handlers,
-                                   ZMapXMLObjTagFunctions end_handlers,
-                                   gpointer *handler_data)
+ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
+						      char *action, GArray *xml_events,
+						      ZMapXMLObjTagFunctions start_handlers,
+						      ZMapXMLObjTagFunctions end_handlers,
+						      gpointer *handler_data)
 {
-  ZMapXRemoteObj xremote;
-  gboolean yield = FALSE;
+  ZMapXRemoteSendCommandError result = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
+  ZMapXRemoteObj xremote ;
 
 #ifdef ZMAP_VIEW_REMOTE_SEND_XML_TEST
   if(ZMAP_VIEW_REMOTE_SEND_XML_TEST)
@@ -129,27 +128,25 @@ gboolean zmapViewRemoteSendCommand(ZMapView view,
 
       parser = zMapXMLParserCreate(&wrapper_data, FALSE, FALSE);
       
-      if(!xml_events)
+      if (!xml_events)
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
-
 
       wrap_ptr = &wrap_request_G[1] ;
       wrap_ptr->value.s = action ;
+
       xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_request_G[0], xml_events);
 
       xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_start_G[0], xml_events);
-
-
 
       xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_request_end_G[0], xml_events);
 
       xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_end_G[0], xml_events);
 
-
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, full_text);
 
       if (!start_handlers)
         start_handlers = &response_starts_G[0];
+
       if (!end_handlers)
         end_handlers = &response_ends_G[0];
 
@@ -157,7 +154,7 @@ gboolean zmapViewRemoteSendCommand(ZMapView view,
 
       if ((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
         {
-          send_client_command(xremote, parser, full_text, &common_data);
+          result = send_client_command(xremote, parser, full_text, &common_data);
         }
       else
 	{
@@ -167,19 +164,21 @@ gboolean zmapViewRemoteSendCommand(ZMapView view,
       zMapXMLWriterDestroy(xml_creator);
       zMapXMLParserDestroy(parser);
 
-      yield = common_data.handled;
+      if (!(common_data.handled))
+	result = ZMAPXREMOTE_SENDCOMMAND_CLIENT_ERROR ;
+
     }
   
-  return yield;
+  return result ;
 }
 
-static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser, 
-                                GString *command_string, ZMapXMLTagHandler tag_handler)
+
+static ZMapXRemoteSendCommandError send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser, 
+						       GString *command_string, ZMapXMLTagHandler tag_handler)
 {
+  ZMapXRemoteSendCommandError result ;
   char *command  = command_string->str;
   char *response = NULL;
-  int result;
-
 
   if (view_remote_send_debug_G)
     {
@@ -196,15 +195,14 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
     {
 #endif /* ZMAP_VIEW_REMOTE_SEND_XML_TEST */
 
-      char *xml_only = NULL;
-      int code  = 0;
-      gboolean parses_ok = FALSE, 
-        error_response = FALSE;
+      char *xml_only = NULL ;
+      int code  = 0 ;
+      gboolean parses_ok = FALSE, error_response = FALSE ;
       
-      zMapXRemoteResponseSplit(client, response, &code, &xml_only);
+      zMapXRemoteResponseSplit(client, response, &code, &xml_only) ;
 
-      if((zMapXRemoteResponseIsError(client, response)))
-        error_response = TRUE;
+      if ((zMapXRemoteResponseIsError(client, response)))
+        error_response = TRUE ;
 
       /* You can do dummy tests of xml by setting xml_only to point to a string of xml
        * that you have defined. */
@@ -220,6 +218,8 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
             zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(parser));
 
 	  tag_handler->handled = FALSE ;
+
+	  result = ZMAPXREMOTE_SENDCOMMAND_XML_ERROR ;
         }
       else if (error_response == TRUE)
 	{
@@ -229,13 +229,19 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
 		      (tag_handler->error_message ? tag_handler->error_message : xml_only));
 
 	  tag_handler->handled = FALSE ;
+
+	  result = ZMAPXREMOTE_SENDCOMMAND_CLIENT_ERROR ;
 	}
     }
-  else if(view_remote_send_debug_G)
-    zMapLogWarning("Failed sending xremote command. Code = %d", result);
+  else if (view_remote_send_debug_G)
+    {
+      zMapLogWarning("Failed sending xremote command. Code = %d", result) ;
+    }
 
-  return ;
+  return result ;
 }
+
+
 
 static int xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data)
 {
