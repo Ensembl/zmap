@@ -29,9 +29,9 @@
  *              servers.
  *
  * HISTORY:
- * Last edited: Jun 12 14:36 2009 (edgrif)
+ * Last edited: Feb 23 13:01 2011 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.61 2011-02-11 15:17:08 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.62 2011-02-24 11:10:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -146,10 +146,6 @@ typedef struct _ZMapViewSelectStruct
   ZMapWindowSelectType  type;
   ZMapFeatureDescStruct feature_desc ;
   char                 *secondary_text;
-
-  /* For Xremote XML actions/events. */
-  ZMapXMLHandlerStruct xml_handler ;
-
 } ZMapViewSelectStruct, *ZMapViewSelect ;
 
 
