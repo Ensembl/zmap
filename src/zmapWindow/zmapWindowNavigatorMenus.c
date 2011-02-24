@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 22 08:09 2011 (edgrif)
+ * Last edited: Feb 24 15:02 2011 (edgrif)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.31 2011-02-24 14:25:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.32 2011-02-24 15:07:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -398,7 +398,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 				   access_window_context_to_item,
 				   menu_data->navigate->current_window,
-				   menu_data->navigate->context_map,
+				   menu_data->navigate->current_window->context_map,
 				   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 				   (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
@@ -408,7 +408,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
       zmapWindowCreateSearchWindow(menu_data->navigate->current_window,
 				   access_navigator_context_to_item,
 				   menu_data->navigate,
-				   menu_data->navigate->context_map,
+				   menu_data->navigate->current_window->context_map,
 				   menu_data->item) ;
       break ;
 

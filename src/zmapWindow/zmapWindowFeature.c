@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 24 10:39 2011 (edgrif)
+ * Last edited: Feb 24 14:59 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.207 2011-02-24 11:19:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.208 2011-02-24 15:07:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1221,7 +1221,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
 						    menu_data->container_set->unique_id,
-                                        0,
+						    0,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(set_strand),
 						    zMapFeatureFrame2Str(set_frame));
@@ -1230,6 +1230,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 			     menu_data->item,
 			     (char *)g_quark_to_string(feature->parent->original_id),
 			     NULL, NULL,
+			     menu_data->window->context_map,
 			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 	break ;
@@ -1251,6 +1252,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 			     menu_data->item,
 			     (char *)g_quark_to_string(feature->parent->original_id),
 			     NULL, NULL,
+			     menu_data->window->context_map,
 			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 	break ;
@@ -1268,6 +1270,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case ITEM_MENU_SEARCH:
       zmapWindowCreateSearchWindow(menu_data->window,
 				   NULL, NULL,
+				   menu_data->window->context_map,
 				   menu_data->item) ;
 
       break ;
