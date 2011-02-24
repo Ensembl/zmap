@@ -22,38 +22,38 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Implements the separate scale/scrolling window widget which
+ *              also holds loci which can be searched/filtered.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapNavigator.h
+ *              
  * HISTORY:
- * Last edited: Apr 23 13:59 2010 (edgrif)
+ * Last edited: Feb 22 08:31 2011 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.66 2011-01-04 11:10:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.67 2011-02-24 14:24:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <math.h>
 #include <string.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowNavigator_P.h>
+
 #ifdef RDS_WITH_STIPPLE
 #include <ZMap/zmapNavigatorStippleG.xbm> /* bitmap... */
 #endif
+
 #include <zmapWindowContainerFeatureSet_I.h>
 
 
 /* Return the widget! */
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
+
 
 typedef struct
 {
@@ -92,6 +92,7 @@ typedef struct
   gboolean locator_click;
   double   click_correction;
 }TransparencyEventStruct, *TransparencyEvent;
+
 
 typedef struct
 {
@@ -186,10 +187,16 @@ static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate
 						    ZMapWindowContainerGroup container);
 
 
-/* ------------------- */
+/*
+ *                     globals
+ */
+
 static gboolean locator_debug_G = FALSE;
 static gboolean navigator_debug_containers_xml_G = FALSE;
 static gboolean navigator_debug_containers_G = FALSE;
+
+
+
 
 /*
  * Mail from Jon:
@@ -257,108 +264,124 @@ static char *locus_names_filter_G[] = {
 /* create */
 ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 {
-  ZMapWindowNavigator navigate = NULL;
+  ZMapWindowNavigator navigate = NULL ;
+  FooCanvas *canvas = NULL ;
+  FooCanvasGroup *root = NULL ;
 
-  zMapAssert(FOO_IS_CANVAS(canvas_widget));
+  zMapAssert(FOO_IS_CANVAS(canvas_widget)) ;
 
-  if((navigate = g_new0(ZMapWindowNavigatorStruct, 1)))
+  navigate = g_new0(ZMapWindowNavigatorStruct, 1) ;
+
+  navigate->ftoi_hash = zmapWindowFToICreate();
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  navigate->context_map.column_2_styles = zMap_g_hashlist_create() ;
+  navigate->context_map.columns = NULL ;		    /* FOR NOW !! */
+
+  fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col);
+  if(g_hash_table_size(fset_col))
+    view->context_map.featureset_2_column = fset_col;
+  else
+    g_hash_table_destroy(fset_col);
+
+  src2src = g_hash_table_new(NULL,NULL);
+  view->context_map.source_2_sourcedata = src2src;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
+  navigate->locus_id = g_quark_from_string("locus");
+
+  if(USE_BACKGROUNDS)
     {
-      FooCanvas *canvas = NULL;
-      FooCanvasGroup *root = NULL;
-
-      navigate->ftoi_hash = zmapWindowFToICreate();
-
-      navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
-      navigate->locus_id = g_quark_from_string("locus");
-
-      if(USE_BACKGROUNDS)
-        {
-          gdk_color_parse(ROOT_BACKGROUND,   &(navigate->root_background));
-          gdk_color_parse(ALIGN_BACKGROUND,  &(navigate->align_background));
-          gdk_color_parse(BLOCK_BACKGROUND,  &(navigate->block_background));
-          gdk_color_parse(STRAND_BACKGROUND, &(navigate->strand_background));
-          gdk_color_parse(COLUMN_BACKGROUND, &(navigate->column_background));
-        }
-      else
-        {
-          GdkColor *canvas_color = NULL;
-          int gdkcolor_size = 0;
-          gdkcolor_size = sizeof(GdkColor);
-          canvas_color  = &(gtk_widget_get_style(canvas_widget)->bg[GTK_STATE_NORMAL]);
-          memcpy(&(navigate->root_background),
-                 canvas_color,
-                 gdkcolor_size);
-          memcpy(&(navigate->align_background),
-                 canvas_color,
-                 gdkcolor_size);
-          memcpy(&(navigate->block_background),
-                 canvas_color,
-                 gdkcolor_size);
-          memcpy(&(navigate->strand_background),
-                 canvas_color,
-                 gdkcolor_size);
-          memcpy(&(navigate->column_background),
-                 canvas_color,
-                 gdkcolor_size);
-        }
-
-      gdk_color_parse(LOCATOR_BORDER,    &(navigate->locator_border_gdk));
-      gdk_color_parse(LOCATOR_DRAG,      &(navigate->locator_drag_gdk));
-      gdk_color_parse(LOCATOR_FILL,      &(navigate->locator_fill_gdk));
-      gdk_color_parse(LOCATOR_HIGHLIGHT, &(navigate->locator_highlight));
-
-      navigate->scaling_factor      = 0.0;
-      navigate->locator_bwidth      = LOCATOR_LINE_WIDTH;
-      navigate->locator_x_coords.x1 = 0.0;
-      navigate->locator_x_coords.x2 = LOCATOR_LINE_WIDTH * 10.0;
-
-#ifdef RDS_WITH_STIPPLE
-      navigate->locator_stipple = gdk_bitmap_create_from_data(NULL, &zmapNavigatorStippleG_bits[0],
-                                                              zmapNavigatorStippleG_width,
-                                                              zmapNavigatorStippleG_height);
-#endif
-
-      /* create the root container */
-      canvas = FOO_CANVAS(canvas_widget);
-      root   = FOO_CANVAS_GROUP(foo_canvas_root(canvas));
-
-
-      g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, navigate->current_window) ;
-
-
-      navigate->container_root = zmapWindowContainerGroupCreateFromFoo(root, ZMAPCONTAINER_LEVEL_ROOT,
-								       ROOT_CHILD_SPACING,
-								       &(navigate->root_background), NULL);
-
-      g_object_set_data(G_OBJECT(navigate->container_root), ZMAP_WINDOW_POINTER, navigate->current_window) ;
-
-
-      /* add it to the hash. */
-      zmapWindowFToIAddRoot(navigate->ftoi_hash, (FooCanvasGroup *)(navigate->container_root));
-      /* lower to bottom so that everything else works... */
-      foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(navigate->container_root));
-
-      container_group_add_locator(navigate, navigate->container_root);
-
-      zmapWindowContainerGroupAddUpdateHook(navigate->container_root,
-					    container_draw_locator,
-					    navigate);
-
-      g_object_set(G_OBJECT(navigate->container_root),
-		   "debug-xml", navigator_debug_containers_xml_G, NULL);
-      g_object_set(G_OBJECT(navigate->container_root),
-		   "debug", navigator_debug_containers_G, NULL);
-
-      customiseFactory(navigate);
-
-      default_locus_names_filter(&(navigate->hide_filter));
-
-      available_locus_names_filter(&(navigate->available_filters));
+      gdk_color_parse(ROOT_BACKGROUND,   &(navigate->root_background));
+      gdk_color_parse(ALIGN_BACKGROUND,  &(navigate->align_background));
+      gdk_color_parse(BLOCK_BACKGROUND,  &(navigate->block_background));
+      gdk_color_parse(STRAND_BACKGROUND, &(navigate->strand_background));
+      gdk_color_parse(COLUMN_BACKGROUND, &(navigate->column_background));
+    }
+  else
+    {
+      GdkColor *canvas_color = NULL;
+      int gdkcolor_size = 0;
+      gdkcolor_size = sizeof(GdkColor);
+      canvas_color  = &(gtk_widget_get_style(canvas_widget)->bg[GTK_STATE_NORMAL]);
+      memcpy(&(navigate->root_background),
+	     canvas_color,
+	     gdkcolor_size);
+      memcpy(&(navigate->align_background),
+	     canvas_color,
+	     gdkcolor_size);
+      memcpy(&(navigate->block_background),
+	     canvas_color,
+	     gdkcolor_size);
+      memcpy(&(navigate->strand_background),
+	     canvas_color,
+	     gdkcolor_size);
+      memcpy(&(navigate->column_background),
+	     canvas_color,
+	     gdkcolor_size);
     }
 
-  zMapAssert(navigate);
+  gdk_color_parse(LOCATOR_BORDER,    &(navigate->locator_border_gdk));
+  gdk_color_parse(LOCATOR_DRAG,      &(navigate->locator_drag_gdk));
+  gdk_color_parse(LOCATOR_FILL,      &(navigate->locator_fill_gdk));
+  gdk_color_parse(LOCATOR_HIGHLIGHT, &(navigate->locator_highlight));
 
-  return navigate;
+  navigate->scaling_factor      = 0.0;
+  navigate->locator_bwidth      = LOCATOR_LINE_WIDTH;
+  navigate->locator_x_coords.x1 = 0.0;
+  navigate->locator_x_coords.x2 = LOCATOR_LINE_WIDTH * 10.0;
+
+#ifdef RDS_WITH_STIPPLE
+  navigate->locator_stipple = gdk_bitmap_create_from_data(NULL, &zmapNavigatorStippleG_bits[0],
+							  zmapNavigatorStippleG_width,
+							  zmapNavigatorStippleG_height);
+#endif
+
+  /* create the root container */
+  canvas = FOO_CANVAS(canvas_widget);
+  root   = FOO_CANVAS_GROUP(foo_canvas_root(canvas));
+
+
+  g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, navigate->current_window) ;
+
+
+  navigate->container_root = zmapWindowContainerGroupCreateFromFoo(root, ZMAPCONTAINER_LEVEL_ROOT,
+								   ROOT_CHILD_SPACING,
+								   &(navigate->root_background), NULL);
+
+  g_object_set_data(G_OBJECT(navigate->container_root), ZMAP_WINDOW_POINTER, navigate->current_window) ;
+
+
+  /* add it to the hash. */
+  zmapWindowFToIAddRoot(navigate->ftoi_hash, (FooCanvasGroup *)(navigate->container_root));
+
+  /* lower to bottom so that everything else works... */
+  foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(navigate->container_root));
+
+  container_group_add_locator(navigate, navigate->container_root);
+
+  zmapWindowContainerGroupAddUpdateHook(navigate->container_root,
+					container_draw_locator,
+					navigate);
+
+  g_object_set(G_OBJECT(navigate->container_root),
+	       "debug-xml", navigator_debug_containers_xml_G, NULL);
+  g_object_set(G_OBJECT(navigate->container_root),
+	       "debug", navigator_debug_containers_G, NULL);
+
+  customiseFactory(navigate);
+
+  default_locus_names_filter(&(navigate->hide_filter));
+
+  available_locus_names_filter(&(navigate->available_filters));
+
+
+  return navigate ;
 }
 
 
@@ -431,6 +454,16 @@ void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindo
    * until the visibility change handler is called */
 
   navigate->current_window = window;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Try sticking this in here....it looks to me like quite a few things should be updated
+   * each time we change window... */
+  navigate->current_window->context_map->featureset_2_column
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   return ;
 }
@@ -543,7 +576,13 @@ void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate)
 }
 
 
-/* INTERNAL */
+
+
+/* 
+ *                     Internal routines
+ */
+
+
 
 static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate)
 {
@@ -601,7 +640,8 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
   start   = locus_data->start;
   end     = locus_data->end;
 
-  if((item = zmapWindowFToIFindFeatureItem(data->navigate->current_window,data->navigate->ftoi_hash,
+  if((item = zmapWindowFToIFindFeatureItem(data->navigate->current_window,
+					   data->navigate->ftoi_hash,
                                            locus_data->strand, ZMAPFRAME_NONE,
                                            feature)))
     {
@@ -823,6 +863,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         /* we're only displaying one strand... create it ... */
         features = zmapWindowContainerGetFeatures(draw_data->container_block);
+
         /* The strand container doesn't get added to the hash! */
         draw_data->container_strand = zmapWindowContainerGroupCreate(features, ZMAPCONTAINER_LEVEL_STRAND,
 								     STRAND_CHILD_SPACING,
@@ -839,7 +880,9 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         /* create a column per set ... */
         initialiseScaleIfNotExists(draw_data->current_block);
+
         g_list_foreach(draw_data->navigate->feature_set_names, createColumnCB, (gpointer)draw_data);
+
         if(drawScaleRequired(draw_data))
           drawScale(draw_data);
       }
@@ -851,25 +894,26 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
 #if MH17_FToIHash_does_this_mapping
         if(!feature_set->column_id)
-        {
+	  {
             ZMapFeatureSetDesc gffset;
 
-            gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
-            if(gffset)
-                  feature_set->column_id = gffset->column_id;
-        }
+            gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
+					 GUINT_TO_POINTER(feature_set->unique_id));
+            if (gffset)
+	      feature_set->column_id = gffset->column_id;
+	  }
 #endif
 
         draw_data->current_set = feature_set;
 
         status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
-            /* play safe: only look up the item if it's displayed */
+	/* play safe: only look up the item if it's displayed */
         if(/*feature_set->column_id && */
-            (item = zmapWindowFToIFindSetItem(draw_data->navigate->current_window,
-                                                draw_data->navigate->ftoi_hash,
-                                                feature_set,
-                                                ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
+	   (item = zmapWindowFToIFindSetItem(draw_data->navigate->current_window,
+					     draw_data->navigate->ftoi_hash,
+					     feature_set,
+					     ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
           {
 	    ZMapWindowContainerFeatureSet container_feature_set;
             FooCanvasGroup *group_feature_set;
@@ -999,16 +1043,25 @@ static void createColumnCB(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style;
   gboolean status = FALSE;
 
+
+  /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
   /* for the navigator styles are hard coded?? and there's no featureset_2_colum mapping ?
-  style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
+     style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
   */
+
+
   style = zMapFindStyle(draw_data->styles,set_id);
 
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id);
 
-  if(style && draw_data->current_set)
+  
+
+  if (style && draw_data->current_set)
     {
       ZMapWindowContainerFeatureSet container_set;
+
+      printf("navigator current set: %s\n", g_quark_to_string(draw_data->current_set->original_id)) ;
+
 
       features = zmapWindowContainerGetFeatures(ZMAP_CONTAINER_GROUP(draw_data->container_strand));
 
@@ -1051,8 +1104,9 @@ static void createColumnCB(gpointer data, gpointer user_data)
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
 
       zmapWindowContainerGroupBackgroundSize(draw_data->container_feature_set,
-		(draw_data->current_block->block_to_sequence.t2 - draw_data->current_block->block_to_sequence.t1)
-            * draw_data->navigate->scaling_factor);
+					     ((draw_data->current_block->block_to_sequence.t2
+					       - draw_data->current_block->block_to_sequence.t1)
+					      * draw_data->navigate->scaling_factor)) ;
 
       /* scale doesn't need this. */
       if(set_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME))
@@ -1061,10 +1115,13 @@ static void createColumnCB(gpointer data, gpointer user_data)
 			 (gpointer)draw_data->navigate);
     }
   else
-    printf("Failed to find style list for name '%s'\n", g_quark_to_string(set_id));
+    {
+      zMapLogWarning("Failed to find style list for name '%s'\n", g_quark_to_string(set_id)) ;
+    }
 
   return ;
 }
+
 
 static void clampCoords(ZMapWindowNavigator navigate,
                         double pre_scale, double post_scale,
@@ -1309,14 +1366,18 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
       menu_data->item     = item;
       menu_data->navigate = (ZMapWindowNavigator)data;
 
-      if(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-        {
-          ZMapFeature feature = (ZMapFeature)feature_any;
 
+
+      if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+        {
           menu_data->item_cb  = TRUE;
           /* This is the variant filter... Shouldn't be in the menu code too! */
 
-          if(feature->locus_id != 0)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          if (feature->feature.transcript.locus_id != 0)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
             {
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusOps(NULL, NULL, menu_data));
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
@@ -1329,7 +1390,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
         {
           /* get set_data->style */
 
-	  if(ZMAP_IS_CONTAINER_FEATURESET(item))
+	  if (ZMAP_IS_CONTAINER_FEATURESET(item))
 	    {
 	      container = ZMAP_CONTAINER_FEATURESET(item);
 
@@ -1343,7 +1404,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
           menu_data->item_cb  = FALSE;
         }
 
-      if(bumping_works && container)
+      if (bumping_works && container)
         {
 	  bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container);
 
@@ -1425,7 +1486,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
           }
         else
           {
-            if(button->button == 1 && feature->locus_id != 0)
+            if (button->button == 1 && feature->feature.transcript.locus_id != 0)
               {
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
                 event_handled = TRUE;

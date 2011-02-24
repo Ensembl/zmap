@@ -28,25 +28,25 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 29 16:57 2009 (rds)
+ * Last edited: Feb 22 08:09 2011 (edgrif)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.30 2010-10-20 09:33:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.31 2011-02-24 14:25:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
 
-
-
-
-
 #include <zmapWindowNavigator_P.h>
 #include <ZMap/zmapUtils.h>
-#include <zmapWindowContainerFeatureSet_I.h>
+#include <zmapWindowContainerFeatureSet_I.h>		    /* agggggghhhhhhhhhhhh!!!!!!!!!!!!! */
+
+
 
 #define FILTER_DATA_KEY        "ZMapWindowNavigatorFilterData"
 #define FILTER_CANCEL_DATA_KEY "ZMapWindowNavigatorFilterCancelData"
+
+
 
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
@@ -60,41 +60,7 @@ static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent);
 static void cancel_destroy_cb(GtkWidget *widget, gpointer user_data);
 static void apply_destroy_cb(GtkWidget *widget, gpointer user_data);
 static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navigator);
-
-
-static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
-{
-  GQuark locus_name = GPOINTER_TO_UINT(user_data);
-  ZMapFeatureAny feature_any = NULL;
-  gboolean match = FALSE;
-
-  feature_any = zmapWindowItemGetFeatureAny(item);
-  zMapAssert(feature_any);
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-        ZMapFeature feature = (ZMapFeature)feature_any;
-#ifdef THIS_LOCUS_STUFF_IS_A_PAIN
-	/* quick fix to zmapWindowNavigatorShowSameNameList...  */
-	if(locus_name == feature_any->original_id)
-	  match = TRUE;
-#endif /* THIS_LOCUS_STUFF_IS_A_PAIN */
-
-	/* Having just (locus_name == feature->locus_id) resulted in duplicates... */
-	/* Added (feature->locus_id != feature->original_id) to fix RT # 64287 */
-        if((locus_name == feature->locus_id)
-	   && (feature->locus_id != feature->original_id))
-          match = TRUE;
-      }
-      break;
-    default:
-      break;
-    }
-
-  return match;
-}
+static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data) ;
 
 void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvasItem *item)
 {
@@ -139,22 +105,37 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   return ;
 }
 
+
+
+
 /* This has the wrong name! it only works for finding variants! */
 void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvasItem *item)
 {
   ZMapWindow window = NULL;
   ZMapFeature feature = NULL;
-  GQuark locus_quark = 0;
-  char *wild_card = "*";
+  GQuark locus_quark = 0, wild_card_id ;
+  char *wild_card = "*" ;
+  FooCanvasItem *set_item ;
+  ZMapWindowContainerFeatureSet container;
 
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature);
+  wild_card_id = g_quark_from_string(wild_card) ;
+
+  feature = zmapWindowItemGetFeature(item) ;
+  zMapAssert(feature) ;
+
+  set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(item));
+  container = (ZMapWindowContainerFeatureSet)set_item;
+
 
   window = navigate->current_window;
+
+
 #define USING_SET_SEARCH_DATA_METHOD
+
 #ifndef USING_SET_SEARCH_DATA_METHOD
   ZMapWindowFToIPredFuncCB callback = NULL ;
   GList *result = NULL;
+
 
 #ifdef RDS_PROBLEMATIC_CODE
   /* Is it right to use window->context_to_item here??? */
@@ -198,36 +179,53 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 				 zoom_to_item);
       g_list_free(result);  /* clean up list. */
     }
+
 #else /* USING_SET_SEARCH_DATA_METHOD */
 
   {
     ZMapWindowFToISetSearchData search_data;
     gboolean zoom_to_item = FALSE;
+    char *wild_name ;
+    GQuark wild_name_id ;
+
+    wild_name = g_strdup_printf("%s*", g_quark_to_string(feature->original_id)) ;
+    wild_name_id = g_quark_from_string(wild_name) ;
+    g_free(wild_name) ;
 
     locus_quark = g_quark_from_string(wild_card);
 
-    search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
+
+    search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull,
+						    NULL,
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
-						    locus_quark, /* feature->parent->unique_id, NO: container->unique_id */
-						    locus_quark,
-                                        0,
+						    wild_card_id,
+						    wild_card_id,
+						    wild_card_id,
 						    wild_card, /* strand */
 						    wild_card, /* frame */
 						    searchLocusSetCB,
-						    GUINT_TO_POINTER(feature->original_id), NULL);
+						    GUINT_TO_POINTER(feature->original_id),
+						    NULL) ;
 
     zmapWindowListWindowCreate(window, item,
 			       (char *)(g_quark_to_string(feature->original_id)),
 			       access_window_context_to_item,  window,
+			       window->context_map,
 			       (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			       (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
 
   }
 #endif /* USING_SET_SEARCH_DATA_METHOD */
 
+
+
   return ;
 }
+
+
+
+
 
 static void popUpVariantList(int menu_item_id, gpointer callback_data)
 {
@@ -374,7 +372,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 
         feature = zmapWindowItemGetFeatureAny(menu_data->item);
 
-        if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+        if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
           {
             /* a small hack for the time being... */
             set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(menu_data->item));
@@ -387,7 +385,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 						    feature->parent->parent->unique_id,
 						    feature->parent->unique_id,
 						    container->unique_id,
-                                        0,
+						    0,
 						    g_quark_from_string("*"),
 						    zMapFeatureStrand2Str(container->strand),
 						    zMapFeatureFrame2Str(container->frame));
@@ -395,8 +393,12 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         zmapWindowListWindowCreate(menu_data->navigate->current_window,
 				   NULL,
                                    (char *)g_quark_to_string(feature->original_id),
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 				   access_navigator_context_to_item,
-				   menu_data->navigate,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+				   access_window_context_to_item,
+				   menu_data->navigate->current_window,
+				   menu_data->navigate->context_map,
 				   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 				   (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
@@ -406,6 +408,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
       zmapWindowCreateSearchWindow(menu_data->navigate->current_window,
 				   access_navigator_context_to_item,
 				   menu_data->navigate,
+				   menu_data->navigate->context_map,
 				   menu_data->item) ;
       break ;
 
@@ -657,3 +660,52 @@ static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navig
 
   return ;
 }
+
+
+
+
+static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
+{
+  gboolean match = FALSE;
+  GQuark locus_name = GPOINTER_TO_UINT(user_data);
+  ZMapFeatureAny feature_any = NULL;
+
+  feature_any = zmapWindowItemGetFeatureAny(item);
+  zMapAssert(feature_any);
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+        ZMapFeature feature = (ZMapFeature)feature_any;
+
+#ifdef THIS_LOCUS_STUFF_IS_A_PAIN
+	/* quick fix to zmapWindowNavigatorShowSameNameList...  */
+	if(locus_name == feature_any->original_id)
+	  match = TRUE;
+#endif /* THIS_LOCUS_STUFF_IS_A_PAIN */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* SHOULDN'T NEED THIS ANYMORE AS LOCUS DOES NOT HAVE A LOCUS_ID */
+
+	/* Having just (locus_name == feature->locus_id) resulted in duplicates... */
+	/* Added (feature->locus_id != feature->original_id) to fix RT # 64287 */
+        if((locus_name == feature->feature.transcript.locus_id)
+	   && (feature->feature.transcript.locus_id != feature->original_id))
+          match = TRUE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+        if (locus_name == feature->feature.transcript.locus_id)
+          match = TRUE ;
+
+
+	break;
+      }
+
+    default:
+      break;
+    }
+
+  return match;
+}
+

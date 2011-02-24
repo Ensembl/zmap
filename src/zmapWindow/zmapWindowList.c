@@ -28,9 +28,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Jul 29 08:29 2010 (edgrif)
+ * Last edited: Jan 18 15:31 2011 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.80 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.81 2011-02-24 14:24:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,6 +66,7 @@ typedef struct _ZMapWindowListStruct
 
   GHashTable    *context_to_item;
 
+  ZMapFeatureContextMap context_map ;
 
   /* enable getting the hash */
   ZMapWindowListGetFToIHash get_hash_func;
@@ -122,6 +123,7 @@ static ZMapWindowList window_list_window_create(ZMapWindowList               win
 						GList *items,
 						ZMapWindowListGetFToIHash    get_hash_func,
 						gpointer                     get_hash_data,
+						ZMapFeatureContextMap context_map,
 						ZMapWindowListSearchHashFunc search_hash_func,
 						gpointer                     search_hash_data,
 						GDestroyNotify               search_hash_free,
@@ -231,6 +233,7 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
 				char                        *title,
 				ZMapWindowListGetFToIHash    get_hash_func,
 				gpointer                     get_hash_data,
+				ZMapFeatureContextMap context_map,
 				ZMapWindowListSearchHashFunc search_hash_func,
 				gpointer                     search_hash_data,
 				GDestroyNotify               search_hash_free,
@@ -261,7 +264,7 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
     {
       window_list = window_list_window_create(NULL, current_item, title, window,
 					      items,
-					      get_hash_func, get_hash_data,
+					      get_hash_func, get_hash_data, context_map,
 					      search_hash_func, search_hash_data, search_hash_free,
 					      zoom_to_item) ;
     }
@@ -284,6 +287,7 @@ void zmapWindowListWindow(ZMapWindow                   window,
 			  char                        *title,
 			  ZMapWindowListGetFToIHash    get_hash_func,
 			  gpointer                     get_hash_data,
+			  ZMapFeatureContextMap context_map,
 			  ZMapWindowListSearchHashFunc search_hash_func,
 			  gpointer                     search_hash_data,
 			  GDestroyNotify               search_hash_free,
@@ -319,7 +323,7 @@ void zmapWindowListWindow(ZMapWindow                   window,
       /* now show the window, if we found a reusable one that will be reused. */
       window_list = window_list_window_create(window_list, current_item, title, window,
 					      items,
-					      get_hash_func, get_hash_data,
+					      get_hash_func, get_hash_data, context_map,
 					      search_hash_func, search_hash_data, search_hash_free,
 					      zoom_to_item) ;
 
@@ -483,6 +487,7 @@ static ZMapWindowList window_list_window_create(ZMapWindowList               win
 						ZMapWindow                   zmap_window,
 						GList *items,
 						ZMapWindowListGetFToIHash get_hash_func, gpointer get_hash_data,
+						ZMapFeatureContextMap context_map,
 						ZMapWindowListSearchHashFunc search_hash_func,
 						gpointer search_hash_data,
 						GDestroyNotify               search_hash_free,
@@ -1029,6 +1034,7 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
 	  zmapWindowCreateSearchWindow(window_list->zmap_window,
 				       window_list->get_hash_func,
 				       window_list->get_hash_data,
+				       window_list->context_map,
 				       feature_item) ;
 	}
       else

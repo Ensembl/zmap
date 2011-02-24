@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jul  3 15:19 2009 (rds)
+ * Last edited: Feb 24 14:23 2011 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.55 2011-02-16 10:02:57 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.56 2011-02-24 14:23:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,7 +69,7 @@ zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, Z
  *  */
 
 
-#define MH17_SEARCH_DEBUG 0
+#define MH17_SEARCH_DEBUG 1
 
 /* Used to hold coord information + return a result the child search callback function. */
 typedef struct
@@ -723,21 +723,20 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
   GQuark frame_id, frame_none, frame_0, frame_1, frame_2, frame_all ;
   GQuark forward_set_id = 0, reverse_set_id = 0 ;
   GList *search = NULL;
-  ItemSearchStruct align_search = {0}, block_search = {0},
-	 forward_set_search = {0}, reverse_set_search = {0},
-         feature_search = {0}, terminal_search = {0} ;
+  ItemSearchStruct align_search = {0}, block_search = {0}, forward_set_search = {0}, reverse_set_search = {0},
+  feature_search = {0}, terminal_search = {0} ;
 
   /* Required for minimum query. */
   zMapAssert(feature_context_to_item && align_id) ;
 
 #if 0
-zMapLogWarning("find item set full %s. %s, %s, %s, %s %s",
-      g_quark_to_string(align_id),
-      g_quark_to_string(block_id),
-      g_quark_to_string(column_id),
-      g_quark_to_string(set_id),
-      strand_spec,frame_spec,
-      g_quark_to_string(feature_id));
+  zMapLogWarning("find item set full %s. %s, %s, %s, %s %s",
+		 g_quark_to_string(align_id),
+		 g_quark_to_string(block_id),
+		 g_quark_to_string(column_id),
+		 g_quark_to_string(set_id),
+		 strand_spec,frame_spec,
+		 g_quark_to_string(feature_id));
 #endif
 
   align_search.search_quark = align_id ;
@@ -760,90 +759,98 @@ zMapLogWarning("find item set full %s. %s, %s, %s, %s %s",
       /* convert strand spec to something useful. */
       strand_id = 0 ;
       if (strand_spec)
-      {
-        strand_none = g_quark_from_string(".") ;
-        strand_forward = g_quark_from_string("+") ;
-        strand_reverse = g_quark_from_string("-") ;
-        strand_both = g_quark_from_string("*") ;
+	{
+	  strand_none = g_quark_from_string(".") ;
+	  strand_forward = g_quark_from_string("+") ;
+	  strand_reverse = g_quark_from_string("-") ;
+	  strand_both = g_quark_from_string("*") ;
 
-        strand_id = g_quark_from_string(strand_spec) ;
-        zMapAssert(strand_id == strand_none || strand_id == strand_forward
-                 || strand_id == strand_reverse || strand_id == strand_both) ;
-      }
+	  strand_id = g_quark_from_string(strand_spec) ;
+	  zMapAssert(strand_id == strand_none || strand_id == strand_forward
+		     || strand_id == strand_reverse || strand_id == strand_both) ;
+	}
 
       /* Convert frame_spec to something useful. */
       frame_id = 0 ;
       if (frame_spec)
-      {
-        frame_none = g_quark_from_string(".") ;
-        frame_0 = g_quark_from_string("1") ;
-        frame_1 = g_quark_from_string("2") ;
-        frame_2 = g_quark_from_string("3") ;
-        frame_all = g_quark_from_string("*") ;
+	{
+	  frame_none = g_quark_from_string(".") ;
+	  frame_0 = g_quark_from_string("1") ;
+	  frame_1 = g_quark_from_string("2") ;
+	  frame_2 = g_quark_from_string("3") ;
+	  frame_all = g_quark_from_string("*") ;
 
-        frame_id = g_quark_from_string(frame_spec) ;
-        zMapAssert(frame_id == frame_none
-                 || frame_id == frame_0 || frame_id == frame_1 || frame_id == frame_2
-                 || frame_id == frame_all) ;
-      }
+	  frame_id = g_quark_from_string(frame_spec) ;
+	  zMapAssert(frame_id == frame_none
+		     || frame_id == frame_0 || frame_id == frame_1 || frame_id == frame_2
+		     || frame_id == frame_all) ;
+	}
 
       zMap_g_hash_table_iter_init(&iter,window->context_map->featureset_2_column);
       while(zMap_g_hash_table_iter_next(&iter,&key, &value))
-      {
-            ItemSearchStruct filter_search;
-            GQuark featureset_id = GPOINTER_TO_UINT(key);
-           /*
-            * As we search the context for featuresets when we request a column
-            * we need to extract the featuresets in that column
-            * If the column is spec'd with a wildcard then we need to process that here.
-            */
+	{
+	  ItemSearchStruct filter_search;
+	  GQuark featureset_id = GPOINTER_TO_UINT(key);
+	  /*
+	   * As we search the context for featuresets when we request a column
+	   * we need to extract the featuresets in that column
+	   * If the column is spec'd with a wildcard then we need to process that here.
+	   */
 
-            f2c = (ZMapFeatureSetDesc) value;
-            /* get exact match or pattern match for the column */
+	  f2c = (ZMapFeatureSetDesc) value;
+	  /* get exact match or pattern match for the column */
 
-            filter_search.search_quark = column_id;
+	  filter_search.search_quark = column_id;
 
-            if((featureset_id == set_id) ||
-                  (!set_id && (f2c->column_id == column_id || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))))
-            {
-                  /* add this featureset as an exact string with strand and frame */
-                  /* erm... no ... the context has plain featuresets but
-                   * the hash is split into tables for each canvas column
-                   */
 
-                  /* Some care needed here as we may need to wild card the frame to ensure we search
-                  * enough columns.... */
-                  if (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both)
-	            {
-	                  forward_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_FORWARD, frame_id) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* I think this is broken, what if the column and set are wild cards ????? */
 
-	                  forward_set_search.search_quark = forward_set_id ;
+	  if((featureset_id == set_id) ||
+	     (!set_id && (f2c->column_id == column_id || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          if ((featureset_id == set_id)
+	      || (!set_id && f2c->column_id == column_id)
+	      || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))
+	      {
+		/* add this featureset as an exact string with strand and frame */
+		/* erm... no ... the context has plain featuresets but
+		 * the hash is split into tables for each canvas column
+		 */
 
-                        forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
+		/* Some care needed here as we may need to wild card the frame to ensure we search
+		 * enough columns.... */
+		if (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both)
+		  {
+		    forward_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_FORWARD, frame_id) ;
+
+		    forward_set_search.search_quark = forward_set_id ;
+
+		    forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
 
 #if MH17_SEARCH_DEBUG > 1
-//zMapLogWarning("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
+		    printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
 #endif
-	                  if (isRegExp(forward_set_id))
-	                        forward_set_search.is_reg_exp = TRUE ;
-	            }
+		    if (isRegExp(forward_set_id))
+		      forward_set_search.is_reg_exp = TRUE ;
+		  }
 
-                  if (strand_id == strand_reverse || strand_id == strand_both)
-	            {
-      	            reverse_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_REVERSE, frame_id) ;
+		if (strand_id == strand_reverse || strand_id == strand_both)
+		  {
+		    reverse_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_REVERSE, frame_id) ;
 
-                        reverse_set_search.search_quark = reverse_set_id ;
+		    reverse_set_search.search_quark = reverse_set_id ;
 
-                        reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
+		    reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
 #if MH17_SEARCH_DEBUG > 1
-//zMapLogWarning("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
+		    printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
 #endif
 
-      	            if (isRegExp(reverse_set_id))
-            	            reverse_set_search.is_reg_exp = TRUE ;
-	          }
-            }
-      }
+		    if (isRegExp(reverse_set_id))
+		      reverse_set_search.is_reg_exp = TRUE ;
+		  }
+	      }
+	}
 
     }
 
@@ -1003,7 +1010,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
   gboolean debug_caching = FALSE;
 
 #if MH17_SEARCH_DEBUG > 1
-//zMapLogWarning("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
+printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 #endif
 
   search_data = g_new0(ZMapWindowFToISetSearchDataStruct, 1);
@@ -1108,13 +1115,24 @@ GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_cont
 {
   GList *list = NULL;
 
-  if(search_data->search_function == zmapWindowFToIFindItemSetFull   ||
-     search_data->search_function == zmapWindowFToIFindSameNameItems)
+  if (window_ftoi_debug_G)
+    printf("Search:\t%s,\t%s,\t%s,\t%s,\t%s,\t%s,\t%s\n",
+	   g_quark_to_string(search_data->align_id),
+	   g_quark_to_string(search_data->block_id),
+	   g_quark_to_string(search_data->column_id),
+	   g_quark_to_string(search_data->set_id),
+	   search_data->strand_str,
+	   search_data->frame_str,
+	   g_quark_to_string(search_data->feature_id)) ;
+
+
+  if(search_data->search_function == zmapWindowFToIFindItemSetFull
+     || search_data->search_function == zmapWindowFToIFindSameNameItems)
     {
       list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
 					   search_data->align_id,
 					   search_data->block_id,
-                                 search_data->column_id,
+					   search_data->column_id,
 					   search_data->set_id,
 					   search_data->strand_str,
 					   search_data->frame_str,
@@ -1316,7 +1334,7 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
   zMapAssert(curr_search_id != stop) ;
 
 #if MH17_SEARCH_DEBUG
-zMapLogWarning("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id), g_hash_table_size(hash_table), g_quark_to_string(next_search_id),curr_search->is_reg_exp);
+printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id), g_hash_table_size(hash_table), g_quark_to_string(next_search_id),curr_search->is_reg_exp);
 #endif
 
   if (next_search_id == stop)
@@ -1332,7 +1350,7 @@ zMapLogWarning("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_se
 	  {
           results = g_list_append(results, item_id->item) ;
 #if MH17_SEARCH_DEBUG
-      zMapLogWarning("added: exact %s, %p\n",g_quark_to_string(curr_search->search_quark), item_id->item);
+      printf("added: exact %s, %p\n",g_quark_to_string(curr_search->search_quark), item_id->item);
 #endif
         }
 	}
@@ -1370,7 +1388,7 @@ zMapLogWarning("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_se
               if(isRegExp(curr_search->search_quark))
                   curr_search->is_reg_exp = TRUE;
 #if MH17_SEARCH_DEBUG
-//zMapLogWarning("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);
+printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_quark), curr_search->is_reg_exp);
 #endif
 
               if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,l->data)))
@@ -1399,7 +1417,7 @@ zMapLogWarning("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_se
 
   *results_inout = results ;
 #if MH17_SEARCH_DEBUG
-zMapLogWarning("do_hash_set returns %d features",g_list_length(results));
+printf("do_hash_set returns %d features\n",g_list_length(results));
 #endif
   return ;
 }
@@ -1421,13 +1439,13 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
       *results = g_list_append(*results, hash_item->item) ;
 
 #if MH17_SEARCH_DEBUG
-      zMapLogWarning("added: %d %s, %s %p\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)),hash_item->item);
+      printf("added: %d %s, %s %p\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)),hash_item->item);
 #endif
   }
 #if MH17_SEARCH_DEBUG
   else
   {
-//      zMapLogWarning("filtered: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
+      printf("filtered: %d %s, %s\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)));
   }
 #endif
   return ;
@@ -1444,7 +1462,7 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data)
       || filterOnRegExp(search->curr_search, key))
     {
 #if MH17_SEARCH_DEBUG
-      zMapLogWarning("do hash set %s",g_quark_to_string(GPOINTER_TO_UINT(key)));
+      printf("do hash set %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)));
 #endif
       doHashSet(hash_item->hash_table, search->search, search->results) ;
     }
@@ -1487,9 +1505,10 @@ static void printGlist(gpointer data, gpointer user_data)
       feature_id = feature_any->unique_id ;
     }
 
-  printf("%s:  %s\n",
-	 (feature_type ? feature_type : "<no feature data attached>"),
-	 (feature_id ? g_quark_to_string(feature_id) : "")) ;
+  if (window_ftoi_debug_G)
+    printf("%s:  %s\n",
+	   (feature_type ? feature_type : "<no feature data attached>"),
+	   (feature_id ? g_quark_to_string(feature_id) : "")) ;
 
   return ;
 }

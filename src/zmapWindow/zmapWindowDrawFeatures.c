@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Feb 21 11:38 2011 (edgrif)
+ * Last edited: Feb 22 07:43 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.304 2011-02-21 11:46:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.305 2011-02-24 14:21:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2385,6 +2385,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   cbdata->item = item ;
   cbdata->feature_set = feature_set ;
   cbdata->container_set = container_set;
+  cbdata->context_map = window->context_map ;
 
   /* Make up the menu. */
   if (zMapUtilsUserIsDeveloper())
@@ -2485,12 +2486,13 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	zmapWindowListWindow(menu_data->window,
 			     NULL, (char *)g_quark_to_string(container_set->original_id),
 			     NULL, NULL,
+			     menu_data->window->context_map,
 			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
 	break ;
       }
     case 2:
-      zmapWindowCreateSearchWindow(menu_data->window, NULL, NULL, menu_data->item) ;
+      zmapWindowCreateSearchWindow(menu_data->window, NULL, NULL, menu_data->context_map, menu_data->item) ;
       break ;
 
     case 5:
