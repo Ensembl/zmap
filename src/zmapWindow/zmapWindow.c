@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 23 16:33 2011 (edgrif)
+ * Last edited: Feb 24 11:58 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.351 2011-02-24 11:19:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.352 2011-02-24 14:21:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4264,7 +4264,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 //#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
     case GDK_D:
-//      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
+      //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
       printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
 	     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
 	     " zmapwindowalignmentfeature %zu\n",
