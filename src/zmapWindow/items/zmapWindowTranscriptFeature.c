@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  4 17:04 2011 (edgrif)
+ * Last edited: Feb 22 07:44 2011 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.13 2011-02-21 10:58:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.14 2011-02-24 13:59:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -165,12 +165,12 @@ static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canv
 
   (* canvas_item_class_G->post_create)(canvas_item);
 
-  if(create_locus_text_G && (feature = canvas_item->feature) && feature->locus_id)
+  if (create_locus_text_G && (feature = canvas_item->feature) && feature->feature.transcript.locus_id)
     {
       FooCanvasGroup *parent;
       FooCanvasItem *item;
       char *text;
-      text = (char *)g_quark_to_string(feature->locus_id);
+      text = (char *)g_quark_to_string(feature->feature.transcript.locus_id);
 
       parent = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_OVERLAY]);
 

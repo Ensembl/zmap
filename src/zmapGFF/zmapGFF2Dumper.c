@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 19 17:19 2010 (edgrif)
+ * Last edited: Jan 14 13:38 2011 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.26 2010-10-19 16:34:39 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.27 2011-02-24 13:57:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -690,13 +690,13 @@ static gboolean dump_transcript_locus(ZMapFeature    feature,
 {
   gboolean result = FALSE;
 
-  if(feature->locus_id)
+  if (feature->feature.transcript.locus_id)
     {
       /* To make       Locus "AC12345.1"          */
       g_string_append_printf(gff_string,
 			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
 			     "Locus",
-			     (char *)g_quark_to_string(feature->locus_id));
+			     (char *)g_quark_to_string(feature->feature.transcript.locus_id));
       result = TRUE;
     }
 

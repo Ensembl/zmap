@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Feb 18 10:15 2011 (edgrif)
+ * Last edited: Feb 21 08:10 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.91 2011-02-23 16:09:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.92 2011-02-24 13:58:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1879,7 +1879,14 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
   double parent_ypos;
   char *text_string = NULL;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS IS A DISGUSTING HACK.... */
+
   text_string = (char *)g_quark_to_string(feature->locus_id);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  text_string = (char *)g_quark_to_string(feature->original_id);
+
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
 
