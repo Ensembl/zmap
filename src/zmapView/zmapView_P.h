@@ -25,9 +25,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Nov  5 09:08 2010 (edgrif)
+ * Last edited: Feb 23 12:41 2011 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.68 2011-02-11 15:17:08 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.69 2011-02-24 11:17:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -338,11 +338,11 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
-gboolean zmapViewRemoteSendCommand(ZMapView view,
-                                   char *action, GArray *xml_events,
-                                   ZMapXMLObjTagFunctions start_handlers,
-                                   ZMapXMLObjTagFunctions end_handlers,
-                                   gpointer *handler_data);
+ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
+						      char *action, GArray *xml_events,
+						      ZMapXMLObjTagFunctions start_handlers,
+						      ZMapXMLObjTagFunctions end_handlers,
+						      gpointer *handler_data);
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);
 void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list);
