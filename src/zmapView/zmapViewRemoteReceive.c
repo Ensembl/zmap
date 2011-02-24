@@ -30,9 +30,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Feb 22 12:15 2011 (edgrif)
+ * Last edited: Feb 24 11:58 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.60 2011-02-24 11:16:36 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.61 2011-02-24 14:13:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1567,12 +1567,13 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 										(ZMapFeatureAny)request_data->feature);
 
 			if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-			    && (old_feature->locus_id != 0) && (old_feature->locus_id != new_locus_id))
+			    && (old_feature->feature.transcript.locus_id != 0)
+			    && (old_feature->feature.transcript.locus_id != new_locus_id))
 			  {
 			    /* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
 			    ZMapFeature tmp_locus_feature;
 			    ZMapFeatureAny old_locus_feature;
-			    char *old_locus_name = (char *)g_quark_to_string(old_feature->locus_id);
+			    char *old_locus_name = (char *)g_quark_to_string(old_feature->feature.transcript.locus_id);
 
 			    /* I DON'T REALLY UNDERSTAND THIS BIT CURRENTLY...WHY DO WE ALWAYS LOG THIS... */
 			    /* If we're here, assumptions have been made

@@ -30,9 +30,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 10:11 2010 (edgrif)
+ * Last edited: Feb 24 14:14 2011 (edgrif)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.11 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.12 2011-02-24 14:14:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -356,9 +356,11 @@ static TextItem itemCreate(FooCanvasItem *text)
 
   {
     ZMapFeature feature = NULL;
-    if((feature = zmapWindowItemGetFeature(text)))
+
+    /* THIS CODE ATTEMPTS TO FUDGE THE ISSUE OF WHEN SOMETHING IS A LOCUS.... */
+    if ((feature = zmapWindowItemGetFeature(text)) && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
       {
-        item->locus_name = feature->locus_id;
+	item->locus_name = feature->feature.transcript.locus_id ;
       }
   }
 
