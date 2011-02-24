@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Feb 23 16:50 2011 (edgrif)
+ * Last edited: Feb 24 11:59 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.278 2011-02-24 11:19:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.279 2011-02-24 14:15:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -455,6 +455,8 @@ typedef struct
   ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
   ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
                                                 /* be good to loose the featureset member */
+  ZMapFeatureContextMap context_map ;			    /* column to featureset mapping and other data. */
+  
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
 
@@ -636,7 +638,7 @@ typedef struct _ZMapWindowStruct
 
   ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
 
-  ZMapFeatureContextMap context_map;      /* all the data for mapping featuresets styles and columns */
+  ZMapFeatureContextMap context_map ;      /* all the data for mapping featuresets styles and columns */
 
   GList *feature_set_names ;				    /* Gives names/order of columns to be displayed. */
 /*  GHashTable *featureset_2_styles ;			     Links column names to the styles
@@ -808,6 +810,7 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
 				char                        *title,
 				ZMapWindowListGetFToIHash    get_hash_func,
 				gpointer                     get_hash_data,
+				ZMapFeatureContextMap context_map,
 				ZMapWindowListSearchHashFunc search_hash_func,
 				gpointer                     search_hash_data,
 				GDestroyNotify               search_hash_free,
@@ -817,6 +820,7 @@ void zmapWindowListWindow(ZMapWindow                   window,
 			  char                        *title,
 			  ZMapWindowListGetFToIHash    get_hash_func,
 			  gpointer                     get_hash_data,
+			  ZMapFeatureContextMap context_map,
 			  ZMapWindowListSearchHashFunc search_hash_func,
 			  gpointer                     search_hash_data,
 			  GDestroyNotify               search_hash_free,
@@ -826,6 +830,7 @@ void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow,
 				  ZMapWindowListGetFToIHash get_hash_func,
 				  gpointer get_hash_data,
+				  ZMapFeatureContextMap context_map,
 				  FooCanvasItem *feature_item) ;
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type) ;
@@ -921,7 +926,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
 							      ZMapFeature feature,
 							      GQuark      align_id,
 							      GQuark      block_id,
-                                                GQuark column_id,
+							      GQuark column_id,
 							      GQuark      set_id,
 							      GQuark      feature_id,
 							      char       *strand_str,
@@ -933,7 +938,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  ZMapFeature feature,
 							  GQuark      align_id,
 							  GQuark      block_id,
-                                            GQuark      column_id,
+							  GQuark      column_id,
 							  GQuark      set_id,
 							  GQuark      feature_id,
 							  char       *strand_str,
