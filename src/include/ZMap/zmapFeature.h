@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Feb  1 08:47 2011 (edgrif)
+ * Last edited: Feb 21 08:02 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.190 2011-02-18 09:52:16 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.191 2011-02-24 13:56:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -522,6 +522,8 @@ typedef struct
 {
   GQuark known_name ;					    /* Known or external name for transcript. */
 
+  GQuark locus_id ;					    /* Locus this transcript belongs to. */
+
   /* If cds == TRUE, then these must show the position of the cds in sequence coords... */
   Coord cds_start, cds_end ;
 
@@ -620,10 +622,6 @@ typedef struct ZMapFeatureStruct_
   /* MOVE THIS...WE ONLY NEED IT IN SOME FEATURES....NEEDS SOME RESEARCH BECAUSE WHILE
    * THIS IS BASICALLY AN ALIGNMENT THING THERE MAY BE OTHER FEATURES THAT HAVE SCORES... */
   float score ;
-
-
-
-  GQuark locus_id ;					    /* needed for a lot of annotation. */
 
   /* Source name and text, gives information about all features of a particular type. */
   GQuark source_id ;

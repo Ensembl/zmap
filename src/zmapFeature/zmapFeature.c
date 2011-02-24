@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 11 15:46 2010 (edgrif)
+ * Last edited: Jan 14 13:59 2011 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.139 2010-11-12 09:16:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.140 2011-02-24 13:56:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -941,11 +941,16 @@ gboolean zMapFeatureAddURL(ZMapFeature feature, char *url)
  *  */
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
   zMapAssert(feature && locus_id) ;
 
-  feature->locus_id = locus_id ;
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      feature->feature.transcript.locus_id = locus_id ;
+
+      result = TRUE ;
+    }
 
   return result ;
 }

@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 17:18 2010 (edgrif)
+ * Last edited: Jan 14 13:38 2011 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.10 2010-10-19 16:34:12 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.11 2011-02-24 13:56:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -463,8 +463,8 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
 
 	feature = (ZMapFeature)feature_data->feature_any;
 
-	if(feature->locus_id)
-	  g_value_set_static_string(value, g_quark_to_string(feature->locus_id));
+	if (feature->feature.transcript.locus_id)
+	  g_value_set_static_string(value, g_quark_to_string(feature->feature.transcript.locus_id));
 
 
 	result = TRUE;
