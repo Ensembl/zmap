@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov  5 12:33 2010 (edgrif)
+ * Last edited: Feb 24 11:14 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.229 2011-02-11 15:17:08 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.230 2011-02-24 11:15:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2047,7 +2047,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
     return ;                    /* !!! RETURN !!! */
 
 
-  if((view_select.type = window_select->type) == ZMAPWINDOW_SELECT_SINGLE)
+  if ((view_select.type = window_select->type) == ZMAPWINDOW_SELECT_SINGLE)
     {
       if (window_select->highlight_item)
 	{
@@ -2079,25 +2079,22 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
     }
 
 
-  view_select.xml_handler = window_select->xml_handler ;    /* n.b. struct copy. */
-
-  if(window_select->xml_handler.zmap_action)
+  if (window_select->xml_handler.zmap_action)
     {
-      view_select.xml_handler.handled =
-        window_select->xml_handler.handled = zmapViewRemoteSendCommand(view_window->parent_view,
-                                                                       window_select->xml_handler.zmap_action,
-                                                                       window_select->xml_handler.xml_events,
-                                                                       window_select->xml_handler.start_handlers,
-                                                                       window_select->xml_handler.end_handlers,
-                                                                       window_select->xml_handler.handler_data);
+      window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
+								     window_select->xml_handler.zmap_action,
+								     window_select->xml_handler.xml_events,
+								     window_select->xml_handler.start_handlers,
+								     window_select->xml_handler.end_handlers,
+								     window_select->xml_handler.handler_data) ;
     }
 
 
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
   (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
 
-
-  window_select->xml_handler.handled = view_select.xml_handler.handled;
+  /* temporary.... */
+  window_select->xml_handler.handled = FALSE ;
 
   return ;
 }
