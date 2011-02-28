@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.31 2010-10-18 09:41:15 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.32 2011-02-28 12:24:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -316,7 +316,6 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
  * gets called by setErrMsg() - if the server fails we read STDERR and possibly report why
  * if no failures we ignore STDERR
  * the last message is the one that gets popped up to the user
- * We log all messages except the last as that generally appears twice in the log anyway
  */
 
 // NB: otterlace would prefer to get all of STDERR, which needs a slight rethink
@@ -348,15 +347,13 @@ gchar *pipe_server_get_stderr(PipeServer server)
       if(status != G_IO_STATUS_NORMAL)
         break;
 
-      if(msg)
-            ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
-
       *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
       if(terminator_pos > 0)              // can get blank lines at the end
       {
             if(msg)
                   g_free(msg);
             msg = g_strdup(line->str);
+            ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
       }
     }
 
@@ -969,7 +966,7 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
    // seq coords for our sequence based from 1
   feature_context->sequence_to_parent.c1 = feature_block->block_to_sequence.q1 = 1;
   feature_context->sequence_to_parent.c2 = feature_block->block_to_sequence.q2
-                                         = header->features_end;
+                                         = header->features_end - header->features_start + 1;
 
   // block coordinates if not pre-specified
   if(feature_block->block_to_sequence.t2 == 0)
