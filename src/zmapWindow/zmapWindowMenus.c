@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Feb 21 11:04 2011 (edgrif)
+ * Last edited: Feb 28 11:10 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.83 2011-02-21 11:04:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.84 2011-02-28 11:30:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1170,6 +1170,26 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+
+/* Clicked on a non-alignment feature... */
+ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
+						  ZMapGUIMenuItemCallbackFunc callback_func,
+						  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - show this feature",
+       BLIX_FEATURE, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+    } ;
+
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
 /* Clicked on a dna homol feature... */
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
@@ -1278,17 +1298,11 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 	feature_set = (ZMapFeatureSet)feature_any ;
 
-
-	/* We should use the mouse position here.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	if (zMapWindowGetVisibleSeq(menu_data->window, &y1, &y2))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  if (zmapWindowWorld2SeqCoords(menu_data->window,
-					menu_data->x, menu_data->y, menu_data->x, menu_data->y,
-					&block_grp, &y1, &y2))
-	    {
+	/* User clicked on col. background so use mouse position to set blixem origin. */
+	if (zmapWindowWorld2SeqCoords(menu_data->window,
+				      menu_data->x, menu_data->y, menu_data->x, menu_data->y,
+				      &block_grp, &y1, &y2))
+	  {
 	      y2 = y1 ;
 	      feature = zMap_g_hash_table_nth(feature_set->features, 0) ;
 	    }
