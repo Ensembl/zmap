@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 24 14:59 2011 (edgrif)
+ * Last edited: Feb 28 11:08 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.208 2011-02-24 15:07:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.209 2011-02-28 11:31:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1129,7 +1129,12 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   if (feature->url)
     menu_sets = g_list_append(menu_sets, makeMenuURL(NULL, NULL, menu_data)) ;
 
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+
+  if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
+    }
+  else
     {
       menu_sets = g_list_append(menu_sets, makeMenuPfetchOps(NULL, NULL, menu_data)) ;
 
@@ -1144,6 +1149,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
 	}
     }
+
 
   /* DNA/Peptide ops. */
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)

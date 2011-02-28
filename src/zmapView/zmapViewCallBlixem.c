@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jan 11 15:43 2011 (edgrif)
+ * Last edited: Feb 28 10:53 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.51 2011-01-11 15:48:42 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.52 2011-02-28 11:31:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1068,9 +1068,11 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     missed += 1 ;
 
 
-  /* type of alignment data, i.e. nucleotide or peptide. Compulsory. */
+  /* type of alignment data, i.e. nucleotide or peptide. Compulsory. Note that type
+   * can be NONE if blixem called for non-alignment column, something requested by
+   * annotators for just looking at transcripts/dna. */
   paramString[BLX_ARGV_TYPE_FLAG - missed] = g_strdup("-m");
-  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+  if (blixem_data->align_type == ZMAPHOMOL_NONE || blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
     paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'n') ;
   else
     paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'p') ;

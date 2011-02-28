@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Feb 22 07:43 2011 (edgrif)
+ * Last edited: Feb 28 11:12 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.305 2011-02-24 14:21:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.306 2011-02-28 11:31:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2407,9 +2407,13 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
   menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
 
-  if((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
+  if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
     {
-      if(feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
+	}
+      else
 	{
 	  menu_sets = g_list_append(menu_sets, separator) ;
 
