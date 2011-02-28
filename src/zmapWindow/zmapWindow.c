@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 24 11:58 2011 (edgrif)
+ * Last edited: Feb 28 09:20 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.352 2011-02-24 14:21:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.353 2011-02-28 09:25:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,6 +411,10 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
     {
       copyLockWindow(original_window, new_window) ;
     }
+
+
+  /* Is there a remote client ? */
+  new_window->xremote_client = original_window->xremote_client ;
 
   /* A new window will have new canvas items so we need a new hash. */
   new_window->context_to_item = zmapWindowFToICreate() ;
