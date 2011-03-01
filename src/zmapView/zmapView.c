@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 24 11:14 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.230 2011-02-24 11:15:38 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.231 2011-03-01 09:34:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,6 +52,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
+#include <ZMap/zmapCmdLineArgs.h>
 
 #include <zmapView_P.h>
 
@@ -446,6 +447,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
   char *str;
 
   gpointer key, value;
+  ZMapCmdLineArgsType arg;
 
 
   /*
@@ -456,6 +458,14 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
    * See zMapConfigIniGetQQHash()...
    *
    */
+
+#if 0
+  if(zMapCmdLineArgsValue(ZMAPARG_SERIAL,&arg))
+      view->serial_load = arg.b;
+
+//view->serial_load = TRUE;
+  zMapLogWarning("serial load = %d",view->serial_load);
+#endif
 
   if ((context = zMapConfigIniContextProvide()))
     {
@@ -918,8 +928,11 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		    else
 		      dna_requested = FALSE ;
 
-                terminate = !g_str_has_prefix(current_server->url,"pipe://");
+                terminate = g_str_has_prefix(current_server->url,"pipe://");
 
+/*
+NOTE            if(view->serial_load)   don't request in parallel
+*/
 		    if ((view_con = createConnection(zmap_view, NULL, context,
 						     current_server->url,
 						     (char *)current_server->format,
@@ -2693,6 +2706,21 @@ static gboolean checkStateConnections(ZMapView zmap_view)
       zmap_view->state = ZMAPVIEW_LOADED ;
       zmap_view->sources_loading = 0;
       state_change = TRUE;
+
+#if 0
+      /* MH17 NOTE: I'm re-using this flag for the moment just to see if it's effective
+       * if restarting a session then load pipes in series (from cached files)
+       * then display the lot once only instead of moving columns sideways many times
+       */
+      if(zmap_view->serial_load)
+      {
+            /* 4th arg is a list of masked featuresets which are relevant if updating
+             * here we display the lot so no problem
+             */
+            justDrawContext(zmap_view, zmap_view->features, zmap_view->context_map.styles , NULL);
+            zmap_view->serial_load = FALSE;
+      }
+#endif
     }
 
   if (state_change)
@@ -3605,7 +3633,7 @@ static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_in
   ZMapFeatureContext diff_context = NULL ;
   GList *masked;
 
-  if ((merge_results = justMergeContext(view, &context_in, styles, &masked)))
+  if ((merge_results = justMergeContext(view, &context_in, styles, &masked))) // && !view->serial_load)
     {
       diff_context = context_in;
 
