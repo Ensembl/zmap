@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 28 09:20 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.353 2011-02-28 09:25:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.354 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4472,11 +4472,33 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
+      /* testing... */
+#if 0
+    case GDK_x:
+      {     FooCanvasItem *focus_item ;
+            if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+            {
+                  int i;
+
+                  zMapStartTimer("Test map","100000");
+
+                  for(i = 0;i < 100000;i++)
+                  {
+                        foo_canvas_item_unmap(focus_item);
+                        foo_canvas_item_map(focus_item);
+                  }
+                  zMapStopTimer("Test map","done");
+                  /* takes 8ms for 100k */
+            }
+      }
+      break;
+#endif
+
     case GDK_Z:
     case GDK_z:
       {
 	/* Zoom to an item or subpart of an item. */
-	FooCanvasItem *focus_item ;
+      FooCanvasItem *focus_item ;
 	gboolean mark_set ;
 
 

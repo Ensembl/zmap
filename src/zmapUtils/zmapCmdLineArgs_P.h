@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 13 17:39 2010 (edgrif)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.9 2010-10-19 15:50:14 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.10 2011-03-01 16:22:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
@@ -46,6 +46,7 @@
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
+#define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
 
 #define ZMAPARG_NO_ARG         "<none>"
 #define ZMAPARG_COORD_ARG      "coord"
@@ -53,6 +54,7 @@
 #define ZMAPARG_DIR_ARG        "directory"
 #define ZMAPARG_WINID_ARG      "0x0000000"
 #define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
+#define ZMAPARG_SERIAL_ARG     "<none>"
 
 #define ZMAPARG_INVALID_INT -1
 #define ZMAPARG_INVALID_BOOL FALSE
@@ -61,6 +63,7 @@
 
 enum {ARG_SET = 1,					    /* Special value, do not alter. */
       ARG_VERSION,
+      ARG_SERIAL,
       ARG_START, ARG_END,
       ARG_CONF_FILE, ARG_CONF_DIR,
       ARG_WINID
@@ -81,6 +84,7 @@ typedef struct _ZMapCmdLineArgsStruct
 
   /* All option values are stored here for later reference. */
   gboolean version ;
+  gboolean serial ;
 
   int start, end ;
 

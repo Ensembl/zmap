@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb 23 12:41 2011 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.69 2011-02-24 11:17:54 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.70 2011-03-01 16:22:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -204,6 +204,7 @@ typedef struct _ZMapViewStruct
   gboolean busy ;					    /* Records when we are busy so can
 							       block user interaction. */
   gboolean thread_fail_silent;                /* don't report failures on screen */
+  gboolean serial_load;                   /* load pipe servers in series on startup */
 
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program

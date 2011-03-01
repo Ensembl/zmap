@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 18 11:03 2011 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.37 2011-02-18 11:06:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.38 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1886,6 +1886,12 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
 
       if ((draw_me = canvas_item->items[i]))
 	{
+if(canvas_item->debug)
+{
+      printf("%p - zmap_window_canvas_item_draw: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
+            item, item->x1, item->y1, item->x2, item->y2);
+
+}
 	  if ((draw_me->object.flags & FOO_CANVAS_ITEM_VISIBLE))
 	    {
 	      if (!(draw_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
@@ -2020,7 +2026,7 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 		(*group_parent_class_G->map)(item);
 
 	      (*group_parent_class_G->bounds)(item, &x1, &y1, &x2, &y2) ;
-	      
+
 	      if(canvas_item->debug == TRUE)
 		{
 		  printf("%p - zmap_window_canvas_item_bounds: rect->x1=%g, rect->y1=%g, rect->x2=%g, rect->y2=%g\n",
@@ -2212,7 +2218,7 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
 					  FooCanvasItem *canvas_item,
 					  FooCanvasRE *rect)
 {
-  double x1, x2, y1, y2 ;
+  double x1,y1,x2,y2;
 
   if (window_canvas_item->debug)
     {
@@ -2237,10 +2243,14 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
   rect->y2 = (y2) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    FooCanvasItem *rect_item ;
+
   printBounds(canvas_item, "canvas item:") ;
 
-  rect_item = (FooCanvasItem *)rect; /*  */
+  rect_item = (FooCanvasItem *)rect;
   printBounds(rect_item, "rect_item:") ;
+  }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 13 17:43 2010 (edgrif)
  * Created: Mon Feb  7 08:19:50 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.h,v 1.8 2010-10-19 15:50:14 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.h,v 1.9 2011-03-01 16:22:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_H
@@ -58,7 +58,7 @@ typedef union
 /*!
  *
  * @section cmdline_flags   Command line flags
- * 
+ *
  * <table>
  *  <tr>
  *  <th colspan=4 align=center>"ZMap Command Line Flags"</th>
@@ -118,6 +118,7 @@ typedef union
 
 
 #define ZMAPARG_VERSION        "version"
+#define ZMAPARG_SERIAL         "serial"
 #define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_SEQUENCE_START "start"
 #define ZMAPARG_SEQUENCE_END   "end"

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.41 2011-01-12 16:56:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.42 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -978,11 +978,12 @@ ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet 
 
 
 /* show or hide all the masked features in this column */
-void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean set_colour)
+void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean show, gboolean set_colour)
 {
   ZMapWindowContainerFeatures container_features ;
   ZMapStyleBumpMode bump_mode;      /* = container->settings.bump_mode; */
-  gboolean show = !container->masked;
+
+  container->masked = !show;
 
   bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container);
 
@@ -1015,7 +1016,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 
             if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
               {
-                if(set_colour)
+                if(set_colour)      /* called on masking by abother featureset */
                 {
                       GdkColor *fill,*outline;
 
@@ -1055,6 +1056,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container),bump_mode);
     }
 }
+
 
 
 

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Feb 24 14:23 2011 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.56 2011-02-24 14:23:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.57 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,7 +69,7 @@ zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, Z
  *  */
 
 
-#define MH17_SEARCH_DEBUG 1
+#define MH17_SEARCH_DEBUG 0
 
 /* Used to hold coord information + return a result the child search callback function. */
 typedef struct

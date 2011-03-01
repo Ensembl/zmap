@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 28 11:12 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.306 2011-02-28 11:31:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.307 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -984,7 +984,7 @@ void container_mask_cb(ZMapWindowContainerGroup container, FooCanvasPoints *poin
             {
                   // this does the lot!
                   // mh17: cannot believe my luck -> or is it skill??
-                  zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs, TRUE);
+                  zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs, cfs->masked, TRUE);
                   break;
             }
       }
@@ -1418,6 +1418,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         FooCanvasItem  *align_hash_item;
         double x, y;
         int start,end;
+
         feature_align = (ZMapFeatureAlignment)feature_any;
 #ifdef MH17_REVCOMP_DEBUG
         printf("drawFeatures align");

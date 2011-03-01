@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.19 2011-01-12 16:56:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.20 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,7 +122,7 @@ void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet containe
 
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set);
 
-void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean set_colour);
+void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean show, gboolean set_colour);
 gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
 
 ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowContainerFeatureSet container_set);

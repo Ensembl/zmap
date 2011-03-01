@@ -440,14 +440,16 @@ foo_canvas_item_unrealize (FooCanvasItem *item)
 }
 
 /* Map handler for canvas items */
-static void
+//static
+void
 foo_canvas_item_map (FooCanvasItem *item)
 {
 	GTK_OBJECT_SET_FLAGS (item, FOO_CANVAS_ITEM_MAPPED);
 }
 
 /* Unmap handler for canvas items */
-static void
+//static
+void
 foo_canvas_item_unmap (FooCanvasItem *item)
 {
 	GTK_OBJECT_UNSET_FLAGS (item, FOO_CANVAS_ITEM_MAPPED);

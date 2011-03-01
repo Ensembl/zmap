@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 28 11:10 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.84 2011-02-28 11:30:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.85 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -951,8 +951,7 @@ static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowContainerFeatureSet container = menu_data->container_set;
 
-  container->masked = !container->masked;
-  zMapWindowContainerFeatureSetShowHideMaskedFeatures(container,FALSE);
+  zMapWindowContainerFeatureSetShowHideMaskedFeatures(container, container->masked, FALSE);
 
       /* un/bumped features might be wider */
   zmapWindowFullReposition(menu_data->window) ;
