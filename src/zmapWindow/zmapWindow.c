@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 28 09:20 2011 (edgrif)
+ * Last edited: Mar  3 08:23 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.354 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.355 2011-03-03 08:29:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -5083,9 +5083,9 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
   /* We could be using this here..... */
 
 	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
-			     "start",  &selected_start,
-			     "end",    &selected_end,
-			     "length", &selected_length,
+			     "start",  selected_start,
+			     "end",    selected_end,
+			     "length", selected_length,
 			     NULL);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -5113,6 +5113,16 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 
   zmapWindowCoordPairToDisplay(window, feature->x1, feature->x2,
 			       selected_start, selected_end) ;
+
+  /* I'm special casing this because otterlace need this reversed for now but will be
+   * sorting out their ordering soon....really...honestly.... */
+  if (window->revcomped_features && feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+      int tmp = *selected_start ;
+      *selected_start = *selected_end ;
+      *selected_end = tmp ;
+    }
+
 
   *selected_length = *feature_length ;
 
