@@ -1,0 +1,345 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 3 March 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.114 </h1>
+
+<p>Last Release Date: 24/02/2011</p>
+
+
+<h3>Current Release Date:  3 March 2011</h3>
+
+
+<p>This report covers 2011-02-24 to 2011-03-03</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=113979">113979</a>, Resolved (Mon Feb 28 12:00:20 2011)
+<p>additional blixem option for style</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=130041">130041</a>, Resolved (Mon Feb 28 10:26:18 2011)
+<p>starting blixem from empty part of column bug</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=134441">134441</a>, Resolved (Mon Feb 28 11:33:51 2011)
+<p>run blixem without clicking on a column first</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=160809">160809</a>, Resolved (Mon Feb 28 11:34:59 2011)
+<p>certain blixems center on "random" genomic sequence
+</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=165428">165428</a>, Resolved (Mon Feb 28 11:45:08 2011)
+<p>Blixem TrEmbl and Swiss-Prot proteins together</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=176116">176116</a>, Resolved (Mon Feb 28 11:46:20 2011)
+<p>Blixem DNAs - all matches for associated columns and Blixem Proteins - all matches for associated columns don't work</p>
+<p>lw2@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=176171">176171</a>, Resolved (Mon Feb 28 12:04:11 2011)
+<p>Blixem prefixes</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=185615">185615</a>, Resolved (Mon Feb 28 11:47:05 2011)
+<p>Blixem Proteins/DNAs all matches for associated columns</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=192196">192196</a>, Resolved (Thu Feb 24 17:03:47 2011)
+<p>Z keyboard shortcut
+</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=198981">198981</a>, Resolved (Thu Feb 24 14:37:57 2011)
+<p>show variants list broken</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=201884">201884</a>, Resolved (Thu Feb 24 11:53:00 2011)
+<p>feature_details timeout</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=204168">204168</a>, Resolved (Mon Feb 28 10:17:08 2011)
+<p>v-split zmap causes marking anomalies?</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=204477">204477</a>, Resolved (Thu Feb 24 11:54:08 2011)
+<p>remote client detection from zmap code</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=204692">204692</a>, Resolved (Mon Feb 28 10:10:03 2011)
+<p>zmap 0.1.104: segfault</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=205167">205167</a>, Resolved (Mon Feb 28 10:02:27 2011)
+<p>protein blixem</p>
+<p>jla1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=205504">205504</a>, Resolved (Wed Mar 02 11:59:40 2011)
+<p>test_otterlace feedback</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=205744">205744</a>, Resolved (Tue Mar 01 16:23:19 2011)
+<p>Can search for masked features but can't see them</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=205912">205912</a>, Resolved (Tue Mar 01 12:05:58 2011)
+<p>window feature list is invalid after bump column</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=206688">206688</a>, Resolved (Thu Mar 03 08:32:15 2011)
+<p>zmap 114 always puts features on the forward strand</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>acedb</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=200215">200215</a>, Resolved (Mon Feb 28 07:57:32 2011)
+<p>64 bit version of 4.4.9.47 and cachesize.wrm questions</p>
+<p>wnash@genome.wustl.edu</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=206095">206095</a>, Resolved (Mon Feb 28 07:55:47 2011)
+<p>ACEDB problem view update CDS in Fmap</p>
+<p>wnash@genome.wustl.edu</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=206100">206100</a>, Resolved (Fri Feb 25 17:19:28 2011)
+<p>Re: ACEDB problem view update CDS in Fmap</p>
+<p>paul.davis@wormbase.org</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix stupid/bad bug in gaps parsing
+	  code causing it to fail unpredictably.
+
+
+  </li>
+  <li> src/include/ZMap/zmapView.h: remove unused struct from select
+	  return struct.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: add new call to register remote
+	  client + new remote return code to select.
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: add new return codes for client
+	  errors etc. to send codes.
+
+
+  </li>
+  <li> src/zmapControl/zmapControl.c: remove unused code.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: sendcommand now returns a proper send
+	  response code.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: add code to register remote
+	  client existence with all zmapWindows
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteSend.c: add code to return proper send
+	  response code.
+
+
+  </li>
+  <li> src/zmapView/zmapView_P.h: send command now returns proper send
+	  response code.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowFeature.c,
+	  zmapWindowFeatureShow.c, zmapWindow_P.h: xremote calls now return
+	  proper send response codes, calls now handle timeout from client.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_02_24.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4850/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureData.c: move locus to transcript, only
+	  needed there.
+
+
+  </li>
+  <li> src/: zmapGFF/zmapGFF2Dumper.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/items/zmapWindowTranscriptFeature.c: locus moved to
+	  transcript.
+
+
+  </li>
+  <li> src/: zmapView/zmapViewRemoteReceive.c,
+	  zmapWindow/zmapWindowTextPositioner.c: locus moved to transcript.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: formatting only.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowSearch.c, zmapWindowDrawFeatures.c:
+	  fix up search stuff for locus for now...temporary until havana
+	  come back with requirements.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: formatting only.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowItemHash.c, zmapWindowList.c,
+	  zmapWindowNavigator.c, zmapWindowNavigatorMenus.c: fix up search
+	  stuff for locus for now...temporary until havana come back with
+	  requirements.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeature.c, zmapWindowNavigatorMenus.c:
+	  somehow an earlier commit was messed up by me, redo the code
+	  changes.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: forgot to copy xremote state to
+	  split window.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowMenus.c, zmapWindow_P.h: add option
+	  for non-alignment feature blixem.
+
+
+  </li>
+  <li> src/: zmapView/zmapViewCallBlixem.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c: allow user to click on non-align
+	  col/features to launch blixem, some annotators like to look at
+	  dna that way.
+
+
+  </li>
+  <li> src/zmapServer/pipe/pipeServer.c: Fixed logging of stderr from
+	  pipe servers
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: fixed non terminating pipe servers
+
+
+  </li>
+  <li> src/: include/ZMap/zmapCmdLineArgs.h,
+	  libzmapfoocanvas/foo-canvas.c, zmapUtils/zmapCmdLineArgs.c,
+	  zmapUtils/zmapCmdLineArgs_P.h, zmapView/zmapView_P.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowItemHash.c, zmapWindow/zmapWindowList.c,
+	  zmapWindow/zmapWindowMenus.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h: fixed window
+	  list out of data item and feature data plus unmasked selected
+	  features (RT205744)
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix coord ordering for pasting of
+	  align coords.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Added the ability to specify column widths in the config file
+</li>
+
+<li>
+Also fixed a bug with the dynamic column width not being calculated correctly (it was not ignoring columns whose data is not loaded).
+</li>
+
+<li>
+Made Source column sortable and reverted its width to 85 pixels
+</li>
+
+<li>
+Added Source column to mouse-over feedback text
+</li>
+
+<li>
+Enable Source column by default and make it narrow
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
