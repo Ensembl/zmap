@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowSequenceFeature.h
  * HISTORY:
- * Last edited: Aug 18 10:05 2010 (edgrif)
+ * Last edited: Mar  8 08:26 2011 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.14 2010-08-18 09:24:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.15 2011-03-08 08:35:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -699,18 +699,30 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
   origin_index  = index1 + first_char_index;
   current_index = index2 + first_char_index;
 
-  /* this is needed to fix up what is probably unavoidable from the text item... [-ve coords] */
-  if (origin_index < 1)
-    origin_index = 1;
 
-  /* this is needed to fix up what is probably unavoidable from the text item... [too long coords] */
-  if(current_index > feature->feature.sequence.length)
-    current_index = feature->feature.sequence.length;
+  /* This section of code isn't great, it implies that to some extent we are not in control
+   * of our coords...investigate when there is time...note that with peptides we can run
+   * off the end in our coords because of all the frame stuff.... */
 
-  signal_id = ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(sequence_feature)->signals[SEQUENCE_SELECTED_SIGNAL];
+  /* HACK: Currently we display an 'X' for peptides right at the end that can't be fully translated
+   * because we've run out of dna sequence, avoid displaying these as we run off the dna.... */
+  if (feature->type != ZMAPSTYLE_MODE_PEP_SEQUENCE || current_index <= feature->feature.sequence.length)
+    {
+      /* These comments are Roys and imply that the whole text position stuff is flakey. */
 
-  sequence_feature_emit_signal(sequence_feature, signal_id,
-			       origin_index, current_index);
+      /* this is needed to fix up what is probably unavoidable from the text item... [-ve coords] */
+      if (origin_index < 1)
+	origin_index = 1;
+
+      /* this is needed to fix up what is probably unavoidable from the text item... [too long coords] */
+      if (current_index > feature->feature.sequence.length)
+	current_index = feature->feature.sequence.length;
+
+      signal_id = ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(sequence_feature)->signals[SEQUENCE_SELECTED_SIGNAL];
+
+      sequence_feature_emit_signal(sequence_feature, signal_id,
+				   origin_index, current_index);
+    }
 
   return TRUE;
 }
