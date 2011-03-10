@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 18 10:00 2011 (edgrif)
+ * Last edited: Mar 10 16:35 2011 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.76 2011-02-18 10:01:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.77 2011-03-10 17:01:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -314,6 +314,33 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 
 
 
+/* Get the marked region of a window in user-friendly coords.
+ *
+ * returns boolean corresponding to whether mark is set TRUE = set, FALSE = unset
+ */
+gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
+{
+  gboolean result = FALSE ;
+
+  if (window->mark && zmapWindowMarkIsSet(window->mark))
+    {
+      double wx1, wx2, wy1, wy2 ;
+
+      zmapWindowMarkGetWorldRange(window->mark, &wx1, &wy1, &wx2, &wy2) ;
+
+      *start = (int)(wy1) ;
+      *end = (int)(wy2) ;
+
+      if (window->display_forward_coords)
+	{
+	  zmapWindowCoordPairToDisplay(window, *start, *end, start, end) ;
+	}
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 /* Get scroll region top/bottom. */
