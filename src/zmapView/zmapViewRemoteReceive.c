@@ -30,9 +30,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Feb 24 11:58 2011 (edgrif)
+ * Last edited: Mar 10 16:27 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.61 2011-02-24 14:13:16 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.62 2011-03-10 17:00:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1864,7 +1864,7 @@ static void reportWindowMark(ZMapView view, RequestData input_data, ResponseData
   view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
   window = view_window->window ;
 
-  if (zMapWindowMarkGetSequenceSpan(window, &start, &end))
+  if (zMapWindowGetMark(window, &start, &end))
     {
       g_string_append_printf(output_data->messages,
 			     "<mark exists=\"true\" start=\"%d\" end=\"%d\" />", start, end) ;
@@ -1911,7 +1911,7 @@ static void loadFeatures(ZMapView view, RequestData input_data, ResponseData out
       view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
       window = view_window->window ;
 
-      if ((zMapWindowGetMark(window, &start, &end)))
+      if ((zMapWindowMarkGetSequenceSpan(window, &start, &end)))
 	{
 	  use_mark = TRUE ;
 	}
