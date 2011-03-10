@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 18 10:24 2011 (edgrif)
+ * Last edited: Mar 10 16:30 2011 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.27 2011-02-18 10:25:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.28 2011-03-10 17:00:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -539,43 +539,6 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 
   return result ;
 }
-
-
-/*!
- * \brief Get the marked region of a window.
- *
- * \param window  The window to get the mark from
- * \param start   The address to store the start of the mark
- * \param end     The address to store the end of the mark
- *
- * \return boolean corresponding to whether mark is set TRUE = set, FALSE = unset
- */
-gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
-{
-  gboolean result = FALSE ;
-
-  if (window->mark && window->mark->mark_set)
-    {
-      double wx1, wx2, wy1, wy2 ;
-
-      zmapWindowMarkGetWorldRange(window->mark, &wx1, &wy1, &wx2, &wy2) ;
-
-      *start = (int)(wy1) ;
-      *end = (int)(wy2) ;
-
-
-      /* THIS IS NOT THE PLACE FOR THIS...SHOULD BE IN FUNC THAT CALLS THIS ONE.... */
-      if (window->display_forward_coords)
-	{
-	  zmapWindowCoordPairToDisplay(window, *start, *end, start, end) ;
-	}
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
 
 
 /* GROSS HACK UNTIL I FIX THE MARK STUFF...what should happen is that we use 
