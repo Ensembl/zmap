@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowTextItem.h
  * HISTORY:
- * Last edited: Jul 29 11:21 2010 (edgrif)
+ * Last edited: Mar 11 11:33 2011 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.12 2010-07-29 10:22:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.13 2011-03-11 17:42:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1186,6 +1186,16 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
 	  
 	  if (first_found && last_found)
 	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      printf("seq coords: %d, %d    item_start/end = %d, %d   new_start/end = %d, %d\n",
+		     zmap->refseq_start, zmap->refseq_end,
+		     item_event->start_index, item_event->end_index,
+		     new_start_index, new_end_index) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 	      item_event->start_index = new_start_index;
 	      item_event->end_index   = new_end_index;
 
@@ -2431,7 +2441,7 @@ static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
       y2 += i2w_dy;
       
       /* Event y > current line?. check not already on last line! */
-      if(ewy > y2 && !pango_layout_iter_at_last_line(iterator))
+      if (ewy > y2 && !pango_layout_iter_at_last_line(iterator))
 	{
 	  int spacing = pango_layout_get_spacing(text->layout);
 	  double height_d;
@@ -2446,7 +2456,7 @@ static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
 	  
 	  current_line = (int)(nominator / denominator);
 	  
-	  if(debug_text_highlight_G)
+	  if (debug_text_highlight_G)
 	    printf("I think %f / %f = a current line of %d instead of %f\n", 
 		   nominator, 
 		   denominator,
@@ -2666,7 +2676,8 @@ static void print_private_data(ZMapWindowTextItem zmap)
 
 static void printSelectedState(ItemEvent item_event, char *function, char *prefix)
 {
-  if (debug_text_highlight_G)
+
+  if (debug_selection_signals_G)
     {
       printf("%p %s %s item_event->selected_state = ", item_event, function, prefix) ;
 
