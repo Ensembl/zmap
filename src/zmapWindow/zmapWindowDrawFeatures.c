@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Feb 28 11:12 2011 (edgrif)
+ * Last edited: Mar 11 17:39 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.307 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.308 2011-03-11 17:40:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2305,22 +2305,14 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 	  /* Try unhighlighting dna/translations... */
 	  zmapWindowItemUnHighlightDNA(window, item) ;
-
-	  {
-	    ZMapFrame frame ;
-
-	    for (frame = ZMAPFRAME_0 ; frame < ZMAPFRAME_2 + 1 ; frame++)
-	      {
-		zmapWindowItemUnHighlightTranslation(window, item, frame) ;
-	      }
-	  }
+	  zmapWindowItemUnHighlightTranslations(window, item) ;
 
 	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
 
-        select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
-
-        feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
-        select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
+	  select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+	  
+	  feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
+	  select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
 
         {
             GQuark q;
