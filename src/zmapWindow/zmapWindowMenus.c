@@ -28,14 +28,15 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Feb 28 11:10 2011 (edgrif)
+ * Last edited: Mar  8 09:53 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.85 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.86 2011-03-11 17:29:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <string.h>
 #include <ZMap/zmap.h>
+
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h> /* zMap_g_hash_table_nth */
 #include <ZMap/zmapFASTA.h>
@@ -45,6 +46,7 @@
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerFeatureSet_I.h>
+
 
 /* some common menu strings, needed because cascading menus need the same string as their parent
  * menu item. */
@@ -77,19 +79,12 @@
 
 enum
   {
-    BLIX_MATCH,						    /* Blixem just this match. */
-    BLIX_FEATURE,					    /* Blixem all matches for this feature
+    BLIX_SELECTED,					    /* Blixem all matches for selected features
 							       in this column. */
     BLIX_SET,						    /* Blixem all matches for all features
 							       in this column. */
-    BLIX_MULTI_SETS,					    /* Blixem all matches for all features
+    BLIX_MULTI_SETS					    /* Blixem all matches for all features
 							       in the list of columns in the blixem config file. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* Not supported and never used....?? */
-    BLIX_ALL_SETS					    /* All matches for all features in all columns. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   } ;
 
 
@@ -1177,8 +1172,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - show this feature",
-       BLIX_FEATURE, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - show this column",
+       BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
     } ;
 
@@ -1196,15 +1191,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Although they asked for this the annotators now say they don't want it... */
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - just this match",
-       BLIX_MATCH, blixemMenuCB, NULL, NULL},
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - all matches for this feature",
-       BLIX_FEATURE, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - all matches for selected features",
+       BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
     } ;
 
@@ -1243,8 +1231,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AA_STR " - all matches for this feature",
-       BLIX_FEATURE, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AA_STR " - all matches for selected features",
+       BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                             0, NULL,         NULL}
     } ;
 
@@ -1278,16 +1266,22 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
+  ZMapWindowCallbackCommandAlign align ;
   ZMapFeatureAny feature_any;
   ZMapFeature feature = NULL ;
+  gboolean found_feature = FALSE ;
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   int y1, y2 ;
+  gboolean selected_features = FALSE ;
+
+  
+  align = g_new0(ZMapWindowCallbackCommandAlignStruct, 1) ;
 
 
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
   zMapAssert(feature_any) ; /* something badly wrong if no feature. */
 
+  /* User may have clicked on a column or on a feature within a column. */
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -1302,51 +1296,108 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 				      menu_data->x, menu_data->y, menu_data->x, menu_data->y,
 				      &block_grp, &y1, &y2))
 	  {
-	      y2 = y1 ;
-	      feature = zMap_g_hash_table_nth(feature_set->features, 0) ;
-	    }
+	    y2 = y1 ;
+
+	    /* Use first feature in set to get alignment type etc. */
+	    feature = zMap_g_hash_table_nth(feature_set->features, 0) ;
+
+	    found_feature = TRUE ;
+	  }
 
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-	feature = (ZMapFeature)feature_any;
+	feature = (ZMapFeature)feature_any ;
 
 	y1 = feature->x1 ;
 	y2 = feature->x2 ;
 
+	/* User clicked on an alignment feature. */
+	if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	  selected_features = TRUE ;
+
+	found_feature = TRUE ;
+
 	break;
       }
     default:
-      break;
+      {
+	found_feature = FALSE ;
+	break;
+      }
     }
 
-  if (feature)
+  if (found_feature)
     {
-      align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
+      /* Set up general command field for callback. */
+      align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
 
-      align.position = y1 + ((y2 - y1) / 2) ;
-      align.feature = feature ;
+      align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
+      zMapAssert(align->block) ;
 
-      switch(menu_item_id)
+
+
+      
+      if (zmapWindowMarkIsSet(menu_data->window->mark))
 	{
-	case BLIX_MATCH:
-	  align.blix_type.single_match = TRUE ;
-	  break;
-	case BLIX_FEATURE:
-	  align.blix_type.single_feature = TRUE ;
-	  break;
-	case BLIX_SET:
-	  align.blix_type.feature_set = TRUE ;
-	  break;
-	case BLIX_MULTI_SETS:
-	  align.blix_type.multi_sets = TRUE ;
-	  break;
-	default:
-	  break;
+	  zmapWindowMarkGetSequenceRange(menu_data->window->mark, &(align->start), &(align->end)) ;
+
+	  align->position = align->start + ((align->end - align->start) / 2) ;
+	}
+      else
+	{
+	  align->position = y1 + ((y2 - y1) / 2) ;
 	}
 
-      (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
+      /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
+      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  align->homol_type = ZMAPHOMOL_N_HOMOL ;
+
+	  align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
+	}
+      else
+	{
+	  align->homol_type = feature->feature.homol.type ;
+
+	  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
+
+	  /* If user clicked on features then make a list of them (may only be one), otherwise
+	   * we need to use the feature set. */
+	  if (selected_features == TRUE)
+	    {
+	      GList *focus_items ;
+
+	      focus_items = zmapWindowFocusGetFocusItemsType(menu_data->window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
+
+	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
+
+	      g_list_free(focus_items) ;
+
+	      /* If no highlighted features then use the one the user clicked on. */
+	      if (!(align->features))
+		align->features = g_list_append(align->features, feature) ;
+	    }
+
+	  switch(menu_item_id)
+	    {
+	    case BLIX_SELECTED:
+	      align->homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
+	      break;
+	    case BLIX_SET:
+	      align->homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+	      break;
+	    case BLIX_MULTI_SETS:
+	      align->homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
+	      break;
+	    default:
+	      zMapAssertNotReached() ;
+	      break;
+	    }
+	}
+
+      (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, align) ;
     }
 
   g_free(menu_data) ;
