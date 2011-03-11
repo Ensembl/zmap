@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Feb 28 10:53 2011 (edgrif)
+ * Last edited: Mar  3 17:37 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.52 2011-02-28 11:31:40 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.53 2011-03-11 17:36:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -119,12 +119,20 @@ typedef struct BlixemDataStruct
   gchar         *netid;					    /* eg pubseq */
   int            port;					    /* eg 22100  */
 
+  /* features are shown in blixem either over the range  (position +/- (scope / 2))
+   * or mark start to end. */
   int position ;					    /* Tells blixem what position to
 							       centre on initially. */
+  int scope ;						    /* defaults to 40000 */
+
+  gboolean scope_mark ;					    /* Use mark start/end for scope ? */
+  int mark_start, mark_end ;
+
   int min, max ;					    /* Bounds of displayed features/sequence. */
   gboolean negate_coords ;				    /* Show rev strand coords as same as
 							       forward strand but with a leading '-'. */
-  int            scope;					    /* defaults to 40000 */
+
+
   int            homol_max;				    /* score cutoff point */
 
   char          *opts;
@@ -151,8 +159,19 @@ typedef struct BlixemDataStruct
 
   ZMapView     view;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapFeature feature ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  GList *features ;
+
+  ZMapFeatureSet feature_set ;
+
   ZMapFeatureBlock block ;
+
+
+
   GHashTable *known_sequences ;				    /* Used to check if we already have a sequence. */
   GList *local_sequences ;				    /* List of any sequences held in
 							       server and not in pfetch. */
@@ -167,7 +186,7 @@ typedef struct BlixemDataStruct
    * is in one of these sets then all the features in all the sets are sent to blixem. */
   ZMapHomolType align_type ;				    /* What type of alignment are we doing ? */
 
-  ZMapViewBlixemAlignSet align_set ;			    /* Which set of alignments ? */
+  ZMapWindowAlignSetType align_set ;			    /* Which set of alignments ? */
 
   GList *dna_sets ;
   GList *protein_sets ;
@@ -197,6 +216,8 @@ typedef struct BlixemConfigDataStructType
     unsigned int port : 1 ;
 
     unsigned int scope : 1 ;
+    unsigned int scope_mark : 1 ;
+
     unsigned int homol_max : 1 ;
 
     unsigned int keep_tmpfiles : 1 ;
@@ -214,6 +235,9 @@ typedef struct BlixemConfigDataStructType
 
   int           scope ;					    /* defines range over which aligns are
 							       collected to send to blixem, defaults to 40000 */
+
+  gboolean scope_mark ;
+
   int           homol_max ;				    /* defines max. number of aligns sent
 							       to blixem. */
 
@@ -243,7 +267,10 @@ typedef struct BasicFeatureDumpStructName
 
 
 
-static gboolean initBlixemData(ZMapView view, int position, ZMapFeature feature,
+static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
+			       ZMapHomolType align_type, 
+			       int position, int start, int end,
+			       GList *features, ZMapFeatureSet feature_set,
 			       blixemData blixem_data, char **err_msg) ;
 static gboolean addFeatureDetails(blixemData blixem_data) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
@@ -361,21 +388,22 @@ static gboolean debug_G = TRUE ;
  * Note - position is the centre of the section of reference sequence displayed.
  *      - feature is only used to get the type of alignment to be displayed.
  *  */
-gboolean zmapViewBlixemLocalSequences(ZMapView view, int position, ZMapFeature feature, GList **local_sequences_out)
+gboolean zmapViewBlixemLocalSequences(ZMapView view,
+				      ZMapFeatureBlock block, ZMapHomolType align_type, int position,
+				      ZMapFeatureSet feature_set, GList **local_sequences_out)
 {
   gboolean status = TRUE ;
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapViewCallBlixem()" ;
-  ZMapFeatureSet feature_set ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  status = initBlixemData(view, position, feature, &blixem_data, &err_msg) ;
+  status = initBlixemData(view, block, align_type, position, 0, 0, NULL, feature_set, &blixem_data, &err_msg) ;
 
   blixem_data.errorMsg = NULL ;
-
-  feature_set = (ZMapFeatureSet)(feature->parent) ;
 
   /* There is no way to interrupt g_hash_table_foreach(), so instead,
    * if printLine() encounters a problem, we store the error message
@@ -422,7 +450,9 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, int position, ZMapFeature f
 	  blixem_data.local_sequences = NULL ;		    /* So its not free'd by freeBlixemData. */
 	}
       else
-	status = FALSE ;
+	{
+	  status = FALSE ;
+	}
     }
 
   freeBlixemData(&blixem_data) ;
@@ -441,8 +471,12 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, int position, ZMapFeature f
  * Note - position is the centre of the section of reference sequence displayed.
  *      - feature is only used to get the type of alignment to be displayed.
  *  */
-gboolean zmapViewCallBlixem(ZMapView view, int position, ZMapFeature feature, GList *local_sequences,
-			    ZMapViewBlixemAlignSet align_set, GPid *child_pid, gboolean *kill_on_exit)
+gboolean zmapViewCallBlixem(ZMapView view,
+			    ZMapFeatureBlock block, ZMapHomolType homol_type,
+			    int position, int start, int end,
+			    ZMapWindowAlignSetType align_set,
+			    GList *features, ZMapFeatureSet feature_set, GList *local_sequences,
+			    GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
   char *argv[BLX_ARGV_ARGC + 1] = {NULL} ;
@@ -451,9 +485,15 @@ gboolean zmapViewCallBlixem(ZMapView view, int position, ZMapFeature feature, GL
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
 
-  zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature) && child_pid) ;
 
-  status = initBlixemData(view, position, feature, &blixem_data, &err_msg) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature) && child_pid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  status = initBlixemData(view, block, homol_type,
+			  position, start, end,
+			  features, feature_set, &blixem_data, &err_msg) ;
 
   if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
     blixem_data.format_data = &gff_data ;
@@ -572,22 +612,31 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 
 
 
-static gboolean initBlixemData(ZMapView view, int position, ZMapFeature feature,
+static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
+			       ZMapHomolType align_type, 
+			       int position, int start, int end,
+			       GList *features, ZMapFeatureSet feature_set,
 			       blixemData blixem_data, char **err_msg)
 {
   gboolean status = TRUE ;
-  ZMapFeatureBlock block = NULL;
 
   blixem_data->view  = view ;
 
   blixem_data->position = position ;
+  blixem_data->mark_start = start ;
+  blixem_data->mark_end = end ;
+
   blixem_data->negate_coords = TRUE ;			    /* default for havana. */
 
-  blixem_data->feature = feature ;
-  blixem_data->align_type = feature->feature.homol.type ;
+  blixem_data->align_type = align_type ;
 
-  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
-  zMapAssert(block) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  blixem_data->feature = feature ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  blixem_data->features = features ;
+
+  blixem_data->feature_set = feature_set ;
+  
   blixem_data->block = block ;
 
   /* ZMap uses the new blixem so default format is GFF by default. */
@@ -657,6 +706,9 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
 
   if (curr_prefs->scope > 0)
     blixem_data->scope = curr_prefs->scope ;
+
+  blixem_data->scope_mark = curr_prefs->scope_mark ;
+
   if (curr_prefs->homol_max > 0)
     blixem_data->homol_max = curr_prefs->homol_max ;
 
@@ -717,6 +769,10 @@ static gboolean getUserPrefs(BlixemConfigData curr_prefs)
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				    ZMAPSTANZA_BLIXEM_SCOPE, &tmp_int))
 	file_prefs.scope = tmp_int ;
+
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+					ZMAPSTANZA_BLIXEM_SCOPE_MARK, &tmp_bool))
+	file_prefs.scope_mark = tmp_bool;
 
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				    ZMAPSTANZA_BLIXEM_MAX, &tmp_int))
@@ -805,6 +861,9 @@ static gboolean getUserPrefs(BlixemConfigData curr_prefs)
       if (curr_prefs->is_set.scope)
 	file_prefs.scope = curr_prefs->scope ;
 
+      if (curr_prefs->is_set.scope_mark)
+	file_prefs.scope_mark = curr_prefs->scope_mark ;
+
       if (curr_prefs->is_set.homol_max)
 	file_prefs.homol_max = curr_prefs->homol_max ;
 
@@ -845,17 +904,30 @@ static gboolean getUserPrefs(BlixemConfigData curr_prefs)
 static gboolean addFeatureDetails(blixemData blixem_data)
 {
   gboolean status = TRUE;
-  ZMapFeature feature;
   int scope = 40000 ;					    /* can be set from user prefs */
 
   if (blixem_data->scope > 0)
     scope = blixem_data->scope ;
 
-  feature = blixem_data->feature ;
 
   /* Set min/max range for blixem and clamp to our sequence. */
-  blixem_data->min = blixem_data->position - (scope / 2) ;
-  blixem_data->max = blixem_data->position + (scope / 2) ;
+  if (blixem_data->scope_mark && blixem_data->mark_start && blixem_data->mark_end)
+    {
+      blixem_data->min = blixem_data->mark_start ;
+      blixem_data->max = blixem_data->mark_end ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      blixem_data->position = blixem_data->mark_start + ((blixem_data->mark_end - blixem_data->mark_start) / 2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+  else
+    {
+      blixem_data->min = blixem_data->position - (scope / 2) ;
+      blixem_data->max = blixem_data->position + (scope / 2) ;
+    }
+
 
   if (blixem_data->min < 1)
     blixem_data->min = 1 ;
@@ -889,17 +961,37 @@ static gboolean addFeatureDetails(blixemData blixem_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
+  if (blixem_data->align_type == ZMAPHOMOL_X_HOMOL)	    /* protein */
     {
+      ZMapFeature feature ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* AGH....WHAT TO DO ABOUT THIS.... */
+
+      /* tmp...sort out later.... */
+      feature = (ZMapFeature)(blixem_data->features->data) ;
+
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+	blixem_data->opts = "X-BR";
+      else
+	blixem_data->opts = "X+BR";
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      /* HACKED FOR NOW..... */
+      if (blixem_data->features)
+	feature = (ZMapFeature)(blixem_data->features->data) ;
+      else
+	feature = zMap_g_hash_table_nth(blixem_data->feature_set->features, 0) ;
+      
       if (feature->strand == ZMAPSTRAND_REVERSE)
 	blixem_data->opts = "X-BR";
       else
 	blixem_data->opts = "X+BR";
     }
   else
-    blixem_data->opts = "N+BR";                     /* dna */
-
+    {
+      blixem_data->opts = "N+BR";			    /* dna */
+    }
 
   return status ;
 }
@@ -1195,13 +1287,12 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
    */
   if (status)
     {
-      ZMapFeature feature = blixem_data->feature ;
       ZMapFeatureSet feature_set ;
       GList *set_list = NULL ;
 
       blixem_data->errorMsg = NULL ;
 
-      feature_set = (ZMapFeatureSet)(feature->parent) ;
+      feature_set = blixem_data->feature_set ;
 
 
       /*
@@ -1209,84 +1300,68 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
        */
       blixem_data->required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
 
-      /* Be better even for single feature to have it as a list and put it through some common
-       * code...and same for homol_max...just treat it all in one way.... */
+      /* Do a homol max list here.... */
+      int num_homols = 0 ;
 
-      if (blixem_data->homol_max || (blixem_data->align_set != BLIXEM_NO_MATCHES))
+      blixem_data->align_list = NULL ;
+
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES)
 	{
-	  /* Do a homol max list here.... */
-	  int num_homols = 0 ;
-
-	  blixem_data->align_list = NULL ;
-
-	  if (blixem_data->align_set == BLIXEM_FEATURE_SINGLE_MATCH)
-	    {
-	      blixem_data->align_list = g_list_append(blixem_data->align_list, feature) ;
-	    }
-	  else if (blixem_data->align_set == BLIXEM_FEATURE_ALL_MATCHES)
-	    {
-	      blixem_data->align_list = zMapFeatureSetGetNamedFeatures(feature_set, feature->original_id) ;
-	    }
-	  else if (blixem_data->align_set == BLIXEM_FEATURESET_MATCHES)
-	    {
-	      g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
-	    }
-	  else if (blixem_data->align_set == BLIXEM_MULTI_FEATURESET_MATCHES)
-	    {
-	      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
-		set_list = blixem_data->dna_sets ;
-	      else
-		set_list = blixem_data->protein_sets ;
-
-	      g_list_foreach(set_list, getSetList, blixem_data) ;
-	    }
-
-	  if (blixem_data->homol_max)
-	    {
-	      if ((num_homols = g_list_length(blixem_data->align_list)) && blixem_data->homol_max < num_homols)
-		{
-		  GList *break_point ;
-
-		  blixem_data->align_list = g_list_sort(blixem_data->align_list, scoreOrderCB) ;
-
-		  break_point = g_list_nth(blixem_data->align_list, blixem_data->homol_max + 1) ;
-							    /* "+ 1" to go past last homol. */
-
-		  /* Now remove entries.... */
-		  if ((break_point = zMap_g_list_split(blixem_data->align_list, break_point)))
-		    g_list_free(break_point) ;
-		}
-	    }
-
-	  g_list_foreach(blixem_data->align_list, writeListEntry, blixem_data) ;
-	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else
-	{
-	  /* No homol_max...is this ever called ? */
-
-	  if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))
+	  blixem_data->align_list = zMapFeatureSetGetNamedFeatures(feature_set, feature->original_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  /* mmmm tricky.....should all features be highlighted...mmmmmm */
+	  if (g_list_length(blixem_data->features) > 1)
 	    {
-	      g_list_foreach(set_list, processSetList, blixem_data) ;
+	      blixem_data->align_list = blixem_data->features ;
 	    }
 	  else
 	    {
-	      g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data) ;
+	      ZMapFeature feature = (ZMapFeature)(blixem_data->features->data) ;
+
+	      blixem_data->align_list = zMapFeatureSetGetNamedFeatures(feature_set, feature->original_id) ;
 	    }
 	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SET)
+	{
+	  g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
+	}
+      else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
+	{
+	  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+	    set_list = blixem_data->dna_sets ;
+	  else
+	    set_list = blixem_data->protein_sets ;
 
+	  g_list_foreach(set_list, getSetList, blixem_data) ;
+	}
+
+      if (blixem_data->homol_max)
+	{
+	  if ((num_homols = g_list_length(blixem_data->align_list)) && blixem_data->homol_max < num_homols)
+	    {
+	      GList *break_point ;
+
+	      blixem_data->align_list = g_list_sort(blixem_data->align_list, scoreOrderCB) ;
+
+	      break_point = g_list_nth(blixem_data->align_list, blixem_data->homol_max + 1) ;
+	      /* "+ 1" to go past last homol. */
+
+	      /* Now remove entries.... */
+	      if ((break_point = zMap_g_list_split(blixem_data->align_list, break_point)))
+		g_list_free(break_point) ;
+	    }
+	}
+
+      /* Write out remaining alignments. */
+      if (blixem_data->align_list)
+	g_list_foreach(blixem_data->align_list, writeListEntry, blixem_data) ;
 
 
       /*
        * Now do transcripts (may need to filter further...)
        */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      blixem_data->required_feature_type = ZMAPSTYLE_MODE_TRANSCRIPT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       if (blixem_data->transcript_sets)
 	{
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1343,6 +1418,8 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 
   return status ;
 }
+
+
 
 /* HACK...try to get rid of blixem_data param...needs curr_channel to go... */
 /* Open and initially format a feature file. */
@@ -2664,8 +2741,6 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b)
 static gboolean writeFastAFile(blixemData blixem_data)
 {
   gboolean status = TRUE ;
-  ZMapFeature feature = NULL ;
-  ZMapFeatureBlock block = NULL ;
   gsize    bytes_written ;
   GError  *channel_error = NULL ;
   char    *line = NULL ;
@@ -2676,11 +2751,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
   int      i ;
 
 
-  feature = blixem_data->feature ;
-
-
-  if (!(block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))
-      || !zMapFeatureBlockDNA(block, NULL, NULL, &cp))
+  if (!zMapFeatureBlockDNA(blixem_data->block, NULL, NULL, &cp))
     {
       zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
 
@@ -2731,7 +2802,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  dna = zMapFeatureGetDNA((ZMapFeatureAny)block,
+	  dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),
 				  start, end, blixem_data->view->revcomped_features) ;
 
 	  total_chars = (end - start + 1) ;
@@ -2976,6 +3047,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					   "int", blixem_config_curr_G.scope) ;
 
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Use Mark as blixem scope",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", blixem_config_curr_G.scope_mark) ;
+
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Maximum Homols Shown",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					   "int", blixem_config_curr_G.homol_max) ;
@@ -3044,6 +3119,15 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 	    {
 	      blixem_config_curr_G.scope = int_value ;
 	      blixem_config_curr_G.is_set.scope = TRUE ;
+	    }
+	}
+
+      if (zMapGUINotebookGetTagValue(page, "Use Mark as blixem scope", "bool", &bool_value))
+	{
+	  if (blixem_config_curr_G.scope_mark != bool_value)
+	    {
+	      blixem_config_curr_G.scope_mark = bool_value ;
+	      blixem_config_curr_G.is_set.scope_mark = TRUE ;
 	    }
 	}
 
@@ -3153,6 +3237,9 @@ static void saveUserPrefs(BlixemConfigData prefs)
 
       zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				 ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
+
+      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				     ZMAPSTANZA_BLIXEM_SCOPE_MARK, prefs->scope_mark) ;
 
       zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				 ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
