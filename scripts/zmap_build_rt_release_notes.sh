@@ -53,10 +53,14 @@ function set_zmap_version_release_update_vars
     fi
 }
 
+
+
 CMDSTRING='[ -d<date> -n -z ] VAR=VALUE'
 DESCSTRING=`cat <<DESC
    -d   specify date from which changes/tickets should be extracted,
         date must be in form "dd/mm/yyyy" (defaults to date in $ZMAP_RELEASE_NOTES_TIMESTAMP)
+
+   -f   force production of release notes even if it's the same day.
 
    -n   DO NOT put the release notes in cvs or update the date file there
 
@@ -74,6 +78,7 @@ UPDATE_HTML=yes
 UPDATE_DATE=yes
 UPDATE_DEFINE=yes
 ZMAP_ONLY=no
+FORCE_NOTES=no
 
 
 # Note that the zmap user must have permissions within RT to see and query these queues
@@ -87,10 +92,11 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
 zmap_message_out "Parsing cmd line options: '$*'"
 
 
-while getopts ":d:nz" opt ;
+while getopts ":d:fnz" opt ;
   do
   case $opt in
       d  ) RT_LAST_RUN=$OPTARG ;;
+      f  ) FORCE_NOTES=yes ;;
       n  ) UPDATE_CVS=no ;;
       z  ) ZMAP_ONLY=yes ;;
       \? ) 
@@ -149,7 +155,9 @@ zmap_message_out '$ZMAP_PATH_TO_WEBPAGE_HEADER =' $ZMAP_PATH_TO_WEBPAGE_HEADER
 RT_PREV_DATE=$RT_LAST_RUN
 
 RT_TODAY=$(date "+%d/%m/%Y")
+
 HUMAN_TODAY=$(date "+%e %B %Y")
+HUMAN_TIME=$(date "+%kh.%Mm.%Ss")
 
 set_cvs_prev_date $RT_PREV_DATE
 
@@ -163,6 +171,7 @@ GIT_START_DATE="$CVS_PREV_DATE"
 GIT_END_DATE=$(date -d"today" "+%Y-%m-%d")
 
 FILE_DATE=$(date "+%Y_%m_%d")
+FILE_TIME=$(date "+%k_%M_%S")
 
 zmap_message_out '$RT_TODAY ='     $RT_TODAY
 zmap_message_out '$HUMAN_TODAY ='  $HUMAN_TODAY
@@ -175,7 +184,7 @@ zmap_message_out '$GIT_END_DATE =' $GIT_END_DATE
 
 
 
-RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
+RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${FILE_TIME}.${ZMAP_RELEASE_FILE_SUFFIX}"
 
 zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
 
@@ -191,11 +200,14 @@ fi
 # If we are updating cvs with these reports then check that we are not doing this twice
 # in a day because otherwise we will lose cvs updates in our reports.....
 if [ "x$UPDATE_CVS" == "xyes" ]; then
+    if [ "x$RT_LAST_RUN" == "x$RT_TODAY" ] ; then
 
-    if [ "x$RT_LAST_RUN" == "x$RT_TODAY" ]; then
-	zmap_message_exit "Not enough time has passed since $RT_LAST_RUN. Today is $RT_TODAY"
+       if [ $FORCE_NOTES == "yes" ] ; then
+         zmap_message_out "Warning: making new release notes on same day as previous notes, there won't be many changes !"
+       else
+	 zmap_message_exit "Not enough time has passed since $RT_LAST_RUN. Today is $RT_TODAY"
+       fi
     fi
-
 fi
 
 set_zmap_version_release_update_vars $ZMAP_PATH_TO_VERSION_HEADER
@@ -234,7 +246,7 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <p>Last Release Date: $RT_PREV_DATE</p>
 
 $NO_RELEASE_A
-<h3>Current Release Date: $HUMAN_TODAY</h3>
+<h3>Current Release Date: $HUMAN_TODAY at $HUMAN_TIME</h3>
 $NO_RELEASE_B
 
 <p>This report covers $GIT_START_DATE to $GIT_END_DATE</p>
