@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *
  * HISTORY:
- * Last edited: Nov  4 12:23 2010 (edgrif)
+ * Last edited: Mar  8 15:02 2011 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.35 2010-12-08 08:53:32 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.36 2011-03-11 17:25:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -41,8 +41,12 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapThreads.h>
 
+
+/* Debug flags. */
 extern gboolean zmap_server_feature2style_debug_G;
 extern gboolean zmap_server_styles_debug_G;
+
+
 
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */
@@ -219,16 +223,11 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  int position ;					    /* Where relevant is the sequence
-							       coord. for the request. */
-
-  ZMapFeature orig_feature ;				    /* The original feature which
-							       triggered the request. */
-
   GList *sequences ;					    /* List of ZMapSequenceStruct which
 							       hold name of sequence to be fetched. */
 
-  int flags ;
+  void *caller_data ;
+
 } ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 

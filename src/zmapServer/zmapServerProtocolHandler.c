@@ -26,9 +26,9 @@
  * Description:
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Nov  4 12:28 2010 (edgrif)
+ * Last edited: Mar  8 15:03 2011 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.67 2010-12-08 08:53:32 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.68 2011-03-11 17:26:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,10 +264,8 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       {
 	ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)req_any ;
 
-	get_sequence->position = va_arg(args, int) ;
-	get_sequence->orig_feature = va_arg(args, ZMapFeature) ;
 	get_sequence->sequences = va_arg(args, GList *) ;
-	get_sequence->flags = va_arg(args, int) ;
+	get_sequence->caller_data = va_arg(args, void *) ;
 
 	break ;
       }
