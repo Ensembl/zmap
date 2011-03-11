@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapSequence.h
  * HISTORY:
- * Last edited: Jul 29 11:29 2010 (edgrif)
+ * Last edited: Mar  9 14:35 2011 (edgrif)
  * Created: Thu Sep 27 10:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapSequence.c,v 1.5 2010-07-29 10:30:43 edgrif Exp $
+ * CVS info:   $Id: zmapSequence.c,v 1.6 2011-03-11 17:39:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,55 +79,60 @@ void zMapSequencePep2DNA(int *start_inout, int *end_inout, ZMapFrame frame)
 }
 
 
-/* Map dna coords to corresponding peptide coords, you may need to clip the end
- * coord to lie within the peptide. */
+/* Map dna coords to corresponding peptide coords, the returned peptide
+ * coord is for the peptide that contains the dna base, this is a one for
+ * one translation of coords, bounds checking is only done for coords
+ * at the start of the dna sequence.
+ * 
+ * Notes:
+ *  - zero can be returned for dna bases 1 and 2 for frames > 1.
+ *  - the end peptide coord is _not_ clipped to lie completely within
+ *    the end coord of the dna.
+ * 
+ */
 void zMapSequenceDNA2Pep(int *start_inout, int *end_inout, ZMapFrame frame)
 {
   int dna_start, dna_end, pep_start, pep_end ;
   int dna_offset ;
   int curr_frame ;
+  int start_coord, end_coord ;
+  int frame_int = (int)frame ;
 
-  zMapAssert(start_inout && end_inout && frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2) ;
+  zMapAssert((start_inout && end_inout && *start_inout > 0 && end_inout > 0
+	      && (*start_inout <= *end_inout))
+	     && frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2) ;
 
   dna_start = *start_inout ;
   dna_end = *end_inout ;
 
-  curr_frame = dna_start % 3 ;
+  start_coord = dna_start - frame_int ;
 
-  curr_frame = 3 - ((3 - curr_frame) % 3) ;
-
-  dna_offset = 3 - (curr_frame - frame) ;
-
-  dna_offset = dna_offset % 3 ;
-
-  dna_start = (dna_start + dna_offset)  ;
-
-
-  curr_frame = dna_end % 3 ;
-
-  curr_frame = 3 - ((3 - curr_frame) % 3) ;
-
-
-  /* HACK UNTIL I SORT THIS OUT....HATEFUL...I'M BEING STUPID.... */
-  /* This doesn't quite work for all combinations...agh....so close.... */
-  if (curr_frame - frame == -2)
-    dna_offset = 2 ;
+  if (start_coord < 0)
+    {
+      start_coord = 0 ;
+    }
   else
-    dna_offset = (curr_frame - frame) + 1 ;
+    {
+      start_coord = start_coord / 3 ;
 
+      start_coord += 1 ;
+    }
 
-  dna_offset = dna_offset % 3 ;
+  end_coord = dna_end - frame_int ;
 
+  if (end_coord < 0)
+    {
+      end_coord = 0 ;
+    }
+  else
+    {
+      end_coord = end_coord / 3 ;
 
+      end_coord += 1 ;
+    }
 
-  dna_end = (dna_end - dna_offset)  ;
-
-  pep_start = ((dna_start - 1) + 3) / 3 ;
-
-  pep_end = pep_start + ((dna_end - dna_start) / 3 ) ;
-
-  *start_inout = pep_start ;
-  *end_inout = pep_end ;
+  *start_inout = start_coord ;
+  *end_inout = end_coord ;
 
   return ;
 }
