@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowSequenceFeature.h
  * HISTORY:
- * Last edited: Mar  8 08:26 2011 (edgrif)
+ * Last edited: Mar 11 11:37 2011 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.15 2011-03-08 08:35:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.16 2011-03-11 17:49:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,8 +126,6 @@ static GType float_group_axis_get_type (void);
 static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_feature,
 					     guint                     signal_id,
 					     int first_index, int final_index);
-
-
 static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
 						gboolean       include_protein,
 						FooCanvasItem *item,
@@ -146,8 +144,8 @@ static void coordsDNA2Pep(ZMapFeature feature, int *start_inout, int *end_inout)
 
 /* globals. */
 
-static FooCanvasItemClass *canvas_parent_class_G ;
-static FooCanvasItemClass *group_parent_class_G ;
+static FooCanvasItemClass *canvas_parent_class_G = NULL ;
+static FooCanvasItemClass *group_parent_class_G = NULL ;
 
 
 
@@ -317,24 +315,61 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 {
   gboolean result = TRUE ;
   FooCanvasGroup *sequence_group ;
+  ZMapWindowCanvasItem canvas_item ;
+  ZMapFeature feature ;
   GList *list ;
+  gboolean select ;
+  int seq_start, seq_end ;
+
+  zMapAssert(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(sequence_feature) && region_start <= region_end) ;
+
+  sequence_group = FOO_CANVAS_GROUP(sequence_feature) ;
+  canvas_item = ZMAP_CANVAS_ITEM(sequence_feature) ;
+  feature = canvas_item->feature ;
+
+  seq_start = 1 ;
+  seq_end = feature->feature.sequence.length ;
 
 
-  sequence_group = FOO_CANVAS_GROUP(sequence_feature);
+  /* Check coords against sequence length, if both are outside then just deselect (ensures
+   * that any sequence currently selected gets deselected). If one coord is inside then
+   * clamp the other to lie inside as well, if this proves wrong then perhaps we should just
+   * deselect. */
+  if ((region_start < seq_start && region_end < seq_start)
+      || (region_start > seq_end && region_end > seq_end))
+    {
+      select = FALSE ;
+    }
+  else
+    {
+      /* Don't need many checks because start <= end */
+      if (region_start < seq_start)
+	region_start = seq_start ;
 
-  if((list = sequence_group->item_list))
+      if (region_end > seq_end)
+	region_end = seq_end ;
+
+      select = TRUE ;
+    }
+
+  if ((list = sequence_group->item_list))
     {
       do
 	{
-	  /* There should only ever be one iteration here!  IS THIS BECAUSE THERE SHOULD ONLY BE
-	     ONE TEXT ITEM ???? */
+	  /* THIS INSCRUTABLE COMMENT FROM ROY IS PRESUMEABLY BECAUSE THERE SHOULD ONLY BE
+	     ONE CHILD IN A TEXT ITEM WHICH IS THE TEXT ???? SHOULD BE ASSERTED TO BE TRUE. */
+
+	  /* There should only ever be one iteration here! */
 	  if (ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
 	    {
 	      ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data);
 
-	      zMapWindowTextItemSelect(text_item,
-				       region_start, region_end,
-				       TRUE, FALSE);
+	      if (select)
+		zMapWindowTextItemSelect(text_item,
+					 region_start, region_end,
+					 TRUE, FALSE) ;
+	      else
+		zMapWindowTextItemDeselect(text_item, FALSE) ;
 	    }
 	}
       while((list = list->next));
@@ -1276,7 +1311,7 @@ static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_
 }
 
 
-/* Convert coords from dna to pep, conversion is done on complete codons only. */
+/* Convert coords from dna to pep, note: result can lie outside of pep sequence. */
 static void coordsDNA2Pep(ZMapFeature feature, int *start_inout, int *end_inout)
 {
   ZMapFrame frame = feature->feature.sequence.frame ;
