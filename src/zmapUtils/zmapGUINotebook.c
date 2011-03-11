@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov 19 20:59 2008 (rds)
+ * Last edited: Mar  8 12:24 2011 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.24 2010-11-19 11:48:38 mh17 Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.25 2011-03-11 17:26:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1172,38 +1172,36 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
   return ;
 }
 
-static gboolean editing_finished_cb(GtkWidget     *widget,
-				    GdkEventFocus *event,
-				    gpointer       user_data)
+
+static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpointer user_data)
 {
-  GtkEntry *entry = GTK_ENTRY(widget);
-  ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data;
-  const char *entry_text;
+  GtkEntry *entry = GTK_ENTRY(widget) ;
+  ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
+  const char *entry_text ; 
 
-  g_signal_handlers_block_by_func (widget, editing_finished_cb, user_data);
+  g_signal_handlers_block_by_func (widget, editing_finished_cb, user_data) ;
 
-  entry_text = gtk_entry_get_text(entry);
+  entry_text = gtk_entry_get_text(entry) ;
 
-#ifdef RDS_DEBUGGING
-  printf("widget focus-out called '%s'\n", entry_text);
-#endif /* RDS_DEBUGGING */
-
-  if(!event->in)
+  if (!event->in)
     {
-      ZMapGuiNotebookChapter chapter = NULL;
-      gboolean edit_allowed = TRUE;
-      char *tag_value_text = NULL;
+      ZMapGuiNotebookChapter chapter = NULL ;
+      gboolean edit_allowed = TRUE ;
+      char *tag_value_text = NULL ;
 
       chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
 
       if(chapter->user_CBs.edit_func)
 	edit_allowed = (chapter->user_CBs.edit_func)((ZMapGuiNotebookAny)tag_value, entry_text,
-						     chapter->user_CBs.edit_data);
+						     chapter->user_CBs.edit_data) ;
 
       switch(tag_value->data_type)
 	{
 	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
-	  tag_value_text = g_strdup(tag_value->original_data.string_value);
+	  if ((tag_value->original_data.string_value))
+	    tag_value_text = g_strdup(tag_value->original_data.string_value);
+	  else
+	    tag_value_text = g_strdup("") ;
 	  break;
 	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
 	  tag_value_text = g_strdup_printf("%f", tag_value->original_data.float_value);
@@ -1215,49 +1213,36 @@ static gboolean editing_finished_cb(GtkWidget     *widget,
 	  tag_value_text = g_strdup((tag_value->original_data.bool_value ? "true" : "false"));
 	  break;
 	default:
-	  /* warning needed here! */
-	  /* BAD Type */
+	  zMapAssertNotReached() ;
 	  break;
 	}
 
-      if(!tag_value_text || g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
+      if (g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
 	{
-	  if(edit_allowed)
+	  if (edit_allowed)
 	    {
 	      /* update_original with entry_text */
-	      validateTagValue(tag_value, (char *)entry_text, TRUE);
-#ifdef RDS_DEBUGGING
-	      printf("changed original...\n");
-#endif /* RDS_DEBUGGING */
+	      validateTagValue(tag_value, (char *)entry_text, TRUE) ;
 	    }
 	  else
 	    {
 	      /* revert to original */
-	      gtk_entry_set_text(entry, tag_value_text);
-#ifdef RDS_DEBUGGING
-	      printf("reverted...\n");
-#endif /* RDS_DEBUGGING */
+	      gtk_entry_set_text(entry, tag_value_text) ;
 	    }
 	}
-      else if (!tag_value_text)
-	{
-	  /* warning needed here... It appears the original value == string && was empty. */
-	  gtk_entry_set_text(entry, "");
-	}
 
-      if(tag_value_text)
-	g_free(tag_value_text);
+      g_free(tag_value_text) ;
     }
 
-  g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data);
-
-  /* g_signal_stop_emission_by_name (widget, "focus-out-event"); */
+  g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data) ;
 
   /* Gtk-WARNING **: GtkEntry - did not receive focus-out-event. If you
    * connect a handler to this signal, it must return
    * FALSE so the entry gets the event as well */
-  return FALSE;
+  return FALSE ;
 }
+
+
 
 /* A GFunc() to build notebook pages. */
 static void makeTagValueCB(gpointer data, gpointer user_data)
