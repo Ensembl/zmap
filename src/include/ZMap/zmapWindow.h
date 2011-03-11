@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Feb 23 16:47 2011 (edgrif)
+ * Last edited: Mar 11 17:37 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.121 2011-02-24 11:11:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.122 2011-03-11 17:38:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -172,43 +172,61 @@ typedef struct
 
 
 
-/* THIS IS COMPLETELY WRONG...WINDOW SHOULD PASS BACK A LIST OF FEATURES
- * TO BE SHOWN BY THE ALIGNMENT VIEWER AS A LIST OF FEATURES, THE CODE IN
- * VIEW TO MAKE THE FEATURE SETS SHOULD BE MOVED INTO WINDOW.....THEN
- * THIS INTERFACE IS MUCH SIMPLIFIED AS IS THE CODE.... */
 /* Call an alignment display program for the given alignment feature. */
-typedef struct
-{
-  ZMapWindowCommandType cmd ;
-  int position ;
-
-  ZMapFeature feature ;
-
-  struct
+typedef enum
   {
-  unsigned int single_match : 1 ;
-  unsigned int single_feature : 1 ;
-  unsigned int feature_set : 1 ;
-  unsigned int multi_sets : 1 ;
-  unsigned int all_sets : 1 ;
-  } blix_type ;
+    ZMAPWINDOW_ALIGNCMD_NONE,
+    ZMAPWINDOW_ALIGNCMD_FEATURES,
+    ZMAPWINDOW_ALIGNCMD_SET,
+    ZMAPWINDOW_ALIGNCMD_MULTISET
+  } ZMapWindowAlignSetType ;
+
+typedef struct ZMapWindowCallbackCommandAlignStructName
+{
+  /* Common section. */
+  ZMapWindowCommandType cmd ;
+
+  ZMapFeatureBlock block ;
+
+  /* Align specific section. */
+  ZMapHomolType homol_type ;				    /* DNA or Peptide alignments. */
+
+  int position ;					    /* Centre position for alignment viewing. */
+
+  int start, end ;					    /* Optional range for alignment viewing. */
+
+  ZMapWindowAlignSetType homol_set ;			    /* What features to display. */
+
+
+  GList *features ;					    /* Optional list of alignment features. */
+
+  ZMapFeatureSet feature_set ;
+
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
 
 /* Call sources to get new features. */
 typedef struct
 {
+  /* Common section. */
   ZMapWindowCommandType cmd ;
+
   ZMapFeatureBlock block ;				    /* Block for which features should be fetched. */
   GList *feature_set_ids ;				    /* List of names as quarks. */
   int start, end ;					    /* Range over which features should be fetched. */
+
 } ZMapWindowCallbackCommandGetFeaturesStruct, *ZMapWindowCallbackGetFeatures ;
 
 
-/* No extra data needed for rev. comp. */
+
+/* Reverse complement features. */
 typedef struct
 {
+  /* Common section. */
   ZMapWindowCommandType cmd ;
+
+  /* No extra data needed for rev. comp. */
+
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
 
 
