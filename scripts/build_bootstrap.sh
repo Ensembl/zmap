@@ -247,11 +247,18 @@ fi
 # as we lock the release notes to the binary using a #define
 
 if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
+
     NO_CVS=""
     if [ "x$ZMAP_MASTER_TAG_CVS" != "x$ZMAP_TRUE" ]; then
 	NO_CVS='-n'
     fi
-    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh $NO_CVS || \
+
+    FORCE_NOTES=""
+    if [ "x$ZMAP_MASTER_FORCE_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
+        FORCE_NOTES='-f'
+    fi
+
+    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh $NO_CVS $FORCE_NOTES || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
 
     # We need to copy the changed web header into the master directory from the directory it was run in.
