@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 28 11:08 2011 (edgrif)
+ * Last edited: Mar 10 13:48 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.209 2011-02-28 11:31:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.210 2011-03-11 17:46:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1707,281 +1707,8 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* We may wish to make this public some time but as the rest of the long item calls for features
- * are in this file then there is no need for it to be exposed.
- *
- * Deals with removing all the items contained in a compound object from the longitem list.
- *
- *  */
-static void removeFeatureLongItems(ZMapWindowLongItems long_items, FooCanvasItem *feature_item)
-{
-  ZMapWindowItemFeatureType type ;
 
-  zMapAssert(long_items && feature_item) ;
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(type == ITEM_FEATURE_SIMPLE
-	     || type == ITEM_FEATURE_PARENT
-	     || type == ITEM_FEATURE_CHILD || type == ITEM_FEATURE_BOUNDING_BOX) ;
-
-  /* If item is part of a compound feature then get the parent. */
-  if (type == ITEM_FEATURE_CHILD || type == ITEM_FEATURE_BOUNDING_BOX)
-    feature_item = feature_item->parent ;
-
-  /* Test for long items according to whether feature is simple or compound. */
-  if (type == ITEM_FEATURE_SIMPLE)
-    {
-      zmapWindowLongItemRemove(long_items, feature_item) ;  /* Ignore boolean result. */
-    }
-  else
-    {
-      FooCanvasGroup *feature_group = FOO_CANVAS_GROUP(feature_item) ;
-
-      g_list_foreach(feature_group->item_list, removeLongItemCB, long_items) ;
-    }
-
-  return ;
-}
-
-
-/* GFunc callback for removing long items. */
-static void removeLongItemCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  ZMapWindowLongItems long_items = (ZMapWindowLongItems)user_data ;
-
-  zmapWindowLongItemRemove(long_items, item) ;		    /* Ignore boolean result. */
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Function to check whether any of the blocks has dna */
-static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
-                                                      gpointer data,
-                                                      gpointer user_data,
-                                                      char **error_out)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureBlock     feature_block = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
-
-  BlockHasDNA dna = (BlockHasDNA)user_data;
-
-  feature_type = feature_any->struct_type;
-
-  switch(feature_type)
-    {
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      feature_block = (ZMapFeatureBlock)feature_any;
-      if(!dna->exists)
-        dna->exists = (gboolean)(feature_block->sequence.length ? TRUE : FALSE);
-      break;
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-    case ZMAPFEATURE_STRUCT_FEATURE:
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      break;
-    case ZMAPFEATURE_STRUCT_INVALID:
-    default:
-      zMapAssertNotReached();
-      break;
-
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* THIS ALL LOOKS LIKE IT NEEDS WRITING SOMETIME.... */
-
-/* Move a canvas item into a new group, redoing its coords as they must be relative to
- * the new parent. */
-static void reparentItemCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *feature_item = (FooCanvasItem *)data ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  foo_canvas_item_reparent (FooCanvasItem *item, FooCanvasGroup *new_group);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
-{
-  double tmp, width = 0.0 ;
-  double fac ;
-
-  fac = style->width / (style->max_score - style->min_score) ;
-
-  if (score <= style->min_score)
-    tmp = 0 ;
-  else if (score >= style->max_score)
-    tmp = style->width ;
-  else
-    tmp = fac * (score - style->min_score) ;
-
-  width = tmp ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (seg->data.f <= bc->meth->minScore)
-	x = 0 ;
-      else if (seg->data.f >= bc->meth->maxScore)
-	x = bc->width ;
-      else
-	x = fac * (seg->data.f - bc->meth->minScore) ;
-
-      box = graphBoxStart() ;
-
-      if (x > origin + 0.5 || x < origin - 0.5)
-	graphLine (bc->offset+origin, y, bc->offset+x, y) ;
-      else if (x > origin)
-	graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
-      else
-	graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  return width ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Here's how acedb does all this..... */
-
-void fMapShowSplices (LOOK genericLook, float *offset, MENU *menu)
-     /* This is of type MapColDrawFunc */
-{
-  FeatureMap look = (FeatureMap)genericLook;
-  float x, y1, y2, origin ;
-  BoxCol *bc ;
-
-  bc = bcFromName (look, look->map->activeColName, menu) ;
-	/* NB old default diff was 5 - now using bc system it is 1 */
-  if (!bcTestMag (bc, look->map->mag))
-    return ;
-  bc->offset = *offset ;
-
-  y1 = MAP2GRAPH(look->map,look->min) ;
-  y2 = MAP2GRAPH(look->map,look->max) ;
-
-  graphColor(LIGHTGRAY) ;
-  x = *offset + 0.5 * bc->width ;  graphLine (x, y1, x, y2) ;
-  x = *offset + 0.75 * bc->width ;  graphLine (x, y1, x, y2) ;
-
-  graphColor(DARKGRAY) ;
-  if (bc->meth->minScore < 0 && 0 < bc->meth->maxScore)
-    origin = bc->width *
-      (-bc->meth->minScore / (bc->meth->maxScore - bc->meth->minScore)) ;
-  else
-    origin = 0 ;
-  graphLine (*offset + origin, y1, *offset + origin, y2) ;
-
-  graphColor (BLACK) ;
-  showSplices (look, SPLICE5, bc, origin) ;
-  showSplices (look, SPLICE3, bc, origin) ;
-
-  *offset += bc->width + 1 ;
-
-  return;
-} /* fMapShowSplices */
-
-
-static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin)
-{
-  char  *v ;
-  int i, box, background ;
-  SEG *seg ;
-  float y=0, delta=0, x=0 ; /* delta: mieg: shows frame by altering the drawing of the arrow */
-  float fac;
-
-  fac = bc->width / (bc->meth->maxScore - bc->meth->minScore);
-
-  for (i = 0 ; i < arrayMax(look->segs) ; ++i)
-    { seg = arrp(look->segs, i, SEG) ;
-      if (seg->x1 > look->max
-	  || seg->x2 < look->min
-	  || (lexAliasOf(seg->key) != bc->meth->key)
-	  || seg->type != type)
-	continue ;
-      y = MAP2GRAPH(look->map, seg->x2) ;
-      if (seg->data.f <= bc->meth->minScore)
-	x = 0 ;
-      else if (seg->data.f >= bc->meth->maxScore)
-	x = bc->width ;
-      else
-	x = fac * (seg->data.f - bc->meth->minScore) ;
-      box = graphBoxStart() ;
-      if (x > origin + 0.5 || x < origin - 0.5)
-	graphLine (bc->offset+origin, y, bc->offset+x, y) ;
-      else if (x > origin)
-	graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
-      else
-	graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
-      switch (type)
-	{
-	case SPLICE5:
-	  delta = (look->flag & FLAG_REVERSE) ? -0.5 : 0.5 ;
-	  break ;
-	case SPLICE3:
-	  delta = (look->flag & FLAG_REVERSE) ? 0.5 : -0.5 ;
-	  break ;
-        default:
-	  messcrash ("Bad type %d in showSplices", type) ;
-	}
-      graphLine (bc->offset+x, y, bc->offset+x, y+delta) ;
-      graphBoxEnd() ;
-      v = SEG_HASH (seg) ;
-      if (assFind (look->chosen, v, 0))
-	background = GREEN ;
-      else if (assFind (look->antiChosen, v, 0))
-	background = LIGHTGREEN ;
-      else
-	background = TRANSPARENT ;
-      switch (seg->x2 % 3)
-	{
-	case 0:
-	  graphBoxDraw (box, RED, background) ; break ;
-	case 1:
-	  graphBoxDraw (box, BLUE, background) ; break ;
-	case 2:
-	  graphBoxDraw (box, DARKGREEN, background) ; break ;
-	}
-      array(look->boxIndex, box, int) = i ;
-      fMapBoxInfo (look, box, seg) ;
-      graphBoxFreeMenu (box, fMapChooseMenuFunc, fMapChooseMenu) ;
-    }
-
-  return;
-} /* showSplices */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
+/* this is surely a candidate for better encapsulation that this.... */
 static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
@@ -1995,18 +1722,19 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpo
   if (feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
     {
       zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
-						feature->feature.sequence.type, start, end) ;
+						ZMAPFRAME_NONE,
+						feature->feature.sequence.type,
+						start, end) ;
     }
   else
     {
       zmapWindowItemHighlightDNARegion(window, FALSE, item, feature->feature.sequence.frame,
 				       feature->feature.sequence.type, start, end) ;
 
-      /* We want to highlight the peptides correctly but really we need to take the frame of
-       * the selected peptide column, get the corresponding dna, then for the remaining frames
-       * clip their translations to this section of dna..... */
       zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
-						feature->feature.sequence.type, start, end) ;
+						feature->feature.sequence.frame,
+						feature->feature.sequence.type,
+						start, end) ;
     }
 
   /* Pass information about the object clicked on back to the application. */
