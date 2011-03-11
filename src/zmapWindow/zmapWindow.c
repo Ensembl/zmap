@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  8 08:37 2011 (edgrif)
+ * Last edited: Mar  3 09:24 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.356 2011-03-08 08:38:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.357 2011-03-11 17:32:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,11 +58,6 @@
 
 #include <zmapWindowCanvasItem_I.h>     // for debugging
 #include <zmapWindowAlignmentFeature_I.h>       //for debugging
-
-
-
-/* Used by zmapWindowZoomToWorldPosition() to determine whether zoom should be changed. */
-#define ZOOM_SENSITIVITY 5.0
 
 
 /* Local struct to hold current features and new_features obtained from a server and
@@ -1373,10 +1368,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
 	{
-	  feature_start = start = origin_index ;
-	  feature_end = end = current_index ;
-
- 	  zmapWindowCoordPairToDisplay(window, feature_start, feature_end, &feature_start, &feature_end) ;
+	  start = origin_index ;
+	  end   = current_index ;
 
 	  seq_term = "DNA" ;
 	}
@@ -1384,7 +1377,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	{
 	  ZMapFrame frame ;
 	  int window_origin ;
-	  int tmp_start, tmp_end ;
 
 	  frame = zMapFeatureFrame(feature) ;
 
@@ -1398,10 +1390,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  origin_index += frame ;
 	  current_index = origin_index + ((end - start + 1) * 3) - 1;
 
-	  tmp_start = dna_start = origin_index ;
-	  tmp_end = dna_end = current_index ;
+	  dna_start = origin_index ;
+	  dna_end = current_index ;
 
- 	  zmapWindowCoordPairToDisplay(window, tmp_start, tmp_end, &tmp_start, &tmp_end) ;
 
 	  /* zmapWindowCoordToDisplay() doesn't work for protein coord space,
 	   * whether this is useful though.... */
@@ -1416,15 +1407,15 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	      window_origin = (window->origin + 4 ) / 3;
 	    }
 
-	  feature_start = start = start - (window_origin - 1);
-	  feature_end = end = end - (window_origin - 1);
+	  start = start - (window_origin - 1);
+	  end   = end   - (window_origin - 1);
 
 	  seq_term = "Protein" ;
 
 	  select.feature_desc.sub_feature_term   =  g_strdup("DNA") ;
 	  select.feature_desc.sub_feature_index  =  g_strdup(zMapFeatureFrame2Str(frame)) ;
-	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", tmp_start);
-	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", tmp_end);
+	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", dna_start);
+	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", dna_end);
 	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", dna_end - dna_start + 1);
 	}
 
@@ -1432,8 +1423,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id) ;
       select.feature_desc.feature_term   = g_strdup_printf("%s", seq_term) ;
-      select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
-      select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
+      select.feature_desc.feature_start  = g_strdup_printf("%d", start) ;
+      select.feature_desc.feature_end    = g_strdup_printf("%d", end) ;
       select.feature_desc.feature_length = g_strdup_printf("%d", end  - start + 1) ;
 
       /* update the info panel */
@@ -1529,7 +1520,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  if (feature_total_length)
 	    select.feature_desc.feature_total_length = g_strdup_printf("%d", feature_total_length) ;
 
- 	  zmapWindowCoordPairToDisplay(window, feature_start, feature_end, &feature_start, &feature_end) ;
+	  zmapWindowCoordPairToDisplay(window, feature_start, feature_end, &feature_start, &feature_end) ;
 
 	  select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
 	  select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
@@ -3100,19 +3091,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
       }
     case GDK_MOTION_NOTIFY:
       {
-	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
-
-
 	/* interestingly we don't check the button number here.... */
-
-	zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
 
 	if (dragging || guide)
 	  {
+	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 
 
-
-	    zMapDebugPrint(mouse_debug_G, "%s", "Start: motion with drag") ;
+	    zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
 
 	    /* work out the world of where we are */
 	    foo_canvas_window_to_world(window->canvas,
@@ -3181,7 +3167,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		event_handled = FALSE ;
 	      }
 
-	    zMapDebugPrint(mouse_debug_G, "%s", "End: motion with drag") ;
+	    zMapDebugPrint(mouse_debug_G, "%s", "End: motion") ;
 	  }
 	else if ((!mark_updater.in_mark_move_region) && zmapWindowMarkIsSet(window->mark))
 	  {
@@ -3274,9 +3260,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		event_handled = FALSE;
 	      }
 	  }
-
-	zMapDebugPrint(mouse_debug_G, "Leave: button_motion - return %s",
-		       event_handled ? "TRUE" : "FALSE") ;
 
         break;
       }
@@ -3422,10 +3405,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 }
 
 
-/* 
- * A trio of event handlers, they don't interfer with other handlers, just
- * report that they were called...helpful for debugging.
- */
+
 gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   gboolean event_handled = FALSE ;
@@ -3438,6 +3418,22 @@ gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
   foo_canvas_window_to_world(window->canvas,
 			     event->x, event->y,
 			     &origin_x, &origin_y);
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Don't handle if its text because the text item callbacks handle lasso'ing of
+   * text. */
+  {
+    FooCanvasItem *item ;
+
+    if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
+                  && ZMAP_IS_WINDOW_TEXT_ITEM(item))
+      return FALSE ;
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   return event_handled ;
 }
 
@@ -3445,10 +3441,15 @@ gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
   gboolean event_handled = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapDebugPrint(mouse_debug_G, "%s",  "in motion") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   if (event->state & GDK_BUTTON1_MASK)
-    zMapDebugPrint(mouse_debug_G, "%s",  "in motion with button 1 press") ;
-  else
-    zMapDebugPrint(mouse_debug_G, "%s",  "in motion") ;
+    zMapDebugPrint(mouse_debug_G, "%s",  "in motion with button press") ;
+
 
   return event_handled ;
 }
@@ -3459,13 +3460,13 @@ gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 
   zMapDebugPrint(mouse_debug_G, "%s",  "in release") ;
 
+
   return event_handled ;
 }
 
 
 
-
-
+#define ZOOM_SENSITIVITY 5.0
 
 
 static void zoomToRubberBandArea(ZMapWindow window)
@@ -4175,16 +4176,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
 
 		align.position = y1 + ((y2 - y1) / 2) ;
-		align.feature = feature ;
+		align.features = g_list_append(align.features, feature) ;
 
 		if (key_event->state & GDK_CONTROL_MASK)
-		  align.blix_type.multi_sets = TRUE ;
+		  align.homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
 		else if (key_event->keyval == GDK_a)
-		  align.blix_type.feature_set = TRUE ;
+		  align.homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
 		else if (!column && key_event->keyval == GDK_A)
-		  align.blix_type.single_feature = TRUE ;
+		  align.homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-		if (align.blix_type.feature_set || align.blix_type.multi_sets || align.blix_type.single_feature)
+		if (align.homol_set)
 		  (*(window_callbacks_G->command))(window, window->app_data, &align) ;
 	      }
 	  }
@@ -5082,9 +5083,9 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
   /* We could be using this here..... */
 
 	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
-			     "start",  selected_start,
-			     "end",    selected_end,
-			     "length", selected_length,
+			     "start",  &selected_start,
+			     "end",    &selected_end,
+			     "length", &selected_length,
 			     NULL);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -5112,16 +5113,6 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 
   zmapWindowCoordPairToDisplay(window, feature->x1, feature->x2,
 			       selected_start, selected_end) ;
-
-  /* I'm special casing this because otterlace need this reversed for now but will be
-   * sorting out their ordering soon....really...honestly.... */
-  if (window->revcomped_features && feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-    {
-      int tmp = *selected_start ;
-      *selected_start = *selected_end ;
-      *selected_end = tmp ;
-    }
-
 
   *selected_length = *feature_length ;
 
