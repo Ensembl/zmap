@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Feb 10 15:35 2011 (edgrif)
+ * Last edited: Mar  3 16:07 2011 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.41 2011-02-10 16:06:39 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.42 2011-03-11 17:25:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -869,19 +869,20 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_BLIXEM_CONFIG     "blixem"
-#define ZMAPSTANZA_BLIXEM_NETID      "netid"
-#define ZMAPSTANZA_BLIXEM_PORT       "port"
-#define ZMAPSTANZA_BLIXEM_SCRIPT     "script"
-#define ZMAPSTANZA_BLIXEM_CONF_FILE  "config-file"
-#define ZMAPSTANZA_BLIXEM_SCOPE      "scope"
-#define ZMAPSTANZA_BLIXEM_MAX        "homol-max"
+#define ZMAPSTANZA_BLIXEM_CONFIG      "blixem"
+#define ZMAPSTANZA_BLIXEM_NETID       "netid"
+#define ZMAPSTANZA_BLIXEM_PORT        "port"
+#define ZMAPSTANZA_BLIXEM_SCRIPT      "script"
+#define ZMAPSTANZA_BLIXEM_CONF_FILE   "config-file"
+#define ZMAPSTANZA_BLIXEM_SCOPE       "scope"
+#define ZMAPSTANZA_BLIXEM_SCOPE_MARK  "scope-from-mark"
+#define ZMAPSTANZA_BLIXEM_MAX         "homol-max"
 #define ZMAPSTANZA_BLIXEM_FILE_FORMAT "file-format"
-#define ZMAPSTANZA_BLIXEM_KEEP_TEMP  "keep-tempfiles"
-#define ZMAPSTANZA_BLIXEM_KILL_EXIT  "kill-on-exit"
-#define ZMAPSTANZA_BLIXEM_DNA_FS     "dna-featuresets"
-#define ZMAPSTANZA_BLIXEM_PROT_FS    "protein-featuresets"
-#define ZMAPSTANZA_BLIXEM_FS         "featuresets"
+#define ZMAPSTANZA_BLIXEM_KEEP_TEMP   "keep-tempfiles"
+#define ZMAPSTANZA_BLIXEM_KILL_EXIT   "kill-on-exit"
+#define ZMAPSTANZA_BLIXEM_DNA_FS      "dna-featuresets"
+#define ZMAPSTANZA_BLIXEM_PROT_FS     "protein-featuresets"
+#define ZMAPSTANZA_BLIXEM_FS          "featuresets"
 
 #define ZMAPSTANZA_BLIXEM_FILE_OPT_GFF   "gffv3"
 #define ZMAPSTANZA_BLIXEM_FILE_OPT_EXBLX "exblx"

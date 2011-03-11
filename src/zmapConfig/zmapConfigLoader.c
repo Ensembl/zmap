@@ -30,9 +30,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
  * HISTORY:
- * Last edited: Feb 10 15:36 2011 (edgrif)
+ * Last edited: Mar  3 17:14 2011 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.40 2011-02-10 16:06:39 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.41 2011-03-11 17:25:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1607,18 +1607,19 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, ch
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_BLIXEM_NETID,      G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_PORT,       G_TYPE_INT,     NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_SCRIPT,     G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_CONF_FILE,  G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_SCOPE,      G_TYPE_INT,     NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_FILE_FORMAT,  G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_MAX,        G_TYPE_INT,     NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_KEEP_TEMP,  G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_KILL_EXIT,  G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_DNA_FS,     G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_PROT_FS,    G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_BLIXEM_FS,         G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_NETID,       G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_PORT,        G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_SCRIPT,      G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_CONF_FILE,   G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_SCOPE,       G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_SCOPE_MARK,  G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_FILE_FORMAT, G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_MAX,         G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_KEEP_TEMP,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_KILL_EXIT,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_DNA_FS,      G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_PROT_FS,     G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_FS,          G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_BLIXEM_CONFIG;
