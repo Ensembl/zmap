@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 18 09:54 2011 (edgrif)
+ * Last edited: Mar 11 17:07 2011 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.29 2011-02-18 09:56:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.30 2011-03-11 17:12:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       search_data->screen_search_end   = screen_search_end;
 
       /* Update the start & end according to the mark */
-      if(zmapWindowMarkIsSet(search_data->window->mark))
+      if (zmapWindowMarkIsSet(search_data->window->mark))
 	{
 	  zmapWindowMarkGetSequenceRange(search_data->window->mark,
 					 &(search_data->screen_search_start),
@@ -460,7 +460,10 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
-  error_spinbox =  gtk_spin_button_new_with_range(min, max, 1.0) ;
+  if (min > max)
+    zMapUtilsSwop(int, min, max) ;
+
+  error_spinbox = gtk_spin_button_new_with_range(min, max, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(error_spinbox), init) ;
   gtk_signal_connect(GTK_OBJECT(error_spinbox), "value-changed",
 		     GTK_SIGNAL_FUNC(func), (gpointer)search_data) ;
@@ -470,7 +473,11 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
-  n_spinbox =  gtk_spin_button_new_with_range(min2, max2, 1.0) ;
+
+  if (min2 > max2)
+    zMapUtilsSwop(int, min2, max2) ;
+
+  n_spinbox = gtk_spin_button_new_with_range(min2, max2, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(n_spinbox), init2) ;
   gtk_signal_connect(GTK_OBJECT(n_spinbox), "value-changed",
 		     GTK_SIGNAL_FUNC(func2), (gpointer)search_data) ;
@@ -492,9 +499,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   ZMapStrand strand = ZMAPSTRAND_NONE ;
   ZMapFrame frame = ZMAPFRAME_NONE ;
 
+  /* If we are revcomp'd these coords will be the wrong way round. */
   search_data->search_start = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_start) ;
-
   search_data->search_end = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_end) ;
+  if (search_data->search_start > search_data->search_end)
+    zMapUtilsSwop(int, search_data->search_start, search_data->search_end) ;
+
 
   if (search_data->strand_entry && (strand_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry))))
     {
@@ -527,6 +537,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  frame = ZMAPFRAME_NONE ;
 	}
     }
+
 
   /* NEED TO SORT WHOLE COORD JUNK OUT....USER SHOULD SEE BLOCK COORDS WE SHOULD DO RELATIVE COORDS... */
   /* Convert to relative coords.... */
