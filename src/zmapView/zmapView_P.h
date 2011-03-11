@@ -25,9 +25,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Feb 23 12:41 2011 (edgrif)
+ * Last edited: Mar  3 15:12 2011 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.70 2011-03-01 16:22:42 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.71 2011-03-11 17:34:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -42,6 +42,8 @@
 #include <ZMap/zmapXRemote.h>
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef enum
   {
     BLIXEM_NO_MATCHES,
@@ -51,6 +53,8 @@ typedef enum
     BLIXEM_MULTI_FEATURESET_MATCHES,			    /* All matches of all sequences in several sets. */
     BLIXEM_ALL_FEATURESET_MATCHES			    /* All matches of all sequences in all sets. */
   } ZMapViewBlixemAlignSet ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -332,18 +336,26 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
-gboolean zmapViewBlixemLocalSequences(ZMapView view, int position, ZMapFeature feature, GList **local_sequences_out) ;
-gboolean zmapViewCallBlixem(ZMapView view, int position, ZMapFeature feature, GList *local_sequences,
-			    ZMapViewBlixemAlignSet align_set, GPid *child_pid, gboolean *kill_on_exit) ;
+
+gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMapHomolType align_type,
+				      int position, ZMapFeatureSet feature_set, GList **local_sequences_out) ;
+gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
+			    ZMapHomolType homol_type, int position, int start, int end,
+			    ZMapWindowAlignSetType align_set,
+			    GList *features, ZMapFeatureSet feature_set, GList *local_sequences,
+			    GPid *child_pid, gboolean *kill_on_exit) ;
+
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
+
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
 ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
 						      char *action, GArray *xml_events,
 						      ZMapXMLObjTagFunctions start_handlers,
 						      ZMapXMLObjTagFunctions end_handlers,
 						      gpointer *handler_data);
+
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);
 void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list);

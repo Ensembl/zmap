@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 24 11:14 2011 (edgrif)
+ * Last edited: Mar  8 14:48 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.231 2011-03-01 09:34:42 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.232 2011-03-11 17:34:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,6 +126,7 @@ static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *win
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
 
+static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -447,7 +448,12 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
   char *str;
 
   gpointer key, value;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapCmdLineArgsType arg;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /*
@@ -2803,19 +2809,12 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 	break ;
       }
     case ZMAP_SERVERREQ_SEQUENCE:
-      // mh17: this was a cut and paste of _FEATURES
-      // it turns out that the code that fields this expects it, so what is ZMapServerReqGetSequence about?
       {
-      ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
+	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
-      get_features->context = connect_data->curr_context ;
-      get_features->styles = connect_data->curr_styles ;
+	get_features->context = connect_data->curr_context ;
+	get_features->styles = connect_data->curr_styles ;
 
-/*	ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)req_any ;
-      get_sequence->orig_feature = va_arg(args, ZMapFeature) ;
-      get_sequence->sequences = va_arg(args, GList *) ;
-      get_sequence->flags = va_arg(args, int) ;
-*/
 	break ;
       }
     case ZMAP_SERVERREQ_TERMINATE:
@@ -3196,15 +3195,17 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
   if (req_any->type == ZMAP_SERVERREQ_GETSEQUENCE)
     {
       ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)req_any ;
+      ZMapWindowCallbackCommandAlign align = (ZMapWindowCallbackCommandAlign)(get_sequence->caller_data) ;
       GPid blixem_pid ;
       gboolean status ;
 
       /* Got the sequences so launch blixem. */
-      if ((status = zmapViewCallBlixem(zmap_view,
-				       get_sequence->position, get_sequence->orig_feature,
-				       get_sequence->sequences, get_sequence->flags,
-				       &blixem_pid,
-				       &(zmap_view->kill_blixems))))
+      if ((status = zmapViewCallBlixem(zmap_view, align->block,
+				       align->homol_type,
+				       align->position, align->start, align->end,
+				       align->homol_set,
+				       align->features, align->feature_set, get_sequence->sequences,
+				       &blixem_pid, &(zmap_view->kill_blixems))))
 	zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
 						     GINT_TO_POINTER(blixem_pid)) ;
 
@@ -3753,81 +3754,13 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
   ZMapView view = view_window->parent_view ;
   ZMapWindowCallbackCommandAny cmd_any = (ZMapWindowCallbackCommandAny)window_data ;
 
-  switch(cmd_any->cmd)
+  switch (cmd_any->cmd)
     {
     case ZMAPWINDOW_CMD_SHOWALIGN:
       {
 	ZMapWindowCallbackCommandAlign align_cmd = (ZMapWindowCallbackCommandAlign)cmd_any ;
-	gboolean status ;
-	GList *local_sequences = NULL ;
-	ZMapViewBlixemAlignSet align_type = BLIXEM_NO_MATCHES ;
 
-	/* GHASTLY....ALL CHOICE BIT SHOULD BE IN WINDOW.... */
-	if (align_cmd->blix_type.single_match)
-	  align_type = BLIXEM_FEATURE_SINGLE_MATCH ;
-	else if (align_cmd->blix_type.single_feature)
-	  align_type = BLIXEM_FEATURE_ALL_MATCHES ;
-	else if (align_cmd->blix_type.feature_set)
-	  align_type = BLIXEM_FEATURESET_MATCHES ;
-	else if (align_cmd->blix_type.multi_sets)
-	  align_type = BLIXEM_MULTI_FEATURESET_MATCHES ;
-	else if (align_cmd->blix_type.all_sets)
-	  align_type = BLIXEM_ALL_FEATURESET_MATCHES ;
-
-	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->position, align_cmd->feature, &local_sequences)))
-	  {
-	    if (!view->sequence_server)
-	      {
-		zMapWarning("%s", "No sequence server was specified so cannot fetch raw sequences for blixem.") ;
-	      }
-	    else
-	      {
-		ZMapViewConnection view_con ;
-		ZMapViewConnectionRequest request ;
-		ZMapServerReqAny req_any ;
-
-		view_con = view->sequence_server ;
-		// assumed to be acedb
-
-		if (!view_con) // || !view_con->sequence_server)
-		  {
-		    zMapWarning("%s", "Sequence server incorrectly specified in config file"
-				" so cannot fetch local sequences for blixem.") ;
-		  }
-		else if(view_con->step_list)
-		  {
-		    zMapWarning("%s", "Sequence server is currently active"
-				" so cannot fetch local sequences for blixem.") ;
-		  }
-		else
-		  {
-		    zmapViewBusy(view, TRUE) ;
-
-		    /* Create the step list that will be used to fetch the sequences. */
-		    view_con->step_list = zmapViewStepListCreate(NULL, processGetSeqRequests, NULL) ;
-		    zmapViewStepListAddStep(view_con->step_list, ZMAP_SERVERREQ_GETSEQUENCE,
-					    REQUEST_ONFAIL_CANCEL_STEPLIST) ;
-
-		    /* Add the request to the step list. */
-		    req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
-						      align_cmd->position, align_cmd->feature,
-						      local_sequences, align_type) ;
-		    request = zmapViewStepListAddServerReq(view_con->step_list,
-							   view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any) ;
-
-		    /* Start the step list. */
-		    zmapViewStepListIter(view_con) ;
-		  }
-	      }
-	  }
-	else
-	  {
-	    GPid blixem_pid ;
-
-	    if ((status = zmapViewCallBlixem(view, align_cmd->position, align_cmd->feature, NULL, align_type,
-					     &blixem_pid, &(view->kill_blixems))))
-	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
-	  }
+	doBlixemCmd(view, align_cmd) ;
 
 	break ;
       }
@@ -3861,6 +3794,80 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	zMapAssertNotReached() ;
 	break ;
       }
+    }
+
+
+  return ;
+}
+
+
+/* Call blixem functions, note that if we fetch local sequences this is asynchronous and
+ * results in a callback to processGetSeqRequests() which then does the zmapViewCallBlixem() call. */
+static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
+{
+  gboolean status ;
+  GList *local_sequences = NULL ;
+
+
+  if (align_cmd->homol_set == ZMAPWINDOW_ALIGNCMD_NONE
+      || !(status = zmapViewBlixemLocalSequences(view, align_cmd->block, align_cmd->homol_type,
+						 align_cmd->position, align_cmd->feature_set, &local_sequences)))
+    {
+      GPid blixem_pid ;
+
+      if ((status = zmapViewCallBlixem(view, align_cmd->block,
+				       align_cmd->homol_type,
+				       align_cmd->position, align_cmd->start, align_cmd->end,
+				       align_cmd->homol_set,
+				       align_cmd->features, align_cmd->feature_set, NULL,
+				       &blixem_pid, &(view->kill_blixems))))
+	view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
+    }
+  else
+    {
+      if (!view->sequence_server)
+	{
+	  zMapWarning("%s", "No sequence server was specified so cannot fetch raw sequences for blixem.") ;
+	}
+      else
+	{
+	  ZMapViewConnection view_con ;
+	  ZMapViewConnectionRequest request ;
+	  ZMapServerReqAny req_any ;
+
+	  view_con = view->sequence_server ;
+	  // assumed to be acedb
+
+	  if (!view_con) // || !view_con->sequence_server)
+	    {
+	      zMapWarning("%s", "Sequence server incorrectly specified in config file"
+			  " so cannot fetch local sequences for blixem.") ;
+	    }
+	  else if(view_con->step_list)
+	    {
+	      zMapWarning("%s", "Sequence server is currently active"
+			  " so cannot fetch local sequences for blixem.") ;
+	    }
+	  else
+	    {
+	      zmapViewBusy(view, TRUE) ;
+
+	      /* Create the step list that will be used to fetch the sequences. */
+	      view_con->step_list = zmapViewStepListCreate(NULL, processGetSeqRequests, NULL) ;
+	      zmapViewStepListAddStep(view_con->step_list, ZMAP_SERVERREQ_GETSEQUENCE,
+				      REQUEST_ONFAIL_CANCEL_STEPLIST) ;
+
+	      /* Add the request to the step list. */
+	      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
+						align_cmd->position, align_cmd->features,
+						local_sequences, align_cmd->homol_set, align_cmd) ;
+	      request = zmapViewStepListAddServerReq(view_con->step_list,
+						     view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any) ;
+
+	      /* Start the step list. */
+	      zmapViewStepListIter(view_con) ;
+	    }
+	}
     }
 
 
