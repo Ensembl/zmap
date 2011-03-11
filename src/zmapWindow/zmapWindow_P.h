@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Feb 28 11:10 2011 (edgrif)
+ * Last edited: Mar 10 12:25 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.280 2011-02-28 11:30:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.281 2011-03-11 17:50:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -994,11 +994,10 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight
 void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
 					       FooCanvasItem *item,
+					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
-void zmapWindowItemHighlightTranslationRegion(ZMapWindow window,  gboolean item_highlight, FooCanvasItem *item,
-					      ZMapFrame required_frame,
-					      ZMapSequenceType coords_type, int region_start, int region_end) ;
-void zmapWindowItemUnHighlightTranslation(ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame) ;
+void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
+
 
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
