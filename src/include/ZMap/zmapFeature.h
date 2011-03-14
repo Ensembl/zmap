@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb 21 08:02 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.191 2011-02-24 13:56:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.192 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -201,13 +201,22 @@ typedef struct
  * SMap in ZMap we can use SMap structs instead....BUT strand is needed here too !!!!! */
 typedef struct
 {
-  int p1, p2 ;						    /* coords in parent. */
-  int c1, c2 ;						    /* coords in child. */
+      /* NOTE even if reversed coords are as start < end */
+  ZMapSpanStruct parent;          /* start/end in parent span (context) */
+  ZMapSpanStruct block;             /* start,end in align, aka child seq */
+      /* NOTE for a single align parent and block coords will be the same
+       * if another align exists then block is the coords in that align,
+       * parent is the related master_align coords
+       */
+  gboolean reversed;
 } ZMapMapBlockStruct, *ZMapMapBlock ;
 
 
 /*
  * Sequences and Block Coordinates
+ * NOTE with moving to chromosome coords this is a bit out of date
+ * will update this comment when I've worked out what to do.
+ * NOTE refer to docs/IntWeb/Design/notes/coord_config.shtml and ignore the below
  *
  * In the context of displaying a single align with a single block,
  * given a chromosome and a sequence from that to look at *we have:
@@ -322,29 +331,16 @@ typedef struct ZMapFeatureContextStruct_
   GQuark parent_name ;					    /* Name of parent sequence
 							       (== sequence_name if no parent). */
 
-//  int length ;						    /* total length of sequence. */
-
-
-
-  /* I think we should remove this as in fact our code will break IF  (start != 1)  !!!!!!!  */
-
-  /* Mapping for the target sequence, this shows where this section of sequence fits in to its
-   * overall assembly, e.g. where a clone is located on a chromosome. */
-  ZMapSpanStruct parent_span ;				    /* Start/end of ultimate parent, usually we
-							       will have: x1 = 1, x2 = length in
-							       bases of parent. */
-
-
-  ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
-							       ultimate parent. */
-
-
-  GList *req_feature_set_names ;	              /* Global list of _names_ of all requested
-							       feature sets for the context,
-							       _only_ these sets are loaded into
-							       the context. */
+  ZMapSpanStruct parent_span ;                      /* Start/end of ultimate parent, usually we
+                                                      will have: x1 = 1, x2 = length in
+                                                      bases of parent. */
+  GList *req_feature_set_names ;	            /* Global list of _names_ of all requested
+							       * feature sets for the context.
+                                                 * for ACEDB these are given as columns
+                                                 * and are returned as featuresets
+							       */
   GList *src_feature_set_names ;                  /* Global list of _names_ of all source
-                                                 feature sets for the context,
+                                                 feature sets actually in the context,
                                                  _only_ these sets are loaded into
                                                  the context. */
 
@@ -369,6 +365,10 @@ typedef struct ZMapFeatureAlignmentStruct_
 
   /* Alignment only data should go here. */
 
+  /* Mapping for the target sequence, this shows where this section of sequence fits in to its
+   * overall assembly, e.g. where a clone is located on a chromosome. */
+  ZMapSpanStruct sequence_span;                       /* start/end of our sequence */
+
 } ZMapFeatureAlignmentStruct;
 
 
@@ -379,7 +379,7 @@ typedef struct ZMapFeatureBlockStruct_
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
-  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;	/* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent alignment. */
   GQuark unique_id ;					    /* Unique id for this block. */
   GQuark original_id ;					    /* Original id, probably not needed ? */
@@ -387,15 +387,15 @@ typedef struct ZMapFeatureBlockStruct_
 							       set of ZMapFeatureSetStruct. */
 
   /* Block only data. */
-  ZMapAlignBlockStruct block_to_sequence ;		    /* Shows how these features map to the
+  ZMapMapBlockStruct block_to_sequence ;	/* Shows how these features map to the
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
-
-  ZMapSequenceStruct sequence ;				    /* DNA sequence for this block,
+  ZMapSequenceStruct sequence ;	      /* DNA sequence for this block,
 							       n.b. there may not be any dna. */
 
-  int features_start, features_end ;			    /* coord limits for fetching
-							       features. */
+  gboolean revcomped;                     /* block RevComp'd relative to the window */
+
+//  int features_start, features_end ;    /* coord limits for fetching features. */
 
 } ZMapFeatureBlockStruct, *ZMapFeatureBlock ;
 
@@ -429,16 +429,9 @@ typedef struct ZMapFeatureSetStruct_
       /* NB we don't expect to use both these on the same featureset but play safe... */
   GList *masker_sorted_features;    /* or NULL if not sorted */
 
-/*  GQuark column_id;                               * as mapped in view/window featureset_2_column
-                                                    * as this is a view wide setting this is safe
-                                                    * despite maybe having several windows
-                                                    * NOTE: this is the column name canonicalised
-                                                    * and the cols themselves are munged with strand and frame
-                                                    * if we have two aligns, then the blocks are diff
-                                                    * and the featuresets likewise so diff mappings are possible
-                                                    */
-
-
+  GList *loaded;              /* strand and end coordinate pairs in numerical order of start coord */
+                              /* we use ZMapSpanStruct (x1,x2) to hold this */
+                              /* NOTE:may be null after context merge into view context */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -753,7 +746,6 @@ typedef struct
 /* NOTE these are logical columns, real display columns get munged with strand and frame */
 typedef struct
 {
-      // really need to change feature_set to column: it's confusing
   GQuark unique_id ;                /* column name as a key value*/
   GQuark column_id ;                /* column name as display text*/
 
@@ -766,7 +758,16 @@ typedef struct
                                      */
   GQuark style_id;                  /* this can be set before we get the style itself */
 
-  GList *style_table;          /* all the styles needed by the column */
+  GList *style_table;               /* all the styles needed by the column */
+
+  GList * featuresets;              /* list of those configured
+                                     * these get filled in when servers request featureset-names
+                                     * for pipe servers we could do this during server config
+                                     * but for ACE (and possibly DAS) we have to wait till they provide data
+                                     */
+/* performance betterment
+   generate with zMapFeatureGetColumnFeatureSets() after config and update if a server provides mapping */
+/* change all code around that function */
 
 } ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
 
@@ -822,6 +823,18 @@ typedef struct
                                            */
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;
+
+
+
+/* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
+/* MH17: moved from zmapView.h */
+typedef struct
+{
+  char *sequence ;                                  /* Sequence + start/end coords. */
+  int start, end ;
+} ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
+
+
 
 typedef enum
   {
@@ -933,7 +946,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
 void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
-void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout) ;
+void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout) ;
 
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
@@ -963,6 +976,9 @@ void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
+
+
+gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block, GQuark unique_id,int start, int end);
 
 
 /* *********************
@@ -1017,7 +1033,8 @@ ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_
 ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature) ;
 ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 						    ZMapFeatureContext *new_context_inout,
-						    ZMapFeatureContext *diff_context_out) ;
+						    ZMapFeatureContext *diff_context_out,
+                                        GList *featureset_names) ;
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
@@ -1030,6 +1047,7 @@ ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext featu
                                                         GQuark align_id);
 gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext   feature_context,
                                            ZMapFeatureAlignment feature_align);
+gboolean zMapFeatureContextGetMasterAlignSpan(ZMapFeatureContext context,int *start,int *end);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, char *style_name);
@@ -1078,6 +1096,7 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
 
 /* UTILITY METHODS */
 
+int zmapFeatureRevCompCoord(int coord, int start, int end);
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructType type) ;

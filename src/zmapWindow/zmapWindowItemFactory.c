@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 21 08:10 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.92 2011-02-24 13:58:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.93 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,8 +48,9 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
 
-// tmep include for timing test
+// temp include for timing test
 #include <zmapWindowCanvasItem_I.h>
+
 
 typedef struct _RunSetStruct *RunSet;
 
@@ -295,8 +296,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) parent_container;
   ZMapWindow window;
 
-#if MH17_REVCOMP_DEBUG
-        printf("run_single ");
+#if MH17_REVCOMP_DEBUG > 1
+        zMapLogWarning("run_single ","");
 #endif
 
   /* check here before they get called.  I'd prefer to only do this
@@ -341,16 +342,16 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       if (zMapStyleIsStrandSpecific(style)
           && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
       {
-#if MH17_REVCOMP_DEBUG
-        printf("not reverse\n");
+#if MH17_REVCOMP_DEBUG > 2
+        zMapLogWarning("not reverse","");
 #endif
         goto undrawn;
       }
       /* Note: for object to _span_ "width" units, we start at zero and end at "width". */
       limits[0] = 0.0;
-      limits[1] = (double)(block->block_to_sequence.t1);
+      limits[1] = (double)(block->block_to_sequence.block.x1);
       limits[2] = zMapStyleGetWidth(style);
-      limits[3] = (double)(block->block_to_sequence.t2);
+      limits[3] = (double)(block->block_to_sequence.block.x2);
 
       /* Set these to this for normal main window use. */
       points[0] = 0.0;
@@ -362,8 +363,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       /* inlined this should be nothing most of the time, question is can it be inlined?? */
       if((no_points_in_block = (factory->user_funcs->feature_size_request)(feature, &limits[0], &points[0], factory->user_data)) == TRUE)
       {
-#if MH17_REVCOMP_DEBUG
-        printf("no points in block\n");
+#if MH17_REVCOMP_DEBUG > 2
+        zMapLogWarning("no points in block","");
 #endif
         goto undrawn;
       }
@@ -394,9 +395,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 	    break;
 	  }
-#if MH17_REVCOMP_DEBUG
-        printf("not reverse\n");
-#endif
 
         case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
@@ -407,13 +405,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 	    method_table = factory->methods;
 
-          if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
+	    if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
             zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
           else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
           {
             /* if is homol then must have percent, see gff2parser getHomolAttrs() */
             zmapWindowGetPosFromScore(style, feature->feature.homol.percent_id, &(points[0]), &(points[2])) ;
           }
+
 
 
 	    if (!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align))
@@ -551,6 +550,25 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
      if(!zMapWindowContainerSummarise(window,style) || zmapWindowContainerSummariseIsItemVisible(
             window, points[0], points[1],points[2], points[3]))
       {
+            int offset;
+
+            /*
+             * we are drawing from diff_context which may be the result of a req from mark
+             * in which case our block coords may be different from the canvas block
+             * so we need to get the block start coord from the canvas block
+             */
+
+            /* get block via strand from container */
+            ZMapWindowContainerBlock container_block = (ZMapWindowContainerBlock)
+                  zmapWindowContainerUtilsItemGetParentLevel((FooCanvasItem *) container, ZMAPCONTAINER_LEVEL_BLOCK);
+            ZMapFeatureBlock canvas_block;
+
+            /* get the feature corresponding to tbe canvas block */
+            zMapAssert(ZMAP_IS_CONTAINER_BLOCK(container_block));
+            zmapWindowContainerGetFeatureAny( (ZMapWindowContainerGroup) container_block, (ZMapFeatureAny *) &canvas_block);
+
+            /* get the block offset for the display contect not the load request context */
+            offset = block->block_to_sequence.block.x1;
 
             run_data.factory   = factory;
             run_data.container = features_container;
@@ -560,6 +578,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             run_data.set       = set;
 
             run_data.canvas_item = current_item;
+
 #if !MH17_TEST_WITHOUT_FOO
             item   = ((method)->method)(&run_data, feature, limits[1],
 				  points[0], points[1],
@@ -584,8 +603,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
           if(factory->ftoi_hash)
 	    {
-#if MH17_REVCOMP_DEBUG
-            printf("FToIAddFeature %d-%d to %s\n",feature->x1,feature->x2,g_quark_to_string(set->unique_id));
+#if MH17_REVCOMP_DEBUG > 1
+            zMapLogWarning("FToIAddFeature %s %f,%f - %f,%f to %s",
+            g_quark_to_string(feature->unique_id),
+            points[1],points[0],points[3],points[2],
+            g_quark_to_string(set->unique_id));
 #endif
 	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
 						align->unique_id,
@@ -597,8 +619,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    }
           else
           {
-#if MH17_REVCOMP_DEBUG
-        printf("no hash\n");
+#if MH17_REVCOMP_DEBUG > 2
+        zMapLogWarning("no hash","");
 #endif
           }
 
@@ -610,16 +632,16 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         }
         else
         {
-#if MH17_REVCOMP_DEBUG
-        printf("no item\n");
+#if MH17_REVCOMP_DEBUG > 2
+        zMapLogWarning("no item ","");
 #endif
         }
 
     }
   else
     {
-#if MH17_REVCOMP_DEBUG
-        printf("unknown type\n");
+#if MH17_REVCOMP_DEBUG > 2
+        zMapLogWarning("unknown type","");
 #endif
       zMapLogFatal("Feature %s is of unknown type: %d\n",
 		   (char *)g_quark_to_string(feature->original_id), feature->type) ;
@@ -976,8 +998,8 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	  double prev_item_bottom;
 	  guint i = 0;		/* Get First Block */
 
-	  limits[1] = block->block_to_sequence.q1;
-	  limits[3] = block->block_to_sequence.q2;
+	  limits[1] = block->block_to_sequence.block.x1;
+	  limits[3] = block->block_to_sequence.block.x2;
 
 	  feature_start = feature->x1;
 	  feature_end   = feature->x2; /* I want this function to find these values */
@@ -1895,10 +1917,23 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
   parent_ypos = FOO_CANVAS_GROUP(item)->ypos;
 
   y1 -= parent_ypos;
-  y2 -= parent_ypos;
+//  y2 -= parent_ypos;
+  y2 = y1 + 1.0;
+       /* mh17: FooCanvastext sets it's own bounds and we have to avoid
+        * setting the bounds as the elngth of the locus whcih does not
+        * correspond to the height of the text
+        * as this reuslt in a text item spannign a very wide region
+        * which makes the navigator mouse events pick random objects
+        *
+        * unfortunaltely there is another fault causing this to happen
+        * even if my theory here was correct
+        * text items do get sized to text size before gettign expanded to the bottom of the canvas
+        */
 
   text_item = zMapWindowCanvasItemAddInterval(canvas_item, NULL, y1, y2, x1, x2);
-
+#if MH17_DEBUG_MAV_FOOBAR
+printf("drawSimpleAsTextFeature %s  %f -> %f (+%f)\n",text_string,y1,y2, parent_ypos);
+#endif
   foo_canvas_item_set(text_item,
 		      "text",       text_string,
 		      NULL);

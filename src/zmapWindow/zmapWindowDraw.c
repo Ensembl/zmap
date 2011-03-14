@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:42 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.137 2011-02-14 13:25:06 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.138 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -649,11 +649,6 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-if(featureset->unique_id == g_quark_from_string("chip_pet_ditags"))
-{
-zMapLogWarning("is mag vis %s %d: %d %d", g_quark_to_string(featureset->unique_id),featureset->strand, zmapWindowContainerHasFeatures(container),zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
-}
-
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
       double min_mag = 0.0, max_mag = 0.0 ;
@@ -989,7 +984,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
       /* Now we have a context to merge. */
       zMapFeatureContextMerge(&(window->strand_separator_context),
-			      &context_cp, &diff);
+			      &context_cp, &diff,NULL);
 
       canvas_data.window = window;
       canvas_data.full_context = window->strand_separator_context;
@@ -1149,7 +1144,7 @@ static void set_hlocked_scroll_region(gpointer key, gpointer value, gpointer use
 
   zmapWindowSetScrollRegion(window,
 			    &box->coords[0], &box->coords[1],
-			    &box->coords[2], &box->coords[3]) ;
+			    &box->coords[2], &box->coords[3],"set_hlocked_scroll_region") ;
 
   return ;
 }
@@ -1186,7 +1181,7 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
       if(y2 == ZMAP_CANVAS_INIT_SIZE)
 	y2 = window->max_coord;
 
-      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2) ;
+      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidthCB 1") ;
     }
   else if(((window->curr_locking == ZMAP_WINLOCK_HORIZONTAL) &&
 	   (root_width > scr_reg_width)))
@@ -1208,7 +1203,7 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
       box->coords[2] = x2;
       box->coords[3] = y2;
 
-      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2) ;
+      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidthCB 2") ;
 
       /* We need to make the horizontal split & locked windows have
        * the maximum width so that _all_ the features are

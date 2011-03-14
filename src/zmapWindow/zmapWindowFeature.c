@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 10 13:48 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.210 2011-03-11 17:46:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.211 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,6 @@
 #define PFETCH_READ_SIZE 80	/* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
-
 
 
 enum
@@ -542,6 +541,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) set_group;
   gboolean masked;
 
+#if MH17_REVCOMP_DEBUG
+      zMapLogWarning("FeatureDraw %d-%d",feature->x1,feature->x2);
+#endif
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
   if ((zMapStyleIsStrandSpecific(style)) &&
@@ -555,8 +557,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
       return NULL ;
     }
 
-#ifdef MH17_REVCOMP_DEBUG
-      printf("FeatureDraw %d-%d\n",feature->x1,feature->x2);
+#if MH17_REVCOMP_DEBUG
+      zMapLogWarning("right strand %d",feature->strand);
 #endif
 
 
@@ -569,6 +571,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
     {
       if(container->masked && !window->highlights_set.masked)
       {
+#if MH17_REVCOMP_DEBUG
+      zMapLogWarning("masked","");
+#endif
         return NULL;
       }
     }
@@ -1782,7 +1787,11 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
     case ZMAPSTYLE_MODE_GRAPH:
     case ZMAPSTYLE_MODE_RAW_SEQUENCE:
     case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+//      gtk_widget_set_events(GTK_WIDGET(top_item),GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+// not a widget it's a canvas item
+// see if this speeds up up! (no difference)
       g_signal_connect(G_OBJECT(top_item), "event", G_CALLBACK(canvasItemEventCB), handler_data);
+
       break;
 
     default:

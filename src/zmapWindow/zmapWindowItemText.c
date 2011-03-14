@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun  9 14:24 2010 (edgrif)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.31 2011-01-04 11:10:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.32 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -338,11 +338,6 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 	  zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
 
 	  show_translation.style
-/*          = feature->style;
-#warning wrong: need 3ft translation style here
-*/
-            /* this style gets set for the column as it's PreDefined and has the same name as the column */
-#warning using the wrong style here had no effect
             = zMapWindowContainerFeatureSetGetStyle((ZMapWindowContainerFeatureSet)(translation_column));
 
 
@@ -1352,7 +1347,7 @@ static void show_translation_cb(ZMapWindowContainerGroup container_group,
       zmapWindowContainerFeatureSetRemoveAllItems((ZMapWindowContainerFeatureSet)container_group);
 
       item = draw_show_translation(container_features, feature,
-				   feature_block->block_to_sequence.q1,
+				   feature_block->block_to_sequence.block.x1,
 				   0.0,  feature->x1,
 				   30.0, feature->x2,
 				   show_data->style);

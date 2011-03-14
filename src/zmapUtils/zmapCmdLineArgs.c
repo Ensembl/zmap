@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Oct 13 17:36 2010 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.17 2011-03-01 16:22:42 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.18 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,6 +350,9 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
     { G_OPTION_REMAINING, 0, ARG_NO_FLAGS,
       G_OPTION_ARG_STRING_ARRAY, NULL,
       ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
+    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG,
+      G_OPTION_ARG_NONE, NULL,
+      ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
     { NULL }
   };
 
@@ -360,6 +363,7 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       entries[2].arg_data = &(arg_context->start);
       entries[3].arg_data = &(arg_context->end);
       entries[4].arg_data = &(arg_context->sequence_arg);
+      entries[5].arg_data = &(arg_context->sleep);
     }
 
   return &entries[0];

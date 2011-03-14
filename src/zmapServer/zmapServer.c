@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.48 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.49 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,11 +173,11 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 }
 
 
-ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,gboolean sequence_server)
+ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,gboolean sequence_server,gint zmap_start,gint zmap_end)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-  result = server->last_response = (server->funcs->open)(server->server_conn,sequence_server) ;
+  result = server->last_response = (server->funcs->open)(server->server_conn,sequence_server,zmap_start,zmap_end) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,

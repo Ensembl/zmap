@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.13 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.14 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,8 @@
 #include <string.h>
 #include <zmapWindowGlyphItem_I.h>
 #include <ZMap/zmapUtilsLog.h>
+
+#include <ZMap/zmapUtils.h>   // timing only
 
 /* Object argument IDs */
 enum
@@ -937,6 +939,37 @@ static void zmap_window_glyph_item_draw (FooCanvasItem  *item,
           /* foo_canvas_set_stipple_origin removed */
           gdk_draw_polygon (drawable, glyph->line_gc, FALSE, points, glyph->num_points);
         }
+#if MH17_SILLY_TEST
+{
+/* time 10k gdk draws */
+static int first = 1;
+if(first)
+{
+      int i;
+      {
+zMapStartTimer("draw glyph","area");
+      if (glyph->area_set)
+        {
+          /* foo_canvas_set_stipple_origin removed */
+            for(i = 0;i < 10000;i++)
+                gdk_draw_polygon (drawable, glyph->area_gc, TRUE, points, glyph->num_points);
+        }
+zMapStopTimer("draw glyph","area");
+
+zMapStartTimer("draw glyph","line");
+      if (glyph->line_set)
+        {
+          /* foo_canvas_set_stipple_origin removed */
+            for(i = 0;i < 10000;i++)
+                gdk_draw_polygon (drawable, glyph->line_gc, FALSE, points, glyph->num_points);
+        }
+zMapStopTimer("draw glyph","line");
+
+      }
+}
+first = 0;
+}
+#endif
       break;
 
     case GLYPH_DRAW_ARC:

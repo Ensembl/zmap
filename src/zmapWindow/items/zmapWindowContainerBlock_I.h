@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 20 10:05 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.6 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.7 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,8 +49,10 @@ typedef struct _zmapWindowContainerBlockStruct
   gpointer  window;
 
   GList      *compressed_cols, *bumped_cols ;
-  
+
+#if MH17_NO_DEFERRED
   GHashTable *loaded_region_hash;
+#endif
 
   struct
   {

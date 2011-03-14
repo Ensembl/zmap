@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  *              handle. This means that if you zoom in far enough
  *              the display suddenly goes wierd as the sizes get
  *              too big for XWindows (anything over 32k in length).
- *              
+ *
  *              This code attempts to handle this. In fact there are
  *              versions of foocanvas that handle this kind of thing
  *              and perhaps we should swop to them.
@@ -37,7 +37,7 @@
  * HISTORY:
  * Last edited: Jun  5 14:29 2009 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.19 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.20 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,13 +65,13 @@ typedef struct
 
 
 /* Struct for the long items object, internal to long item code.
- * 
+ *
  * There is one long items object per ZMapWindow, it keeps a record of all items that
  * may need to be clipped before they are drawn. We shouldn't need to do this but the
  * foocanvas does not take care of any clipping that might be required by the underlying
  * window system. In the case of XWindows this amounts to clipping anything longer than
  * 32K pixels in size as the XWindows protocol cannot handle anything longer.
- * 
+ *
  *  */
 typedef struct _ZMapWindowLongItemsStruct
 {
@@ -108,24 +108,24 @@ typedef struct
     } box ;
     FooCanvasPoints *points ;
   } pos ;
-  
+
   struct
   {
     double y1 ;
     double y2 ;
   } extreme ;
-  
+
 } LongFeatureItemStruct, *LongFeatureItem ;
 
 
-static void LongItemExposeCrop(ZMapWindowLongItems long_items, 
+static void LongItemExposeCrop(ZMapWindowLongItems long_items,
                                double x1, double y1,
                                double x2, double y2);
-static gboolean long_item_expose_crop(GtkWidget *widget, 
-                                      GdkEventExpose *event, 
+static gboolean long_item_expose_crop(GtkWidget *widget,
+                                      GdkEventExpose *event,
                                       gpointer user_data);
-static void crop_long_item(gpointer key, 
-                           gpointer value, 
+static void crop_long_item(gpointer key,
+                           gpointer value,
                            gpointer user_data);
 static void hash_foreach_print_long_item(gpointer key,
                                          gpointer value,
@@ -135,18 +135,18 @@ static void save_long_item(LongFeatureItemStruct *long_item, double start, doubl
 
 /* printing functions */
 static void printLongItem(gpointer data, gpointer user_data) ;
-static void printLongItemsOperation(ZMapWindowLongItems long_items, 
-                                    LongFeatureItem long_item, 
+static void printLongItemsOperation(ZMapWindowLongItems long_items,
+                                    LongFeatureItem long_item,
                                     char *operation);
 static void printEvent(GdkEventExpose *event);
 static void printCanvas(FooCanvas *canvas);
 
 /* Controlled by... TRUE == debugging*/
-static gboolean long_item_debug_G = FALSE ;
+static gboolean long_item_debug_G = TRUE ;
 static gboolean long_item_expose_crop_G = FALSE;
 
 /*!
- * \brief Simple constructor for a long item object. 
+ * \brief Simple constructor for a long item object.
  *
  * \param               Maximum zoom for the canvas.
  * \return              The new ZMapWindowLongItems object.
@@ -172,7 +172,7 @@ ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom)
  * This is implemented as a stack so there should be as many calls to
  * zmapWindowLongItemPopInterruption as there are to
  * zmapWindowLongItemPushInterruption.
- * 
+ *
  * \param              ZMapWindowLongItems to apply to.
  * \return             void
  *
@@ -185,7 +185,7 @@ void zmapWindowLongItemPushInterruption(ZMapWindowLongItems long_item)
 }
 
 /*!
- * \brief This is the opposite of zmapWindowLongItemPushInterruption 
+ * \brief This is the opposite of zmapWindowLongItemPushInterruption
  * and used to "unfreeze" the redrawing.
  *
  * \param              ZMapWindowLongItems to apply to.
@@ -223,9 +223,9 @@ gulong zmapWindowLongItemsInitialiseExpose(ZMapWindowLongItems long_item, FooCan
 
   long_item->canvas = canvas;
 
-  long_item->handler_id = handler_id = g_signal_connect(G_OBJECT(&(FOO_CANVAS(canvas)->layout)), 
+  long_item->handler_id = handler_id = g_signal_connect(G_OBJECT(&(FOO_CANVAS(canvas)->layout)),
                                                         "expose-event",
-                                                        G_CALLBACK(long_item_expose_crop), 
+                                                        G_CALLBACK(long_item_expose_crop),
                                                         long_item);
 
   return handler_id;
@@ -260,7 +260,7 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
   double length ;
 
   length = zmapWindowExt(start, end) * long_items->max_zoom ;
-  
+
   /* Only add the item if it can exceed the windows limit. */
   if (length > ZMAP_WINDOW_MAX_WINDOW)
     {
@@ -285,7 +285,7 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
 	  save_long_item(new_item, start, end);
 
           g_hash_table_insert(long_items->long_feature_items, item, new_item);
-          
+
           long_items->item_count++ ;
 
           long_items->force_crop = TRUE;
@@ -296,7 +296,7 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
           printLongItem(new_item, NULL) ;
           printLongItemsOperation(long_items, new_item, "added");
         }
-        
+
     }
   return ;
 }
@@ -350,7 +350,7 @@ gboolean zmapWindowLongItemCoords(ZMapWindowLongItems long_items, FooCanvasItem 
  * \param           y2 coord
  * \return          void
  *************************************************  */
-void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, 
+void zmapWindowLongItemCrop(ZMapWindowLongItems long_items,
                             double x1, double y1,
                             double x2, double y2)
 {
@@ -383,7 +383,7 @@ void zmapWindowLongItemPrint(ZMapWindowLongItems long_items)
  *
  * \param                long item object
  * \param                FooCanvasItem * to remove
- * \return               TRUE if the item was removed, 
+ * \return               TRUE if the item was removed,
  *                       FALSE if the item could not be found.
  ************************************************** */
 gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_items, FooCanvasItem *item)
@@ -397,9 +397,9 @@ gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_items, FooCanvasItem 
         {
           LongFeatureItemStruct tmp_long = {NULL};
           tmp_long.item = item;
-          
+
           printLongItem(&tmp_long, NULL) ;
-          
+
           printLongItemsOperation(long_items, &tmp_long, "removed");
         }
     }
@@ -409,7 +409,7 @@ gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_items, FooCanvasItem 
 
 /*!
  * \brief Free all of the items we know about.
- * 
+ *
  * \param            long item object
  * \return           void
  ************************************************** */
@@ -427,7 +427,7 @@ void zmapWindowLongItemFree(ZMapWindowLongItems long_items)
 
 
 /*!
- * \brief Destructor for a long item object. 
+ * \brief Destructor for a long item object.
  *
  * \param            long item object
  * \return           void
@@ -446,15 +446,15 @@ void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item)
 }
 
 
-/* 
+/*
  *                  Internal routines.
  */
 
 /* Cropping starts from here... We check the region with that of the
  * last region and whether or not extra items were added.  If either
- * are true we need to run through the hash of long items cropping 
+ * are true we need to run through the hash of long items cropping
  */
-static void LongItemExposeCrop(ZMapWindowLongItems long_items, 
+static void LongItemExposeCrop(ZMapWindowLongItems long_items,
                                double x1, double y1,
                                double x2, double y2)
 {
@@ -485,7 +485,7 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
                 printf("Cropping was Forced! Either due to new LongItems or by user Call\n");
               printf("Cropping Long Items: Region %f %f %f %f\n", x1, y1, x2, y2);
             }
-          
+
           if(long_items->canvas)
             {
               func_data.pixels_per_unit_y = FOO_CANVAS(long_items->canvas)->pixels_per_unit_y;
@@ -494,7 +494,7 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
 
           g_hash_table_foreach(long_items->long_feature_items, crop_long_item, &func_data);
         }
-      
+
       last_region->x1 = x1;
       last_region->x2 = x2;
       last_region->y1 = y1;
@@ -513,10 +513,12 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
  * does filtering based on the last region we cropped to.  Returning
  * TRUE from this function stops the canvas drawing.  It is using this
  * method that we stop a reasonable amount of flashing/redrawing of
- * the canvas when zooming. See zmapWindowLongItemPushInterruption() 
+ * the canvas when zooming. See zmapWindowLongItemPushInterruption()
  */
-static gboolean long_item_expose_crop(GtkWidget *widget, 
-                                      GdkEventExpose *event, 
+
+/* MH17: was hooked in permanently, taken out via zmapWindow.c InitialiseExpose() */
+static gboolean long_item_expose_crop(GtkWidget *widget,
+                                      GdkEventExpose *event,
                                       gpointer user_data)
 {
   ZMapWindowLongItems long_item = (ZMapWindowLongItems)user_data;
@@ -536,13 +538,13 @@ static gboolean long_item_expose_crop(GtkWidget *widget,
 	  double x1, x2, y1, y2;
 
 	  foo_canvas_get_scroll_region(long_item->canvas, &x1, &y1, &x2, &y2);
-	  
+
 	  LongItemExposeCrop(long_item, x1, y1, x2, y2);
 	}
     }
   else
     disable_draw = TRUE;
-  
+
   if(long_item_debug_G)
     printf("GQueue length = %d\n", queue_length);
 
@@ -552,10 +554,10 @@ static gboolean long_item_expose_crop(GtkWidget *widget,
 
 /*
  * Actually do the cropping.  A GHFunc()
- * 
+ *
  * @param             FooCanvasItem * key of hash.
  * @param             LongFeatureItem to crop
- * @param             The region to crop to 
+ * @param             The region to crop to
  * @return            void
  */
 static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
@@ -678,7 +680,7 @@ static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
   return ;
 }
 
-/* 
+/*
  * print stuff. A GHFunc()
  *
  */
@@ -691,7 +693,7 @@ static void hash_foreach_print_long_item(gpointer key,
   return ;
 }
 
-/* 
+/*
  * Destroy the values of the hash. A GDestroyNotify()
  *
  */
@@ -710,7 +712,7 @@ static void long_item_value_destroy(gpointer user_data)
     }
 
   g_free(long_item) ;
-  
+
   return ;
 }
 
@@ -734,7 +736,7 @@ static void save_long_item(LongFeatureItemStruct *long_item, double start, doubl
 	  /* Not quite sure why we memcpy here... The g_object_get, should by convention
 	   * have already copied the item_points. */
 	  long_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
-	  
+
 	  coords_ptr = long_item->pos.points->coords;
 
 	  memcpy(long_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
@@ -769,7 +771,7 @@ static void printLongItem(gpointer data, gpointer user_data)
 {
   LongFeatureItem long_item = (LongFeatureItem)data ;
   GString *string = g_string_sized_new(128);
-  
+
   g_string_append_printf(string, "%s: ", "printLongItem");
 
   zmapWindowItemDebugItemToString(long_item->item, string);
@@ -781,8 +783,8 @@ static void printLongItem(gpointer data, gpointer user_data)
   return ;
 }
 
-static void printLongItemsOperation(ZMapWindowLongItems long_items, 
-                                    LongFeatureItem long_item, 
+static void printLongItemsOperation(ZMapWindowLongItems long_items,
+                                    LongFeatureItem long_item,
                                     char *operation)
 {
   char *type = NULL;
@@ -794,8 +796,8 @@ static void printLongItemsOperation(ZMapWindowLongItems long_items,
   else
     type = "other";
 
-  printf("Long Item [%s] %s: %d\tList length: %d\n", 
-         type, operation, long_items->item_count, 
+  printf("Long Item [%s] %s: %d\tList length: %d\n",
+         type, operation, long_items->item_count,
          g_hash_table_size(long_items->long_feature_items));
 
   return ;
@@ -804,7 +806,7 @@ static void printLongItemsOperation(ZMapWindowLongItems long_items,
 
 static void printEvent(GdkEventExpose *event)
 {
-  printf("Event: area %d,%d + %d,%d (x,y + w,h)", 
+  printf("Event: area %d,%d + %d,%d (x,y + w,h)",
          event->area.x, event->area.y,
          event->area.width, event->area.height);
   printf("\tcount %d", event->count);

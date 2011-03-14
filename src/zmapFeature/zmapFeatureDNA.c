@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov 11 14:50 2010 (edgrif)
  * Created: Tue Apr  7 10:32:21 2009 (rds)
- * CVS info:   $Id: zmapFeatureDNA.c,v 1.8 2010-11-12 09:16:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureDNA.c,v 1.9 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,8 +96,8 @@ GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block)
     {
       dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE,
 				   dna_name, ZMAPSTRAND_FORWARD,
-				   block->block_to_sequence.q1,
-				   block->block_to_sequence.q2,
+				   block->block_to_sequence.block.x1,
+				   block->block_to_sequence.block.x2,
 				   0, 0);
       g_free(dna_name);
     }
@@ -171,8 +171,8 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
       GQuark dna_id;
       int block_start, block_end;
 
-      block_start = block->block_to_sequence.q1 ;
-      block_end   = block->block_to_sequence.q2 ;
+      block_start = block->block_to_sequence.block.x1 ;
+      block_end   = block->block_to_sequence.block.x2 ;
 
       feature_name = zMapFeatureDNAFeatureName(block);
 

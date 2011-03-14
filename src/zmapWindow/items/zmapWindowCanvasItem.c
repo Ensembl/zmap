@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 18 11:03 2011 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.38 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.39 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1860,6 +1860,13 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
   zMapLogReturnIfFail(ZMAP_IS_CANVAS_ITEM(item));
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
+
+#if MH17_REVCOMP_DEBUG > 1
+      zMapLogWarning("canvas item draw %s %p %f,%f - %f,%f",
+            g_quark_to_string(canvas_item->feature->unique_id),
+            item->canvas,item->y1,item->x1,item->y2,item->x2) ;
+#endif
+
 
   if (canvas_item->debug)
     {

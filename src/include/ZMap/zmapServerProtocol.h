@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  8 15:02 2011 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.36 2011-03-11 17:25:52 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.37 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -111,7 +111,8 @@ typedef struct
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
-  gboolean sequence_server;         // get DNA or not?
+  gboolean sequence_server;         /* get DNA or not? */
+  gint zmap_start,zmap_end;         /* start, end coords based from 1 */
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 
 
@@ -125,6 +126,12 @@ typedef struct
   char *database_name_out ;
   char *database_title_out ;
   char *database_path_out ;
+
+  gboolean request_as_columns;      /* this is really and ACEDB indicator
+                                     * it means 'please expand columns into featuresets'
+                                     * it's not possible to get the acedb code to do this
+                                     * easily with major restructuring
+                                     */
 
 } ZMapServerReqGetServerInfoStruct, *ZMapServerReqGetServerInfo ;
 
@@ -160,7 +167,6 @@ typedef struct
 
   GHashTable *source_2_sourcedata_inout ;			    /* Mapping of features source to its
 							       style and other source specific data. */
-
 
 } ZMapServerReqFeatureSetsStruct, *ZMapServerReqFeatureSets ;
 

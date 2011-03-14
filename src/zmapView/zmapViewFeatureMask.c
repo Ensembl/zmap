@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.6 2010-12-02 12:59:33 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.7 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -241,11 +241,14 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
         if(!src2src)    // assert looks more natural but we get locus w/out any mapping from ACE
             break;
 
-#if MH17_FEATURESET_HAS_NO_STYLE
-        style =  zMapFindStyle(cb_data->view->context_map.styles,src2src->style_id);
-#else
         style = feature_set->style;
-#endif
+#warning should not be necessary: scan for all featureset create fucntion calls and fix
+        if(!style)
+        {
+            zMapLogWarning("looking up style for featureset %s",g_quark_to_string(feature_set->unique_id));
+            style = feature_set->style = zMapFindStyle(cb_data->view->context_map.styles,src2src->style_id);
+        }
+
         masked_by = zMapStyleGetMaskList(style);            /* all the masker featuresets */
 #if FILE_DEBUG
 PDEBUG("mask new by all: fset, style, masked by = %s, %s, %s\n", g_quark_to_string(feature_set->unique_id), g_quark_to_string(src2src->style_id), zMap_g_list_quark_to_string(masked_by));

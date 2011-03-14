@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * TODO: destroy functions
  *
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Feb 24 14:14 2011 (edgrif)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.12 2011-02-24 14:14:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.13 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,7 +63,7 @@ typedef struct
 typedef struct
 {
   double x1;
-  double x2;  
+  double x2;
 }TextPointStruct, *TextPoint;
 
 /* -------------------------- */
@@ -124,16 +124,16 @@ typedef struct
 }DrawOverlayLineDataStruct, *DrawOverlayLineData;
 
 static double getCenterPoint(double p1, double p2);
-static void getItemCanvasSpan(TextItem text_item, 
+static void getItemCanvasSpan(TextItem text_item,
                               TextCanvasSpanStruct *x_out,
                               TextCanvasSpanStruct *y_out);
 static TextItem itemCreate(FooCanvasItem *text);
 static TextPositionerGroup groupCreate(void);
-static void groupSpan(TextPositionerGroup group, 
-                      TextCanvasSpanStruct *xspan_out, 
+static void groupSpan(TextPositionerGroup group,
+                      TextCanvasSpanStruct *xspan_out,
                       TextCanvasSpanStruct *yspan_out);
-static void groupOriginalSpan(TextPositionerGroup group, 
-                              double *x1, double *y1, 
+static void groupOriginalSpan(TextPositionerGroup group,
+                              double *x1, double *y1,
                               double *x2, double *y2);
 #ifdef RDS_UNUSED_FUNCTION
 static double groupOriginalMedian(TextPositionerGroup group);
@@ -183,14 +183,14 @@ ZMapWindowTextPositioner zmapWindowTextPositionerCreate(double column_min, doubl
 }
 
 /*!
- * 
+ *
  * Add a text item to the positioner.
  *
  * @param              A ZMapWindowTextPositioner
  * @param              FooCanvasItem * to add [FOO_IS_CANVAS_TEXT(item) == TRUE]
  * @return             void
  **************************************************** */
-void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner, 
+void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner,
                                      FooCanvasItem *item)
 {
   TextPositionerGroup group;
@@ -236,7 +236,7 @@ void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner,
  * @param                      A ZMapWindowTextPositioner
  * @param                      boolean, whether to draw lines from
  *                             original to unoverlapped position
- * @return                     void 
+ * @return                     void
  *
  ***************************************************  */
 void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
@@ -301,7 +301,7 @@ static double getCenterPoint(double p1, double p2)
  * Fill in the structs with the _canvas_ coords of an item
  *
  ***************************************************  */
-static void getItemCanvasSpan(TextItem text_item, 
+static void getItemCanvasSpan(TextItem text_item,
                               TextCanvasSpanStruct *x_out,
                               TextCanvasSpanStruct *y_out)
 {
@@ -310,7 +310,7 @@ static void getItemCanvasSpan(TextItem text_item,
   int cx1 = 0, cx2 = 0, cy1 = 0, cy2 = 0;
 
   my_foo_canvas_item_get_world_bounds(text_item->text, &x1, &y1, &x2, &y2);
-  
+
   canvas = FOO_CANVAS((FOO_CANVAS_ITEM(text_item->text))->canvas);
 
   foo_canvas_w2c(text_item->text->canvas, x1, y1, &cx1, &cy1);
@@ -385,8 +385,8 @@ static TextPositionerGroup groupCreate(void)
  * Calculate the _canvas_ span of a group
  *
  ***************************************************  */
-static void groupSpan(TextPositionerGroup group, 
-                      TextCanvasSpanStruct *xspan_out, 
+static void groupSpan(TextPositionerGroup group,
+                      TextCanvasSpanStruct *xspan_out,
                       TextCanvasSpanStruct *yspan_out)
 {
   GList *list;
@@ -415,11 +415,11 @@ static void groupSpan(TextPositionerGroup group,
 /*
  * Calculate the _item_ span of a group
  *
- * N.B. This is between center points in y and 
+ * N.B. This is between center points in y and
  *      between 0 and 0 in x!
  ***************************************************  */
-static void groupOriginalSpan(TextPositionerGroup group, 
-                              double *x1, double *y1, 
+static void groupOriginalSpan(TextPositionerGroup group,
+                              double *x1, double *y1,
                               double *x2, double *y2)
 {
   GList *list;
@@ -517,9 +517,9 @@ static gint match_group_overlapping(gconstpointer group_data, gconstpointer find
 }
 
 /*
- * Find a group that overlaps supplied span, 
+ * Find a group that overlaps supplied span,
  * but isn't == ignore param
- * 
+ *
  * @param                A ZMapWindowTextPositioner
  * @param                span to overlap
  * @param                group to ignore
@@ -545,14 +545,14 @@ static TextPositionerGroup getOverlappingGroup(ZMapWindowTextPositioner position
 
 /*
  * g_list_insert_sorted GCompareFunc
- * 
- * @return   negative value if a < b; 
- *           zero           if a = b; 
+ *
+ * @return   negative value if a < b;
+ *           zero           if a = b;
  *           positive value if a > b;
  ***************************************************  */
 static gint order_text_objects(gconstpointer a, gconstpointer b)
 {
-  TextItem a_item = (TextItem)a, 
+  TextItem a_item = (TextItem)a,
     b_item        = (TextItem)b;
   gint order = 0;
 
@@ -568,16 +568,16 @@ static gint order_text_objects(gconstpointer a, gconstpointer b)
 
 
 /*
- * Add a TextItem to a TextPositionerGroup, 
+ * Add a TextItem to a TextPositionerGroup,
  * inserting so that the list remains sorted.
  *
  ***************************************************  */
 static void groupAddItem(TextPositionerGroup group, TextItem text)
 {
   zMapAssert(group && text);
-  
+
   group->text_objects = g_list_insert_sorted(group->text_objects, text, order_text_objects);
-  
+
   group->list_length++;
 
   return ;
@@ -588,13 +588,13 @@ static void groupAddItem(TextPositionerGroup group, TextItem text)
  *
  * @param             A ZMapWindowTextPositioner
  * @param             boolean TRUE if overlaps still exist
- * 
+ *
  ***************************************************  */
 static gboolean check_any_groups_overlap(ZMapWindowTextPositioner positioner)
 {
   gboolean overlapping = FALSE;
   MergeDataStruct merge_inout = {NULL};
- 
+
   merge_inout.positioner = positioner;
   /* In here we try to merge any groups which overlap */
   if(debug_positioner_G)
@@ -622,6 +622,9 @@ static gboolean check_any_groups_overlap(ZMapWindowTextPositioner positioner)
  *   Current max coord is recorded on each iteration.
  *
  ***************************************************  */
+#warning MH17:this function is totally insane
+/* to process an ordered list we call a g_list_foreach function and pass in a pointer to a data structure with a pointer to the 'current item' in the list ??
+*/
 static void unoverlap_items(gpointer text_item_data, gpointer user_data)
 {
   UnOverlapItemsData full_data = (UnOverlapItemsData)user_data;
@@ -636,7 +639,7 @@ static void unoverlap_items(gpointer text_item_data, gpointer user_data)
       overlap = (full_data->max) - y1 + 1;
 
       if(debug_positioner_G)
-        printf("  text[%s] (%f), min = %f, max = %f, y1 = %f, overlap = %f\n", 
+        printf("  text[%s] (%f), min = %f, max = %f, y1 = %f, overlap = %f\n",
                g_quark_to_string(text_item->locus_name),
                text_item->original_point.x2,
                full_data->min,
@@ -675,7 +678,7 @@ static void unoverlap_items(gpointer text_item_data, gpointer user_data)
 
 
       if(debug_positioner_G)
-        printf("  FIRST: [%s] min = %f, max = %f, line = %f\n", 
+        printf("  FIRST: [%s] min = %f, max = %f, line = %f\n",
              g_quark_to_string(text_item->locus_name),
              full_data->min, full_data->max,
              full_data->line_height);
@@ -719,8 +722,8 @@ static void unoverlap_groups(gpointer group_data, gpointer user_data)
   /* Set up the data needed by the child foreach */
   full_data.list_item   = g_list_first(group->text_objects);
   full_data.center      = FALSE;
-  full_data.line_height = 
-    full_data.min       = 
+  full_data.line_height =
+    full_data.min       =
     full_data.max       = 0.0;
 
   if(debug_positioner_G)
@@ -733,10 +736,20 @@ static void unoverlap_groups(gpointer group_data, gpointer user_data)
   if(full_data.center)
     {
       /*
-       * Using the median item's center point seemed like a good idea to make 
-       * the positioning look a little better.  However, it just means more 
+       * MH17: NOTE it should be relatively simple to invent an algorithm that only needs one pass
+       * (limiting iterations could be a way of admitting that the alorgithm is not deterministic
+       * and may fail that famous halting problem they knew about in the late 1940's)
+       * - the text (locus names) is in order (or can be)
+       * - calculate the space needed to display the text (per group) and how much spare there is
+       * - position the groups at one end
+       * - start at one end and add gaps from the spare space allocation  to centre the groups nicely
+       */
+
+      /*
+       * Using the median item's center point seemed like a good idea to make
+       * the positioning look a little better.  However, it just means more
        * iterations to unoverlap everything...
-       * 
+       *
        * original = groupOriginalMedian(group);
        */
       real_max = full_data.max - full_data.line_height;
@@ -803,24 +816,38 @@ static void draw_line_for_item(gpointer text_item_data, gpointer draw_data)
 
       if(!line)
         {
-          foo_canvas_item_get_bounds(text_item->text, 
-                                     &(points->coords[0]), &(points->coords[1]), 
+          foo_canvas_item_get_bounds(text_item->text,
+                                     &(points->coords[0]), &(points->coords[1]),
                                      &(points->coords[2]), &(points->coords[3]));
           /* only move right the once.  needs a better method really... */
           if(points->coords[0] == 0.0)
             {
               foo_canvas_item_move(text_item->text, right, 0.0);
-              foo_canvas_item_get_bounds(text_item->text, 
-                                         &(points->coords[0]), &(points->coords[1]), 
+              foo_canvas_item_get_bounds(text_item->text,
+                                         &(points->coords[0]), &(points->coords[1]),
                                          &(points->coords[2]), &(points->coords[3]));
             }
+#if MH17_DEBUG_NAV_FOOBAR
+{
+ZMapFeatureAny  feature_any = zmapWindowItemGetFeatureAny(text_item->text);
+char * name = zMapFeatureName(feature_any);
 
+printf("text postion %s/%p/%s at %f -> %f\n",g_quark_to_string(text_item->locus_name), text_item->text, name, points->coords[1],points->coords[3]);
+
+if(!strcmp(name,"CCDS44517.1"))
+{
+      extern FooCanvasItem *text_foo;
+      text_foo = text_item->text;
+}
+
+}
+#endif
           points->coords[3] = getCenterPoint(points->coords[1], points->coords[3]);
-          
+
           points->coords[0] = text_item->original_point.x1;
           points->coords[1] = text_item->original_point.x2;
           points->coords[2] = right;
-          
+
           line = foo_canvas_item_new(FOO_CANVAS_GROUP(draw->container_overlay),
                                      FOO_TYPE_CANVAS_LINE,
                                      "points",       points,
@@ -862,7 +889,7 @@ static void insert_elsewhere(gpointer text_item_data, gpointer group_data)
 }
 
 /*
- * Merge TextItems from mergee into group_merger.  This will ensure the 
+ * Merge TextItems from mergee into group_merger.  This will ensure the
  * lists are kept sorted. N.B. mergee is freed!
  ***************************************************  */
 static void merge_groups(TextPositionerGroup group_merger, TextPositionerGroup mergee)
@@ -937,7 +964,7 @@ static void fetch_merge_lists(gpointer list_data, gpointer merge_data)
 
       /* remove from groups list */
       merge->positioner->groups = g_list_remove(merge->positioner->groups, group);
-      
+
       /* merge the two into the one present int he merged_groups list */
       merge_groups(overlap_group, group);
     }

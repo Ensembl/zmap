@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Oct 21 16:13 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.12 2010-07-15 10:49:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.13 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,7 +172,11 @@ static void zmap_window_text_feature_init        (ZMapWindowTextFeature      tex
 
   canvas_item = ZMAP_CANVAS_ITEM(text);
 
-  canvas_item->auto_resize_background = 1;
+      /* mh17 for a locus feature we want the canvas item to be
+       * the size of the displayed test not the extent of the feature
+       * This is for a single line short text feature not a sequence that wraps round
+       */
+  canvas_item->auto_resize_background = 0;
   return ;
 }
 

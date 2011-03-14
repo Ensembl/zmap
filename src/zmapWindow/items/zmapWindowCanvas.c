@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,19 +24,20 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Apr 26 15:35 2010 (edgrif)
  * Created: Wed Apr 29 14:42:41 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.c,v 1.7 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvas.c,v 1.8 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
 
+#include <ZMap/zmapUtils.h>
 
 
 
@@ -60,7 +61,7 @@ enum
 
 static void zmap_window_canvas_class_init  (ZMapWindowCanvasClass canvas_class);
 static void zmap_window_canvas_init        (ZMapWindowCanvas      canvas);
-static void zmap_window_canvas_set_property(GObject               *object, 
+static void zmap_window_canvas_set_property(GObject               *object,
 					    guint                  param_id,
 					    const GValue          *value,
 					    GParamSpec            *pspec);
@@ -71,7 +72,7 @@ static void zmap_window_canvas_get_property(GObject               *object,
 #ifdef REQUIRE_DESTROY
 static void zmap_window_canvas_destroy     (GObject *object);
 #endif /* REQUIRE_DESTROY */
-static gint zmap_window_canvas_expose(GtkWidget      *widget, 
+static gint zmap_window_canvas_expose(GtkWidget      *widget,
 				      GdkEventExpose *event);
 
 
@@ -88,8 +89,8 @@ static gboolean window_canvas_meticulous_check_G = FALSE ;
 GType zMapWindowCanvasGetType (void)
 {
   static GType canvas_type = 0;
-  
-  if (canvas_type == 0) 
+
+  if (canvas_type == 0)
     {
       static const GTypeInfo canvas_info = {
 	sizeof (zmapWindowCanvasClass),
@@ -103,18 +104,18 @@ GType zMapWindowCanvasGetType (void)
 	(GInstanceInitFunc) zmap_window_canvas_init,
 	NULL
       };
-      
+
       canvas_type = g_type_register_static (foo_canvas_get_type (),
 					    ZMAP_WINDOW_CANVAS_NAME,
 					    &canvas_info,
 					    0);
     }
-  
+
   return canvas_type;
 }
 
 /* The idea of the busy/unbusy routines is to stop _all_ redrawing, by
- * not calling the foo_canvas_expose() while busy, and to unset this 
+ * not calling the foo_canvas_expose() while busy, and to unset this
  * switch and expose the current region when unbusy. */
 
 gboolean zMapWindowCanvasBusy(ZMapWindowCanvas canvas)
@@ -213,7 +214,7 @@ GtkWidget *zMapWindowCanvasNew(double max_zoom)
     {
       canvas = GTK_WIDGET(object);
     }
-  
+
   return canvas;
 }
 
@@ -228,7 +229,7 @@ static void visit_all_items_cb(FooCanvasItem *this_item, GFunc each_item, gpoint
       FooCanvasGroup *this_group;
       FooCanvasItem *item;
       GList *list;
-      
+
       this_group = FOO_CANVAS_GROUP(this_item);
 
       if((list = g_list_first(this_group->item_list)))
@@ -271,46 +272,46 @@ static void zmap_window_canvas_class_init  (ZMapWindowCanvasClass canvas_class)
   GObjectClass   *gobject_class;
   GtkObjectClass *object_class;
   GtkWidgetClass *widget_class;
-  
+
   gobject_class = (GObjectClass *)   canvas_class;
   object_class  = (GtkObjectClass *) canvas_class;
   widget_class  = (GtkWidgetClass *) canvas_class;
 
   parent_widget_class_G = g_type_class_peek_parent(canvas_class);
-  
+
   gobject_class->set_property = zmap_window_canvas_set_property;
   gobject_class->get_property = zmap_window_canvas_get_property;
 
   widget_class->expose_event  = zmap_window_canvas_expose;
-  
+
   g_object_class_install_property(gobject_class, CANVAS_MAX_ZOOM_X,
 				  g_param_spec_double("max-zoom-x", "max zoom x",
 						      "The maximum zoom pixels per unit for x axis",
-						      0.0, G_MAXDOUBLE, 0.0, 
+						      0.0, G_MAXDOUBLE, 0.0,
 						      ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class, CANVAS_MAX_ZOOM_Y,
 				  g_param_spec_double("max-zoom-y", "max zoom y",
 						      "The maximum zoom pixels per unit for y axis",
-						      0.0, G_MAXDOUBLE, 0.0, 
-						      ZMAP_PARAM_STATIC_RW));  
+						      0.0, G_MAXDOUBLE, 0.0,
+						      ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class, CANVAS_PIXELS_PER_UNIT,
 				  g_param_spec_double("pixels-per-unit", "pixels per unit",
 						      "The pixels per unit for both axis",
-						      0.0, G_MAXDOUBLE, 0.0, 
+						      0.0, G_MAXDOUBLE, 0.0,
 						      ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class, CANVAS_PIXELS_PER_UNIT_X,
 				  g_param_spec_double("pixels-per-unit-x", "pixels per unit x",
 						      "The pixels per unit for x axis",
-						      0.0, G_MAXDOUBLE, 0.0, 
+						      0.0, G_MAXDOUBLE, 0.0,
 						      ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class, CANVAS_PIXELS_PER_UNIT_Y,
 				  g_param_spec_double("pixels-per-unit-y", "pixels per unit y",
 						      "The pixels per unit for y axis",
-						      0.0, G_MAXDOUBLE, 0.0, 
+						      0.0, G_MAXDOUBLE, 0.0,
 						      ZMAP_PARAM_STATIC_RW));
 
 
@@ -326,7 +327,7 @@ static void zmap_window_canvas_init        (ZMapWindowCanvas      canvas)
   return ;
 }
 
-static void zmap_window_canvas_set_property(GObject               *object, 
+static void zmap_window_canvas_set_property(GObject               *object,
 					    guint                  param_id,
 					    const GValue          *value,
 					    GParamSpec            *pspec)
@@ -420,7 +421,7 @@ static gboolean zmap_window_canvas_get_visible_area(ZMapWindowCanvas canvas,
 
   rect.x = hadj->value ;
   rect.y = vadj->value ;
-  
+
   rect.width  = hadj->page_size;
   rect.height = vadj->page_size;
 
@@ -446,7 +447,7 @@ static void meticulous_check(FooCanvasItem *item, ZMapWindowCanvas canvas)
       double scroll_x1, scroll_y1, scroll_x2, scroll_y2, dummy_x = 0.0;
 
       too_big = TRUE;
-      
+
       scroll_x1 = foo_canvas->scroll_x1;
       scroll_y1 = foo_canvas->scroll_y1;
       scroll_x2 = foo_canvas->scroll_x2;
@@ -467,7 +468,7 @@ static void meticulous_check(FooCanvasItem *item, ZMapWindowCanvas canvas)
       GdkColor awful_pink;
 
       type_name = G_OBJECT_TYPE_NAME(G_OBJECT(item));
-      
+
       parent_type_name = G_OBJECT_TYPE_NAME(G_OBJECT(item->parent));
 
       gdk_color_parse(colour, &awful_pink);
@@ -477,7 +478,7 @@ static void meticulous_check(FooCanvasItem *item, ZMapWindowCanvas canvas)
 			    "fill_color_gdk", &awful_pink,
 			    NULL);
 
-      g_warning("Item (Type='%s',Parent='%s') is too big! Coords (y1,y2)=(%f, %f) @ %f=%f. Colour now='%s'", 
+      g_warning("Item (Type='%s',Parent='%s') is too big! Coords (y1,y2)=(%f, %f) @ %f=%f. Colour now='%s'",
 		type_name, parent_type_name, y1, y2, foo_canvas->pixels_per_unit_y, pixel_extent, colour);
 
     }
@@ -503,7 +504,7 @@ static void meticulous_foreach_check(gpointer foo_canvas_item_or_group, gpointer
 static void zmap_window_canvas_meticulous_long_item_check(ZMapWindowCanvas canvas, gboolean cropped)
 {
   FooCanvas *foo_canvas;
-  
+
   foo_canvas = FOO_CANVAS(canvas);
 
   meticulous_foreach_check(foo_canvas->root, canvas);
@@ -511,7 +512,7 @@ static void zmap_window_canvas_meticulous_long_item_check(ZMapWindowCanvas canva
   return ;
 }
 
-static gint zmap_window_canvas_expose(GtkWidget      *widget, 
+static gint zmap_window_canvas_expose(GtkWidget      *widget,
 				      GdkEventExpose *event)
 {
   ZMapWindowCanvas window_canvas;
@@ -522,6 +523,10 @@ static gint zmap_window_canvas_expose(GtkWidget      *widget,
 
   canvas        = FOO_CANVAS(widget);
   window_canvas = ZMAP_CANVAS(widget);
+
+#if MH17_REVCOMP_DEBUG
+      zMapLogWarning("canvas expose %p  %f,%f - %f,%f",canvas, canvas->scroll_y1,canvas->scroll_x1, canvas->scroll_y2,canvas->scroll_x1);
+#endif
 
   /* If canvas needs an update or we force it for testing/debugging then do the
    * long item stuff....this makes scrolling really slow. */

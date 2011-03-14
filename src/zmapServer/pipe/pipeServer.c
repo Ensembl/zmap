@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.32 2011-02-28 12:24:04 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.33 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,7 +81,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 
 static gboolean pipe_server_spawn(PipeServer server,GError **error);
-static ZMapServerResponseType openConnection(void *server, gboolean sequence_server) ;
+static ZMapServerResponseType openConnection(void *server, gboolean sequence_server,gint zmap_start,gint zmap_end) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
@@ -100,7 +100,7 @@ static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
-static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header) ;
+static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header,int req_start,int req_end) ;
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlock(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString* gff_line,
@@ -261,7 +261,7 @@ static gboolean createConnection(void **server_out,
 static gboolean pipe_server_spawn(PipeServer server,GError **error)
 {
   gboolean result = FALSE;
-  gchar **argv, **q_args, *z_start,*z_end;
+  gchar **argv, **q_args;
   gint pipe_fd;
   GError *pipe_error = NULL;
   int i;
@@ -271,18 +271,49 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + g_strv_length(q_args)));
   argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
   for(i = 1;q_args[i-1];i++)
-      argv[i] = q_args[i-1];
-
-      // now add on zmap args such as start and end
-  if(server->zmap_start || server->zmap_end)
   {
-      argv[i++] = z_start = g_strdup_printf("%s=%d",PIPE_ARG_ZMAP_START,server->zmap_start);
-      argv[i++] = z_end = g_strdup_printf("%s=%d",PIPE_ARG_ZMAP_END,server->zmap_end);
+      /* if we request from the mark we have to adjust the start/end coordinates
+       * these are supplied in the url and really should be configured explicitly
+       * ... now they are in [ZMap].  We now work with chromosome coords.
+       */
+
+      if(server->zmap_start && server->zmap_end)  /* NB: makes no sense if only one is supplied */
+      {
+            char *p = q_args[i-1];
+            char *q;
+
+            if(!g_ascii_strncasecmp(p,"start=",6) && server->zmap_start)
+            {
+                  q = g_strdup_printf("start=%d",server->zmap_start);
+                  g_free(q_args[i-1]);
+                  q_args[i-1] = q;
+            }
+            else if(!g_ascii_strncasecmp(p,"end=",4) && server->zmap_end)
+            {
+                  q = g_strdup_printf("end=%d",server->zmap_end);
+                  g_free(q_args[i-1]);
+                  q_args[i-1] = q;
+            }
+      }
+
+      argv[i] = q_args[i-1];
   }
 
+
+
   argv[i]= NULL;
+#if 1 // MH17_DEBUG_ARGS
+{
+char *x = "";
+int j;
 
-
+for(j = 0;argv[j] ;j++)
+{
+      x = g_strconcat(x," ",argv[j],NULL);
+}
+zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
+}
+#endif
   zMapThreadForkLock();
 
   result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,G_SPAWN_CHILD_INHERITS_STDIN, // can't not give a flag!
@@ -298,11 +329,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
 
   g_free(argv);   // strings allocated and freed seperately
   g_strfreev(q_args);
-  if(server->zmap_start || server->zmap_end)
-  {
-      g_free(z_start);
-      g_free(z_end);
-  }
+
 
   if(error)
     *error = pipe_error;
@@ -362,7 +389,7 @@ gchar *pipe_server_get_stderr(PipeServer server)
 }
 
 
-static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server)
+static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server,gint zmap_start,gint zmap_end)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
@@ -374,6 +401,9 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
   else
     {
       GError *gff_pipe_err = NULL ;
+
+      server->zmap_start = zmap_start;
+      server->zmap_end = zmap_end;
 
       if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
       {
@@ -394,6 +424,7 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
       if(retval)
 	  {
 	    result = pipeGetHeader(server);
+//zMapLogWarning("pipe query was: %s",server->query);
           if(result == ZMAP_SERVERRESPONSE_OK)
             {
               // always read it: have to skip over if not wanted
@@ -697,8 +728,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
     {
       header = zMapGFFGetHeader(server->parser) ;
 
-      addMapping(feature_context, header) ;
-
+      addMapping(feature_context, header,server->zmap_start, server->zmap_end) ;
       zMapGFFFreeHeader(header) ;
 
 
@@ -707,7 +737,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
       /* can only have one alignment and one block ?? */
       g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)server) ;
 
-      /* get the list if source featuresets */
+      /* get the list of source featuresets */
       feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -940,7 +970,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
  * the code in this file so far simply reads a GFF stream for now, we just fake it by setting
  * everything to be the same for child/parent... */
-static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
+static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header, int req_start, int req_end)
 {
   ZMapFeatureBlock feature_block = NULL;//feature_context->master_align->blocks->data ;
 
@@ -959,20 +989,25 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
   if(feature_context->parent_span.x2 < header->features_end)
       feature_context->parent_span.x2 = header->features_end ;
 
-  // seq coords from parent sequence
-  feature_context->sequence_to_parent.p1 = 1;
-  feature_context->sequence_to_parent.p2 = header->features_end;
-
-   // seq coords for our sequence based from 1
-  feature_context->sequence_to_parent.c1 = feature_block->block_to_sequence.q1 = 1;
-  feature_context->sequence_to_parent.c2 = feature_block->block_to_sequence.q2
-                                         = header->features_end - header->features_start + 1;
-
-  // block coordinates if not pre-specified
-  if(feature_block->block_to_sequence.t2 == 0)
+  // seq range  from parent sequence
+  if(!feature_context->master_align->sequence_span.x2)
   {
-      feature_block->block_to_sequence.t1 = header->features_start ;
-      feature_block->block_to_sequence.t2 = header->features_end ;
+      feature_context->master_align->sequence_span.x1 = header->features_start;
+      feature_context->master_align->sequence_span.x2 = header->features_end;
+  }
+
+   // seq coords for our block NOTE must be block coords not features sub-sequence in case of req from mark
+  if(!feature_block->block_to_sequence.block.x2)
+  {
+      feature_block->block_to_sequence.block.x1 = header->features_start ;
+      feature_block->block_to_sequence.block.x2 = header->features_end ;
+  }
+
+  // parent sequence coordinates if not pre-specified
+  if(!feature_block->block_to_sequence.parent.x2)
+  {
+      feature_block->block_to_sequence.parent.x1 = header->features_start ;
+      feature_block->block_to_sequence.parent.x2 = header->features_end ;
   }
 
   return ;
@@ -1057,11 +1092,12 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
-  if(feature_block->block_to_sequence.t2)
+
+  if(server->zmap_end)
   {
       zMapGFFSetFeatureClipCoords(parser,
-			      feature_block->block_to_sequence.t1,
-			      feature_block->block_to_sequence.t2) ;
+			      server->zmap_start,
+			      server->zmap_end) ;
       zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);       // mh17: needs config added to server stanza for clip type
   }
 
@@ -1144,6 +1180,7 @@ static gboolean getServerInfo(PipeServer server, ZMapServerInfo info)
 
   result = TRUE ;
   info->database_path = g_strdup(server->script_path) ;
+  info->request_as_columns = FALSE;
 
   return result ;
 }

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 18 10:39 2011 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.19 2011-02-18 10:40:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.20 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -824,6 +824,11 @@ static void zmap_window_container_group_destroy     (GtkObject *gtkobject)
 static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
 					      GdkEventExpose *expose)
 {
+#if MH17_REVCOMP_DEBUG
+ ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) item;
+      zMapLogWarning("container group draw @ %f,%f - %f,%f, level %d (%d items), canvas %p", item->y1,item->x1,item->y2,item->x2, group->level, g_list_length(group->__parent__.item_list), item->canvas) ;
+#endif
+
   if(item_parent_class_G->draw)
     (item_parent_class_G->draw)(item, drawable, expose);
 
@@ -1125,12 +1130,20 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   gboolean need_cropping;
   gboolean add_strand_border = TRUE;
 
+
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
 
   this_container = (ZMapWindowContainerGroup)item;
   this_container->reposition_x = current_x;
   this_container->reposition_y = current_y;
+
+#if MH17_DEBUG_NAV_FOOBAR
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update (%s)\n",name);
+print_foo("");
+#endif
 
   /* This was in the previous version of the code, copying across... */
   if(add_strand_border && this_container->level == ZMAPCONTAINER_LEVEL_STRAND)
@@ -1157,6 +1170,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   doing_reposition = ((flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION) == ZMAP_CANVAS_UPDATE_NEED_REPOSITION);
   need_cropping    = ((flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)   == ZMAP_CANVAS_UPDATE_CROP_REQUIRED);
 
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 2");
+#endif
   if(doing_reposition)
     {
       GList *list, *list_end, tmp_features = {NULL}, tmp_background = {NULL};
@@ -1197,7 +1213,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	  while((item_list = item_list->next));
 	}
 
-
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 3");
+#endif
       if(print_debug_G)
 	{
 	  switch(this_container->level)
@@ -1241,6 +1259,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
       canvas_group->item_list     = &tmp_background;
       canvas_group->item_list_end = &tmp_features;
 
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 3a");
+#endif
       (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
       canvas_group->item_list     = list;
@@ -1249,9 +1270,14 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
     }
   else
     {
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 3b");
+#endif
       (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
     }
-
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 4");
+#endif
   if(rect && item_visible)
     {
       gboolean need_2nd_update = TRUE;
@@ -1264,13 +1290,18 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	  if(parent_container)
 	    {
 	      double dx, dy;
-
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 5");
+#endif
 	      if(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)
 		(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)(this_container,
 										   rect->x1, rect->y1,
 										   rect->x2, rect->y2,
 										   &dx, &dy);
 
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("container_group_update 6");
+#endif
 	      parent_container->reposition_x += dx;
 	      parent_container->reposition_y += dy;
 	    }

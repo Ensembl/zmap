@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 15:27 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.21 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.22 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -644,8 +644,15 @@ gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container,
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 #if 1 /* MH17_NO_RECOVER */
-/* I'd like to remove this but that will mean having to re3move stats code in 3 files iffed bu RDS_REMOVED_STATS */
-/* this is the only place this function gets called */
+/* I'd like to remove this but that will mean having to remove stats code
+ * in 3 files iffed by RDS_REMOVED_STATS
+ *
+ * this is the only place this function gets called
+ *
+ * some months later ... when trying tp ding the block feature from a CanvasBlock ...
+ * all the canvas items/groups have a feature_any (expect strand) and not attaching one might cause errors
+ * but as several featuresets can go in a column (featureset in canvas speak) then we don't get a 1-1 mapping
+ */
 	  if((status = ZMAP_IS_CONTAINER_FEATURESET(container)))
 	    {
 	      status = zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)container,

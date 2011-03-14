@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.28 2010-12-09 13:59:54 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.29 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -444,7 +444,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
   ZMapWindowFocusItem gonner,data;
   GList *remove,*l;
 
-#if 1 // MH17_CHASING_FOCUS_CRASH
+#if MH17_CHASING_FOCUS_CRASH
   zMapLogWarning("focus item removed","");
 #endif
 

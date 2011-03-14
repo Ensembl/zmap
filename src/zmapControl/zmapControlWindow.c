@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 18 10:55 2011 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.45 2011-02-18 15:48:29 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.46 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,17 +183,31 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 
+      /* MH17: how tedious...
+       * due to scope issues we can't see the view of the window
+       * the view can return the sequence span which is in fwd strand
+       * but the windowcoordpairtodisplay func assumes 'current fwd strand'
+       * so we get to write another goddam fucntion to access the same data
+       * and introduce yet more repetition of code
+       * these functions were written to provide a reliable single point of access
+       * but you have to feed them the right data of else they don't work
+       */
 
-	if (zMapViewGetFeaturesSpan(view, &start, &end))
+#if NO_SCOPE_FOR_IMPROVEMENT
+//	if (zMapViewGetFeaturesSpan(view, &start, &end))
 	  {
 	    zmapWindowCoordPairToDisplay(window,
-					 start, end,
+//					 start, end,
+                              window->min_coord,window->max_coord,
 					 &start, &end) ;
-
-	    coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
-	    gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
-	    g_free(coord_txt) ;
-	  }
+#else
+      if(zmapWindowGetCurrentSpan(window,&start,&end))
+      {
+#endif
+          coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
+          gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
+          g_free(coord_txt) ;
+      }
 
 	free_this = status_text = zMapViewGetStatusStr(view) ;
 

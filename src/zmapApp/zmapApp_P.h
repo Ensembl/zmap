@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,11 +24,11 @@
  *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for application level of zmap.
- * 
+ *
  * HISTORY:
  * Last edited: Mar  2 14:22 2010 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.30 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.31 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -97,19 +97,19 @@ typedef struct _ZMapAppContextStruct
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
 
-  char *default_sequence ;				    /* Was a default sequence specified in
-							       the config. file.*/
+      /* Was a default sequence specified in the config. file.*/
+  ZMapFeatureSequenceMap default_sequence;
 
   char *locale;
   gboolean sent_finalised ;
-  
+
   char *script_dir;					    /* where scripts are kept for the pipeServer module
 							     * can be set in [ZMap] or defaults to run-time directory
 							     */
 
   gboolean xremote_debug ;				    /* Turn on/off debugging for xremote connections. */
 
-  
+
 } ZMapAppContextStruct, *ZMapAppContext ;
 
 

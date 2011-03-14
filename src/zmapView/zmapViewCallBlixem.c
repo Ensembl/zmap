@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Mar  3 17:37 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.53 2011-03-11 17:36:16 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.54 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -467,7 +467,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
  *
  * The function returns TRUE if blixem was successfully launched and also returns the pid of the blixem
  * process so that the blixems can be cleared up when the view exits.
- * 
+ *
  * Note - position is the centre of the section of reference sequence displayed.
  *      - feature is only used to get the type of alignment to be displayed.
  *  */
@@ -929,11 +929,11 @@ static gboolean addFeatureDetails(blixemData blixem_data)
     }
 
 
-  if (blixem_data->min < 1)
-    blixem_data->min = 1 ;
+  if (blixem_data->min < blixem_data->block->block_to_sequence.block.x1)
+    blixem_data->min = blixem_data->block->block_to_sequence.block.x1 ;
 
-  if (blixem_data->max > blixem_data->block->block_to_sequence.t2)
-    blixem_data->max = blixem_data->block->block_to_sequence.t2 ;
+  if (blixem_data->max > blixem_data->block->block_to_sequence.block.x2)
+    blixem_data->max = blixem_data->block->block_to_sequence.block.x2 ;
 
 
 
@@ -1135,7 +1135,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       start = end = blixem_data->position ;
 
       if (blixem_data->view->revcomped_features)
-	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
+	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
       paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-S");
       paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start);
@@ -1230,7 +1230,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
   end = blixem_data->max ;
 
   if (blixem_data->view->revcomped_features)
-    zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
+    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
 
   /*
@@ -1282,7 +1282,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
     }
 
 
-  /* 
+  /*
    * Write the features.
    */
   if (status)
@@ -2566,7 +2566,7 @@ static gboolean formatVariant(GFFFormatData gff_data, GString *line,
       g_free(url_str) ;
       g_free(url_escaped) ;
     }
-  
+
   if (feature->feature.basic.has_attr.variation_str)
     {
       char *variant_str = NULL ;
@@ -2799,7 +2799,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (blixem_data->view->revcomped_features)
-	    zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
+	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 18 10:56 2011 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.43 2011-02-18 11:05:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.44 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainers.h>
 
@@ -105,6 +106,7 @@ typedef struct
 {
   ZMapWindowColConfigureMode mode ;
   FooCanvasGroup *column_group ;
+  GQuark column_id;
   gboolean button_found ;
 } ChangeButtonStateDataStruct, *ChangeButtonStateData ;
 
@@ -521,7 +523,6 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 
 static void configure_get_column_lists(ColConfigure configure_data,
 				       FooCanvasGroup *column_group,
-				       gboolean deferred_or_loaded, /* TRUE = deferred, FALSE = loaded */
 				       GList **forward_columns_out, GList **reverse_columns_out)
 {
   ZMapWindowColConfigureMode configure_mode;
@@ -556,19 +557,19 @@ static void configure_get_column_lists(ColConfigure configure_data,
 
       block = zmapWindowItemGetFeatureBlock(block_group);
 
-      forward_reverse_lists.loaded_or_deferred = deferred_or_loaded;
+      forward_reverse_lists.loaded_or_deferred = FALSE;
       forward_reverse_lists.block_group = (ZMapWindowContainerBlock)block_group;
 
       if(use_mark_if_marked && window->mark && zmapWindowMarkIsSet(window->mark))
 	{
-	  zmapWindowGetMarkedSequenceRangeFwd(window, block,
+	  zmapWindowMarkGetSequenceRange(window->mark,
 					      &(forward_reverse_lists.mark1),
 					      &(forward_reverse_lists.mark2));
 	}
       else
 	{
-	  forward_reverse_lists.mark1 = block->block_to_sequence.q1;
-	  forward_reverse_lists.mark2 = block->block_to_sequence.q2;
+	  forward_reverse_lists.mark1 = block->block_to_sequence.block.x1;
+	  forward_reverse_lists.mark2 = block->block_to_sequence.block.x2;
 	}
 
       zmapWindowContainerUtilsExecute((ZMapWindowContainerGroup)block_group,
@@ -606,7 +607,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   hbox = notebook_page->page_container;
 
   configure_get_column_lists(configure_data,
-			     column_group, FALSE,
+			     column_group,
 			     &forward_cols, &reverse_cols);
 
   show_hide_data = (ShowHidePageData)(notebook_page->page_data);
@@ -1013,7 +1014,7 @@ static void deferred_page_construct(NotebookPage notebook_page, GtkWidget *page)
   notebook_page->page_container = page;
 }
 
-static void deferred_radio_buttons(GtkWidget *parent, FooCanvasGroup *column_group, gboolean loaded_in_mark,
+static void deferred_radio_buttons(GtkWidget *parent, GQuark column_id, gboolean loaded_in_mark,
 				   DeferredButton *all_out, DeferredButton *mark_out, DeferredButton *none_out)
 {
   GtkWidget *radio_load_all, *radio_load_mark, *radio_deferred;
@@ -1042,13 +1043,13 @@ static void deferred_radio_buttons(GtkWidget *parent, FooCanvasGroup *column_gro
 
   all = g_new0(DeferredButtonStruct, 1);
   all->column_button = radio_load_all;
-  all->column_group  = column_group;
+  all->column_quark  = column_id;
   mark = g_new0(DeferredButtonStruct, 1);
   mark->column_button = radio_load_mark;
-  mark->column_group  = column_group;
+  mark->column_quark  = column_id;
   none = g_new0(DeferredButtonStruct, 1);
   none->column_button = radio_deferred;
-  none->column_group  = column_group;
+  none->column_quark  = column_id;
 
   if(all_out)
     *all_out = all;
@@ -1098,8 +1099,41 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
   return match;
 }
 
+
+/* column loaded in a range? (set by the mark) */
+/* also called for full range by using seq start and end coords */
+gboolean column_is_loaded_in_range(ZMapFeatureContextMap map, ZMapFeatureBlock block, GQuark column_id,int start, int end)
+{
+#define MH17_DEBUG      1
+      GList *fsets;
+
+      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+#if MH17_DEBUG
+zMapLogWarning("is col loaded %s %d -> %d? ",g_quark_to_string(column_id),start,end);
+#endif
+      while(fsets)
+      {
+            gboolean loaded;
+            loaded = zMapFeatureSetIsLoadedInRange(block,GPOINTER_TO_UINT(fsets->data), start, end);
+#if MH17_DEBUG
+zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
+#endif
+
+            if(!loaded)
+                  return(FALSE);
+
+            /* NOTE fsets is an allocated list
+             * if this is changed to a static one held in the column struct
+             * then we should not free it
+             */
+            fsets = g_list_delete_link(fsets,fsets);
+            /*fsets = fsets->next;   if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
+      }
+      return TRUE;
+}
+
 static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
-				      GList       *columns_list)
+				      GList       *columns_list, GQuark column_name)
 {
   DeferredPageData deferred_page_data;
   GtkWidget *frame = NULL, *vbox, *hbox;
@@ -1115,11 +1149,14 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
   if((mark_set = zmapWindowMarkIsSet(window->mark)))
     {
-      zmapWindowGetMarkedSequenceRangeFwd(window, deferred_page_data->block,
+      zmapWindowMarkGetSequenceRange(window->mark,
 					  &mark1, &mark2);
     }
 
-  frame = gtk_frame_new("Available Columns");
+  if(column_name)
+      frame = gtk_frame_new(g_quark_to_string(column_name));
+  else
+      frame = gtk_frame_new("Available Columns");
   gtk_container_set_border_width(GTK_CONTAINER(frame),
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
@@ -1143,25 +1180,18 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
   if((column = g_list_first(columns_list)))
     {
-      FooCanvasGroup *block_group;
-      FooCanvasGroup *first_column_group = FOO_CANVAS_GROUP(column->data);
       GList *make_unique = NULL;
-      gboolean have_block_group = FALSE;
 
-      if((block_group = configure_get_point_block_container(notebook_page->configure_data, first_column_group)))
-	{
-	  have_block_group = TRUE;
-	}
 
       do
 	{
 	  GtkWidget *label, *button_box;
-	  FooCanvasGroup *column_group = FOO_CANVAS_GROUP(column->data);
+//	  FooCanvasGroup *column_group = FOO_CANVAS_GROUP(column->data);
 	  char *column_name;
 	  DeferredButton all, mark, none;
 	  gboolean loaded_in_mark = FALSE;
 
-	  column_name = label_text_from_column(column_group);
+	  column_name = (char *) g_quark_to_string(GPOINTER_TO_UINT(column->data));     //label_text_from_column(column_group);
 
 	  if(!g_list_find_custom(make_unique, column_name, find_name_cb))
 	    {
@@ -1171,18 +1201,27 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
 	      gtk_box_pack_start(GTK_BOX(column_box), button_box, TRUE, TRUE, 0);
 
-	      if(mark_set && have_block_group)
-		loaded_in_mark = zmapWindowContainerBlockIsColumnLoaded((ZMapWindowContainerBlock)block_group,
-									(ZMapWindowContainerFeatureSet)column_group,
-									mark1, mark2);
 
-	      deferred_radio_buttons(button_box, column_group, loaded_in_mark,
+            if(mark_set)
+            {
+                  DeferredPageData page_data;
+                  ZMapFeatureColumn col;
+
+                  page_data   = (DeferredPageData)notebook_page->page_data;
+
+                  col = g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(zMapFeatureSetCreateID(column_name)));
+                  zMapAssert(col);
+
+                  loaded_in_mark = column_is_loaded_in_range(window->context_map,page_data->block,col->unique_id,mark1,mark2);
+            }
+
+            deferred_radio_buttons(button_box, zMapFeatureSetCreateID(column_name),loaded_in_mark,
 				     &all, &mark, &none);
 
 	      all->deferred_page_data = mark->deferred_page_data =
 		none->deferred_page_data = deferred_page_data;
 
-	      gtk_widget_set_sensitive(mark->column_button, mark_set);
+	      gtk_widget_set_sensitive(mark->column_button, mark_set && !loaded_in_mark);
 
 	      deferred_page_data->load_all     = g_list_append(deferred_page_data->load_all, all);
 	      deferred_page_data->load_in_mark = g_list_append(deferred_page_data->load_in_mark, mark);
@@ -1222,7 +1261,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
       gtk_container_add(GTK_CONTAINER(frame), button_box) ;
 
       /* button for selecting all full loads */
-      button = gtk_button_new_with_label("Load All Columns Fully");
+      button = gtk_button_new_with_label("Select All Columns Fully");
 
       gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
 
@@ -1230,7 +1269,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 		       G_CALLBACK(deferred_activate_all), deferred_page_data->load_all);
 
       /* button for selecting all full loads */
-      button = gtk_button_new_with_label("Load All Columns Marked");
+      button = gtk_button_new_with_label("Select All Columns Marked");
 
       gtk_widget_set_sensitive(button, mark_set);
 
@@ -1240,7 +1279,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 		       G_CALLBACK(deferred_activate_all), deferred_page_data->load_in_mark);
 
       /* button for selecting all full loads */
-      button = gtk_button_new_with_label("Load None");
+      button = gtk_button_new_with_label("Select None");
 
       gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
 
@@ -1251,7 +1290,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
     {
       GtkWidget *label;
 
-      label = gtk_label_new("No extra columns available");
+      label = gtk_label_new("No extra data available");
 
       gtk_misc_set_alignment(GTK_MISC(label), 0.5, 0.0);
 
@@ -1330,25 +1369,90 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
   return block;
 }
 
+
+/*
+ * unloaded columns do not exist, so unlike the loaded columns page that allows show/hide
+ * we can't find them from the canvas
+ * we need to get the columns list (or featuresets) from ZMap config and
+ * select those that aren't fully loaded yet
+ * which means a) not including the whole sequenceand b) not including all featuresets
+ * NOTE the user selects columns but we request featuresets
+ * NOTE we make requests relative to the current block, just in case there is more than one
+ *
+ * NOTE unlike loaded columns page we store the column names not the canvas containers
+ */
+
+
+
+
+gint col_sort_by_name(gconstpointer a, gconstpointer b)
+{
+      /* we sort by unique but display original; the result should be the same */
+      return(g_ascii_strcasecmp(g_quark_to_string(GPOINTER_TO_UINT(a)),g_quark_to_string(GPOINTER_TO_UINT(b))));
+}
+
+/* get all deferered columns or just the one specified */
+static GList *configure_get_deferred_column_lists(ColConfigure configure_data, ZMapFeatureBlock block,  GQuark column_name)
+{
+  GList *columns = NULL;
+  ZMapWindow window;
+  GList *disp_cols = NULL;
+  ZMapFeatureColumn column;
+
+  window         = configure_data->window;
+
+
+  /* get unloaded columns in a list
+   * from window->context_map->columns hash table
+   * sort into alpha order (not display order)
+   * if we are doing 'configure this column' then we only include it
+   * if not fully loaded and also include no others
+   */
+  zMap_g_hash_table_get_data(&disp_cols,window->context_map->columns);
+
+  while(disp_cols)
+  {
+      column = (ZMapFeatureColumn) disp_cols->data;
+
+      if((!column_name || column_name == column->unique_id ) &&
+            (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)) &&
+            (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME)) &&
+            !column_is_loaded_in_range(window->context_map,block,column->unique_id,window->sequence->start,window->sequence->end))
+      {
+            columns = g_list_prepend(columns,GUINT_TO_POINTER(column->column_id));
+      }
+      disp_cols = g_list_delete_link(disp_cols,disp_cols);
+  }
+  columns = g_list_sort(columns,col_sort_by_name);
+
+  return columns;
+}
+
+
 static void deferred_page_populate(NotebookPage notebook_page, FooCanvasGroup *column_group)
 {
   GList *all_deferred_columns = NULL;
   GtkWidget *hbox, *frame;
-  FooCanvasGroup *point_block = NULL;
+  GQuark column_name = 0;
+
   DeferredPageData page_data;
+  FooCanvasGroup *point_block;
 
   point_block = configure_get_point_block_container(notebook_page->configure_data, column_group);
+
   page_data   = (DeferredPageData)notebook_page->page_data;
 
   page_data->block = zmapWindowItemGetFeatureBlock(point_block);
 
-  configure_get_column_lists(notebook_page->configure_data,
-			     NULL, TRUE,
-			     &all_deferred_columns, NULL);
+
+  if(column_group)
+      column_name = g_quark_from_string(label_text_from_column(column_group));
+
+  all_deferred_columns = configure_get_deferred_column_lists(notebook_page->configure_data,page_data->block,column_name);
 
   hbox = notebook_page->page_container;
 
-  if((frame = deferred_cols_panel(notebook_page, all_deferred_columns)))
+  if((frame = deferred_cols_panel(notebook_page, all_deferred_columns,column_name)))
     {
       gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0);
     }
@@ -1368,11 +1472,7 @@ static void add_name_to_list(gpointer list_data, gpointer user_data)
     {
       if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
 	{
-	  ZMapWindowContainerFeatureSet container;
-	  container = (ZMapWindowContainerFeatureSet)(button_data->column_group);
-	  *list_out = g_list_append(*list_out,
-                 GUINT_TO_POINTER(zmapWindowContainerFeatureSetColumnDisplayName(container)));
-                 // was: container->unique_id
+	  *list_out = g_list_append(*list_out,GUINT_TO_POINTER(button_data->column_quark));
 	}
     }
 
@@ -1401,8 +1501,17 @@ static void deferred_page_apply(NotebookPage notebook_page)
       /* Go through the load all ones... */
       g_list_foreach(deferred_data->load_all, add_name_to_list, &all_list);
 
+//      mark_list = expand_columns_to_featuresets
       zmapWindowFetchData(configure_data->window, block, mark_list, TRUE);
       zmapWindowFetchData(configure_data->window, block, all_list, FALSE);
+
+  /* dismiss the dialog and let the user see ZMap.
+   * if they change the mark then we'd have to refresh the options
+   * so easier to make them refresh it via a re-request
+   */
+
+  gtk_widget_destroy(configure_data->window->col_config_window) ;
+
     }
 
   return ;
@@ -1435,9 +1544,6 @@ static void deferred_page_destroy(NotebookPage notebook_page)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* NOT USED ANYWHERE... */
 
 static NotebookPage deferred_page_create(ColConfigure configure_data, char **page_name_out)
 {
@@ -1462,7 +1568,7 @@ static NotebookPage deferred_page_create(ColConfigure configure_data, char **pag
 
   return page_data;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1483,11 +1589,12 @@ static void configure_add_pages(ColConfigure configure_data)
 
       gtk_notebook_append_page(GTK_NOTEBOOK(configure_data->notebook),
 			       new_page, label);
+      /* get block */
 
       if(page_data->page_constructor)
 	(page_data->page_constructor)(page_data, new_page);
     }
-#if MH17_NO_DEFERED_PAGE
+
   if((page_data = deferred_page_create(configure_data, &page_name)))
     {
       label = gtk_label_new(page_name);
@@ -1502,7 +1609,7 @@ static void configure_add_pages(ColConfigure configure_data)
       if(page_data->page_constructor)
 	(page_data->page_constructor)(page_data, new_page);
     }
-#endif
+
   return ;
 }
 
@@ -1961,9 +2068,8 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
                    * but only if the featureset is in the hash for that frame and strand combo.
                    * Hmmm... this was always the case, but all the features were in one context featureset
                    *
-                   * As this function is already broken I'm leaving it for now (RT 188834)
                    */
-#warning column config should work on both strands
+
 		      for(i = ZMAPFRAME_NONE ; i <= ZMAPFRAME_2; i++)
 			{
 			  FooCanvasItem *frame_column;
@@ -2051,6 +2157,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 }
 
 
+
 /* Direct copy from zmapWindowContainer.c ... with additions ...*/
 static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data)
@@ -2066,30 +2173,12 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	if(ZMAP_IS_CONTAINER_FEATURESET(container))
 	  {
 	    ZMapWindowContainerFeatureSet container_set;
-	    gboolean want_deferred, is_deferred, is_empty;
-	    gboolean loaded = FALSE;
+	    gboolean is_empty;
 
 	    container_set = (ZMapWindowContainerFeatureSet)container;
-	    is_empty      = (zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set) == TRUE ? FALSE : TRUE);
-#if MH17_NO_DEFERRED
-          want_deferred = lists_data->loaded_or_deferred;
-          is_deferred   = zmapWindowContainerFeatureSetGetDeferred(container_set);
+	    is_empty      = !zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set);
 
-	    if(want_deferred && is_deferred)
-	      {
-		loaded = zmapWindowContainerBlockIsColumnLoaded(lists_data->block_group,
-								(ZMapWindowContainerFeatureSet)container,
-								lists_data->mark1,
-								lists_data->mark2);
-	      }
-	    else if(!is_empty && !want_deferred)
-	      is_deferred = FALSE;
-#else
-            want_deferred = is_deferred = FALSE;
-#endif
-
-	    if(( want_deferred &&  is_deferred && !loaded) ||
-	       (!want_deferred && !is_deferred && !is_empty))
+	    if(!is_empty)
 	      {
 		if(zmapWindowContainerFeatureSetGetStrand(container_set) == ZMAPSTRAND_FORWARD)
 		  lists_data->forward = g_list_append(lists_data->forward, container);

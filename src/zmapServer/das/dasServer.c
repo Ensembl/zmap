@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 11 15:02 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.49 2010-11-12 09:20:14 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.50 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,7 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server,gboolean sequence_server) ;
+static ZMapServerResponseType openConnection(void *server,gboolean sequence_server,gint zmap_start,gint zmap_end) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
@@ -250,6 +250,9 @@ static gboolean createConnection(void **server_out,
   server->curl_errmsg = (char *)g_malloc0(CURL_ERROR_SIZE * 2) ;	/* Big margin for safety. */
   server->data        = NULL ;
 
+  server->zmap_start = 1;
+  server->zmap_end = 0;
+
   /* init the curl session */
   if (!(server->curl_handle = curl_easy_init()))
     {
@@ -329,12 +332,15 @@ static gboolean createConnection(void **server_out,
 
 /* Need to check that the server has the dsn requested */
 // mh17: added sequence_server flag for compatability with pipeServer, it's not used here
-static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server)
+static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server,gint zmap_start, gint zmap_end)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
   ZMapDAS1DSN dsn = NULL;
   requestParseDetailStruct detail = {0};
+
+  server->zmap_start = zmap_start;
+  server->zmap_end = zmap_end;
 
   if(server->protocol == g_quark_from_string("file"))
     return result;
@@ -384,6 +390,11 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
   DasServer server = (DasServer)server_in ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+/* MH17: treat as pipe server not ACEDB??
+  no idea really but this is a reminder to find out
+  DAS code is not currently used. DAS comes in via a pipe
+*/
+  info->request_as_columns = FALSE;
 
   /* Needs implementing............ */
 
@@ -601,7 +612,7 @@ static gint segmentsFindCurrent(gpointer data, gpointer user_data)
 
 static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_context)
 {
-  ZMapMapBlockStruct seq2p = {0, 0, 0, 0};
+  ZMapMapBlockStruct seq2p = {{0, 0}, {0, 0},FALSE};
   ZMapSpanStruct pspan = {0, 0};
   ZMapDAS1DSN dsn = NULL;
   gboolean result = FALSE;     /* A Flag to continue going */
@@ -639,7 +650,9 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
 
           if(pspan.x1 && pspan.x2)
             {
+#warning need to check this code
               /* Just adjust for the user's request. */
+#if 0
               if(feature_context->sequence_to_parent.c1 >= pspan.x1)
                 seq2p.p1 = seq2p.c1 = feature_context->sequence_to_parent.c1;
               else
@@ -650,6 +663,21 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
                 seq2p.p2 = seq2p.c2 = feature_context->sequence_to_parent.c2;
               else
                 seq2p.p2 = seq2p.c2 = pspan.x2;
+#else
+            int seq_start,seq_end;
+            zMapFeatureContextGetMasterAlignSpan(feature_context,&seq_start,&seq_end);
+
+            if(seq_start >= pspan.x1)
+                seq2p.parent.x1 = seq2p.block.x1 = seq_start;
+            else
+                seq2p.parent.x1 = seq2p.block.x1 = pspan.x1;
+
+            if((seq_end > seq_start)
+                 && seq_end <= pspan.x2)
+                seq2p.parent.x2 = seq2p.block.x2 = seq_end;
+            else
+                seq2p.parent.x2 = seq2p.block.x2 = pspan.x2;
+#endif
             }
         }
 #ifdef RDS_DONT_INCLUDE
@@ -708,12 +736,20 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
     {
       /* Copy the structs we made to the feature context */
 //    feature_context->length                = seq2p.c2 - seq2p.c1 + 1;
+
+#warning need to check this code
+#if !OLD_VERSION
+      feature_context->master_align->sequence_span.x1 = seq2p.block.x1;
+      feature_context->master_align->sequence_span.x2 = seq2p.block.x2;
+#else
       feature_context->sequence_to_parent.c1 = seq2p.c1;
       feature_context->sequence_to_parent.c2 = seq2p.c2;
       feature_context->sequence_to_parent.p1 = seq2p.p1;
       feature_context->sequence_to_parent.p2 = seq2p.p2;
+#endif
       feature_context->parent_span.x1        = pspan.x1;
       feature_context->parent_span.x2        = pspan.x2;
+
       feature_context->parent_name           = server->current_segment->id;
 #ifdef RDS_DONT_INCLUDE
       printf("|-----------------------------------------|\n");
@@ -1081,8 +1117,8 @@ static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc)
     {
       query = g_strdup_printf(ZMAP_DAS_FORMAT_SEGMENT,
                               (char *)g_quark_to_string(das->current_segment->id),
-                              fc->sequence_to_parent.p1,
-                              fc->sequence_to_parent.p2);
+                              fc->master_align->sequence_span.x1,
+                              fc->master_align->sequence_span.x2);
     }
 
   return query;

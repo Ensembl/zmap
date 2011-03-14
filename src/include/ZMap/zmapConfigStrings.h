@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  3 16:07 2011 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.42 2011-03-11 17:25:21 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.43 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -181,7 +181,13 @@
 #define ZMAPSTANZA_APP_MAINWINDOW        "show-mainwindow"
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
 #define ZMAPSTANZA_APP_HELP_URL          "help-url"
+
 #define ZMAPSTANZA_APP_SEQUENCE          "default-sequence"
+#define ZMAPSTANZA_APP_START             "start"
+#define ZMAPSTANZA_APP_END               "end"
+#define ZMAPSTANZA_APP_CSNAME            "csname"
+#define ZMAPSTANZA_APP_CSVER             "csver"
+
 #define ZMAPSTANZA_APP_PRINTER           "default-printer"
 #define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence-server"
 #define ZMAPSTANZA_APP_PFETCH_LOCATION   "pfetch"

@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar  3 15:12 2011 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.71 2011-03-11 17:34:31 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.72 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -234,9 +234,9 @@ typedef struct _ZMapViewStruct
   /* NOTE TO EG....DO WE NEED THESE HERE ANY MORE ???? */
   /* This specifies the "context" of the view, i.e. which section of virtual sequence we are
    * interested in. */
-  gchar *sequence ;
-  int start, end ;
-
+//  gchar *sequence ;
+//  int start, end ;
+  ZMapFeatureSequenceMap view_sequence;       /* use complier to pinpoint use of sequence */
 
   /* This will need to be a full mapping of sequences, blocks etc in the end which will
    * be used both to set up the feature context so the right bits of feature get fetched
@@ -391,7 +391,7 @@ void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
-			  int features_start, int features_end) ;
+			  int features_start, int features_end, gboolean group, gboolean terminate) ;
 
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar  8 15:03 2011 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.68 2011-03-11 17:26:11 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.69 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -400,7 +400,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
       {
          ZMapServerReqOpen open = (ZMapServerReqOpen)request_in ;
 
-	  if ((request->response = zMapServerOpenConnection(server,open->sequence_server)) != ZMAP_SERVERRESPONSE_OK)
+	  if ((request->response = zMapServerOpenConnection(server,open->sequence_server,open->zmap_start,open->zmap_end)) != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
@@ -425,6 +425,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    get_info->database_name_out = info.database_name ;
 	    get_info->database_title_out = info.database_title ;
 	    get_info->database_path_out = info.database_path ;
+          get_info->request_as_columns = info.request_as_columns ;
 	  }
 
 	break ;
@@ -480,6 +481,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	  }
 	else
 	  {
+#if MH17_BLOCK_COORDS_SET_FROM_SEQ_COORDS_IN_REQUEST_BY_SERVER_OR_GFF_HEADER
 	    /* The start/end for the master alignment may have been specified as start = 1 and end = 0
 	     * so we may need to fill in the start/end for the master align block. */
 	    GHashTable *blocks = context->context->master_align->blocks ;
@@ -498,7 +500,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	            = context->context->sequence_to_parent.c2 ;
           }
 	    block->block_to_sequence.q_strand = block->block_to_sequence.t_strand = ZMAPSTRAND_FORWARD ;
-
+#endif
 	  }
 
 	break ;

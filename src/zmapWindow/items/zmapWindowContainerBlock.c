@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Feb 13 08:35 2011 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.13 2011-02-18 10:32:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.14 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,12 +52,9 @@ enum
     ITEM_FEATURE_BLOCK_0,		/* zero == invalid prop value */
   };
 
-static ZMapSeqBitmap get_bitmap_for_key(ZMapWindowContainerBlock block_data,
-					ZMapFeatureBlock               block, 
-					GQuark                         key);
 
 /* There's some functions for managing ZMapWindowMark here... */
-static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated, 
+static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 				       FooCanvasPoints         *group_bounds,
 				       ZMapContainerLevelType   group_level,
 				       gpointer                 user_data);
@@ -79,20 +76,20 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 static gboolean areas_intersection(FooCanvasPoints *area_1,
 				   FooCanvasPoints *area_2,
 				   FooCanvasPoints *intersect);
-static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1, 
-					     FooCanvasPoints *area_2, 
+static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1,
+					     FooCanvasPoints *area_2,
 					     double           threshold);
 
 /* All the basic object functions */
 static void zmap_window_container_block_class_init  (ZMapWindowContainerBlockClass block_data_class);
 static void zmap_window_container_block_init        (ZMapWindowContainerBlock block_data);
-static void zmap_window_container_block_set_property(GObject      *gobject, 
-						     guint         param_id, 
-						     const GValue *value, 
+static void zmap_window_container_block_set_property(GObject      *gobject,
+						     guint         param_id,
+						     const GValue *value,
 						     GParamSpec   *pspec);
-static void zmap_window_container_block_get_property(GObject    *gobject, 
-						     guint       param_id, 
-						     GValue     *value, 
+static void zmap_window_container_block_get_property(GObject    *gobject,
+						     guint       param_id,
+						     GValue     *value,
 						     GParamSpec *pspec);
 static void zmap_window_container_block_destroy     (GtkObject *gtkobject);
 /* A ZMapWindowContainerGroup 'interface' function. */
@@ -103,17 +100,17 @@ static GObjectClass *parent_class_G = NULL;
 
 /*!
  * \brief Get the GType for the ZMapWindowContainerBlock GObjects
- * 
+ *
  * \return GType corresponding to the GObject as registered by glib.
  */
 
 GType zmapWindowContainerBlockGetType(void)
 {
   static GType group_type = 0;
-  
-  if (!group_type) 
+
+  if (!group_type)
     {
-      static const GTypeInfo group_info = 
+      static const GTypeInfo group_info =
 	{
 	  sizeof (zmapWindowContainerBlockClass),
 	  (GBaseInitFunc) NULL,
@@ -125,26 +122,26 @@ GType zmapWindowContainerBlockGetType(void)
 	  0,              /* n_preallocs */
 	  (GInstanceInitFunc) zmap_window_container_block_init
       };
-    
+
     group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
 					 ZMAP_WINDOW_CONTAINER_BLOCK_NAME,
 					 &group_info,
 					 0);
   }
-  
+
   return group_type;
 }
 
 /*!
- * \brief Once a new ZMapWindowContainerBlock object has been created, 
+ * \brief Once a new ZMapWindowContainerBlock object has been created,
  *        various parameters need to be set.  This sets all the params.
- * 
+ *
  * \param container     The container to set everything on.
  * \param feature       The container needs to know its Block.
  *
  * \return ZMapWindowContainerBlock that was edited.
  */
- 
+
 ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
 							 ZMapFeatureBlock feature)
 {
@@ -165,7 +162,7 @@ ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBloc
  *
  * \return nothing
  */
-void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, 
+void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data,
 						 FooCanvasGroup *container)
 {
 
@@ -205,7 +202,7 @@ GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock 
  *
  * \return nothing
  */
-void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, 
+void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data,
 					     FooCanvasGroup *container)
 {
 
@@ -274,11 +271,11 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
       /* We get the current bounds of the background.  It will have
        * been cropped to the scroll region. The UpdateHook takes care
        * of maximising it. */
-      foo_canvas_item_get_bounds((FooCanvasItem *)background, 
+      foo_canvas_item_get_bounds((FooCanvasItem *)background,
 				 &coords[0], &coords[1],
 				 &coords[2], &coords[3]);
 
-      /* If the coords look valid, at least one is > zero, then we can just attempt to 
+      /* If the coords look valid, at least one is > zero, then we can just attempt to
        * update the mark items and show them here.
        */
       if (coords[0] > 0.0 || coords[1] > 0.0 || coords[2] > 0.0 || coords[3] > 0.0)
@@ -289,8 +286,8 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 	  bounds.ref_count  = 1;
 	  /* Call the update hook as if we were in an update cycle. */
 	  mark_block_update_hook(container, &bounds, ZMAPCONTAINER_LEVEL_BLOCK, mark);
-	  
-	  /* 
+
+	  /*
 	   * This seemed like a good idea, but I don't think it's necessary, so I've commented it.
 	   * It does mean we have to Request Reposition though, which might be time consuming.
 	   *
@@ -305,9 +302,9 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 	}
 
       /* This is required to preserve and crop the mark while zooming. */
-      zmapWindowContainerGroupAddUpdateHook(container, maximise_mark_items_cb, 
+      zmapWindowContainerGroupAddUpdateHook(container, maximise_mark_items_cb,
 					    &(container_block->mark));
-      
+
       zmapWindowContainerRequestReposition(container);
     }
 
@@ -320,7 +317,7 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
  * Reverse of Mark
  *
  * \param container_block  The container to remove the mark from.
- * 
+ *
  * \return nothing
  * */
 void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block)
@@ -330,7 +327,7 @@ void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block)
   container = (ZMapWindowContainerGroup)container_block;
 
   mark_items_hide(container_block);
-  
+
   zmapWindowContainerGroupRemoveUpdateHook(container, maximise_mark_items_cb,
 					   &(container_block->mark));
 
@@ -342,93 +339,6 @@ void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block)
 
 /* --- */
 
-
-void zmapWindowContainerBlockFlagRegion(ZMapWindowContainerBlock block_data,
-					ZMapFeatureBlock         block)
-{
-  ZMapSeqBitmap bitmap;
-
-  if((bitmap = get_bitmap_for_key(block_data, block, block->unique_id)))
-    {
-      if(block->features_start == 0)
-	block->features_start = block->block_to_sequence.q1;
-      
-      if(block->features_end == 0)
-	block->features_end = block->block_to_sequence.q2;
-
-      zmapSeqBitmapMarkRegion(bitmap, block->features_start, block->features_end);
-    }
-
-  return ;
-}
-
-void zmapWindowContainerBlockFlagRegionForColumn(ZMapWindowContainerBlock       container_block,
-						 ZMapFeatureBlock               block, 
-						 ZMapWindowContainerFeatureSet  container_set)
-{
-  if(ZMAP_IS_CONTAINER_BLOCK(container_block))
-    {
-      ZMapSeqBitmap bitmap;
-
-      if((bitmap = get_bitmap_for_key(container_block, block, container_set->unique_id)))
-	{
-	  if(block->features_start == 0)
-	    block->features_start = block->block_to_sequence.q1;
-	  
-	  if(block->features_end == 0)
-	    block->features_end = block->block_to_sequence.q2;
-	  
-	  zmapSeqBitmapMarkRegion(bitmap, block->features_start, block->features_end);
-	}
-    }
-
-  return ;
-}
-
-GList *zmapWindowContainerBlockFilterFlaggedColumns(ZMapWindowContainerBlock block_data,
-					 	    GList *list, int world1, int world2)
-{
-  GList *key_list;
-
-  key_list = list;
-
-  while(key_list)
-    {
-      ZMapSeqBitmap bitmap;
-      GQuark key;
-      GList *tmp_list;
-
-      tmp_list = key_list->next;
-
-      key = GPOINTER_TO_UINT(key_list->data);
-
-      /* we don't want to create anything... */
-      if((bitmap = get_bitmap_for_key(block_data, NULL, key)))
-	{
-	  if(zmapSeqBitmapIsRegionFullyMarked(bitmap, world1, world2))
-	    list = g_list_delete_link(list, key_list);
-	}
-
-      key_list = tmp_list;
-    }
-
-  return list;
-}
-
-gboolean zmapWindowContainerBlockIsColumnLoaded(ZMapWindowContainerBlock      container_block,
-						ZMapWindowContainerFeatureSet container_set, 
-						int world1, int world2)
-{
-  ZMapSeqBitmap bitmap;
-  gboolean fully_marked = FALSE;
-
-  if((bitmap = get_bitmap_for_key(container_block, NULL, container_set->unique_id)))
-    {
-      fully_marked = zmapSeqBitmapIsRegionFullyMarked(bitmap, world1, world2);
-    }
-    
-  return fully_marked;
-}
 
 ZMapWindowContainerBlock zmapWindowContainerBlockDestroy(ZMapWindowContainerBlock container_block)
 {
@@ -444,30 +354,8 @@ ZMapWindowContainerBlock zmapWindowContainerBlockDestroy(ZMapWindowContainerBloc
  *                           INTERNAL
  */
 
-static ZMapSeqBitmap get_bitmap_for_key(ZMapWindowContainerBlock block_data,
-					ZMapFeatureBlock         block, 
-					GQuark                   key)
-{
-  ZMapSeqBitmap bitmap = NULL;
 
-  if(!(bitmap = g_hash_table_lookup(block_data->loaded_region_hash, GUINT_TO_POINTER(key))))
-    {
-      if(block)
-	{
-	  int length;
-	  
-	  length = block->block_to_sequence.q2 - block->block_to_sequence.q1 + 1;
-	  
-	  bitmap = zmapSeqBitmapCreate(block->block_to_sequence.q1, length, 9000);
-	  
-	  g_hash_table_insert(block_data->loaded_region_hash, GUINT_TO_POINTER(key), bitmap);
-	}
-    }
-
-  return bitmap;
-}
-
-static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated, 
+static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 				       FooCanvasPoints         *group_bounds,
 				       ZMapContainerLevelType   group_level,
 				       gpointer                 user_data)
@@ -483,18 +371,18 @@ static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
       if(container_block->mark.top_item)
 	{
 	  mark_item_rectangle = (FooCanvasRE *)container_block->mark.top_item;
-	  
+
 	  mark_item_rectangle->x1 = group_bounds->coords[0];
 	  mark_item_rectangle->y1 = group_bounds->coords[1];
 	  mark_item_rectangle->x2 = group_bounds->coords[2];
-	  
+
 	  mark_item_rectangle->y2 = container_block->mark.start;
 	}
-      
+
       if(container_block->mark.bottom_item)
 	{
 	  mark_item_rectangle = (FooCanvasRE *)container_block->mark.bottom_item;
-	  
+
 	  mark_item_rectangle->x1 = group_bounds->coords[0];
 	  /*  */
 	  mark_item_rectangle->y1 = container_block->mark.end;
@@ -532,7 +420,7 @@ static void mark_items_create(ZMapWindowContainerBlock container_block,
 #endif /* DEBUG_MARK_WITH_OUTLINE */
       parent = (FooCanvasGroup *)overlay;
 
-      container_block->mark.top_item = 
+      container_block->mark.top_item =
 	foo_canvas_item_new(parent,
 			    FOO_TYPE_CANVAS_RECT,
 #ifdef DEBUG_MARK_WITH_OUTLINE
@@ -664,28 +552,28 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 	  /* I was concerned that the group_points and the
 	   * item_get_bounds might not marry up, but it appears
 	   * there's no need for concern. */
-	  foo_canvas_item_get_bounds(bg_item, 
-				     &block_coords[0], &block_coords[1], 
+	  foo_canvas_item_get_bounds(bg_item,
+				     &block_coords[0], &block_coords[1],
 				     &block_coords[2], &block_coords[3]);
-	  
+
 	  if(group_points->coords[0] != block_coords[0] ||
 	     group_points->coords[0] != block_coords[0] ||
 	     group_points->coords[0] != block_coords[0] ||
 	     group_points->coords[0] != block_coords[0])
 	    {
-	      zMapLogWarning("block %p has item coords: [%f,%f] - [%f,%f]", 
+	      zMapLogWarning("block %p has item coords: [%f,%f] - [%f,%f]",
 			     group_in_update,
-			     block_coords[0], block_coords[1], 
+			     block_coords[0], block_coords[1],
 			     block_coords[2], block_coords[3]);
-	      zMapLogWarning("block %p has grouppoints: [%f,%f] - [%f,%f]\n", 
+	      zMapLogWarning("block %p has grouppoints: [%f,%f] - [%f,%f]\n",
 			     group_in_update,
-			     group_points->coords[0], group_points->coords[1], 
+			     group_points->coords[0], group_points->coords[1],
 			     group_points->coords[2], group_points->coords[3]);
 	    }
-	  
-	  printf ("block %p has item coords: [%f,%f] - [%f,%f]\n", 
+
+	  printf ("block %p has item coords: [%f,%f] - [%f,%f]\n",
 		  group_in_update,
-		  block_coords[0], block_coords[1], 
+		  block_coords[0], block_coords[1],
 		  block_coords[2], block_coords[3]);
 	}
 
@@ -693,7 +581,7 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
       block_coords[1] = group_points->coords[1];
       block_coords[2] = group_points->coords[2];
       block_coords[3] = group_points->coords[3];
-      
+
       /* We need to compare world coords. coords are item coords */
       /* so we i2w them */
       foo_canvas_item_i2w(bg_item, &block_coords[0], &block_coords[1]);
@@ -701,9 +589,9 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 
       if(debug_update_hook)
 	{
-	  printf ("block %p has wrld coords: [%f,%f] - [%f,%f]\n", 
+	  printf ("block %p has wrld coords: [%f,%f] - [%f,%f]\n",
 		  group_in_update,
-		  block_coords[0], block_coords[1], 
+		  block_coords[0], block_coords[1],
 		  block_coords[2], block_coords[3]);
 	}
 
@@ -738,7 +626,7 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
   return status;
 }
 
-/* checks whether two areas intersect.  
+/* checks whether two areas intersect.
  * Only good for a rectangle descibed by 2 points (e.g. x1,y1, x2,y2) */
 static gboolean areas_intersection(FooCanvasPoints *area_1,
 				   FooCanvasPoints *area_2,
@@ -761,7 +649,7 @@ static gboolean areas_intersection(FooCanvasPoints *area_1,
       overlap = TRUE;
     }
   else
-    intersect->coords[0] = intersect->coords[1] = 
+    intersect->coords[0] = intersect->coords[1] =
       intersect->coords[2] = intersect->coords[3] = 0.0;
 
   return overlap;
@@ -770,8 +658,8 @@ static gboolean areas_intersection(FooCanvasPoints *area_1,
 
 /* threshold = percentage / 100. i.e. has a range of 0.00000001 -> 1.00000000 */
 /* For 100% overlap pass 1.0, For 50% overlap pass 0.5 */
-static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1, 
-					     FooCanvasPoints *area_2, 
+static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1,
+					     FooCanvasPoints *area_2,
 					     double           threshold)
 {
   FooCanvasPoints inter;
@@ -787,12 +675,12 @@ static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1,
     {
       aI = (inter.coords[2] - inter.coords[0] + 1.0) * (inter.coords[3] - inter.coords[1] + 1.0);
       a1 = (area_1->coords[2] - area_1->coords[0] + 1.0) * (area_1->coords[3] - area_1->coords[1] + 1.0);
-      
+
       if(threshold > 0.0 && threshold < 1.0)
 	threshold = 1.0 - threshold;
       else
 	threshold = 0.0;		/* 100% overlap only */
-      
+
       if(inter.coords[0] >= area_1->coords[0] &&
 	 inter.coords[1] >= area_1->coords[1] &&
 	 inter.coords[2] <= area_1->coords[2] &&
@@ -837,12 +725,12 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
 
 #ifdef RDS_DONT_INCLUDE
   /* width */
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_BLOCK_WIDTH,
-				  g_param_spec_double(ZMAPSTYLE_PROPERTY_WIDTH, 
+				  g_param_spec_double(ZMAPSTYLE_PROPERTY_WIDTH,
 						      ZMAPSTYLE_PROPERTY_WIDTH,
 						      "The minimum width the column should be displayed at.",
-						      0.0, 32000.00, 16.0, 
+						      0.0, 32000.00, 16.0,
 						      ZMAP_PARAM_STATIC_RO));
 
 #endif
@@ -856,15 +744,14 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
 
 static void zmap_window_container_block_init(ZMapWindowContainerBlock block_data)
 {
-  block_data->loaded_region_hash = g_hash_table_new_full(NULL, NULL, NULL, (GDestroyNotify)zmapSeqBitmapDestroy);
   block_data->compressed_cols    = NULL;
 
   return ;
 }
 
-static void zmap_window_container_block_set_property(GObject      *gobject, 
-						      guint         param_id, 
-						      const GValue *value, 
+static void zmap_window_container_block_set_property(GObject      *gobject,
+						      guint         param_id,
+						      const GValue *value,
 						      GParamSpec   *pspec)
 {
 
@@ -878,9 +765,9 @@ static void zmap_window_container_block_set_property(GObject      *gobject,
   return ;
 }
 
-static void zmap_window_container_block_get_property(GObject    *gobject, 
-						     guint       param_id, 
-						     GValue     *value, 
+static void zmap_window_container_block_get_property(GObject    *gobject,
+						     guint       param_id,
+						     GValue     *value,
 						     GParamSpec *pspec)
 {
   ZMapWindowContainerBlock block_data;
@@ -926,11 +813,6 @@ static void zmap_window_container_block_destroy(GtkObject *gtkobject)
       block_data->bumped_cols = NULL;
     }
 
-  if(block_data->loaded_region_hash)
-    {
-      g_hash_table_destroy(block_data->loaded_region_hash);
-      block_data->loaded_region_hash = NULL;
-    }
 
   if(gtkobject_class->destroy)
     (gtkobject_class->destroy)(gtkobject);

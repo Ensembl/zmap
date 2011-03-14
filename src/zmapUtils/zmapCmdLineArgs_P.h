@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 13 17:39 2010 (edgrif)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.10 2011-03-01 16:22:42 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.11 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
@@ -87,6 +87,7 @@ typedef struct _ZMapCmdLineArgsStruct
   gboolean serial ;
 
   int start, end ;
+  int sleep;      /* not used but needed */
 
   char *config_dir ;
   char *config_file_path ;

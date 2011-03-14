@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar  3 17:14 2011 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.41 2011-03-11 17:25:21 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.42 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1066,7 +1066,13 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_APP_MAINWINDOW,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_SEQUENCE,     G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_APP_EXIT_TIMEOUT, G_TYPE_INT,     NULL, FALSE },
+    /* csname and csver are provided by otterlace with start and end coordinates
+     * but are 'always' chromosome and Otter. see zmapApp.c/getConfiguration()
+     */
+    { ZMAPSTANZA_APP_CSNAME,       G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_CSVER,        G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_START,        G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_APP_END,          G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_HELP_URL,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LOCALE,       G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,   G_TYPE_STRING,  NULL, FALSE },

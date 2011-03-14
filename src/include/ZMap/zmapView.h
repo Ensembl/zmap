@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 23 13:01 2011 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.62 2011-02-24 11:10:25 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.63 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -120,13 +120,6 @@ typedef struct
 
 } LoadFeaturesDataStruct, *LoadFeaturesData ;
 
-
-/* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
-typedef struct
-{
-  char *sequence ;					    /* Sequence + start/end coords. */
-  int start, end ;
-} ZMapViewSequenceMapStruct, *ZMapViewSequenceMap ;
 
 
 /* Holds a sequence to be fetched and the server it should be fetched from. */

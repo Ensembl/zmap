@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  5 13:42 2010 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.56 2010-12-07 16:43:11 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.57 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,10 +137,10 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
 
   cb_data.styles = styles ;
 
-  /* Get this first...Then swop */
-  // mh17: this should really be block->block_to_sequence.q1,q2
-  cb_data.start = context->sequence_to_parent.c1 ;
-  cb_data.end   = context->sequence_to_parent.c2 ;
+  cb_data.start = context->parent_span.x1;
+  cb_data.end   = context->parent_span.x2 ;
+
+zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
 
   /* Because this doesn't allow for execution at context level ;( */
   zMapFeatureContextExecute((ZMapFeatureAny)context,
@@ -153,26 +153,26 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
 
 
 
+/* this is for a block only ! */
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature)
 {
   int start, end ;
 
-  /* should be block... */
-  start = context->sequence_to_parent.c1 ;
-  end = context->sequence_to_parent.c2 ;
+  start = context->parent_span.x1 ;
+  end   = context->parent_span.x2 ;
 
   revCompFeature(feature, start, end) ;
 
   return ;
 }
 
-void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout)
+void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout)
 {
   int start, end, my_start, my_end ;
+  ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
 
-  /* should be block... */
-  start = context->sequence_to_parent.c1 ;
-  end = context->sequence_to_parent.c2 ;
+  start = context->parent_span.x1 ;
+  end   = context->parent_span.x2 ;
 
   my_start = *start_inout ;
   my_end = *end_inout ;
@@ -183,6 +183,13 @@ void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_i
   *end_inout = my_end ;
 
   return ;
+}
+
+
+/* provide access to private macro, NB start is not used but defined by the macro */
+int zmapFeatureRevCompCoord(int coord, int start, int end)
+{
+      return(zmapFeatureInvert(coord,start,end));
 }
 
 
@@ -343,7 +350,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 		  int seq_length = 0 ;
 
 		  seq_fetcher.dna_in  = tmp ;
-		  seq_fetcher.dna_start = block->block_to_sequence.t1 ;
+		  seq_fetcher.dna_start = block->block_to_sequence.block.x1 ;
 		  seq_fetcher.start = start ;
 		  seq_fetcher.end = end ;
 
@@ -776,7 +783,7 @@ static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end
 {
   gboolean result = FALSE ;
 
-  if (!(result = zMapCoordsClamp(block->block_to_sequence.t1, block->block_to_sequence.t2,
+  if (!(result = zMapCoordsClamp(block->block_to_sequence.block.x1, block->block_to_sequence.block.x2,
 				 start_inout, end_inout)))
     {
       *start_inout = *end_inout = 0 ;
@@ -840,7 +847,14 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
       {
         ZMapFeatureAlignment feature_align = NULL;
         feature_align = (ZMapFeatureAlignment)feature_any;
-        /* Nothing to swop? */
+
+            /* we revcomp a complete context so reflect in the parent span */
+
+zMapLogWarning("rev comp align 1, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
+        zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
+                           feature_align->sequence_span.x1,
+                           feature_align->sequence_span.x2) ;
+zMapLogWarning("rev comp align 2, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
       }
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
@@ -855,16 +869,31 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 	    zMapDNAReverseComplement(feature_block->sequence.sequence, feature_block->sequence.length) ;
           }
 
+//zMapLogWarning("rev comp block 1, block = %d -> %d", //feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
+
         zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
-                           feature_block->block_to_sequence.t1,
-                           feature_block->block_to_sequence.t2) ;
+                           feature_block->block_to_sequence.block.x1,
+                           feature_block->block_to_sequence.block.x2) ;
+        feature_block->revcomped = !feature_block->revcomped;
+//zMapLogWarning("rev comp block 2, block = %d -> %d", //feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         ZMapFeatureSet feature_set = NULL;
+        GList *l;
+        ZMapSpan span;
 
         feature_set = (ZMapFeatureSet)feature_any;
+
+        /* need to rev comp the loaded regions list */
+        for(l = feature_set->loaded;l;l = l->next)
+        {
+            span = (ZMapSpan) l->data;
+//zMapLogWarning("rev comp set 1, span = %d -> %d",span->x1, span->x2);
+            zmapFeatureRevComp(Coord, cb_data->start, cb_data->end, span->x1, span->x2) ;
+//zMapLogWarning("rev comp set 2, span = %d -> %d",span->x1, span->x2);
+        }
 
 	/* Now redo the 3 frame translations from the dna (if they exist). */
 	if(feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
@@ -947,6 +976,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
           align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
 
           zmapFeatureRevComp(Coord, start_coord, end_coord, align->t1, align->t2) ;
+#warning why does this not change t_strand?
         }
 
       zMapFeatureSortGaps(feature->feature.homol.align) ;
@@ -1155,6 +1185,18 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
     }
 
   return ;
+}
+
+
+
+gboolean zMapFeatureContextGetMasterAlignSpan(ZMapFeatureContext context,int *start,int *end)
+{
+      gboolean res = start && end;
+
+      if(start) *start = context->master_align->sequence_span.x1;
+      if(end)   *end   = context->master_align->sequence_span.x2;
+
+      return(res);
 }
 
 

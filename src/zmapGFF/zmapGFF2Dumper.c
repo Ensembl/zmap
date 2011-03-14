@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 13:38 2011 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.27 2011-02-24 13:57:25 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.28 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -426,14 +426,15 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
     case ZMAPFEATURE_STRUCT_ALIGN:
       if(header_data->status && header_data->cont)
 	{
+        ZMapFeatureAlignment feature_align = (ZMapFeatureAlignment)feature_any;
 	  const char *sequence;
 	  header_data->status = header_data->cont = TRUE;
 
 	  sequence = g_quark_to_string(feature_any->original_id);
 
 	  g_string_append_printf(header_data->header_string,
-				 "##Type DNA %s\n",
-				 sequence);
+				 "##Type DNA %s %d %d\n",
+				 sequence,feature_align->sequence_span.x1,feature_align->sequence_span.x2);
 
 	  if(!header_data->gff_sequence)
 	    header_data->gff_sequence = sequence;
@@ -443,20 +444,19 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
       if(header_data->status && header_data->cont)
 	{
 	  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)feature_any;
-	  gboolean reversed = FALSE;
 	  int start, end;
+        gboolean reversed = FALSE;
 
-	  start = feature_block->block_to_sequence.q1;
-	  end   = feature_block->block_to_sequence.q2;
+	  start = feature_block->block_to_sequence.block.x1;
+	  end   = feature_block->block_to_sequence.block.x2;
 
-	  /* I'm a little unsure about the strand stuff...think more about this... */
-	  if (feature_block->block_to_sequence.q_strand == ZMAPSTRAND_REVERSE)
-	    reversed = TRUE ;
+        if (feature_block->block_to_sequence.reversed)
+          reversed = TRUE ;
 
 	  g_string_append_printf(header_data->header_string,
 				 "##sequence-region %s %d %d %s\n",
 				 g_quark_to_string(feature_any->original_id),
-				 start, end, (reversed ? "(reversed)" : "")) ;
+				 start, end,(reversed ? "(reversed)" : "")) ;
 	  header_data->status = TRUE;
 	  header_data->cont   = FALSE;
 	}

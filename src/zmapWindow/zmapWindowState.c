@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 18 09:40 2011 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.32 2011-02-18 09:58:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.33 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -381,7 +381,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow window)
 {
 #warning save bumped commented out temproarily while tweaking CFS code
-#if MH17_NO_RECOVER
+#if MH17_NO_BUMP_STATE
 
 /* the restore was commented out so this function is not needed right now
  * both need to handle columns not featuresets
@@ -443,22 +443,25 @@ static void rev_comp_region(ZMapWindow window, double *a, double *b)
  * rev comp'd coords are based on sequence end (the new origin)
  * these are displayed as -ve numbers via some calcultions in zmapWindowUtils.c
  */
-  ZMapMapBlock p2s;
 
-     /* RevComp applies to a block not a window or featurecontext
-      * but for the momwnt we only handle one align and one block
+     /* RevComp applies to an align not a window or featurecontext
+      * but for the moment we only handle one align and one block
       * So we can get the block query sequence coord from here as
       * they are the same as the sequence_to_parent child coordinates
       * ref to RT 158542
       */
-  p2s = &window->feature_context->sequence_to_parent;
+
+  ZMapSpan sspan;
+
+      /* we have to use the parent span as the alignment's sequence span gets fflipped */
+  sspan = &window->feature_context->parent_span;
 
 
   if(a && b)
     {
       double tp;                  /* temp */
-      *a = p2s->c2 + 1 - *a;
-      *b = p2s->c2 + 1 - *b;
+      *a = sspan->x2 + 1 - *a;
+      *b = sspan->x2 + 1 - *b;
       tp = *a;
       *a = *b;
       *b = tp;
@@ -559,6 +562,11 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 	    print_position(position, "state_position_restore rev-comp status switched! reversing position...");
 
 	  rev_comp_region(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
+
+
+#if MH17_REVCOMP_DEBUG
+      zMapLogWarning("restore scroll: %f,%f -> %f,%f", position->scroll_y1,position->scroll_y2,new_position.scroll_y1,new_position.scroll_y2);
+#endif
 
 #ifdef RDS_DONT_INCLUDE
 	  new_position.scroll_y1 = seq_length - position->scroll_y1;
@@ -977,7 +985,7 @@ static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointe
   y1 = locked->y1;
   y2 = locked->y2;
 
-  zmapWindowSetScrollRegion(locked->window, &x1, &y1, &x2, &y2);
+  zmapWindowSetScrollRegion(locked->window, &x1, &y1, &x2, &y2,"lockedDisplaySetScrollRegionCB");
 
   return ;
 }
@@ -998,7 +1006,7 @@ static void set_scroll_region(ZMapWindow window, double x1, double y1, double x2
       g_hash_table_foreach(window->sibling_locked_windows, lockedDisplaySetScrollRegionCB, &locked);
     }
   else
-    zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2);
+    zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"set_scroll_region");
 
   return ;
 }

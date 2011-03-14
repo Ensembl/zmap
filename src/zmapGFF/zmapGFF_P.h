@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 22 14:26 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.26 2010-08-26 08:04:08 mh17 Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.27 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -148,8 +148,7 @@ typedef struct ZMapGFFParserStruct_
   char *date ;
 
   char *sequence_name ;
-  int features_start, features_end ;
-
+  int features_start, features_end ;      /* in GFF these are based from 1 */
 
   /* Parsing feature data. */
   ZMapFeatureTypeStyle locus_set_style ;			    /* cached locus style. */

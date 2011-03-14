@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,13 +24,13 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 24 15:17 2010 (edgrif)
  * Created: Mon Apr 27 18:01:23 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.6 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.7 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,7 @@ enum
 
 static void zmap_window_container_overlay_class_init  (ZMapWindowContainerOverlayClass overlay_class);
 static void zmap_window_container_overlay_init        (ZMapWindowContainerOverlay overlay);
-static void zmap_window_container_overlay_set_property(GObject               *object, 
+static void zmap_window_container_overlay_set_property(GObject               *object,
 						       guint                  param_id,
 						       const GValue          *value,
 						       GParamSpec            *pspec);
@@ -74,8 +74,8 @@ static void zmap_window_container_overlay_get_property(GObject               *ob
 						       GValue                *value,
 						       GParamSpec            *pspec);
 
-static void maximise_child_rectangle_no_update(FooCanvasRE *rectangle, 
-					       double ix1, double iy1, 
+static void maximise_child_rectangle_no_update(FooCanvasRE *rectangle,
+					       double ix1, double iy1,
 					       double ix2, double iy2,
 					       gboolean in_x, gboolean in_y);
 static gboolean invoke_maximise_child_rectangle(GList *item_list,
@@ -86,7 +86,7 @@ static gboolean invoke_maximise_child_rectangle(GList *item_list,
 
 static void zmap_window_container_features_class_init  (ZMapWindowContainerFeaturesClass container_class);
 static void zmap_window_container_features_init        (ZMapWindowContainerFeatures collection);
-static void zmap_window_container_features_set_property(GObject               *object, 
+static void zmap_window_container_features_set_property(GObject               *object,
 							guint                  param_id,
 							const GValue          *value,
 							GParamSpec            *pspec);
@@ -97,18 +97,18 @@ static void zmap_window_container_features_get_property(GObject               *o
 
 static void zmap_window_container_underlay_class_init  (ZMapWindowContainerUnderlayClass underlay_class);
 static void zmap_window_container_underlay_init        (ZMapWindowContainerUnderlay underlay);
-static void zmap_window_container_underlay_set_property(GObject               *object, 
+static void zmap_window_container_underlay_set_property(GObject               *object,
 							guint                  param_id,
 							const GValue          *value,
 							GParamSpec            *pspec);
-static void zmap_window_container_underlay_get_property(GObject               *object, 
+static void zmap_window_container_underlay_get_property(GObject               *object,
 							guint                  param_id,
 							GValue                *value,
 							GParamSpec            *pspec);
 
 static void zmap_window_container_background_class_init  (ZMapWindowContainerBackgroundClass background_class);
 static void zmap_window_container_background_init        (ZMapWindowContainerBackground background);
-static void zmap_window_container_background_set_property(GObject               *object, 
+static void zmap_window_container_background_set_property(GObject               *object,
 							  guint                  param_id,
 							  const GValue          *value,
 							  GParamSpec            *pspec);
@@ -120,20 +120,20 @@ static void zmap_window_container_background_get_property(GObject               
 
 
 
-/* 
+/*
  *                     External routines
  */
 
 
-/* 
+/*
  *       Functions for functions within a group.
- * 
+ *
  */
 GType zmapWindowContainerFeaturesGetType(void)
 {
   static GType group_type = 0;
 
-  if (group_type == 0) 
+  if (group_type == 0)
     {
       static const GTypeInfo group_info = {
 	sizeof (zmapWindowContainerFeaturesClass),
@@ -166,7 +166,7 @@ FooCanvasItem *zmapWindowContainerFeaturesGetNextSibling(FooCanvasItem          
 {
   FooCanvasItem *next_item = NULL;
 
-  
+
 
   return next_item;
 }
@@ -177,7 +177,7 @@ GType zmapWindowContainerOverlayGetType(void)
 {
   static GType group_type = 0;
 
-  if (!group_type) 
+  if (!group_type)
     {
       static const GTypeInfo group_info = {
 	sizeof (zmapWindowContainerOverlayClass),
@@ -190,13 +190,13 @@ GType zmapWindowContainerOverlayGetType(void)
 	0,              /* n_preallocs */
 	(GInstanceInitFunc) zmap_window_container_overlay_init
       };
-    
+
       group_type = g_type_register_static (foo_canvas_group_get_type(),
 					   ZMAP_WINDOW_CONTAINER_OVERLAY_NAME,
 					   &group_info,
 					   0);
     } /* group_type == 0 */
-  
+
   return group_type;
 }
 
@@ -227,7 +227,7 @@ GType zmapWindowContainerUnderlayGetType(void)
 {
   static GType group_type = 0;
 
-  if (!group_type) 
+  if (!group_type)
     {
       static const GTypeInfo group_info = {
 	sizeof (zmapWindowContainerUnderlayClass),
@@ -278,9 +278,9 @@ GType zmapWindowContainerBackgroundGetType(void)
 {
   static GType group_type = 0;
 
-  if (!group_type) 
+  if (!group_type)
     {
-      static const GTypeInfo group_info = 
+      static const GTypeInfo group_info =
 	{
 	  sizeof (zmapWindowContainerBackgroundClass),
 	  (GBaseInitFunc) NULL,
@@ -334,18 +334,34 @@ void zmapWindowContainerBackgroundResetColour(ZMapWindowContainerBackground back
 
 
 
-/* 
+/*
  *                     Internal routines
  */
 
+static FooCanvasItemClass  *feature_item_parent_class_G  = NULL;
+
+static void zmap_window_container_features_draw (FooCanvasItem *item, GdkDrawable *drawable,
+                                    GdkEventExpose *expose)
+{
+
+#if MH17_REVCOMP_DEBUG > 1
+ ZMapWindowContainerFeatures group = (ZMapWindowContainerFeatures) item;
+      zMapLogWarning("container features draw @ %f,%f - %f,%f,  (%d items), canvas %p", item->y1,item->x1,item->y2,item->x2, g_list_length(group->__parent__.item_list), item->canvas) ;
+#endif
+
+  if(feature_item_parent_class_G->draw)
+    (feature_item_parent_class_G->draw)(item, drawable, expose);
+
+  return ;
+}
 
 
 static void zmap_window_container_features_class_init  (ZMapWindowContainerFeaturesClass container_class)
 {
   GObjectClass *gobject_class;
-  
-  gobject_class = (GObjectClass *) container_class;
 
+  gobject_class = (GObjectClass *) container_class;
+  FooCanvasItemClass *item_class    = (FooCanvasItemClass *)container_class;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Not included yet....is it correct this is here ?? */
@@ -354,10 +370,12 @@ static void zmap_window_container_features_class_init  (ZMapWindowContainerFeatu
   canvas_class->obj_total = 0 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  feature_item_parent_class_G  = (FooCanvasItemClass *)(g_type_class_peek_parent(container_class));
+  item_class->draw = zmap_window_container_features_draw;
 
   gobject_class->set_property = zmap_window_container_features_set_property;
   gobject_class->get_property = zmap_window_container_features_get_property;
-  
+
   return ;
 }
 
@@ -370,7 +388,7 @@ static void zmap_window_container_features_init        (ZMapWindowContainerFeatu
   return ;
 }
 
-static void zmap_window_container_features_set_property(GObject               *object, 
+static void zmap_window_container_features_set_property(GObject               *object,
 							guint                  param_id,
 							const GValue          *value,
 							GParamSpec            *pspec)
@@ -397,7 +415,7 @@ static void zmap_window_container_features_get_property(GObject               *o
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
     }
-  
+
   return ;
 }
 
@@ -407,7 +425,7 @@ static void zmap_window_container_features_get_property(GObject               *o
 static void zmap_window_container_overlay_class_init  (ZMapWindowContainerOverlayClass overlay_class)
 {
   GObjectClass *gobject_class;
-  
+
   gobject_class = (GObjectClass *) overlay_class;
 
   gobject_class->set_property = zmap_window_container_overlay_set_property;
@@ -423,7 +441,7 @@ static void zmap_window_container_overlay_class_init  (ZMapWindowContainerOverla
 						       "Column needs maximising in the y axis",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
 
-  
+
   return ;
 }
 
@@ -438,7 +456,7 @@ static void zmap_window_container_overlay_init        (ZMapWindowContainerOverla
   return ;
 }
 
-static void zmap_window_container_overlay_set_property(GObject               *object, 
+static void zmap_window_container_overlay_set_property(GObject               *object,
 						       guint                  param_id,
 						       const GValue          *value,
 						       GParamSpec            *pspec)
@@ -475,7 +493,7 @@ static void zmap_window_container_overlay_get_property(GObject               *ob
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
     }
-  
+
   return ;
 }
 
@@ -484,7 +502,7 @@ static void zmap_window_container_overlay_get_property(GObject               *ob
 static void zmap_window_container_underlay_class_init  (ZMapWindowContainerUnderlayClass underlay_class)
 {
   GObjectClass *gobject_class;
-  
+
   gobject_class = (GObjectClass *) underlay_class;
 
   gobject_class->set_property = zmap_window_container_underlay_set_property;
@@ -501,7 +519,7 @@ static void zmap_window_container_underlay_init        (ZMapWindowContainerUnder
   return ;
 }
 
-static void zmap_window_container_underlay_set_property(GObject               *object, 
+static void zmap_window_container_underlay_set_property(GObject               *object,
 							guint                  param_id,
 							const GValue          *value,
 							GParamSpec            *pspec)
@@ -532,7 +550,7 @@ static void zmap_window_container_underlay_get_property(GObject               *o
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
     }
-  
+
   return ;
 }
 
@@ -542,7 +560,7 @@ static void zmap_window_container_background_class_init  (ZMapWindowContainerBac
   GObjectClass *gobject_class;
   GParamSpec *param_spec;
   const gchar *override_properties[] = {
-    "width_pixels", "width_units", 
+    "width_pixels", "width_units",
     NULL
   };
   const gchar **property;
@@ -568,7 +586,7 @@ static void zmap_window_container_background_class_init  (ZMapWindowContainerBac
     {
       if((param_spec = g_object_class_find_property(gobject_class, *property)))
 	{
-	  g_object_class_override_property(gobject_class, param_id, 
+	  g_object_class_override_property(gobject_class, param_id,
 					   g_param_spec_get_name(param_spec));
 	}
       param_id++;
@@ -587,14 +605,14 @@ static void zmap_window_container_background_init        (ZMapWindowContainerBac
   box = FOO_CANVAS_RE(collection);
 
   g_object_set_data(G_OBJECT(collection), CONTAINER_TYPE_KEY, GINT_TO_POINTER(CONTAINER_GROUP_BACKGROUND));
-  
+
   box->width_pixels = FALSE;
   box->width        = 0;
 
   return ;
 }
 
-static void zmap_window_container_background_set_property(GObject               *object, 
+static void zmap_window_container_background_set_property(GObject               *object,
 							  guint                  param_id,
 							  const GValue          *value,
 							  GParamSpec            *pspec)
@@ -614,9 +632,9 @@ static void zmap_window_container_background_set_property(GObject               
 	if((colour = g_value_get_boxed(value)))
 	  {
 	    g_object_set(object, "fill-color-gdk", colour, NULL);
-	    
+
 	    background = ZMAP_CONTAINER_BACKGROUND(object);
-	    
+
 	    background->original_colour = *colour; /* struct copy */
 	    background->has_bg_colour   = TRUE;
 	  }
@@ -689,7 +707,7 @@ static gboolean invoke_maximise_child_rectangle(GList *item_list,
 {
   gboolean need_update = FALSE;
   gboolean maximise_non_rectangles = FALSE;	/* setting to true will require extra work! */
-  
+
   do
     {
       /* We only maximise rectangles... Didn't I say that. */
@@ -703,10 +721,10 @@ static gboolean invoke_maximise_child_rectangle(GList *item_list,
       else if(maximise_non_rectangles)
 	{
 	  double nx1, ny1, nx2, ny2; /* new coords */
-	  
+
 	  foo_canvas_item_get_bounds((FooCanvasItem *)(item_list->data),
 				     &nx1, &ny1, &nx2, &ny2);
-	  
+
 	  if(in_x)
 	    {
 	      nx1 = x1;
@@ -717,7 +735,7 @@ static gboolean invoke_maximise_child_rectangle(GList *item_list,
 	      ny1 = y1;
 	      ny2 = y2;
 	    }
-	  
+
 	  /* This won't work for items that don't have x1,x2,y1,y2 properties! */
 	  foo_canvas_item_set((FooCanvasItem *)(item_list->data),
 			      "x1", nx1, "y1", ny1,
@@ -726,6 +744,6 @@ static gboolean invoke_maximise_child_rectangle(GList *item_list,
 	}
     }
   while((item_list = item_list->next));
-  
+
   return need_update;
 }

@@ -12,7 +12,6 @@ zmapHandle.c \
 zmapFileUtils.c \
 zmapLogging.c \
 zmapString.c \
-zmapSeqBitmap.c \
 zmapCmdLineArgs.c \
 zmapFASTA.c \
 zmapIO_P.h \

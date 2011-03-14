@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar  8 09:53 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.86 2011-03-11 17:29:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.87 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -821,10 +821,11 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowColConfigureMode configure_mode = (ZMapWindowColConfigureMode)menu_item_id  ;
-  FooCanvasGroup *column_group ;
+  FooCanvasGroup *column_group = NULL ;
 
   /* did user click on an item or on the column background ? */
-  column_group = menuDataItemToColumn(menu_data->item);
+  if(configure_mode != ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
+      column_group = menuDataItemToColumn(menu_data->item);
 
   zmapWindowColumnConfigure(menu_data->window, column_group, configure_mode) ;
 

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.38 2010-10-18 09:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.39 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -49,6 +49,9 @@ typedef struct
   char *database_name ;
   char *database_title ;
   char *database_path ;
+
+  gboolean request_as_columns;
+
 } ZMapServerInfoStruct, *ZMapServerInfo ;
 
 
@@ -62,7 +65,7 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 ZMapURL url, char *format,
                                          char *version_str, int timeout) ;
 
-typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, gboolean sequence_server) ;
+typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, gboolean sequence_server,gint zmap_start,gint zmap_end) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerInfo info) ;
 

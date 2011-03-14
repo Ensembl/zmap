@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Feb 18 09:55 2011 (edgrif)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.13 2011-02-18 09:56:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.14 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,8 +147,8 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
       return dna ;
     }
 
-  block_start = block->block_to_sequence.t1 ;
-  block_end   = block->block_to_sequence.t2 ;
+  block_start = block->block_to_sequence.block.x1 ;
+  block_end   = block->block_to_sequence.block.x2 ;
 
 
 
@@ -162,7 +162,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
     dna_data->revcomp = TRUE ;
   else
     dna_data->revcomp = FALSE ;
-    
+
   zmapWindowCoordPairToDisplay(window, block_start, block_end, &block_start, &block_end) ;
   zmapWindowCoordPairToDisplay(window, dna_data->dna_start, dna_data->dna_end,
 			       &(dna_data->dna_start), &(dna_data->dna_end)) ;
@@ -181,7 +181,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   dna_data->item_y1 = y1 ;
   dna_data->item_x2 = x2 ;
   dna_data->item_y2 = y2 ;
-  dna_data->overlay_box = zMapDrawBoxOverlay(overlay_group, 
+  dna_data->overlay_box = zMapDrawBoxOverlay(overlay_group,
 					     x1, y1, x2, y2,
 					     &overlay_colour) ;
 
@@ -230,7 +230,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(feature->original_id)) ;
   gtk_box_pack_start(GTK_BOX(topbox), entry, FALSE, FALSE, 0) ;
 
-  
+
   /* Make the start/end boxes. */
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
@@ -241,7 +241,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 			    dna_data->dna_start, GTK_SIGNAL_FUNC(startSpinCB),
 			    "End: ", dna_data->dna_start, block_end,
 			    dna_data->dna_end, GTK_SIGNAL_FUNC(endSpinCB),
-			    "Flanking bases: ", 0, (block->block_to_sequence.t2 - 1),
+			    "Flanking bases: ", 0, (block->block_to_sequence.block.x2 - block->block_to_sequence.block.x1),
 			    dna_data->dna_flanking, GTK_SIGNAL_FUNC(flankingSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
 
@@ -380,8 +380,8 @@ static gboolean checkCoords(DNASearchData dna_data)
   start = dna_data->dna_start - dna_data->dna_flanking ;
   end = dna_data->dna_end + dna_data->dna_flanking ;
 
-  block_start = dna_data->block->block_to_sequence.t1;
-  block_end   = dna_data->block->block_to_sequence.t2;
+  block_start = dna_data->block->block_to_sequence.block.x1;
+  block_end   = dna_data->block->block_to_sequence.block.x2;
 
   zmapWindowCoordPairToDisplay(dna_data->window, block_start, block_end, &block_start, &block_end) ;
 
@@ -405,7 +405,7 @@ static void getDNA(DNASearchData dna_data)
   if (!checkCoords(dna_data))
     return ;
 
-  block_start = dna_data->block->block_to_sequence.t1;
+  block_start = dna_data->block->block_to_sequence.block.x1;
 
   if (dna_data->window->display_forward_coords)
     {
@@ -429,8 +429,8 @@ static void getDNA(DNASearchData dna_data)
 	   || (end < 0 || end > dna_len)
 	   || (start - dna_data->dna_flanking < 0 || end + dna_data->dna_flanking > dna_len))
     err_text = g_strdup_printf("start/end +/- flanking must be within range %d -> %d",
-			       dna_data->block->block_to_sequence.t1,
-			       dna_data->block->block_to_sequence.t2) ;
+			       dna_data->block->block_to_sequence.block.x1,
+			       dna_data->block->block_to_sequence.block.x2) ;
 
   if (err_text)
     {
@@ -440,7 +440,7 @@ static void getDNA(DNASearchData dna_data)
     {
       start = start - dna_data->dna_flanking ;
       end   = end + dna_data->dna_flanking ;
-	
+
       dna_data->dna = zMapFeatureGetDNA((ZMapFeatureAny)(dna_data->block), start, end, dna_data->revcomp) ;
     }
 
@@ -494,14 +494,14 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 
-/* 
+/*
  * You should read this before you alter these routines.....
- * 
+ *
  * Event and value handling is slightly complicated with the spinners.
  * There seems to be no recognised way of asking to be called once the
  * user stops spinning (releases the mouse pointer) so you have to fake
  * it by catching the button release yourself.
- * 
+ *
  * Handling of when the user types in a value and presses the Return
  * key is also difficult, you can't tell from the normal spinner callback
  * that Return was pressed. If you use an event handler to catch the key press it's
@@ -509,13 +509,13 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
  * handler does not see the value the user typed in. Hence the key
  * press handler has to signal to the spin handler that its been called
  * and then the spin handler can be made to call our update routine.
- * 
+ *
  * Note also that the spin handlers are not called if the new value in the
  * spinner is the same as the old one, sounds crazy but this is _exactly_
  * what happens when the user enters an out of range value and the spinner
  * itself then resets the value. Do this twice in a row and the new value is the same
  * as the old one. Its confusing...sigh...
- * 
+ *
  */
 static void startSpinCB(GtkSpinButton *spin_button, gpointer user_data)
 {
@@ -611,7 +611,7 @@ static gboolean spinEventCB(GtkWidget *widget, GdkEventClient *event, gpointer u
  * as keeping spinner values consistent with each other, also draws the extent of the
  * sequence selected by the user on the zmap window, we want this only to happen when
  * the users has set their final values.
- * 
+ *
  * We know all we need to know to keep all the spinners logically consistent with each other,
  * this is done in this routine and ensures that we don't end up coords outside the block or
  * any other pathological values. */
@@ -625,8 +625,8 @@ static void updateSpinners(DNASearchData dna_data)
   end      = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
   flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
 
-  min_start =  dna_data->block->block_to_sequence.t1;
-  max_end   =  dna_data->block->block_to_sequence.t2;
+  min_start =  dna_data->block->block_to_sequence.block.x1;
+  max_end   =  dna_data->block->block_to_sequence.block.x2;
 
   zmapWindowCoordPairToDisplay(dna_data->window, min_start, max_end, &min_start, &max_end) ;
 

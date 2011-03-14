@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 22 11:56 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.76 2010-10-26 13:32:22 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.77 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -242,9 +242,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* If user specifyed a sequence in the config. file or on the command line then
    * display it straight away, app exits if bad command line params supplied. */
-  sequence = app_context->default_sequence ;
+  sequence = NULL;
   start = 1 ;
   end = 0 ;
+  if(app_context->default_sequence)
+  {
+      sequence = app_context->default_sequence->sequence ;
+      start = app_context->default_sequence->start;
+      end = app_context->default_sequence->end;
+  }
 
   if (!sequence)
     checkForCmdLineSequenceArg(argc, argv, &sequence) ;
@@ -374,6 +380,12 @@ static void destroyAppContext(ZMapAppContext app_context)
   if (app_context->locale)
     g_free(app_context->locale) ;
 
+  if(app_context->default_sequence)
+  {
+      if(app_context->default_sequence->sequence)
+            g_free(app_context->default_sequence->sequence);
+      g_free(app_context->default_sequence);
+  }
   g_free(app_context) ;
 
   return ;
@@ -742,7 +754,29 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       /* default sequence to display */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
-	app_context->default_sequence = tmp_string;
+      {
+            ZMapFeatureSequenceMap s;
+            app_context->default_sequence = s = (ZMapFeatureSequenceMap) g_new0(ZMapFeatureSequenceMapStruct,1);
+	      s->sequence = tmp_string;
+            s->start = 1;
+            if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_START, &s->start))
+            {
+                  zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_END, &s->end);
+
+                  /* possibly worth checking csname and csver at some point */
+                  tmp_string = NULL;
+                  zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_CSNAME,&tmp_string);
+                  zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
+            }
+            else
+            {
+                  /* (don't) try to get chromo coords from seq name */
+            }
+
+      }
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,

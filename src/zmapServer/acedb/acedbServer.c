@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 28 08:51 2011 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.164 2011-01-28 09:02:39 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.165 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,7 +162,7 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server,gboolean sequence_server) ;
+static ZMapServerResponseType openConnection(void *server,gboolean sequence_server,gint zmap_start, gint zmap_end) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
@@ -344,6 +344,9 @@ static gboolean createConnection(void **server_out,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
+  server->zmap_start = 1;
+  server->zmap_end = 0;
+
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
@@ -358,12 +361,15 @@ static gboolean createConnection(void **server_out,
  * set "quiet" mode on so that we can get dna, gff and other stuff back unadulterated by
  * extraneous information. */
 // mh17: added sequence_server flag for compatability with pipeServer, it's not used here
-static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server)
+static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server,gint zmap_start,gint zmap_end)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
   resetErr(server) ;
+
+  server->zmap_start = zmap_start;
+  server->zmap_end   = zmap_end;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
@@ -784,6 +790,34 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
       /* get the list of source featuresets */
   feature_context->src_feature_set_names = get_features.src_feature_set_names;
+
+#if MH17_this_cant_work
+      /* replace the list of requested columns with a list of requested featuresets
+       * this is needed to keep track of what featuresets were actually requested.
+       *
+       * NOTE src_feature_set_names is constructed per block and merged
+       * req_feature_set_names is as given and applies to all blocks??
+       * NOTE multiple block requests are not currently used and cannot apply to pipe servers
+       * It would be much simpler to use single block requests only and if
+       * necessary implement multiple block requests from the main ZMap code
+       * as this would be compatable with pipeServers
+       */
+#warning review this if multiple blocks are implemented
+  GList *req_names,*req_cols;
+  req_cols = feature_context->req_feature_set_names;
+  req_names = NULL;
+  while(req_cols)
+  {
+
+      column = g_hash_table_lookup(server->method_2_feature_set,);
+      if(column)
+      {
+            req_names = g_list_concat(req_names,column->features
+      }
+      req_cols = g_list_delete_link(req_names,req_cols);
+
+  }
+#endif
 
   zMapPrintTimer(NULL, "In thread, got features") ;
 
@@ -1272,8 +1306,8 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				   " %s "
 				   "seqfeatures -refseq %s -rawmethods -zmap %s",
 				   g_quark_to_string(feature_block->original_id),
-				   feature_block->features_start,
-				   feature_block->features_end,
+				   server->zmap_start,
+				   server->zmap_end,
 				   no_clip ? "-noclip" : "",
 				   methods,
 				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
@@ -1547,8 +1581,8 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 
-  block_start = feature_block->block_to_sequence.q1 ;
-  block_end   = feature_block->block_to_sequence.q2 ;
+  block_start = feature_block->block_to_sequence.block.x1 ;
+  block_end   = feature_block->block_to_sequence.block.x2 ;
   /* These block numbers appear correct, but I may have the wrong
    * end of the block_to_sequence stick! */
 
@@ -1675,13 +1709,15 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 {
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
-  ZMapMapBlockStruct sequence_to_parent = {0} ;
+
+  ZMapMapBlockStruct sequence_to_parent = { {0, 0} , {0, 0}, FALSE };
+
   int parent_length = 0 ;
 
 
   /* We have a special case where the caller can specify  end == 0  meaning "get the sequence
    * up to the end", in this case we explicitly find out what the end is. */
-  if (server->req_context->sequence_to_parent.c2 == 0)
+  if (server->zmap_end == 0)
     {
       int child_length ;
 
@@ -1690,28 +1726,57 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       if (getSMapLength(server, "sequence",
 			(char *)g_quark_to_string(server->req_context->sequence_name),
 			&child_length))
-	server->req_context->sequence_to_parent.c2 =  child_length ;
+	server->zmap_end = child_length ;
     }
 
+zMapLogWarning("getSequenceMapping %d -> %d",server->zmap_start,server->zmap_end);
+
   if (getSMapping(server, NULL, (char *)g_quark_to_string(server->req_context->sequence_name),
-		  server->req_context->sequence_to_parent.c1, server->req_context->sequence_to_parent.c2,
+              server->zmap_start,server->zmap_end,
 		  &parent_class, &parent_name, &sequence_to_parent)
-      && ((server->req_context->sequence_to_parent.c2 - server->req_context->sequence_to_parent.c1 + 1)
-	  == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
+        && ((server->zmap_end - server->zmap_start + 1) ==
+             (sequence_to_parent.block.x2 - sequence_to_parent.block.x1 + 1))
+
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
       feature_context->parent_name = g_quark_from_string(parent_name) ;
       g_free(parent_name) ;
 
-      /* Set the top level span. */
-      feature_context->parent_span.x1 = 1 ;
-      feature_context->parent_span.x2 = parent_length ;
-     
-      /* Set the mapping from this sequence to the top level. */
-      feature_context->sequence_to_parent.c1 = sequence_to_parent.c1 ;
-      feature_context->sequence_to_parent.c2 = sequence_to_parent.c2 ;
-      feature_context->sequence_to_parent.p1 = sequence_to_parent.p1 ;
-      feature_context->sequence_to_parent.p2 = sequence_to_parent.p2 ;
+      if(!feature_context->parent_span.x2)
+      {
+	      feature_context->parent_span.x1 = 1;
+	      feature_context->parent_span.x2 = parent_length;
+      }
+
+      feature_context->master_align->sequence_span.x1 = sequence_to_parent.parent.x1 ;
+      feature_context->master_align->sequence_span.x2 = sequence_to_parent.parent.x2 ;
+
+      /* set up block coords as well in case not supplied in context (req = 1,0) */
+      {
+          ZMapFeatureAlignment align = feature_context->master_align;
+          GHashTable *blocks = align->blocks ;
+          ZMapFeatureBlock block ;
+
+          zMapAssert(g_hash_table_size(blocks) == 1) ;
+
+          block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
+
+zMapLogWarning("getSequenceMapping block %d -> %d",
+block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
+          if(!block->block_to_sequence.parent.x2)
+          {
+            block->block_to_sequence.parent.x1 = server->zmap_start;   /* = align->sequence_span.x1 ; */
+            block->block_to_sequence.parent.x2 = server->zmap_end;     /* = align->sequence_span.x2 ; */
+          }
+          if(!block->block_to_sequence.block.x2)
+          {
+            block->block_to_sequence.block.x1 = server->zmap_start;   /* = align->sequence_span.x1 ; */
+            block->block_to_sequence.block.x2 = server->zmap_end;     /* = align->sequence_span.x2 ; */
+zMapLogWarning("getSequenceMapping set block %d -> %d",
+block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
+          }
+          block->block_to_sequence.reversed = FALSE;
+      }
 
       result = TRUE ;
     }
@@ -1774,14 +1839,14 @@ static gboolean getSMapping(AcedbServer server, char *class,
 	  enum {FIELD_BUFFER_LEN = 257} ;
 	  char parent_class[FIELD_BUFFER_LEN] = {'\0'}, parent_name[FIELD_BUFFER_LEN] = {'\0'} ;
 	  char status[FIELD_BUFFER_LEN] = {'\0'} ;
-	  ZMapMapBlockStruct child_to_parent = {0, 0, 0, 0} ;
+	  ZMapMapBlockStruct child_to_parent =  { {0, 0} , {0, 0}, FALSE } ;
 	  enum {FIELD_NUM = 7} ;
 	  char *format_str = "SMAP %256[^:]:%256s%d%d%d%d%256s" ;
 	  int fields ;
 
 	  if ((fields = sscanf(reply_text, format_str, &parent_class[0], &parent_name[0],
-			       &child_to_parent.p1, &child_to_parent.p2,
-			       &child_to_parent.c1, &child_to_parent.c2,
+			       &child_to_parent.parent.x1, &child_to_parent.parent.x2,
+			       &child_to_parent.block.x1, &child_to_parent.block.x2,
 			       &status[0])) != FIELD_NUM)
 	    {
 	      setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
@@ -2102,6 +2167,8 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 
   /* We could add "status -code" later..... */
   command = "status -database" ;
+
+  info->request_as_columns = TRUE;
 
   acedb_request =  g_strdup_printf("%s", command) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,

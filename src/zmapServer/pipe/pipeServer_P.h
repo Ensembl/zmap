@@ -29,7 +29,7 @@
  *
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.11 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.12 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -39,7 +39,7 @@
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
 #define FILE_PROTOCOL_STR "GFF File"
 
-#define PIPE_MAX_ARGS	4	// extra args we add on to the query, including the program and terminating NULL
+#define PIPE_MAX_ARGS	6	// extra args we add on to the query, including the program and terminating NULL
 #define PIPE_ARG_ZMAP_START	"zmap_start"
 #define PIPE_ARG_ZMAP_END	"zmap_end"
 

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov 11 14:54 2010 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.17 2010-11-12 09:16:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.18 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -541,17 +541,13 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
 	feature_context = (ZMapFeatureContext)feature_any;
 	g_string_append_printf(dump_string_in_out,
-			       "Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n",
+			       "Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\n",
 			       g_quark_to_string(feature_context->unique_id),
 			       g_quark_to_string(feature_context->original_id),
 			       g_quark_to_string(feature_context->sequence_name),
 			       g_quark_to_string(feature_context->parent_name),
 			       feature_context->parent_span.x1,
-			       feature_context->parent_span.x2,
-			       feature_context->sequence_to_parent.p1,
-			       feature_context->sequence_to_parent.p2,
-			       feature_context->sequence_to_parent.c1,
-			       feature_context->sequence_to_parent.c2);
+			       feature_context->parent_span.x2);
       }
       break;
     case ZMAPFEATURE_STRUCT_ALIGN:
@@ -560,8 +556,10 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
 	feature_align = (ZMapFeatureAlignment)feature_any;
 	g_string_append_printf(dump_string_in_out,
-			       "\tAlignment:\t%s\n",
-			       g_quark_to_string(feature_align->unique_id)) ;
+			       "\tAlignment:\t%s\t%d\t%d\n",
+			       g_quark_to_string(feature_align->unique_id),
+                         feature_align->sequence_span.x1,
+                         feature_align->sequence_span.x2);
 
       }
       break;
@@ -570,12 +568,10 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 	ZMapFeatureBlock feature_block;
 	feature_block = (ZMapFeatureBlock)feature_any;
 	g_string_append_printf(dump_string_in_out,
-			       "\tBlock:\t%s\t%d\t%d\t%d\t%d\n",
+			       "\tBlock:\t%s\t%d\t%d\n",
 			       g_quark_to_string(feature_block->unique_id),
-			       feature_block->block_to_sequence.t1,
-			       feature_block->block_to_sequence.t2,
-			       feature_block->block_to_sequence.q1,
-			       feature_block->block_to_sequence.q2) ;
+			       feature_block->block_to_sequence.parent.x1,
+			       feature_block->block_to_sequence.parent.x2) ;
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:

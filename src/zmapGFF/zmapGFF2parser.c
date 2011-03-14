@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 24 09:46 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.129 2011-02-24 09:47:19 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.130 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -495,6 +495,41 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     {
+      int start,end;
+
+      start = parser->features_start;
+      end   = parser->features_end;
+
+      if(parser->clip_mode)
+      {
+            if(start < parser->clip_start)
+                  start = parser->clip_start;
+            if(end > parser->clip_end)
+                  end = parser->clip_end;
+      }
+
+#if MH17_NEED_ACTUAL_FEATURES_COORD_RANGE_FOR_EMPTY_FEATURESETS
+/* MH17: this appears to rebase the features to the start of the sequence span :-( */
+      if(!feature_block->block_to_sequence.block.x2)
+#endif
+      {
+            /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+            /* ideally chromosome coordinates would be better */
+
+            /* NOTE we need to know the actual data returned as we
+             *  mark empty featuresets as loaded over this range
+             */
+            feature_block->block_to_sequence.block.x1 = start;
+            feature_block->block_to_sequence.block.x2 = end;
+      }
+      if(!feature_block->block_to_sequence.parent.x2)
+      {
+            /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+            /* ideally chromosome coordinates would be better */
+            feature_block->block_to_sequence.parent.x1 = start;
+            feature_block->block_to_sequence.parent.x2 = end;
+      }
+
       /* Actually we should only need to test feature_sets here really as there shouldn't be any
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
@@ -581,7 +616,9 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
 {
   if (parser->state != ZMAPGFF_PARSE_ERROR)
-    parser->clip_mode = clip_mode ;
+  {
+      parser->clip_mode = clip_mode ;
+  }
 
   return ;
 }
@@ -841,13 +878,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		  parser->features_start = start ;
 		  parser->features_end = end ;
 		  parser->header_flags.done_sequence_region = TRUE ;
-
-		  /* If Clip start/end not set, they default to features start/end. */
-		  if (parser->clip_start == 0)
-		    {
-		      parser->clip_start = parser->features_start ;
-		      parser->clip_end = parser->features_end ;
-		    }
+//zMapLogWarning("get gff header: %d-%d",start,end);
 		}
 
 	    }
@@ -1100,6 +1131,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 		  if (end > parser->clip_end)
 		    end = parser->clip_end ;
 		}
+//zMapLogWarning("clip: %d %d %d (%d %d)",parser->clip_mode,start,end,parser->clip_start,parser->clip_end);
 	    }
 
 	  if (include_feature)
@@ -1281,12 +1313,22 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   /* If we don't have this feature_set yet, then make one. */
   if (!parser_feature_set)
     {
+      ZMapSpan span;
+
       parser_feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
 
       g_datalist_set_data_full(&(parser->feature_sets),
 			       feature_set_name, parser_feature_set, destroyFeatureArray) ;
 
       feature_set = parser_feature_set->feature_set = zMapFeatureSetCreate(feature_set_name , NULL) ;
+
+      /* record the region we are getting */
+      span = (ZMapSpan) g_new0(ZMapSpanStruct,1);
+      span->x1 = parser->features_start;
+      span->x2 = parser->features_end;
+      feature_set->loaded = g_list_append(NULL,span);
+
+//zMapLogWarning("gff span %s %d -> %d",feature_set_name,span->x1,span->x2);
 
       parser->src_feature_sets =
 	g_list_prepend(parser->src_feature_sets,GUINT_TO_POINTER(feature_set->unique_id));
@@ -1505,7 +1547,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    }
 
 
-	  /* Shouldn't we be getting phase from what's passed in ??????? actually we are not 
+	  /* Shouldn't we be getting phase from what's passed in ??????? actually we are not
 	   * recording phase in the right place...it's needs to be part of an exon.... */
 
 

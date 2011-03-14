@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Aug 17 08:56 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.108 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.109 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1239,6 +1239,10 @@ GHashTable *zMapStyleGetAllPredefined(void)
 
 
   /* GeneFinderFeatures */
+  /* due to the vagaries of ACEDB we only request GF features if
+   * we hand it a style which has a hard coded name
+   * despite the fact that we supply a different one in otter_styles.ini
+   */
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_GFF_NAME,
 			       ZMAP_FIXED_STYLE_GFF_NAME_TEXT);
   g_object_set(G_OBJECT(curr),
@@ -1273,7 +1277,12 @@ GHashTable *zMapStyleGetAllPredefined(void)
     char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
 
     g_object_set(G_OBJECT(curr),
-		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_TEXT,
+    /* MH17: NOTE style mode was _TEXT ans get passed all the way to draw_show_translation
+     * but the style is only used to define text colours and the text drawing and callbacks
+     * for cursor handling are hard coded -> I suspect an incomplete implemntation
+     * there is a #warning to this effect in draw_show_translation()
+     */
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_PEP_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,

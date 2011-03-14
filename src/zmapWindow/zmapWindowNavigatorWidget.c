@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,18 +24,17 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Feb 16 10:05 2010 (edgrif)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.15 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.16 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
 
 
 
@@ -51,25 +50,26 @@
 
 typedef struct _ZMapNavigatorClassDataStruct
 {
-  int width, height;
-  double text_height;
+  int width, height;          /* size of the widget in pixels */
+  double text_height;         /* in pixels */
   ZMapWindowNavigatorCallbackStruct callbacks;
   gpointer user_data;
-  double container_width, container_height;
+  double container_width, container_height;     /* size of the features in canvas coordinates */
   FooCanvasItem *top_bg, *bot_bg;
   GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
+  double start,end;
 } ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
 
-static void navCanvasSizeAllocateCB(GtkWidget     *allocatee, 
-                                    GtkAllocation *allocation, 
+static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
+                                    GtkAllocation *allocation,
                                     gpointer       user_data);
-static double getZoomFactor(GtkWidget *widget, double border, int size);
+static double getZoomFactor(double widget_height, double border, int size);
 static void fetchScrollCoords(ZMapNavigatorClassData class_data,
-                              double border, 
-                              double *x1, double *y1, 
+                              double border,
+                              double *x1, double *y1,
                               double *x2, double *y2);
-static gboolean getTextOnCanvasDimensions(FooCanvas *canvas, 
+static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
                                           double *width_out,
                                           double *height_out);
 static void destroyClassData(gpointer user_data);
@@ -187,7 +187,7 @@ void zMapWindowNavigatorPackDimensions(GtkWidget *widget, double *width, double 
   FooCanvas *canvas = NULL;
   FooCanvasGroup *root = NULL;
   double a, b, x, y;
-  
+
   if(FOO_IS_CANVAS(widget))
     {
       canvas = FOO_CANVAS(widget);
@@ -213,7 +213,13 @@ void zMapWindowNavigatorPackDimensions(GtkWidget *widget, double *width, double 
 
 /* Set the size in the class data. This is the size requested to be
  * filled in the FillWidget method, it might not get the full size. */
-void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y)
+/* MH17:
+ * i added span to this as  we need the start and end for the fetchScrollCoords()
+ * can add borders to the real data rather than re-basing this to 0 and not working
+ * at all on non 1-based coordinate systems.
+ * I didn't remove y just in case the mod doesn't work, can't work out how the code ever worked!
+ */
+void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y,double start,double end)
 {
   ZMapNavigatorClassData class_data = NULL;
   FooCanvas  *canvas = NULL;
@@ -223,9 +229,14 @@ void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y)
   class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
 
   zMapAssert(class_data);
-  
+
+#if MH17_DEBUG_MAV_FOOBAR
+printf("nav size request %f %f, %f %f\n",x,y,start,end);
+#endif
   class_data->container_width  = x;
   class_data->container_height = y;
+  class_data->start = start;
+  class_data->end = end;
 
   return ;
 }
@@ -234,7 +245,7 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
 {
   ZMapNavigatorClassData class_data = NULL;
   FooCanvas  *canvas = NULL;
-  double curr_pixels = 0.0, 
+  double curr_pixels = 0.0,
     target_pixels    = 0.0;
 
   canvas = FOO_CANVAS(widget);
@@ -244,12 +255,12 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   zMapAssert(class_data);
 
   curr_pixels   = canvas->pixels_per_unit_y;
-  target_pixels = getZoomFactor(GTK_WIDGET(canvas), class_data->text_height, NAVIGATOR_SIZE);
+  target_pixels = getZoomFactor(class_data->height, class_data->text_height, NAVIGATOR_SIZE);
 
   {
       double x1, x2, y1, y2, x3;
       double border = class_data->text_height / target_pixels;
-          
+
       if(curr_pixels != target_pixels)
         foo_canvas_set_pixels_per_unit_xy(canvas, 1.0, target_pixels);
 
@@ -276,6 +287,9 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
 			  NULL);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
 
+#if MH17_DEBUG_MAV_FOOBAR
+printf("fill widget %f %f, %f %f\n",y1,0.0,(double) NAVIGATOR_SIZE,y2);
+#endif
       zmapWindowNavigatorWidthChanged(widget, x1, x2);
   }
 
@@ -309,8 +323,8 @@ void zmapWindowNavigatorTextSize(GtkWidget *widget, double *x, double *y)
 }
 
 
-static void navCanvasSizeAllocateCB(GtkWidget     *allocatee, 
-                                    GtkAllocation *allocation, 
+static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
+                                    GtkAllocation *allocation,
                                     gpointer       user_data)
 {
   ZMapNavigatorClassData class_data = (ZMapNavigatorClassData)user_data;
@@ -318,7 +332,9 @@ static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
 
   new_width  = allocation->width;
   new_height = allocation->height;
-  
+#if MH17_DEBUG_NAV_FOOBAR
+print_foo("nav size 1");
+#endif
   if(new_height != class_data->height)
     {
       class_data->height = new_height;
@@ -327,21 +343,23 @@ static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
 
   class_data->width = new_width;
 
-  //printf("navCanvasSizeAllocateCB: width = %d, height = %d\n", new_width, new_height);
-
+#if MH17_DEBUG_NAV_FOOBAR
+  printf("navCanvasSizeAllocateCB: width = %d, height = %d\n", new_width, new_height);
+print_foo("nav size 2");
+#endif
   return ;
 }
 
-/* 
+/*
  * #define BORDER (12.0)
  * #define FIXED_HEIGHT 32000
  * zoom = getZoomFactor(widget, BORDER, FIXED_HEIGHT);
  */
-static double getZoomFactor(GtkWidget *widget, double border, int size)
+static double getZoomFactor(double widget_height, double border, int size)
 {
-  double zoom = 0.0, widget_height = 0.0, border_height = 0.0;
+  double zoom = 0.0, border_height = 0.0;
 
-  if((widget_height = GTK_WIDGET(widget)->allocation.height) > 0.0)
+  if(widget_height > 0.0)
     {
       border_height = border * 2.0;
       /* rearrangement of
@@ -360,8 +378,8 @@ static double getZoomFactor(GtkWidget *widget, double border, int size)
 }
 
 static void fetchScrollCoords(ZMapNavigatorClassData class_data,
-                              double border, 
-                              double *x1, double *y1, 
+                              double border,
+                              double *x1, double *y1,
                               double *x2, double *y2)
 {
   double border_x = 2.0;
@@ -369,7 +387,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
   double max_x, max_y, container_width, container_height;
 
   zMapAssert(x1 && x2 && y1 && y2);
-  
+
   max_x = 32000.0;             /* only canvas limit */
   max_y = (double)(NAVIGATOR_SIZE);
 
@@ -383,16 +401,23 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
       *x1 -= border_x;
       *x2 += (container_width > max_x ? max_x : container_width) + border_x;
     }
-  if(container_height > 0.0)
+
+  *y1 = class_data->start;
+  *y2 = class_data->end;
+//  if(container_height > 0.0)
     {
       *y1 -= border_y;
-      *y2 += (container_height > max_y ? max_y : container_height) + border_y;
+      *y2 += border_y;
+//      *y2 += (container_height > max_y ? max_y : container_height) + border_y;
     }
 
+#if MH17_DEBUG_MAV_FOOBAR
+printf("fetch scroll coords %f %f (%f %f)\n",*y1,*y2, container_height, border_y);
+#endif
   return ;
 }
 
-static gboolean getTextOnCanvasDimensions(FooCanvas *canvas, 
+static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
                                           double *width_out,
                                           double *height_out)
 {
@@ -419,7 +444,7 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
 
   */
 
-  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas), 
+  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
                                g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
                                &font, &font_desc))
     printf("Couldn't get fixed width font\n");
@@ -453,10 +478,10 @@ static void destroyClassData(gpointer user_data)
 {
   ZMapNavigatorClassData class_data = (ZMapNavigatorClassData)user_data;
 
-  class_data->width = 
+  class_data->width =
     class_data->height = 0;
-  class_data->text_height = 
-    class_data->container_width = 
+  class_data->text_height =
+    class_data->container_width =
     class_data->container_height = 0.0;
   class_data->callbacks.valueCB  = NULL;
   class_data->user_data = NULL;

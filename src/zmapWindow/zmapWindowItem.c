@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:26 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.143 2011-03-11 17:42:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.144 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -507,8 +507,8 @@ FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *
           dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE,
                                        feature_name,
                                        ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
-                                       block->block_to_sequence.q1,
-                                       block->block_to_sequence.q2,
+                                       block->block_to_sequence.block.x1,
+                                       block->block_to_sequence.block.x2,
                                        0,0);
           g_free(feature_name);
         }
@@ -1260,7 +1260,7 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-
+#if MH17_NOT_USED
 /* moves a feature to new coordinates */
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature, FooCanvasItem *item)
@@ -1289,7 +1289,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
     }
   return;
 }
-
+#endif
 
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  *
@@ -1315,7 +1315,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 	{
 	  double offset ;
 
-	  offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
+	  offset = (double)(block->block_to_sequence.block.x1 - 1) ; /* - 1 for 1 based coord system. */
 
 	  my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(block_container), &wx1, &wy1, &wx2, &wy2) ;
 
@@ -2249,7 +2249,7 @@ static void fill_workaround_struct(ZMapWindowContainerGroup container,
 		workaround->block = (FooCanvasGroup *)container;
 		block = zmapWindowItemGetFeatureBlock(container);
 
-		offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
+		offset = (double)(block->block_to_sequence.block.x1 - 1) ; /* - 1 for 1 based coord system. */
 
 		my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(cont_backgrd),
 						   &(workaround->wx1), &(workaround->wy1),

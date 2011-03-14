@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 10 16:35 2011 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.77 2011-03-10 17:01:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.78 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,7 +67,109 @@ typedef struct
 
 /* Some simple coord calculation routines, if these prove too expensive they
  * can be replaced with macros. */
+/* MH17: isn't the above comment sweet considering we use GObjects for everything */
 
+
+#if 1
+/* MH17 reworking coordinate functions
+ *
+ * NOTE we assume window->min_coord,max_coord are vliad and there is only one block
+ * with the implemnention as of Jan/Feb2011 this is true and
+ * all features are displayed at absolute not block relative coordinates
+ */
+
+/* Zmap internal seq coord to canvas coord;
+ * seq is chromosome based from otterlace but could be 1-based eg w/ wormbase
+ */
+int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
+{
+      /* min_coord is the start of the sequence even if revcomp'ed
+       * window->sequence->start is fwd strand
+       */
+      coord = coord - window->min_coord + 1;
+      if(window->revcomped_features)
+            coord -= window->max_coord - window->min_coord + 2;
+
+      return(coord);
+}
+
+void zmapWindowCoordPairToDisplay(ZMapWindow window,
+                          int start_in, int end_in,
+                          int *display_start_out, int *display_end_out)
+{
+  int start, end ;
+
+  start = zmapWindowCoordToDisplay(window, start_in) ;
+  end = zmapWindowCoordToDisplay(window, end_in) ;
+
+  /* Note that the start/ends get swopped if we are reversed complemented and
+   * display forwards coords so their order fits the "forwards" display. */
+  if (window->revcomped_features && window->display_forward_coords)
+    ZMAP_SWAP_TYPE(int, start, end) ;
+
+  *display_start_out = start ;
+  *display_end_out = end ;
+
+  return ;
+}
+
+
+/* start and end in current fwd strand coordinates (revcomped is -ve) */
+/* ffunction written due to scope issues */
+gboolean zmapWindowGetCurrentSpan(ZMapWindow window, int *start, int *end)
+{
+      zmapWindowCoordPairToDisplay(window,window->min_coord,window->max_coord,start,end);
+      return(TRUE);
+}
+
+int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord)
+{
+  int new_coord = coord;
+  ZMapSpan span;
+
+  /* new coord is the 'current forward strand' sequence coordinate */
+
+  if(window->revcomped_features)
+  {
+      span = &window->feature_context->parent_span;
+      new_coord -= span->x2 - span->x1 + 1;
+  }
+
+  return new_coord ;
+}
+
+
+int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
+{
+#warning this needs testing/fixing: called from -> zmapWindowDNA.c/searchCB()
+/* turns out it's the converse of zmapWindowCoordPairToDisplay()
+ * coords get converted to display then converted back to sequence
+ * better to fix in the caller by not calling this!
+ */
+  if(window->revcomped_features)
+      coord += window->max_coord - window->min_coord + 2;
+  coord = coord + window->min_coord - 1;
+
+  return coord ;
+}
+
+
+/* Use if you have no window.... */
+/* ZMap seq coord to display, is not always 1 based, start is the smallest seq coord in the range*/
+int zmapWindowCoordFromOriginRaw(int start, int end, int coord, gboolean revcomped)
+{
+  int new_coord ;
+
+  new_coord = coord - (start - 1) ;
+
+  if(revcomped)
+      new_coord -= end - start + 1;
+
+  return new_coord ;
+}
+
+
+#else
 
 /* Transforming coordinates for a revcomp'd sequence:
  *
@@ -92,6 +194,7 @@ int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 }
 
 
+
 void zmapWindowCoordPairToDisplay(ZMapWindow window,
 				  int start_in, int end_in,
 				  int *display_start_out, int *display_end_out)
@@ -111,6 +214,7 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 
   return ;
 }
+
 
 
 
@@ -140,6 +244,7 @@ int zmapWindowCoordFromOriginRaw(int origin, int coord)
   return new_coord ;
 }
 
+#endif
 
 ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in)
 {
@@ -314,34 +419,6 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 
 
 
-/* Get the marked region of a window in user-friendly coords.
- *
- * returns boolean corresponding to whether mark is set TRUE = set, FALSE = unset
- */
-gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
-{
-  gboolean result = FALSE ;
-
-  if (window->mark && zmapWindowMarkIsSet(window->mark))
-    {
-      double wx1, wx2, wy1, wy2 ;
-
-      zmapWindowMarkGetWorldRange(window->mark, &wx1, &wy1, &wx2, &wy2) ;
-
-      *start = (int)(wy1) ;
-      *end = (int)(wy2) ;
-
-      if (window->display_forward_coords)
-	{
-	  zmapWindowCoordPairToDisplay(window, *start, *end, start, end) ;
-	}
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
 
 /* Get scroll region top/bottom. */
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out)
@@ -380,42 +457,6 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_ou
 
 
 
-
-
-gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
-					     ZMapFeatureBlock block,
-					     int *start, int *end)
-{
-  gboolean result = FALSE ;
-
-  result = zmapWindowMarkGetSequenceRange(window->mark, start, end);
-
-  if(result && window->revcomped_features && start && end)
-    {
-      int seq_end, x, y, z;
-
-      /* Need to reverse complement the mark here... */
-      seq_end = block->block_to_sequence.q2;
-      x = *start;
-      y = *end;
-
-      /* swop */
-      z = x;
-      x = y;
-      y = z;
-
-      /* invert */
-      x = seq_end - x + 1;
-
-      /* invert */
-      y = seq_end - y + 1;
-
-      *start = x;
-      *end   = y;
-    }
-
-  return result ;
-}
 
 
 
@@ -534,10 +575,8 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
                   column->column_id =
                   column->style_id = set_id;
                   column->column_desc = name;
-#if MH17_BUG_FIX
-// commented out for bug fix CVS update, must put back!!
+
                   column->featuresets = g_list_append(column->featuresets,GUINT_TO_POINTER(set_id));
-#endif
 
                   g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
             }
@@ -713,127 +752,6 @@ void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text)
   return ;
 }
 
-void zmapWindowToggleMark(ZMapWindow window, guint keyval)
-{
-  FooCanvasItem *focus_item ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowMarkPrint(window, "Starting mark toggle") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  if (zmapWindowMarkIsSet(window->mark))
-    {
-      zMapWindowStateRecord(window);
-      /* Unmark an item. */
-      zmapWindowMarkReset(window->mark) ;
-    }
-  else
-    {
-      zMapWindowStateRecord(window);
-      /* If there's a focus item we mark that, otherwise we check if the user set
-       * a rubber band area and use that, otherwise we mark to the screen area. */
-      if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
-	{
-	  ZMapFeature feature ;
-
-	  feature = zMapWindowCanvasItemGetFeature(focus_item);
-	  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-	  /* If user presses 'M' we mark "whole feature", e.g. whole transcript,
-	   * all HSP's, otherwise we mark just the highlighted ones. */
-	  if (keyval == GDK_M)
-	    {
-	      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-		{
-		  GList *list = NULL;
-		  ZMapStrand set_strand ;
-		  ZMapFrame set_frame ;
-		  gboolean result ;
-		  double rootx1, rooty1, rootx2, rooty2 ;
-
-		  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-		  zMapAssert(result) ;
-
-		  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
-							 zMapFeatureStrand2Str(set_strand),
-							 zMapFeatureFrame2Str(set_frame),
-							 feature) ;
-
-		  zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
-
-		  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-
-		  g_list_free(list) ;
-		}
-	      else
-		{
-		  zmapWindowMarkSetItem(window->mark, focus_item) ;
-		}
-	    }
-	  else
-	    {
-	      GList *focus_items ;
-	      double rootx1, rooty1, rootx2, rooty2 ;
-
-	      focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
-
-	      if(g_list_length(focus_items) == 1)
-		{
-		  zmapWindowMarkSetItem(window->mark, focus_items->data);
-		}
-	      else
-		{
-		  zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
-
-		  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-		}
-
-	      g_list_free(focus_items) ;
-	    }
-	}
-      else if (window->rubberband)
-	{
-	  double rootx1, rootx2, rooty1, rooty2 ;
-
-	  my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
-
-	  zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
-	  /* We ignore any failure, perhaps we should warn the user ? If we colour
-	   * the region it will be ok though.... */
-	  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-	}
-      else
-	{
-	  /* If there is no feature selected and no rubberband set then mark to the
-	   * visible screen. */
-	  double x1, x2, y1, y2;
-	  double margin ;
-
-	  zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2) ;
-
-	  zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
-
-	  /* Make the mark visible to the user by making its extent slightly smaller
-	   * than the window. */
-	  margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
-	  y1 += margin ;
-	  y2 -= margin ;
-	  /* We only ever want the mark as wide as the scroll region */
-	  zmapWindowGetScrollRegion(window, NULL, NULL, &x2, NULL);
-
-	  zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
-	}
-    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowMarkPrint(window, "Ending mark toggle") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
 
 static void window_cancel_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
 {

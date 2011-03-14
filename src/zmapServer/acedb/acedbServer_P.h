@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,11 +23,11 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  * HISTORY:
  * Last edited: Aug 28 09:47 2009 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.25 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.26 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -70,7 +70,7 @@ typedef struct _AcedbServerStruct
   int port ;
 
   /* Needed so we can return err msgs for aceconn errors. */
-  AceConnStatus last_err_status ;			    
+  AceConnStatus last_err_status ;
   char *last_err_msg ;
 
   char *version_str ;					    /* For checking server is at right level. */
@@ -91,6 +91,8 @@ typedef struct _AcedbServerStruct
 							       (NULL if acedb_styles == FALSE). */
 
   ZMapFeatureContext current_context ;
+
+  gint zmap_start,zmap_end;                     /* request coordinates for our one block */
 
 } AcedbServerStruct, *AcedbServer ;
 

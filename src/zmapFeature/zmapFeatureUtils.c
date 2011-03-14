@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 25 16:25 2010 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.77 2010-10-26 13:39:07 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.78 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,6 @@ typedef struct
 } SimpleParent2ChildDataStruct, *SimpleParent2ChildData;
 
 static ZMapFrame feature_frame(ZMapFeature feature, int start_coord);
-static int feature_block_frame_offset(ZMapFeature feature);
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
@@ -686,9 +685,24 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {
+      GList *list = NULL;
+#if 0
+these get corrupted somewhere and only cater for unique id-s (doh!)
+refer to zmapWindowColConfig/column_is_loaded_in_range()
+
+      ZMapFeatureColumn column;
+
+      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
+      if(column)
+            list = column->featuresets;
+#else
+/*
+This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
+Could re-instate the column->featuresets list and allocate and uppercase it if !unique_id
+*/
       ZMapFeatureSetDesc fset;
-      GList *iter,*list = NULL;
       gpointer key;
+      GList *iter;
 
       zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
       while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
@@ -698,14 +712,17 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
                   list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
             }
       }
+#endif
       return list;
 }
 
 
 
+
 /* For blocks within alignments other than the master alignment, it is not possible to simply
  * use the x1,x2 positions in the feature struct as these are the positions in the original
- * feature. We need to know the coordinates in the master alignment. */
+ * feature. We need to know the coordinates in the master alignment. (ie as in the parent span) */
+
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2)
 {
   double master_x1 = 0.0, master_x2 = 0.0 ;
@@ -716,7 +733,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
   block = (ZMapFeatureBlock)feature->parent->parent ;
 
-  feature_offset = block->block_to_sequence.t1 - block->block_to_sequence.q1 ;
+  feature_offset = block->block_to_sequence.parent.x1 - block->block_to_sequence.block.x1;
 
   master_x1 = feature->x1 + feature_offset ;
   master_x2 = feature->x2 + feature_offset ;
@@ -726,6 +743,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
   return ;
 }
+
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out)
 {
@@ -791,9 +809,9 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
       else
 	{
 	  SimpleParent2ChildDataStruct parent_data = { NULL };
-	  ZMapMapBlockStruct map_data = { 0 };
-	  map_data.p1 = w1;
-	  map_data.p2 = w2;
+	  ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE };
+	  map_data.parent.x1 = w1;
+	  map_data.parent.x2 = w2;
 
 	  parent_data.map         = &map_data;
 	  parent_data.limit_start = feature->x1;
@@ -803,9 +821,9 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
 	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
 					   &parent_data);
 	  if(t1)
-	    *t1 = map_data.c1;
+	    *t1 = map_data.block.x1;
 	  if(t2)
-	    *t2 = map_data.c2;
+	    *t2 = map_data.block.x2;
 
 	  is_transcript = TRUE;
 	}
@@ -910,10 +928,10 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
       else
 	{
 	  SimpleParent2ChildDataStruct exon_cds_data = { NULL };
-	  ZMapMapBlockStruct map_data = { 0 };
+	  ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE } ;
 
-	  map_data.p1 = exon1;
-	  map_data.p2 = exon2;
+	  map_data.parent.x1 = exon1;
+	  map_data.parent.x2 = exon2;
 
 	  exon_cds_data.map         = &map_data;
 	  exon_cds_data.limit_start = cds_start;
@@ -923,9 +941,9 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
 					   &exon_cds_data);
 	  if (cds1)
-	    *cds1 = map_data.c1;
+	    *cds1 = map_data.block.x1;
 	  if (cds2)
-	    *cds2 = map_data.c2;
+	    *cds2 = map_data.block.x2;
 
 	  cds_exon = TRUE;
 	}
@@ -1037,74 +1055,25 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
  * Using the offset of 1 is almost certainly wrong for the reverse strand and
  * possibly wrong for forward.  Need to think about this one ;)
  *  */
+
 static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
 {
-  ZMapFrame frame = ZMAPFRAME_NONE;
-  int offset, start;
+  ZMapFrame frame;
+  int offset;
+  ZMapFeatureBlock block;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  zMapAssert(feature->parent && feature->parent->parent);
 
-  offset = feature_block_frame_offset(feature);
-  start  = ((int)(start_coord - offset) % 3) + ZMAPFRAME_0 ;
+  block = (ZMapFeatureBlock)(feature->parent->parent);
 
-  switch (start)
-    {
-    case ZMAPFRAME_0:
-      frame = ZMAPFRAME_0 ;
-      break ;
-    case ZMAPFRAME_1:
-      frame = ZMAPFRAME_1 ;
-      break ;
-    case ZMAPFRAME_2:
-      frame = ZMAPFRAME_2 ;
-      break ;
-    default:
-      frame = ZMAPFRAME_NONE ;
-      break ;
-    }
+  offset = block->block_to_sequence.parent.x1;   /* start of block in sequence/parent */
+
+  frame  = (ZMapFrame) ((start_coord + offset) % 3) + ZMAPFRAME_0 ;
 
   return frame;
 }
 
-/* Returns the start of the block corrected according to the frame the
- * block is offset by in it's parent */
-static int feature_block_frame_offset(ZMapFeature feature)
-{
-  ZMapFeatureBlock block;
-  int frame = 0;
-  int offset;
-
-  zMapAssert(feature->parent && feature->parent->parent);
-
-  block  = (ZMapFeatureBlock)(feature->parent->parent);
-  offset = block->block_to_sequence.q1; /* start of block */
-
-  /* This should be 0, 1 or 2 */
-  if(block->block_to_sequence.t1 >= block->block_to_sequence.q1)
-    frame = (block->block_to_sequence.t1 - block->block_to_sequence.q1) % 3;
-  else
-    frame = (block->block_to_sequence.q1 - block->block_to_sequence.t1) % 3;
-
-  frame += ZMAPFRAME_0;         /* translate to the enums. */
-
-  switch(frame)
-    {
-    case ZMAPFRAME_0:
-      break;
-    case ZMAPFRAME_1:
-      offset -= 1;
-      break;
-    case ZMAPFRAME_2:
-      offset -= 2;
-      break;
-    case ZMAPFRAME_NONE:
-    default:
-      zMapAssertNotReached();
-      break;
-    }
-
-  return offset;
-}
 
 static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 {
@@ -1166,20 +1135,20 @@ static void map_parent2child(gpointer exon_data, gpointer user_data)
   if(!(p2c_data->limit_start > exon_span->x2 ||
        p2c_data->limit_end   < exon_span->x1))
     {
-      if(exon_span->x1 <= p2c_data->map->p1 &&
-	 exon_span->x2 >= p2c_data->map->p1)
+      if(exon_span->x1 <= p2c_data->map->parent.x1 &&
+	 exon_span->x2 >= p2c_data->map->parent.x1)
 	{
 	  /* update the c1 coord*/
-	  p2c_data->map->c1  = (p2c_data->map->p1 - p2c_data->limit_start + 1);
-	  p2c_data->map->c1 += p2c_data->counter;
+	  p2c_data->map->block.x1  = (p2c_data->map->parent.x1 - p2c_data->limit_start + 1);
+	  p2c_data->map->block.x1 += p2c_data->counter;
 	}
 
-      if(exon_span->x1 <= p2c_data->map->p2 &&
-	 exon_span->x2 >= p2c_data->map->p2)
+      if(exon_span->x1 <= p2c_data->map->parent.x2 &&
+	 exon_span->x2 >= p2c_data->map->parent.x2)
 	{
 	  /* update the c2 coord */
-	  p2c_data->map->c2  = (p2c_data->map->p2 - p2c_data->limit_start + 1);
-	  p2c_data->map->c2 += p2c_data->counter;
+	  p2c_data->map->block.x2  = (p2c_data->map->parent.x2 - p2c_data->limit_start + 1);
+	  p2c_data->map->block.x2 += p2c_data->counter;
 	}
 
       p2c_data->counter += (exon_span->x2 - exon_span->x1 + 1);

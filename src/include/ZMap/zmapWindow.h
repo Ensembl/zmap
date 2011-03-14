@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 11 17:37 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.122 2011-03-11 17:38:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.123 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -123,7 +123,7 @@ typedef struct
 
   char *secondary_text ;				    /* Simple string description. */
 
-  
+
 
   /* For Xremote XML actions/events. */
   ZMapXRemoteSendCommandError remote_result ;
@@ -259,9 +259,9 @@ typedef struct _ZMapWindowCallbacksStruct
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
-                            char *sequence, void *app_data,
+                            ZMapFeatureSequenceMap sequence, void *app_data,
                             GList *feature_set_names) ;
-ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
+ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
 			  void *app_data, ZMapWindow old,
 			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
 			  ZMapWindowLockType window_locking) ;
@@ -277,15 +277,7 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-#if MH17_NO_STYLE_COPY
-			   GHashTable *all_styles, GHashTable *new_styles,
-			   GHashTable *new_featuresets_2_stylelist,
-                     GHashTable *new_featureset_2_column,
-                     GHashTable *new_source_2_sourcedata,
-                     GHashTable *new_columns,
-#else
                      ZMapFeatureContextMap context_map,
-#endif
                      GList *masked) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
@@ -313,6 +305,7 @@ void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 void zmapWindowCoordPairToDisplay(ZMapWindow window,
 				  int start_in, int end_in,
 				  int *display_start_out, int *display_end_out) ;
+gboolean zmapWindowGetCurrentSpan(ZMapWindow window,int *start,int *end);
 
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) ;

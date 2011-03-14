@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 27 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.42 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.43 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -851,6 +851,8 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 
   if(container_set->sorted == FALSE)
     {
+zMapStartTimer("Featureset Sort","");
+
       if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
 	{
 	  GCompareFunc compare_func;
@@ -865,6 +867,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 	  zMap_foo_canvas_sort_items(features_group, compare_func);
 	}
 
+zMapStopTimer("Featureset Sort","");
       container_set->sorted = TRUE;
     }
 

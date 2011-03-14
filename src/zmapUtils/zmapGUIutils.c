@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 10 15:45 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.60 2011-02-10 16:09:11 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.61 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1012,6 +1012,7 @@ void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
 
   return ;
 }
+
 
 
 

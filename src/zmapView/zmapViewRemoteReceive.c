@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar 10 16:27 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.62 2011-03-10 17:00:18 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.63 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapXML.h>
 #include <zmapView_P.h>
+#include <ZMap/zmapConfigStanzaStructs.h>
 
 #define VIEW_POST_EXECUTE_DATA "xremote_post_execute_data"
 
@@ -1122,6 +1123,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 		      block = zMapFeatureBlockCreate(block_seq,
 						     ref_start, ref_end, ref_strand,
 						     non_start, non_end, non_strand);
+zMapLogWarning("view remote create block %d %d",ref_start,ref_end);
 		    }
 		  else
 		    {
@@ -1923,12 +1925,12 @@ static void loadFeatures(ZMapView view, RequestData input_data, ResponseData out
     }
   else
     {
-      start = input_data->block->features_start ;
-      end = input_data->block->features_end ;
+      start = input_data->block->block_to_sequence.block.x1 ;
+      end = input_data->block->block_to_sequence.block.x2 ;
     }
 
   if (output_data->code == ZMAPXREMOTE_OK)
-    zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, start, end) ;
+    zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, start, end, SOURCE_GROUP_DELAYED, TRUE) ;
 
   return ;
 }
@@ -1948,12 +1950,13 @@ static void getFeatureNames(ZMapView view, RequestData input_data, ResponseData 
   window = view_window->window ;
 
 
-  if (input_data->start < input_data->block->features_start || input_data->end > input_data->block->features_end)
+  if (input_data->start < input_data->block->block_to_sequence.block.x2 || input_data->end > input_data->block->block_to_sequence.block.x2)
     {
       g_string_append_printf(output_data->messages,
 			     "Requested coords (%d, %d) are outside of block coords (%d, %d).",
 			     input_data->start, input_data->end,
-			     input_data->block->features_start, input_data->block->features_end) ;
+			     input_data->block->block_to_sequence.block.x1,
+                       input_data->block->block_to_sequence.block.x2) ;
       output_data->code = ZMAPXREMOTE_BADREQUEST;
     }
   else

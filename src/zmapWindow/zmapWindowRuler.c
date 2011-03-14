@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 21 14:36 2008 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.15 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.16 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,13 +73,14 @@ typedef struct _ZMapWindowRulerCanvasStruct
   PangoFontDescription *font_desc;
   int font_width;
 
-  int origin ;
+  gboolean revcomped;
+  int seq_start,seq_end;
 
   struct
   {
     double y1, y2;
-    double origin;
     double pixels_per_unit_y;
+    gboolean revcomped;
   }last_draw_coords;
 
   ZMapWindowRulerCanvasCallbackList callbacks; /* The callbacks we need to call sensible window functions... */
@@ -101,12 +102,13 @@ typedef struct _ZMapScaleBarStruct
 
   int start;
   int end;
-  double top;
-  double bottom;
+  int seq_start;
+  int seq_end;
 
-  int origin ;
+  int offset;           /* where to display rebased coordinates */
 
-  guint display_forward_coords : 1;					    /* Has a coord display origin been set. */
+  gboolean display_forward_coords;	/* Has a coord display origin been set. */
+  gboolean revcomped;
 } ZMapScaleBarStruct, *ZMapScaleBar;
 
 typedef enum
@@ -117,21 +119,18 @@ typedef enum
   } ZMapScaleBarGroupType;
 
 static gboolean initialiseScale(ZMapScaleBar ruler_out,
-                                double start, double end, 
+                                double start, double end,
+                                int seq_start, int seq_end,
                                 double zoom, double line,
-				gboolean display_forward_coords, int origin,
+				gboolean display_forward_coords, gboolean revcomped,
                                 double projection_factor);
-static void drawScaleBar(ZMapScaleBar scaleBar, 
-                         FooCanvasGroup *group, 
+static void drawScaleBar(ZMapScaleBar scaleBar,
+                         FooCanvasGroup *group,
                          PangoFontDescription *font,
                          gboolean text_left);
-static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
-                                           PangoFontDescription *font,
-                                           double start, 
-                                           double end,
-                                           double height,
-                                           gboolean text_left,
-					   gboolean display_forward_coords, int origin);
+static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
+                                           double start,
+                                           double end);
 
 static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
@@ -176,7 +175,7 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas ruler,
 
   zmapWindowRulerCanvasSetVAdjustment(ruler, vadjustment);
 
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW( scrolled ), 
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW( scrolled ),
                                  GTK_POLICY_ALWAYS, GTK_POLICY_NEVER);
 
   gtk_widget_set_sensitive(GTK_SCROLLED_WINDOW(scrolled)->hscrollbar, TRUE);
@@ -192,17 +191,17 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas ruler,
     (*(ruler->callbacks->paneResize))(&(ruler->default_position), ruler->callbacks->user_data);
 #endif
 
-  g_object_connect(G_OBJECT(paned), 
+  g_object_connect(G_OBJECT(paned),
                    "signal::notify::position", G_CALLBACK(paneNotifyPositionCB), (gpointer)ruler,
                    NULL);
 
-  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(paned), 
+  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(paned),
                                g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
                                &(ruler->font), &(ruler->font_desc)))
     printf("Couldn't get fixed width font\n");
   else
     zMapGUIGetFontWidth(ruler->font, &(ruler->font_width));
-  
+
 
   return ;
 }
@@ -216,10 +215,10 @@ void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas ruler)
     g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
 
   /* Reconnect the maximising one... */
-  ruler->visibilityHandlerCB = 
+  ruler->visibilityHandlerCB =
     g_signal_connect(G_OBJECT(ruler->canvas),
-                     "visibility-notify-event", 
-                     G_CALLBACK(rulerMaxVisibilityHandlerCB), 
+                     "visibility-notify-event",
+                     G_CALLBACK(rulerMaxVisibilityHandlerCB),
                      (gpointer)ruler);
 
   /* Now open it, which will result in the above getting called... */
@@ -234,11 +233,11 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas ruler, double y1, doubl
 {
   double x2, max_x2,
     ix1 = 0.0,
-    iy1 = y1, 
+    iy1 = y1,
     iy2 = y2;
 
   if(ruler->scaleParent)
-    { 
+    {
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(ruler->scaleParent),
                                  NULL, NULL, &max_x2, NULL);
       if(iy1 == iy2 && iy1 == ix1)
@@ -247,7 +246,7 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas ruler, double y1, doubl
       else
         foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
                                      NULL, NULL, &x2, NULL);
-#ifdef VERBOSE_1        
+#ifdef VERBOSE_1
       printf("rulerCanvasMaximise: %f %f - %f %f %f %f\n", x2, max_x2, ix1, x2, iy1, iy2);
 #endif /* VERBOSE_1 */
       foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas),
@@ -255,7 +254,7 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas ruler, double y1, doubl
 
       if(max_x2 > 0.0)
         {
-          ruler->default_position = max_x2; 
+          ruler->default_position = max_x2;
 
           if(ruler->callbacks->paneResize &&
              ruler->callbacks->user_data)
@@ -278,8 +277,9 @@ gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, do
   gboolean drawn = FALSE;
   zMapAssert(ruler && ruler->canvas);
 
-  if(force || ruler->last_draw_coords.y1 != start || ruler->last_draw_coords.y2 != end || 
-     (ruler->display_forward_coords && ruler->last_draw_coords.origin != ruler->origin) ||
+  if(force || ruler->last_draw_coords.y1 != start || ruler->last_draw_coords.y2 != end ||
+     (ruler->last_draw_coords.revcomped != ruler->revcomped) ||
+//     (ruler->display_forward_coords && ruler->last_draw_coords.origin != ruler->origin) ||
      (ruler->last_draw_coords.pixels_per_unit_y != ruler->canvas->pixels_per_unit_y))
     {
       /* We need to remove the current item */
@@ -289,16 +289,9 @@ gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, do
 	  ruler->scaleParent = ruler->horizon = NULL;
 	}
 
-      ruler->scaleParent = rulerCanvasDrawScale(ruler->canvas, 
-						ruler->font_desc,
-						start,
-						end,
-						ruler->line_height,
-						ruler->text_left,
-						ruler->display_forward_coords, 
-						ruler->origin);
-      
-      /* We either need to do this check or 
+      ruler->scaleParent = rulerCanvasDrawScale(ruler, start, end);
+
+      /* We either need to do this check or
        * double test = 0.0;
        * foo_canvas_item_get_bounds((FOO_CANVAS_ITEM(ruler->scaleParent)), NULL, NULL, &test, NULL);
        * if(test == 0.0)
@@ -309,13 +302,13 @@ gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, do
 	  g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
 	  ruler->visibilityHandlerCB = 0;
 	}
-      
+
       if(ruler->visibilityHandlerCB == 0 &&
 	 !((FOO_CANVAS_ITEM(ruler->scaleParent))->object.flags & (FOO_CANVAS_ITEM_REALIZED | FOO_CANVAS_ITEM_MAPPED)))
 	{
 	  ruler->visibilityHandlerCB = g_signal_connect(G_OBJECT(ruler->canvas),
-							"visibility-notify-event", 
-							G_CALLBACK(rulerVisibilityHandlerCB), 
+							"visibility-notify-event",
+							G_CALLBACK(rulerVisibilityHandlerCB),
 							(gpointer)ruler);
 	}
       drawn = TRUE;
@@ -323,8 +316,8 @@ gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, do
 
   ruler->last_draw_coords.y1 = start;
   ruler->last_draw_coords.y2 = end;
-  ruler->last_draw_coords.origin = ruler->origin;
   ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
+  ruler->last_draw_coords.revcomped = ruler->revcomped;
 
   return drawn;
 }
@@ -337,15 +330,28 @@ void zmapWindowRulerCanvasZoom(ZMapWindowRulerCanvas ruler, double x, double y)
   return ;
 }
 
-void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas ruler, int origin)
+
+
+void zmapWindowRulerCanvasSetRevComped(ZMapWindowRulerCanvas ruler, gboolean revcomped)
 {
   zMapAssert(ruler) ;
 
   ruler->display_forward_coords = TRUE ;
-  ruler->origin = origin ;
+  ruler->revcomped = revcomped;
 
   return ;
 }
+
+
+/* set seq start, end to handle high zoom level with non 1-based first display coord */
+void zmapWindowRulerCanvasSetSpan(ZMapWindowRulerCanvas ruler, int start,int end)
+{
+  zMapAssert(ruler) ;
+
+  ruler->seq_start = start;
+  ruler->seq_end = end;
+}
+
 
 
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas ruler, GtkAdjustment *vadjustment)
@@ -414,7 +420,7 @@ void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas ruler)
   return ;
 }
 
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double origin, double start, double end)
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped, double start, double end)
 {
   FooCanvas *canvas = NULL;
   ZMapScaleBarStruct scaleBar = {0};
@@ -428,7 +434,7 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double 
 
   zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
 
-  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas), 
+  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
                                g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
                                &font, &font_desc))
     printf("Couldn't get fixed width font\n");
@@ -437,29 +443,29 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double 
       FooCanvasItem *item ;
       PangoLayout *playout;
       int iwidth = -1, iheight = -1;
-      
+
       item = foo_canvas_item_new(parent,
                                  FOO_TYPE_CANVAS_TEXT,
-                                 "x",         0.0, 
-                                 "y",         0.0, 
+                                 "x",         0.0,
+                                 "y",         0.0,
                                  "text",      "X",
                                  "font_desc", font_desc,
                                  NULL);
       playout = FOO_CANVAS_TEXT(item)->layout;
-      
+
       pango_layout_get_pixel_size( playout , &iwidth, &iheight );
-      
+
       font_width  = (double)iwidth;
       line_height = (double)iheight;
-      
+
       gtk_object_destroy(GTK_OBJECT(item));
     }
 
   //line_height      = line_height / zoom_factor;
 
-  if(initialiseScale(&scaleBar, start, end, zoom_factor, line_height, TRUE, origin, project_at))
+  if(initialiseScale(&scaleBar, start, end, (int) start, (int) end, zoom_factor, line_height, TRUE, revcomped, project_at))
     drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(parent), font_desc, TRUE);
-  
+
 
   return ;
 }
@@ -480,39 +486,39 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
     cancel = TRUE;
 
   /* Reduce the processing this needs to do if we're frozen.  I can't
-   * get g_object_freeze_notify(G_OBJECT(pane)) to work... 
+   * get g_object_freeze_notify(G_OBJECT(pane)) to work...
    */
   if(cancel)
     cancel = !ruler->freeze;
 
   if(cancel)
     {
-      int position, 
+      int position,
         max = ruler->default_position;
       double x2 = 0.0;
 
-      foo_canvas_item_get_bounds(scale, 
+      foo_canvas_item_get_bounds(scale,
                                  NULL, NULL, &x2, NULL);
       /* get bounds returns 0.0 if item is not mapped.
        * This happens when handle position == 0. */
       if(x2 != 0.0)
         max = (int)x2;
-       
+
       g_object_get(G_OBJECT(pane),
                    "position", &position,
                    NULL);
 
       if(position == max)
         goto leave;
-      else if(position > max && 
-              ruler->callbacks->paneResize && 
+      else if(position > max &&
+              ruler->callbacks->paneResize &&
               ruler->callbacks->user_data)
         (*(ruler->callbacks->paneResize))(&max, ruler->callbacks->user_data);
       else if(position == 0 && ruler->visibilityHandlerCB == 0)
-        ruler->visibilityHandlerCB = 
+        ruler->visibilityHandlerCB =
           g_signal_connect(G_OBJECT(ruler->canvas),
-                           "visibility-notify-event", 
-                           G_CALLBACK(rulerVisibilityHandlerCB), 
+                           "visibility-notify-event",
+                           G_CALLBACK(rulerVisibilityHandlerCB),
                            (gpointer)ruler);
     }
 
@@ -528,7 +534,7 @@ static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right)
   double x2 = 0.0;
 
   my_foo_canvas_item_goto(FOO_CANVAS_ITEM(left), &x2, NULL);
-  
+
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(left),
                              NULL, NULL, &x2, NULL);
   my_foo_canvas_item_goto(FOO_CANVAS_ITEM(right), &x2, NULL);
@@ -539,7 +545,7 @@ static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right)
 static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
   ZMapWindowRulerCanvas ruler = (ZMapWindowRulerCanvas)user_data;
-  gboolean handled  = FALSE; 
+  gboolean handled  = FALSE;
 
 #ifdef VERBOSE_1
   printf("rulerVisibilityHandlerCB: enter\n");
@@ -612,29 +618,26 @@ static void thaw_notify(ZMapWindowRulerCanvas ruler)
 
 
 /* =================================================== */
-static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
-                                           PangoFontDescription *font,
-                                           double start, 
-                                           double end,
-                                           double height,
-                                           gboolean text_left,
-					   gboolean display_forward_coords, int origin)
+static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
+                                           double start,
+                                           double end)
 {
   FooCanvasItem *group = NULL ;
   ZMapScaleBarStruct scaleBar = { 0 };
   double zoom_factor = 0.0;
+  double height;
 
-  group = foo_canvas_item_new(foo_canvas_root(canvas),
+  group = foo_canvas_item_new(foo_canvas_root(ruler->canvas),
 			      foo_canvas_group_get_type(),
 			      "x", 0.0,
 			      "y", 0.0,
 			      NULL) ;
 
-  zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
-  height      = height / zoom_factor;
+  zoom_factor = FOO_CANVAS(ruler->canvas)->pixels_per_unit_y;
+  height      = ruler->line_height / zoom_factor;
 
-  if(initialiseScale(&scaleBar, start, end, zoom_factor, height, display_forward_coords, origin, 1.0))
-    drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(group), font, text_left);
+  if(initialiseScale(&scaleBar, start, end, ruler->seq_start, ruler->seq_end, zoom_factor, height, ruler->display_forward_coords, ruler->revcomped, 1.0))
+    drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(group), ruler->font_desc, ruler->text_left);
 
   if(scaleBar.unit)
     g_free(scaleBar.unit);
@@ -643,11 +646,12 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
 }
 
 static gboolean initialiseScale(ZMapScaleBar scale_out,
-                                double start, 
-                                double end, 
-                                double zoom, 
+                                double start,
+                                double end,
+                                int seq_start, int seq_end,
+                                double zoom,
                                 double line,
-				gboolean display_forward_coords, int origin,
+				gboolean display_forward_coords,gboolean revcomped,
                                 double projection_factor)
 {
   gboolean good = TRUE;
@@ -660,38 +664,38 @@ static gboolean initialiseScale(ZMapScaleBar scale_out,
   int majorSize, diff ;
   int i, tmp;
   int basesBetween;
-  
+
   absolute_min = lineheight = basesPerPixel = dtmp = 0.0;
 
   scale_out->start  = (int)start;
-  scale_out->top    = start;
   scale_out->end    = (int)end;
-  scale_out->bottom = end;
+  scale_out->seq_start = seq_start;
+  scale_out->seq_end = seq_end;
   scale_out->force_multiples_of_five = ZMAP_FORCE_FIVES;
   scale_out->zoom_factor             = zoom * projection_factor;
   scale_out->display_forward_coords  = display_forward_coords ;
-  scale_out->origin                  = origin ;
+  scale_out->revcomped               = revcomped ;
   scale_out->projection_factor       = projection_factor;
 
-  /* line * zoom is constant @ 14 on my machine, 
+  /* line * zoom is constant @ 14 on my machine,
    * simply increasing this decreases the number of majors (makes it faster),
    * hence inclusion of 'speed_factor'. May want to refine what looks good
    * 2 or 4 are reasonable, while 10 is way OTT!
    * 1 gives precision issues when drawing the mnor ticks. At reasonable zoom
-   * it gives about 1 pixel between minor ticks and this sometimes equates to 
+   * it gives about 1 pixel between minor ticks and this sometimes equates to
    * two pixels (precision) which looks odd.
    */
   if(speed_factor >= 1)
     dtmp = line * zoom * speed_factor;
   else
-    dtmp = line * zoom; 
+    dtmp = line * zoom;
 
-  lineheight = ceil(dtmp); 
+  lineheight = ceil(dtmp);
 
   /* Abosulte minimum of (ZMAP_SCALE_MINORS_PER_MAJOR * 2) + 1
    * Explain: pixel width for each line, plus one to see it + 1 for good luck!
    * Require 1 * text line height + 1 so they're not merged
-   * 
+   *
    */
   diff          = scale_out->end - scale_out->start + 1;
   basesPerPixel = diff / (diff * scale_out->zoom_factor);
@@ -756,8 +760,8 @@ static gboolean initialiseScale(ZMapScaleBar scale_out,
   return good;
 }
 
-static void drawScaleBar(ZMapScaleBar scaleBar, 
-                         FooCanvasGroup *group, 
+static void drawScaleBar(ZMapScaleBar scaleBar,
+                         FooCanvasGroup *group,
                          PangoFontDescription *font,
                          gboolean text_left)
 {
@@ -772,11 +776,12 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
   digitUnitStr = g_string_sized_new(20);
 
   lines = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
-                                               foo_canvas_group_get_type(),
-                                               NULL));
+            foo_canvas_group_get_type(),
+            NULL));
   text  = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
-                                               foo_canvas_group_get_type(),
-                                               NULL));
+            foo_canvas_group_get_type(),
+            NULL));
+
   if(text_left)
     {
       scale_line = scale_over;
@@ -788,23 +793,43 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
       scale_over = 0.0;
       scale_line = scale_over;
       scale_min  = scale_over + 5.0;
-      scale_maj  = scale_line + 10.0;       
+      scale_maj  = scale_line + 10.0;
     }
 
   gdk_color_parse("black", &black) ;
   gdk_color_parse("white", &white) ;
   gdk_color_parse("yellow", &yellow) ;
 
-  n = ceil( (scaleBar->start % 
-             (scaleBar->major < ZMAP_SCALE_MINORS_PER_MAJOR 
-              ? ZMAP_SCALE_MINORS_PER_MAJOR 
+#if !ODD_CHOICE_OF_START
+  n = ceil( (scaleBar->start %
+             (scaleBar->major < ZMAP_SCALE_MINORS_PER_MAJOR
+              ? ZMAP_SCALE_MINORS_PER_MAJOR
               : scaleBar->major
               )
              ) / scaleBar->minor
             );
 
   i = (scaleBar->start - (scaleBar->start % scaleBar->minor));
+#else
+      /* as the coords we display are 1-based and the coords we iterate through and draw at are different
+       * we need to adjust the major/minor to appear at sensible places in display coords
+       */
+  {
+  int y1 = zmapWindowCoordFromOriginRaw(scaleBar->seq_start,scaleBar->seq_end,scaleBar->start,scaleBar->revcomped);
 
+  if(y1 < 0)      /* ie revcomped */
+  {
+      n = (-(y1) % scaleBar->major) / scaleBar->minor;      /* get no of minors till first major */
+      i = y1 - scaleBar->minor + ((-y1) % scaleBar->minor); /* start on first minor */
+  }
+  else
+  {
+      n = (y1 % scaleBar->major) / scaleBar->minor;         /* get no of minors till first major */
+      i = y1 - (y1 % scaleBar->minor);                      /* start on first minor */
+  }
+printf("i,n,y1 = %d %d %d (%d %d %d)\n",i,n,y1,scaleBar->start,scaleBar->minor,scaleBar->major);
+  }
+#endif
 
   /* What I want to do here rather than worry about width of
    * characters is to have two groups/columns. One for the
@@ -818,84 +843,64 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
     {
       /* More conditionals than I intended here... */
       /* char *digitUnit = NULL; */
-      double i_d = (double)i *scaleBar->projection_factor ; /* Save a lot of casting, typing and multiplication... */
+
+            /* Save a lot of casting, typing and multiplication... */
+            /* offset to place the ruler in the same place as the features */
+      double i_d = (double) (i)  * scaleBar->projection_factor ;
       int scale_pos ;
-      
+      double scale_left = scale_min;
+
+      if (i < scaleBar->start)
+        {
+          i_d = (double) (scaleBar->start) * scaleBar->projection_factor;
+        }
+
       if (n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
         {
-          if (i < scaleBar->start)
-            zMapDrawLine(lines, 
-                         scale_min, (double)scaleBar->start * scaleBar->projection_factor, 
-                         scale_line, (double)scaleBar->start * scaleBar->projection_factor, 
-                         &black, 1.0) ;
-          else if (i == scaleBar->start && n < 5)
+            if (i == scaleBar->start && n < 5)
             {                   /* n < 5 to stop overlap of digitUnit at some zooms */
-              /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
 
 	      if (scaleBar->display_forward_coords)
-		scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->origin, scaleBar->start) ;
-	      else
-		scale_pos = scaleBar->start ;
-              g_string_printf(digitUnitStr, "%d", scale_pos);
+		  scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->seq_start, scaleBar->seq_end, scaleBar->start, scaleBar->revcomped) ;
 
-              zMapDrawLine(lines, 
-                           scale_min,  i_d, 
-                           scale_line, i_d, 
-                           &black, 1.0) ;
+	      else
+		  scale_pos = scaleBar->start ;
+            g_string_printf(digitUnitStr, "%d", scale_pos);
             }
-          else
-            zMapDrawLine(lines, 
-                         scale_min,  i_d, 
-                         scale_line, i_d, 
-                         &black, 1.0) ;
         }
       else                      /* Majors */
         {
           if (i && i >= scaleBar->start)
             {
-              zMapDrawLine(lines, 
-                           scale_maj,  i_d, 
-                           scale_line, i_d, 
-                           &black, 1.0);
-              /* digitUnit = g_strdup_printf("%d%s", 
-                                          (i / scaleBar->base), 
-                                          scaleBar->unit); */
-
+              scale_left = scale_maj;
 
 	      if (scaleBar->display_forward_coords)
 		{
-		  scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->origin, i) ;
+              scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->seq_start, scaleBar->seq_end, i, scaleBar->revcomped) ;
 		  scale_pos = (scale_pos / scaleBar->base) ;
 		}
 	      else
 		scale_pos = (i / scaleBar->base) ;
 
               g_string_printf(digitUnitStr,
-                              "%d%s", 
-                              scale_pos, 
+                              "%d%s",
+                              scale_pos,
                               scaleBar->unit) ;
             }
           else
             {
 	      /* I guess this means "do the first one".... */
-
-              zMapDrawLine(lines, 
-                           scale_min, (double)scaleBar->start * scaleBar->projection_factor, 
-                           scale_line, (double)scaleBar->start * scaleBar->projection_factor, 
-                           &black, 1.0);
-              /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
-
 	      if (scaleBar->display_forward_coords)
 		{
-		  scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->origin, scaleBar->start) ;
+              scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->seq_start, scaleBar->seq_end, scaleBar->start, scaleBar->revcomped) ;
 
 		  if (abs(scale_pos) > 1)
 		    {
 		      scale_pos = (scale_pos / scaleBar->base) ;
 
 		      g_string_printf(digitUnitStr,
-				      "%d%s", 
-				      scale_pos, 
+				      "%d%s",
+				      scale_pos,
 				      scaleBar->unit);
 		    }
 		  else
@@ -910,6 +915,9 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
         }
 
       /* =========================================================== */
+
+      zMapDrawLine(lines, scale_left,  i_d, scale_line, i_d, &black, 1.0) ;
+
       if(digitUnitStr->len > 0)
         {
           FooCanvasItem *item = NULL;
@@ -925,7 +933,7 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
           item = foo_canvas_item_new(text,
                                      foo_canvas_text_get_type(),
                                      "x",          x,
-                                     "y",          (i_d < (double)scaleBar->start ? (double)scaleBar->start * scaleBar->projection_factor : i_d),
+                                     "y",          i_d,
                                      "text",       digitUnitStr->str,
                                      "font_desc",  font,
                                      "fill_color", "black",
@@ -942,12 +950,15 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
   /* draw the vertical line of the scalebar. */
     /* allocate a new points array */
   points = foo_canvas_points_new(2) ;
-				                                            
+
   /* fill out the points */
   points->coords[0] = scale_line ;
-  points->coords[1] = scaleBar->top * scaleBar->projection_factor;
+  points->coords[1] = scaleBar->start * scaleBar->projection_factor;
   points->coords[2] = scale_line ;
-  points->coords[3] = scaleBar->bottom * scaleBar->projection_factor;
+  points->coords[3] = scaleBar->end * scaleBar->projection_factor;
+
+
+//zMapLogWarning("scale extent %f %f",points->coords[1],points->coords[3]);
 
   /* draw the line, unfortunately we need to use GDK_CAP_PROJECTING here to make it work */
   foo_canvas_item_new(lines,
@@ -964,24 +975,24 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
   /* Arrange groups to remove overlapping */
   if(text_left)
     {
-      g_object_set_data(G_OBJECT(text), 
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+      g_object_set_data(G_OBJECT(text),
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
                         GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
-      g_object_set_data(G_OBJECT(lines), 
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+      g_object_set_data(G_OBJECT(lines),
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
                         GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
       positionLeftRight(text, lines);
     }
   else
     {
-      g_object_set_data(G_OBJECT(lines), 
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+      g_object_set_data(G_OBJECT(lines),
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
                         GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
-      g_object_set_data(G_OBJECT(text), 
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+      g_object_set_data(G_OBJECT(text),
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
                         GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
       positionLeftRight(lines, text);
-      
+
     }
 
   return ;

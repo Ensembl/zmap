@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 10 12:25 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.281 2011-03-11 17:50:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.282 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -434,6 +434,7 @@ typedef enum
 #define ZMAP_WINDOW_ITEM_EVIDENCE_FILL "yellow"
 
 
+#define MH17_REVCOMP_DEBUG   0
 
 
 /* Used to pass data to canvas item menu callbacks, whether columns or feature items. */
@@ -456,7 +457,7 @@ typedef struct
   ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
                                                 /* be good to loose the featureset member */
   ZMapFeatureContextMap context_map ;			    /* column to featureset mapping and other data. */
-  
+
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
 
@@ -519,8 +520,6 @@ typedef struct
  * display. */
 typedef struct _ZMapWindowStruct
 {
-  gchar *sequence ;					    /* Should remove this... */
-  long chromo_start;                                /* chromosome coordinate of our slice start */
 
   ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
 
@@ -599,6 +598,9 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowZoomControl zoom;
 
+  gboolean scroll_initialised;      /* have we ever set a scroll region?
+                                     * used to control re-intialise eg on RevComp
+                                     */
 
   /* Max canvas window size can either be set in pixels or in DNA bases, the latter overrides the
    * former. In either case the window cannot be more than 30,000 pixels (32k is the actual
@@ -628,8 +630,7 @@ typedef struct _ZMapWindowStruct
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
   double         seqLength;
-  double         seq_start ;
-  double         seq_end ;
+  ZMapFeatureSequenceMap sequence;  /* has name start and end */
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
@@ -727,7 +728,7 @@ typedef struct _ZMapWindowStruct
    * always as if for the original forward strand or for the whichever is the current forward
    * strand. origin is used to transform coords for revcomp if display_forward_coords == TRUE */
   gboolean display_forward_coords ;
-  int origin ;
+/*  int origin ; */
 
 
   /* 3 frame display:
@@ -871,8 +872,9 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 				  int start_in, int end_in,
 				  int *display_start_out, int *display_end_out) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
-int zmapWindowCoordFromOriginRaw(int origin, int start) ;
+int zmapWindowCoordFromOriginRaw(int start,int end, int coord, gboolean revcomped) ;
 ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
+int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord);
 
 double zmapWindowExt(double start, double end) ;
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
@@ -1053,7 +1055,7 @@ void zmapWindowGetScrollRegion(ZMapWindow window,
 			       double *x2_inout, double *y2_inout);
 void zmapWindowSetScrollRegion(ZMapWindow window,
 			       double *x1_inout, double *y1_inout,
-			       double *x2_inout, double *y2_inout);
+			       double *x2_inout, double *y2_inout,char *where);
 ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window,
                                      double *top_inout,
                                      double *bot_inout) ;
@@ -1385,14 +1387,15 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
                                GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
 void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
-void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas obj, int origin) ;
+void zmapWindowRulerCanvasSetRevComped(ZMapWindowRulerCanvas obj, gboolean revcomped) ;
+void zmapWindowRulerCanvasSetSpan(ZMapWindowRulerCanvas ruler, int start,int end);
 gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at,
-                              double origin, double start, double end);
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped,
+                             double start, double end);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
@@ -1406,7 +1409,7 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats) ;
 void zmapWindowShowStyle(ZMapFeatureTypeStyle style) ;
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
-void zmapWindowToggleMark(ZMapWindow window, guint keyval);
+void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
