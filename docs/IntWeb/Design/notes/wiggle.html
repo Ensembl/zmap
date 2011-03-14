@@ -1,0 +1,90 @@
+<h2>Implementing Wiggle plots</h2>
+
+<p>MH17: I'm still working on this ! </p>
+
+<fieldset><legend>Introduction</legend>
+<h3>Objectives</h3>
+<ul>
+<li> implement a display style that shows a line (wiggle) plot of data density over a sequence
+<li> provide options for bins matching display pixels or fixed-size
+<li> experiment with a more streamlined way of operating the foo canvas
+<li> provide a timely implementation and estimate effort required accurately
+</ul>
+
+<h3>Wiggle plots and styles</h3>
+<p>
+For a specific set of data (short reads via BAM files) we wish to display data density in a column and allow the user to inspect this data in Blixem.  Features could be displayed as basic features in ZMap but there is little benefit in this.  By specifying a style we specify that a featureset is displayed as summarised data (feature density over a small range).  Code will be written to support density bins from a normal featureset containing the short reads features (which will be loaded on demand in a marked region) and the resulting data will also be available for other display formats such as heatmaps when implemented.
+</p>
+<p> For BAM data we wish to show the feature density over a wide range and it make sense to match the bin size to display zoom - at low zooms taking a sample fixed size bin would misrepresent the data. For some other data (eg CAGE and DiTags) there is a short fixed bin size (eg 20-40 bases) that relates to experimental technique and cannot be changed.
+</p>
+
+<p>This display style can also be used to show GC content and naturally would be fed with pixel wide bins.
+</p>
+
+<p>All possible bin size display options must be limited to a minimum size as otherwise the display becomes meaningless.
+</p>
+
+<h4>Effect of Zoom</h4>
+<p>A series fixed size bins would overlap and we would loose the overall density of features when hidden by a rare peak at low zoom.
+As zoom level changes slightly then a variable bin size may suddenly show peaks where there none before.
+</p>
+
+<h3>Foo Canvas</h3>
+<h4>Efficiency</h4>
+<p>It is know that the foo canvas is not designed to handle large amounts of data and performs badly with hundreds of thousands of features and we wish to use wiggle plots as a test bed for a more efficient way of using the canvas.  If we take as an example a sequence of 400k bases and assume bins of 20 bases wide then that gives ns 20k data points which traditionally would be drawn in the foo canvas individually at all levels of zoom, and most would be invisible at low zoom levels due to overlap.  This gives a significant overhead operating the foo-canvas GObjects underneath all the features and may maximise the number of round trips via the X-server.
+</p>
+<p>We wish to paint series of line segments via a GdkPolyLine function each representing a series of bins - it may be necessary to tune this by experiment - and this requries us to implement display objects at a higher level than the individual data point.
+</p>
+
+<h3>Proposed implementation</h3>
+
+<h4>Configuration</h4>
+<p>
+<ul>
+<li> The minumum and maximum bin size will be set via min-score and max-score in the style and for fixed size bins these should be the same.
+<li> An option will be provided to overlap bins by 50% or have them contiguous
+</ul>
+</p>
+
+<h4>Data structures and canvas items </h4>
+<p>There should be no need to add more than one canvas item for a column but this can be controlled by a run-time parameter to allow experimentation.  This canvas item (ZMapWindowCanvasWiggle) will have start and end coordinate and a list of bins; note that start and end cordinate are constrained to be on bin boundaries. In case of changing the zoom level it may be necessary to update these canvas items in which case there is a slight argument for having only one.  Note that as we plan to not have a lot of canvas items is is feasable to remove and redisplay each of these should it be necessary. Note also that bins will have to be re-allocated in this circumstance.
+</p>
+<p>A bin just needs start, end coordinate and volume
+</p>
+
+<p>Canvas items will have a list of bins.  A linked list is chosen to allow rapid implementation - a b-tree would be preferable but GLib does not have a good implementation of a btree structure (does not support sequential processing). Given that the data is static a simple (indexed) skip-list overlay can be added to this to allow efficient lookup of data without fear of degeneracy.
+</p>
+</fieldset>
+
+<fieldset><legend>Effort needed</legend>
+what needs to happen:
+- styles to define display parameters     1/2 day
+- wiggle canvas item type implemented (interface to canvas) cut and paste     2 days
+- on column load create a new featureset for density bins canvas items and compute bins for that featureset - hold in a list and add binary tree index or use a btree instead. Name the featureset as &lt;source&gt;_density.
+- on featureset display add wiggle canvas items to a column
+(featureset name to be defined by source featureset style) 1 day
+- on expose draw a series of poly lines OTF from the bins data for the exposed region 1/2 day
+- configuration options for display parameters  1/2 day
+- mouse click on column: show info on status bar: look up bin from canvas item...   1/2 day
+- ? double click: show feature dialog ?
+- call-back for zoom change (NB if we stick with one canvas item we can trigger bin re-calculation from the expose event)
+This needs to re-create the wiggle featureset and canvas items(s)     1 day
+
+- patch on GC content display to DNA data
+
+<h3>Payload: reusable code</h3>
+<p>
+<ul>
+<li> generic skip list functions
+<li> ? container group for canvas items (ZMapWindowCanvasUmbrella) with sub-type eg wiggle, heatmap, alignment, etc
+<li> blank template for new canvas item
+</ul>
+</p>
+</fieldset>
+
+<fieldset><legend>What's not covered?</legend>
+<p>Partly this is intended as an experiment to see how the foocanvas can be used more efficiently but summary plots like these do not apply directly to drawing real features.  If we take the example of ungapped alignments what we need is a btree/ skip list of features to draw on a canvas at a given zoom and instructions on how to draw them, and then we can just display the ones that are visible.  Wiggle plots differ from this in that the data may change at different zoom levels rather than just the visibility.
+</p>
+</fieldset>
+
+
