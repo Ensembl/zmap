@@ -24,6 +24,7 @@ zmapWindowDrawFeatures.c \
 zmapWindowDump.c \
 zmapWindowExport.c \
 zmapWindowFeature.c \
+zmapWindowFeatureFuncs.c \
 zmapWindowFeatureList.c \
 zmapWindowFeatureList.h \
 zmapWindowFeatureList_I.h \
