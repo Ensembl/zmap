@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  3 09:24 2011 (edgrif)
+ * Last edited: Mar 14 14:56 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.358 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.359 2011-03-15 14:37:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4209,56 +4209,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_a:
     case GDK_A:
       {
-	ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
-	ZMapWindowCallbacks window_callbacks_G = zmapWindowGetCBs() ;
-	ZMapFeatureAny feature_any ;
-	ZMapFeature  feature = NULL ;
-	gboolean column = FALSE ;
-	FooCanvasItem *focus_item ;
+	ZMapWindowAlignSetType requested_homol_set ;
 
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
-	  focus_item = zmapWindowItemGetTrueItem(focus_item) ;
-	else
-	  focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
+	if (key_event->state & GDK_CONTROL_MASK)
+	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
+	else if (key_event->keyval == GDK_a)
+	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+	else if (key_event->keyval == GDK_A)
+	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	/* Test there was an item selected otherwise we don't know which aligns to show. */
-	if (focus_item && (feature_any = zmapWindowItemGetFeatureAnyType(focus_item, -1)))
-	  {
-	    int y1, y2 ;
-
-	    if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
-	      {
-		column = TRUE ;
-
-		if (zMapWindowGetVisibleSeq(window, &y1, &y2))
-		  feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
-	      }
-	    else
-	      {
-		feature = (ZMapFeature)feature_any ;
-
-		y1 = feature->x1 ;
-		y2 = feature->x2 ;
-	      }
-
-	    if (feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	      {
-		align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
-
-		align.position = y1 + ((y2 - y1) / 2) ;
-		align.features = g_list_append(align.features, feature) ;
-
-		if (key_event->state & GDK_CONTROL_MASK)
-		  align.homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
-		else if (key_event->keyval == GDK_a)
-		  align.homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-		else if (!column && key_event->keyval == GDK_A)
-		  align.homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
-
-		if (align.homol_set)
-		  (*(window_callbacks_G->command))(window, window->app_data, &align) ;
-	      }
-	  }
+	zmapWindowCallBlixem(window, requested_homol_set) ;
 
 	break ;
       }
