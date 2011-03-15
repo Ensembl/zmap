@@ -30,9 +30,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
  * HISTORY:
- * Last edited: Mar  3 17:14 2011 (edgrif)
+ * Last edited: Mar 15 08:07 2011 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.42 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.43 2011-03-15 14:32:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1619,6 +1619,7 @@ static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, ch
     { ZMAPSTANZA_BLIXEM_CONF_FILE,   G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_SCOPE,       G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_SCOPE_MARK,  G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_BLIXEM_FEATURES_MARK,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_FILE_FORMAT, G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_MAX,         G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_BLIXEM_KEEP_TEMP,   G_TYPE_BOOLEAN, NULL, FALSE },
