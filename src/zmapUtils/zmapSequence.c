@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapSequence.h
  * HISTORY:
- * Last edited: Mar  9 14:35 2011 (edgrif)
+ * Last edited: Mar 14 15:01 2011 (edgrif)
  * Created: Thu Sep 27 10:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapSequence.c,v 1.6 2011-03-11 17:39:00 edgrif Exp $
+ * CVS info:   $Id: zmapSequence.c,v 1.7 2011-03-15 14:32:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,9 +92,7 @@ void zMapSequencePep2DNA(int *start_inout, int *end_inout, ZMapFrame frame)
  */
 void zMapSequenceDNA2Pep(int *start_inout, int *end_inout, ZMapFrame frame)
 {
-  int dna_start, dna_end, pep_start, pep_end ;
-  int dna_offset ;
-  int curr_frame ;
+  int dna_start, dna_end ;
   int start_coord, end_coord ;
   int frame_int = (int)frame ;
 
