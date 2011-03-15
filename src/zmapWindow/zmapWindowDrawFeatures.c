@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Mar 11 17:39 2011 (edgrif)
+ * Last edited: Mar 14 14:18 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.309 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.310 2011-03-15 14:38:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2378,9 +2378,10 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       menu_sets = g_list_append(menu_sets, separator) ;
     }
 
-  menu_sets = g_list_append(menu_sets,
-			    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-						   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
+  menu_sets
+    = g_list_append(menu_sets,
+		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
+					   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -2401,9 +2402,15 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	  menu_sets = g_list_append(menu_sets, separator) ;
 
 	  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-	    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
+	    {
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomolFeature(NULL, NULL, cbdata)) ;
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
+	    }
 	  else
-	    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
+	    {
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
+	    }
 	}
     }
 
