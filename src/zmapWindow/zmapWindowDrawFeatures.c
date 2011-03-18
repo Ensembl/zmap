@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 14 14:18 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.310 2011-03-15 14:38:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.311 2011-03-18 14:35:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -983,7 +983,7 @@ void container_mask_cb(ZMapWindowContainerGroup container, FooCanvasPoints *poin
             {
                   // this does the lot!
                   // mh17: cannot believe my luck -> or is it skill??
-                  zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs, cfs->masked, TRUE);
+                  zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs, !cfs->masked, TRUE);
                   break;
             }
       }
@@ -2300,7 +2300,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
 
 	  select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
-	  
+
 	  feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
 	  select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
 
