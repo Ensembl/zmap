@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Feb 22 08:31 2011 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.68 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.69 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -374,15 +374,21 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   g_object_set(G_OBJECT(navigate->container_root),
 	       "debug", navigator_debug_containers_G, NULL);
 
+
   customiseFactory(navigate);
 
   default_locus_names_filter(&(navigate->hide_filter));
 
   available_locus_names_filter(&(navigate->available_filters));
 
+      /* this is to allow other files in this module to access this module's data */
+      /* yes really */
+  zMapWindowNavigatorSetWindowNavigator(canvas_widget,navigate);
 
   return navigate ;
 }
+
+
 
 
 void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean revcomped)
@@ -537,9 +543,10 @@ print_foo("draw features");
 
 void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate)
 {
+      /* NOTE this can get called before we even drew in the first place */
 
-  repositionText(navigate);
-
+  if(navigate)
+      repositionText(navigate);
   return ;
 }
 
@@ -740,8 +747,9 @@ static void repositionText(ZMapWindowNavigator navigate)
       canvas = fetchCanvas(navigate);
 
       repos_data.navigate = navigate;
-      repos_data.positioner = zmapWindowTextPositionerCreate(navigate->full_span.x1 * navigate->scaling_factor,
-                                                             navigate->full_span.x2 * navigate->scaling_factor);
+      repos_data.positioner = zmapWindowTextPositionerCreate(
+            navigate->full_span.x1 * navigate->scaling_factor,
+            navigate->full_span.x2 * navigate->scaling_factor);
 
       zmapWindowNavigatorTextSize(GTK_WIDGET(canvas),
                                   NULL, &(repos_data.wheight));
@@ -773,7 +781,6 @@ void print_foo(char * where)
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
   ZMapWindowNavigator navigate = nav_draw->navigate;
-
   /* We need this! */
   zMapAssert(navigate->current_window);
 
@@ -1527,8 +1534,10 @@ printf("navCanvasItemEventCB %f,%f: %s, %p at %f -> %f\n", button->x,button->y,g
           }
         else
           {
-            if (button->button == 1 && feature->feature.transcript.locus_id != 0)
+            if (button->button == 1  /* && feature->feature.transcript.locus_id != 0) */
+                  && feature->type == ZMAPSTYLE_MODE_TEXT)
               {
+                  /*used to get a transcript feature? no idea how, but the locus feature is a text item */
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
                 event_handled = TRUE;
               }

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 16 10:05 2010 (edgrif)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.16 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.17 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,6 +59,8 @@ typedef struct _ZMapNavigatorClassDataStruct
   GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
   double start,end;
+  ZMapWindowNavigator window_navigator;         /* needed to reposition text on resize */
+
 } ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
 
 static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
@@ -104,7 +106,40 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
         {
           class_data->callbacks.valueCB = callbacks->valueCB;
           class_data->callbacks.widthCB = callbacks->widthCB;
+          class_data->callbacks.resizeCB = callbacks->resizeCB;
+
           class_data->user_data         = user_data;
+          /* MH17: this is a navigator struct
+           * due to some completely insane ideas about encapsulation and modularity
+           * it seems that the navigator widget cannot know about the navigator
+           * and even cannot know what type of data it cannot know about
+           * yet it has to be a specific data structure or else it won't work
+           * it's set in zmapControlNavigator.c
+           * This REALLLY OUGHT TO BE CHANGED to use ZMapWindowNavigator as then the compiler can check the data type
+           * and people can work out what's going on
+           */
+          /* WRONG ...
+          :
+           * MH17: no it's not a ZMapWindowNavigator, its a ZMapNavigator, which has pointers
+           * to widgets including the ZMapWindowNavigator widget but no data structures containing data about the Navigator display
+           * there is another blank pointer called user_data
+           * commented as something the caller can register when moving the locator
+           * unfortunately that's in a data structure not a function, so 'caller' is misplaced
+           * In zmapControlWindowFrame.c zMapNavigatorSetWindowCallback() is called and the blank data struct turns out to be a ZMap
+           *
+           * So: ZMap has a view ??
+           * the view has a ZMapWindowNavigator which is what we want but it's helpfully called navigator_window
+           * NO: it has a view_list, which may contain the one view we want but cannot be programmed safely
+           *
+           * a ZMapWindowNavigator has a window set in a GObject set data function and the window has a pointer to the navigator
+           * but we have access to neither
+           *
+           * this is a waste of time & i give up
+           * So I'm writing a function to store a pointer in the class_data
+           *
+           * These files are all part of the same module and they cannot communicate
+           * NOTE <some frank views deleted at this point>
+           */
         }
 
       getTextOnCanvasDimensions(canvas, NULL, &(class_data->text_height));
@@ -149,6 +184,19 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
 
   return canvas_widget ;
 }
+
+
+void zMapWindowNavigatorSetWindowNavigator(GtkWidget *widget,ZMapWindowNavigator navigator)
+{
+  ZMapNavigatorClassData class_data = NULL;
+
+  class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
+  if(class_data)
+  {
+      class_data->window_navigator = navigator;
+  }
+}
+
 
 void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double bottom)
 {
@@ -335,16 +383,21 @@ static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
 #if MH17_DEBUG_NAV_FOOBAR
 print_foo("nav size 1");
 #endif
+//printf("navCanvasSizeAllocateCB: width = %d, height = %d\n", new_width, new_height);
+
   if(new_height != class_data->height)
     {
       class_data->height = new_height;
       zmapWindowNavigatorFillWidget(allocatee);
+
+//printf("nav resize %p\n",class_data->window_navigator);
+      if(class_data->callbacks.resizeCB && class_data->window_navigator)
+       (class_data->callbacks.resizeCB)(class_data->window_navigator);
     }
 
   class_data->width = new_width;
 
 #if MH17_DEBUG_NAV_FOOBAR
-  printf("navCanvasSizeAllocateCB: width = %d, height = %d\n", new_width, new_height);
 print_foo("nav size 2");
 #endif
   return ;
@@ -415,6 +468,21 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 printf("fetch scroll coords %f %f (%f %f)\n",*y1,*y2, container_height, border_y);
 #endif
   return ;
+}
+
+gboolean zMapNavigatorWidgetGetCanvasTextSize(FooCanvas *canvas,
+                                          int *width_out,
+                                          int *height_out)
+{
+      double h,w;
+      gboolean result;
+
+      result = getTextOnCanvasDimensions(canvas,&w,&h);
+      if(height_out)
+            *height_out = (int) h;
+      if(width_out)
+            *width_out = (int) w;
+      return(result);
 }
 
 static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,

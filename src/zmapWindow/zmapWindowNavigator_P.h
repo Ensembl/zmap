@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 10 10:48 2009 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.17 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.18 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,6 +147,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
 void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate);
 
 /* WIDGET STUFF */
+void zMapWindowNavigatorSetWindowNavigator(GtkWidget *widget,ZMapWindowNavigator navigator);
 void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y, double start, double end);
 void zmapWindowNavigatorFillWidget(GtkWidget *widget);
 void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double bottom);

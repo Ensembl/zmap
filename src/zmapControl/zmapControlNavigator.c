@@ -33,7 +33,7 @@ name
  * HISTORY:
  * Last edited: Aug  1 12:24 2007 (rds)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.35 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.36 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,10 +57,10 @@ name
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 static void canvas_value_cb(gpointer user_data, double top, double bottom);
 static void canvas_width_cb(gpointer user_data, double left, double right);
-
+static void canvas_size_cb(ZMapWindowNavigator navigator);
 
 static ZMapWindowNavigatorCallbackStruct control_nav_cbs_G = {
-  canvas_value_cb, canvas_width_cb
+  canvas_value_cb, canvas_width_cb, canvas_size_cb
 };
 
 /* Create an instance of the navigator, this currently has two scroll bars,
@@ -313,6 +313,13 @@ static void canvas_width_cb(gpointer user_data, double left, double right)
   ZMapNavigator navigator = (ZMapNavigator)user_data;
 
   navigator->right_pane_width = (int)(right - left) + 1;
+
+  return ;
+}
+
+static void canvas_size_cb(ZMapWindowNavigator navigator)
+{
+  zmapWindowNavigatorLocusRedraw(navigator);
 
   return ;
 }

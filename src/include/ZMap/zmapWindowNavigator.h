@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 10 09:44 2009 (rds)
  * Created: Thu Sep  7 09:10:32 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.h,v 1.11 2010-06-08 08:31:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.h,v 1.12 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,15 +38,18 @@
 
 #include <ZMap/zmapWindow.h>
 
+typedef struct _ZMapWindowNavigatorStruct *ZMapWindowNavigator;
 
 typedef void (*ZMapWindowNavigatorValueChanged)(void *user_data, double start, double end) ;
+typedef void (*ZMapWindowNavigatorFunction)(ZMapWindowNavigator navigator);
 
-typedef struct _ZMapWindowNavigatorStruct *ZMapWindowNavigator;
 
 typedef struct _ZMapNavigatorCallbackStruct
 {
   ZMapWindowNavigatorValueChanged valueCB;
   ZMapWindowNavigatorValueChanged widthCB;
+  ZMapWindowNavigatorFunction resizeCB;
+
 } ZMapWindowNavigatorCallbackStruct, *ZMapWindowNavigatorCallback;
 
 
@@ -60,6 +63,8 @@ void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean is_reve
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext  full_context,
 				     GHashTable              *styles);
+void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate);
+
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                                     double top, double bottom);
 void zMapWindowNavigatorReset(ZMapWindowNavigator navigate);
@@ -72,5 +77,6 @@ void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate);
 GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks, gpointer user_data);
 void zMapWindowNavigatorPackDimensions(GtkWidget *widget, double *width, double *height);
 
+gboolean zMapNavigatorWidgetGetCanvasTextSize(FooCanvas *canvas,int *width_out,int *height_out);
 
 #endif /*  ZMAP_WINDOW_NAVIGATOR_H  */

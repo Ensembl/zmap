@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 15 14:42 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.234 2011-03-15 14:43:02 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.235 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -667,7 +667,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         view->context_map.source_2_sourcedata = src2src;
 
 //       print_src2src("view ini",view->context_map.source_2_sourcedata);
-       print_fset2col("view ini",view->context_map.featureset_2_column);
+//       print_fset2col("view ini",view->context_map.featureset_2_column);
 
             /*---------------------------------------------
              * context_map.column_2_styles: hash of Glist of quarks
