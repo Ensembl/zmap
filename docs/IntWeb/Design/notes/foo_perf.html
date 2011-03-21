@@ -275,6 +275,8 @@ This gives us:
 </p>
 Set column state takes 18 seconds -half the time needed to add features to the foo canvas. This appear to be a result of <b>zmapWindowContainerFeatureSetAugment()</b> setting the column state to not visible which then requires the column to be made visible after adding the features.  Some high volume columns (eg GF_Splice) are hidden by default and perhaps ZMap could make a better guess of the intended state on column creation. It would also be possible to not display a column if it is not intended to display it (eg like 3-Frame).
 </p>
+<p> Removing the canvas item creation from the display code results in 270ms being needed to drive everything else for the Trembl column, and we could loose 40 seconds by handling all this in the ZMap code, if we chose to draw features from the context of a column container object.
+</p>
 
 <h3>Exposing a single column: all features or just a few</h3>
 <p>
@@ -358,12 +360,12 @@ for the initial display this allows a maximum time need to be determined as for 
 </p>
 
 
-<h3>Providing our own pixmaps for display</h3>
+<h3>Providing our own pixmaps for display/ displaying features as part of a column</h3>
 <p>If we construct our own image in a pixmap (or several) and display these via the foo canvas then there will be no noticable performance issues from the foo canvas (assuming that pixmaps will operate efficiently) as the number of display items will be small (eg less than 100).
 </p>
-<p>This would allow us to remove almost entirely the step of adding items to the foo canvas as all we need to do is to create a mapping from feature context to pixmap - this will be equivalent to the FToIhash operations already in place. The draw process would then consist of writing to the pixmap and triggering a GDK paint.  Note that htis implicitly treast the display as a representation of the data and the concept of searching the canvas is not relevant.
+<p>This would allow us to remove almost entirely the step of adding items to the foo canvas as all we need to do is to create a mapping from feature context to pixmap - this will be equivalent to the FToIhash operations already in place. The draw process would then consist of writing to the pixmap and triggering a GDK paint.  Note that this implicitly treats the display as a representation of the data and the concept of searching the canvas is not relevant.
 <p>
-This would give 24% from not operating the foo canvas except for minimal numbers of items, and 8% from not operating the update process. Gains in drawing should also be possible.
+This would give 24% from not operating the foo canvas except for minimal numbers of items, and 8% from not operating the update process. Gains in drawing should also be possible - a simple test using a glyph drawing function shows that displaying 10k items to a gdk_drawable takes 150ms for background and 120 ms for outline - if we have 600k items to display that would take 15 seconds approx, which is half the time spent currently.  Obviously with an off screen drawable (pixmap) there can be less interaction with X and items can be draw as a batch.  Note that if we adopt the policy of only displaying what needs to be displayed it is unlikely that we will have to display significantly more than 10 items and it should be possible to engineer a ZMap where all display operations take less than 1 second, even without resorting to off-screen pixmaps.
 </p>
 <p>It should also be possible to lose the need for long items code.
 </p>
@@ -371,11 +373,11 @@ This would give 24% from not operating the foo canvas except for minimal numbers
 </p>
 
 <h3>Getting the foo canvas to operate pixmaps</h3>
-<p>This (or Zmap supplied pixmaps) is essential to allow efficient scrolling. It is also essential to allow columns to be hidden or shown or moved without repainting half the screen - Either we have one foo canvsa per column or one pixmap per column.
+<p>This (or Zmap supplied pixmaps) is essential to allow efficient scrolling. It is also essential to allow columns to be hidden or shown or moved without repainting half the screen - Either we have one foo canvas per column or one pixmap per column.
 </p>
 
 <h3>Painting on demand</h3>
-<p>Using well known graphics techniques of displaying a current view and having adjacent view already prepared (eg like google maps) we can provide smooth scrolling using pixmaps without having to display all the data at high zoom.  It would be desirable/ necessary to implement a display thread to paint to a cache of pixmaps, but this would unlink control and view and provide a more comfortable user experience.  Note that we nove much of the drawing operations to idle CPU time as we can paint adjacent regions while the user is doing soemthing else, and the appearance will be of a much faster operation.
+<p>Using well known graphics techniques of displaying a current view and having adjacent view already prepared (eg like google maps) we can provide smooth scrolling using pixmaps without having to display all the data at high zoom.  It would be desirable/ necessary to implement a display thread to paint to a cache of pixmaps, but this would unlink control and view and provide a more comfortable user experience.  Note that we move much of the drawing operations to idle CPU time as we can paint adjacent regions while the user is doing soemthing else, and the appearance will be of a much faster operation.
 </p>
 <p>This strategy would allow us to paint only a subset of the data at high zoom and would therefore speed up zoom and revcomp considerably.
 </p>

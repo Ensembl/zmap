@@ -1,4 +1,4 @@
-<!-- $Id: EST_mRNA.html,v 1.2 2011-02-23 15:36:59 mh17 Exp $ -->
+<!-- $Id: EST_mRNA.html,v 1.3 2011-03-21 09:46:50 mh17 Exp $ -->
 <h2>RT 69060: Clustering (masking) EST's and mRNA's</h2>
 
 <fieldset><legend>Background</legend>
@@ -20,6 +20,43 @@ and recently (after the latest annotation test) we were requested to see how eas
 <p> This was once intended to be an interactive process w/ otterlace- see <a href="Design_notes/notes/otter_zmap.shtml">here</a>. However, reading the text and a quick chat w/ the requestor suggest that an interactive process was not wanted.
 </p>
 </fieldset>
+
+<a name="userguide"></a>
+<fieldset><legend>A brief User Guide</legend>
+<p><b>Note</b> this section written months after the rambling notes below</p>
+<h3>What do we mean by masking?</h3>
+<p>We mask alignments with other alignments with the intention of hiding those that are uninteresting ie give no new information.  Here an alignment is a series of matched features with the same name and an uninteresting one is exactly the same as another except perhaps a little shorter at one or both ends.
+We apply this process to EST's and mRNA's and this is defined by ZMap configuration as discussed in the sections below.
+</p>
+
+<h3>How does this affect the ZMap display?</h3>
+<p>By default a masked featureset (eg EST_Human) will have masked features hidden (not displayed) so there will be fewer features on the screen and bumping the column will show less data.  There is an option on the Right-Click Menu ('Show Masked Features') that will display the masked features, and these will be in grey, to indicate that we think they give no information not given by another feature.
+</p>
+<p>Masking is done at the featureset level and a feature is masked in all windows (eg if you v-split) but each window can be set to display the masked features or not, just like 'bump-column' only applies to one column &amp; window at a time.
+</p>
+
+<p>Masking is done whenever new data arrives, so if you request (eg) another EST column then you may find that displayed features either disappear or turn grey.
+</p>
+
+<h3>Highlighting a feature from 'list all this column features'</h3>
+<p>
+If a feature is masked and hidden you can still find it via the feature search windows and if you select a hidden masked feature then it will be displayed for you.  Note that this will not cause the other masked features in the column to display.
+</p>
+
+<h3>When specifically is a feature masked?</h3>
+<p>
+EST's are masked by themselves and other EST featuresets and mRNA's and mRNA's are masked by themsleves.  Perhaps the easiest way to illustrate this is with a diagram.
+</p>
+<p><b>NOTE</b> originally the request was to mask as in this diagram but since the first implementation it was decided to insist on exact splicing in all cases and in the diagram mRNA 3 would not mask EST C, and mRNA1 would not mask any EST.
+<img src="Design_notes/notes/est_mask.png" class="img">
+</p>
+
+<h3>Other notes</h3>
+<p>With masked features not displayed we expect to see fewer 'imcomplete homology' markers</p>
+<p>Some alignments can repeat over a DNA sequence and this can affect how the masking algorithm operates as it does not take into account repetition.  (Note that this is consistent with current ZMap practice in displaying co-linear lines between features).
+</p>
+</fieldset>
+
 
 <fieldset><legend>Things to define/ solve</legend>
 <h3>How to decide when to not display a feature?</h3>
@@ -100,13 +137,7 @@ There may be a combinatorial problem to solve.  A sample session from human chr-
 <h3>Masking a set with itself</h3>
 <p>The same procedure as above is followed but with the restriction that each exon must be matched (no gaps are allowed) and splice junctions must be the same. (which means that only the 5' and 3' coordinates may differ).
 </p>
-<h3>What gets's masked by what?</h3>
-<p>
-Perhaps the easiet way to illustrate this is with a diagram:
-<img src="Design_notes/notes/est_mask.png" class="img">
-</p>
-<p><b>NOTE</b> since the first implementation it was decided to insist on exact splicing and in the diagram mRNA 3 would not mask EST C.
-</p>
+
 
 <h3>Data Structures</h3>
 <p>The feature structure contains a union depending on the featuretype and for EST and mRNA we use style mode=align, which corresponds to a homol data structure.  The style data uses a similar structure but the structure is called an alignment. Extra flags will be added to these to handle masking status.

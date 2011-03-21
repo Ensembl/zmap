@@ -1,4 +1,4 @@
-<!-- $Id: canvas_tweaks.html,v 1.2 2011-02-16 12:27:48 mh17 Exp $ -->
+<!-- $Id: canvas_tweaks.html,v 1.3 2011-03-21 09:46:50 mh17 Exp $ -->
 
 <h2>Speeding up the use of the Foo Canvas</h2>
 
@@ -113,8 +113,8 @@ BumpCol would have to be changed to display the hidden features rather than movi
 </p>
 <p>Functions such as 'List all Column Features' may have to be reviewed if they feed off the canvas data - perhaps some speed gains can be made by drawing features as hidden. (tests show about a 20-25% improvement by hiding all features.
 </p>
-<p> Displaying several featuresets in one column is more complicated especially when we consider that the summarise option is selected by a featureset's style.  It is possible so specify a style for a column abnd this perhaps provides some resolution despite allowing for mis-configuration.
-However the intention was to speed up the display of featuresets like TrEmbl and SwissProt which normally appear in a column of thier own   It may not be worth implementing a comples way of combining featuresets like this, better to specify what happens if this is configured.  As a short term measure we will choose to summarise each featureset in a column independantly.
+<p> Displaying several featuresets in one column is more complicated especially when we consider that the summarise option is selected by a featureset's style.  It is possible so specify a style for a column and this perhaps provides some resolution despite allowing for mis-configuration.
+However the intention was to speed up the display of featuresets like TrEmbl and SwissProt which normally appear in a column of thier own   It may not be worth implementing a complex way of combining featuresets like this, better to specify what happens if this is configured.  As a short term measure we will choose to summarise each featureset in a column independantly.
 </p>
 <h3>Implementation</h3>
 <h4>Module and scope</h4>
@@ -148,8 +148,8 @@ Given that the list of covered regions stays very short there seems little point
 <h3>Some caveats</h3>
 <p>This has so far been an experiment and there are some issues that need to be resolved:
 <ul>
-<li> some ZMap features such as list features in column may need to be adjusted to refernce the feature context rather than the canvas
-<li> zoom appears to operate without doing a re-draw and this code needs to be adjusted to add featrues to the canvas
+<li> some ZMap features such as list features in column may need to be adjusted to reference the feature context rather than the canvas. Tests reveal that 'List all Column Features' uses the FToI hash and thereby only finds features displayed on the canvas; perhaps this can be fixed by adding null entries to the hash when items are not displayed, and creating a fake canvas item OTF (or displaying the feature) if necessary (eg if the hash is used to look up a specific feature).
+<li> zoom appears to operate without doing a re-draw and this code needs to be adjusted to add features to the canvas. The function zmapWindowDraw.c/preZoomCB() looks like a good place to do this.
 <li> bump column must draw the missing features
 </ul>
 The later two imply some performance overhead, although not as great as drawing the whole column in the first place.
@@ -157,3 +157,8 @@ The later two imply some performance overhead, although not as great as drawing 
 
 </fieldset>
 
+<fieldset><legend>Removing canvas items altogether</legend>
+<h3>Where is the performance problem?</h3>
+<p>Even with 200k features it should be possible to display relatively quickly ansd perhaps there are delays introduced by interaction with the X server whcih has a complex protocol involving map realize update and expose events.  We have a tree of canvas groups to the column level which consists of no more than a few hundred groups total and this can certainly be processed very quickly.
+</p>
+</fieldset>
