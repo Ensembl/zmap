@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 15 14:42 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.235 2011-03-18 11:38:26 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.236 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2758,6 +2758,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		  lfd.status = thread_status > 0 ? TRUE : FALSE ;
 		  lfd.err_msg = err_msg ;
+              lfd.start = cd->start;
+              lfd.end = cd->end;
+
 
 		  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, &lfd) ;
 		}

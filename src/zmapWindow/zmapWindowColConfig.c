@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 18 10:56 2011 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.44 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.45 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1104,7 +1104,7 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
 /* also called for full range by using seq start and end coords */
 gboolean column_is_loaded_in_range(ZMapFeatureContextMap map, ZMapFeatureBlock block, GQuark column_id,int start, int end)
 {
-#define MH17_DEBUG      1
+#define MH17_DEBUG      0
       GList *fsets;
 
       fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);

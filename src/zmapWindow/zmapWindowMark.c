@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Mar 10 16:30 2011 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.29 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.30 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1075,8 +1075,12 @@ static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *po
 
       my_foo_canvas_item_get_world_bounds((FooCanvasItem *)block, &x1, &y1, &x2, &y2) ;
 
-      foo_canvas_item_get_bounds((FooCanvasItem *)block, &x1, &y1, &x2, &y2) ;
+#if MH17_WHAT_IS_THIS_FOR
+// erm.. fill in soem data and then overwrite it??
+// totalview suggests we want world coordinates as does this code
 
+      foo_canvas_item_get_bounds((FooCanvasItem *)block, &x1, &y1, &x2, &y2) ;
+#endif
 
       if (rectangleIntersection(x1, y1, x2, y2,
 				get_block_data->world_x1, get_block_data->world_y1,

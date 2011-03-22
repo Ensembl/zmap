@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.81 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.82 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -774,13 +774,30 @@ static void collection_add_colinear_cb(gpointer data, gpointer user_data)
   ComplexBump bump_data  = (ComplexBump)user_data;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  ZMapFeatureBlock block;
+  ZMapWindowContainerBlock container_block;
+  int block_offset = 0;
+
+      /* features azre block displayed relative so we have to do the same for gylphs etc
+       * really these should be part of the feature not the featureset
+       */
+            /* get block via strand from container */
+  container_block = (ZMapWindowContainerBlock)
+                  zmapWindowContainerUtilsGetParentLevel((ZMapWindowContainerGroup) column_data->feature_set, ZMAPCONTAINER_LEVEL_BLOCK);
+
+            /* get the feature corresponding to tbe canvas block */
+  zMapAssert(ZMAP_IS_CONTAINER_BLOCK(container_block));
+  zmapWindowContainerGetFeatureAny( (ZMapWindowContainerGroup) container_block, (ZMapFeatureAny *) &block);
+  if(block)
+      block_offset = block->block_to_sequence.block.x1;
+
   zMapWindowContainerFeatureSetAddColinearMarkers(column_data->feature_set, column_data->feature_list,
-						  colinear_compare_features_cb, column_data) ;
+						  colinear_compare_features_cb, column_data, block_offset) ;
 
   zMapWindowContainerFeatureSetAddIncompleteMarkers(column_data->feature_set, column_data->feature_list,
-						    column_data->bump_properties->window->revcomped_features) ;
+						    column_data->bump_properties->window->revcomped_features, block_offset) ;
 
-  zMapWindowContainerFeatureSetAddSpliceMarkers(column_data->feature_set, column_data->feature_list) ;
+  zMapWindowContainerFeatureSetAddSpliceMarkers(column_data->feature_set, column_data->feature_list, block_offset) ;
 
   return ;
 }

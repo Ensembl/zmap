@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.20 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.21 2011-03-22 12:30:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -167,9 +167,9 @@ void zMapWindowContainerFeatureSetRemoveSubFeatures(ZMapWindowContainerFeatureSe
 void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureSet container_set,
 						     GList *feature_list,
 						     ZMapFeatureCompareFunc compare_func,
-						     gpointer compare_data) ;
+						     gpointer compare_data, int block_offset) ;
 void zMapWindowContainerFeatureSetAddIncompleteMarkers(ZMapWindowContainerFeatureSet container_set,
-						       GList *feature_list, gboolean revcomped_features) ;
-void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet container_set, GList *feature_list) ;
+						       GList *feature_list, gboolean revcomped_features, int block_offset) ;
+void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet container_set, GList *feature_list, int block_offset) ;
 
 #endif /* ZMAP_WINDOW_CONTAINER_FEATURESET_H */

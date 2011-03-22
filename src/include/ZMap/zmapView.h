@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 23 13:01 2011 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.63 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.64 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -115,6 +115,7 @@ typedef struct
 {
   char *err_msg;        // from the server mainly
   GList *feature_sets ;
+  int start,end;        // requested coords
   gboolean status;      // load sucessful?
   unsigned long xwid ;  // X Window id for the xremote widg. */
 

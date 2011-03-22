@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 23 13:03 2011 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.112 2011-02-24 11:12:41 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.113 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -658,9 +658,11 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
             "<zmap> <request action=\"features_loaded\">"
             " <client xwid=\"0x%lx\" />"
             " <featureset names=\"%s\" />"
+            " <start value=\"%d\" />"
+            " <end value=\"%d\" />"
             " <status value=\"%d\" message=\"%s\" />"
             "</request></zmap>",
-            lfd->xwid, featurelist,(int) lfd->status,emsg) ;
+            lfd->xwid, featurelist, lfd->start, lfd->end, (int) lfd->status,emsg) ;
      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
     if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)

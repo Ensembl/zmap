@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 21 08:10 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.93 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.94 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -580,7 +580,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             run_data.canvas_item = current_item;
 
 #if !MH17_TEST_WITHOUT_FOO
-            item   = ((method)->method)(&run_data, feature, limits[1],
+            item   = ((method)->method)(&run_data, feature, offset,
 				  points[0], points[1],
 				  points[2], points[3],
 				  style);
@@ -749,6 +749,9 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   /* clip the coords to the block, extending end to canvas drawing coords. */
   /* Feature span coords are already clipped to block sapce.
    * We just need to Seq2CanOffset */
+ /* MH17 NOTE this makes the coordinate block relative,
+  * which has a greater effect than clipping them
+  * especially if the coordinates are not 1-based */
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
 
 

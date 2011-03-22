@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.9 2011-02-14 11:45:54 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.10 2011-03-22 12:30:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,6 +76,7 @@ typedef struct
   GdkColor             colinear;
   GdkColor             non_colinear;
   double               x;
+  double               block_offset;
   ZMapFeatureCompareFunc compare_func;
   gpointer               compare_data;
 } ColinearMarkerDataStruct, *ColinearMarkerData ;
@@ -88,7 +89,7 @@ static double get_glyph_mid_point(FooCanvasItem *item);
 static void add_colinear_lines(gpointer data, gpointer user_data);
 static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 				  ZMapStrand ref_strand, MatchType match_type,
-				  FooCanvasItem *item, ZMapFeature feature) ;
+				  FooCanvasItem *item, ZMapFeature feature,int block_offset) ;
 static gboolean fragments_splice(char *fragment_a, char *fragment_b);
 //static void process_feature(ZMapFeature prev_feature);
 static void destroyListAndData(GList *item_list) ;
@@ -110,7 +111,7 @@ static void itemDestroyCB(gpointer data, gpointer user_data);
 void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureSet feature_set,
 						     GList *feature_list,
 						     ZMapFeatureCompareFunc compare_func,
-						     gpointer compare_data)
+						     gpointer compare_data, int block_offset)
 {
   ColinearMarkerDataStruct colinear_data = {NULL};
   ZMapFeatureTypeStyle style;
@@ -118,7 +119,6 @@ void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureS
   char *perfect_colour     = ZMAP_WINDOW_MATCH_PERFECT ;
   char *colinear_colour    = ZMAP_WINDOW_MATCH_COLINEAR ;
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
-
 
   zMapAssert(feature_set && feature_list && compare_func) ;
 
@@ -137,6 +137,8 @@ void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureS
 
   colinear_data.x = (x2 * 0.5);
 
+  colinear_data.block_offset = block_offset;
+
   gdk_color_parse(perfect_colour,     &colinear_data.perfect) ;
   gdk_color_parse(colinear_colour,    &colinear_data.colinear) ;
   gdk_color_parse(noncolinear_colour, &colinear_data.non_colinear) ;
@@ -150,7 +152,7 @@ void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureS
 
 
 void zMapWindowContainerFeatureSetAddIncompleteMarkers(ZMapWindowContainerFeatureSet feature_set,
-						       GList *feature_list, gboolean revcomped_features)
+						       GList *feature_list, gboolean revcomped_features,int block_offset)
 {
   ZMapWindowCanvasItem canvas_item ;
   FooCanvasItem *first_item, *last_item ;
@@ -183,16 +185,16 @@ void zMapWindowContainerFeatureSetAddIncompleteMarkers(ZMapWindowContainerFeatur
     }
 
   /* If either the first or last match features are truncated then add the incomplete marker. */
-  markMatchIfIncomplete(feature_set, ref_strand, FIRST_MATCH, first_item, first_feature) ;
+  markMatchIfIncomplete(feature_set, ref_strand, FIRST_MATCH, first_item, first_feature,block_offset) ;
 
-  markMatchIfIncomplete(feature_set, ref_strand, LAST_MATCH, last_item, last_feature) ;
+  markMatchIfIncomplete(feature_set, ref_strand, LAST_MATCH, last_item, last_feature,block_offset) ;
 
   return ;
 }
 
 
 
-void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet feature_set, GList *feature_list)
+void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet feature_set, GList *feature_list,int block_offset)
 {
   double x_coord;
   gboolean canonical ;
@@ -253,14 +255,14 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
 		      ZMapWindowGlyphItem glyph ;
 
 		      glyph = zMapWindowGlyphItemCreate(parent, style, 3,
-							x_coord, prev_feature->x2, 0, FALSE) ;
+							x_coord, prev_feature->x2 - block_offset, 0, FALSE) ;
 
 		      /* Record the item so we can delete it later. */
                   if(glyph)
 		            feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
 
 		      glyph = zMapWindowGlyphItemCreate(parent, style, 5,
-							x_coord, curr_feature->x1 - 1, 0, FALSE) ;
+							x_coord, curr_feature->x1 - block_offset - 1, 0, FALSE) ;
 
 		      /* Record the item so we can delete it later. */
                   if(glyph)
@@ -392,17 +394,9 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
       y1 = floor(py2);
       y2 = ceil (cy1);
 
-#if MH17_WHY_IS_YPOS_0
-#warning empirical bug fix here
-/* these line just disappeared!
-   experiment to see if they come back, then try ro explain
-*/
-      y1 = prev_feature->x2;
-      y2 = curr_feature->x1 - 1.0; /* Ext2Zero */
-#else
-      y1 = prev_feature->x2 - canvas_group->ypos;
-      y2 = curr_feature->x1 - canvas_group->ypos - 1.0; /* Ext2Zero */
-#endif
+      y1 = prev_feature->x2 - colinear_data->block_offset;
+      y2 = curr_feature->x1 - colinear_data->block_offset - 1.0; /* Ext2Zero */
+
       mid_x = get_glyph_mid_point(previous) ;
 
       coords[0] = mid_x ;
@@ -423,14 +417,6 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 					  "fill_color_gdk", draw_colour,
 					  NULL);
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Record the item so we can delete it later. */
-      feature_set->colinear_markers = g_list_append(feature_set->colinear_markers, colinear_line) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      // canvas_item->debug = 1;
 
       /* mh17: not sure if this is valid/safe..
        * can't find any definition anywhere of what map and realize signify,
@@ -480,7 +466,7 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
  * alignments to reverse strand. */
 static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 				  ZMapStrand ref_strand, MatchType match_type,
-				  FooCanvasItem *item, ZMapFeature feature)
+				  FooCanvasItem *item, ZMapFeature feature,int block_offset)
 {
   int start, end ;
 
@@ -520,27 +506,11 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 	  if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
 	      || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
 	    {
-#if MH17_WHY_IS_YPOS_0
-#warning empirical bug fix here
-/* these line just disappeared!
-   experiment to see if they come back, then try ro explain
-*/
-                  y_coord = feature->x1 - 1.0 ; /* Ext2Zero */
-#else
-      	      y_coord = feature->x1 - ((FooCanvasGroup *)feature_set)->ypos - 1.0 ; /* Ext2Zero */
-#endif
+      	      y_coord = feature->x1 - block_offset - 1.0 ; /* Ext2Zero */
 	    }
 	  else
 	    {
-#if MH17_WHY_IS_YPOS_0
-#warning empirical bug fix here
-/* these line just disappeared!
-   experiment to see if they come back, then try ro explain
-*/
-                  y_coord = feature->x2;
-#else
-      	      y_coord = feature->x2 - ((FooCanvasGroup *)feature_set)->ypos;
-#endif
+      	      y_coord = feature->x2 - block_offset;
 	    }
 
 	  diff = end - start;
