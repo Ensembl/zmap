@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.82 2011-03-22 12:30:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.83 2011-03-22 16:52:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -663,6 +663,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 		/* WE SHOULD ONLY BE DOING THIS FOR ALIGN FEATURES...TEST AT THIS LEVEL.... */
 
+            /* NOTE for name_no_interleave we have several groups in a column
+             * ref to collection_add_colinear_cb() and called functions
+             */
                 g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
 
                 zMapPrintTimer(NULL, "added inter align bars etc.") ;
@@ -791,13 +794,10 @@ static void collection_add_colinear_cb(gpointer data, gpointer user_data)
   if(block)
       block_offset = block->block_to_sequence.block.x1;
 
+      /* NOTE: this does colinear lines, homology markers and nc-splice */
   zMapWindowContainerFeatureSetAddColinearMarkers(column_data->feature_set, column_data->feature_list,
 						  colinear_compare_features_cb, column_data, block_offset) ;
 
-  zMapWindowContainerFeatureSetAddIncompleteMarkers(column_data->feature_set, column_data->feature_list,
-						    column_data->bump_properties->window->revcomped_features, block_offset) ;
-
-  zMapWindowContainerFeatureSetAddSpliceMarkers(column_data->feature_set, column_data->feature_list, block_offset) ;
 
   return ;
 }
@@ -2401,12 +2401,17 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
  * COLINEAR_PERFECT if they are colinear and there is no missing sequence within the
  * threshold given in the style.
  *
- *  */
+ * NOTE this function also flags the start and end of a series of alignments with COLINEAR_INVALID
+ */
 static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int match_threshold,
 					      ZMapFeature feat_1, ZMapFeature feat_2)
 {
   ColinearityType colinearity = COLINEAR_INVALID ;
   int diff ;
+
+      /* we allow comparisons withthe start and end of the list */
+  if(!feat_1 || !feat_2)
+      return(colinearity);
 
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE)) ;
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)) ;

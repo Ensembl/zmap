@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.10 2011-03-22 12:30:36 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.11 2011-03-22 16:52:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,7 +86,7 @@ typedef struct
 
 /* Accessory functions, some from foo-canvas.c */
 static double get_glyph_mid_point(FooCanvasItem *item);
-static void add_colinear_lines(gpointer data, gpointer user_data);
+static void add_colinear_lines_and_markers(gpointer data, gpointer user_data);
 static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 				  ZMapStrand ref_strand, MatchType match_type,
 				  FooCanvasItem *item, ZMapFeature feature,int block_offset) ;
@@ -119,19 +119,20 @@ void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureS
   char *perfect_colour     = ZMAP_WINDOW_MATCH_PERFECT ;
   char *colinear_colour    = ZMAP_WINDOW_MATCH_COLINEAR ;
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
+  FooCanvasItem *current;
 
   zMapAssert(feature_set && feature_list && compare_func) ;
 
   colinear_data.feature_set = feature_set ;
 
-  colinear_data.previous     = FOO_CANVAS_ITEM(feature_list->data);
-  colinear_data.prev_feature = ZMAP_CANVAS_ITEM(colinear_data.previous)->feature;
+  colinear_data.previous     = NULL; // FOO_CANVAS_ITEM(feature_list->data);
+  colinear_data.prev_feature = NULL; // ZMAP_CANVAS_ITEM(colinear_data.previous)->feature;
 
   colinear_data.compare_func = compare_func;
   colinear_data.compare_data = compare_data;
 
-  style
-    = (ZMAP_CANVAS_ITEM_GET_CLASS(colinear_data.previous)->get_style)(ZMAP_CANVAS_ITEM(colinear_data.previous)) ;
+  current = FOO_CANVAS_ITEM(feature_list->data);
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(current)->get_style)(ZMAP_CANVAS_ITEM(current)) ;
 
   x2 = zMapStyleGetWidth(style);
 
@@ -143,148 +144,13 @@ void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureS
   gdk_color_parse(colinear_colour,    &colinear_data.colinear) ;
   gdk_color_parse(noncolinear_colour, &colinear_data.non_colinear) ;
 
-  g_list_foreach(feature_list->next, add_colinear_lines, &colinear_data);
+      /* process each item and then the end of list to pick up th elast homology marker*/
+  g_list_foreach(feature_list, add_colinear_lines_and_markers, &colinear_data);
+  add_colinear_lines_and_markers(NULL,&colinear_data);
 
   return ;
 }
 
-
-
-
-void zMapWindowContainerFeatureSetAddIncompleteMarkers(ZMapWindowContainerFeatureSet feature_set,
-						       GList *feature_list, gboolean revcomped_features,int block_offset)
-{
-  ZMapWindowCanvasItem canvas_item ;
-  FooCanvasItem *first_item, *last_item ;
-  ZMapFeature first_feature, last_feature ;
-  ZMapStrand ref_strand ;
-
-  /* Assume that match is forward so first match is first item, last match is last item. */
-  first_item   = FOO_CANVAS_ITEM(feature_list->data);
-  canvas_item  = ZMAP_CANVAS_ITEM(first_item);
-  first_feature = canvas_item->feature;
-
-  last_item = FOO_CANVAS_ITEM(g_list_last(feature_list)->data);
-  canvas_item  = ZMAP_CANVAS_ITEM(last_item);
-  last_feature = canvas_item->feature;
-
-  /* Now we have a feature we can retrieve which strand of the reference sequence the
-   * alignment is to. */
-  ref_strand = first_feature->strand ;
-
-  /* If the alignment is to the reverse strand of the reference sequence then swop first and last. */
-  if (ref_strand == ZMAPSTRAND_REVERSE)
-    {
-      last_item   = FOO_CANVAS_ITEM(feature_list->data);
-      canvas_item  = ZMAP_CANVAS_ITEM(last_item);
-      last_feature = canvas_item->feature;
-
-      first_item    = FOO_CANVAS_ITEM(g_list_last(feature_list)->data);
-      canvas_item  = ZMAP_CANVAS_ITEM(first_item);
-      first_feature = canvas_item->feature;
-    }
-
-  /* If either the first or last match features are truncated then add the incomplete marker. */
-  markMatchIfIncomplete(feature_set, ref_strand, FIRST_MATCH, first_item, first_feature,block_offset) ;
-
-  markMatchIfIncomplete(feature_set, ref_strand, LAST_MATCH, last_item, last_feature,block_offset) ;
-
-  return ;
-}
-
-
-
-void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet feature_set, GList *feature_list,int block_offset)
-{
-  double x_coord;
-  gboolean canonical ;
-  ZMapFeatureTypeStyle style;
-  GList *list;
-  ZMapFeature prev_feature;
-  ZMapFeature curr_feature;
-
-  canonical = FALSE ;
-
-//  if((prev_feature = zMapWindowCanvasItemGetFeature(feature_list->data)))
-//    process_feature(prev_feature);
-  prev_feature = zMapWindowCanvasItemGetFeature(feature_list->data);
-
-
-  if((list = feature_list->next))
-    x_coord = get_glyph_mid_point(list->data);
-
-  while (list && prev_feature)
-    {
-      char *prev, *curr;
-      gboolean prev_reversed, curr_reversed;
-
-      curr_feature = zMapWindowCanvasItemGetFeature(list->data);
-
-      prev_reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
-      curr_reversed = curr_feature->strand == ZMAPSTRAND_REVERSE;
-
-//      process_feature(curr_feature);
-
-            // 3' end of exon: get 1 base  + 2 from intron
-      prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
-			       prev_feature->x2,
-			       prev_feature->x2 + 2,
-			       prev_reversed);
-
-            // 5' end of exon: get 2 bases from intron
-      curr = zMapFeatureGetDNA((ZMapFeatureAny)curr_feature,
-			       curr_feature->x1 - 2,
-			       curr_feature->x1 - 1,
-			       curr_reversed);
-
-      if (prev && curr && fragments_splice(prev, curr))
-	{
-	  FooCanvasGroup *parent;
-//	  GQuark id;
-
-	  parent = FOO_CANVAS_GROUP(zmapWindowContainerGetOverlay(ZMAP_CONTAINER_GROUP(feature_set))) ;
-
-        style = curr_feature->style;
-
-	  if (style)
-	    {
-	      /* do sub-feature bit or not needed now ? */
-            style = curr_feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
-		  if (style)
-		    {
-		      ZMapWindowGlyphItem glyph ;
-
-		      glyph = zMapWindowGlyphItemCreate(parent, style, 3,
-							x_coord, prev_feature->x2 - block_offset, 0, FALSE) ;
-
-		      /* Record the item so we can delete it later. */
-                  if(glyph)
-		            feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
-
-		      glyph = zMapWindowGlyphItemCreate(parent, style, 5,
-							x_coord, curr_feature->x1 - block_offset - 1, 0, FALSE) ;
-
-		      /* Record the item so we can delete it later. */
-                  if(glyph)
-		            feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
-		    }
-		}
-	}
-
-      /* free */
-      if(prev)
-	g_free(prev);
-      if(curr)
-	g_free(curr);
-
-      /* move on. */
-      prev_feature = curr_feature;
-
-      list = list->next;
-    }
-
-  return ;
-}
 
 
 void zMapWindowContainerFeatureSetRemoveSubFeatures(ZMapWindowContainerFeatureSet container)
@@ -349,13 +215,88 @@ static void zmap_window_collection_feature_destroy     (GObject *object)
 
 
 
-static void add_colinear_lines(gpointer data, gpointer user_data)
+int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_offset,
+      ZMapWindowCanvasItem curr_item, ZMapWindowCanvasItem prev_item,
+      ZMapFeature curr_feature,ZMapFeature prev_feature)
+{
+      char *prev, *curr;
+      gboolean prev_reversed, curr_reversed;
+      int added = 0;
+
+      prev_reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
+      curr_reversed = curr_feature->strand == ZMAPSTRAND_REVERSE;
+
+
+            // 3' end of exon: get 1 base  + 2 from intron
+      prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
+                         prev_feature->x2,
+                         prev_feature->x2 + 2,
+                         prev_reversed);
+
+            // 5' end of exon: get 2 bases from intron
+      curr = zMapFeatureGetDNA((ZMapFeatureAny)curr_feature,
+                         curr_feature->x1 - 2,
+                         curr_feature->x1 - 1,
+                         curr_reversed);
+
+      if (prev && curr && fragments_splice(prev, curr))
+      {
+        FooCanvasGroup *parent;
+        ZMapFeatureTypeStyle style;
+
+        parent = FOO_CANVAS_GROUP(zmapWindowContainerGetOverlay(ZMAP_CONTAINER_GROUP(feature_set))) ;
+
+        style = curr_feature->style;
+
+        if (style)
+          {
+            /* do sub-feature bit or not needed now ? */
+            style = curr_feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
+              if (style)
+                {
+                  ZMapWindowGlyphItem glyph ;
+                  double x_coord;
+
+                  x_coord = get_glyph_mid_point((FooCanvasItem *) curr_item);
+
+                  glyph = zMapWindowGlyphItemCreate(parent, style, 3,
+                                          x_coord, prev_feature->x2 - block_offset, 0, FALSE) ;
+
+                  /* Record the item so we can delete it later. */
+                  if(glyph)
+                  {
+                        feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
+                        added++;
+                  }
+
+                  glyph = zMapWindowGlyphItemCreate(parent, style, 5,
+                                          x_coord, curr_feature->x1 - block_offset - 1, 0, FALSE) ;
+
+                  /* Record the item so we can delete it later. */
+                  if(glyph)
+                  {
+                        feature_set->splice_markers = g_list_append(feature_set->splice_markers, glyph) ;
+                        added++;
+                  }
+                }
+            }
+      }
+
+      /* free */
+      if(prev)
+      g_free(prev);
+      if(curr)
+      g_free(curr);
+      return added;
+}
+
+static void add_colinear_lines_and_markers(gpointer data, gpointer user_data)
 {
   ColinearMarkerData colinear_data = (ColinearMarkerData)user_data;
   ZMapWindowContainerFeatureSet feature_set ;
   FooCanvasItem *current = FOO_CANVAS_ITEM(data);
   FooCanvasItem *previous;
-  ZMapFeature prev_feature, curr_feature;
+  ZMapFeature prev_feature = NULL, curr_feature = NULL;
   GdkColor *draw_colour;
   FooCanvasPoints line_points;
   double coords[4], y1, y2;
@@ -363,15 +304,42 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 
   feature_set = colinear_data->feature_set ;
 
+  /* NOTE current and previous can be NULL if we are at the start or end of the list */
   previous = colinear_data->previous;
   colinear_data->previous = current;
 
   prev_feature = colinear_data->prev_feature;
-  curr_feature = ZMAP_CANVAS_ITEM(current)->feature;
+  if(current)
+      curr_feature = ZMAP_CANVAS_ITEM(current)->feature;
   colinear_data->prev_feature = curr_feature;
 
   if ((colinearity = (colinear_data->compare_func)(prev_feature, curr_feature,
-						   colinear_data->compare_data)) != COLINEAR_INVALID)
+						   colinear_data->compare_data)) == COLINEAR_INVALID)
+    {
+            /* must be start or end of a sequence */
+            MatchType prev_match = LAST_MATCH;
+            MatchType curr_match = FIRST_MATCH;
+            ZMapStrand ref_strand ;
+
+            /* add end homology marker to previous if present */
+            if(previous)
+            {
+              ref_strand = prev_feature->strand ;
+              if(ref_strand ==ZMAPSTRAND_REVERSE)
+                  prev_match = FIRST_MATCH;
+              markMatchIfIncomplete(feature_set, ref_strand, prev_match, previous, prev_feature, colinear_data->block_offset) ;
+            }
+
+            /* add start homology marker to current if present */
+            if(current)
+            {
+              ref_strand = curr_feature->strand ;
+              if(ref_strand ==ZMAPSTRAND_REVERSE)
+                  curr_match = LAST_MATCH;
+              markMatchIfIncomplete(feature_set, ref_strand, curr_match, current, curr_feature, colinear_data->block_offset) ;
+            }
+    }
+  else      /* we must have two features and they are in the same series */
     {
       FooCanvasGroup *canvas_group;
       FooCanvasItem *colinear_line;
