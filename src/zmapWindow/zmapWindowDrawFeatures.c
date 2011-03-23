@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 14 14:18 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.311 2011-03-18 14:35:45 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.312 2011-03-23 08:23:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -704,8 +704,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if(feature_set->masker_sorted_features)
         {
-            if(!container->maskable)            /* cannot have been unset */
-                  container->masked = TRUE;     /* default to not visible on first feature set */
+            if(!container->maskable)            /* cannot have been unset -> this is the first maskable set */
+                  container->masked = FALSE;     /* default to visible on first feature set */
             container->maskable = TRUE;
         }
 
@@ -728,7 +728,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       if(feature_set->masker_sorted_features)
         {
             if(!container->maskable)            /* cannot have been unset */
-                  container->masked = TRUE;     /* default to not visible on first feature set */
+                  container->masked = FALSE;     /* default to visible on first feature set */
             container->maskable = TRUE;
         }
 
