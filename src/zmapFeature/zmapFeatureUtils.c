@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 25 16:25 2010 (edgrif)
+ * Last edited: Mar 30 12:35 2011 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.78 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.79 2011-03-31 10:34:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -722,7 +722,6 @@ Could re-instate the column->featuresets list and allocate and uppercase it if !
 /* For blocks within alignments other than the master alignment, it is not possible to simply
  * use the x1,x2 positions in the feature struct as these are the positions in the original
  * feature. We need to know the coordinates in the master alignment. (ie as in the parent span) */
-
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2)
 {
   double master_x1 = 0.0, master_x2 = 0.0 ;
@@ -743,6 +742,41 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
   return ;
 }
+
+
+
+void zMapFeature2BlockCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout)
+{
+  int offset ;
+
+  offset = block->block_to_sequence.block.x1 ;
+
+  if (x1_inout)
+    *x1_inout = (*x1_inout - offset) + 1 ;
+
+  if (x2_inout)
+    *x2_inout = (*x2_inout - offset) + 1 ;
+
+  return ;
+}
+
+
+
+void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout)
+{
+  int offset ;
+
+  offset = block->block_to_sequence.block.x1 ;
+
+  if (x1_inout)
+    *x1_inout = (*x1_inout + offset) - 1 ;
+
+  if (x2_inout)
+    *x2_inout = (*x2_inout + offset) - 1 ;
+
+  return ;
+}
+
 
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out)
@@ -993,8 +1027,6 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 
 
 
-
-
 ZMapFrame zMapFeatureFrame(ZMapFeature feature)
 {
   ZMapFrame frame = ZMAPFRAME_NONE ;
@@ -1003,6 +1035,7 @@ ZMapFrame zMapFeatureFrame(ZMapFeature feature)
 
   return frame ;
 }
+
 
 ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord)
 {
@@ -1030,7 +1063,9 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
       frame = feature_frame(feature, start);
     }
   else
-    zMapLogWarning("Feature %s is not a Transcript.", g_quark_to_string(feature->unique_id));
+    {
+      zMapLogWarning("Feature %s is not a Transcript.", g_quark_to_string(feature->unique_id));
+    }
 
   return frame;
 }
@@ -1067,9 +1102,20 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
 
-  offset = block->block_to_sequence.parent.x1;   /* start of block in sequence/parent */
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  offset = block->block_to_sequence.parent.x1;   /* start of block in sequence/parent */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   frame  = (ZMapFrame) ((start_coord + offset) % 3) + ZMAPFRAME_0 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  frame  = (ZMapFrame) ((start_coord - offset) % 3) + ZMAPFRAME_0 ;
+
 
   return frame;
 }

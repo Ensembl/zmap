@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Feb 21 08:02 2011 (edgrif)
+ * Last edited: Mar 31 11:32 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.192 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.193 2011-03-31 10:34:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -613,7 +613,10 @@ typedef struct ZMapFeatureStruct_
 
 
   /* MOVE THIS...WE ONLY NEED IT IN SOME FEATURES....NEEDS SOME RESEARCH BECAUSE WHILE
-   * THIS IS BASICALLY AN ALIGNMENT THING THERE MAY BE OTHER FEATURES THAT HAVE SCORES... */
+   * THIS IS BASICALLY AN ALIGNMENT THING THERE MAY BE OTHER FEATURES THAT HAVE SCORES...
+   * 
+   * e.g. TRANSCRIPTS WILL NEED SCORE BECAUSE THEY MAY BE PRODUCED BY PREDICTION PROGRAMS...
+   *  */
   float score ;
 
   /* Source name and text, gives information about all features of a particular type. */
@@ -943,6 +946,8 @@ gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
+void zMapFeature2BlockCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
+void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
