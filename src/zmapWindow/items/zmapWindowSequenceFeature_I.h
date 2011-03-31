@@ -29,9 +29,9 @@
  *              highlighting.
  *
  * HISTORY:
- * Last edited: Jul 22 14:47 2010 (edgrif)
+ * Last edited: Mar 17 15:16 2011 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.7 2010-07-29 10:17:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.8 2011-03-31 11:38:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_SEQUENCE_FEATURE_I_H
@@ -70,12 +70,19 @@ typedef struct _zmapWindowSequenceFeatureStruct
    * to know which frame we are !! */
   ZMapFrame frame ;
 
+  /* We display sequence where  start > 1  so need offset to correct coords for text display. */
+  double offset ;
+
+
   struct
   {
     double zoom_x, zoom_y;
+
     /* world coords scroll region, also sets min/max x/y positions */
     double scr_x1, scr_y1, scr_x2, scr_y2;
+
   } float_settings;
+
 
   struct
   {
