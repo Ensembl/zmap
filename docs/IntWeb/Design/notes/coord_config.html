@@ -1,7 +1,10 @@
 </div>
-<div style="margin-right:5em;margin-left:11em;">
-<h2>Coordinate systems and configuration</h2>
-<fieldset><legend>Coordinate systems for generic databases</legend>
+
+
+<h1>Coordinate systems and configuration</h1>
+
+<h2>Coordinate systems for generic databases</h2>
+
 <h3>What's the problem?</h3>
 <p>
 It is common (especially in model organism databases) to use chromosome coordinates to refer to sequence information but many databases exist which are based on fragments eg BAC (clones), and these are typically based from 1.  ZMap implements a mapping process to define what coordinates are presented to the user and what coordinates are used when referring to the underlying database.
@@ -188,12 +191,12 @@ When mapping a genomic sequence to an underlying database both forward and rever
 
 </ul>
 </p>
-</fieldset>
 
 
 
 
-<fieldset><legend>Chromosome and ZMap coordinates</legend>
+
+<h2>Chromosome and ZMap coordinates</h2>
 <p>Chromosome coordinates are useful when dealing with external sources and people but are unwieldy when annotating and ZMap has traditionally held features based on slice coordinates ie based from 1.
 </p>
 <p>The user will always be presented with ZMap coordinates in status widgets and the ruler also provides a tooltip with the zmap coordinate and if available the corresponding chromosome coordinate.
@@ -236,12 +239,12 @@ ZMap will store features with chromosome coordinates and Pipe servers and ACEDB 
 <p>The scale display must be adjusted when chromosome coords are configured.
 </p>
 
-<fieldset>
 
+<h2>Window and sequence coordinates</h2>
 
-<fieldset><legend>Window and sequence coordinates</legend>
 <h3>Nomenclature</h3>
 <p>
+
 <table border="1" spacing="1">
 <tr><td> world </td> <td>FooCanvas</td> <td>real world coordinate relating to sequence/ feature </td> </tr>
 <tr><td> canvas </td> <td>FooCanvas</td> <td>pixel coordinate relating to the scroll region</td> </tr>
@@ -250,6 +253,7 @@ ZMap will store features with chromosome coordinates and Pipe servers and ACEDB 
 <tr><td> sequence </td> <td>ZMap</td> <td> coordinates corresponding to loaded data<br />(may be 1-based or not depending on the database) </td>
 <tr><td> chromosome </td> <td>ZMap</td> <td> external (physical) coordinates relating to where the loaded data has come from </td> </tr>
 </table>
+
 </p>
 <p>The FooCanvas code comments that window and canvas coordinates are the same, but note that canvas are integer and window are real. The code suggests that they are both pixel coordinates.
 </p>
@@ -324,9 +328,9 @@ To implement request from mark (and the corresponding function via an XRemote re
 </ul>
 </p>
 
-</fieldset>
 
-<fieldset><legend>Implementation</legend>
+
+<h2>Implementation</h2>
 <p>
 <ul>
 <li>The feature context will remain reverse complemented instead of keeping it static and reversing the display as there would eb a lot of work needed to fix this.  This means that feature stats and end coordinate will always be +ve and start &lt; end.
@@ -341,4 +345,3 @@ To implement request from mark (and the corresponding function via an XRemote re
 
 </ul>
 </p>
-</fieldset>
