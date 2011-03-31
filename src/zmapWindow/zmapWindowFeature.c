@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 10 13:48 2011 (edgrif)
+ * Last edited: Mar 31 12:26 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.211 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.212 2011-03-31 11:28:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,13 +129,6 @@ typedef struct
 
 FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group, ZMapFeature feature,
 				gboolean bump_col) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item);
-static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
-                                             ZMapGUIMenuItemCallbackFunc callback_func,
-                                             gpointer callback_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 				   ZMapGUIMenuItemCallbackFunc callback_func,
 				   gpointer callback_data) ;
@@ -161,16 +154,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
-                                                      gpointer data,
-                                                      gpointer user_data,
-                                                      char **error_out);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapFeatureContext context,
                                       ZMapFeatureAlignment align,
@@ -183,7 +166,9 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout,
                                       gpointer handler_data);
 
-static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpointer user_data) ;
+static gboolean sequenceSelectionCB(FooCanvasItem *item,
+				    int start, int end, int seq_x1, int seq_x2,
+				    gpointer user_data) ;
 
 
 
@@ -212,19 +197,6 @@ static gboolean mouse_debug_G = FALSE ;
  * This way if there are errors in the xml and you can't find the right align/block/set then
  * you can easily report back to lace what the error was....
  *  */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GHashTable *zMapWindowFeatureAllStyles(ZMapWindow window)
-{
-  zMapAssert(window && window->feature_context);
-
-  return window->feature_context->styles ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -464,11 +436,16 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   return result ;
 }
 
+
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
 {
+  ZMapFrame frame ;
+
   /* do we need to consider the reverse strand.... or just return ZMAPFRAME_NONE */
 
-  return zMapFeatureFrame(feature);
+  frame = zMapFeatureFrame(feature) ;
+
+  return frame ;
 }
 
 /* Encapulates the rules about which strand a feature will be drawn on.
@@ -1050,7 +1027,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0,  0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 
@@ -1552,53 +1529,6 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void textSelectCB(int menu_item_id, gpointer callback_data)
-{
-#ifdef RDS_BREAKING_STUFF
-  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowItemHighlighter hlght = NULL;
-
-  switch(menu_item_id){
-  case 3:
-    zMapWarning("%s", "Manually selecting the text will copy it to the clip buffer automatically");
-    break;
-  case 2:
-    if((hlght = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(menu_data->item))))
-      zmapWindowItemTextHighlightReset(hlght);
-    break;
-  default:
-    zMapWarning("%s", "Unimplemented feature");
-    break;
-  }
-#endif
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
-                                             ZMapGUIMenuItemCallbackFunc callback_func,
-                                             gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "Select All",  1, textSelectCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Select None", 2, textSelectCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Copy",        3, textSelectCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle,
 				       char         *text,
@@ -1713,14 +1643,17 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 
 
 
-/* this is surely a candidate for better encapsulation that this.... */
-static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpointer user_data)
+/* this is surely a candidate for better encapsulation that this....it should be moved to
+ * the items/ subdir in the SequenceFeature object. */
+static gboolean sequenceSelectionCB(FooCanvasItem *item,
+				    int start, int end, int seq_x1, int seq_x2,
+				    gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapWindowSequenceFeature sequence_feature ;
   ZMapFeature feature;
 
-  sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
+  sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item) ;
 
   feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
 
@@ -1743,7 +1676,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpo
     }
 
   /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, item, item, start, end, NULL, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, feature, item, item, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
 
   return FALSE ;
 }
