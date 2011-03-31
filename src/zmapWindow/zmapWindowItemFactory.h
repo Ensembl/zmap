@@ -28,19 +28,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 19 13:37 2009 (rds)
+ * Last edited: Mar 31 12:12 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.h,v 1.10 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.h,v 1.11 2011-03-31 11:13:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAPWINDOWITEM_FACTORY_H
 #define ZMAPWINDOWITEM_FACTORY_H
-
-/* Should this go up to ZMAPSTYLE_MODE_GLYPH */
-#define FACTORY_METHOD_COUNT ZMAPSTYLE_MODE_GLYPH
-
-
 
 
 typedef gboolean (*ZMapWindowFToIFactoryTopItemCreated)(FooCanvasItem *top_item,
