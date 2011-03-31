@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 31 12:19 2011 (edgrif)
+ * Last edited: Mar 31 12:53 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.145 2011-03-31 11:23:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.146 2011-03-31 11:54:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2054,39 +2054,7 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 		}
 	      else
 		{
-		  int tmp_start, tmp_end ;
-
-		  tmp_start = region_start ;
-		  tmp_end = region_end ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  if (coords_type == ZMAPSEQUENCE_DNA)
-		    {
-		      zMapSequenceDNA2Pep(&tmp_start, &tmp_end, required_frame) ;
-
-		      if (sequence_debug)
-			printf("region start/end: %d,%d      pep start/end: %d,%d\n",
-			       region_start, region_end, tmp_start, tmp_end) ;
-		    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  else
-		    {
-		      zMapSequencePep2DNA(&tmp_start, &tmp_end, required_frame) ;
-
-		      zMapSequenceDNA2Pep(&tmp_start, &tmp_end, required_frame) ;
-		    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  if (tmp_start && tmp_end)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		    zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, tmp_start, tmp_end) ;
+		  zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
 		}
 	    }
 	  else
