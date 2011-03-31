@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Mar 14 14:18 2011 (edgrif)
+ * Last edited: Mar 31 12:30 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.312 2011-03-23 08:23:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.313 2011-03-31 11:31:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,8 @@ typedef struct _ZMapCanvasDataStruct
 
   GList *masked;
 
+
+  /* frame specific display control. */
   gboolean    frame_mode_change ;
   ZMapFrame   current_frame;
 
@@ -992,7 +994,7 @@ void container_mask_cb(ZMapWindowContainerGroup container, FooCanvasPoints *poin
 static void windowDrawContext(ZMapCanvasData     canvas_data,
 			      ZMapFeatureContext full_context,
 			      ZMapFeatureContext diff_context,
-                        GList *masked)
+			      GList *masked)
 {
 
   canvas_data->curr_x_offset = 0.0;
@@ -1369,7 +1371,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
   ZMapFeatureSet         feature_set;
   ZMapFeatureStructType feature_type;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-//  int start,end;
+  //  int start,end;
 
   feature_type = feature_any->struct_type;
 
@@ -1482,7 +1484,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         feature_block = (ZMapFeatureBlock)feature_any;
 
 #if MH17_REVCOMP_DEBUG
-zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
+	zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
 #endif
 
 	/* Work out height of block making sure it spans all bases in the block. */
@@ -1497,12 +1499,12 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
                                                                    feature_block->unique_id);
 
         /* Always set y offset to be top of current block. */
-//        canvas_data->curr_y_offset = feature_block->block_to_sequence.x1 ;
+	//        canvas_data->curr_y_offset = feature_block->block_to_sequence.x1 ;
 
         if ((block_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-                                                         canvas_data->curr_alignment->unique_id,
-                                                         feature_block->unique_id, 0, ZMAPSTRAND_NONE,
-                                                         ZMAPFRAME_NONE, 0)))
+							  canvas_data->curr_alignment->unique_id,
+							  feature_block->unique_id, 0, ZMAPSTRAND_NONE,
+							  ZMAPFRAME_NONE, 0)))
           {
             zMapAssert(ZMAP_IS_CONTAINER_GROUP(block_hash_item));
 
@@ -1515,9 +1517,9 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
           {
             block_group = zmapWindowContainerGroupCreate(canvas_data->curr_align_group,         							  ZMAPCONTAINER_LEVEL_BLOCK,
 
-							  window->config.strand_spacing,
-							  &(window->colour_block),
-							  &(canvas_data->window->canvas_border));
+							 window->config.strand_spacing,
+							 &(window->colour_block),
+							 &(canvas_data->window->canvas_border));
             g_signal_connect(G_OBJECT(block_group),
                              "destroy",
                              G_CALLBACK(containerDestroyCB),
@@ -1595,7 +1597,7 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
 
                 zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)reverse_group, ZMAPSTRAND_REVERSE);
 
-		    zmapWindowContainerGroupBackgroundSize(reverse_group,height);
+		zmapWindowContainerGroupBackgroundSize(reverse_group,height);
 
 
 
@@ -1637,7 +1639,7 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
 							       &(canvas_data->window->canvas_border));
 
                 zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)forward_group, ZMAPSTRAND_FORWARD);
-		    zmapWindowContainerGroupBackgroundSize(forward_group,height);
+		zmapWindowContainerGroupBackgroundSize(forward_group,height);
 
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB),
@@ -1656,60 +1658,63 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-      FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
+	FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
 	int frame_start, frame_end;
-      ZMapFeatureTypeStyle style;
+	ZMapFeatureTypeStyle style;
 #if MH17_REVCOMP_DEBUG
-    zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
+	zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
 #endif
 
         /* record the full_context current block, not the diff block which will get destroyed! */
-      canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
+	canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
 
-      if(!canvas_data->curr_set)
-      {
+	if (!canvas_data->curr_set)
+	  {
             char *x = g_strdup_printf("cannot find set %s, available are: ", g_quark_to_string(feature_any->unique_id));
             {
-                  GList *l;
-                  zMap_g_hash_table_get_keys(&l,canvas_data->curr_block->feature_sets);
-                  for(;l;l = l->next)
-                  {
-                        char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
-                        x = g_strconcat(x," ",y,NULL);
-                  }
+	      GList *l;
+
+	      zMap_g_hash_table_get_keys(&l,canvas_data->curr_block->feature_sets);
+	      for(;l;l = l->next)
+		{
+		  char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+		  x = g_strconcat(x," ",y,NULL);
+		}
             }
+
             zMapLogWarning(x,"");
-      }
+	  }
 
 	/* Don't attach this feature_set to anything. It is
 	 * potentially part of a _diff_ context in which it might be a
 	 * copy of the view context's feature set.  It should also get
 	 * destroyed with the diff context, so be warned. */
-      feature_set = (ZMapFeatureSet)feature_any;
+	feature_set = (ZMapFeatureSet)feature_any;
 
-      style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
-      if(!style)
-      {
+	style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
+	if(!style)
+	  {
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
-      }
-      if(!style)
-      {
+	  }
+	if(!style)
+	  {
             zMapLogCritical("no column style for featureset %s\n",g_quark_to_string(feature_set->unique_id));
             break;
-      }
-      canvas_data->style = style;
+	  }
+	canvas_data->style = style;
 
-	/* Default is not to draw more than one column... */
+
+	/* Default is to draw one column... */
 	frame_start = ZMAPFRAME_NONE;
 	frame_end   = ZMAPFRAME_NONE;
 
+	/* translation should just be one col..... */
 	if ((!(canvas_data->frame_mode_change)
-	    || feature_set_matches_frame_drawing_mode(window, style, &frame_start, &frame_end)))
+	     || feature_set_matches_frame_drawing_mode(window, style, &frame_start, &frame_end)))
 	  {
 	    int i, got_columns = 0;
 
-	    /* re-written for(i = frame_start; i <= frame_end; i++) */
 	    i = frame_start;
 	    do
 	      {
@@ -1735,7 +1740,7 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
 					     tmp_reverse,
 					     canvas_data->current_frame, canvas_data->frame_mode_change) ;
 
-		    zMapStopTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
+		    zMapStopTimer("DrawFeatureSet", g_quark_to_string(feature_set->unique_id));
 		  }
 		i++;
 	      }
@@ -1749,7 +1754,7 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
 
 	break;
       }
-     case ZMAPFEATURE_STRUCT_INVALID:
+    case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
 	status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
@@ -1759,7 +1764,7 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
     }
 #if MH17_REVCOMP_DEBUG
   if(feature_type != ZMAPFEATURE_STRUCT_FEATURE)
-      zMapLogWarning(" -> status %s\n",status == ZMAP_CONTEXT_EXEC_STATUS_OK ? "OK" : "error");
+    zMapLogWarning(" -> status %s\n",status == ZMAP_CONTEXT_EXEC_STATUS_OK ? "OK" : "error");
 #endif
 
   return status;
@@ -1771,8 +1776,8 @@ zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.bl
  * a column, filtering for frame specificity, before returning the
  * frame start and end, to be used in a for() loop when splitting a
  * feature set into separate, or not so, framed columns */
-static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
-                                          ZMapFeatureTypeStyle style,
+static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
+						       ZMapFeatureTypeStyle style,
 						       int *frame_start_out,
 						       int *frame_end_out)
 {
@@ -1781,60 +1786,60 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
   gboolean frame_specific = FALSE;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
 
-            /* Default is not to draw more than one column... */
-      frame_start = ZMAPFRAME_NONE;
-      frame_end   = ZMAPFRAME_NONE;
+  /* Default is not to draw more than one column... */
+  frame_start = ZMAPFRAME_NONE;
+  frame_end   = ZMAPFRAME_NONE;
 
-      frame_specific = zMapStyleIsFrameSpecific(style);
-      zMapStyleGetStrandAttrs(style,NULL,NULL,&frame_mode);
+  frame_specific = zMapStyleIsFrameSpecific(style);
+  zMapStyleGetStrandAttrs(style,NULL,NULL,&frame_mode);
 
-      if (frame_specific)
+  if (frame_specific)
+    {
+
+      if (IS_3FRAME(window->display_3_frame))
 	{
+	  /* We are going to draw in 3 frame so set up the correct frames to be drawn. */
 
-	  if (IS_3FRAME(window->display_3_frame))
+	  switch(frame_mode)
 	    {
-	      /* We are going to draw in 3 frame so set up the correct frames to be drawn. */
-
-	      switch(frame_mode)
-		{
-		case ZMAPSTYLE_3_FRAME_ONLY_1:
-		  frame_start = ZMAPFRAME_NONE;
-		  frame_end   = ZMAPFRAME_NONE;
-		  break;
-		case ZMAPSTYLE_3_FRAME_ONLY_3:
-		case ZMAPSTYLE_3_FRAME_AS_WELL:
-		  /* we're only redrawing the 3 frame columns here...*/
-		  frame_start = ZMAPFRAME_0;
-		  frame_end   = ZMAPFRAME_2;
-		  break;
-		default:
-		  break;
-		}
-
-	      matched = TRUE ;
+	    case ZMAPSTYLE_3_FRAME_ONLY_1:
+	      frame_start = ZMAPFRAME_NONE;
+	      frame_end   = ZMAPFRAME_NONE;
+	      break;
+	    case ZMAPSTYLE_3_FRAME_ONLY_3:
+	    case ZMAPSTYLE_3_FRAME_AS_WELL:
+	      /* we're only redrawing the 3 frame columns here...*/
+	      frame_start = ZMAPFRAME_0;
+	      frame_end   = ZMAPFRAME_2;
+	      break;
+	    default:
+	      break;
 	    }
-	  else
-	    {
-	      /* We are returning from 3 frame to normal display so only redraw cols that should
-	       * be shown normally. */
 
-	      switch(frame_mode)
-		{
-		case ZMAPSTYLE_3_FRAME_ONLY_1:
-		case ZMAPSTYLE_3_FRAME_ONLY_3:
-		  matched = FALSE ;
-		  break;
-		default:
-		  matched = TRUE ;
-		  break;
-		}
+	  matched = TRUE ;
+	}
+      else
+	{
+	  /* We are returning from 3 frame to normal display so only redraw cols that should
+	   * be shown normally. */
+
+	  switch(frame_mode)
+	    {
+	    case ZMAPSTYLE_3_FRAME_ONLY_1:
+	    case ZMAPSTYLE_3_FRAME_ONLY_3:
+	      matched = FALSE ;
+	      break;
+	    default:
+	      matched = TRUE ;
+	      break;
 	    }
 	}
+    }
 
-      if (frame_start_out)
-	*frame_start_out = frame_start ;
-      if (frame_end_out)
-	*frame_end_out = frame_end ;
+  if (frame_start_out)
+    *frame_start_out = frame_start ;
+  if (frame_end_out)
+    *frame_end_out = frame_end ;
 
   return matched ;
 }
@@ -1926,7 +1931,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 					ZMapFeatureAlignment align,
 					ZMapFeatureBlock     block,
 					ZMapFeatureSet       feature_set,
-                              GQuark               original_id,
+					GQuark               original_id,
 					GQuark               column_id,
 					ZMapStrand           strand,
 					ZMapFrame            frame,
@@ -1955,6 +1960,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
     {
       original_id = column_id;
     }
+
 
   /* Add a background colouring for the column. */
   if (frame != ZMAPFRAME_NONE)
@@ -2014,6 +2020,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
     {
       GList *list;
       proceed = TRUE;
+
       if((list = g_list_first(style_list)))
 	{
 	  do
@@ -2021,10 +2028,10 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	      ZMapFeatureTypeStyle style;
 	      style = ZMAP_FEATURE_STYLE(list->data);
 	      if(!zMapStyleIsDisplayable(style))
-            {
-                  zMapLogWarning("style %s for %s is not displayable\n", g_quark_to_string(style->unique_id),g_quark_to_string(column_id));
-		      proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
-            }
+		{
+                  zMapLogWarning("style %s for %s is not displayable", g_quark_to_string(style->unique_id),g_quark_to_string(column_id));
+		  proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
+		}
 	    }
 	  while(proceed && (list = g_list_next(list)));
 	}
