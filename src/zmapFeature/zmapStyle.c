@@ -1,4 +1,4 @@
-/*  Last edited: Jul 29 10:27 2010 (edgrif) */
+/*  Last edited: Mar 24 09:12 2011 (edgrif) */
 /*  File: zmapStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  and formerly Ed Griffiths (edgrif@sanger.ac.uk)
@@ -30,7 +30,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.62 2011-01-04 11:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.63 2011-03-31 10:56:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -742,6 +742,18 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style)
     }
 
   return valid ;
+}
+
+
+/* Checks style mode to see if it is one of the drawable types. */
+gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
+{
+  gboolean is_drawable = FALSE ;
+
+  if (style->mode > ZMAPSTYLE_MODE_INVALID && style->mode < ZMAPSTYLE_MODE_META)
+    is_drawable = TRUE ;
+
+  return is_drawable ;
 }
 
 

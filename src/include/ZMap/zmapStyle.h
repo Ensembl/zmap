@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jan 26 08:42 2010 (edgrif)
+ * Last edited: Mar 24 08:18 2011 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.62 2010-10-13 09:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.63 2011-03-31 10:56:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -294,6 +294,9 @@ typedef enum
  * form
  *          if (element)
  *            do_something ;
+ * 
+ * Many of the enums have an ordering that is relied on by various functions.
+ * 
  *  */
 
 #define ZMAP_STYLE_MODE_LIST(_)                                                                          \
@@ -976,6 +979,7 @@ void zMapStyleSetPfetch(ZMapFeatureTypeStyle style, gboolean pfetchable) ;
 void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 
 
+gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
 gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
 
