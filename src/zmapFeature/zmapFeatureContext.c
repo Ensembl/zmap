@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  5 13:42 2010 (edgrif)
+ * Last edited: Mar 31 11:50 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.57 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.58 2011-03-31 10:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,12 +89,11 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
                                                          char **error_out);
 static void revcompSpan(GArray *spans, int start_coord, int seq_end) ;
 
-static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
-static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
-
 static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp) ;
+static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
-
+static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
+static void coordToOneBased(int *start_inout, int *end_inout) ;
 
 static gboolean executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
@@ -769,6 +768,52 @@ static char *fetchBlockDNAPtr(ZMapFeatureAny feature_any, ZMapFeatureBlock *bloc
 }
 
 
+
+
+static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp)
+{
+  char *dna = NULL ;
+  ZMapFeatureBlock block ;
+  int start, end ;
+
+  zMapAssert(feature_any && (start_in > 0 && end_in >= start_in)) ;
+
+  start = start_in ;
+  end = end_in ;
+
+  /* Can only get dna if there is dna for the block and the coords lie within the block. */
+  if (fetchBlockDNAPtr(feature_any, &block) && coordsInBlock(block, &start, &end))
+    {
+      /* Transform block coords to 1-based for fetching sequence. */
+      coordToOneBased(&start, &end) ;
+
+      dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
+    }
+
+  return dna ;
+}
+
+
+
+static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
+{
+  char *dna = NULL ;
+  int length ;
+
+  length = end - start + 1 ;
+
+  dna = g_strndup((dna_sequence + start - 1), length) ;
+
+  if (revcomp)
+    zMapDNAReverseComplement(dna, length) ;
+
+  return dna ;
+}
+
+
+
+/* THESE SHOULD BE IN UTILS.... */
+
 /* Check whether coords overlap a block, returns TRUE for full or partial
  * overlap, FALSE otherwise.
  *
@@ -792,41 +837,19 @@ static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end
   return result ;
 }
 
-
-static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp)
+static void coordToOneBased(int *start_inout, int *end_inout)
 {
-  char *dna = NULL ;
-  ZMapFeatureBlock block ;
-  int start, end ;
+  *end_inout -= (*start_inout - 1) ;
 
-  zMapAssert(feature_any && (start_in > 0 && end_in >= start_in)) ;
+  *start_inout = 1 ;
 
-  start = start_in ;
-  end = end_in ;
-
-  /* Can only get dna if there is dna for the block and the coords lie within the block. */
-  if (fetchBlockDNAPtr(feature_any, &block) && coordsInBlock(block, &start, &end))
-    dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
-
-  return dna ;
+  return ;
 }
 
 
 
-static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
-{
-  char *dna = NULL ;
-  int length ;
 
-  length = end - start + 1 ;
 
-  dna = g_strndup((dna_sequence + start - 1), length) ;
-
-  if (revcomp)
-    zMapDNAReverseComplement(dna, length) ;
-
-  return dna ;
-}
 
 
 
@@ -950,8 +973,38 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
   else if (feature->strand == ZMAPSTRAND_REVERSE)
     feature->strand = ZMAPSTRAND_FORWARD ;
 
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-      && (feature->feature.transcript.exons || feature->feature.transcript.introns))
+
+  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    {
+      /* Original & Unique IDs need redoing as they include the frame which probably change on revcomp. */
+      ZMapFrame curr_frame ;
+      char *feature_name = NULL ;			    /* Remember to free this */
+      GQuark feature_id ;
+
+      curr_frame = zMapFeatureFrame(feature) ;
+
+      feature->feature.sequence.frame = curr_frame ;
+
+      feature_name = zMapFeature3FrameTranslationFeatureName((ZMapFeatureSet)(feature->parent), curr_frame) ;
+      feature_id = g_quark_from_string(feature_name) ;
+      g_free(feature_name) ;
+
+      feature->original_id = feature->unique_id = feature_id ;
+    }
+  else if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+    {
+      /* Unique ID needs redoing as it includes the coords which change on revcomp. */
+      ZMapFeatureBlock block ;
+      GQuark dna_id;
+
+      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK)) ;
+
+      dna_id = zMapFeatureDNAFeatureID(block) ;
+
+      feature->unique_id = dna_id ;
+    }
+  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+	   && (feature->feature.transcript.exons || feature->feature.transcript.introns))
     {
       if (feature->feature.transcript.exons)
         revcompSpan(feature->feature.transcript.exons, start_coord, end_coord) ;
