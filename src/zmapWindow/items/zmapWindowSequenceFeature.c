@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowSequenceFeature.h
  * HISTORY:
- * Last edited: Mar 11 11:37 2011 (edgrif)
+ * Last edited: Mar 31 12:48 2011 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.16 2011-03-11 17:49:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.17 2011-03-31 11:50:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,14 +118,15 @@ static double zmap_window_sequence_feature_point      (FooCanvasItem  *item,
 static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject);
 #endif /* RDS_DONT_INCLUDE */
 static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
-							     int text_first_char, int text_final_char);
+							     int text_first_char, int text_final_char,
+							     int start, int end) ;
 
 static void save_scroll_region(FooCanvasItem *item);
 static GType float_group_axis_get_type (void);
 
 static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_feature,
-					     guint                     signal_id,
-					     int first_index, int final_index);
+					     guint signal_id,
+					     int first_index, int final_index, int start, int end);
 static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
 						gboolean       include_protein,
 						FooCanvasItem *item,
@@ -147,7 +148,7 @@ static void coordsDNA2Pep(ZMapFeature feature, int *start_inout, int *end_inout)
 static FooCanvasItemClass *canvas_parent_class_G = NULL ;
 static FooCanvasItemClass *group_parent_class_G = NULL ;
 
-
+static gboolean debug_G = FALSE ;
 
 
 /* 
@@ -184,11 +185,13 @@ GType zMapWindowSequenceFeatureGetType(void)
 }
 
 
+
 /*
  *   highlight/select the DNA/Peptide
  */
 
-/* Highlight sequence corresponding to supplied feature, frame is needed for  */
+
+/* Highlight sequence in sequence_feature corresponding to seed_feature. */
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
 						  FooCanvasItem *item, ZMapFeature seed_feature)
 {
@@ -197,11 +200,15 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
   gboolean result = TRUE;
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
+  ZMapFeatureBlock block ;
   gboolean sub_part ;
+
 
   sequence_group = FOO_CANVAS_GROUP(sequence_feature) ;
   canvas_item = ZMAP_CANVAS_ITEM(sequence_feature) ;
   feature = canvas_item->feature ;
+
+  block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK)) ;
 
   /* Is the given item a sub-part of a feature or the whole feature ? */
   sub_part = zMapWindowCanvasItemIsSubPart(item) ;
@@ -209,11 +216,15 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
   if ((list = sequence_group->item_list))
     {
+
+      /* There should only ever be one iteration here! */
+      /* UMMMM, SO WHY THIS COMMENT ?? I assume the assumption is that there is only one text
+       * feature in a sequence feature object.....EG */
       do
 	{
 	  ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data) ;
 
-	  /* There should only ever be one iteration here! UMMMM, SO WHY THIS COMMENT ?? */
+
 	  switch(seed_feature->type)
 	    {
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -225,8 +236,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		deselect = TRUE ;			    /* 1st time deselect any existing highlight. */
 		event = FALSE ;
 
+		/* oh gosh....what does this do..... */
 		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list) ;
-
 
 		if (sub_part)
 		  {
@@ -239,6 +250,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
 		    start = current_exon->exon_span.x1 ;
 		    end = current_exon->exon_span.x2 ;
+
+		    zMapFeature2BlockCoords(block, &start, &end) ;
 
 		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 		      coordsDNA2Pep(feature, &start, &end) ;
@@ -259,6 +272,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
 			start = current_exon->exon_span.x1 ;
 			end = current_exon->exon_span.x2 ;
+
+			zMapFeature2BlockCoords(block, &start, &end) ;
 
 			if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 			  coordsDNA2Pep(feature, &start, &end) ;
@@ -290,6 +305,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		    start = seed_feature->x1 ;
 		    end = seed_feature->x2 ;
 
+		    zMapFeature2BlockCoords(block, &start, &end) ;
+
 		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 		      coordsDNA2Pep(feature, &start, &end) ;
 
@@ -319,7 +336,9 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
   ZMapFeature feature ;
   GList *list ;
   gboolean select ;
+  int start, end ;
   int seq_start, seq_end ;
+  ZMapFeatureBlock block ;
 
   zMapAssert(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(sequence_feature) && region_start <= region_end) ;
 
@@ -331,26 +350,47 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
   seq_end = feature->feature.sequence.length ;
 
 
+  start = region_start ;
+  end = region_end ;
+
+
+  block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK)) ;
+  zMapFeature2BlockCoords(block, &start, &end) ;
+
+
+  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    zMapSequenceDNA2Pep(&start, &end, feature->feature.sequence.frame) ;
+
+
+  if (debug_G)
+    printf("Feature %s, coord_type %s,   region_start/end: %d, %d   seq start/end: %d, %d\n",
+	   feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE ? "Peptide" : "DNA",
+	   coord_type == ZMAPSEQUENCE_PEPTIDE ? "Peptide" : "DNA",
+	   region_start, region_end,
+	   start, end) ;
+
+
   /* Check coords against sequence length, if both are outside then just deselect (ensures
    * that any sequence currently selected gets deselected). If one coord is inside then
    * clamp the other to lie inside as well, if this proves wrong then perhaps we should just
    * deselect. */
-  if ((region_start < seq_start && region_end < seq_start)
-      || (region_start > seq_end && region_end > seq_end))
+  if ((start < seq_start && end < seq_start)
+      || (start > seq_end && end > seq_end))
     {
       select = FALSE ;
     }
   else
     {
       /* Don't need many checks because start <= end */
-      if (region_start < seq_start)
-	region_start = seq_start ;
+      if (start < seq_start)
+	start = seq_start ;
 
-      if (region_end > seq_end)
-	region_end = seq_end ;
+      if (end > seq_end)
+	end = seq_end ;
 
       select = TRUE ;
     }
+
 
   if ((list = sequence_group->item_list))
     {
@@ -360,16 +400,25 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 	     ONE CHILD IN A TEXT ITEM WHICH IS THE TEXT ???? SHOULD BE ASSERTED TO BE TRUE. */
 
 	  /* There should only ever be one iteration here! */
+
 	  if (ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
 	    {
 	      ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data);
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* This doesn't seem to work...find out why.... */
+
 	      if (select)
 		zMapWindowTextItemSelect(text_item,
-					 region_start, region_end,
+					 start, end,
 					 TRUE, FALSE) ;
 	      else
 		zMapWindowTextItemDeselect(text_item, FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		zMapWindowTextItemSelect(text_item,
+					 start, end,
+					 TRUE, TRUE) ;
 	    }
 	}
       while((list = list->next));
@@ -405,6 +454,13 @@ gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature)
 
   return result;
 }
+
+
+
+
+/* 
+ *                    Internal routines.
+ */
 
 
 static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
@@ -694,6 +750,19 @@ static void zmapExonDestroy(ZMapFullExon exon)
 
 
 
+/* Called by the windowTextItem object (basic display widget for dna
+ * or peptide sequence) in response to the user clicking on a base or
+ * peptide.
+ * 
+ * index1/2 are ZERO-based and are offsets into the text. Thus for
+ * peptides the coords are in peptide space and for DNA they are in DNA
+ * space.
+ * 
+ * Note also that as we zoom in and the scrolled-region shrinks that index1/2
+ * will themselves be offset from the start of the sequence. It's arguable
+ * whether the offsetting should have been dealt with by the text widget...
+ * 
+ *  */
 static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
 						    double cellx1, double celly1,
 						    double cellx2, double celly2,
@@ -706,44 +775,68 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
   FooCanvasItem *item;
   double x1, y1, x2, y2;
   double wx1, wy1, wx2, wy2;
-  int first_char_index = 0;
-  int origin_index, current_index;
+  int world_position ;
+  ZMapFeatureBlock block ;
+  int first_char_index ;
   guint signal_id;
+  int dna_start, dna_end ;
+  int seq_start, seq_end ;
 
-  sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(user_data);
-  canvas_item = ZMAP_CANVAS_ITEM(sequence_feature);
-  item = FOO_CANVAS_ITEM(text);
 
-  feature = canvas_item->feature;
+  sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(user_data) ;
+  canvas_item = ZMAP_CANVAS_ITEM(sequence_feature) ;
+  item = FOO_CANVAS_ITEM(text) ;
+  feature = canvas_item->feature ;
 
+
+  /* Find out world coords of first base displayed (changes as scrolled region position & size changes). */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
   wx1 = x1; wx1 = x2; wy1 = y1; wy2 = y2;
   foo_canvas_item_i2w(item, &wx1, &wy1);
   foo_canvas_item_i2w(item, &wx2, &wy2);
 
+  world_position = first_char_index = (int)(wy1) ;
+
+
+  /* Convert our position to one-based block-relative coords. */
+  block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK)) ;
+  zMapFeature2BlockCoords(block, &first_char_index, NULL) ;
+
+
+  /* If peptide, convert to peptide coords for block for this position. */
   if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
-      first_char_index = (int)(wy1 - feature->x1);
-      first_char_index = (int)(first_char_index / 3) + 1;
-    }
-  else
-    {
-      first_char_index = (int)(wy1 - feature->x1 + 1);
+      int dummy = first_char_index ;
+
+      zMapSequenceDNA2Pep(&first_char_index, &dummy, feature->feature.sequence.frame) ;
     }
 
-  origin_index  = index1 + first_char_index;
-  current_index = index2 + first_char_index;
+
+  /* Now get the start/end position of selected text in the dna or peptide sequence. */
+  seq_start = first_char_index + index1 ;
+  seq_end = first_char_index + index2 ;
 
 
-  /* This section of code isn't great, it implies that to some extent we are not in control
-   * of our coords...investigate when there is time...note that with peptides we can run
-   * off the end in our coords because of all the frame stuff.... */
+  /* Now convert that back into dna coords. */
+  dna_start = seq_start ;
+  dna_end = seq_end ;
+
+  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    zMapSequencePep2DNA(&dna_start, &dna_end, feature->feature.sequence.frame) ;
+
+  zMapBlock2FeatureCoords(block, &dna_start, &dna_end) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* hmmmm do we still need these...do more trials... */
+
 
   /* HACK: Currently we display an 'X' for peptides right at the end that can't be fully translated
    * because we've run out of dna sequence, avoid displaying these as we run off the dna.... */
   if (feature->type != ZMAPSTYLE_MODE_PEP_SEQUENCE || current_index <= feature->feature.sequence.length)
     {
       /* These comments are Roys and imply that the whole text position stuff is flakey. */
+
 
       /* this is needed to fix up what is probably unavoidable from the text item... [-ve coords] */
       if (origin_index < 1)
@@ -752,15 +845,23 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
       /* this is needed to fix up what is probably unavoidable from the text item... [too long coords] */
       if (current_index > feature->feature.sequence.length)
 	current_index = feature->feature.sequence.length;
-
-      signal_id = ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(sequence_feature)->signals[SEQUENCE_SELECTED_SIGNAL];
-
-      sequence_feature_emit_signal(sequence_feature, signal_id,
-				   origin_index, current_index);
     }
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Now send the signal, this ends up calling code in zmapFeature.c to tell layer above what
+   * was clicked on. */
+  signal_id = ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(sequence_feature)->signals[SEQUENCE_SELECTED_SIGNAL];
+
+  sequence_feature_emit_signal(sequence_feature, signal_id,
+			       dna_start, dna_end, seq_start, seq_end) ;
+
 
   return TRUE;
 }
+
 
 static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvasItem   sequence,
 								ZMapFeatureSubPartSpan unused,
@@ -901,9 +1002,9 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 		 G_SIGNAL_RUN_LAST,
 		 G_STRUCT_OFFSET(zmapWindowSequenceFeatureClass, selected_signal),
 		 NULL, NULL,
-		 zmapWindowSequenceFeatureCMarshal_BOOL__INT_INT,
-		 G_TYPE_BOOLEAN, 2,
-		 G_TYPE_INT, G_TYPE_INT);
+		 zmapWindowSequenceFeatureCMarshal_BOOL__INT_INT_INT_INT,
+		 G_TYPE_BOOLEAN, 4,
+		 G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
 
   sequence_class->selected_signal = zmap_window_sequence_feature_selected_signal;
 
@@ -914,31 +1015,31 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
   return ;
 }
 
-static void zmap_window_sequence_feature_init(ZMapWindowSequenceFeature  sequence)
+static void zmap_window_sequence_feature_init(ZMapWindowSequenceFeature sequence)
 {
-  ZMapWindowCanvasItem canvas_item;
-  FooCanvasItem *item;
+  ZMapWindowCanvasItem canvas_item ;
+  FooCanvasItem *item ;
 
-  canvas_item = ZMAP_CANVAS_ITEM(sequence);
-  canvas_item->auto_resize_background = 1;
+  canvas_item = ZMAP_CANVAS_ITEM(sequence) ;
+  canvas_item->auto_resize_background = 1 ;
 
   /* initialise the floating stuff */
-  sequence->float_settings.zoom_x = 0.0;
-  sequence->float_settings.zoom_y = 0.0;
-  sequence->float_settings.scr_x1 = 0.0;
-  sequence->float_settings.scr_y1 = 0.0;
-  sequence->float_settings.scr_x2 = 0.0;
-  sequence->float_settings.scr_y2 = 0.0;
+  sequence->float_settings.zoom_x = 0.0 ;
+  sequence->float_settings.zoom_y = 0.0 ;
+  sequence->float_settings.scr_x1 = 0.0 ;
+  sequence->float_settings.scr_y1 = 0.0 ;
+  sequence->float_settings.scr_x2 = 0.0 ;
+  sequence->float_settings.scr_y2 = 0.0 ;
 
-  item = FOO_CANVAS_ITEM(sequence);
+  item = FOO_CANVAS_ITEM(sequence) ;
   if(item->canvas)
     {
-      sequence->float_settings.zoom_x = item->canvas->pixels_per_unit_x;
-      sequence->float_settings.zoom_y = item->canvas->pixels_per_unit_y;
+      sequence->float_settings.zoom_x = item->canvas->pixels_per_unit_x ;
+      sequence->float_settings.zoom_y = item->canvas->pixels_per_unit_y ;
     }
 
   /* y axis only! */
-  sequence->float_flags.float_axis = ZMAP_FLOAT_AXIS_Y;
+  sequence->float_flags.float_axis = ZMAP_FLOAT_AXIS_Y ;
 
   return ;
 }
@@ -1150,19 +1251,29 @@ static double zmap_window_sequence_feature_point(FooCanvasItem  *item,
 
 static void zmap_window_sequence_feature_realize (FooCanvasItem *item)
 {
-  ZMapWindowSequenceFeature seq_feature;
+  ZMapWindowSequenceFeature seq_feature ;
+  ZMapWindowCanvasItem canvas_item ;
+  ZMapFeature feature ;
 
-  seq_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
+  seq_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item) ;
 
-  if(item->canvas)
+  canvas_item = ZMAP_CANVAS_ITEM(seq_feature) ;
+
+  feature = canvas_item->feature ;
+
+  seq_feature->offset = feature->x1 ;
+
+  if (item->canvas)
     {
-      seq_feature->float_settings.zoom_x = item->canvas->pixels_per_unit_x;
-      seq_feature->float_settings.zoom_y = item->canvas->pixels_per_unit_y;
-      save_scroll_region(item);
+      seq_feature->float_settings.zoom_x = item->canvas->pixels_per_unit_x ;
+      seq_feature->float_settings.zoom_y = item->canvas->pixels_per_unit_y ;
+      save_scroll_region(item) ;
     }
 
-  if(canvas_parent_class_G->realize)
-    (* canvas_parent_class_G->realize)(item);
+  if (canvas_parent_class_G->realize)
+    (* canvas_parent_class_G->realize)(item) ;
+
+  return ;
 }
 
 
@@ -1196,7 +1307,8 @@ static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject)
 
 
 static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
-							     int text_first_char, int text_final_char)
+							     int text_first_char, int text_final_char,
+							     int start, int end)
 {
 #ifdef RDS_DONT_INCLUDE
   g_warning("%s sequence indices %d to %d", __PRETTY_FUNCTION__, text_first_char, text_final_char);
@@ -1273,10 +1385,10 @@ static GType float_group_axis_get_type (void)
 
 
 static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_feature,
-					     guint                     signal_id,
-					     int first_index, int final_index)
+					     guint signal_id,
+					     int first_index, int final_index, int start, int end)
 {
-#define SIGNAL_N_PARAMS 3
+#define SIGNAL_N_PARAMS 5
   GValue instance_params[SIGNAL_N_PARAMS] = {{0}}, sig_return = {0};
   GQuark detail = 0;
   int i;
@@ -1290,6 +1402,12 @@ static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_
 
   g_value_init(instance_params + 2, G_TYPE_INT);
   g_value_set_int(instance_params + 2, final_index);
+
+  g_value_init(instance_params + 3, G_TYPE_INT);
+  g_value_set_int(instance_params + 3, start);
+
+  g_value_init(instance_params + 4, G_TYPE_INT);
+  g_value_set_int(instance_params + 4, end);
 
   g_value_init(&sig_return, G_TYPE_BOOLEAN);
   g_value_set_boolean(&sig_return, result);
@@ -1324,3 +1442,4 @@ static void coordsDNA2Pep(ZMapFeature feature, int *start_inout, int *end_inout)
 
   return ;
 }
+
