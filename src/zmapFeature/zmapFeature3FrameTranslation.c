@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 11 14:47 2010 (edgrif)
+ * Last edited: Mar 31 11:53 2011 (edgrif)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.7 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.8 2011-03-31 10:55:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,9 +44,7 @@
 void zmapFeature3FrameTranslationDestroySequenceData(ZMapFeature feature);
 
 
-static void zmapFeature3FrameTranslationPopulate(ZMapFeatureSet       feature_set,
-						 ZMapFeatureTypeStyle style);
-static void fudge_rev_comp_translation(gpointer key, gpointer value, gpointer user_data);
+static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 static void translation_set_populate(ZMapFeatureBlock     feature_block,
 				     ZMapFeatureSet       feature_set,
 				     ZMapFeatureTypeStyle style,
@@ -73,58 +71,54 @@ gboolean zMapFeatureAddFrame(ZMapFeature feature, ZMapFrame frame)
 
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
 {
+  gboolean created = FALSE ;
   ZMapFeatureSet feature_set = NULL;
   GQuark frame_id = 0;
-  gboolean created = FALSE;
 
   /* No sequence. No Translation _return_ EARLY */
-  if(!(block->sequence.length))
-    return created;
-
-  frame_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
-
-  if(!(feature_set = zMapFeatureBlockGetSetByID(block, frame_id)))
+  if ((block->sequence.length))
     {
-      GQuark original_id = 0;
-      GQuark unique_id   = frame_id;
+      frame_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
 
-      original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME);
+      if (!(feature_set = zMapFeatureBlockGetSetByID(block, frame_id)))
+	{
+	  GQuark original_id = 0;
+	  GQuark unique_id   = frame_id;
 
-      feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
+	  original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME);
 
-      zMapFeatureBlockAddFeatureSet(block, feature_set);
+	  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
 
-      created = TRUE;
+	  zMapFeatureBlockAddFeatureSet(block, feature_set);
+
+	  created = TRUE;
+	}
+
+      if (set_out)
+	*set_out = feature_set;
     }
 
-  if(set_out)
-    *set_out = feature_set;
-
-  return created;
+  return created ;
 }
 
-void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
-						   ZMapFeatureTypeStyle style)
+void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
   /* public version of... */
-  zmapFeature3FrameTranslationPopulate(feature_set, style);
+  feature3FrameTranslationPopulate(feature_set, style) ;
 
   return ;
 }
 
+
+/* This function relies on the 3 frame translation features already existing....should make
+ * sure this is true.......... */
 void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, RevCompData cb_data)
 {
-  zmapFeature3FrameTranslationPopulate(feature_set, NULL);
-
-  /* We have to do this as the features get rev comped later, but
-   * we're actually recreating the translation in the new orientation
-   * so the numbers don't need rev comping then, so we do it here.
-   * I figured doing it twice was less hassle than special case
-   * elsewhere... RDS */
-  g_hash_table_foreach(feature_set->features, fudge_rev_comp_translation, (gpointer) cb_data);
+  feature3FrameTranslationPopulate(feature_set, NULL) ;
 
   return ;
 }
+
 
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame)
 {
@@ -180,111 +174,85 @@ void zmapFeature3FrameTranslationDestroySequenceData(ZMapFeature feature)
   return ;
 }
 
-/* INTERNALS */
 
-/* Accepts NULL as style. */
-static void zmapFeature3FrameTranslationPopulate(ZMapFeatureSet       feature_set,
-						 ZMapFeatureTypeStyle style)
+
+
+/*
+ *               internal routines
+ */
+
+
+/* Accepts NULL as style but the translation features must already
+ * exist and we just revcomp the feature and hence do not need a style.
+ * 
+ *  */
+static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
-  ZMapFeatureTypeStyle temp_style = NULL;
+  gboolean result = FALSE ;
   ZMapFeatureBlock feature_block;
-  char *sequence_name;
-  char *dna_sequence;
 
-  feature_block =
-    (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set,
-						ZMAPFEATURE_STRUCT_BLOCK);
+  feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK) ;
 
-  zMapAssert(feature_block);
-
-  sequence_name = (char *)g_quark_to_string(feature_block->original_id);
-
-  dna_sequence  = feature_block->sequence.sequence;
-
-  if(style == NULL)
+  if ((feature_block->sequence.sequence))
     {
-      temp_style = style = zMapStyleCreate(ZMAP_FIXED_STYLE_3FT_NAME,
-					   ZMAP_FIXED_STYLE_3FT_NAME_TEXT);
+      char *sequence_name;
+
+      sequence_name = (char *)g_quark_to_string(feature_block->original_id);
+
+      translation_set_populate(feature_block,
+			       feature_set,
+			       style,
+			       sequence_name,
+			       feature_block->sequence.sequence) ;
+
+      result = TRUE ;
     }
 
-  if(dna_sequence)
-    translation_set_populate(feature_block,
-			     feature_set,
-			     style,
-			     sequence_name,
-			     dna_sequence);
-
-  if(temp_style)
-    zMapStyleDestroy(temp_style);
-
-  return ;
+  return result ;
 }
 
-static void fudge_rev_comp_translation(gpointer key, gpointer value, gpointer user_data)
-{
-  ZMapFeature feature = (ZMapFeature)value;
-  RevCompData cb_data = (RevCompData) user_data;
 
-  zmapFeatureRevComp(Coord, cb_data->start, cb_data->end, feature->x1, feature->x2);
-  return ;
-}
 
-static void translation_set_populate(ZMapFeatureBlock     feature_block,
-				     ZMapFeatureSet       feature_set,
+static void translation_set_populate(ZMapFeatureBlock feature_block,
+				     ZMapFeatureSet feature_set,
 				     ZMapFeatureTypeStyle style,
 				     char *seq_name,
 				     char *dna)
 {
-  int i, block_position;
-  ZMapFeature frame_feature;
-  char *feature_name_id = "__delete_me__";
-  char *feature_name    = "__delete_me__";
-  char *sequence        = "__delete_me__";
-  char *ontology        = "sequence";
+  int i, block_position ;
 
-  frame_feature = zMapFeatureCreateEmpty();
+  block_position = feature_block->block_to_sequence.block.x1 ;     // actual loaded DNA not logical sequence start
 
-  zMapFeatureAddStandardData(frame_feature, feature_name_id,
-			     feature_name, sequence,
-			     ontology, ZMAPSTYLE_MODE_PEP_SEQUENCE,
-                             style, 1, 10, FALSE, 0.0,
-			     ZMAPSTRAND_NONE) ;
-
-  zMapFeatureSetAddFeature(feature_set, frame_feature);
-
-  block_position = feature_block->block_to_sequence.block.x1;     // actual loaded DNA not logical sequence start
-
-  for (i = ZMAPFRAME_0; dna && *dna && i <= ZMAPFRAME_2; i++, dna++, block_position++)
+  for (i = ZMAPFRAME_0 ; dna && *dna && i <= ZMAPFRAME_2 ; i++, dna++, block_position++)
     {
-      ZMapPeptide pep;
-      ZMapFeature translation;
-      char *feature_name = NULL; /* Remember to free this */
-      GQuark feature_id;
-      ZMapFrame curr_frame;
-      char *peptide_str;
-      int peptide_length;
+      ZMapPeptide pep ;
+      ZMapFeature translation ;
+      char *feature_name = NULL ;			    /* Remember to free this */
+      GQuark feature_id ;
+      ZMapFrame curr_frame ;
+      char *peptide_str ;
+      int peptide_length ;
 
-      frame_feature->x1 = block_position;
+      curr_frame   = (ZMapFrame)i ;
 
-      curr_frame   = zMapFeatureFrame(frame_feature);
-      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, curr_frame);
-      feature_id   = g_quark_from_string(feature_name);
+      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, curr_frame) ;
+      feature_id   = g_quark_from_string(feature_name) ;
 
-      pep = zMapPeptideCreateSafely(NULL, NULL, dna, NULL, FALSE);
+      pep = zMapPeptideCreateSafely(NULL, NULL, dna, NULL, FALSE) ;
 
-      if((translation = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
+      if ((translation = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
         {
 	  /* clear sequence? */
-	  zmapFeature3FrameTranslationDestroySequenceData(translation);
+	  zmapFeature3FrameTranslationDestroySequenceData(translation) ;
 	}
       else
         {
-          int x1, x2;
+          int x1, x2 ;
 
-          x1 = frame_feature->x1;
-          x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1;
+	  x1 = block_position ;
+          x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1 ;
 
-          translation = zMapFeatureCreateEmpty();
+          translation = zMapFeatureCreateEmpty() ;
 
           zMapFeatureAddStandardData(translation, feature_name, feature_name,
                                      seq_name, "sequence",
@@ -292,9 +260,9 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
                                      x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE) ;
 
-	  zMapFeatureAddFrame(translation, i) ;
+	  zMapFeatureAddFrame(translation, curr_frame) ;
 
-          zMapFeatureSetAddFeature(feature_set, translation);
+          zMapFeatureSetAddFeature(feature_set, translation) ;
         }
 
       peptide_str = zMapPeptideSequence(pep) ;
@@ -304,16 +272,13 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
       /* Get the peptide length in complete codons. */
       peptide_length = zMapPeptideFullCodonAALength(pep) ;
 
-      zMapFeature3FrameTranslationAddSequenceData(translation, peptide_str, peptide_length);
+      zMapFeature3FrameTranslationAddSequenceData(translation, peptide_str, peptide_length) ;
 
       zMapPeptideDestroy(pep) ;
 
-      if(feature_name)
-	g_free(feature_name);
+      if (feature_name)
+	g_free(feature_name) ;
     }
-
-  zMapFeatureSetRemoveFeature(feature_set, frame_feature);
-  zMapFeatureDestroy(frame_feature);
 
   return ;
 }
