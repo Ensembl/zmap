@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 11 14:26 2011 (edgrif)
+ * Last edited: Mar 31 12:19 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.144 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.145 2011-03-31 11:23:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -144,11 +144,6 @@ static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *are
 static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out);
 static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold);
 #endif
-
-
-
-static gboolean sequence_debug = FALSE ;
-
 
 
 
@@ -314,20 +309,14 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       break ;
     }
 
-  zmapWindowFocusClearOverlayManagers(window->focus);
+  zmapWindowFocusClearOverlayManagers(window->focus) ;
 
+
+  /* Highlight DNA and Peptide sequences corresponding to feature (if visible). */
   zmapWindowItemHighlightDNARegion(window, TRUE, item, ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
 
-  {
-    int frame_itr;
-
-    for (frame_itr = ZMAPFRAME_0; frame_itr < ZMAPFRAME_2 + 1; frame_itr++)
-      {
-	zmapWindowItemHighlightTranslationRegion(window, TRUE, TRUE, item,
-						 frame_itr, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
-      }
-
-  }
+  zmapWindowItemHighlightTranslationRegions(window, TRUE, item, ZMAPFRAME_NONE,
+					    ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
   zMapWindowHighlightFocusItems(window);
@@ -581,7 +570,6 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
  * Sequence highlighting functions, these feel like they should be in the
  * sequence item class objects.
  */
-
 
 void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item)
 {
@@ -2000,16 +1988,7 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight,
 	    }
 	  else
 	    {
-	      int tmp_start, tmp_end ;
-
-	      tmp_start = region_start ;
-	      tmp_end = region_end ;
-
-	      /* this needs to pass into selectbyregion call.... */
-	      if (coords_type == ZMAPSEQUENCE_PEPTIDE)
-		zMapSequencePep2DNA(&tmp_start, &tmp_end, required_frame) ;
-
-	      zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, tmp_start, tmp_end) ;
+	      zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
 	    }
 	}
       else
@@ -2080,6 +2059,8 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 		  tmp_start = region_start ;
 		  tmp_end = region_end ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  if (coords_type == ZMAPSEQUENCE_DNA)
 		    {
 		      zMapSequenceDNA2Pep(&tmp_start, &tmp_end, required_frame) ;
@@ -2088,6 +2069,8 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 			printf("region start/end: %d,%d      pep start/end: %d,%d\n",
 			       region_start, region_end, tmp_start, tmp_end) ;
 		    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  else
@@ -2098,7 +2081,12 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 		    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		  zMapWindowSequenceFeatureSelectByRegion(sequence_feature, ZMAPSEQUENCE_DNA, tmp_start, tmp_end) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  if (tmp_start && tmp_end)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		    zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, tmp_start, tmp_end) ;
 		}
 	    }
 	  else
