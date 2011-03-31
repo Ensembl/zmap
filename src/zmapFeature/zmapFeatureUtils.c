@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 30 12:35 2011 (edgrif)
+ * Last edited: Mar 31 11:35 2011 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.79 2011-03-31 10:34:43 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.80 2011-03-31 10:36:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1102,20 +1102,9 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  offset = block->block_to_sequence.parent.x1;   /* start of block in sequence/parent */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  frame  = (ZMapFrame) ((start_coord + offset) % 3) + ZMAPFRAME_0 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   frame  = (ZMapFrame) ((start_coord - offset) % 3) + ZMAPFRAME_0 ;
-
 
   return frame;
 }
