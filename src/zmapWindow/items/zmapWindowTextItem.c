@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowTextItem.h
  * HISTORY:
- * Last edited: Mar 11 11:33 2011 (edgrif)
+ * Last edited: Mar 31 12:36 2011 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.13 2011-03-11 17:42:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.14 2011-03-31 11:38:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,7 +128,8 @@ static void allocate_buffer_size(ZMapWindowTextItem zmap);
 static gboolean canvas_has_changed(FooCanvasItem *item, ZMapTextItemDrawData draw_data);
 static gboolean invoke_get_text(FooCanvasItem  *item);
 static void invoke_allocate_width_height(FooCanvasItem *item);
-static void save_origin(FooCanvasItem *item);
+static void getClampedScrollRegion(FooCanvasItem *item,
+				   double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
 
 /* print out cached data functions */
 static void print_private_data(ZMapWindowTextItem zmap);
@@ -201,12 +202,13 @@ static void text_item_request_update_no_vis_change(ZMapWindowTextItem text_item)
 static gboolean debug_text_highlight_G = FALSE ;
 static gboolean debug_allocate  = FALSE ;
 static gboolean debug_functions = FALSE ;
-static gboolean debug_area      = FALSE ;
-static gboolean debug_table     = FALSE ;
+static gboolean debug_area = FALSE ;
+static gboolean debug_table = FALSE ;
 static gboolean debug_selection_signals_G = FALSE ;
 
 
-static FooCanvasItemClass *parent_class_G ;
+
+static FooCanvasItemClass *parent_class_G = NULL ;
 
 
 
@@ -305,9 +307,9 @@ gboolean zMapWindowTextItemText2WorldCoords(ZMapWindowTextItem text_item,
 
 
 
-int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
+int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem *item,
 					      ZMapTextItemDrawData draw_data,
-					      int              max_buffer_size)
+					      int max_buffer_size)
 {
   ZMapWindowTextItem zmap = ZMAP_WINDOW_TEXT_ITEM(item);
   int buffer_size = max_buffer_size;
@@ -319,12 +321,10 @@ int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
   int real_chars_per_line, canvas_range;
   int real_lines, real_lines_space;
 
-  if(draw_data->y1 < 0.0)
-    {
-      double t = 0.0 - draw_data->y1;
-      draw_data->y1  = 0.0;
-      draw_data->y2 -= t;
-    }
+
+  /* is this called anyway ??? no probably not as this is called from itemfactory... */
+  getClampedScrollRegion(item, &draw_data->x1, &draw_data->y1, &draw_data->x2, &draw_data->y2) ;
+
   
   foo_canvas_w2c(item->canvas, draw_data->x1, draw_data->y1, &cx1, &cy1);
   foo_canvas_w2c(item->canvas, draw_data->x2, draw_data->y2, &cx2, &cy2);
@@ -338,28 +338,49 @@ int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
   print_calculate_buffer_data(zmap, draw_data, cx1, cy1, cx2, cy2);
   print_private_data(zmap);
 
+
   /* world & canvas range to work out rough chars per line */
-  world_range        = (draw_data->y2 - draw_data->y1 + 1);
-  canvas_range       = (cy2 - cy1 + 1);
+  world_range = (draw_data->y2 - draw_data->y1 + 1) ;
+  canvas_range = (cy2 - cy1 + 1) ;
+
+  if (debug_text_highlight_G)
+    {
+      printf("world range: %g - %g + 1 = %g\n",
+	     draw_data->y2, draw_data->y1, (draw_data->y2 - draw_data->y1 + 1)) ;
+
+      printf("canvas range: %d - %d + 1 = %d\n",
+	     cy2, cy1, (cy2 - cy1 + 1)) ;
+    }
+
+
+  /* Chars per line. */
   raw_chars_per_line = ((world_range * height) / canvas_range);
+
+  real_chars_per_line = (int)raw_chars_per_line ;
+  if ((double)(real_chars_per_line) < raw_chars_per_line)
+    real_chars_per_line++ ;
+
+
+
+  /* Lines per window. */
+  raw_lines = world_range / real_chars_per_line ;
   
-  if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
-    real_chars_per_line++;
-  
-  raw_lines = world_range / real_chars_per_line;
-  
-  if((double)(real_lines = (int)raw_lines) < raw_lines)
-    real_lines++;
-  
+  real_lines = (int)raw_lines ;
+  if ((double)(real_lines) < raw_lines)
+    real_lines++ ;
+
+
+  /* Space taken by lines. */
   real_lines_space = real_lines * height;
   
-  if(real_lines_space > canvas_range)
+  if (real_lines_space > canvas_range)
     {
       real_lines--;
       real_lines_space = real_lines * height;
     }
   
-  if(real_lines_space < canvas_range)
+
+  if (real_lines_space < canvas_range)
     {
       double spacing_dbl = canvas_range;
       double delta_factor = 0.15;
@@ -453,7 +474,7 @@ static gboolean text_item_text_index2item(ZMapWindowTextItem zmap,
 
 
 	  /* text position needs to be corrected for the number of text characters per
-	   * codon, e.g. for peptides there is only one character very 3 bases whereas
+	   * codon, e.g. for peptides there is only one character every 3 bases whereas
 	   * for dna there is one character per base. */
 	  divisor = ((zmap->refseq_end - zmap->refseq_start) + 1) / zmap->text_length ;
 
@@ -528,10 +549,14 @@ static gboolean text_item_text_index2item(ZMapWindowTextItem zmap,
 	      item_coords_out[2] = x2;
 	    }
 
+
 	  /* As y coords aren't reliable, we need to long item crop. */
-	  foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2);
+	  getClampedScrollRegion(item, &x1, &y1, &x2, &y2) ;
+
 	  foo_canvas_item_w2i(item, &x1, &y1);
 	  foo_canvas_item_w2i(item, &x2, &y2);
+
+
 
 	  if(item_coords_out[1] < y1)
 	    {
@@ -1195,7 +1220,6 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
 	      item_event->start_index = new_start_index;
 	      item_event->end_index   = new_end_index;
 
@@ -1377,7 +1401,17 @@ static void zmap_window_text_item_realize (FooCanvasItem *item)
   foo_text = FOO_CANVAS_TEXT(item);
 
   /* First time it's realized  */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   save_origin(item);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  text->update_cache.wx = foo_text->x ;
+  text->update_cache.wy = foo_text->y ;
+
+  getClampedScrollRegion(item,
+			 &(text->update_cache.x1), &(text->update_cache.y1),
+			 &(text->update_cache.x2), &(text->update_cache.y2)) ;
+
+
 
   layout = foo_text->layout;
 
@@ -1733,7 +1767,7 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
   /* The only part we allow to be copied back... */
   draw_data->table = draw_data_stack.table;		    /* struct copy */
 
-  if(actual_size > 0)
+  if (actual_size > 0)
     {
       double ztmp;
 
@@ -1888,12 +1922,15 @@ static gboolean canvas_has_changed(FooCanvasItem   *item,
     {
       double sx1, sy1, sx2, sy2;
 
-      foo_canvas_get_scroll_region(item->canvas, &sx1, &sy1, &sx2, &sy2);
 
-      if((draw_data->x1 != sx1) ||
-	 (draw_data->y1 != sy1) ||
-	 (draw_data->x2 != sx2) ||
-	 (draw_data->y2 != sy2))
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      foo_canvas_get_scroll_region(item->canvas, &sx1, &sy1, &sx2, &sy2);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      getClampedScrollRegion(item, &sx1, &sy1, &sx2, &sy2) ;
+
+
+      if ((draw_data->x1 != sx1) || (draw_data->y1 != sy1) || (draw_data->x2 != sx2) || (draw_data->y2 != sy2))
 	{
 	  draw_data->x1 = sx1;
 	  draw_data->y1 = sy1;
@@ -1944,25 +1981,88 @@ static gboolean canvas_has_changed(FooCanvasItem   *item,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void save_origin(FooCanvasItem *item)
 {
-  ZMapWindowTextItem text;
-  FooCanvasText *parent;
+  ZMapWindowTextItem text ;
+  FooCanvasText *parent ;
 
-  text   = ZMAP_WINDOW_TEXT_ITEM (item);
-  parent = FOO_CANVAS_TEXT(item);
+  text = ZMAP_WINDOW_TEXT_ITEM (item) ;
+  parent = FOO_CANVAS_TEXT(item) ;
 
-  text->update_cache.wx = parent->x;
-  text->update_cache.wy = parent->y;
+  text->update_cache.wx = parent->x ;
+  text->update_cache.wy = parent->y ;
 
   foo_canvas_get_scroll_region(item->canvas, 
 			       &(text->update_cache.x1),
 			       &(text->update_cache.y1),
 			       &(text->update_cache.x2),
-			       &(text->update_cache.y2));
+			       &(text->update_cache.y2)) ;
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static void getClampedScrollRegion(FooCanvasItem *item, double *x1_out, double *y1_out, double *x2_out, double *y2_out)
+{
+  ZMapWindowTextItem text ;
+  double x1, y1, x2, y2 ;
+
+  text = ZMAP_WINDOW_TEXT_ITEM (item) ;
+
+  foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2) ;
+
+
+
+  printf("  Scr region intial:   %g, %g\n", y1, y2) ;
+
+
+
+  /* Hacky....ugh..... try to use scolled region sensibly....this is the old code, here temporarily.. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_COD
+  if (y1 < 0.0)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (y1 < text->refseq_start)
+    {
+      double t = text->refseq_start - y1 ;
+      y1  = text->refseq_start ;
+      y2 -= t ;
+
+      printf("Scr region rezeroed:   %g, %g\n", y1, y2) ;
+    }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* For drawing we want 0-based coords and must be clamped to sequence length. */
+  if (y1 < 0.0)
+    y1  = 0.0 ;
+
+
+  /* This isn't right, length for peptides is very short...implies we do not have enough
+   * data in the text item struct......it's fudged.... */
+
+  if (y2 > text->text_length + 3)
+    y2 = text->text_length + 3 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  
+
+
+
+
+
+
+  *x1_out = x1 ;
+  *y1_out = y1 ;
+  *x2_out = x2 ;
+  *y2_out = y2 ;
+  
+  return ;
+}
+
+
 
 
 /* ******** faster gdk drawing code. ******** */
@@ -2270,6 +2370,7 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
   if (ewy > y2 + 0.5)
     {
       valid_x = FALSE;
+
       if(debug_text_highlight_G)
 	printf("%f should be next row (higher) %f / %d = %f too much (%f)\n", 
 	       ewy, ewy - y2, iter_line_index, ((ewy - y2)/ iter_line_index),
@@ -2279,6 +2380,7 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
     {
       valid_x  = FALSE;
       finished = TRUE;
+
       if(debug_text_highlight_G)
 	printf("%f should be previous row (lower) %f / %d = %f too little (%f)\n",
 	       ewy, y1 - ewy, iter_line_index, ((y1 - ewy) / iter_line_index),
@@ -2724,7 +2826,7 @@ static void print_calculate_buffer_data(ZMapWindowTextItem zmap,
 					int cx1, int cy1, 
 					int cx2, int cy2)
 {
-  if(debug_table)
+  if (debug_table)
     {
       printf("foo y1,y2,r: %d, %d, %d\n", 
 	     cy1, cy2, cy2 - cy1 + 1);
