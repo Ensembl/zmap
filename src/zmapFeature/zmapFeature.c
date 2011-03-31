@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan 14 13:59 2011 (edgrif)
+ * Last edited: Mar 24 10:47 2011 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.141 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.142 2011-03-31 10:51:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1409,6 +1409,13 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
   return ;
 }
 
+
+
+
+
+/* 
+ *       ZMapFeatureBlock functions.
+ */
 
 
 ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
