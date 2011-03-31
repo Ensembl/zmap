@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 14 14:56 2011 (edgrif)
+ * Last edited: Mar 31 12:10 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.359 2011-03-15 14:37:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.360 2011-03-31 11:11:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,12 @@
 
 #include <zmapWindowCanvasItem_I.h>     // for debugging
 #include <zmapWindowAlignmentFeature_I.h>       //for debugging
+
+
+
+/* If zoom factor less than this then we don't do it. */
+#define ZOOM_SENSITIVITY 5.0
+
 
 
 /* Local struct to hold current features and new_features obtained from a server and
@@ -165,9 +171,9 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer d
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data) ;
 
-gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
-gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
-gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
+static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 
@@ -783,7 +789,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, NULL, TRUE, FALSE) ;
+      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
 
       if (state_saves_position)
 	{
@@ -925,11 +931,19 @@ void zMapWindowBack(ZMapWindow window)
   return  ;
 }
 
+
+
+
 void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
-  zmapWindowZoom(window, zoom_factor, TRUE);
+  zmapWindowZoom(window, zoom_factor, TRUE) ;
+
   return ;
 }
+
+
+
+
 
 /* try out the new zoom window.... */
 void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centered)
@@ -1003,6 +1017,37 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 
   return;
 }
+
+
+/* Returns FALSE if feature cannot be found on canvas. */
+gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+  FooCanvasItem *feature_item ;
+
+  if ((feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+						    feature->strand,
+						    ZMAPFRAME_NONE,
+						    feature)))
+    {
+      zmapWindowZoomToItem(window, feature_item) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
+				   double rootx1, double rooty1,
+                                   double rootx2, double rooty2)
+{
+  zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2);
+
+  return ;
+}
+
+
 
 
 /* try out the new zoom window.... */
@@ -1316,7 +1361,8 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
 void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                ZMapFeature feature_arg,
 			       FooCanvasItem *sub_item, FooCanvasItem *full_item,
-			       int sub_start, int sub_end,
+			       int sub_item_dna_start, int sub_item_dna_end,
+			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
 			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {
@@ -1362,81 +1408,48 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   if (feature_arg->type == ZMAPSTYLE_MODE_RAW_SEQUENCE || feature_arg->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
       /* sequence like feature. */
-
-      ZMapWindowSequenceFeature sequence_feature = NULL;
-      int origin_index = sub_start;
-      int current_index = sub_end;
-      char *seq_term = "";
+      ZMapWindowSequenceFeature sequence_feature = NULL ;
+      char *seq_term ;
 
       sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(sub_item);
 
       feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
 
+      dna_start = sub_item_dna_start ;
+      dna_end = sub_item_dna_end ;
+
+      start = sub_item_coords_start ;
+      end = sub_item_coords_end ;
+
+
       if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
 	{
-	  start = origin_index ;
-	  end   = current_index ;
-
 	  seq_term = "DNA" ;
 	}
       else
 	{
 	  ZMapFrame frame ;
-	  int window_origin ;
-
-	  frame = zMapFeatureFrame(feature) ;
-
-	  start = origin_index ;
-	  end = current_index ;
-
-	  /* I'm guessing we should be using zMapSequencePep2DNA */
-	  /* Do some monkeying to get the dna coords */
-	  origin_index-- ;
-	  origin_index *= 3 ;
-	  origin_index += frame ;
-	  current_index = origin_index + ((end - start + 1) * 3) - 1;
-
-	  dna_start = origin_index ;
-	  dna_end = current_index ;
-
-
-#if MH17_REMOVED_ORIGIN
-	  /* zmapWindowCoordToDisplay() doesn't work for protein coord space,
-	   * whether this is useful though.... */
-	  if (window->origin == window->min_coord)
-	    {
-	      window_origin = window->min_coord;
-	    }
-	  else
-	    {
-	      /* calculation for window->origin uses + 2 */
-	      /* CHECK THIS OUT! TEST THE + 4 is required */
-	      window_origin = (window->origin + 4 ) / 3;
-	    }
-#else
-      /* with revcomped coordinates min is alwasy the start/origin */
-      window_origin = window->min_coord;
-#endif
-
-	  start = start - (window_origin - 1);
-	  end   = end   - (window_origin - 1);
 
 	  seq_term = "Protein" ;
 
-	  select.feature_desc.sub_feature_term   =  g_strdup("DNA") ;
+	  frame = zMapFeatureFrame(feature) ;
+
+	  select.feature_desc.sub_feature_term   =  g_strdup("Frame") ;
 	  select.feature_desc.sub_feature_index  =  g_strdup(zMapFeatureFrame2Str(frame)) ;
-	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", dna_start);
-	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", dna_end);
-	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", dna_end - dna_start + 1);
+	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", start) ;
+	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end) ;
+	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1) ;
 	}
 
-      zmapWindowCoordPairToDisplay(window, origin_index, current_index, &display_start, &display_end) ;
+
+      zmapWindowCoordPairToDisplay(window, dna_start, dna_end, &display_start, &display_end) ;
+
 
       select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id) ;
       select.feature_desc.feature_term   = g_strdup_printf("%s", seq_term) ;
-      select.feature_desc.feature_start  = g_strdup_printf("%d", start) ;
-      select.feature_desc.feature_end    = g_strdup_printf("%d", end) ;
-      select.feature_desc.feature_length = g_strdup_printf("%d", end  - start + 1) ;
+      select.feature_desc.feature_start  = g_strdup_printf("%d", display_start) ;
+      select.feature_desc.feature_end    = g_strdup_printf("%d", display_end) ;
+      select.feature_desc.feature_length = g_strdup_printf("%d", dna_end - dna_start + 1) ;
 
       /* update the info panel */
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
@@ -1699,7 +1712,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     {
       char *dna_string, *seq_name;
 
-      dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+      dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, sub_item_dna_start, sub_item_dna_end, FALSE);
 
       seq_name = g_strdup_printf("%d-%d", display_start, display_end);
 
@@ -1713,13 +1726,10 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     {
       ZMapPeptide translation;
       char *dna_string, *seq_name;
-#ifdef UNUSED
-      int frame = zmapWindowFeatureFrame(feature);
-#endif
 
       /* Get peptide by translating the corresponding dna, necessary because
        * there might be trailing part codons etc. */
-      dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, dna_start, dna_end, FALSE) ;
+      dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, sub_item_dna_start, sub_item_dna_end, FALSE) ;
       seq_name    = g_strdup_printf("%d-%d (%d-%d)", start, end, dna_start, dna_end) ;
       translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE) ;
       select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
@@ -3453,12 +3463,16 @@ zMapLogWarning("update mark %f",wy);
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 /*
  * A trio of event handlers, they don't interfer with other handlers, just
- * report that they were called...helpful for debugging.
+ * report that they were called...helpful for debugging. Just undef in the
+ * places they appear in this file and set break points.
  */
 
-gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindow)user_data ;
@@ -3489,7 +3503,7 @@ gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
   return event_handled ;
 }
 
-gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
   gboolean event_handled = FALSE ;
 
@@ -3506,7 +3520,7 @@ gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
   return event_handled ;
 }
 
-gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   gboolean event_handled = FALSE ;
 
@@ -3515,10 +3529,12 @@ gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 
   return event_handled ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
-#define ZOOM_SENSITIVITY 5.0
+
+
 
 
 static void zoomToRubberBandArea(ZMapWindow window)
@@ -3590,31 +3606,7 @@ void zmapWindowZoomToItems(ZMapWindow window, GList *items)
   return ;
 }
 
-/* Returns FALSE if feature cannot be found on canvas. */
-gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
-{
-  gboolean result = FALSE ;
-  FooCanvasItem *feature_item ;
 
-  if ((feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-						    feature->strand,
-						    ZMAPFRAME_NONE,
-						    feature)))
-    {
-      zmapWindowZoomToItem(window, feature_item) ;
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-				   double rootx1, double rooty1,
-                                   double rootx2, double rooty2)
-{
-  zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2);
-  return ;
-}
 
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rooty1, double rootx2, double rooty2)
@@ -4763,7 +4755,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
       feature = zmapWindowItemGetFeature(focus_item);
 
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, focus_item, focus_item, 0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, focus_item, focus_item, 0, 0, 0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 
