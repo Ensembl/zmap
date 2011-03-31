@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowTextItem.h
  * HISTORY:
- * Last edited: Mar 31 12:36 2011 (edgrif)
+ * Last edited: Mar 31 13:56 2011 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.14 2011-03-31 11:38:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.15 2011-03-31 13:11:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2013,9 +2013,8 @@ static void getClampedScrollRegion(FooCanvasItem *item, double *x1_out, double *
   foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2) ;
 
 
-
-  printf("  Scr region intial:   %g, %g\n", y1, y2) ;
-
+  if (debug_allocate || debug_area)
+    printf("  Scr region intial:   %g, %g\n", y1, y2) ;
 
 
   /* Hacky....ugh..... try to use scolled region sensibly....this is the old code, here temporarily.. */
@@ -2030,7 +2029,8 @@ static void getClampedScrollRegion(FooCanvasItem *item, double *x1_out, double *
       y1  = text->refseq_start ;
       y2 -= t ;
 
-      printf("Scr region rezeroed:   %g, %g\n", y1, y2) ;
+      if (debug_allocate || debug_area)
+	printf("Scr region rezeroed:   %g, %g\n", y1, y2) ;
     }
 
 
@@ -2046,11 +2046,6 @@ static void getClampedScrollRegion(FooCanvasItem *item, double *x1_out, double *
   if (y2 > text->text_length + 3)
     y2 = text->text_length + 3 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  
-
-
-
 
 
 
