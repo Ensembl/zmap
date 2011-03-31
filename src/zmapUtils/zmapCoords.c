@@ -29,17 +29,13 @@
  * Exported functions: See ZMap/zmapUtils.h
  *              
  * HISTORY:
- * Last edited: Nov 18 15:58 2009 (edgrif)
+ * Last edited: Mar 21 11:28 2011 (edgrif)
  * Created: Tue Nov 17 13:29:50 2009 (edgrif)
- * CVS info:   $Id: zmapCoords.c,v 1.3 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapCoords.c,v 1.4 2011-03-31 10:57:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
 
 
 #include <glib.h>
@@ -82,5 +78,19 @@ gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *
 }
 
 
+
+/* Converts a start/end pair of coords into a zero based pair of coords,
+ *
+ * e.g.  range  3 -> 6  becomes  0 -> 3
+ *
+ */
+void zmapCoordsZeroBased(int *start_inout, int *end_inout)
+{
+  *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
+
+  *start_inout = 0.0 ;
+
+  return ;
+}
 
 
