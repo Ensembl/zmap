@@ -31,9 +31,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Oct 13 17:36 2010 (edgrif)
+ * Last edited: Mar 31 15:07 2011 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.18 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.19 2011-03-31 14:08:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -332,41 +332,38 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 {
   static GOptionEntry entries[] = {
     /* long_name, short_name, flags, arg, arg_data, description, arg_description */
-    { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG,
-      G_OPTION_ARG_NONE, NULL,
-      ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
-    { ZMAPARG_SERIAL, 0, G_OPTION_FLAG_NO_ARG,
-      G_OPTION_ARG_NONE, NULL,
-      ZMAPARG_SERIAL_DESC, ZMAPARG_NO_ARG },
-    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG,
-      G_OPTION_ARG_NONE, NULL,
-      ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
-    { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS,
-      G_OPTION_ARG_INT, NULL,
-      ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
-    { ZMAPARG_SEQUENCE_END, 0, ARG_NO_FLAGS,
-      G_OPTION_ARG_INT, NULL,
-      ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
-    { G_OPTION_REMAINING, 0, ARG_NO_FLAGS,
-      G_OPTION_ARG_STRING_ARRAY, NULL,
-      ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
-    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG,
-      G_OPTION_ARG_NONE, NULL,
-      ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
-    { NULL }
-  };
 
-  if(entries[0].arg_data == NULL)
+    { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+
+    { ZMAPARG_SERIAL,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
+
+    { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
+      ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
+
+    { ZMAPARG_SEQUENCE_END,   0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
+      ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+
+    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
+
+    /* Must be the last entry. */
+    { G_OPTION_REMAINING, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING_ARRAY, NULL,
+      ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
+
+    { NULL }
+  } ;
+
+
+  if (entries[0].arg_data == NULL)
     {
       entries[0].arg_data = &(arg_context->version);
       entries[1].arg_data = &(arg_context->serial);
       entries[2].arg_data = &(arg_context->start);
       entries[3].arg_data = &(arg_context->end);
-      entries[4].arg_data = &(arg_context->sequence_arg);
-      entries[5].arg_data = &(arg_context->sleep);
+      entries[4].arg_data = &(arg_context->sleep);
+      entries[5].arg_data = &(arg_context->sequence_arg);
     }
 
-  return &entries[0];
+  return &entries[0] ;
 }
 
 static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
