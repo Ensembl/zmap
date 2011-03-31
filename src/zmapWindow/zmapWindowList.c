@@ -28,9 +28,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Jan 18 15:31 2011 (edgrif)
+ * Last edited: Mar 18 14:50 2011 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.82 2011-03-01 16:22:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.83 2011-03-31 11:12:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -770,7 +770,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 	      zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
 
         zMapWindowHighlightObject(window, item, TRUE, TRUE) ;
-        zmapWindowUpdateInfoPanel(window, feature, item, NULL, 0, 0, NULL, TRUE, TRUE);
+        zmapWindowUpdateInfoPanel(window, feature, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE);
     }
   }
 

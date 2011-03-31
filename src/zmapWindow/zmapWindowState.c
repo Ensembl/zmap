@@ -28,9 +28,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 18 09:40 2011 (edgrif)
+ * Last edited: Mar 18 14:50 2011 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.33 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.34 2011-03-31 11:12:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -648,7 +648,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	     strand ?? or maybe not...actually we should be checking if something is visible !!!! */
 
 	  /* Blank the info panel if we can't find the feature. */
-	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, NULL, TRUE, FALSE) ;
+	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
 
 
 	  zMapLogWarning("%s", "Failed to find serialized focus item.");
@@ -664,7 +664,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	  feature = zMapWindowCanvasItemGetFeature(focus_item) ;
 
 	  /* Pass information about the object clicked on back to the application. */
-	  zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0,
+	  zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0, 0, 0,
 				    NULL, replace_highlight, highlight_same_names) ;
 	}
     }
