@@ -29,9 +29,9 @@
  *              highlighting.
  *
  * HISTORY:
- * Last edited: Dec 15 15:19 2010 (edgrif)
+ * Last edited: Mar 25 10:14 2011 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.12 2010-12-20 12:20:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.13 2011-03-31 11:39:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,7 +76,8 @@ typedef struct _zmapWindowSequenceFeatureStruct  zmapWindowSequenceFeature, *ZMa
 typedef struct _zmapWindowSequenceFeatureClassStruct  zmapWindowSequenceFeatureClass, *ZMapWindowSequenceFeatureClass ;
 
 typedef gboolean (* ZMapWindowSequenceFeatureSelectionCB)(ZMapWindowSequenceFeature sequence_feature,
-							  int text_first_char, int text_final_char);
+							  int region_x1, int region_x2,
+							  int seq_x1, int seq_x2) ;
 
 
 /* Public funcs */
