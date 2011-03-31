@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug 17 08:56 2010 (edgrif)
+ * Last edited: Mar 31 07:13 2011 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.109 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.110 2011-03-31 10:36:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1154,7 +1154,6 @@ GHashTable *zMapStyleGetAllPredefined(void)
 
 
   /* 3 Frame Translation */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FT_NAME, ZMAP_FIXED_STYLE_3FT_NAME_TEXT);
   /* The translation width is the width for the whole column if
    * all three frames are displayed in one column.  When displayed
    * in the frame specfic mode the width of each of the columns
@@ -1164,7 +1163,11 @@ GHashTable *zMapStyleGetAllPredefined(void)
    * not.  I thought this was important considering the column is
    * very wide. */
   /* Despite seeming to be frame specific, they all get drawn in the
-   * same column at the moment so it's not frame specific! */
+   * same column at the moment so it's not frame specific!
+   * 
+   * UM no, not true, they are in seperate cols in 3 frame mode...
+   *  */
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FT_NAME, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
   {
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
 
