@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb 10 15:45 2011 (edgrif)
+ * Last edited: Apr  1 13:03 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.61 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.62 2011-04-01 12:05:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,7 +107,7 @@ static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_dat
 static void radioButtonCB(GtkWidget *button, gpointer radio_data) ;
 static void radioButtonCBDataDestroy(gpointer data) ;
 
-
+static GdkCursor *makeCustomCursor(char *cursor_name) ;
 
 
 /* Holds an alternative URL for help pages if set by the application. */
@@ -1230,21 +1230,30 @@ GdkCursor *zMapGUIGetCursor(char *cursor_name)
     } ;
   CursorName curr_cursor ;
 
-  curr_cursor = cursors ;
-  while (curr_cursor->cursor_id != GDK_LAST_CURSOR)
+
+ if (g_ascii_strncasecmp(cursor_name, "eds_", 4) == 0)
     {
-      if (g_ascii_strcasecmp(cursor_name, curr_cursor->cursor_name) == 0)
+      cursor = makeCustomCursor(cursor_name) ;
+    }
+  else
+    {
+      curr_cursor = cursors ;
+      while (curr_cursor->cursor_id != GDK_LAST_CURSOR)
 	{
-	  break ;
+	  if (g_ascii_strcasecmp(cursor_name, curr_cursor->cursor_name) == 0)
+	    {
+	      break ;
+	    }
+	  else
+	    {
+	      curr_cursor++ ;
+	    }
 	}
-      else
-	{
-	  curr_cursor++ ;
-	}
+
+      if (curr_cursor->cursor_id < GDK_LAST_CURSOR)
+	cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
     }
 
-  if (curr_cursor->cursor_id < GDK_LAST_CURSOR)
-    cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
 
   return cursor ;
 }
@@ -1645,4 +1654,85 @@ static void radioButtonCBDataDestroy(gpointer data)
 
   return ;
 }
+
+
+/* Constructs custom shaped cursors, only two at the moment.
+ * 
+ * Use the "bitmap" program to construct files containing definitions
+ * for the shape, mask, size and hotspot definitions in a format suitable
+ * for X bitmap.
+ *  */
+static GdkCursor *makeCustomCursor(char *cursor_name)
+{
+  GdkCursor *cursor = NULL ;
+
+#define Eds_cursor_width 16
+#define Eds_cursor_height 16
+
+  /* My cross hair cursor. */
+#define Eds_crosshair_shape_x_hot 7
+#define Eds_crosshair_shape_y_hot 7
+static unsigned char Eds_crosshair_shape_bits[] = {
+   0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x3f, 0xfc,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xfc, 0x20, 0x04,
+   0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x20, 0x04};
+static unsigned char Eds_crosshair_mask_bits[] = {
+   0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x3f, 0xfc, 0x3f, 0xfc,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xfc, 0x3f, 0xfc,
+   0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c};
+
+/* My circle cursor. */
+#define Eds_circle_shape_x_hot 7
+#define Eds_circle_shape_y_hot 7
+ static unsigned char Eds_circle_shape_bits[] = {
+   0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0x04, 0x10, 0x02, 0x20,
+   0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x04, 0x10, 0x08, 0x08,
+   0x10, 0x04, 0xe0, 0x03, 0x00, 0x00, 0x00, 0x00};
+ static unsigned char Eds_circle_mask_bits[] = {
+   0xc0, 0x01, 0xf0, 0x07, 0x18, 0x0c, 0x0c, 0x18, 0x06, 0x30, 0x02, 0x20,
+   0x03, 0x60, 0x03, 0x60, 0x03, 0x60, 0x02, 0x20, 0x06, 0x30, 0x0c, 0x18,
+   0x18, 0x0c, 0xf0, 0x07, 0xc0, 0x01, 0x00, 0x00};
+
+ gchar *shape_data, *mask_data ;
+ gint hot_x, hot_y ;
+ gboolean found_cursor = FALSE ;
+ GdkPixmap *source, *mask;
+ GdkColor fg = { 0, 65535, 0, 0 };			    /* Red. */
+ GdkColor bg = { 0, 0, 0, 65535 };			    /* Blue. */
+
+
+ if (g_ascii_strcasecmp(cursor_name, "eds_crosshair") == 0)
+   {
+     shape_data = (gchar *)Eds_crosshair_shape_bits ;
+     mask_data = (gchar *)Eds_crosshair_mask_bits ;
+     hot_x = Eds_crosshair_shape_x_hot ;
+     hot_y = Eds_crosshair_shape_y_hot ;
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, "eds_circle") == 0)
+   {
+     shape_data = (gchar *)Eds_circle_shape_bits ;
+     mask_data = (gchar *)Eds_circle_mask_bits ;
+     hot_x = Eds_circle_shape_x_hot ;
+     hot_y = Eds_circle_shape_y_hot ;
+     found_cursor = TRUE ;
+   }
+
+ if (found_cursor)
+   {
+     source = gdk_bitmap_create_from_data(NULL, shape_data,
+					  Eds_cursor_width, Eds_cursor_height) ;
+     mask = gdk_bitmap_create_from_data(NULL, mask_data,
+					Eds_cursor_width, Eds_cursor_height);
+
+     cursor = gdk_cursor_new_from_pixmap (source, mask, &fg, &bg, hot_x, hot_y) ;
+
+     g_object_unref (source);
+     g_object_unref (mask);
+   } 
+
+
+  return cursor ;
+}
+
 
