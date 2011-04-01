@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Mar 31 12:30 2011 (edgrif)
+ * Last edited: Apr  1 08:13 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.313 2011-03-31 11:31:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.314 2011-04-01 12:09:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -366,26 +366,26 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
     {
       double sx1,sy1,sx2,sy2;
 
-/*
-      MH17 -> RT162629
-      on v-split when zoomed this caused the LH pane to have a full range scroll region
-      meaning that the two windows were not exact copies & they become unlocked
-      we set the scroll region here as this is where we have the min/max coords
+      /*
+	MH17 -> RT162629
+	on v-split when zoomed this caused the LH pane to have a full range scroll region
+	meaning that the two windows were not exact copies & they become unlocked
+	we set the scroll region here as this is where we have the min/max coords
 
-      erm... see also CAUSED_RT_57193 in zmapWindow.c
-*/
+	erm... see also CAUSED_RT_57193 in zmapWindow.c
+      */
 
       if(window->scroll_initialised)
-      {
-            zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
-      }
+	{
+	  zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+	}
       else
-      {
-            sx1 = 0.0;
-            sy1 = window->min_coord;
-            sx2 = ZMAP_CANVAS_INIT_SIZE;
-            sy2 = window->max_coord;
-      }
+	{
+	  sx1 = 0.0;
+	  sy1 = window->min_coord;
+	  sx2 = ZMAP_CANVAS_INIT_SIZE;
+	  sy2 = window->max_coord;
+	}
 
       zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
 
@@ -397,9 +397,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 							 &(window->colour_root),
 							 &(window->canvas_border));
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapWindowContainerGroupBackgroundSize(root_group, window->max_coord - window->min_coord);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       zmapWindowContainerGroupBackgroundSize(root_group, zmapWindowExt(window->min_coord, window->max_coord)) ;
 
       g_signal_connect(G_OBJECT(root_group), "destroy", G_CALLBACK(containerDestroyCB), window) ;
@@ -413,6 +410,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
     }
 
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
+
 
   /* Always reset this as context changes with new features.*/
   zmapWindowContainerAttachFeatureAny(root_group, (ZMapFeatureAny)full_context);
