@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Mar 11 17:37 2011 (edgrif)
+ * Last edited: Apr  1 10:12 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.123 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.124 2011-04-01 12:07:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -272,7 +272,7 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
   zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, (char *)__PRETTY_FUNCTION__)
 #else
 #define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyFull(__FILE__, NULL, (WINDOW), (BUSY))
+  zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, NULL)
 #endif
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
