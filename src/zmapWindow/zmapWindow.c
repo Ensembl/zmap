@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 31 12:10 2011 (edgrif)
+ * Last edited: Apr  1 10:13 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.360 2011-03-31 11:11:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.361 2011-04-01 12:08:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,10 +288,6 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
 
 
 
-/* WHAT'S THIS !!! */
-ZMapFeature FEATURE_GLOBAL_G = NULL ;
-
-
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
  * process. */
@@ -488,6 +484,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
   return new_window ;
 }
+
 
 
 /* This function shouldn't be called directly, instead use the macro zMapWindowBusy()
@@ -2186,14 +2183,23 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
       zmapWindowClampSpan(window, &y1, &y2);
 
-      /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
-       * to avoid a double redraw....but that might never happen actually, depends how much there is
-       * in the Xlib buffer so not lets worry about it. */
+
+
+      /* Set the new scroll_region and the new zoom, keep these together to try
+       * and avoid a double redraw as both these operations cause update requests
+       * and if separated by other gtk calls will result in double draws.
+       * If this doesn't work we'll need to provide a new single foocanvas call
+       * to set both zoom and scroll region in one go. */
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
+
+      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"myWindowZoom");
+
+
+
+      /* Try this here as a hack to avoid double call to work out widget set ups... */
       zmapWindowRulerCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
 
-      /* Set the scroll region. */
-      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"myWindowZoom");
+
 
       /* Now we've actually done the zoom on the canvas we can
        * redraw/show/hide everything that's zoom dependent.
@@ -5704,8 +5710,6 @@ static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, in
   if (canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
       ZMapWindow window = (ZMapWindow)user_data;
-
-      zMapWindowBusy(window, TRUE) ;
     }
 
   zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
@@ -5720,8 +5724,6 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
       ZMapWindow window = (ZMapWindow)user_data;
-
-      zMapWindowBusy(window, FALSE) ;
     }
 
   zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
