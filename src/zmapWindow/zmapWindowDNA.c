@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 11 17:07 2011 (edgrif)
+ * Last edited: Apr  5 11:53 2011 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.31 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.32 2011-04-05 10:54:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -580,8 +580,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   if (!err_text)
     {
-      if ((start < 0 || start > dna_len)
-	  || (end < 0 || end > dna_len)
+      if ((start < 0 || start > dna_len) || (end < 0 || end > dna_len)
 	  || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
 	  || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
 	err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
@@ -780,8 +779,18 @@ static void remapCoords(gpointer data, gpointer user_data)
   DNASearchData search_data = (DNASearchData)user_data ;
   ZMapFeatureBlock block = (ZMapFeatureBlock)search_data->block ;
 
-  match_data->start = match_data->start + block->block_to_sequence.block.x1 ;
-  match_data->end = match_data->end + block->block_to_sequence.block.x1 ;
+  /* Change to 1 based..... */
+  match_data->start++ ;
+  match_data->end++ ;
+
+
+  if (match_data->match_type == ZMAPSEQUENCE_PEPTIDE)
+    {
+      zMapSequencePep2DNA(&(match_data->start), &(match_data->end), match_data->frame) ;
+    }
+
+  zMapBlock2FeatureCoords(block, &(match_data->start), &(match_data->end)) ;
+
 
   zmapWindowCoordPairToDisplay(search_data->window, match_data->start, match_data->end,
 			       &(match_data->screen_start), &(match_data->screen_end)) ;
@@ -869,12 +878,6 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
 
   start = current_match->start;
   end   = current_match->end;
-  /* excellent */
-  if(current_match->match_type == ZMAPSEQUENCE_PEPTIDE)
-    {
-      start *= 3;
-      end   *= 3;
-    }
 
   feature_set = fstyle->feature_set;
   style       = fstyle->feature_style;
