@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,14 +26,14 @@ name
  *
  * Description: Splits the zmap window to show either the same view twice
  *              or two different views.
- *              
+ *
  *              This is a complete rewrite of the original.
- *              
+ *
  * Exported functions: See zmapControl.h
  * HISTORY:
  * Last edited: Dec  9 16:15 2008 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.28 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.29 2011-04-05 14:53:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@ name
 
 
 
- 
+
 #include <zmapControl_P.h>
 #include <ZMap/zmapUtilsDebug.h>
 
@@ -102,7 +102,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   else
     curr_container = NULL ;
 
-  view_title = sequence ;
+  view_title = zMapViewGetSequenceName(sequence, start, end) ;
 
   /* Record what your current parent is. */
   if (curr_container)
@@ -145,7 +145,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
       infopanel = zmapControlWindowMakeInfoPanel(zmap, labels);
 
       labels->hbox = infopanel;
-      gtk_signal_connect(GTK_OBJECT(labels->hbox), "destroy", 
+      gtk_signal_connect(GTK_OBJECT(labels->hbox), "destroy",
 			 GTK_SIGNAL_FUNC(labelDestroyCB), (gpointer)labels) ;
 
 
@@ -156,7 +156,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
 
       /* Add view to the xremote widget so it can be recovered later. */
       /* no need for this call ...
-       * g_object_set_data(G_OBJECT(xremote_widget), VIEW_XREMOTE_WIDGET, zmap_view) ; 
+       * g_object_set_data(G_OBJECT(xremote_widget), VIEW_XREMOTE_WIDGET, zmap_view) ;
        */
 
       zMapViewSetupNavigator(view_window, zmap->nav_canvas) ;
@@ -169,7 +169,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
        * the user will not get visual feedback that a window is the focus window. */
       if (!zmap->focus_viewwindow)
 	zmapControlSetWindowFocus(zmap, view_window) ;
-      
+
       /* We'll need to update the display..... */
       gtk_widget_show_all(zmap->toplevel) ;
 
@@ -179,10 +179,10 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   return zmap_view ;
 }
 
-ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap, 
+ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
                                                     ZMapWindow zmap_window,
-                                                    GtkWidget *curr_container, 
+                                                    GtkWidget *curr_container,
                                                     GtkOrientation orientation,
 						    ZMapControlSplitOrder window_order,
                                                     char *view_title)
@@ -244,13 +244,14 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
   view_title  = zMapViewGetSequence(zmap_view) ;
 
-  view_window = zmapControlNewWidgetAndWindowForView(zmap, 
+  view_window = zmapControlNewWidgetAndWindowForView(zmap,
                                                      zmap_view,
                                                      zmap_window,
-                                                     curr_container, 
+                                                     curr_container,
                                                      orientation,
 						     window_order,
                                                      view_title);
+
 
   /* If there is no current focus window we need to make this new one the focus,
    * if we don't of code will fail because it relies on having a focus window and
@@ -352,10 +353,10 @@ void zmapControlRemoveWindow(ZMap zmap)
 
 
 
-/* 
+/*
  * view_window is the view to add, this must be supplied.
  * orientation is GTK_ORIENTATION_HORIZONTAL or GTK_ORIENTATION_VERTICAL
- * 
+ *
  *  */
 GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 				GtkOrientation orientation, ZMapControlSplitOrder window_order,
@@ -567,7 +568,7 @@ static GtkWidget *closePane(GtkWidget *close_frame)
    * a frame.)
    * Note also that we have to deal with event boxes inserted for new views,
    * it makes the hierachy more complex, in another world I'll think of a better way
-   * to handle all this. 
+   * to handle all this.
    */
   while (GTK_IS_PANED(keep_container) || GTK_IS_EVENT_BOX(keep_container))
     {
@@ -622,7 +623,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       if (zmap->focus_viewwindow)
 	{
 	  GtkWidget *unfocus_frame ;
-          
+
 	  unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
           gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
           gtk_widget_set_name(GTK_WIDGET(unfocus_frame), "GtkFrame");
@@ -811,7 +812,7 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapInfoPanelLabels labels = (ZMapInfoPanelLabels) cb_data ;
 
-  labels->hbox = NULL ; 
+  labels->hbox = NULL ;
 
   return ;
 }

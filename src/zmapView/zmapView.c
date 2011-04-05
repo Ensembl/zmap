@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr  1 10:01 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.237 2011-04-01 12:07:00 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.238 2011-04-05 14:53:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1387,16 +1387,37 @@ void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFe
 /*
  *    A set of accessor functions.
  */
+
 char *zMapViewGetSequence(ZMapView zmap_view)
 {
   char *sequence = NULL ;
+  ZMapFeatureSequenceMap seq;
 
   if (zmap_view->state != ZMAPVIEW_DYING)
-    sequence = zmap_view->view_sequence->sequence ;
+  {
+    seq = zmap_view->view_sequence;
+
+    sequence = zMapViewGetSequenceName(seq->sequence,seq->start,seq->end);
+  }
 
   return sequence ;
 }
 
+char *zMapViewGetSequenceName(char *name,int start,int end)
+{
+  char *sequence = NULL ;
+
+  if(!g_strstr_len(name,-1,"_"))    /* sequencename_start-end format? */
+    {
+      sequence = g_strdup_printf("%s_%d-%d", name,start,end);
+    }
+    else
+    {
+      sequence = g_strdup(name);
+    }
+
+  return sequence ;
+}
 
 void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title)
 {

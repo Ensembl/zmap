@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 23 13:03 2011 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.113 2011-03-22 12:30:35 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.114 2011-04-05 14:53:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -370,13 +370,15 @@ void zmapControlClose(ZMap zmap)
     {
       char *msg ;
 
+      char *name = zMapViewGetSequence(view);
       msg = g_strdup_printf("Closing this window will remove view \"%s\", "
-			    "do you really want to do this ?", zMapViewGetSequence(view)) ;
+			    "do you really want to do this ?", name) ;
 
       if (num_windows > 1
 	  || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
 	zmapControlRemoveWindow(zmap) ;
 
+      g_free(name);
       g_free(msg) ;
     }
 
@@ -1059,6 +1061,7 @@ static void updateControl(ZMap zmap, ZMapView view)
 			      features ? "" : " <no sequence loaded>") ;
       gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
       g_free(title) ;
+      g_free(seq_name);
 
 
       /* Set up zoom buttons. */
