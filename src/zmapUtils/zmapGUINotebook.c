@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar  8 12:24 2011 (edgrif)
+ * Last edited: Apr  5 14:22 2011 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.25 2011-03-11 17:26:43 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.26 2011-04-05 13:28:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1455,7 +1455,7 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
   MakeNotebook make_notebook = (MakeNotebook)make_notebook_data;
   GtkWidget *notebook, *notebook_stack ;
   const char *chapter_name;
-  gint notebook_pos ;
+  gint notebook_pos, notebook_pages ;
 
   /* Get hold of the notebook, the notebook_stack and the position of the notebook within
    * the notebook_stack. */
@@ -1463,22 +1463,25 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
 
   notebook_stack = g_object_get_data(G_OBJECT(notebook), GUI_NOTEBOOK_STACK_SETDATA) ;
 
-  notebook_pos = gtk_notebook_page_num(GTK_NOTEBOOK(notebook_stack), notebook) ;
-
-  if((chapter_name = gtk_button_get_label(GTK_BUTTON(widget))))
+  if ((notebook_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook_stack))) > 1)
     {
-      ZMapGuiNotebookChapter focus_chapter = NULL;
+      notebook_pos = gtk_notebook_page_num(GTK_NOTEBOOK(notebook_stack), notebook) ;
 
-      focus_chapter = zMapGUINotebookFindChapter(make_notebook->notebook_spec, chapter_name);
+      if((chapter_name = gtk_button_get_label(GTK_BUTTON(widget))))
+	{
+	  ZMapGuiNotebookChapter focus_chapter = NULL;
 
-      make_notebook->current_focus_chapter = focus_chapter;
+	  focus_chapter = zMapGUINotebookFindChapter(make_notebook->notebook_spec, chapter_name);
+
+	  make_notebook->current_focus_chapter = focus_chapter;
+	}
+
+      /* Raise the notebook to the top of the notebooks */
+      gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook_stack), notebook_pos) ;
+
+      /* Set this notebook to show the first page. */
+      gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), 0) ;
     }
-
-  /* Raise the notebook to the top of the notebooks */
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook_stack), notebook_pos) ;
-
-  /* Set this notebook to show the first page. */
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), 0) ;
 
   return ;
 }
