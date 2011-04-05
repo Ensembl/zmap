@@ -33,9 +33,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 24 10:34 2011 (edgrif)
+ * Last edited: Apr  5 14:26 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.31 2011-02-24 11:19:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.32 2011-04-05 13:27:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -393,9 +393,6 @@ static ZMapWindowFeatureShow showFeature(ZMapWindowFeatureShow reuse_window, ZMa
       gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
 
       gtk_widget_show_all(show->window) ;
-
-      /* Now free the feature_book..not wanted after display ?? */
-      zMapGUINotebookDestroyNotebook(show->feature_book) ;
     }
 
   return show ;
@@ -804,6 +801,9 @@ static void destroyCB(GtkWidget *widget, gpointer data)
   ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data ;
 
   g_ptr_array_remove(feature_show->zmapWindow->feature_show_windows, (gpointer)feature_show->window);
+
+  /* Now free the feature_book..not wanted after display ?? */
+  zMapGUINotebookDestroyNotebook(feature_show->feature_book) ;
 
   g_free(feature_show) ;
 
@@ -1646,6 +1646,7 @@ static void getAllMatches(ZMapWindow window,
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Match Start"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Match End"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Score"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Percent ID"))) ;
 
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
@@ -1654,7 +1655,7 @@ static void getAllMatches(ZMapWindow window,
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("float"))) ;
-
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("float"))) ;
 
       paragraph = zMapGUINotebookCreateParagraph(subsection, "Matches",
 						 ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE, headers, types) ;
@@ -1707,11 +1708,14 @@ static void addTagValue(gpointer data, gpointer user_data)
   memcpy(&tmp, &(feature->score), 4) ;
   column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
 
+  memcpy(&tmp, &(feature->feature.homol.percent_id), 4) ;
+  column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
+
+
   tagvalue = zMapGUINotebookCreateTagValue(paragraph,
 					   NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
 					   "compound", column_data,
 					   NULL) ;
-
   return ;
 }
 
