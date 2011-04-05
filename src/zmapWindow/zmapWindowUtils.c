@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 10 16:35 2011 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.78 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.79 2011-04-05 13:29:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,10 +70,10 @@ typedef struct
 /* MH17: isn't the above comment sweet considering we use GObjects for everything */
 
 
-#if 1
+
 /* MH17 reworking coordinate functions
  *
- * NOTE we assume window->min_coord,max_coord are vliad and there is only one block
+ * NOTE we assume window->min_coord,max_coord are valid and there is only one block
  * with the implemnention as of Jan/Feb2011 this is true and
  * all features are displayed at absolute not block relative coordinates
  */
@@ -156,95 +156,20 @@ int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
 
 /* Use if you have no window.... */
 /* ZMap seq coord to display, is not always 1 based, start is the smallest seq coord in the range*/
+/* calculation as for zmapWindowCoordToDisplay() */
 int zmapWindowCoordFromOriginRaw(int start, int end, int coord, gboolean revcomped)
 {
   int new_coord ;
 
-  new_coord = coord - (start - 1) ;
-
+  new_coord = coord - start + 1;
   if(revcomped)
-      new_coord -= end - start + 1;
-
-  return new_coord ;
-}
-
-
-#else
-
-/* Transforming coordinates for a revcomp'd sequence:
- *
- * Users sometimes want to see coords transformed to a "negative" version of the forward
- * coords when viewing a revcomp'd sequence, i.e. 1 -> 365700 becomes -365700 -> -1
- *
- * These functions take care of this for zmap where we don't actually change the
- * underlying sequence coords of features to be negative but simply display them
- * as negatives to the user.
- *
- *  */
-int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
-{
-  int new_coord ;
-
-  if (window->revcomped_features && window->display_forward_coords)
-    new_coord = coord - (window->origin - 1) ;
-  else
-    new_coord = coord ;
+      new_coord -= end - start + 2;
 
   return new_coord ;
 }
 
 
 
-void zmapWindowCoordPairToDisplay(ZMapWindow window,
-				  int start_in, int end_in,
-				  int *display_start_out, int *display_end_out)
-{
-  int start, end ;
-
-  start = zmapWindowCoordToDisplay(window, start_in) ;
-  end = zmapWindowCoordToDisplay(window, end_in) ;
-
-  /* Note that the start/ends get swopped if we are reversed complemented and
-   * display forwards coords so their order fits the "forwards" display. */
-  if (window->revcomped_features && window->display_forward_coords)
-    ZMAP_SWAP_TYPE(int, start, end) ;
-
-  *display_start_out = start ;
-  *display_end_out = end ;
-
-  return ;
-}
-
-
-
-
-int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
-{
-  int new_coord ;
-  int origin ;
-
-  if (window->revcomped_features && window->display_forward_coords)
-    origin = (window->origin - 2) * -1 ;
-  else
-    origin = window->origin ;
-
-  new_coord = coord - (origin - 1) ;
-
-  return new_coord ;
-}
-
-
-/* Use if you have no window.... */
-int zmapWindowCoordFromOriginRaw(int origin, int coord)
-{
-  int new_coord ;
-
-  new_coord = coord - (origin - 1) ;
-
-  return new_coord ;
-}
-
-#endif
 
 ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in)
 {

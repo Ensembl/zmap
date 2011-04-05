@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 31 12:26 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.212 2011-03-31 11:28:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.213 2011-04-05 13:29:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1750,6 +1750,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
 
 
 
+/* NOTE feature may be null */
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
                                       double *points_array_inout,
@@ -1768,7 +1769,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
    * so guess what size we end up using....sigh...and in addition it's the block size
    * we should be using anyway.... */
 
-  if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
+  if(featrue && feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
      feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
       ZMapWindow window = (ZMapWindow)handler_data;

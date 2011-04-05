@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  1 08:13 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.314 2011-04-01 12:09:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.315 2011-04-05 13:29:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -305,7 +305,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   // we want to display just the data in our blocks, not the surrounding sequence
   zMapFeatureContextGetMasterAlignSpan(full_context,&seq_start,&seq_end);
   /* NOTE sequence is a pointer to the view's sequence
-   * and should have been updated the view
+   * and should have been updated the view eg if revcomped
    */
    if(!window->sequence->end)
    {
@@ -316,7 +316,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
   zmapWindowRulerCanvasSetRevComped(window->ruler, window->revcomped_features) ;
-  zmapWindowRulerCanvasSetSpan(window->ruler, window->sequence->start,window->sequence->end) ;
+/*
+ * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
+ * which is very confusing but valid. To display the ruler properly we need to use those coordinates
+ * and not the original sequence coordinates.
+ * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
+ */
+  zmapWindowRulerCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
@@ -325,7 +331,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   zmapWindowLongItemSetMaxZoom(window->long_items, zMapWindowGetZoomMax(window)) ;
 
 
-      /* we diff coords from the sequence if RevComped */
+      /* we use diff coords from the sequence if RevComped */
   window->min_coord = seq_start;
   window->max_coord = seq_end ;
 

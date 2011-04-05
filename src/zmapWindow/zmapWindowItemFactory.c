@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 24 09:45 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.95 2011-03-31 11:16:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.96 2011-04-05 13:29:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -276,6 +276,23 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 }
 
 
+
+/* re-using a factory helper to scale a navigator coordinate */
+/* NOTE all factory helpers must handle a NULL feature arg */
+void getFactoriedCoordinates(ZMapWindowFToIFactory factory, int *y1, int *y2)
+{
+      double limits[4] = { 0 };
+      double points[4] = { 0 };
+
+      limits[1] = *y1;
+      limits[3] = *y2;
+
+      points[1] = *y1;
+      points[3] = *y2;
+      (factory->user_funcs->feature_size_request)(NULL,&limits[0], &points[0], factory->user_data);
+      *y1 = (int) points[1];
+      *y2 = (int) points[3];
+}
 
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 					      FooCanvasItem        *current_item,
@@ -567,7 +584,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
      if(!zMapWindowContainerSummarise(window,style) || zmapWindowContainerSummariseIsItemVisible(
             window, points[0], points[1],points[2], points[3]))
       {
-            int offset;
+            int offset,block_y1,block_y2;
 
             /*
              * we are drawing from diff_context which may be the result of a req from mark
@@ -584,8 +601,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             zMapAssert(ZMAP_IS_CONTAINER_BLOCK(container_block));
             zmapWindowContainerGetFeatureAny( (ZMapWindowContainerGroup) container_block, (ZMapFeatureAny *) &canvas_block);
 
-            /* get the block offset for the display contect not the load request context */
-            offset = block->block_to_sequence.block.x1;
+            /* get the block offset for the display context not the load request context */
+            /* MH17: to handle the navigator as scaled we need to get the canvas item start coord
+             * not the block feature start coord. for the normal window it should be the same
+             */
+            block_y1 = block->block_to_sequence.block.x1;
+            block_y2 = block->block_to_sequence.block.x2;
+            getFactoriedCoordinates(factory, &block_y1,&block_y2);
+            offset =  block_y1;
 
             run_data.factory   = factory;
             run_data.container = features_container;
@@ -729,7 +752,12 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
   /* filter on frame! */
   if((run_data->frame != ZMAPFRAME_NONE) &&
      run_data->frame  != zmapWindowFeatureFrame(feature))
+  {
+    zMapLogWarning("datalist Run filters on frame %d %d %s %s", run_data->frame,zmapWindowFeatureFrame(feature), g_quark_to_string(feature->unique_id), g_quark_to_string(run_data->set->unique_id));
     return ;
+  }
+
+    zMapLogWarning("datalist Run Single on frame %d %d %s %s @ %d-%d", run_data->frame,zmapWindowFeatureFrame(feature), g_quark_to_string(feature->unique_id), g_quark_to_string(run_data->set->unique_id),feature->x1,feature->x2);
 
   zmapWindowFToIFactoryRunSingle(run_data->factory,
 				 run_data->canvas_item,
@@ -1817,7 +1845,7 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("Now pointing at: '%c' (base  %d)\n",
-	     *seq_ptr, 
+	     *seq_ptr,
 	     (seq_ptr - feature->feature.sequence.sequence) + 1) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -1969,14 +1997,14 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
 //  y2 -= parent_ypos;
   y2 = y1 + 1.0;
        /* mh17: FooCanvastext sets it's own bounds and we have to avoid
-        * setting the bounds as the elngth of the locus whcih does not
+        * setting the bounds as the length of the locus which does not
         * correspond to the height of the text
-        * as this reuslt in a text item spannign a very wide region
+        * as this results in a text item spanning a very wide region
         * which makes the navigator mouse events pick random objects
         *
         * unfortunaltely there is another fault causing this to happen
         * even if my theory here was correct
-        * text items do get sized to text size before gettign expanded to the bottom of the canvas
+        * text items do get sized to text size before getting expanded to the bottom of the canvas
         */
 
   text_item = zMapWindowCanvasItemAddInterval(canvas_item, NULL, y1, y2, x1, x2);

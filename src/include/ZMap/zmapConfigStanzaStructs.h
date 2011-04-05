@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov 13 08:58 2008 (edgrif)
  * Created: Tue Aug 26 12:38:28 2008 (rds)
- * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.8 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.9 2011-04-05 13:29:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@ typedef struct _ZMapConfigSourceStruct
 {
   char *url ;
   char *version ;
-  char *featuresets, *navigatorsets ;
+  char *featuresets; //, *navigatorsets ;
   char *styles_list, *stylesfile ;
   char *format ;
   int timeout ;

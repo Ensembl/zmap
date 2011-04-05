@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Feb 22 08:31 2011 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.69 2011-03-18 11:38:26 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.70 2011-04-05 13:29:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -874,12 +874,18 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         draw_data->current_block = feature_block = (ZMapFeatureBlock)feature_any;
 
+#if MH17_DEBUG_NAV_FOOBAR
+/* NOTE the navigator features get scaled but the block is not as these don't appear to
+ * have any coordinates set anywhere.
+ * in the item factory features get offset by a block start coordinate
+ * which also has to be scaled
+ */
         block_start = feature_block->block_to_sequence.block.x1;
         block_end   = feature_block->block_to_sequence.block.x2;
 
-#if MH17_DEBUG_NAV_FOOBAR
 printf("nav draw block %d %d\n",block_start,block_end);
 #endif
+
         /* create the block and add the item to the hash */
         features    = zmapWindowContainerGetFeatures(draw_data->navigate->container_align);
         draw_data->container_block = zmapWindowContainerGroupCreate(features, ZMAPCONTAINER_LEVEL_BLOCK,
@@ -1062,15 +1068,6 @@ printf("nav draw scale %d %d\n",min,max);
 #endif
       zmapWindowRulerGroupDraw(features, draw_data->navigate->scaling_factor,
                                 draw_data->navigate->is_reversed,
-
-/* MH17 this is a big hack, it didn't display at all since taking origin out
- * (or perhaps since implementing chromosome coords) for fwd strand (not 1-based)
- * this seems to be the way to fix it. origin was removed by analogy with window->origin
- * which was removed to simplify coordinate handling
- */
-/*                            1.0, (double) max - min + 1); */
-/* but the locator does not display either so another fix is needed */
-/* and the features are in the wrong place so another fix is needed */
                                 (double)min, (double)max);
     }
 
@@ -1087,21 +1084,22 @@ static void createColumnCB(gpointer data, gpointer user_data)
   ZMapWindowContainerBackground container_background = NULL;
   ZMapFeatureTypeStyle style;
   gboolean status = FALSE;
-
+  GQuark set_unique_id;
 
   /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
   /* for the navigator styles are hard coded?? and there's no featureset_2_colum mapping ?
      style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
   */
 
-
-  style = zMapFindStyle(draw_data->styles,set_id);
-  draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id);
+      /* mh17: need to canonicalise the set name to find the style */
+  set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id));
+  style = zMapFindStyle(draw_data->styles,set_unique_id);
+  draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 
 
   if(!style)
     {
-      printf("Failed to find style for navigator featureset '%s'\n", g_quark_to_string(set_id));
+      zMapLogWarning("Failed to find style for navigator featureset '%s'", g_quark_to_string(set_id));
     }
   else if(draw_data->current_set)
     {
@@ -1128,7 +1126,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
       status = zmapWindowFToIAddSet(draw_data->navigate->ftoi_hash,
                                     draw_data->current_align->unique_id,
                                     draw_data->current_block->unique_id,
-                                    set_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
+                                    set_unique_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
                                     (FooCanvasGroup *)draw_data->container_feature_set);
       zMapAssert(status);
 
@@ -1138,7 +1136,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
 					   draw_data->navigate->current_window,
 					   draw_data->current_align->unique_id,
 					   draw_data->current_block->unique_id,
-					   set_id, 0, style,
+					   set_id, set_unique_id, style,
 					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
 
       zmapWindowContainerAttachFeatureAny(draw_data->container_feature_set, (ZMapFeatureAny) draw_data->current_set);
@@ -1148,8 +1146,8 @@ static void createColumnCB(gpointer data, gpointer user_data)
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
 
       zmapWindowContainerGroupBackgroundSize(draw_data->container_feature_set,
-
-		(draw_data->current_block->block_to_sequence.block.x2 - draw_data->current_block->block_to_sequence.block.x1)
+		(draw_data->current_block->block_to_sequence.block.x2 -
+             draw_data->current_block->block_to_sequence.block.x1)
             * draw_data->navigate->scaling_factor);
 
       /* scale doesn't need this. */
@@ -1159,7 +1157,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
 			 (gpointer)draw_data->navigate);
     }
   else
-    printf("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
+    zMapLogWarning("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
 
   return ;
 }
@@ -1601,7 +1599,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
   *x1_inout = *x1_inout * scale_factor;
   *x2_inout = *x2_inout * scale_factor;
 
-  if(navigate->locus_id == feature->parent->unique_id)
+  if(feature && navigate->locus_id == feature->parent->unique_id)
     {
       points_array_inout[0] += 20;
       points_array_inout[2] += 20;

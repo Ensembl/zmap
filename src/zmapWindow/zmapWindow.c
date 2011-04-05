@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  1 10:13 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.361 2011-04-01 12:08:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.362 2011-04-05 13:29:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -5633,8 +5633,10 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 
 	  clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
 
-	  zmapWindowRulerCanvasSetRevComped(window->ruler, window->revcomped_features);
-        zmapWindowRulerCanvasSetSpan(window->ruler, window->sequence->start,window->sequence->end) ;
+// this was set in WindowDrawFeatures and is now incorrect here after a revcomp
+// sequence->start,end are fwd stranc coords, we need the revcomp'ed equivalents
+//	  zmapWindowRulerCanvasSetRevComped(window->ruler, window->revcomped_features);
+//        zmapWindowRulerCanvasSetSpan(window->ruler, window->sequence->start,window->sequence->end) ;
 
 	  foo_canvas_get_scroll_offsets(canvas, &scroll_x, &scroll_y);
 

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar 15 08:07 2011 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.43 2011-03-15 14:32:01 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.44 2011-04-05 13:29:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1442,8 +1442,8 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
     g_free(source_to_free->version);
   if(source_to_free->featuresets)
     g_free(source_to_free->featuresets);
-  if(source_to_free->navigatorsets)
-    g_free(source_to_free->navigatorsets);
+//  if(source_to_free->navigatorsets)
+//    g_free(source_to_free->navigatorsets);
   if(source_to_free->stylesfile)
     g_free(source_to_free->stylesfile);
   if(source_to_free->styles_list)
@@ -1465,7 +1465,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
+//    { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
 //    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
@@ -1506,8 +1506,8 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	str_ptr = &(config_source->styles_list) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLESFILE) == 0)
       str_ptr = &(config_source->stylesfile) ;
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_NAVIGATORSETS) == 0)
-	str_ptr = &(config_source->navigatorsets) ;
+//      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_NAVIGATORSETS) == 0)
+//	str_ptr = &(config_source->navigatorsets) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_TIMEOUT) == 0)
 	int_ptr = &(config_source->timeout) ;
 //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
