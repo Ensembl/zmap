@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  1 13:03 2011 (edgrif)
+ * Last edited: Apr  5 08:27 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.62 2011-04-01 12:05:49 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.63 2011-04-05 10:52:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1658,9 +1658,26 @@ static void radioButtonCBDataDestroy(gpointer data)
 
 /* Constructs custom shaped cursors, only two at the moment.
  * 
- * Use the "bitmap" program to construct files containing definitions
- * for the shape, mask, size and hotspot definitions in a format suitable
- * for X bitmap.
+ * The sample X windows utility program "bitmap" was used to construct
+ * files containing definitions for the shape, mask, size and hotspots
+ * in a format suitable for the GDK calls that create cursors (i.e. X bitmaps).
+ * 
+ * If you ever need to edit any of the below cursors simply cut/paste the
+ * the bitmap data into a normal text file with format as follows and then
+ * use the bitmap program to edit them:
+ * 
+ * #define Eds_cursor_shape_width 16
+ * #define Eds_cursor_shape_height 16
+ * #define Eds_cursor_shape_x_hot 7
+ * #define Eds_cursor_shape_y_hot 7
+ * static unsigned char Eds_cursor_shape_bits[] = {
+ *    0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0x04, 0x10, 0x02, 0x20,
+ *    0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x04, 0x10, 0x08, 0x08,
+ *    0x10, 0x04, 0xe0, 0x03, 0x00, 0x00, 0x00, 0x00};
+ * 
+ * Once you've done that you can just extract the hot spot and bits data and
+ * insert it below as for the other cursors.
+ * 
  *  */
 static GdkCursor *makeCustomCursor(char *cursor_name)
 {
@@ -1669,17 +1686,29 @@ static GdkCursor *makeCustomCursor(char *cursor_name)
 #define Eds_cursor_width 16
 #define Eds_cursor_height 16
 
-  /* My cross hair cursor. */
+  /* My thick cross cursor. */
+#define Eds_cross_shape_x_hot 7
+#define Eds_cross_shape_y_hot 7
+static unsigned char Eds_cross_shape_bits[] = {
+   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
+   0x00, 0x00, 0x3f, 0x7e, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
+   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
+static unsigned char Eds_cross_mask_bits[] = {
+   0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
+   0x3f, 0x7e, 0x3f, 0x7e, 0x3f, 0x7e, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
+   0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0x00, 0x00};
+
+  /* My crosshair cursor. */
 #define Eds_crosshair_shape_x_hot 7
 #define Eds_crosshair_shape_y_hot 7
 static unsigned char Eds_crosshair_shape_bits[] = {
-   0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x3f, 0xfc,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xfc, 0x20, 0x04,
-   0x20, 0x04, 0x20, 0x04, 0x20, 0x04, 0x20, 0x04};
+   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
+   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
 static unsigned char Eds_crosshair_mask_bits[] = {
-   0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x3f, 0xfc, 0x3f, 0xfc,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xfc, 0x3f, 0xfc,
-   0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c};
+   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
+   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
 
 /* My circle cursor. */
 #define Eds_circle_shape_x_hot 7
@@ -1697,17 +1726,30 @@ static unsigned char Eds_crosshair_mask_bits[] = {
  gint hot_x, hot_y ;
  gboolean found_cursor = FALSE ;
  GdkPixmap *source, *mask;
- GdkColor fg = { 0, 65535, 0, 0 };			    /* Red. */
- GdkColor bg = { 0, 0, 0, 65535 };			    /* Blue. */
+ GdkColor red = { 0, 65535, 0, 0 };			    /* Red. */
+ GdkColor blue = { 0, 0, 0, 65535 };			    /* Blue. */
+ GdkColor black = { 0, 0, 0, 0 };			    /* Black. */
+ GdkColor *fg, *bg ;
 
 
- if (g_ascii_strcasecmp(cursor_name, "eds_crosshair") == 0)
+ if (g_ascii_strcasecmp(cursor_name, "eds_cross") == 0)
+   {
+     shape_data = (gchar *)Eds_cross_shape_bits ;
+     mask_data = (gchar *)Eds_cross_mask_bits ;
+     hot_x = Eds_cross_shape_x_hot ;
+     hot_y = Eds_cross_shape_y_hot ;
+     found_cursor = TRUE ;
+     fg = &red ;
+     bg = &blue ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, "eds_crosshair") == 0)
    {
      shape_data = (gchar *)Eds_crosshair_shape_bits ;
      mask_data = (gchar *)Eds_crosshair_mask_bits ;
      hot_x = Eds_crosshair_shape_x_hot ;
      hot_y = Eds_crosshair_shape_y_hot ;
      found_cursor = TRUE ;
+     fg = bg = &black ;
    }
  else if (g_ascii_strcasecmp(cursor_name, "eds_circle") == 0)
    {
@@ -1716,6 +1758,8 @@ static unsigned char Eds_crosshair_mask_bits[] = {
      hot_x = Eds_circle_shape_x_hot ;
      hot_y = Eds_circle_shape_y_hot ;
      found_cursor = TRUE ;
+     fg = &red ;
+     bg = &blue ;
    }
 
  if (found_cursor)
@@ -1725,7 +1769,7 @@ static unsigned char Eds_crosshair_mask_bits[] = {
      mask = gdk_bitmap_create_from_data(NULL, mask_data,
 					Eds_cursor_width, Eds_cursor_height);
 
-     cursor = gdk_cursor_new_from_pixmap (source, mask, &fg, &bg, hot_x, hot_y) ;
+     cursor = gdk_cursor_new_from_pixmap (source, mask, fg, bg, hot_x, hot_y) ;
 
      g_object_unref (source);
      g_object_unref (mask);
