@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar 24 10:47 2011 (edgrif)
+ * Last edited: Apr  5 08:31 2011 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.142 2011-03-31 10:51:40 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.143 2011-04-05 10:51:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -401,16 +401,21 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       break;
     }
 
+
+  /* What I don't like about this way of doing things is that the default behaviour
+   * is to copy things that we either shouldn't be copying or should be making a
+   * deep copy of.... */
   if (USE_SLICE_ALLOC)
     {
       new_feature_any = g_slice_alloc0(bytes) ;
       g_memmove(new_feature_any, orig_feature_any, bytes) ;
     }
   else
-    new_feature_any = g_memdup(orig_feature_any, bytes) ;
-
-
+    {
+      new_feature_any = g_memdup(orig_feature_any, bytes) ;
+    }
   logMemCalls(TRUE, new_feature_any) ;
+
 
 
   /* We DO NOT copy children or parents... */
@@ -429,6 +434,8 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	new_context->elements_to_destroy = NULL ;
 
 	new_context->req_feature_set_names = NULL ;
+
+	new_context->src_feature_set_names = NULL ;
 
 	new_context->master_align = NULL ;
 
@@ -450,23 +457,25 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-      ZMapFeatureSet new_set = (ZMapFeatureSet) new_feature_any;
+	ZMapFeatureSet new_set = (ZMapFeatureSet) new_feature_any;
 
-      /* MH17: this is for a copy of the featureset to be added to the diff context on merge
-       * we could set this to NULL to avoid a double free
-       * but there are a few calls here from WindowRemoteReceive, viewRemoteReceive, WindowDNA, WindowDraw
-       * and while it's tedious to copy the list it save a lot of starting at code
-       */
+	/* MH17: this is for a copy of the featureset to be added to the diff context on merge
+	 * we could set this to NULL to avoid a double free
+	 * but there are a few calls here from WindowRemoteReceive, viewRemoteReceive, WindowDNA, WindowDraw
+	 * and while it's tedious to copy the list it save a lot of starting at code
+	 */
 
-      GList *l,*copy = NULL;
-      ZMapSpan span;
+	GList *l,*copy = NULL;
+	ZMapSpan span;
 
-      for(l = new_set->loaded;l;l = l->next)
-      {
-            span = g_memdup(l->data,sizeof(ZMapSpanStruct));
-            copy = g_list_append(copy,span);    /* must preserve the order */
-      }
-      new_set->loaded = copy;
+	for(l = new_set->loaded;l;l = l->next)
+	  {
+	    span = g_memdup(l->data,sizeof(ZMapSpanStruct));
+	    copy = g_list_append(copy,span);    /* must preserve the order */
+	  }
+
+	new_set->loaded = copy;
+
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
@@ -1983,26 +1992,27 @@ static void destroyFeatureAny(gpointer data)
       break ;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-            ZMapFeatureSet feature_set = (ZMapFeatureSet) feature_any;
-            GList *l;
+	ZMapFeatureSet feature_set = (ZMapFeatureSet) feature_any;
+	GList *l;
 
-            if(feature_set->masker_sorted_features)
-                  g_list_free(feature_set->masker_sorted_features);
-            feature_set->masker_sorted_features = NULL;
+	if(feature_set->masker_sorted_features)
+	  g_list_free(feature_set->masker_sorted_features);
+	feature_set->masker_sorted_features = NULL;
 
-            if(feature_set->loaded)
-            {
-                  for(l = feature_set->loaded;l;l = l->next)
-                  {
-                        g_free(l->data);
-                  }
-                  g_list_free(feature_set->loaded);
-            }
-            feature_set->loaded = NULL;
+	if(feature_set->loaded)
+	  {
+	    for(l = feature_set->loaded;l;l = l->next)
+	      {
+		g_free(l->data);
+	      }
+	    g_list_free(feature_set->loaded);
+	  }
+	feature_set->loaded = NULL;
 
-            nbytes = sizeof(ZMapFeatureSetStruct) ;
+	nbytes = sizeof(ZMapFeatureSetStruct) ;
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       nbytes = sizeof(ZMapFeatureStruct) ;
       destroyFeature((ZMapFeature)feature_any) ;
@@ -2013,19 +2023,19 @@ static void destroyFeatureAny(gpointer data)
     }
 
   if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-  {
-    g_hash_table_destroy(feature_any->children) ;
-  }
+    {
+      g_hash_table_destroy(feature_any->children) ;
+    }
 
 
   logMemCalls(FALSE, feature_any) ;
 
-
-  memset(feature_any, (char )0, nbytes);		    /* Make sure mem for struct is useless. */
+  memset(feature_any, 0, nbytes) ;			    /* Make sure mem for struct is useless. */
   if (USE_SLICE_ALLOC)
     g_slice_free1(nbytes, feature_any) ;
   else
     g_free(feature_any) ;
+
 
   return ;
 }
@@ -3241,12 +3251,20 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 
   if (LOG_MEM_CALLS)
     {
-      if (USE_SLICE_ALLOC && alloc)
-	func = "g_slice_alloc0" ;
-      else if (USE_SLICE_ALLOC && !alloc)
-	func = "g_slice_free1" ;
+      if (USE_SLICE_ALLOC)
+	{
+	  if (alloc)
+	    func = "g_slice_alloc0" ;
+	  else
+	    func = "g_slice_free1" ;
+	}
       else
-	func = "BAD_FUNC" ;
+	{
+	  if (alloc)
+	    func = "g_malloc" ;
+	  else
+	    func = "g_free" ;
+	}
 
       zMapLogWarning("%s: %s at %p\n", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
     }
