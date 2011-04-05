@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 31 12:53 2011 (edgrif)
+ * Last edited: Apr  5 11:55 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.146 2011-03-31 11:54:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.147 2011-04-05 10:56:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1793,7 +1793,7 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
 
 static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 				   FooCanvasItem *focus_item,
-				   ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
+				   ZMapSequenceType seq_type, ZMapFrame required_frame, int start, int end,
 				   gboolean centre_on_region)
 {
   FooCanvasItem *item ;
@@ -1817,21 +1817,21 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
       dna_start = start ;
       dna_end = end ;
 
-      /* If it's a peptide hit, convert peptide start/end to dna sequence coords. */
-      if (seq_type == ZMAPSEQUENCE_PEPTIDE)
-	zMapSequencePep2DNA(&dna_start, &dna_end, frame) ;
-
-      zmapWindowItemHighlightDNARegion(window, FALSE, item, frame, seq_type, dna_start, dna_end) ;
+      zmapWindowItemHighlightDNARegion(window, FALSE, item, required_frame, seq_type, dna_start, dna_end) ;
 
       if (centre_on_region)
 	{
+	  /* Need to convert sequence coords to block for this call. */
+	  zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
+
+
 	  zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, dna_start, dna_end) ;
 	  done_centring = TRUE ;
 	}
     }
 
 
-  /* If there is a peptide column then highlight match in that. */
+  /* If there are peptide columns then highlight match in those. */
   tmp_strand = ZMAPSTRAND_NONE ;
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
@@ -1841,22 +1841,13 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 					 set_id, tmp_strand, tmp_frame, 0)))
     {
       int frame_num, pep_start, pep_end ;
+      
 
-      for (frame_num = ZMAPFRAME_0 ; frame_num < ZMAPFRAME_2 + 1 ; frame_num++)
+
+      for (frame_num = ZMAPFRAME_0 ; frame_num <= ZMAPFRAME_2 ; frame_num++)
 	{
 	  pep_start = start ;
 	  pep_end = end ;
-
-	  /* If it's a dna hit, convert dna coords to peptide. */
-	  if (seq_type == ZMAPSEQUENCE_DNA)
-	    zMapSequenceDNA2Pep(&pep_start, &pep_end, frame_num) ;
-
-	  /* slightly tricky...if it's a peptide match then we should only highlight in
-	   * the right frame, the others are by definition not a match. */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (seq_type == ZMAPSEQUENCE_DNA || frame_num == frame)
-	    zmapWindowItemHighlightTranslationRegion(window, item, frame_num, pep_start, pep_end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  if (seq_type == ZMAPSEQUENCE_DNA)
 	    {
@@ -1865,7 +1856,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 	    }
 	  else
 	    {
-	      if (frame_num == frame)
+	      if (frame_num == required_frame)
 		zmapWindowItemHighlightTranslationRegion(window, TRUE, FALSE, item,
 							 frame_num, seq_type, pep_start, pep_end) ;
 	      else
