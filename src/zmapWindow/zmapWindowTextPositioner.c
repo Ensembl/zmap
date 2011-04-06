@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Feb 24 14:14 2011 (edgrif)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.15 2011-04-05 13:29:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.16 2011-04-06 08:12:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -299,8 +299,11 @@ void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
                         group_off = top_canvas - cur_y;
                         if(group_off > col_spare)
                               group_off = col_spare;
-                        sep += group_off;
-                        col_spare -= group_off;
+                        if(group_off > 0)
+                        {
+                              sep += group_off;
+                              col_spare -= group_off;
+                        }
                   }
 
                   gs = gs->next;
@@ -324,7 +327,10 @@ void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
             if(item_adjust > col_spare)
                  item_adjust = col_spare;
             if(item_adjust > 0)
+            {
                   sep += item_adjust;
+                  col_spare -= item_adjust;
+            }
       }
 
       ti->span_canvas.x1 += sep;
