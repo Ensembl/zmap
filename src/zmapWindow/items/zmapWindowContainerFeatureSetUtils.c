@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.12 2011-04-06 13:04:52 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.13 2011-04-06 13:43:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -226,8 +226,9 @@ int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_o
       prev_reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
       curr_reversed = curr_feature->strand == ZMAPSTRAND_REVERSE;
 
-
+#if 0
 zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_quark_to_string(curr_feature->unique_id));
+#endif
 
       /* MH17 NOTE
        *
@@ -271,7 +272,7 @@ zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_
                   x_coord = get_glyph_mid_point((FooCanvasItem *) curr_item);
 
                   glyph = zMapWindowGlyphItemCreate(parent, style, prev_reversed? 5 : 3,
-                                          x_coord, prev_feature->x2 - block_offset, 0, FALSE) ;
+                                          x_coord, prev_feature->x2 - block_offset + 1, 0, FALSE) ;
 
                   /* Record the item so we can delete it later. */
                   if(glyph)
@@ -281,7 +282,7 @@ zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_
                   }
 
                   glyph = zMapWindowGlyphItemCreate(parent, style, prev_reversed? 3 : 5,
-                                          x_coord, curr_feature->x1 - block_offset - 1, 0, FALSE) ;
+                                          x_coord, curr_feature->x1 - block_offset, 0, FALSE) ;
 
                   /* Record the item so we can delete it later. */
                   if(glyph)
@@ -374,7 +375,7 @@ static void add_colinear_lines_and_markers(gpointer data, gpointer user_data)
       y2 = ceil (cy1);
 
       y1 = prev_feature->x2 - colinear_data->block_offset;
-      y2 = curr_feature->x1 - colinear_data->block_offset - 1.0; /* Ext2Zero */
+      y2 = curr_feature->x1 - colinear_data->block_offset;
 
       mid_x = get_glyph_mid_point(previous) ;
 
@@ -488,11 +489,11 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 	  if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
 	      || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
 	    {
-      	      y_coord = feature->x1 - block_offset - 1.0 ; /* Ext2Zero */
+      	      y_coord = feature->x1 - block_offset;
 	    }
 	  else
 	    {
-      	      y_coord = feature->x2 - block_offset;
+      	      y_coord = feature->x2 - block_offset + 1;
 	    }
 
 	  diff = end - start;
@@ -586,8 +587,9 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b, gboolean re
       if(!g_ascii_strncasecmp(&spliceosome[1],"GT",2) || !g_ascii_strncasecmp(&spliceosome[0],"GGC",3))
            splice = TRUE;
     }
+#if 0
 zMapLogWarning("nc splice %s %d = %d",spliceosome,reversed,splice);
-
+#endif
   return splice;
 }
 
