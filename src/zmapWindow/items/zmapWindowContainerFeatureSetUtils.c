@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.11 2011-03-22 16:52:11 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.12 2011-04-06 13:04:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,7 +90,7 @@ static void add_colinear_lines_and_markers(gpointer data, gpointer user_data);
 static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 				  ZMapStrand ref_strand, MatchType match_type,
 				  FooCanvasItem *item, ZMapFeature feature,int block_offset) ;
-static gboolean fragments_splice(char *fragment_a, char *fragment_b);
+static gboolean fragments_splice(char *fragment_a, char *fragment_b, gboolean reversed);
 //static void process_feature(ZMapFeature prev_feature);
 static void destroyListAndData(GList *item_list) ;
 static void itemDestroyCB(gpointer data, gpointer user_data);
@@ -227,7 +227,18 @@ int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_o
       curr_reversed = curr_feature->strand == ZMAPSTRAND_REVERSE;
 
 
-            // 3' end of exon: get 1 base  + 2 from intron
+zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_quark_to_string(curr_feature->unique_id));
+
+      /* MH17 NOTE
+       *
+       * for reverse strand we need to splice backwards
+       * logically we could has a mixed series
+       * we do get duplicate series and these can be reversed
+       * we assume any reversal is a series break
+       * and do not attempt to splice inverted exons
+       */
+
+          // 3' end of exon: get 1 base  + 2 from intron
       prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
                          prev_feature->x2,
                          prev_feature->x2 + 2,
@@ -236,10 +247,10 @@ int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_o
             // 5' end of exon: get 2 bases from intron
       curr = zMapFeatureGetDNA((ZMapFeatureAny)curr_feature,
                          curr_feature->x1 - 2,
-                         curr_feature->x1 - 1,
+                         curr_feature->x1,
                          curr_reversed);
 
-      if (prev && curr && fragments_splice(prev, curr))
+      if ((prev_reversed == curr_reversed) && !fragments_splice(prev, curr, prev_reversed))
       {
         FooCanvasGroup *parent;
         ZMapFeatureTypeStyle style;
@@ -259,7 +270,7 @@ int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_o
 
                   x_coord = get_glyph_mid_point((FooCanvasItem *) curr_item);
 
-                  glyph = zMapWindowGlyphItemCreate(parent, style, 3,
+                  glyph = zMapWindowGlyphItemCreate(parent, style, prev_reversed? 5 : 3,
                                           x_coord, prev_feature->x2 - block_offset, 0, FALSE) ;
 
                   /* Record the item so we can delete it later. */
@@ -269,7 +280,7 @@ int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_o
                         added++;
                   }
 
-                  glyph = zMapWindowGlyphItemCreate(parent, style, 5,
+                  glyph = zMapWindowGlyphItemCreate(parent, style, prev_reversed? 3 : 5,
                                           x_coord, curr_feature->x1 - block_offset - 1, 0, FALSE) ;
 
                   /* Record the item so we can delete it later. */
@@ -417,6 +428,9 @@ static void add_colinear_lines_and_markers(gpointer data, gpointer user_data)
 	/* Record the item so we can delete it later. */
 	feature_set->colinear_markers = g_list_append(feature_set->colinear_markers, colinear_line) ;
 
+
+      add_nc_splice_markers(feature_set, colinear_data->block_offset, (ZMapWindowCanvasItem) current, (ZMapWindowCanvasItem) previous, curr_feature, prev_feature);
+
       }
 
     }
@@ -539,106 +553,45 @@ These can be configured in/out via styles:
 sub-features=non-concensus-splice:nc-splice-glyph
 */
 
-static gboolean fragments_splice(char *fragment_a, char *fragment_b)
+static gboolean fragments_splice(char *fragment_a, char *fragment_b, gboolean reversed)
 {
   gboolean splice = FALSE;
-  char spliceosome[6];
+  char spliceosome[7];
 
     // NB: DNA always reaches us as lower case, see zmapUtils/zmapDNA.c
-  if(fragment_a && fragment_b)
-    {
+  if(!fragment_a || !fragment_b)
+    return(splice);
+
+  if(reversed)    /* bases have already been complemented & order reversed */
+  {
+      spliceosome[0] = fragment_b[2];
+      spliceosome[1] = fragment_b[1];
+      spliceosome[2] = fragment_b[0];
+      spliceosome[3] = fragment_a[0];
+      spliceosome[4] = fragment_a[1];
+      spliceosome[5] = '\0';
+  }
+  else
+  {
       spliceosome[0] = fragment_a[0];
       spliceosome[1] = fragment_a[1];
       spliceosome[2] = fragment_a[2];
       spliceosome[3] = fragment_b[0];
       spliceosome[4] = fragment_b[1];
       spliceosome[5] = '\0';
+  }
 
-#define NEW_RULES 1
-#if NEW_RULES
-      if(!g_ascii_strcasecmp(fragment_b, "AG"))
-        {
-          if(!g_ascii_strcasecmp(&spliceosome[1], "GT") || !g_ascii_strcasecmp(&spliceosome[0], "GGC"))
-	        splice = TRUE;
-	  }
-#else
-      if(g_ascii_strcasecmp(&spliceosome[1], "GTAG") == 0)
-      {
-        splice = TRUE;
-      }
-      else if(g_ascii_strcasecmp(&spliceosome[1], "GCAG") == 0)
-      {
-        splice = TRUE;
-      }
-      else if(g_ascii_strcasecmp(&spliceosome[1], "ATAC") == 0)
-      {
-        splice = TRUE;
-      }
-#endif
-    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if(splice)
+  if(!g_ascii_strncasecmp(fragment_b, "AG",2))
     {
-      printf("splices: %s\n", &spliceosome[0]);
+      if(!g_ascii_strncasecmp(&spliceosome[1],"GT",2) || !g_ascii_strncasecmp(&spliceosome[0],"GGC",3))
+           splice = TRUE;
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+zMapLogWarning("nc splice %s %d = %d",spliceosome,reversed,splice);
 
   return splice;
 }
 
 
-// mh17: this function does not do anything other than allocate some memory look at it and free it
-// was it an experiment?
-#if 0
-static void process_feature(ZMapFeature prev_feature)
-{
-  int i;
-  gboolean reversed;
-
-  reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
-
-  if(prev_feature->feature.homol.align &&
-     prev_feature->feature.homol.align->len > 1)
-    {
-      ZMapAlignBlock prev_align, curr_align;
-      prev_align = &(g_array_index(prev_feature->feature.homol.align,
-				   ZMapAlignBlockStruct, 0));
-
-      for(i = 1; i < prev_feature->feature.homol.align->len; i++)
-	{
-	  char *prev, *curr;
-	  curr_align = &(g_array_index(prev_feature->feature.homol.align,
-				       ZMapAlignBlockStruct, i));
-
-	  if(prev_align->t2 + 4 < curr_align->t1)
-	    {
-	      prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
-				       prev_align->t2,
-				       prev_align->t2 + 2,
-				       reversed);
-	      curr = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
-				       curr_align->t1 - 2,
-				       curr_align->t1 - 1,
-				       reversed);
-	      if(prev && curr)
-		fragments_splice(prev, curr);
-
-	      if(prev)
-		g_free(prev);
-	      if(curr)
-		g_free(curr);
-	    }
-
-	  prev_align = curr_align;
-	}
-    }
-
-  return ;
-}
-#endif
 
 
 /* Note that however we do this calculation in the end where an item is an even number

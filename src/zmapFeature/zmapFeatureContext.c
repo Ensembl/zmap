@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 31 11:50 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.58 2011-03-31 10:51:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.59 2011-04-06 13:04:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,7 +93,7 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
 static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
 static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
-static void coordToOneBased(int *start_inout, int *end_inout) ;
+static void coordToOneBased(int *start_inout, int *end_inout,int block_start) ;
 
 static gboolean executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
@@ -785,9 +785,9 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
   if (fetchBlockDNAPtr(feature_any, &block) && coordsInBlock(block, &start, &end))
     {
       /* Transform block coords to 1-based for fetching sequence. */
-      coordToOneBased(&start, &end) ;
-
+      coordToOneBased(&start, &end, block->block_to_sequence.block.x1) ;
       dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
+zMapLogWarning("get DNA %d (%d)",start,block->block_to_sequence.block.x1+start-1);
     }
 
   return dna ;
@@ -837,11 +837,11 @@ static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end
   return result ;
 }
 
-static void coordToOneBased(int *start_inout, int *end_inout)
+static void coordToOneBased(int *start_inout, int *end_inout,int block_start)
 {
-  *end_inout -= (*start_inout - 1) ;
+  *end_inout -= (block_start - 1) ;
 
-  *start_inout = 1 ;
+  *start_inout -= (block_start - 1) ;
 
   return ;
 }
