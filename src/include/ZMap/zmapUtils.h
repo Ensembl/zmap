@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Mar 21 11:13 2011 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.48 2011-03-31 10:57:04 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.49 2011-04-07 13:52:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -39,7 +39,7 @@
 
 /* Some compilers give more information than others so set up compiler dependant defines. */
 
-#ifdef __GNUC__	
+#ifdef __GNUC__
 
 #define ZMAP_MSG_FORMAT_STRING  "%s:%s:%d"
 
@@ -67,9 +67,9 @@
 
 
 /*! You can use ZMAP_MAKESTRING() to create a string version of a number:
- * 
- *         ZMAP_MAKESTRING(6)  produces "6" 
- * 
+ *
+ *         ZMAP_MAKESTRING(6)  produces "6"
+ *
  * n.b. the indirection of ZMAP_PUTSTRING() is required because of the
  * way the ANSI preprocessor handles strings */
 #define ZMAP_PUTSTRING(x) #x
@@ -204,7 +204,7 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
 
 
 gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out) ;
-gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFunc stdout_reader, GIOFunc stderr_reader, 
+gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFunc stdout_reader, GIOFunc stderr_reader,
 				      gpointer pipe_data, GDestroyNotify pipe_data_destroy, GError **error,
 				      GChildWatchFunc child_func, ZMapUtilsChildWatchData child_func_data);
 
@@ -226,6 +226,11 @@ gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
 
 gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *end_inout) ;
 void zmapCoordsZeroBased(int *start_inout, int *end_inout) ;
+
+
+/* zmapRadixSort.c */
+typedef int (*ZMapRadixKey) (gpointer thing,int digit);
+GList * zMapRadixSort(GList *list, ZMapRadixKey key_func,int key_size);
 
 
 #endif /* ZMAP_UTILS_H */

@@ -40,6 +40,7 @@ zmapFooUtils.c \
 zmapBase.c \
 zmapUrlUtils.c \
 zmapUtilsUsers.c \
+zmapRadixSort.c \
 $(NULL)
 
 libZMapUtils_la_CFLAGS = $(INCLUDE_COMMON)
