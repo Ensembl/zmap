@@ -28,22 +28,33 @@ The major problem to solve is one of passing round information regarding what da
 <h3>[Blixem] configuration - new options</h3>
 <h4>Configuration file</h4>
 <p>
-The blixem configuration file <b>blixemrc</b> will be ammended to include a stanze for short reads data, whcih will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
+The blixem configuration file <b>blixemrc</b> will be ammended to include a stanza for short reads data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
 </p>
-<p>This will have a format like:
+<p>
+The config file already specifies the default pfetch mode.  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular range from a particular source, without any prior knowledge of what those sequences are.  I suggest that we name the different methods in the config file to reflect this difference, e.g. <code>data-fetch</code> for the existing method and <code>sequence-fetch</code> for the new method.
+</p>
+<p>The config file will have a format like:
 <pre>
-[SeqData]
-script = /software/anacode/bin/scripts/get_seqdata.pl --arguments=stuff
+[blixem]
+sequence-fetch-mode = seq-fetch
+data-fetch-mode = pfetch-socket
+
+[pfetch-socket]
+pfetch-mode = socket
+port = 22400
+node = pfetch.sanger.ac.uk
+
+[seq-fetch]
+script = /software/anacode/bin/scripts/get_seqdata.pl
+arguments = stuff
 </pre>
 </p>
 <h4>Command line arguments</h4>
-<p>These will be used by Blixem to trigger data requests etc.  Current arguments confusingly use upper and lower case short arguments for wildly different meanings and we will follow that protocol.
+<p>These will be used by Blixem to trigger data requests etc.  Current arguments confusingly use upper and lower case short arguments for wildly different meanings.  We are kind of stuck with this for historic reasons, but we should avoid making it worse where possible; I therefore suggest that we only use long-arguments for the new arguments unless there is a particular need for a short-argument.
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> -Q --seq_data</td> <td> request short reads data<br /> This argument takes a source name of the data we wish to request via the script specified in blixemrc. <br />Blixem will provide a file name of its own choosing to the request script if necessary.<br /> The &lt;datafile&gt> argument will not be given if -Q is specified.</td> </tr>
-<tr> <td> -q --sequence</td> <td> the name of the sequence eg 'chr6-18'</td> </tr>
-<tr> <td> -f --first --start</td> <td> request start coordinate</td> </tr>
-<tr> <td> -l --last --end</td> <td> request end coordinate</td> </tr>
-<tr> <td> -d --dataset</td> <td> where to get the sequence from eg 'human' </td> </tr>
+<tr> <td> --fetch-source</td> <td> request short reads data<br /> This argument takes a source name of the data we wish to request via the script specified in blixemrc. <br />Blixem will provide a file name of its own choosing to the request script if necessary - this will be where the script writes its output.<br /> The &lt;datafile&gt argument will be optional if --fetch-from-source is specified.<br /> The reference sequence must still be supplied, so if &lt;datafile&gt; is omitted then the reference sequence must be supplied via &lt;sequencefile&gt; instead.  Whichever file is used, the sequence name, e.g. 'chr6-18', will be supplied along with the reference sequence data, which is always in FASTA format.</td> </tr>
+<tr> <td> --ref-seq-start</td> <td> request start coordinate<br /> This is only required if &lt;datafile&gt; is not supplied or if &lt;datafile&gt; does not have a <code>##sequence-region</code> header line.  If both are supplied, then <code>--ref-seq-start</code> must agree with the start coordinate in &lt;datafile&gt;.<br /> The end coordinate can be calculated from the start coordinate and the length of the reference sequence.</td> </tr>
+<tr> <td> --fetch-dataset</td> <td> where to get the sequence from eg 'human' </td> </tr>
 <tr> <td> </td> <td> </td> </tr>
 </table>
 </p>
