@@ -1,0 +1,1096 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 7 April 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.119 </h1>
+
+<p>Last Release Date: 11/03/2011</p>
+
+
+<h3>Current Release Date:  7 April 2011 at  8h.58m.02s</h3>
+
+
+<p>This report covers 2011-03-11 to 2011-04-07</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196719">196719</a>, Resolved (Fri Apr 01 14:16:56 2011)
+<p>version 0.1.104 busy cursor selects object to the right</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196720">196720</a>, Resolved (Fri Apr 01 14:18:12 2011)
+<p>handles disappeared from various panel resizing and disclosure areas</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=197234">197234</a>, Resolved (Fri Apr 01 14:14:18 2011)
+<p>Is it possible to extend the 'Blixem DNA- all matches for this feature' option to feature(s)?</p>
+<p>ca1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=202979">202979</a>, Resolved (Tue Apr 05 11:59:20 2011)
+<p>acedb interface needs to find ultimate parent to work with chromosome coords</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=206831">206831</a>, Resolved (Fri Mar 18 11:33:57 2011)
+<p>navigator display does not scale correctly</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209009">209009</a>, Resolved (Tue Mar 22 12:32:22 2011)
+<p>homology glyphs and colinear lines not visible  w/ using chromosome coordinates</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209018">209018</a>, Resolved (Tue Apr 05 12:58:37 2011)
+<p>redundant "Transcript" radio button crashes zmap</p>
+<p>jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209247">209247</a>, Resolved (Tue Mar 22 16:46:15 2011)
+<p>bump name -no-interleave does not show all homolgy markers</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209412">209412</a>, Resolved (Fri Apr 01 13:52:54 2011)
+<p>DNA search</p>
+<p>ds8@sanger.ac.uk, ek1@sanger.ac.uk, gm5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209423">209423</a>, Resolved (Thu Mar 31 16:07:01 2011)
+<p>tiling path displayed incompletely</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209625">209625</a>, Resolved (Thu Mar 31 15:32:36 2011)
+<p>Lasso not working in zmap 0.1.118</p>
+<p>cas@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209824">209824</a>, Resolved (Wed Apr 06 09:04:36 2011)
+<p>rev comp scalebar coordinates are displayed as -ve chromosome</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=210509">210509</a>, Resolved (Wed Apr 06 14:08:46 2011)
+<p>need to text nc-splice markers</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_03_11.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.21654/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_03_11.14_15_44.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.14332/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: fix up bug when sequence
+	  revcompd, coords need swopping.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c: add new scope_mark configuration
+	  parameter.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapServerProtocol.h,
+	  zmapServer/zmapServerProtocolHandler.c: remove blixem specific
+	  stuff.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUINotebook.c: fix stupid null text bug.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: add option to blixem on
+	  non-align col., improve interface for choosing how to call
+	  blixem.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix reported coords for dna when
+	  revcomp'd, improve interface for calling blixem.
+
+
+  </li>
+  <li> src/zmapView/: zmapView.c, zmapView_P.h: remove rubbish blixem
+	  call interface, support blixeming lists of features better.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: add support for blixem from
+	  mark, blixem of selected features and mark_scope configuration.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: remove rubbish interface to
+	  blixem, add support for sets of features.
+
+
+  </li>
+  <li> src/zmapUtils/zmapSequence.c: fix my own rubbish coding of dna ->
+	  pep coords conversion.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: replace loop with single
+	  func call to unhighlight translation cols.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: rewrite how dna/peptide cols are
+	  highlighted/unhighlighted and hide some unused funcs. More to be
+	  done on this.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem.c: only format changes.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: redo peptide highlight call
+	  to include required frame.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.c: add code to
+	  correctly clamp coords for pep display.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: rationalise highlight/unhighlight
+	  calls.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  include/ZMap/zmapFeature.h, include/ZMap/zmapServerProtocol.h,
+	  include/ZMap/zmapUtilsDebug.h, include/ZMap/zmapView.h,
+	  include/ZMap/zmapWindow.h, zmapApp/zmapApp_P.h,
+	  zmapApp/zmapAppwindow.c, zmapConfig/zmapConfigLoader.c,
+	  zmapControl/zmapControlNavigator.c,
+	  zmapControl/zmapControlWindow.c, zmapControl/zmapNavigator_P.h,
+	  zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeature3FrameTranslation.c,
+	  zmapFeature/zmapFeatureContext.c, zmapFeature/zmapFeatureDNA.c,
+	  zmapFeature/zmapFeatureOutput.c, zmapFeature/zmapFeatureTypes.c,
+	  zmapFeature/zmapFeatureUtils.c, zmapGFF/zmapGFF2Dumper.c,
+	  zmapGFF/zmapGFF2parser.c, zmapGFF/zmapGFF_P.h,
+	  zmapServer/zmapServer.c, zmapServer/zmapServer.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/acedb/acedbServer.c,
+	  zmapServer/acedb/acedbServer_P.h, zmapServer/das/dasServer.c,
+	  zmapServer/das/dasServer_P.h, zmapServer/pipe/pipeServer.c,
+	  zmapServer/pipe/pipeServer_P.h, zmapUtils/Makefile.am,
+	  zmapUtils/zmapCmdLineArgs.c, zmapUtils/zmapCmdLineArgs_P.h,
+	  zmapUtils/zmapGUIutils.c, zmapUtils/zmapSeqBitmap.c,
+	  zmapView/zmapView.c, zmapView/zmapViewCallBlixem.c,
+	  zmapView/zmapViewFeatureMask.c, zmapView/zmapViewRemoteReceive.c,
+	  zmapView/zmapView_P.h, zmapWindow/zmapWindow.c,
+	  zmapWindow/zmapWindowColConfig.c, zmapWindow/zmapWindowDNA.c,
+	  zmapWindow/zmapWindowDNAChoose.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c, zmapWindow/zmapWindowFocus.c,
+	  zmapWindow/zmapWindowFrame.c, zmapWindow/zmapWindowItem.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowItemText.c,
+	  zmapWindow/zmapWindowLongItems.c, zmapWindow/zmapWindowMark.c,
+	  zmapWindow/zmapWindowMenus.c, zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowNavigatorWidget.c,
+	  zmapWindow/zmapWindowNavigator_P.h, zmapWindow/zmapWindowRuler.c,
+	  zmapWindow/zmapWindowState.c,
+	  zmapWindow/zmapWindowTextPositioner.c,
+	  zmapWindow/zmapWindowUtils.c, zmapWindow/zmapWindowZoomControl.c,
+	  zmapWindow/zmapWindow_P.h, zmapWindow/items/zmapWindowCanvas.c,
+	  zmapWindow/items/zmapWindowCanvasItem.c,
+	  zmapWindow/items/zmapWindowContainerBlock.c,
+	  zmapWindow/items/zmapWindowContainerBlock_I.h,
+	  zmapWindow/items/zmapWindowContainerChildren.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.c,
+	  zmapWindow/items/zmapWindowContainerGroup.c,
+	  zmapWindow/items/zmapWindowContainerUtils.c,
+	  zmapWindow/items/zmapWindowGlyphItem.c,
+	  zmapWindow/items/zmapWindowTextFeature.c: added chromosome
+	  coords, load columns dialog restored and req from mark working,
+	  needs otterlace update before release
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  zmapConfig/zmapConfigLoader.c: add resources to set scope and
+	  features to mark range instead of scope range.
+
+
+  </li>
+  <li> src/zmapUtils/zmapSequence.c: remove unused variables.
+
+
+  </li>
+  <li> src/zmapView/zmapView_P.h: trivial format change.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: add code to support setting
+	  feature and/or sequence to mark range instead of scope range.
+
+
+  </li>
+  <li> src/zmapWindow/Makefile.am: add new funcs file to build for
+	  larger non-utils windows functions.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowMenus.c: remove a lot of
+	  common code to call blixem and replace with function in funcs.
+	  file.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: add selected features
+	  blixem menu item to column menu.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add general function to do blixem
+	  call.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureFuncs.c: new file for holding
+	  windows functions that are more than utils but not part of cols
+	  etc.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: turn dna loading on, otherwise..just
+	  formatting changes.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapWindowNavigator.h,
+	  zmapControl/zmapControlNavigator.c, zmapView/zmapView.c,
+	  zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowNavigatorWidget.c,
+	  zmapWindow/zmapWindowNavigator_P.h,
+	  zmapWindow/zmapWindowTextPositioner.c,
+	  zmapWindow/zmapWindowTextPositioner.h: fixed navigator display to
+	  unoverlap and resize
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: EST masking no longer
+	  toggles on data load
+
+
+  </li>
+  <li> src/: include/ZMap/zmapView.h, zmapControl/zmapControl.c,
+	  zmapView/zmapView.c, zmapWindow/zmapWindowColBump.c,
+	  zmapWindow/zmapWindowColConfig.c,
+	  zmapWindow/zmapWindowItemFactory.c, zmapWindow/zmapWindowMark.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSet.h,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: made
+	  colinear lines ang homology glyphs block relative
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowColBump.c,
+	  items/zmapWindowContainerFeatureSetUtils.c: fixed homology
+	  markers in name-no-interleave
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: make masking default to
+	  show
+
+
+  </li>
+  <li> src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureUtils.c:
+	  add functions to go to/from feature/block coords. Fix feature
+	  frame func.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureUtils.c: oops, forgot to save changes.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTypes.c: fix up comments for 3 frame.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureContext.c: fix bug in coordsInBlock,
+	  and dna fetch, add code to change feature ids on revcomp for
+	  sequence and peptide features otherwise we can't find them
+	  properly in hash.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature.c: trivial comment change.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature3FrameTranslation.c: redo translation
+	  creation, simplify.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapStyle.h, zmapFeature/zmapStyle.c: add
+	  function to see if a style has a mode that is potentially
+	  drawable.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtils.h, zmapUtils/zmapCoords.c: add
+	  function to convert coords to zero-based.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: update infopanel code, now gets
+	  peptide/dna coords separately. Otherwise small format changes.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowList.c, zmapWindowState.c: update for
+	  new coords params to infopanel call.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.h: remove ghastly global def
+	  for data in another code package.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: Change some asserts to
+	  warning so we don't crash unecessarily. Correct off by one error
+	  in exon/cds drawing. Fix sequenceSelect coords for chromosome.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: fix infopanel func dec, now has
+	  sub item start/end.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: replace code to loop over frames
+	  with single translation call. Remove calls to translate dna/pep
+	  coords, done in sequence obj now.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: remove redundant code. Add
+	  dna/pep coords delivered by sequenceFeature obj to infopanel
+	  call.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: fix bug in setting frame
+	  for 3 frame sequence drawing.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem.c: try to fix bugs to do
+	  with text sizes, still a bug here for peptide frames.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature_I.h: include an
+	  offset for non-1-based sequence.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeatureCMarshal.list: need
+	  pep and dna start/end.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.h: add pep/dna
+	  start/end coords.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.c: make code work
+	  for non 1-based sequence. Do dna<->pep coord conversions here
+	  instead of all over the place. Return coords to caller.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: remove redundant pep<->dna
+	  conversion code, done in sequenceFeature obj now.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem.c: remove debug messages.
+
+
+  </li>
+  <li> src/zmapUtils/zmapCmdLineArgs.c: fix bug in cmdline args, somehow
+	  had got in wrong order causing glib func. to crash.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: add code to do our own custom
+	  cursors.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: remove cursorbusy from connect step,
+	  causing cursor to stay on. Make functions static that should be.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: correct bad definition of function
+	  in windowbusy macro.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: remove bad busy cursor calls that
+	  are not paired with anything. Move rulerpixel call, was causing
+	  double redraw on main canvas.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: just some tidying up of
+	  comments etc.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature.c: fix bug in sequence context copy,
+	  not NULLing feature names list. Improve mem debug message.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: add more custom cursors and
+	  explanation of how to create them.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: add code to handle pep to dna
+	  coord change and also seq to block coord change.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: sort out seq/block coords and
+	  pep/dna coords, pep/dna now in sequencefeature object.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureShow.c: add percent id to info
+	  for aligns, move destroy call, in totally wrong place.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUINotebook.c: only respond to page clicks if
+	  there is more than one page.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStanzaStructs.h,
+	  libzmapfoocanvas/foo-canvas.c, zmapConfig/zmapConfigLoader.c,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowItemFactory.c,
+	  zmapWindow/zmapWindowNavigator.c,
+	  zmapWindow/zmapWindowTextPositioner.c,
+	  zmapWindow/zmapWindowUtils.c: fixed revcomp coord display,
+	  navigator non-canonical name bugs, improved layout slightly, but
+	  please refer to ticket 211152
+
+
+  </li>
+  <li> src/: include/ZMap/zmapView.h, zmapControl/zmapControl.c,
+	  zmapControl/zmapControlViews.c, zmapView/zmapView.c: added coords
+	  to view title if not already there
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: almost fixed busy cursor lark, just one
+	  too many decrements currently.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowTextPositioner.c: fixed stupid mistake
+	  in text positioner
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeatureContext.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: fixed nc
+	  splice markers
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: fixed
+	  off by 1bp error for glyphs and colinear lines
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Fixed a bug where there are gaps in the dotter crosshair when the labels are long
+</li>
+
+<li>
+Updated user manuals
+</li>
+
+<li>
+Updated what's-new help pages
+</li>
+
+<li>
+Fixed a regression with calculating the display coords for exons
+</li>
+
+<li>
+The incorrect reading frame was being used, so the end of the exon was sometimes off by one.
+</li>
+
+<li>
+Improvements to scrolling the big picture when the highlight box reaches the edge of the range
+</li>
+
+<li>
+When the highlight box nears the edge of the big picture range, start scrolling the big picture earlier, so that the highlight box never bumps right up against the edge of the big picture.
+</li>
+
+<li>
+Updated test plan
+</li>
+
+<li>
+Fixed a bug with sorting when no columns are specified to sort by
+</li>
+
+<li>
+Fixed a bug with find-again not working correctly after a group operation
+</li>
+
+<li>
+Removed a 'feature' where typing would bring up a text box on the detail view
+</li>
+
+<li>
+Fixed a bug where the highlight box was getting out of position when zooming
+</li>
+
+<li>
+Fixed a bug with filtering rows
+</li>
+
+<li>
+Improvements to Blixem menu and toolbar
+</li>
+
+<li>
+The menu now has stock icons.  The toolbar is now built using the menu builder, using the same action entries as the menu where applicable.
+</li>
+
+<li>
+Added accelerators to dotter context menu
+</li>
+
+<li>
+Added icon to delete-all-groups button
+</li>
+
+<li>
+Added the option to hide all sequences that are not in a group
+</li>
+
+<li>
+Merge branch 'shortread'
+</li>
+
+<li>
+Fixed a bug with bad error propagation for find-by-list
+</li>
+
+<li>
+Filtered out non-searchable columns from the search-by-column combo box
+</li>
+
+<li>
+WIP: Implemented search for different columns, not just the Name column
+</li>
+
+<li>
+WIP: added search-by-column option to the Find and Group dialogs
+</li>
+
+<li>
+Moved 'invert sort order' option from the Settings dialog to the Sort dialog
+</li>
+
+<li>
+Fixed a bug with sorting short-reads when 'squash matches' is enabled
+</li>
+
+<li>
+Added the ability to sort by multiple columns
+</li>
+
+<li>
+Replaced the drop-down box on the toolbar with a Sort dialog.  Also changed the Id column to display decimal values to 1dp, and changed the Start, End, Id and Score columns so that they do not display invalid data for exons.
+</li>
+
+<li>
+Made sort box have a tear-off drop-down menu
+</li>
+
+<li>
+Small change to separate handle-box creation from toolbar creation
+</li>
+
+<li>
+Fixed a bug where the dotter crosshair was not being redrawn correctly after printing
+</li>
+
+<li>
+Fixed a bug where the alignment tool was not being cleared before redrawing
+</li>
+
+<li>
+Improvements to Dotter menus
+</li>
+
+<li>
+Added tear-offs and icons.
+</li>
+
+<li>
+Shortened Dotter's context menu
+</li>
+
+<li>
+Moved all of the view-related menu items to the View sub-menu.
+</li>
+
+<li>
+Changed sorting functions to allow for sorting by multiple columns
+</li>
+
+<li>
+Removed an unnecessary call to refilter the tree rows
+</li>
+
+<li>
+Performance improvements to row selections
+</li>
+
+<li>
+Don't refilter rows after changing the selection unless necessary.
+</li>
+
+<li>
+Fixed a bug where short reads from different strands were being counted as duplicates
+</li>
+
+<li>
+Fixed another memory leak
+</li>
+
+<li>
+Don't draw duplicate, overlapping MSPs
+</li>
+
+<li>
+More memory leak fixes
+</li>
+
+<li>
+Fixed more memory leaks
+</li>
+
+<li>
+Fixed some memory leaks
+</li>
+
+<li>
+Performance improvements to scrolling
+</li>
+
+<li>
+Fixed a hack where refreshGridOrder was being called to force a resize of the big picture; it now emits the size-allocate signal directly instead.
+</li>
+
+<li>
+The big picture range now scrolls independently of the detail-view range
+</li>
+
+<li>
+This improves performance because previously the whole big picture had to be redrawn every time the detail-view range changed, even if it was only scrolled by one base.
+</li>
+
+<li>
+Merge branch 'shortread'
+</li>
+
+<li>
+Fixed a regression where the highlight box was not being shown when printing
+</li>
+
+<li>
+Also added an option to the print function to allow the caller to print the entire window, including buttons and scrollbars etc.
+</li>
+
+<li>
+Changed the highlight box to be truely transparent
+</li>
+
+<li>
+Previously it was just drawn as background shading. Being able to draw it transparently on top means that we don't need to re-draw the entire image whenever the highlight box moves.
+</li>
+
+<li>
+Added the ability to adjust the coverage plot scale
+</li>
+
+<li>
+Coverage view labels are now nice round values
+</li>
+
+<li>
+Added middle-click scrolling to the coverage view
+</li>
+
+<li>
+Also added mouse-wheel scrolling.
+</li>
+
+<li>
+Made default coverage view height bigger
+</li>
+
+<li>
+Made source, score and ID columns show more sensible values when 'squash matches' is enabled
+</li>
+
+<li>
+Short reads now have a generic name, and they have a row count when 'squash matches' is enabled
+</li>
+
+<li>
+Merge branch 'shortread'
+</li>
+
+<li>
+Added ability to hide coverage view, and hide it by default
+</li>
+
+<li>
+Improvements to coverage view height calculation
+</li>
+
+<li>
+Right-align grid labels
+</li>
+
+<li>
+Added horizontal grid lines to coverage plot
+</li>
+
+<li>
+Made horizontal grid-line drawing function more generic
+</li>
+
+<li>
+Added vertical grid lines and highlight box to coverage view
+</li>
+
+<li>
+Coverage plot is now a bar chart rather than a line graph
+</li>
+
+<li>
+Added custom colour for coverage plot
+</li>
+
+<li>
+Added depth-coverage view
+</li>
+
+<li>
+Merge branch 'shortread'
+</li>
+
+<li>
+Idential short-read alignments are now treated as the same sequence
+</li>
+
+<li>
+Previously grouping was done by sequence name, but the name is not so relevant for short reads so we check whether the alignment is identical instead and, if so, treat them as the same sequence. This means that duplicates are filtered out when the 'squash matches' option is turned on.
+</li>
+
+<li>
+Fixed a potential crash if sequence name is null
+</li>
+
+<li>
+Fixed a potential crash with indexing the depth array
+</li>
+
+<li>
+Fixed a bug with calculating the max depth
+</li>
+
+<li>
+Added ability to calculate coverage depth
+</li>
+
+<li>
+Merge branch 'shortread'
+</li>
+
+<li>
+Simplified row-filtering code
+</li>
+
+<li>
+This also fixes a bug where MSPs could occasionally slip through the net and not be filtered in certain specific cases.
+</li>
+
+<li>
+Fixed a bug with filtering rows after changing the sort order
+</li>
+
+<li>
+Fixed a bug with filtering rows when showing unaligned sequence or polyA tails
+</li>
+
+<li>
+Also now only sort MSP arrays for arrays that are used in detail-view filtering.
+</li>
+
+<li>
+Fixed a bug with filtering after enabling squash matches
+</li>
+
+<li>
+Fixed a bug with filtering trees when zooming
+</li>
+
+<li>
+Fixed a bug with filtering detail-view rows
+</li>
+
+<li>
+Fixed a bug where short reads were not shown in the big picture
+</li>
+
+<li>
+Added debug
+</li>
+
+<li>
+Added debug
+</li>
+
+<li>
+Fixed compile warnings
+</li>
+
+<li>
+Added comments
+</li>
+
+<li>
+Fixed a bug with calculating the max len of MSPs
+</li>
+
+<li>
+Removed an obsolete comment
+</li>
+
+<li>
+Fixed a bug where show-unaligned-sequence was not updating the display
+</li>
+
+<li>
+WIP: performance improvements to filtering tree rows
+</li>
+
+<li>
+WIP: fixed a bug with filtering detail-view rows
+</li>
+
+<li>
+Fixed a bug with drawing exon boundaries
+</li>
+
+<li>
+WIP: replaced MSP lists with arrays
+</li>
+
+<li>
+Performance improvements to filtering trees
+</li>
+
+<li>
+Small performance improvement
+</li>
+
+<li>
+WIP: removed some unused code
+</li>
+
+<li>
+WIP: code refactoring
+</li>
+
+<li>
+Small performance improvements to big picture
+</li>
+
+<li>
+Performance: use cached MSP display range wherever possible
+</li>
+
+<li>
+Performance improvements: cache the display coords and the full extent coords of MSPs
+</li>
+
+<li>
+Performance improvements to tree row filtering
+</li>
+
+<li>
+Added basic functionality to show read pairs on the same strand
+</li>
+
+<li>
+Added short-read data type
+</li>
+
+<li>
+Incremented version to 4.1.14
+</li>
+
+<li>
+Added a link to the SeqTools website to the README file
+</li>
+
+<li>
+Added a pointer from the NEWS file to the individual programs' news files.
+</li>
+
+<li>
+Made usage text files plain text rather than html
+</li>
+
+<li>
+Updated release histories
+</li>
+
+<li>
+Updated user manuals
+</li>
+
+<li>
+Fixed an off-by-one bug in the alignment tool when the display starts at a negative coord
+</li>
+
+<li>
+Fixed a couple of typos in the documentation
+</li>
+
+<li>
+Added some missing help files to the installation
+</li>
+
+<li>
+Fixed a bug in the runconfig script when prefix is not supplied
+</li>
+
+<li>
+Added separate whats-new pages to the help
+</li>
+
+<li>
+Small change to documentation
+</li>
+
+<li>
+Added documentation about printing
+</li>
+
+<li>
+Fixed a bug with the build system not linking libraries correctly
+</li>
+
+<li>
+The OpenOffice versions of the manuals had mistakenly been removed from the distribution
+</li>
+
+<li>
+Replaced the Help dialogs in Blixem and Dotter with html help files that open in a browser
+</li>
+
+<li>
+Also added a link to the Sanger website from the About dialogs, and added an About button on the Blixem toolbar.
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
