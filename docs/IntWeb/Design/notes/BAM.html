@@ -3,33 +3,78 @@
 <fieldset><legend>Use by ZMap</legend>
 <p>It is thought that the volume of data is too great for direct use by ZMap as the time needed to load and display woud be impractical.  Instead ZMap will load summary data and display data volumes in fixed size bins over the sequence in view.  The actual data will be displayed by Blixem and requested over shorter regions defined by the mark.
 </p>
+<p>In the short term we do not expect to be able to handle summary data and instead provide a menu driven interface to run Blixem.  This will involve adding a 'Blixem Short Reads' option to the column menu and providing a sub-menu of data sources off that.  Later on when summary data is available the summary columns can be Blixem'ed directly.
+</p>
 </fieldset>
 
 <fieldset><legend>Configuration</legend>
 <p>
-The major problem to solve is one of passing round information regarding what data to request.  Otterlace has to supply enough configuration information to ZMap (eg in the [Blixem] stanza) and Zmap has to pass on this plus sequence information to Blixem.
+The major problem to solve is one of passing round information regarding what data to request.  Otterlace has to supply enough configuration information to ZMap and Zmap has to pass on this plus sequence information to Blixem.
 </p>
 <p>BAM is a file format not a data source and we need to be able to specify multiple data sources in the BAM format and present these to the user with relevant names.
 </p>
 
-<h3>Sequenced definition</h3>
+<h3>Sequence definition</h3>
 <p>There are currently a number of ways that ZMap is asked to load and display data and these operate by some implicit protocols.  It may be appropriate to redefine some of this to avoid duplication in Blixem configuration.
 </p>
 
 <p>ZMap can be started up without specifying a 'default sequence' and this results in the main window (not normally visible to Otterlace users) being ready to accept sequence requests, and no view window being displayed.  Views can be created by requesting this from the main window (the ZMap Manager) or via an XRemote request from Otterlace, (both of which reuqire a sequence name and start and end coordinates) but note that currently there is no clear linkage between a view and the data sources or request protocol used to request the data.  This has implications for <a href="Design/notes/standalone.shtml">standalone operation</a> and currently the ability to specify different sequences is limited to operation with ACEDB.  Note that ZMap does not provide this kind of function with pipe servers.
 </p>
 
-<p>
+<p> ZMap will use the sequence name of the current view and the requested start and end coordinates (specified by the mark) as the source of this data and pass these directly to Blixem.  Blixem will call a script provided by Anacode to generate a GFF file containing BAM file sourced data and pass this data to the script via command line arguments.
 </p>
 
 
-<h3>[Blixem] stanza - new options</h3>
+<h3>[Blixem] configuration - new options</h3>
+<h4>Configuration file</h4>
 <p>
+The blixem configuration file <b>blixemrc</b> will be ammended to include a stanze for short reads data, whcih will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
+</p>
+<p>This will have a format like:
+<pre>
+[SeqData]
+script = /software/anacode/bin/scripts/get_seqdata.pl --arguments=stuff
+</pre>
+</p>
+<h4>Command line arguments</h4>
+<p>These will be used by Blixem to trigger data requests etc.  Current arguments confusingly use upper and lower case short arguments for wildly different meanings and we will follow that protocol.
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td>sequence </td> <td>The name of the sequence </td> </tr>
-<tr> <td> </td> <td> </td> </tr>
-<tr> <td> </td> <td> </td> </tr>
+<tr> <td> -Q --seq_data</td> <td> request short reads data<br /> This argument takes a source name of the data we wish to request via the script specified in blixemrc. <br />Blixem will provide a file name of its own choosing to the request script if necessary.<br /> The &lt;datafile&gt> argument will not be given if -Q is specified.</td> </tr>
+<tr> <td> -q --sequence</td> <td> the name of the sequence eg 'chr6-18'</td> </tr>
+<tr> <td> -f --first --start</td> <td> request start coordinate</td> </tr>
+<tr> <td> -l --last --end</td> <td> request end coordinate</td> </tr>
+<tr> <td> -d --dataset</td> <td> where to get the sequence from eg 'human' </td> </tr>
 <tr> <td> </td> <td> </td> </tr>
 </table>
 </p>
+
+<h3>[ZMap] stanza - new options</h3>
+<p> As ZMap has to use this to create a menu it will be better to define this globally rather than via Blixem.
+
+<table border="1"  cellpadding="3" cellspacing="3">
+<tr> <td> SeqData</td> <td>A list of columns or featuresets containing SR data<br />
+As for DNA and protein featuresets we try to match both columns<br /> and featuresets to allow simple configuration.<br /> (Note: each column/featureset has options for short names and more lengthy descriptions). <br />
+Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding extra ZMap config options
+ </td> </tr>
+<tr> <td> </td> <td> </td> </tr>
+</table>
+</p>
+
+</fieldset>
+
+
+<fieldset><legend>Interface to the Request script for Short Reads data</legend>
+<p>Blixem will find the script path and fixed arguments from a stanza in its configuration file 'blixemrc'.
+Other arguments will be appended as follows:
+<table border="1"  cellpadding="3" cellspacing="3">
+<tr> <td> --analysis</td> <td>  source name of the data we wish to requesty</td> </tr>
+<tr> <td> --gff_sequence</td> <td> the name of the sequence eg 'chr6-18'</td> </tr>
+<tr> <td> --start</td> <td> request start coordinate</td> </tr>
+<tr> <td> --end</td> <td> request end coordinate</td> </tr>
+<tr> <td> --dataset</td> <td> where to get the sequence from eg 'human' <br /><b>Note</b> in the short term this should appear in the fixed arguments list in blixemrc.</td> </tr>
+<tr> <td> --gff_file</td> <td> where to put the output</td> </tr>
+</table>
+
+</p>
+
 </fieldset>
