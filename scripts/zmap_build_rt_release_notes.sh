@@ -171,7 +171,7 @@ GIT_START_DATE="$CVS_PREV_DATE"
 GIT_END_DATE=$(date -d"today" "+%Y-%m-%d")
 
 FILE_DATE=$(date "+%Y_%m_%d")
-FILE_TIME=$(date "+%k_%M_%S")
+FILE_TIME=$(date "+%H_%M_%S")
 
 zmap_message_out '$RT_TODAY ='     $RT_TODAY
 zmap_message_out '$HUMAN_TODAY ='  $HUMAN_TODAY
