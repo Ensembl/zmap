@@ -31,25 +31,44 @@ The major problem to solve is one of passing round information regarding what da
 The blixem configuration file <b>blixemrc</b> will be ammended to include a stanza for short reads data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
 </p>
 <p>
-The config file already specifies the default pfetch mode.  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular range from a particular source, without any prior knowledge of what those sequences are.  I suggest that we name the different methods in the config file to reflect this difference, e.g. <code>data-fetch</code> for the existing method and <code>sequence-fetch</code> for the new method.
+The config file already specifies the default pfetch mode for our current data type (EMBL sequences).  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular region from a particular source, without any prior knowledge of what those sequences are.  We could in the future want additional fetch methods for different data types that we don't yet know about, which may fetch sequences or just sequence data.
 </p>
-<p>The config file will have a format like:
+<p>The following suggestion for a config file format is an attempt to be as flexible as possible in these requirements:
 <pre>
 [blixem]
-sequence-fetch-mode = seq-fetch
-data-fetch-mode = pfetch-socket
+default-fetch = pfetch-socket  # default fetch method to use when there is no data type given for an item in the GFF file
 
-[pfetch-socket]
+[embl]                         # config options for the embl data type
+fetch = pfetch-socket
+
+[short-read]                   # config options for the short-read data type
+fetch = bam-fetch
+
+[pfetch-socket]                # config options for this particular fetch method
 pfetch-mode = socket
 port = 22400
 node = pfetch.sanger.ac.uk
 
-[seq-fetch]
+[bam-fetch]                    # config options for this particular fetch method
 script = /software/anacode/bin/scripts/get_seqdata.pl
 arguments = stuff
 </pre>
 </p>
+<p>The GFF file would then look something like:
+<pre>
+##gff-version 3
+##sequence-region chr4-04 210623 364887   # the reference sequence region that is passed to blixem
+chr4-04	source1	region	215000	300000	0.000000	.	.	dataType=short-read      # the coords here specify the region to fetch short-reads for
+chr4-04	source2	region	215000	300000	0.000000	.	.	dataType=short-read      # optionally fetch short-reads for a second source
+chr4-04_210623-364887	vertebrate_mRNA	nucleotide_match	212438	212568	71.000000	+	.	Target=AK075066.1 125 255 +;percentID=77.1;dataType=embl
+chr4-04	vertebrate_mRNA	nucleotide_match	211806	212636	544.000000	+	.	Target=AK123078.1 831 1683 +;percentID=84;  # no dataType tag => use default-fetch
+...
+</pre>
+Here, the source column (say, "source1") is the data that would be passed to the bam-fetch script's --analysis option.  If this doesn't make sense as the source column, we could place it in another custom data tag instead (e.g., "dataSource=source1").
+</p>
 <h4>Command line arguments</h4>
+<p>Note that Blixem will need to pass chromosome coords to the bam-fetch script.  ZMap should pass everything to Blixem in chromosome coords plus the required offset (via the -O argument) that Blixem will need to use to display its coords in the same coordinate system as ZMap.</p>
+<p><strong>obsolete?</strong> We probably won't need any additional arguments if passing the info in GFF...</p>
 <p>These will be used by Blixem to trigger data requests etc.  Current arguments confusingly use upper and lower case short arguments for wildly different meanings.  We are kind of stuck with this for historic reasons, but we should avoid making it worse where possible; I therefore suggest that we only use long-arguments for the new arguments unless there is a particular need for a short-argument.
 <table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td> --fetch-source</td> <td> request short reads data<br /> This argument takes a source name of the data we wish to request via the script specified in blixemrc. <br />Blixem will provide a file name of its own choosing to the request script if necessary - this will be where the script writes its output.<br /> The &lt;datafile&gt argument will be optional if --fetch-from-source is specified.<br /> The reference sequence must still be supplied, so if &lt;datafile&gt; is omitted then the reference sequence must be supplied via &lt;sequencefile&gt; instead.  Whichever file is used, the sequence name, e.g. 'chr6-18', will be supplied along with the reference sequence data, which is always in FASTA format.</td> </tr>
