@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  5 08:27 2011 (edgrif)
+ * Last edited: Apr  7 10:09 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.63 2011-04-05 10:52:13 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.64 2011-04-07 09:58:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,6 +108,8 @@ static void radioButtonCB(GtkWidget *button, gpointer radio_data) ;
 static void radioButtonCBDataDestroy(gpointer data) ;
 
 static GdkCursor *makeCustomCursor(char *cursor_name) ;
+static GdkCursor *makeStandardCursor(char *cursor_name) ;
+
 
 
 /* Holds an alternative URL for help pages if set by the application. */
@@ -1144,116 +1146,24 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
 
 
 
+/* Return a GdkCursor which can be used to set the mouse pointer
+ * for a window. 
+ * 
+ * If cursor name begins with "zmap_" then look in list of custom cursors
+ * otherwise look in list of standard X Windows cursors.
+ */
 GdkCursor *zMapGUIGetCursor(char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
-  CursorNameStruct cursors[] =
-    {
-      {GDK_X_CURSOR, "X_CURSOR"},
-      {GDK_ARROW, "ARROW"},
-      {GDK_BASED_ARROW_DOWN, "BASED_ARROW_DOWN"},
-      {GDK_BASED_ARROW_UP, "BASED_ARROW_UP"},
-      {GDK_BOAT, "BOAT"},
-      {GDK_BOGOSITY, "BOGOSITY"},
-      {GDK_BOTTOM_LEFT_CORNER, "BOTTOM_LEFT_CORNER"},
-      {GDK_BOTTOM_RIGHT_CORNER, "BOTTOM_RIGHT_CORNER"},
-      {GDK_BOTTOM_SIDE, "BOTTOM_SIDE"},
-      {GDK_BOTTOM_TEE, "BOTTOM_TEE"},
-      {GDK_BOX_SPIRAL, "BOX_SPIRAL"},
-      {GDK_CENTER_PTR, "CENTER_PTR"},
-      {GDK_CIRCLE, "CIRCLE"},
-      {GDK_CLOCK, "CLOCK"},
-      {GDK_COFFEE_MUG, "COFFEE_MUG"},
-      {GDK_CROSS, "CROSS"},
-      {GDK_CROSS_REVERSE, "CROSS_REVERSE"},
-      {GDK_CROSSHAIR, "CROSSHAIR"},
-      {GDK_DIAMOND_CROSS, "DIAMOND_CROSS"},
-      {GDK_DOT, "DOT"},
-      {GDK_DOTBOX, "DOTBOX"},
-      {GDK_DOUBLE_ARROW, "DOUBLE_ARROW"},
-      {GDK_DRAFT_LARGE, "DRAFT_LARGE"},
-      {GDK_DRAFT_SMALL, "DRAFT_SMALL"},
-      {GDK_DRAPED_BOX, "DRAPED_BOX"},
-      {GDK_EXCHANGE, "EXCHANGE"},
-      {GDK_FLEUR, "FLEUR"},
-      {GDK_GOBBLER, "GOBBLER"},
-      {GDK_GUMBY, "GUMBY"},
-      {GDK_HAND1, "HAND1"},
-      {GDK_HAND2, "HAND2"},
-      {GDK_HEART, "HEART"},
-      {GDK_ICON, "ICON"},
-      {GDK_IRON_CROSS, "IRON_CROSS"},
-      {GDK_LEFT_PTR, "LEFT_PTR"},
-      {GDK_LEFT_SIDE, "LEFT_SIDE"},
-      {GDK_LEFT_TEE, "LEFT_TEE"},
-      {GDK_LEFTBUTTON, "LEFTBUTTON"},
-      {GDK_LL_ANGLE, "LL_ANGLE"},
-      {GDK_LR_ANGLE, "LR_ANGLE"},
-      {GDK_MAN, "MAN"},
-      {GDK_MIDDLEBUTTON, "MIDDLEBUTTON"},
-      {GDK_MOUSE, "MOUSE"},
-      {GDK_PENCIL, "PENCIL"},
-      {GDK_PIRATE, "PIRATE"},
-      {GDK_PLUS, "PLUS"},
-      {GDK_QUESTION_ARROW, "QUESTION_ARROW"},
-      {GDK_RIGHT_PTR, "RIGHT_PTR"},
-      {GDK_RIGHT_SIDE, "RIGHT_SIDE"},
-      {GDK_RIGHT_TEE, "RIGHT_TEE"},
-      {GDK_RIGHTBUTTON, "RIGHTBUTTON"},
-      {GDK_RTL_LOGO, "RTL_LOGO"},
-      {GDK_SAILBOAT, "SAILBOAT"},
-      {GDK_SB_DOWN_ARROW, "SB_DOWN_ARROW"},
-      {GDK_SB_H_DOUBLE_ARROW, "SB_H_DOUBLE_ARROW"},
-      {GDK_SB_LEFT_ARROW, "SB_LEFT_ARROW"},
-      {GDK_SB_RIGHT_ARROW, "SB_RIGHT_ARROW"},
-      {GDK_SB_UP_ARROW, "SB_UP_ARROW"},
-      {GDK_SB_V_DOUBLE_ARROW, "SB_V_DOUBLE_ARROW"},
-      {GDK_SHUTTLE, "SHUTTLE"},
-      {GDK_SIZING, "SIZING"},
-      {GDK_SPIDER, "SPIDER"},
-      {GDK_SPRAYCAN, "SPRAYCAN"},
-      {GDK_STAR, "STAR"},
-      {GDK_TARGET, "TARGET"},
-      {GDK_TCROSS, "TCROSS"},
-      {GDK_TOP_LEFT_ARROW, "TOP_LEFT_ARROW"},
-      {GDK_TOP_LEFT_CORNER, "TOP_LEFT_CORNER"},
-      {GDK_TOP_RIGHT_CORNER, "TOP_RIGHT_CORNER"},
-      {GDK_TOP_SIDE, "TOP_SIDE"},
-      {GDK_TOP_TEE, "TOP_TEE"},
-      {GDK_TREK, "TREK"},
-      {GDK_UL_ANGLE, "UL_ANGLE"},
-      {GDK_UMBRELLA, "UMBRELLA"},
-      {GDK_UR_ANGLE, "UR_ANGLE"},
-      {GDK_WATCH, "WATCH"},
-      {GDK_XTERM, "XTERM"},
-      {GDK_LAST_CURSOR, NULL}				    /* end of array marker. */
-    } ;
-  CursorName curr_cursor ;
 
-
- if (g_ascii_strncasecmp(cursor_name, "eds_", 4) == 0)
+  if (g_ascii_strncasecmp(cursor_name, ZMAPGUI_CURSOR_PREFIX, strlen(ZMAPGUI_CURSOR_PREFIX)) == 0)
     {
       cursor = makeCustomCursor(cursor_name) ;
     }
   else
     {
-      curr_cursor = cursors ;
-      while (curr_cursor->cursor_id != GDK_LAST_CURSOR)
-	{
-	  if (g_ascii_strcasecmp(cursor_name, curr_cursor->cursor_name) == 0)
-	    {
-	      break ;
-	    }
-	  else
-	    {
-	      curr_cursor++ ;
-	    }
-	}
-
-      if (curr_cursor->cursor_id < GDK_LAST_CURSOR)
-	cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
+      cursor = makeStandardCursor(cursor_name) ;
     }
-
 
   return cursor ;
 }
@@ -1656,7 +1566,9 @@ static void radioButtonCBDataDestroy(gpointer data)
 }
 
 
-/* Constructs custom shaped cursors, only two at the moment.
+/* Constructs custom shaped cursors, just add more as required but
+ * make sure their text names begin with "zmap_" to distinguish
+ * them from standard X cursors.
  * 
  * The sample X windows utility program "bitmap" was used to construct
  * files containing definitions for the shape, mask, size and hotspots
@@ -1666,11 +1578,11 @@ static void radioButtonCBDataDestroy(gpointer data)
  * the bitmap data into a normal text file with format as follows and then
  * use the bitmap program to edit them:
  * 
- * #define Eds_cursor_shape_width 16
- * #define Eds_cursor_shape_height 16
- * #define Eds_cursor_shape_x_hot 7
- * #define Eds_cursor_shape_y_hot 7
- * static unsigned char Eds_cursor_shape_bits[] = {
+ * #define zmap_cursor_shape_width 16
+ * #define zmap_cursor_shape_height 16
+ * #define zmap_cursor_shape_x_hot 7
+ * #define zmap_cursor_shape_y_hot 7
+ * static unsigned char zmap_cursor_shape_bits[] = {
  *    0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0x04, 0x10, 0x02, 0x20,
  *    0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x04, 0x10, 0x08, 0x08,
  *    0x10, 0x04, 0xe0, 0x03, 0x00, 0x00, 0x00, 0x00};
@@ -1683,44 +1595,57 @@ static GdkCursor *makeCustomCursor(char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
 
-#define Eds_cursor_width 16
-#define Eds_cursor_height 16
+#define zmap_cursor_width 16
+#define zmap_cursor_height 16
 
   /* My thick cross cursor. */
-#define Eds_cross_shape_x_hot 7
-#define Eds_cross_shape_y_hot 7
-static unsigned char Eds_cross_shape_bits[] = {
+#define zmap_cross_shape_x_hot 7
+#define zmap_cross_shape_y_hot 7
+static unsigned char zmap_cross_shape_bits[] = {
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
    0x00, 0x00, 0x3f, 0x7e, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
-static unsigned char Eds_cross_mask_bits[] = {
+static unsigned char zmap_cross_mask_bits[] = {
    0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
    0x3f, 0x7e, 0x3f, 0x7e, 0x3f, 0x7e, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
    0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0x00, 0x00};
 
   /* My crosshair cursor. */
-#define Eds_crosshair_shape_x_hot 7
-#define Eds_crosshair_shape_y_hot 7
-static unsigned char Eds_crosshair_shape_bits[] = {
+#define zmap_crosshair_shape_x_hot 7
+#define zmap_crosshair_shape_y_hot 7
+static unsigned char zmap_crosshair_shape_bits[] = {
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
    0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
-static unsigned char Eds_crosshair_mask_bits[] = {
+static unsigned char zmap_crosshair_mask_bits[] = {
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
    0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
 
 /* My circle cursor. */
-#define Eds_circle_shape_x_hot 7
-#define Eds_circle_shape_y_hot 7
- static unsigned char Eds_circle_shape_bits[] = {
+#define zmap_circle_shape_x_hot 7
+#define zmap_circle_shape_y_hot 7
+ static unsigned char zmap_circle_shape_bits[] = {
    0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0x04, 0x10, 0x02, 0x20,
    0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x04, 0x10, 0x08, 0x08,
    0x10, 0x04, 0xe0, 0x03, 0x00, 0x00, 0x00, 0x00};
- static unsigned char Eds_circle_mask_bits[] = {
+ static unsigned char zmap_circle_mask_bits[] = {
    0xc0, 0x01, 0xf0, 0x07, 0x18, 0x0c, 0x0c, 0x18, 0x06, 0x30, 0x02, 0x20,
    0x03, 0x60, 0x03, 0x60, 0x03, 0x60, 0x02, 0x20, 0x06, 0x30, 0x0c, 0x18,
    0x18, 0x0c, 0xf0, 0x07, 0xc0, 0x01, 0x00, 0x00};
+
+ /* My No Entry cursor. */
+#define zmap_noentry_shape_x_hot 7
+#define zmap_noentry_shape_y_hot 7
+static unsigned char zmap_noentry_shape_bits[] = {
+   0xc0, 0x01, 0x30, 0x06, 0x0c, 0x18, 0x1c, 0x10, 0x3a, 0x20, 0x72, 0x20,
+   0xe1, 0x40, 0xc1, 0x41, 0x81, 0x43, 0x02, 0x27, 0x02, 0x2e, 0x04, 0x1c,
+   0x0c, 0x18, 0x30, 0x06, 0xc0, 0x01, 0x00, 0x00};
+static unsigned char zmap_noentry_mask_bits[] = {
+   0xc0, 0x01, 0x30, 0x06, 0x0c, 0x18, 0x1c, 0x10, 0x3a, 0x20, 0x72, 0x20,
+   0xe1, 0x40, 0xc1, 0x41, 0x81, 0x43, 0x02, 0x27, 0x02, 0x2e, 0x04, 0x1c,
+   0x0c, 0x18, 0x30, 0x06, 0xc0, 0x01, 0x00, 0x00};
+
 
  gchar *shape_data, *mask_data ;
  gint hot_x, hot_y ;
@@ -1729,45 +1654,60 @@ static unsigned char Eds_crosshair_mask_bits[] = {
  GdkColor red = { 0, 65535, 0, 0 };			    /* Red. */
  GdkColor blue = { 0, 0, 0, 65535 };			    /* Blue. */
  GdkColor black = { 0, 0, 0, 0 };			    /* Black. */
+ GdkColor white = { 0, 65535, 65535, 65535 };		    /* White. */
  GdkColor *fg, *bg ;
 
 
- if (g_ascii_strcasecmp(cursor_name, "eds_cross") == 0)
+ if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
    {
-     shape_data = (gchar *)Eds_cross_shape_bits ;
-     mask_data = (gchar *)Eds_cross_mask_bits ;
-     hot_x = Eds_cross_shape_x_hot ;
-     hot_y = Eds_cross_shape_y_hot ;
-     found_cursor = TRUE ;
+     shape_data = (gchar *)zmap_cross_shape_bits ;
+     mask_data = (gchar *)zmap_cross_mask_bits ;
+     hot_x = zmap_cross_shape_x_hot ;
+     hot_y = zmap_cross_shape_y_hot ;
      fg = &red ;
      bg = &blue ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, "eds_crosshair") == 0)
-   {
-     shape_data = (gchar *)Eds_crosshair_shape_bits ;
-     mask_data = (gchar *)Eds_crosshair_mask_bits ;
-     hot_x = Eds_crosshair_shape_x_hot ;
-     hot_y = Eds_crosshair_shape_y_hot ;
+
      found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSSHAIR) == 0)
+   {
+     shape_data = (gchar *)zmap_crosshair_shape_bits ;
+     mask_data = (gchar *)zmap_crosshair_mask_bits ;
+     hot_x = zmap_crosshair_shape_x_hot ;
+     hot_y = zmap_crosshair_shape_y_hot ;
      fg = bg = &black ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, "eds_circle") == 0)
-   {
-     shape_data = (gchar *)Eds_circle_shape_bits ;
-     mask_data = (gchar *)Eds_circle_mask_bits ;
-     hot_x = Eds_circle_shape_x_hot ;
-     hot_y = Eds_circle_shape_y_hot ;
+
      found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CIRCLE) == 0)
+   {
+     shape_data = (gchar *)zmap_circle_shape_bits ;
+     mask_data = (gchar *)zmap_circle_mask_bits ;
+     hot_x = zmap_circle_shape_x_hot ;
+     hot_y = zmap_circle_shape_y_hot ;
      fg = &red ;
      bg = &blue ;
+
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_NOENTRY) == 0)
+   {
+     shape_data = (gchar *)zmap_noentry_shape_bits ;
+     mask_data = (gchar *)zmap_noentry_mask_bits ;
+     hot_x = zmap_noentry_shape_x_hot ;
+     hot_y = zmap_noentry_shape_y_hot ;
+     fg = &black ;
+     bg = &white ;
+
+     found_cursor = TRUE ;
    }
 
  if (found_cursor)
    {
      source = gdk_bitmap_create_from_data(NULL, shape_data,
-					  Eds_cursor_width, Eds_cursor_height) ;
+					  zmap_cursor_width, zmap_cursor_height) ;
      mask = gdk_bitmap_create_from_data(NULL, mask_data,
-					Eds_cursor_width, Eds_cursor_height);
+					zmap_cursor_width, zmap_cursor_height);
 
      cursor = gdk_cursor_new_from_pixmap (source, mask, fg, bg, hot_x, hot_y) ;
 
@@ -1779,4 +1719,107 @@ static unsigned char Eds_crosshair_mask_bits[] = {
   return cursor ;
 }
 
+
+GdkCursor *makeStandardCursor(char *cursor_name)
+{
+  GdkCursor *cursor = NULL ;
+  CursorNameStruct cursors[] =
+    {
+      {GDK_X_CURSOR, "X_CURSOR"},
+      {GDK_ARROW, "ARROW"},
+      {GDK_BASED_ARROW_DOWN, "BASED_ARROW_DOWN"},
+      {GDK_BASED_ARROW_UP, "BASED_ARROW_UP"},
+      {GDK_BOAT, "BOAT"},
+      {GDK_BOGOSITY, "BOGOSITY"},
+      {GDK_BOTTOM_LEFT_CORNER, "BOTTOM_LEFT_CORNER"},
+      {GDK_BOTTOM_RIGHT_CORNER, "BOTTOM_RIGHT_CORNER"},
+      {GDK_BOTTOM_SIDE, "BOTTOM_SIDE"},
+      {GDK_BOTTOM_TEE, "BOTTOM_TEE"},
+      {GDK_BOX_SPIRAL, "BOX_SPIRAL"},
+      {GDK_CENTER_PTR, "CENTER_PTR"},
+      {GDK_CIRCLE, "CIRCLE"},
+      {GDK_CLOCK, "CLOCK"},
+      {GDK_COFFEE_MUG, "COFFEE_MUG"},
+      {GDK_CROSS, "CROSS"},
+      {GDK_CROSS_REVERSE, "CROSS_REVERSE"},
+      {GDK_CROSSHAIR, "CROSSHAIR"},
+      {GDK_DIAMOND_CROSS, "DIAMOND_CROSS"},
+      {GDK_DOT, "DOT"},
+      {GDK_DOTBOX, "DOTBOX"},
+      {GDK_DOUBLE_ARROW, "DOUBLE_ARROW"},
+      {GDK_DRAFT_LARGE, "DRAFT_LARGE"},
+      {GDK_DRAFT_SMALL, "DRAFT_SMALL"},
+      {GDK_DRAPED_BOX, "DRAPED_BOX"},
+      {GDK_EXCHANGE, "EXCHANGE"},
+      {GDK_FLEUR, "FLEUR"},
+      {GDK_GOBBLER, "GOBBLER"},
+      {GDK_GUMBY, "GUMBY"},
+      {GDK_HAND1, "HAND1"},
+      {GDK_HAND2, "HAND2"},
+      {GDK_HEART, "HEART"},
+      {GDK_ICON, "ICON"},
+      {GDK_IRON_CROSS, "IRON_CROSS"},
+      {GDK_LEFT_PTR, "LEFT_PTR"},
+      {GDK_LEFT_SIDE, "LEFT_SIDE"},
+      {GDK_LEFT_TEE, "LEFT_TEE"},
+      {GDK_LEFTBUTTON, "LEFTBUTTON"},
+      {GDK_LL_ANGLE, "LL_ANGLE"},
+      {GDK_LR_ANGLE, "LR_ANGLE"},
+      {GDK_MAN, "MAN"},
+      {GDK_MIDDLEBUTTON, "MIDDLEBUTTON"},
+      {GDK_MOUSE, "MOUSE"},
+      {GDK_PENCIL, "PENCIL"},
+      {GDK_PIRATE, "PIRATE"},
+      {GDK_PLUS, "PLUS"},
+      {GDK_QUESTION_ARROW, "QUESTION_ARROW"},
+      {GDK_RIGHT_PTR, "RIGHT_PTR"},
+      {GDK_RIGHT_SIDE, "RIGHT_SIDE"},
+      {GDK_RIGHT_TEE, "RIGHT_TEE"},
+      {GDK_RIGHTBUTTON, "RIGHTBUTTON"},
+      {GDK_RTL_LOGO, "RTL_LOGO"},
+      {GDK_SAILBOAT, "SAILBOAT"},
+      {GDK_SB_DOWN_ARROW, "SB_DOWN_ARROW"},
+      {GDK_SB_H_DOUBLE_ARROW, "SB_H_DOUBLE_ARROW"},
+      {GDK_SB_LEFT_ARROW, "SB_LEFT_ARROW"},
+      {GDK_SB_RIGHT_ARROW, "SB_RIGHT_ARROW"},
+      {GDK_SB_UP_ARROW, "SB_UP_ARROW"},
+      {GDK_SB_V_DOUBLE_ARROW, "SB_V_DOUBLE_ARROW"},
+      {GDK_SHUTTLE, "SHUTTLE"},
+      {GDK_SIZING, "SIZING"},
+      {GDK_SPIDER, "SPIDER"},
+      {GDK_SPRAYCAN, "SPRAYCAN"},
+      {GDK_STAR, "STAR"},
+      {GDK_TARGET, "TARGET"},
+      {GDK_TCROSS, "TCROSS"},
+      {GDK_TOP_LEFT_ARROW, "TOP_LEFT_ARROW"},
+      {GDK_TOP_LEFT_CORNER, "TOP_LEFT_CORNER"},
+      {GDK_TOP_RIGHT_CORNER, "TOP_RIGHT_CORNER"},
+      {GDK_TOP_SIDE, "TOP_SIDE"},
+      {GDK_TOP_TEE, "TOP_TEE"},
+      {GDK_TREK, "TREK"},
+      {GDK_UL_ANGLE, "UL_ANGLE"},
+      {GDK_UMBRELLA, "UMBRELLA"},
+      {GDK_UR_ANGLE, "UR_ANGLE"},
+      {GDK_WATCH, "WATCH"},
+      {GDK_XTERM, "XTERM"},
+      {GDK_LAST_CURSOR, NULL}				    /* end of array marker. */
+    } ;
+  CursorName curr_cursor ;
+
+  curr_cursor = cursors ;
+  while (curr_cursor->cursor_id != GDK_LAST_CURSOR)
+    {
+      if (g_ascii_strcasecmp(cursor_name, curr_cursor->cursor_name) == 0)
+	{
+	  cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
+	  break ;
+	}
+      else
+	{
+	  curr_cursor++ ;
+	}
+    }
+
+  return cursor ;
+}
 

@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Feb 10 15:45 2011 (edgrif)
+ * Last edited: Apr  7 10:13 2011 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.43 2011-02-10 16:09:11 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.44 2011-04-07 09:58:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -39,10 +39,6 @@
 #include <ZMap/zmapUtilsMesg.h>
 #include <ZMap/zmapFeature.h>
 
-
-/*! @addtogroup zmapguiutils
- * @{
- *  */
 
 typedef enum {ZMAPGUI_USERDATA_INVALID, ZMAPGUI_USERDATA_BOOL, ZMAPGUI_USERDATA_TEXT} ZMapGUIMsgUserDataType ;
 
@@ -71,6 +67,16 @@ typedef enum
     ZMAPGUI_CLAMP_START = (1 << 1),
     ZMAPGUI_CLAMP_END   = (1 << 2)
   } ZMapGUIClampType;
+
+
+
+
+/* ZMap custom cursors that can be returned by zMapGUIGetCursor(), they must all have the "zmap_" prefix. */
+#define ZMAPGUI_CURSOR_PREFIX    "zmap_"
+#define ZMAPGUI_CURSOR_CROSS     "zmap_cross"
+#define ZMAPGUI_CURSOR_CROSSHAIR "zmap_crosshair"
+#define ZMAPGUI_CURSOR_CIRCLE    "zmap_circle"
+#define ZMAPGUI_CURSOR_NOENTRY   "zmap_noentry"
 
 
 
@@ -408,9 +414,10 @@ typedef struct _ZMapGuiNotebookTagValueStruct
 } ZMapGuiNotebookTagValueStruct ;
 
 
-/*! @} end of zmapguiutils docs. */
-
 typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data);
+
+
+
 
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
