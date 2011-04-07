@@ -1,0 +1,35 @@
+<h2>BAM file data (short reads)</h2>
+
+<fieldset><legend>Use by ZMap</legend>
+<p>It is thought that the volume of data is too great for direct use by ZMap as the time needed to load and display woud be impractical.  Instead ZMap will load summary data and display data volumes in fixed size bins over the sequence in view.  The actual data will be displayed by Blixem and requested over shorter regions defined by the mark.
+</p>
+</fieldset>
+
+<fieldset><legend>Configuration</legend>
+<p>
+The major problem to solve is one of passing round information regarding what data to request.  Otterlace has to supply enough configuration information to ZMap (eg in the [Blixem] stanza) and Zmap has to pass on this plus sequence information to Blixem.
+</p>
+<p>BAM is a file format not a data source and we need to be able to specify multiple data sources in the BAM format and present these to the user with relevant names.
+</p>
+
+<h3>Sequenced definition</h3>
+<p>There are currently a number of ways that ZMap is asked to load and display data and these operate by some implicit protocols.  It may be appropriate to redefine some of this to avoid duplication in Blixem configuration.
+</p>
+
+<p>ZMap can be started up without specifying a 'default sequence' and this results in the main window (not normally visible to Otterlace users) being ready to accept sequence requests, and no view window being displayed.  Views can be created by requesting this from the main window (the ZMap Manager) or via an XRemote request from Otterlace, (both of which reuqire a sequence name and start and end coordinates) but note that currently there is no clear linkage between a view and the data sources or request protocol used to request the data.  This has implications for <a href="Design/notes/standalone.shtml">standalone operation</a> and currently the ability to specify different sequences is limited to operation with ACEDB.  Note that ZMap does not provide this kind of function with pipe servers.
+</p>
+
+<p>
+</p>
+
+
+<h3>[Blixem] stanza - new options</h3>
+<p>
+<table border="1"  cellpadding="3" cellspacing="3">
+<tr> <td>sequence </td> <td>The name of the sequence </td> </tr>
+<tr> <td> </td> <td> </td> </tr>
+<tr> <td> </td> <td> </td> </tr>
+<tr> <td> </td> <td> </td> </tr>
+</table>
+</p>
+</fieldset>

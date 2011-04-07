@@ -345,3 +345,41 @@ To implement request from mark (and the corresponding function via an XRemote re
 
 </ul>
 </p>
+
+<h3>Feature canvas coordinates</h3>
+<p>It's not obvious from the code how feature coordinates are processed to become canvas coordinates, mainly because the data structures and code are very complex and contain obscure details. What appear to be the case is that:
+<ul>
+<li> aligns strands and blocks have offsets to space them out nicely on the screen
+<li> all the containers smaller than blocks have horizontal spacing (not sure on this) and vertical spacing of zero
+<li> feature coordinates are block relative
+<li> ZMapWindowCanvasItems (as of 2009-2011) are placed at block relative feature coordinates and contain 'Intervals' which are the actual foo canvas items that get displayed and these are relative to the ZMapWindowCanvasItem.
+</ul>
+</p>
+<p>The following snippet of code (in <b>drawSimpleFeature()</b> is what makes the canvas item block relative.
+<pre>
+  zmapWindowSeq2CanOffset(&amp;y1, &amp;y2, feature_offset);
+</pre>
+It is called from <b>zmapWindowFToIFactoryRunSingle()</b> via this fucntion call, and similar functions are used for other ZMapWindowCanvasItem types.
+<pre>
+            /* get the block offset for the display contect not the load request context */
+            offset = block->block_to_sequence.block.x1;
+
+            run_data.factory   = factory;
+            run_data.container = features_container;
+            run_data.context   = context;
+            run_data.align     = align;
+            run_data.block     = block;
+            run_data.set       = set;
+
+            run_data.canvas_item = current_item;
+
+            item   = ((method)->method)(&amp;run_data, feature, offset,
+                          points[0], points[1],
+                          points[2], points[3],
+                          style);
+</pre>
+</p>
+<p>One implication of this is that glyphs attached to features which are displayed as foo_canvas_items directly must be displayed as block relative.  For historical reasons despite ZMapWindowCanvasItems being complex objects these are displayed directly in the containing column (ZMapWindowContainerFeatureSet).
+</p>
+
+</fieldset>

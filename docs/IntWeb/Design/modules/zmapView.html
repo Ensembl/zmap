@@ -1,10 +1,12 @@
-<!-- $Id: zmapView.html,v 1.1 2011-01-10 13:44:22 edgrif Exp $ -->
+<!-- $Id: zmapView.html,v 1.2 2011-04-07 09:54:53 mh17 Exp $ -->
 <h2> zmapView - a mixture of V and C from MVC </h2>
 <fieldset> <legend>Summary</legend>
 <p>zmapView is quite a large module! When adding a topic to this file please include a link here.</p>
-<a href="Design_notes/modules/zmapView.shtml#reqdata">Requesting data from sources</a>
-<a href="Design_notes/modules/zmapView.shtml#steplists">Step lists</a>
-<a href="Design_notes/modules/zmapView.shtml#reqcontext">Retreiving data from a server</a> <br />
+<a href="Design/modules/zmapView.shtml#reqdata">Requesting data from sources</a>
+<a href="Design/modules/zmapView.shtml#steplists">Step lists</a>
+<a href="Design/modules/zmapView.shtml#reqcontext">Retreiving data from a server</a>
+<a href="Design/modules/zmapView.shtml#loaddata">Rationalising load-features code</a>
+<br />
 <a href="Design_notes/notes/view_window_style.shtml">Views and Styles</a><br />
 </fieldset>
 
@@ -123,4 +125,28 @@ this is used to trigger merging the data from the source into the view's data.  
 <p>It is also possible to request short segments of DNA on the fly - this goes through a similar interface (Step lists and displatch and process functions) but this requires there to be a sequence server which runs from ZMap startup (ie not delayed) and has a DNA featureset, and only one of these is allowed. (April 2010)  There is some code Ed wrote to specify sequence servers per sequence which is currently iffed out (eg <b>zmapView.c/getSequenceServers()</b>).
 </p>
 
+</fieldset>
+
+<a name="loaddata"></a>
+<fieldset><legend>Rationalising load-features code</legend>
+<h3>The problem</h3>
+<p>Historically there have been two functions that request data from servers <b>zMapViewConnect()</b> and <b>zMapViewLoadFeatures()</b> and these are both similar and subtly different.  As the request logic has become more complicated this requires intricate modifications to be made twice.  There are also other functions involved in requesting OTF data and DNA. The aim here is to provide functions used by both interfaces to encapsulate the request logic in one place.
+</p>
+
+<h3>Functional requirements</h3>
+<p>
+<ul>
+<li> on startup request all non-delayed servers
+<li> keep all non pipe servers (eg ACEDB) active after loading data. Pipe servers should be terminated on completion.
+<li> (DAS server operation unspecified, currently not used)
+<li> from a list of required featuresets find the relevant servers and request the data
+<li> group featuresets into a single request to a server if configured or create several threads if not.  Note that this does not imply any behaviour of the pipe server scripts - they may return all featuresets supported even if only one is requested - this is outside the scope of ZMap design.
+<li> for data served by ACEDB we also have to handle requested data as being featureset of column interchangably
+</ul>
+</p>
+<h3>Notes</h3>
+<p><b>zMapViewConnect()</b> does a lot of config file handling and intialisations and then requests all non-delayed data. This is done per server and it makes a lot of sense to call <b>zmapViewLoadFeatures()</b> for each one.
+</p>
+<p><b>zMapViewLoadFeatures()</b> is also called from the load columns dialog and the (external) XML interface.
+</p>
 </fieldset>

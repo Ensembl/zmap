@@ -1,4 +1,39 @@
-<h2> zmapNavigator - the left hand navigator pane </h2>
+<h2> zmapNavigator - the left hand navigator panes</h2>
 <fieldset> <legend>Summary</legend>
-Forthcoming...
+<h3>Which navigator?</h3>
+<p>There is a possible source of confusion as there two navigators <b>zmapNavigator.c</b> and <b>zmapWindowNavigator.c</b>.
+</p>
+<p><b>zmapNavigator.c</b> relates to a little used feature at the extreme left of the ZMap window entitled &quot;Region&quot; which could show where in a sequence's parent span (if defined) the currently loaded sequence is.
+<p><b>zmapWindowNavigator.c</b> implements the Scroll Navigator which covers the currently loaded sequence and at higher zoom levels allows the currently accessible scroll region to be moved.  It also includes some display of the Locus data and provides a right click menu for this data.
+</p>
 </fieldset>
+
+
+<fieldset><legend>The Scroll Navigator</legend>
+<h3>Display format and implementation</h3>
+<p>The navigator has its own foo canvas and this can be exposed by a sliding frame.  There is a border at the top and bottom of the canvas filled by two shaded regions and between a scale bar similar to the one in the normal window is displayed and this always shows the full extent of the loaded sequence (unlike the window scale bar which shows the visible region within the accessable scroll region).
+</p>
+<p>The <b>Locator</b> is a white rectangle indicating the extent of the accessible scroll region and at higher zooms does not cover the entire loaded sequence.
+</p>
+
+<p>If the window is resized then the navigator canvas is zoomed to make the displayed data fit within the space on the screen.  The border regions are kept the same size regardless of the window size or zoom level of the navigator canvas. This is possibly due to the need to leave enough space in the canvas to display text without it being clipped.
+</p>
+
+<p>Locus data is displayed as text and these are 'unoverlapped' to make them readable , but note that if the window is resized this may not be preserved.  Text is preserved as fixed size regardless  of the zoom level.
+</p>
+
+<p> The navigator canvas is operated as a fixed size region (NAVIGATOR_SIZE, in foo canvas coordinates and the displayed data multiplied by a navigator->scaling_factor to match the loaded sequence to this fixed length coordinate range.  The border regions are of variable height in canvas coordinates to achieve the same size in pixels on display.
+</p>
+
+<p>For configurations where the loaded sequence is not 1-based the navigator does not offset it's data but instead scales it as needed to fit the fixed size canvas and adds the borders at either end.
+
+<h3>Source Files</h3>
+<p>
+<b>zmapWindowNavigator.c</b> implements drawing the data and handling mouse events.<br />
+<b>zmapWindowNavigatorWidget.c</b> fits the naviagotor canvas into the GTK Widget, adding the text-size borders onto the canvas extent, and setting the scroll region.<br />
+<b>zmapWindowTextPositioner.c</b> handles unoverlapping locus names.<br />
+
+<h3>Operation</h3>
+<p>Whenever the zmap window is resized fo the navigator pane's size changed the function <b>navCanvasItemEventCB()</b> is called and this calls <b>zmapWindowNavigatorFillWidget()</b> which adjusts canvas borders and scroll region to make the border size the same in pixels.
+</p>
+</legend>

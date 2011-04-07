@@ -1,4 +1,4 @@
-<!-- $Id: canvas_tweaks.html,v 1.3 2011-03-21 09:46:50 mh17 Exp $ -->
+<!-- $Id: canvas_tweaks.html,v 1.4 2011-04-07 09:54:53 mh17 Exp $ -->
 
 <h2>Speeding up the use of the Foo Canvas</h2>
 
@@ -7,6 +7,22 @@
 <p>
 All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of features for background, underlay, feature, and overlay and changing these to be simple FooCanvasItems may offer a significant performance improvement and simplify a lot of code and free up a lot of memory.  The initial display of ZMap is dominated by alignments (eg SwissProt and TrEMBL) which typically contain 90% of all features on display.
 </p>
+
+<h3>Complexity is implemented but not used</h3>
+<p>Inspection of the code reveals that the four lists of canvas items in a ZMapWindowCanvasItem have been programmed but are not used, or are used incorrectly.  Existing use of these lists can be found by searching for <b>zmapWindowContainerGetOverlay()</b>, <b>zmapWindowContainerGetUnderlay()</b> or <b>WINDOW_ITEM_UNDERLAY</b>, <b>WINDOW_ITEM_OVERLAY</b> etc.
+<ul>
+<li><b>zMapWindowCanvasItemMark()</b> draws a rectangle on the ZMapWindowCanvasItem's overlay but this would be better drawn on the block as this would be consistent with a non-item based mark. Possibly the column constainer might be better as this would cope with hide/display column better.
+<li> <b>zmapWindowTranscriptFeature.c</b> has code to draw a Locus name in the transcript canvas items' overlay but this code is never run as it is controlled by a gboolean set to FALSE.
+<li> transcripts have been presented as the cardinal example of a type of feature that would benefit from complex treatment, but the exons and introns are all drawn on the Features list.  A single sorted list of display items would provide the same function.
+<li> alignments reference the underlay list when switching between gapped and ungapped display.  It's not very clear whether or not this data is actually used - data is moved to a 'no_gaps_hidden_item' and the underlay appears to be used as a 'temp_parent' which looks suspiciously like a hack.
+<li> Text Items use the underlay for the background highlight and this could just as easily be held in the features list.  Text features appear to be expected to include most kinds of foo-canvas-items such as lines, rectangle, glyphs, text.  Why is not clear, as the navigator (which has text and lines associated) displays these as separate items.  DNA and peptide highlights could be implemented in the container (if nto doen so already)
+<li> All items have a single foo_canvas_rect in the background 'list'.   It's actually a foo_canvas_item instead of a foo_canvas_group like the underlay, overlay etc.   Note that the normal feature FooCanvasItems are held in the FooCanvasGroup item list. and the existing FooCanvasGroup methods can be used to find the bounding rectangle of an item.  Underlay and overlay appear not to affect the background size.
+</ul>
+</p>
+<h3>Removing Canvas Item backgrounds </h3>
+<p>This looked like an easy way to gain speed as it doubles the number of FooCanvasItems, but implementation reveals no difference in performance.
+</p>
+
 <h3>Caveats</h3>
 <h4>Complexity is not used? </h4>
 <p>Despite each basic feature consisting of several lists of canvas items these lists are empty and may not cause a significant delay.
@@ -15,11 +31,36 @@ All ZMapWindowCanvasItems are currently FooCanvasGroups and contain lists of fea
 <p>When alignments get bumped their x-coordinate is changed and extra lines and glyphs are drawn on the canvas.  Use of the complex ZMapWindowCanvasItem structure may be necessary to do this.
 </p>
 
+<a name="underlay"></a>
+<h3>Some notes about the Item factory and the CanvasItem Underlay list</h3>
+
+<h4>Underlay is coded as a hack for alignment features but never used</h4>
+<p>This is not immediately obvious.  In <b>zMapWindowAlignmentFeature.c</b> the functions <b>zmap_window_alignment_feature_clear()</b>, <b>zMapWindowAlignmentFeatureGappedDisplay()</b> and <b>zMapWindowAlignmentFeatureUngappedDisplay()</b> operate three different flags to control the used of a local <b>no_gaps_hidden_item</b> canvas item, the intention presumably being to hide an ungapped feature while displaying a gapped alignment.  Tha last one of these uses the [WINDOW_ITEM_UNDERLAY] list as a temporary parent for the item to be removed from display but can never be called as the flag controlling access to this fucntion (<b>alignment->flags.gapped_display</b>) is never set. Note that this code assumes that the underlay list is not used because if it was run it would remove anything in in this list from display.
+</p>
+<h4>Alignment features implement a class clear function and the Item Factory references it but it is never called and Transcript features do not implement this function which is still referenced by the Item factory.</h4>
+<p><b>zmapWindowFToIFactoryRunSingle()</b> takes an argument FooCanvasItem 'current_item' which is always NULL.  This is passed via the run_data structure to the fucntion in the mdule that create and draw canvas items.  In the alignment and transcript functions this current_item is tested and if non NULL (ie never) then the clear function is called.
+</p>
+
+<h4>Text Features and the Underlay list</h4>
+<p><b>zmapWindowTextFeature.c</b> references the WINDOW_ITEM_UNDERLAY list twice but removing these has no effect as the second one adds a line to 'mark the real extent' but this is controlled by a FALSE flag and never run.  The first reference sets the background colour and appears to do nothing not already done by other code.</p>
+
+<h4>Other use of the Underlay and Overlay lists</h4>
+<p>Scanning for references to this data either via the CanvasItem data structure or the access functions reveal very little use:
+<ul>
+<li> zmapWindowItemDebug.c prints them out if defined
+<li> zmapWindowTranscriptFeature.c references the overlay list three times but this code is never run.
+<li> zmapWindowCanvasItemMark() adds a rectangle to the overlay list.  This could be added to the end of the items list, or the container column (which has a group overlay list). The corresponding Unmark function removes the rectangle but does not reference the list directly.  It's not clear how this can be done without leaving a pointer dangling.
+</ul>
+
+<h3>Removing canvas item background underlay and overlay: what's the difference?</h3>
+<p>No noticable difference in performance has been observed, which is strange, as every canvas item had a background foo canvas item - the amount of data on the canvas should have been halved.
+</p>
+
 <h3>Implementation</h3>
 <h4>General comments about existing data and code</h4>
 <p>
 <ul>
-<li> Currently all ZMap canvas items are constructed by inheriting foo_canvas_item (actually foo_canvas_group) and we have to preserve this as the item factory code works by creating a foo_canvas_item which is actually a derived object but refenced as a foo_canvas_item.
+<li> Currently all ZMap canvas items are constructed by inheriting foo_canvas_item (actually foo_canvas_group) and we have to preserve this as the item factory code works by creating a foo_canvas_item which is actually a derived object but referenced as a foo_canvas_item.
 <li> We cannot use foo_canvas_items directly as we must also have a pointer to the relevant feature in the feature context.
 <li>There are 25 instances in the source of ZMAP_IS_CANVAS_ITEM() which implies that we may be forced to have a base ZMapCanvasItem class with simple features and groups derived from it.  25 is not very many so modifying the code for this will be simple, and we can handle adding items  and groups as distinct class hierachies if necessary.
 <li> the existing ZMapCanvasItem class is misnamed as it is really a canvas group, which is a shame as this means we have to edit 283 lines of code to use meaningful names.
@@ -139,26 +180,26 @@ However the intention was to speed up the display of featuresets like TrEmbl and
 <p>After implementing the filtering algorithm as above we can see a big reduction in objects drawn and time used:
 <table border="1" cellpadding="3" cellspacing="3">
 <tbody><tr>
-<th>FeatureSet</th><th>Features drawn</th><th>Total features</th> <th>Max list size<th>Time used</th><th>Previous Time </th><th>Time used</th>Ratio</tr>
+<th>FeatureSet</th><th>Features drawn</th><th>Total features</th> <th>Max list size<th>Time used</th><th>Previous Time </th><th>Ratio</th></tr>
 <tr><td>TrEMBL</td> <td>722</td> <td>28922</td><td>4</td> <td>0.206sec</td> <td>4.865sec</td> <td>23.6</td></tr>
 <tr><td>SwissProt</td> <td>554</td> <td>9563</td> <td>3</td><td>0.125sec</td> <td>1.606sec</td> <td>12.8</td></tr>
 </tbody></table>
-Given that the list of covered regions stays very short there seems little point in combining these as originally planned.  The reduction in time is a little dissappointing - it is related quite directly to the number of items drawn (1/40 for TrEMBL).  One deficiency is that the sorting of features is done using real coordinates and this may cause sorting by size (after start coordinate) to be ineffective and resolving this could result in significant further reductions.  However, trying this out gives no improvement, presumably due to the extra sorting overhead.
+Given that the list of covered regions stays very short there seems little point in combining these as originally planned.  The reduction in time is a little dissappointing - it is related quite directly to the number of items drawn (1/40 for TrEMBL).  There may be further gains to be made by implementing a radix sort - with 200k features this would run 18 times as fast.  A lower limit will be the time needed to draw 1000 features.  As the summarise algorithm is not optimal the number of featuress draw could be reduced by running the summarise algorithm in reverse order on the summarised data.
 </p>
 <h3>Some caveats</h3>
 <p>This has so far been an experiment and there are some issues that need to be resolved:
 <ul>
-<li> some ZMap features such as list features in column may need to be adjusted to reference the feature context rather than the canvas. Tests reveal that 'List all Column Features' uses the FToI hash and thereby only finds features displayed on the canvas; perhaps this can be fixed by adding null entries to the hash when items are not displayed, and creating a fake canvas item OTF (or displaying the feature) if necessary (eg if the hash is used to look up a specific feature).
-<li> zoom appears to operate without doing a re-draw and this code needs to be adjusted to add features to the canvas. The function zmapWindowDraw.c/preZoomCB() looks like a good place to do this.
+<li> some ZMap functions such as list features in column may need to be adjusted to reference the feature context rather than the canvas. Tests reveal that 'List all Column Features' uses the FToI hash and thereby only finds features displayed on the canvas; perhaps this can be fixed by adding null entries to the hash when items are not displayed, and creating a fake canvas item OTF (or displaying the feature) if necessary (eg if the hash is used to look up a specific feature).
+<li> zoom appears to operate without doing a re-draw and this code needs to be adjusted to add or remove features to the canvas. The function zmapWindowDraw.c/preZoomCB() looks like a good place to do this. Note that if we are to have significant performance improvements we cannot display more than a few screens worth of data at high zoom and instead draw on demand, which implies limiting the scroll region more than at present, at least for summarised columns.
 <li> bump column must draw the missing features
 </ul>
-The later two imply some performance overhead, although not as great as drawing the whole column in the first place.
+These imply some performance overhead, although not as great as drawing the whole column in the first place.
 </p>
 
 </fieldset>
 
 <fieldset><legend>Removing canvas items altogether</legend>
 <h3>Where is the performance problem?</h3>
-<p>Even with 200k features it should be possible to display relatively quickly ansd perhaps there are delays introduced by interaction with the X server whcih has a complex protocol involving map realize update and expose events.  We have a tree of canvas groups to the column level which consists of no more than a few hundred groups total and this can certainly be processed very quickly.
+<p>Even with 200k features it should be possible to display relatively quickly and perhaps there are delays introduced by interaction with the X server whcih has a complex protocol involving map realize update and expose events.  We have a tree of canvas groups to the column level which consists of no more than a few hundred groups total and this can certainly be processed very quickly. All we have to do is cause GdkDraw fuicntions to be called and mouse events linked to specific features and this can be handled by ZMap without reference to the foo canvas directly.
 </p>
 </fieldset>
