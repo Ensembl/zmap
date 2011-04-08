@@ -22,28 +22,24 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Ideally we wouldn't have this but instead use an
  *              existing library but that's not always so easy.
  *
  * Exported functions: See ZMap/zmapString.h
  * HISTORY:
- * Last edited: Jun 17 12:21 2008 (rds)
+ * Last edited: Apr  8 12:45 2011 (edgrif)
  * Created: Thu Sep 20 15:21:42 2007 (edgrif)
- * CVS info:   $Id: zmapString.c,v 1.4 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapString.c,v 1.5 2011-04-08 11:46:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <ZMap/zmapString.h>
 #include <string.h>
+
 
 static int findMatch(char *target, char *query, gboolean caseSensitive) ;
 
@@ -77,13 +73,14 @@ int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive)
 }
 
 
-/* This public function isn't from acedb... */
 
-/*!
- * \brief zMapStringRemoveSpaces does a s/ //g;
- * without a regex parser or using g_regex
+/* Takes a string and removes all spaces and control chars. This is
+ * done in place so the resulting string will be shorter but still
+ * uses the same amount of memory.
+ * 
+ * This function is not derived from acedb.
  */
-char *zMapStringRemoveSpaces(char *query_txt)
+char *zMapStringFlatten(char *query_txt)
 {
   char *query_ptr;
   int len = strlen(query_txt);
@@ -97,46 +94,44 @@ char *zMapStringRemoveSpaces(char *query_txt)
 
   for(i = 0, n = 0; i < len; i++, n++, query_ptr++)
     {
-      /* Is it a space? */
-      switch(*query_ptr)
-	{
-	case ' ':
-	  n++;
-	  break;
-	default:
-	  break;
-	}
+      if (g_ascii_isspace(*query_ptr) || g_ascii_iscntrl(*query_ptr))
+	n++ ;
 
       /* Is the replacement a non space? */
-      if(n < len && query_txt[n] != ' ')
+      if (n < len && !(g_ascii_isspace(query_txt[n]) || g_ascii_iscntrl(query_txt[n])))
 	{
 	  *query_ptr = query_txt[n];
 
 	  /* should we set the intervening chars to space? */
-	  if(query_ptr != &query_txt[n])
+	  if (query_ptr != &query_txt[n])
 	    {
 	      char *tmp = query_ptr;
+
 	      query_ptr++;
+
 	      while(query_ptr < &query_txt[n])
 		{
 		  *query_ptr = ' ';
 		  query_ptr++;
 		}
+
 	      query_ptr = tmp;
 	      query_txt[n] = ' ';
 	      n--;
 	    }
 	}
-      else if(n >= len)		/* reached the end? */
+      else if (n >= len)		/* reached the end? */
 	{
-	  int j;
-	  for(j = i; j < len; j++)
+	  int j ;
+
+	  for (j = i; j < len; j++)
 	    {
 	      query_txt[j] = ' ';
 	    }
+
 	  break;
 	}
-      else if(i != 0)
+      else if (i != 0)
 	{
 	  /* Keep the pointer back at the last non-space */
 	  query_ptr--;
