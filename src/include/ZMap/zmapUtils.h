@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Mar 21 11:13 2011 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.49 2011-04-07 13:52:39 mh17 Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.50 2011-04-08 10:45:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -229,8 +229,9 @@ void zmapCoordsZeroBased(int *start_inout, int *end_inout) ;
 
 
 /* zmapRadixSort.c */
-typedef int (*ZMapRadixKey) (gpointer thing,int digit);
-GList * zMapRadixSort(GList *list, ZMapRadixKey key_func,int key_size);
+#define RADIX_BITS      8           /* this will never change so don't*/
+typedef guint ZMapRadixKeyFunc (gconstpointer thing,int digit);
+GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc *key_func,int key_size);
 
 
 #endif /* ZMAP_UTILS_H */

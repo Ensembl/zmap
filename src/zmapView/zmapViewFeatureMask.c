@@ -29,7 +29,7 @@
  *                that display code can use
  *
  * Created: Fri Jul 23 2010 (mh17)
- * CVS info:   $Id: zmapViewFeatureMask.c,v 1.7 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapViewFeatureMask.c,v 1.8 2011-04-08 10:45:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -313,6 +313,29 @@ gint fsetListOrderCB(gconstpointer a, gconstpointer b)
       return(0);
 }
 
+guint fsetListOrderKey(gconstpointer thing, int digit)
+{
+      guint coord;
+      ZMapViewAlignSet as = (ZMapViewAlignSet) thing;
+
+      if(digit < 4)
+      {
+            coord = G_MAXUINT - as->x2;        /* least significant: end coord reversed */
+      }
+      else
+      {
+            digit -= 4;
+            coord = as->x1;         /* start coord */
+      }
+
+      while (--digit >= 0)
+            coord >>= RADIX_BITS;
+      coord &= 0xff;
+
+      return coord;
+}
+
+
 
 /* order feature by start coord */
 gint fsetStartOrderCB(gconstpointer a, gconstpointer b)
@@ -413,7 +436,26 @@ static GList *sortFeatureset(ZMapFeatureSet fset)
       }
 
       /* order these lists by start coord and end coord reversed */
+
+#if MH17_test_radix_sort
+/* see zmapRadix#Sort.c for performance stats */
+
+printf("%s has %d items\n",g_quark_to_string(fset->unique_id),g_list_length(l_out));
+zMapStartTimer("normal sort","");
+{ int i;
+for(i = 0;i < 1000;i++)
       l_out = g_list_sort(l_out,fsetListOrderCB);
+zMapStopTimer("normal sort","");
+zMapStartTimer("radix sort","");
+for(i = 0;i < 1000;i++)
+      l_out = zMapRadixSort(l_out,fsetListOrderKey,8);
+zMapStopTimer("radix sort","");
+}
+#else
+      /* merge sort faster fot this data+key combo */
+      l_out = g_list_sort(l_out,fsetListOrderCB);
+
+#endif
       return(l_out);
 }
 

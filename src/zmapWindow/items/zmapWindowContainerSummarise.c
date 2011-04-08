@@ -26,7 +26,7 @@
  * Description:   avoids displaying features that cannot be seen at the current zoom level
  *                NOTE see Design_notes/notes/canvas_tweaks.html
  *
- * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.3 2010-09-01 13:09:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.4 2011-04-08 10:45:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -229,7 +229,7 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset)
       GList *l;
 
       /* debugging/ stats */
-#if MH17_DONT_INLCUDE
+#if !MH17_DONT_INLCUDE
       if(window->n_col_cover_show)
       {
             printf("summarise %s: %d+%d/%d, max was %d\n",g_quark_to_string(fset->unique_id),
@@ -286,6 +286,33 @@ gint startOrderCB(gconstpointer a, gconstpointer b)
 }
 
 
+/* sort features by start coord then by size (biggest first) */
+
+guint startOrderKey(gconstpointer thing, int digit)
+{
+      guint coord;
+      ZMapFeature feature = (ZMapFeature) thing;
+
+      if(digit < 2)     // we assume size is less than 64k for a single feature (alignment)
+      {
+            coord = G_MAXUINT - (feature->x2 - feature->x1);  /* biggest first */
+      }
+      else
+      {
+            digit -= 2;
+            coord = feature->x1;         /* start coord */
+      }
+
+      while (--digit >= 0)
+            coord >>= RADIX_BITS;
+      coord &= 0xff;
+
+      return coord;
+}
+
+
+
+
 
 /* extract features from the hash table into a list and sort it */
 GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset)
@@ -293,7 +320,29 @@ GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset)
       GList *features;
 
       zMap_g_hash_table_get_data(&features, fset->features);
+#if !MH17_test_radix_sort
+/* see zmapRadixSort.c for performance stats */
+printf("%s has %d items\n",g_quark_to_string(fset->unique_id),g_list_length(features));
+zMapStartTimer("normal sort","");
+{ int i;
+
+
+for(i = 0;i < 100;i++)
       features = g_list_sort(features,startOrderCB);
+zMapStopTimer("normal sort","");
+
+zMap_g_hash_table_get_data(&features, fset->features);      /* makes no difference */
+zMapStartTimer("radix sort","");
+for(i = 0;i < 100;i++)
+      features = zMapRadixSort(features,startOrderKey,6); /* key of 6 bytes: 2 for length, 4 for start */
+zMapStopTimer("radix sort","");
+
+}
+#else
+      features = g_list_sort(features,startOrderCB);
+//      features = zMapRadixSort(features,startOrderKey,6);
+#endif
+
       return features;
 }
 
