@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 24 16:01 2010 (edgrif)
+ * Last edited: Apr  6 16:04 2011 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.83 2011-03-22 16:52:11 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.84 2011-04-08 10:47:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -372,7 +372,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   zmapWindowContainerFeatureSetSortFeatures(container, 0);
 
-  zMapWindowBusy(window, TRUE) ;
+  zmapWindowBusy(window, TRUE) ;
 
   /* Need to know if mark is set for limiting feature display for several modes/feature types. */
   mark_set = zmapWindowMarkIsSet(window->mark) ;
@@ -703,7 +703,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
     }
 
 
-  zMapWindowBusy(window, FALSE) ;
+  zmapWindowBusy(window, FALSE) ;
 
   zMapPrintTimer(NULL, "finished bump") ;
 

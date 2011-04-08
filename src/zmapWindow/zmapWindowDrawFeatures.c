@@ -27,9 +27,9 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Apr  1 08:13 2011 (edgrif)
+ * Last edited: Apr  6 16:08 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.315 2011-04-05 13:29:14 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.316 2011-04-08 10:47:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -280,9 +280,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapAssert(window && full_context && diff_context) ;
 
-  zMapWindowCanvasBusy((ZMapWindowCanvas) window->canvas);
-
-  zMapWindowBusy(window, TRUE) ;
+  zmapWindowBusy(window, TRUE) ;
 
   if(!window->item_factory)
     {
@@ -485,8 +483,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowContainerRequestReposition(root_group);
 
-  zMapWindowBusy(window, FALSE) ;
-  zMapWindowCanvasUnBusy((ZMapWindowCanvas) window->canvas);
+  zmapWindowBusy(window, FALSE) ;
 
   return ;
 }
