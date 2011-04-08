@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Mar 18 14:39 2011 (edgrif)
+ * Last edited: Apr  6 16:09 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.284 2011-03-31 11:17:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.285 2011-04-08 10:46:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -52,6 +52,7 @@
  * ... the same size as foo_canvas sets ...
  */
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
+
 
 
 /*
@@ -548,6 +549,7 @@ typedef struct _ZMapWindowStruct
   /* Handle cursor changes showing when zmap is busy. */
   GdkCursor *normal_cursor ;
   GdkCursor *busy_cursor ;
+  GdkCursor *window_busy_cursor ;
   int cursor_busy_count ;
 
 
@@ -1209,6 +1211,19 @@ void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomContr
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x1_out, double *y1_out,
                                           double *x2_out, double *y2_out);
+
+
+void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
+			    gboolean busy, const char *file, const char *func) ;
+#ifdef __GNUC__
+#define zmapWindowBusy(WINDOW, BUSY)         \
+  zmapWindowBusyInternal((WINDOW), FALSE, (BUSY), __FILE__, (char *)__PRETTY_FUNCTION__)
+#else
+#define zmapWindowBusy(WINDOW, BUSY)         \
+  zmapWindowBusyInternal((WINDOW),  FALSE, (BUSY), __FILE__, NULL)
+#endif
+
+
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
