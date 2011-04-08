@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 29 10:42 2010 (edgrif)
+ * Last edited: Apr  8 11:44 2011 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.138 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.139 2011-04-08 10:47:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -195,7 +195,7 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
   gpointer three_frame_id = NULL;
   gpointer three_frame_Id = NULL;   // capitalised!
 
-  zMapWindowBusy(window, TRUE) ;
+  zmapWindowBusy(window, TRUE) ;
 
 
   zMapStartTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
@@ -250,7 +250,7 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
 
   zMapStopTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
 
-  zMapWindowBusy(window, FALSE) ;
+  zmapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -263,7 +263,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        gboolean force_to, gboolean force)
 {
 
-  zMapWindowBusy(window, TRUE) ;
+  zmapWindowBusy(window, TRUE) ;
 
   if (dna)
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME,
@@ -275,7 +275,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
   zmapWindowFullReposition(window) ;
 
-  zMapWindowBusy(window, FALSE) ;
+  zmapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -990,7 +990,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
       canvas_data.full_context = window->strand_separator_context;
       canvas_data.styles = window->context_map->styles ;
 
-      drawSeparatorFeatures(&canvas_data, diff);
+      drawSeparatorFeatures(&canvas_data, window->strand_separator_context) ;
 
       zmapWindowFullReposition(window);
     }
