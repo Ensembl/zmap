@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  7 15:03 2011 (edgrif)
+ * Last edited: Apr  8 10:15 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.363 2011-04-08 10:48:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.364 2011-04-08 10:52:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -5629,14 +5629,23 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 	}
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* In theory we should reset when we reach zero, be better to  */
+
       if (window->cursor_busy_count == 0)
 	{
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 	  gdk_window_set_cursor(window->toplevel->window, window->normal_cursor) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
