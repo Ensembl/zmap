@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  5 11:53 2011 (edgrif)
+ * Last edited: Apr  8 12:30 2011 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.32 2011-04-05 10:54:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.33 2011-04-08 11:47:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -554,7 +554,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 #ifdef TESTING
   query_txt = g_strdup("   t gg  ccc   tt    cccc   gg  t a tagc  t   gg a  t");
 #endif /* TESTING */
-  query_txt = zMapStringRemoveSpaces(query_txt);
+  query_txt = zMapStringFlatten(query_txt);
 
   gtk_entry_set_text(GTK_ENTRY(search_data->dna_entry), query_txt);
 
