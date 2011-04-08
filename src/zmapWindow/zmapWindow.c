@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  8 10:15 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.364 2011-04-08 10:52:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.365 2011-04-08 14:00:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4080,7 +4080,7 @@ so just request whatever region is requested regardless
       GList *col_list;
 
       for(col_list = featureset_name_list;col_list;col_list = col_list->next)
-            fset_list = g_list_concat(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),TRUE), fset_list);
+            fset_list = g_list_concat(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),FALSE), fset_list);
 
 zMapLogWarning("fetch %d: %d %d",use_mark,fetch_data->start,fetch_data->end);
 

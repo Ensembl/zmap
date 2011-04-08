@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 31 11:50 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.59 2011-04-06 13:04:52 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.60 2011-04-08 14:00:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -787,7 +787,7 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
       /* Transform block coords to 1-based for fetching sequence. */
       coordToOneBased(&start, &end, block->block_to_sequence.block.x1) ;
       dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
-zMapLogWarning("get DNA %d (%d)",start,block->block_to_sequence.block.x1+start-1);
+//zMapLogWarning("get DNA %d (%d)",start,block->block_to_sequence.block.x1+start-1);
     }
 
   return dna ;

@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Mar 10 16:27 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.63 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.64 2011-04-08 14:00:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1175,13 +1175,20 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	  set_id   = zMapXMLAttributeGetValue(attr);
 	  set_name = (char *)g_quark_to_string(set_id);
-	  set_id   = zMapFeatureSetCreateID(set_name);
+
+        /* Make sure we have a source name. */
+        /* MH17 we need capitalised name to handle nice display of column names
+           and also to report status correctly to otterlace
+           so record what is requested exactly as is
+           The request logic will macth both types
+         */
+        featureset_id = set_id;
+        featureset_name = set_name;
+
+        set_id   = zMapFeatureSetCreateID(set_name);
 	  request_data->source_id = set_id ;
 
 
-	  /* Make sure we have a source name. */
-        featureset_id = set_id;
-        featureset_name = set_name;
 
 #if MH17_GET_COLUMN_NOT_FEATURESET___DONT_USE
 	  if (xml_data->common.action != ZMAPVIEW_REMOTE_LOAD_FEATURES)
@@ -1284,7 +1291,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    {
 	    case ZMAPVIEW_REMOTE_LOAD_FEATURES:
 	      {
-		request_data->feature_sets = g_list_append(request_data->feature_sets, GINT_TO_POINTER(set_id)) ;
+		request_data->feature_sets = g_list_append(request_data->feature_sets, GINT_TO_POINTER(featureset_id)) ;
 
 		break;
 	      }

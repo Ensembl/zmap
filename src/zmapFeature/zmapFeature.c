@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr  5 08:31 2011 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.143 2011-04-05 10:51:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.144 2011-04-08 14:00:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1422,7 +1422,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 
 
 
-/* 
+/*
  *       ZMapFeatureBlock functions.
  */
 
@@ -2367,10 +2367,10 @@ static void mergeFeatureSetLoaded(ZMapFeatureSet view_set, ZMapFeatureSet new_se
 
 if(!view_set || !new_set)
 {
-      zMapLogWarning("merge: null set %p %p",view_set,new_set);
+//      zMapLogWarning("merge: null set %p %p",view_set,new_set);
       return;
 }
-zMapLogWarning("merge feature set loaded %s %s\n",g_quark_to_string(view_set->unique_id), g_quark_to_string(new_set->unique_id));
+//zMapLogWarning("merge feature set loaded %s %s\n",g_quark_to_string(view_set->unique_id), //g_quark_to_string(new_set->unique_id));
 
 
       /* we expect to just add our seq region to the existing
@@ -2482,7 +2482,7 @@ zMapLogWarning("merge feature set loaded %s %s\n",g_quark_to_string(view_set->un
             }
             else
             {
-zMapLogWarning("view,new = %d-%d, %d-%d",view_span->x1,view_span->x2,new_span->x1,new_span->x2);
+//zMapLogWarning("view,new = %d-%d, %d-%d",view_span->x1,view_span->x2,new_span->x1,new_span->x2);
                   if(new_span->x2 + 1 == view_span->x1)     /* join then we are finished */
                   {
                         view_span->x1 = new_span->x1;
@@ -2515,7 +2515,7 @@ zMapLogWarning("view,new = %d-%d, %d-%d",view_span->x1,view_span->x2,new_span->x
       {
             view_set->loaded = g_list_append(view_set->loaded, g_memdup(new_span,sizeof(ZMapSpanStruct)));
       }
-print_loaded(view_set->loaded, "view list 2");
+//print_loaded(view_set->loaded, "view list 2");
 //print_loaded(new_set->loaded,  "new list  2");
 
 }
@@ -2535,15 +2535,15 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
       fset = zMapFeatureBlockGetSetByID(block,unique_id);
       if(fset)
       {
-            if(!fset->loaded)
-            {
-                  zMapLogWarning("Featureset %s has no span",g_quark_to_string(unique_id));
-            }
+//            if(!fset->loaded)
+//            {
+//                  zMapLogWarning("Featureset %s has no span",g_quark_to_string(unique_id));
+//            }
 
             for(l = fset->loaded;l;l = l->next)
             {
                   span = l->data;
-                  zMapLogWarning("featureset span %d -> %d",span->x1,span->x2);
+//                  zMapLogWarning("featureset span %d -> %d",span->x1,span->x2);
                   if(span->x2 < start)
                         continue;
 
@@ -2552,7 +2552,7 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
 
                   if(!span->x2)     /* not real coordinates */
                   {
-                        zMapLogWarning("featureset %s has null coordinates", g_quark_to_string(fset->original_id));
+//                        zMapLogWarning("featureset %s has null coordinates", g_quark_to_string(fset->original_id));
                         return TRUE ;
                   }
                   if(span->x2 >= end)
