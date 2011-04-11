@@ -3,7 +3,9 @@
 <fieldset><legend>Use by ZMap</legend>
 <p>It is thought that the volume of data is too great for direct use by ZMap as the time needed to load and display woud be impractical.  Instead ZMap will load summary data and display data volumes in fixed size bins over the sequence in view.  The actual data will be displayed by Blixem and requested over shorter regions defined by the mark.
 </p>
-<p>In the short term we do not expect to be able to handle summary data and instead provide a menu driven interface to run Blixem.  This will involve adding a 'Blixem Short Reads' option to the column menu and providing a sub-menu of data sources off that.  Later on when summary data is available the summary columns can be Blixem'ed directly.
+<p>In the short term we do not expect to be able to handle summary data and instead provide a menu driven interface to run Blixem.  This will involve adding a 'Blixem Short Reads' option to the column menu for each configured short-reads data sources.  Later on when summary data is available the summary columns can be Blixem'ed directly.
+</p>
+<p>By default Blixem operates with a region of 200k bases centred on the mouse (which can be set by the Edit/Preferences main menu item) but for short reads data this will be different: the user must set the mark and if not set the menu options for short reads data will not appear, or if selected will pop up a reminder message.
 </p>
 </fieldset>
 
@@ -68,14 +70,8 @@ Here, the source column (say, "source1") is the data that would be passed to the
 </p>
 <h4>Command line arguments</h4>
 <p>Note that Blixem will need to pass chromosome coords to the bam-fetch script.  ZMap should pass everything to Blixem in chromosome coords plus the required offset (via the -O argument) that Blixem will need to use to display its coords in the same coordinate system as ZMap.</p>
-<p><strong>obsolete?</strong> We probably won't need any additional arguments if passing the info in GFF...</p>
-<p>These will be used by Blixem to trigger data requests etc.  Current arguments confusingly use upper and lower case short arguments for wildly different meanings.  We are kind of stuck with this for historic reasons, but we should avoid making it worse where possible; I therefore suggest that we only use long-arguments for the new arguments unless there is a particular need for a short-argument.
-<table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> --fetch-source</td> <td> request short reads data<br /> This argument takes a source name of the data we wish to request via the script specified in blixemrc. <br />Blixem will provide a file name of its own choosing to the request script if necessary - this will be where the script writes its output.<br /> The &lt;datafile&gt argument will be optional if --fetch-from-source is specified.<br /> The reference sequence must still be supplied, so if &lt;datafile&gt; is omitted then the reference sequence must be supplied via &lt;sequencefile&gt; instead.  Whichever file is used, the sequence name, e.g. 'chr6-18', will be supplied along with the reference sequence data, which is always in FASTA format.</td> </tr>
-<tr> <td> --ref-seq-start</td> <td> request start coordinate<br /> This is only required if &lt;datafile&gt; is not supplied or if &lt;datafile&gt; does not have a <code>##sequence-region</code> header line.  If both are supplied, then <code>--ref-seq-start</code> must agree with the start coordinate in &lt;datafile&gt;.<br /> The end coordinate can be calculated from the start coordinate and the length of the reference sequence.</td> </tr>
-<tr> <td> --fetch-dataset</td> <td> where to get the sequence from eg 'human' </td> </tr>
-<tr> <td> </td> <td> </td> </tr>
-</table>
+<p>
+All other options relating to short-reads data will be passed in the GFF file and no further command line arguments are neeeded.
 </p>
 
 <h3>[ZMap] stanza - new options</h3>
