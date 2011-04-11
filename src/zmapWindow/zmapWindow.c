@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  8 10:15 2011 (edgrif)
+ * Last edited: Apr 11 09:43 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.365 2011-04-08 14:00:42 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.366 2011-04-11 08:44:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -298,7 +298,7 @@ static gboolean window_split_save_bumped_G = TRUE;
 
 
 /* Debugging canvas... */
-static gboolean busy_debug_G = TRUE ;
+static gboolean busy_debug_G = FALSE ;
 static gboolean foo_debug_G = FALSE ;
 static gboolean mouse_debug_G = FALSE ;
 
