@@ -162,7 +162,10 @@ zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL point
 
 # Finalise the source and target directories.
 
-TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}/bin
+BASE_TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}
+TARGET=${BASE_TARGET}/bin
+
+
 
 RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
@@ -280,6 +283,7 @@ ZMAP_ARCH=$(uname -ms | sed -e 's/ /-/g')
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
 seqtools_bin_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/bin"
+seqtools_share_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/share"
 
 
 if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
@@ -299,6 +303,9 @@ for binary in $ZMAP_SEQTOOLS_BINARIES;
       #[ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
       #[ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
 done
+
+zmap_message_out "Running scp -r $seqtools_share_dir $BASE_TARGET"
+scp -r $seqtools_share_dir $BASE_TARGET  || zmap_message_exit "Failed to copy $seqtools_share_dir"
 
 
 #
