@@ -1,5 +1,5 @@
 
-<!-- $Id: index.html,v 1.3 2011-04-07 09:54:53 mh17 Exp $ -->
+<!-- $Id: index.html,v 1.4 2011-04-11 09:59:49 mh17 Exp $ -->
 
 <h2>ZMap Design Documentation</h2>
 
@@ -22,7 +22,8 @@
 <fieldset><legend>How it works</legend>
 <a href="Design/misc/about.shtml">About these pages</a><br />
 <br />
-<a href="Design/modules/zmapConfig.shtml">Configuration files</a><br />
+<a href="Design/modules/zmapConfig.shtml">Configuration files</a>
+<a href="Design/modules/zmapApp.shtml">Sequence config</a><br />
 <a href="Design/notes/coord_config.shtml">Coordinate systems and configuration</a><br />
 <a href="Design/notes/ContainerFeatureset.shtml">Container Featureset</a>
 <a href="Design/notes/FToIHash.shtml">FToIHash</a> <br />
@@ -99,14 +100,9 @@ RC export/config could be used to dump this info to a file but due to scope issu
 <li> <b>zMapFeatureGetColumnFeatureSets()</b> is very ineffcient in that it scans all the featuresets for each column.  An attempt to do this reverse mapping and stire the list int he column sturcture failed due to some obscure list corruption happening and was abandoned. Note also that user and unique ID's are needed.
 With ext_curated we get and extra 1000 featuresets to scan for each column.
 
-<li> the columns dialog needs to feed off server config for loading columns
-
-<li> request logic (for servers) is tangled up with aligns and blocks and the request coordinates are unknown. ACEDB appear to provide multiple aligns and block but pipe servers cannot - this logic need to be in the ZMap application and chromosome coordnates shoudl be supplied by ZMap - currently they are buried in pipe server config in a url.
-<li> It would be better is ZMap used chromosome coordinates internally and if these are deemed 'too big' to present to the user (eg on the ruler) then they can be made relative to each block for display.
-
 <li> zmapWindowContainerFeatureSet is created by three different versions of the same code: normal, navigator and separator and these should be merged and moved into zmapWindowContainerFeatureSet.c
 
-<li> Initial and deferred load of features goes via different paths resulting in repeated coding
+<li> <a href="Design/modules/zmapApp.shtml">sequence config</a>  needs to filter through the many layers of app, mamager, control, view, window as a <b>ZMapFeatureSequenceMap</b> rather than as many arguments. Thi is needed to allow extra information such as 'dataset' to be accessable.
 </ul>
 </p>
 

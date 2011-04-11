@@ -1,4 +1,25 @@
 <h2> zmapApp - main program </h2>
-<fieldset> <legend>Summary</legend>
-Forthcoming...
+<fieldset> <legend>Configuration of sequence and control of ZMap</legend>
+<h3>Sequence options</h3>
+<p>Historically there have been two options inthe [Zmap] stanza that controlled how ZMap started up and loaded data:
+<pre>
+[ZMap]
+show-main-window = false
+default-sequence = chr6-18_12314500-12344230
+</pre>
+The main window is normally hidden when ZMap is run and controlled via Otterlace and visible when run from the command line, and if the default-sequence is specified then it is loaded automatically.  This is not specifed when Zmap is run from Otterlace, and Otterlace requests the sequence to be loaded via an XRemote message. If the main window is hidden then if a ZMap is closed ZMap does not exit.
+</p>
+<p>This is a little clumsy and the following changes are introduced:
+<ul>
+<li> by default the main window will be visible if ZMap is run from the command line. This is defined as no 'win_id' argument is supplied.  If the main widno is hidden then Zmap will exit when no more ZMaps are open.
+<li> [ZMap] default-sequence  is changed to 'sequence' and a new option 'dataset' is provided.  These items will feed into pipe server scripts in the  same way as start and end coordinates.
+<li> if specified on the command line the sequence name is the last argument and this will be extended to include an optional dataset:
+<pre>
+&gt; zmap --start=1234500 --end=1244500 [human/]chr6-18
+</pre>
+Note that we do not require start and end coordinates to be specified as this preserves existing function with ACEDB, but if used with pipe servers only then this is necessary for correct use.
+</ul>
+</p>
+<p>See also <a href="Design/notes/standalone.shtml">Standalone Operation</a>
+</p>
 </fieldset>
