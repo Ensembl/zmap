@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Mar 14 14:55 2011 (edgrif)
+ * Last edited: Apr 13 11:19 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.88 2011-03-15 14:37:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.89 2011-04-13 10:48:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1290,7 +1290,11 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
     }
 
-  zmapWindowCallBlixem(menu_data->window, requested_homol_set) ;
+  /* Called on a column or an item ? */
+  if (menu_data->item == menuDataItemToColumn(menu_data->item))
+    zmapWindowCallBlixemOnPos(menu_data->window, requested_homol_set, menu_data->x, menu_data->y) ;
+  else
+    zmapWindowCallBlixem(menu_data->window, requested_homol_set) ;
 
   g_free(menu_data) ;
 
