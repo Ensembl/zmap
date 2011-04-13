@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 15 14:20 2011 (edgrif)
+ * Last edited: Apr 13 11:30 2011 (edgrif)
  * Created: Mon Mar 14 10:38:39 2011 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.1 2011-03-15 14:40:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.2 2011-04-13 10:44:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,11 +45,20 @@
 #include <zmapWindow_P.h>
 
 
+/* Cover function for the fuller zmapWindowCallBlixemOnPos() function. */
+void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set)
+{
+  zmapWindowCallBlixemOnPos(window, requested_homol_set, 0.0, 0.0) ;
+
+  return ;
+}
+
 
 
 /* Call blixem for selected features, feature column or columns. Gets
  * called from menus and from keyboard short cut. */
-void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set)
+void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set,
+			       double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL ;
   ZMapFeatureAny feature_any ;
@@ -75,12 +84,25 @@ void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_ho
       gboolean found_feature = FALSE ;
       gboolean selected_features = FALSE ;
 
-
       switch(feature_any->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  {
-	    if (zMapWindowGetVisibleSeq(window, &y1, &y2))
+	    double wx1, wy1, wx2, wy2 ;
+	    FooCanvasGroup *block_grp ;
+	    gboolean found_position = FALSE ;
+
+	    if (x_pos != 0.0 && y_pos != 0.0
+		&& zmapWindowWorld2SeqCoords(window, x_pos, y_pos, x_pos, y_pos, &block_grp, &y1, &y2))
+	      {
+		found_position = TRUE ;
+	      }
+	    else if (zMapWindowGetVisibleSeq(window, &y1, &y2))
+	      {
+		found_position = TRUE ;
+	      }
+
+	    if (found_position)
 	      {
 		/* Use first feature in set to get alignment type etc. */
 		feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;

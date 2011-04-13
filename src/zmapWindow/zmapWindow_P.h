@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Apr  6 16:09 2011 (edgrif)
+ * Last edited: Apr 13 11:02 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.285 2011-04-08 10:46:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.286 2011-04-13 10:44:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1003,6 +1003,7 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
 
 void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set) ;
+void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, double x, double y) ;
 
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
