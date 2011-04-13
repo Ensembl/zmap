@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb 24 09:46 2011 (edgrif)
+ * Last edited: Apr 13 15:51 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.130 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.131 2011-04-13 15:16:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1586,8 +1586,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		}
 	    }
 
-	  if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
-	    local_sequence = TRUE ;
+	  if ((local_sequence_str = strstr(attributes, "Own_Sequence TRUE")))
+	    {
+	      printf("Attributes: %s\n", attributes) ;
+
+	      local_sequence = TRUE ;
+	    }
+
+
 
 
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,
