@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  5 11:55 2011 (edgrif)
+ * Last edited: Apr 13 11:45 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.147 2011-04-05 10:56:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.148 2011-04-13 10:45:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1307,13 +1307,13 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 
 	  my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(block_container), &wx1, &wy1, &wx2, &wy2) ;
 
-
 	  if (block_grp_out)
 	    *block_grp_out = block_container ;
+
 	  if (y1_out)
-	    *y1_out = floor(wy1 - offset + 0.5) ;
+	    *y1_out = floor(wy1 + offset + 0.5) ;
 	  if (y2_out)
-	    *y2_out = floor(wy2 - offset + 0.5) ;
+	    *y2_out = floor(wy2 + offset + 0.5) ;
 
 	  result = TRUE ;
 	}
