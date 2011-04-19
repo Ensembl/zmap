@@ -3,9 +3,9 @@
 <fieldset><legend>Use by ZMap</legend>
 <p>It is thought that the volume of data is too great for direct use by ZMap as the time needed to load and display woud be impractical.  Instead ZMap will load summary data and display data volumes in fixed size bins over the sequence in view.  The actual data will be displayed by Blixem and requested over shorter regions defined by the mark.
 </p>
-<p>In the short term we do not expect to be able to handle summary data and instead provide a menu driven interface to run Blixem.  This will involve adding a 'Blixem Short Reads' option to the column menu for each configured short-reads data sources.  Later on when summary data is available the summary columns can be Blixem'ed directly.
+<p>In the short term we do not expect to be able to handle summary data and instead provide a menu driven interface to run Blixem.  This will involve adding a 'Blixem Short Reads' option to the column menu for each configured short-reads data sources.  Later on when summary data is available the summary columns can be Blixem'ed directly.  This menu option will be interpreted as if the user clicked on a summary column and not a feature.
 </p>
-<p>By default Blixem operates with a region of 200k bases centred on the mouse (which can be set by the Edit/Preferences main menu item) but for short reads data this will be different: the user must set the mark and if not set the menu options for short reads data will not appear, or if selected will pop up a reminder message.
+<p>By default Blixem operates with a region of 200k bases centred on the mouse (which can be set by the Edit/Preferences main menu item) but for short reads data this will be different: the user must set the mark and if not set the menu options for short reads data will not appear.
 </p>
 </fieldset>
 
@@ -62,9 +62,8 @@ arguments = stuff
 ##sequence-region chr4-04 210623 364887   # the reference sequence region that is passed to blixem
 chr4-04	source1	region	215000	300000	0.000000	.	.	dataType=short-read      # the coords here specify the region to fetch short-reads for
 chr4-04	source2	region	215000	300000	0.000000	.	.	dataType=short-read      # optionally fetch short-reads for a second source
-chr4-04_210623-364887	vertebrate_mRNA	nucleotide_match	212438	212568	71.000000	+	.	Target=AK075066.1 125 255 +;percentID=77.1;dataType=embl
+chr4-04	vertebrate_mRNA	nucleotide_match	212438	212568	71.000000	+	.	Target=AK075066.1 125 255 +;percentID=77.1;dataType=embl
 chr4-04	vertebrate_mRNA	nucleotide_match	211806	212636	544.000000	+	.	Target=AK123078.1 831 1683 +;percentID=84;  # no dataType tag => use default-fetch
-...
 </pre>
 Here, the source column (say, "source1") is the data that would be passed to the bam-fetch script's --analysis option.  If this doesn't make sense as the source column, we could place it in another custom data tag instead (e.g., "dataSource=source1").
 </p>
@@ -74,9 +73,8 @@ Here, the source column (say, "source1") is the data that would be passed to the
 All other options relating to short-reads data will be passed in the GFF file and no further command line arguments are neeeded.
 </p>
 
-<h3>[ZMap] stanza - new options</h3>
-<p> As ZMap has to use this to create a menu it will be better to define this globally rather than via Blixem.
-
+<h3>[Blixem] stanza - new options</h3>
+<p>
 <table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td> SeqData</td> <td>A list of columns or featuresets containing SR data<br />
 As for DNA and protein featuresets we try to match both columns<br /> and featuresets to allow simple configuration.<br /> (Note: each column/featureset has options for short names and more lengthy descriptions). <br />
@@ -84,6 +82,7 @@ Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comment
  </td> </tr>
 <tr> <td> </td> <td> </td> </tr>
 </table>
+ZMap will hold this list in the View's context_map (accessable to the Window code) and it will be used in the short term to construct RC menus for Blixem.
 </p>
 
 </fieldset>
@@ -93,7 +92,7 @@ Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comment
 <p>Blixem will find the script path and fixed arguments from a stanza in its configuration file 'blixemrc'.
 Other arguments will be appended as follows:
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> --analysis</td> <td>  source name of the data we wish to requesty</td> </tr>
+<tr> <td> --analysis</td> <td>  source name of the data we wish to request</td> </tr>
 <tr> <td> --gff_sequence</td> <td> the name of the sequence eg 'chr6-18'</td> </tr>
 <tr> <td> --start</td> <td> request start coordinate</td> </tr>
 <tr> <td> --end</td> <td> request end coordinate</td> </tr>
@@ -101,6 +100,26 @@ Other arguments will be appended as follows:
 <tr> <td> --gff_file</td> <td> where to put the output</td> </tr>
 </table>
 
+</p>
+
+</fieldset>
+
+
+<a name="blixem_bam"></a>
+<fieldset><legend>Passing short reads dataset choice to blixem</legend>
+<h3>Window Menus</h3>
+<p>Depending on where the user clicks a differnt choice of Blixem menu option appear and in the short term all cases will include access to short reads data as configured, but only if the mark is set. It would be preferable to display these as disabled/ greyed out  but this option has not been programmed and would require extra work to include.
+</p>
+<p>In <b>zmapWindowMenus.c</b> an anonymous enum of BLIX_ options has been defined and this is used to specify what kind of homology to fetch (DNA, peptide, column or feature(s) and we can add a new open BLIX_SEQ.  Eventually we aim to interface by the user clicking on the desired column but in the short term BLIX_SEQ will be used as the base of a range of values referring to a list of featuresets defined in the ZMap config, which is stored in the view's context map and is accessable to the Window code. (<b>view|window-&gt;context_map.seq_data_featuresets</b>).  When short reads data can be displayed ion ZMap then this can revert to a single value.
+</p>
+<p>This data is copied to a data structure <b>ZMapWindowCallbackCommandAlign</b> by <b>zmapWindowFeatureFuncs.c/zmapWindowCallBlixemOnPos()</b>.  There is another enum <b>ZMapWindowAlignSetType</b> in <b>zmapWindow.h</b> which defines the same options as the BLIX_ stuff but is accessable by other modules.  We map BLIX_ to ZMAPWINDOW_ALIGNCMD_ and at the same time insert the appropriate featureset as chosen from the menu as if the user clicked on a column.
+</p>
+
+<h3>Call Blixem</h3>
+<p>Blixem expect to receive a list of features in a GFF file and for short reads data the features are not known and we give a 'source'  feature instead corresponding to the featureset, which we will pass through as text (the name).
+</p>
+<p>Th interface to the <b>zmapViewCallBlixem()</b> code is via the function<b>doBlixemCmd()</b> which is given a
+<b>ZMapWindowCallbackCommandAlign</b> structure and calls zmapViewCallBlixem() passing as arguments each of the members of that structure. doBlixemCommand() copies these arguments to another data structure <b>blixemDataStruct</b> which is private to zmapViewCallBlixem.c.
 </p>
 
 </fieldset>

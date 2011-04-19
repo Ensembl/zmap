@@ -11,7 +11,7 @@ The main window is normally hidden when ZMap is run and controlled via Otterlace
 </p>
 <p>This is a little clumsy and the following changes are introduced:
 <ul>
-<li> by default the main window will be visible if ZMap is run from the command line. This is defined as no 'win_id' argument is supplied.  If the main widno is hidden then Zmap will exit when no more ZMaps are open.
+<li> by default the main window will be visible if ZMap is run from the command line. This is defined as no 'win_id' argument is supplied.  If the main window is hidden then ZMap will exit when no more ZMaps are open.
 <li> [ZMap] default-sequence  is changed to 'sequence' and a new option 'dataset' is provided.  These items will feed into pipe server scripts in the  same way as start and end coordinates.
 <li> if specified on the command line the sequence name is the last argument and this will be extended to include an optional dataset:
 <pre>
@@ -19,6 +19,8 @@ The main window is normally hidden when ZMap is run and controlled via Otterlace
 </pre>
 Note that we do not require start and end coordinates to be specified as this preserves existing function with ACEDB, but if used with pipe servers only then this is necessary for correct use.
 </ul>
+</p>
+<p> Note that the above implies that Otterlace will also include the dataset name eitehr in the sequence name or as a separate XML field.
 </p>
 <p>See also <a href="Design/notes/standalone.shtml">Standalone Operation</a>
 </p>

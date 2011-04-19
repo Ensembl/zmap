@@ -2,18 +2,313 @@
 
 <fieldset><legend>Orientation</legend>
 <p>
-ZMap implements 'servers' whcih provide access to databases either via an interactive connection (eg ACEDB) or a passive one (eg pipeServers) and a few layers of software have been implemented to allow this. These layers have thoer own priovate data and information is passed bewteen the layers via call back functions.
+ZMap implements 'servers' which provide access to databases either via an interactive connection (eg ACEDB) or a passive one (eg pipeServers) and a few layers of software have been implemented to allow this. These layers have thoer own private data and information is passed bewteen the layers via callback functions which are driven by a number of requests and responses defined in <b>zmapServerProtocolHandler.c</b>.
+At each layer requests and responses are copied from one data structure to another and request codes and responses code are translated to something else.
+</p>
+<p>A further section below deals with <a href="Design/notes/server_layers.shtml#req_coords">passing request coordinates to a server</a>.
+</p>
+<p>Hopefully this little document may help someone else find their way through the code.
+</p>
+</fieldset>
+
+
+
+
+<fieldset><legend>An example: Passing an exit code and STDERR from a pipe to Otterlace </legend>
+
+<p>Here we document what has to be done to add new data from an external script and pass this through to Otterlace, which will take us from the script output itself through the layers of server code and via the view and control code back to Otterlace. Adding parameters from Otterlace or ZMap config or user action requires a similar process but in reverse.</p>
+<p>The present example is due to a request from Anacode to have the entire output of a script's STDERR reported instead of a nominal single line error message. As the existing single line error message has to remain (eg to report other errors) we cannot reuse this and have to implement an extra data item.  We also require the exit code of the script to ensure that data is valid (and complete).
+</p>
+<p>Note that returning STDERR is no more complex than returning an exit code - we simple read all of it and assume we have enough memory
+</p>
+
+<h3>A script reports an error</h3>
+<p>In case of a failure a pipe server script will produce diagnostic information on STDERR, and this may occur before or during normal data output.  If ZMap reads the whole stream without an error it will report success, but if not it will read the pipe script's STDERR.  Previously (if there was an error) the last non blank line of this was reported as the error message and now the requirement is to output all of this on ZMap's STDERR and also send it to Otterlace via XRemote.
+</p>
+<p>In this case we will report an error message such as "script failed".
+</p>
+
+<p>There is a function <b>pipe_server_get_stderr()</b> that takes a PipeServer struct as argument which is called in case of any error.  This can be left as is to read STDERR whenever an explicit error occurs and also called at normal EOF on the pipe script's STDOUT.
+</p>
+<p>So step 1 is to add some code to read STDERR and set an error condition if this is non-null.
+</p>
+
+<h3>Change of spec! ... Interfacing to the ZMap server protocol</h3>
+<p>There's a new requirement to return STDERR always and return the exit code of pipe Server scripts. In case of a non zero exit code the data should be dropped as it may be incomplete, and this could influence annotation.
+</p>
+<p>ZMap interfaces to servers via a series of requests the fetch styles, DNA, and features, and to check the script's exit code and return STDERR it is neatest to add a new step to this protocol.
+</p>
+<h4>Add a new request type and data structure</h4>
+<p>In <b>zmapServerProtocol.h</b> add an enum for the request type and a <b>ZMapServerReqStatus</b> data structure.  Add this to <b>ZMapServerReqUnion</b> (in zmapServerProtocol.h) and  <b>zMapServerRequestCreate()</b> and <b>zMapServerCreateRequestDestroy()</b> (sic) and <b>zMapServerRequestHandler()</b> in <b>zmapServerProtocolHandler.c</b>. and then add a function like <b>getStatus()</b> to call the server function <b>zMapServerGetStatus()</b> (that you have to add) which is itself a wrapper for the <b>server->funcs->get_sequence()</b> call.
+</p>
+<p>Why are there all these layers?  AFAICS it's because each one has it's own data which is out of scope in all the others.  Note that the zmapServer layer holds the request and response data in the server request data structure that differs for each request type and the actual remote server module that processes the request does not have access to this data structure and handles each data item explicitly.
+</p>
+
+<h4>Add more functions to allow servers to implement the interface</h4>
+<p>Now add a server function to the <b>ZMapServerFuncs</b> structure in <b>zmapServerPrototype.h</b> and add a matching function prototype. Note that to follow the existing design it is necessary to have all the data outputs specified as arguments.  Revist the code mentioned above and adjust the calls to match.
+</p>
+<p> Add code for this function to <b>zMapServerGlobalInit()</b> in <b>zmapServer.c</b>.  Note that this implies that all server modules must implement this function.
+</p>
+
+<h4>Add get_status() functions to each of the server modules</h4>
+<p>In <b>pipeServer.c</b> add the get_status function to <b>pipeGetServerFuncs()</b> and write the matching <b>getStatus()</b> function based on the prototype defined above.  For pipe servers take into account that they also implement file servers and need to take into account that there is no exit code or STDERR in this case.
+</p>
+<p>Do the same in <b>acedbServer.c</b> and <b>dasServer.c</b>
+</p>
+
+<h4>Add this call to the View's step list when appropriate</h4>
+<p>This is done by calling <b>zmapViewStepListAddServerReq()</b> in <b>createConnection()</b> when we are running a script that is expected to terminate, which for the moment is all pipe scripts.  As we can only get an exit code from a terminated script this seems fairly safe.  Note that the terminate call itself is for the ZMap thread that runs the script and responds to the various requests above.
+</p>
+<p>Add the request type to <b>dispatchContextRequests()</b> and <b>processDataRequests()</b>.
+</p>
+<p>Adjust the display_after flags to be this new request where appropriate (in <b>createConnection()</b>)
+</p>
+
+<h4>Get the exit code and STDERR and report to Otterlace</h4>
+<p>
+Features are displayed via the <b>getFeatures()</b> in <b>processdataRequests()</b> and we have to do the same stuff for ZMAP_SERVERREQ_FEATURES and ZMAP_SERVERREQ_GETSTATUS depending on whether or not we get the exit code (we don't for ACEDB, it doesn't exit).
+ This is independant of reporting 'features_loaded' to Otterlace, which is something that happens via <b>checkStateConnections()</b>. This function tests the server thread status and picks up on error conditions at any point in the series of requests, and we report status to Otterlace when the thread has completed its step list of requests.
+</p>
+<p>This is done by a callback set by <b>zmapControl.c</b> calling <b>zmapViewInit()</b> and the function we end up in via <b>view_cbs_G->load_data()</b> is <b>dataLoadCB()</b>
+<p>The problem to solve now is to get the exit code and STDERR output which is available from the  <b>getStatus()</b> function to the dataLoadCB function and this requires the use of two more data structures:
+<ul>
+<li><b>ConnectionData</b> static to zmapView.c
+<li><b>LoadFeaturesData</b> defined in zmapView.h
+</ul>
+The ConnectionData struct is held for a Server connectiion and holds various items derived from individual requests. LoadFeaturesStruct appears to have been created specifically to pass info to our callback function.
+We have to copy the information we want from one structure (<b>ZMapServerReqGetStatus</b>) to another <b>ConnectionData</b> to get round scope issues and the from that one to another <b>LoadfeaturesData</b> to get round some more scope issues.
+</b>
+
+<h4>A problem</h4>
+<p>There is a slight problem reporting errors from any particular step in the series of requests in that the exit code and STDERR output are recovered by an explicit request and the existing code aborts making these requests in case of an error.  Existing code did not test the script's return code and only detected failure in the Open call by failing to read a valid GFF header.  Obviously a script could fail at any point and we need to detect failure at each possible step int he request protocol.
+</p>
+<p>The current interface consists of different data structures for each request and repsonse and to provide an error response for each request with ancillary data  would require changing the code for each request in all the server modules and at each layer of the server interface and the calling code in zmapView.
+</p>
+<p>There is another complication in that the code in zmapSlave.c aborts the thread if the external server dies and as it stands we cannot return the exit code or STDERR output by the existing interface.
+</p>
+<p>To fix this we can stop the slave thread from exiting and continue to process other requests. Note that zmapServer.c only makes requests if the previous repsonse was not ZMAP_SERVERRESPONSE_SERVERDIED.  This implies that the pipeServer should set ZMAP_SERVERRESPONSE_SERVERDIED rather than ZMAP_SERVERRESPONSE_REQFAIL.
+</p>
+<p>What would be better would be the have the pipe server check the status of the external script.  This could be done by adding a callback to report the child process exiting and report ZMAP_SERVERRESPONSE_SERVERDIED if that happened.  However,  this would happen asyncronously and the likely result would then be a race condition, with some of the failures operating as at present.
+</p>
+<h5>A practical solution</h5>
+<p>To avoid a) rewriting the server code and b) making a large number of global changes the following will be done:
+<ul>
+<li> the pipe server will report ZMAP_SERVERRESPONSE_SERVERDIED when it fails to retrieve data.  This implies that each external script must provide a valid GFF header as a minimum, and that the pipeServer code must handle a GFF file with no features as valid.  If a GFF header but no features is received then the subsequent normal getStatus request will highlight whether or not there was a failure, and this will be handled in the same way as an incomplete GFF stream with features. A  script that fails with no output will produce an error and STDERR can be passed on.
+<li> actual external script status will be tested explicitly by the getStatus request and not via a call-back or other tests done spontaneously by the Server code.  Note that if a server has died we cannot return ZMAPTHREAD_REPLY_DIED from the getStatus call or else it will be ignored.
+<li> slave Threads will continue running until requested to close. The functions in zmapServer.c will avoid making requests if the external script is reported as dead.
+
+<li> zmapView will ignore ZMAPTHREAD_REPLY_DIED status and continue through the step list of requests, which will all fail with the same error.  This will be controlled by the step_list->on_fail enum.  This requires a mod to <b>zmapViewUtils.c</b> which creates and populates the view's step list data structures.  These functions set the <b>on_fail</b> flag according to the type of request and not according to the different types of server ie assumes that all servers will operate in the same way.
+</ul>
+</p>
+
+<h4>Another problem</h4>
+<p>
+In zmapView.c when replies are received to requests there is a flag that controls whether or not to display the data recieved.  This previously could be set for sequence or features requests, both of which were handled by the same response code in zmapView.c.  They use different data structures but both are accessed as ZMapServerReqGetFeatures. (this is a bug).
+</p>
+<p>The flag 'display_after' is misnamed as it controls storing the returned data (merging into the View's context) and then displaying it.  If we flag the getStatus request as the one to display after then by then we have lost the data that was returned by getFeatures.
+</p>
+<p>We could query the exit status fo the script before requesting features but this could lead to a deadlock where the script is de-scheduled due to waiting to write to a pipe that is not being read, and we have to store the features data in the ConnectionData struct for use later.
+</p>
+
+<h4>Another problem</h5>
+<p>Due to a previous implementation where the View's step list data structures were used to ensure that all active connections did each request in step and all finished at the same time attempts to add a getStatus call by using the function <b>zmapViewStepListAddServerReq()</b> failed as this requires <b>      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD)</b> to have been called first. This is hidden away in <b>zmapViewConnectionStepListCreate()</b>.
+</p>
+<p>This implies that the current implemenation prevents re-ordering of requests for different types of server. Note: some of the requests are required to be in the given order as some require data retrieved by a previous request.  Some of this may be passed in arguments or perhaps held secretly by the server module.
+</p>
+
+<h4>Another problem</h4>
+<a name="hang_on_fail"></a>
+<p>If a request succeeds then the code in zmapView.c calls <b>zmapViewStepListStepProcessRequest()</b> which has the side effect of marking the current step as finished.  Not doing this causes the step list to stop where it is as it is marked as waiting for a response.  This implies that although the action REQUEST_ONFAIL_CONTINUE had been programmed it has never been run.
+</p>
+
+<h4>More confusion</h4>
+<p><b>zmapServer.c</b> tries to preserve SERVERDIED status by remembering if that response was received in the past from that server.  Unfortunately some of the functions do not implement this (eg <b>getStyles()</b> <b>stylesHaveModes()</b> and loose this information: if a server dies in the Open call and we then carry on through the step list then calls such as <b>getSequence()</b> and <b>getFeatures()</b> would not return ZMAPTHREAD_RETURNCODE_SERVERDIED status despite code suggesting otherwise.  (in fact they would hopefully return ZMAPTHREAD_RETURNCODE_REQFAIL status instead as programmed and this would be translated into ZMAPTRHEAD_REPLY_REQFAIL by zmapServerprotocolHandler.c)
+</p>
+<p><b>acedbServer.c</b> does return a spontaneous ZMAPTHREAD_RETURNCODE_SERVERDIED code for both getSequence and getFeatures(), but note that <b>dasServer.c</b> does not, and besides zmapServerProtocolHandler translates this into ZMAPTRHEAD_REPLY_REQFAIL regardless.
+</p>
+
+<h5>It's even more confusing than that</h5>
+<p>The return code ZMAPTHREAD_RETURNCODE_REQFAIL gets turned into ZMAPTHREAD_REPLY_REQERROR by <b>zmapSlave.c</b>. At the level below that <b>zmapServerProtocolHandler.c</b> turns the return code into ZMAPTHREAD_RETURNCODE_REQFAIL if it's not ZMAPTHREAD_RETURNCODE_OK or ZMAPTHREAD_RETURNCODE_UNSUPPORTED, although this varies between functions.
+</p>
+<p>The solution is to make the server default to the last response, except for the getStatus call. Note that exisitng code that handles ZMAPTRHEAD_REPLY_REQERROR causes the step list to hang as mentioned <a href="Design/notes/server_layers.shtml#hang_on_fail">above</a> and needs fixing.
+</p>
+<h6>The main problem is that return codes are ignored and replaced by something else</h6>
+<p><b>zmapServerProtocolHandler.c</b> appears to have been coded to make up its own return codes if it does not get an OK status.  This prevents any attempt so pass return codes from the actual server thread upsteam futile, and it is necessary to convert these codes explicitly.
+</p>
+<p>The root cause of this is attempting to represent more than different kind of information with one value: script status, thread status, request response status all combined into one value used in zmapView.c and during transit through these layers they get mangled.
+</p>
+
+<h4>Another obscurity</h4>
+<p>Some of the requests are handled directly by zmapServerProtcolHandler.c eg GET_STYLES if a styles file is given.  This does not go through the server code and a SERVERDIED status cannot be returned from this.
+</p>
+
+<h4>Another obscure gotcha</h4>
+<p>In zmapView.c <b>checkStateConnections()</b> polls the server thread step lists and on a status change (detected via the ZMAPTHREAD_REPLY_codes) will call zmapViewStepListStepProcessRequest() for ZMAPTHREAD_REPLAY_GOTDATA status, which is set if zmapServerProtcolhandler returns ZMAPTHREAD_RETURNCODE_OK.
+This only sets the step list state to finished if the process function returns success and if not this would hang.  <i>I didn't fix this one</i>.
+</p>
+
+<h4>An obscure old bug</h4>
+<p>Returning response codes that correspond to actual failure states exposes an obscure bug in <b>zMapServerProtocolHandler.c</b> which contains the following code which has not enough brackets:
+<pre>
+    case ZMAP_SERVERREQ_NEWCONTEXT:
+      {
+        ZMapServerReqNewContext context = (ZMapServerReqNewContext)request_in ;
+
+      /* Create a sequence context from the sequence and start/end data. */
+      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+          &amp;&amp; (request->response = zMapServerSetContext(server, context->context)
+            != ZMAP_SERVERRESPONSE_OK))
+        {
+</pre>
+which sets the response code to 1 which is ZMAPSERVER_RESPONSE_BARDREQ, which then causes the server thread to abort.  BADREQ is never set in the source code so it was diffcult to find.
+</p>
+
+
+
+
+<h3>A personal view</h3>
+<p>Working on this code I cannot escape from the feeling that people are laughing at me. It's also immensely frustrating that such a simple task can be so complex.
+</p>
+
+
+
+<h3>How many files?</h3>
+<p> I think that comes to 14:
+<pre>
+include/ZMap/zmapServerProtocol.h
+zmapServer/zmapServer.c
+zmapServer/zmapServer.h
+zmapServer/zmapServerProtocolHandler.c
+zmapServer/zmapServerPrototype.h
+zmapServer/acedb/acedbServer.c
+zmapServer/das/dasServer.c
+zmapServer/pipe/pipeServer.c
+zmapServer/pipe/pipeServer_P.h
+zmapView/zmapView.c
+zmapControl/zmapControl.c
+include/Zmap/zmapView.h
+zmapView/zmapViewUtils.c
+zmapView/zmapView_P.h
+</pre>
+</p>
+
+<h3>Layering: a summary</h3>
+<p>Given a request from otterlace to load data we visit the following modules:
+<ul>
+<li> zmapView - process the request, set up a server connection and operate it. This creates the server thread.
+<li> zmapThread - creates a thread and runs the slave main loop
+<li> zmapServer - implements layers of generic server and specific server
+<li> pipeServer - forks and runs the specified script and reads requested data
+<li> zmapControl - reports script + request status
+</ul>
+<b>zmapView</b> runs in the main thread and interfaces to the thread code via the slave main loop (<b>zmapSlave.c</b>) which calls <b>zmapServerProtocolHandler.c</b> which calls <b>zmapServer.c</b> which calls eg <b>pipeServer.c</b>.
+</p>
+
+
+<h3>Reporting script failure: a series of status codes</h3>
+<p>Due to the chosen implementation of a number of layers that communicate though one level only there are a number of different status codes that get translated as the progress from failure detection to reporting.
+In the case of the Open Connection request these are:
+<ul>
+<li> pipeServer.c reports <b>ZMAP_SERVERRESPONSE_REQFAIL</b>
+<li> zmapServer.c sets the status code to <b>ZMAP_SERVERRESPONSE_REQFAIL</b> if it is not <b>ZMAP_SERVERRESPONSE_OK</b>
+<li> zmapServerProtocolHandler.c set the status code to <b>ZMAPTHREAD_RETURNCODE_SERVERDIED</b> of it is not <b>ZMAP_SERVERRESPONSE_OK</b>
+<li> zmapSlave.c returns <b>ZMAPTHREAD_REPLY_DIED</b>
+<li> zmapView.c sets the thread status to <b>FALSE</b>
+</ul>
+Note that this list of translations only applies to the Open Connection request for a pipe server; other requests are likely to operate in a similar way but some differences are expected.  <b>zmapServerProtocolHandler.c</b> controls the use of <b>ZMAPTHREAD_RETURNCODE_SERVERDIED</b> and this can only be set on Create or Open Connection, which is odd as an interactive connection such as ACEDB could die at any time.
+</p>
+
+
+
+
+<h3>Reporting status to Otterlace</h3>
+<p>
+In the  features_loaded XRemote message that current status code refers to the thread status not the script exit code.<br />
+This is set to 1 for 'thread complete OK' and 0 otherwise.
+<br />
+There is a message  that gives helpful info on a good day
+<br />
+These will remain as is.
+</p>
+
+<p>
+Two extra <things> will be added:
+
+<ul>
+<li> &lt;exit_code value="code" /&gt;>
+<li> &lt;stderr value="war and peace" /&gt;
+</ul>
+
+
+"code" consists of the least significant 8 bits of the exit code from the script, or 0x100 if the script had an abnormal exit.
+If it is zero then we assume that the script completed OK.
+</p>
+
+Example 1 (success, script produces no STDERR):
+
+<pre>
+&lt;zmap&gt; &lt;request action="features_loaded"&gt;&lt;client xwid=0x12345678\" /&gt;
+            &lt;featureset names="EST_Gibbon"  /&gt;
+            &lt;start value="123456" /&gt;
+            &lt;end value="234567" /&gt;
+            &lt;status value="1" message="OK" /&gt;
+            &lt;exit_code value="0" /&gt;
+            &lt;stderr value=""&gt;
+            &lt;/request&gt;&lt;/zmap&gt;
+</pre>
+
+Example 2 (thread fails due to empty GFF, script has debug output):
+
+<pre>
+&lt;zmap&gt; &lt;request action="features_loaded"&gt;&lt;client xwid=0x12345678\" /&gt;
+            &lt;featureset names="EST_Gibbon"  /&gt;
+            &lt;start value="123456" /&gt;
+            &lt;end value="234567" /&gt;
+            &lt;status value="0" message="GFF line 5 - Mandatory fields missing in:  /&gt;
+            &lt;exit_code value="0" /&gt;
+            &lt;stderr value="here is my story"&gt;
+            &lt;/request&gt;&lt;/zmap&gt;
+</pre>
+Example 3 (thread fails due to empty GFF, script has debug output):
+
+<pre>
+&lt;zmap&gt; &lt;request action="features_loaded"&gt;&lt;client xwid=0x12345678\" /&gt;
+            &lt;featureset names="EST_Gibbon"  /&gt;
+            &lt;start value="123456" /&gt;
+            &lt;end value="234567" /&gt;
+            &lt;status value="0" message="pipe script reports failure"  /&gt;
+            &lt;exit_code value="3" /&gt;
+            &lt;stderr value="here is my story"&gt;
+            &lt;/request&gt;&lt;/zmap&gt;
+</pre>
 </p>
 
 </fieldset>
 
+<a name="req_coords"></a>
+<fieldset> <legend>Passing sequence coordinates to a server</legend>
+<h3>Why document this?</h3>
+<p>This should be trivial but experience shows that it involves a lot of code not immediately obvious.  Other code modifications could require following the same trail.
+</p>
+<p>Here we just write up the process of adding 'dataset' to request logic, this is a parameter that should be specified globally and passed to pipe server scripts, and is also needed for Blixem. We change the original interface that involves a  lot of individual arguments passed to functions and use a data structure whcih will allow similar changes with much less work.
+</p>
 
+<h3>Where to start?</h3>
+<p>There are a few interfaces to feature request code (eg via XRemote, from the command line, from the ZMap config file, from the columns dialog) and to catch then all we need to start on the common path and work outwards.  Starting at random in zmapAppconnect.c with the function
+<pre>
+void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end)
+</pre>
+we need to change this to use:
+<pre>
+typedef struct
+{
+  char *dataset ;       /* eg human */
+  char *sequence ;      /* eg chr6-18 */
+  int start, end ;      /* chromosoem coordinates */
+} ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
-<fieldset><legend></legend>
-
-</fieldset>
-
-
-<fieldset><legend>An example: Passing an STDERR from a pipe to Otterlace </legend>
+</pre>
+and then follow through with the functions that call this and get called.
+</p>
 
 </fieldset>
