@@ -4,7 +4,7 @@
 <p>Overwhelmingly ZMap is used in conjunction with Otterlace and Otterlace provides configuration to define data sources etc and also some request data via the XRemote protocol. Data sources are specifed with a lengthy URL whcih include options for each source and some of these are common eg start and end coordinates, which are supplied by ZMap, and must be for functions such as 'Request from Mark'.
 </p>
 <p>
-There are a few other arguments common to all scripts which relate to the sequence and for consistency, and to allow easy configuration for standalone operation, it would be good to define these in another stanza:
+There are a few other arguments common to all scripts which relate to the sequence and for consistency, and to allow easy configuration for standalone operation, it would be good to define these in [ZMap] or another stanza:
 <table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td>sequence </td> <td>The name of the sequence eg 'chr6-18'</td> </tr>
 <tr> <td>dataset </td> <td>eg 'human' </td> </tr>
@@ -12,7 +12,7 @@ There are a few other arguments common to all scripts which relate to the sequen
 Note that the sequence name appears in pipe server script arguments as both 'gff_seqname' and 'type'.
 </p>
 
-<p>The above handles a single sequence, whcih is how ZMap is normally used.  Options for multiple alignments may be added in future via the [align] stanza, and the reference sequence will be as specified above.
+<p>The above handles a single sequence, which is how ZMap is normally used.  Options for multiple alignments may be added in future via the [align] stanza, and the reference sequence will be as specified above.
 </p>
 
 <p>As Blixem also has to call a script to request short reads data, these arguments are also relevant <a href="Design/notes/BAM.shtml">here</a>
