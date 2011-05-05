@@ -75,6 +75,7 @@ All other options relating to short-reads data will be passed in the GFF file an
 
 <h3>[Blixem] stanza - new options</h3>
 <p>
+
 <table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td> SeqData</td> <td>A list of columns or featuresets containing SR data<br />
 As for DNA and protein featuresets we try to match both columns<br /> and featuresets to allow simple configuration.<br /> (Note: each column/featureset has options for short names and more lengthy descriptions). <br />
@@ -82,9 +83,17 @@ Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comment
  </td> </tr>
 <tr> <td> </td> <td> </td> </tr>
 </table>
+
 ZMap will hold this list in the View's context_map (accessable to the Window code) and it will be used in the short term to construct RC menus for Blixem.
 </p>
 
+<p>The [ZMap] stanza will include:
+
+<table border="1"  cellpadding="3" cellspacing="3">
+<tr> <td> dataset</td> <td> eg 'human' </td> </tr>
+<tr> <td> sequence</td> <td> eg 'chr14-10'</td> </tr>
+</table>
+</p>
 </fieldset>
 
 
