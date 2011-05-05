@@ -288,12 +288,12 @@ Example 3 (thread fails due to empty GFF, script has debug output):
 <a name="req_coords"></a>
 <fieldset> <legend>Passing sequence coordinates to a server</legend>
 <h3>Why document this?</h3>
-<p>This should be trivial but experience shows that it involves a lot of code not immediately obvious.  Other code modifications could require following the same trail, and looking at the command structure rigourously can highlight <a href="Design/notes.server_layers.shtml#loose_ends">areas of code that work for present use only</a>.
+<p>This should be trivial but experience shows that it involves a lot of code not immediately obvious.  Other code modifications could require following the same trail, and looking at the command structure rigourously can highlight <a href="Design/notes/server_layers.shtml#loose_ends">areas of code that work for present use only</a>.
 Compilation did in fact show several paths through the code that were missed.
 </p>
 <p>Why is the trail not obvious?  it's partly due to the naming conventions not being followed and in fact are sometimes blatantly confusing.
 </p>
-<p>Here we just write up the process of adding 'dataset' to request logic, this is a parameter that should be specified globally and passed to pipe server scripts, and is also needed for Blixem. We change the original interface that involves a  lot of individual arguments passed to functions and use a data structure whcih will allow similar changes with much less work.
+<p>Here we just write up the process of adding 'dataset' to request logic, this is a parameter that should be specified globally and passed to pipe server scripts, and is also needed for Blixem. We change the original interface that involves a  lot of individual arguments passed to functions and use a data structure which will allow similar changes with much less work.
 </p>
 
 <h3>Where to start?</h3>
@@ -311,8 +311,11 @@ typedef struct
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
 </pre>
+
 and then follow through with the functions that call this and get called.
+Note that start and end may be diffferent from startup configuration.
 </p>
+
 
 <p>This gives us a paths through the code like these:
 
@@ -321,6 +324,7 @@ and then follow through with the functions that call this and get called.
 <div class="left">
 <table border="1"  cellpadding="3" cellspacing="3">
 <caption>Otterlace starts up ZMap</caption>
+<tr> <td>zmapAppRemote.c </td> <td>application_execute_command() </td> </tr>
 <tr> <td>zmapAppremote.c </td> <td>createZMap()</td> <td>See note 3</td> </tr>
 <tr> <td>zmapAppconnect.c </td> <td>zmapAppCreateZMap() </td> </tr>
 </table>
@@ -328,17 +332,18 @@ and then follow through with the functions that call this and get called.
 
 <div class="left">
 <table border="1"  cellpadding="3" cellspacing="3">
-<caption>Otterlace starts up new ZMap</caption>
-<tr> <td>zmapAppremote.c </td> <td>insertView()</td> <td>See note 5</td> </tr>
+<caption>Otterlace opens a new ZMap view</caption>
+<tr> <td>zmapControlRemoteReceive.c </td> <td>control_execute_command()</td> <tr>
+<tr> <td>zmapControlRemoteReceive.c </td> <td>insertView()</td> <td>See note 5</td> </tr>
 <tr> <td>zmapControl.c </td> <td>zMapAddView() </td> </tr>
 </table>
 </div>
 
-
 <div class="left">
 <table border="1"  cellpadding="3" cellspacing="3">
 <caption>ZMap starts from the command line</caption>
-<tr> <td>zmapAppwindow.c </td> <td>createThreadCB() </td> </tr>
+<tr> <td>zmapAppMain.c </td> <td>main() </td> </tr>
+<tr> <td>zmapAppwindow.c </td> <td>zmapMainMakeAppWindow() </td> </tr>
 <tr> <td>zmapAppconnect.c </td> <td>zmapAppCreateZMap() </td> </tr>
 </table>
 </div>
@@ -346,12 +351,10 @@ and then follow through with the functions that call this and get called.
 <div>
 <table border="1"  cellpadding="3" cellspacing="3">
 <caption>The user clicks create in then main window</caption>
-<tr> <td>zmapAppwindow.c </td> <td>zmapMainMakeAppWindow() </td> </tr>
+<tr> <td>zmapAppConnect.c </td> <td>createThreadCB() </td> </tr>
 <tr> <td>zmapAppconnect.c </td> <td>zmapAppCreateZMap() </td> </tr>
 </table>
-<p>
-Note that start and end may be diffferent from startup configuration.
-</p>
+<br clear=left />
 </div>
 
 <h4>ZMap creates a view window and stores sequence info for later use</h4>
@@ -359,14 +362,17 @@ Note that start and end may be diffferent from startup configuration.
 <div>
 <table border="1"  cellpadding="3" cellspacing="3">
 <caption></caption>
-<tr> <td>zmapAppconnect.c </td> <td>zmapAppCreateZMap() </td> </tr>
-<tr> <td>zmapmanager.c </td> <td>zMapManagerAdd() </td> </tr>
+<tr> <td>zmapAppconnect.c </td> <td>zmapAppCreateZMap() </td> <td>creates the main (manager) window</td> </tr>
+<tr> <td>zmapManager.c </td> <td>zMapManagerAdd() </td> </tr>
+</table>
+<h5>We drop through here or land from insertView() above</h5>
+<table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td>zmapControl.c </td> <td>zMapAddView() </td> </tr>
 <tr> <td>zmapControl.c </td> <td> zmapControlAddView()</td> </tr>
 <tr> <td>zmapControlViews.c </td> <td>zmapControlNewWindow() </td> </tr>
 <tr> <td>zmapView.c </td> <td>zMapViewCreate() </td> </tr>
 <tr> <td>zmapView.c </td> <td>createZMapView() </td> <td>See note 1<br /> See note 2</tr>
-<tr> <td>zmapView.c </td> <td>addWindow() </td> </tr>
+<tr> <td>zmapView.c </td> <td>addWindow() </td>  <td>creates the ZMap window that the users see </td></tr>
 <tr> <td>zmapWindow.c </td> <td>zMapWindowCreate() </td> </tr>
 <tr> <td>zmapWindow.c </td> <td>myWindowCreate() </td> <td>See Note 2</td> </tr>
 </table>
@@ -375,12 +381,10 @@ Note that start and end may be diffferent from startup configuration.
 <div class="left">
 <table border="1"  cellpadding="3" cellspacing="3">
 <caption>Requesting data from the stored sequence info - automatically requests initial data</caption>
-<tr> <td> </td> <td> </td> </tr>
 <tr> <td>zmapManager.c </td> <td>zMapManagerAdd() </td> </tr>
 <tr> <td>zmapControl.c </td> <td>zMapConnectView() </td> </tr>
 <tr> <td>zmapView.c </td> <td>zMapViewConnect() </td> </tr>
 <tr> <td>zmapView.c </td> <td>zmapViewLoadFeatures() </td> </tr>
-<tr> <td> </td> <td> </td> </tr>
 </table>
 </div>
 
@@ -419,8 +423,15 @@ Note that start and end may be diffferent from startup configuration.
 <p>Of relevance here is the dispatchContextRequests/ZMAP_SERVERREQ_OPEN which sets up start and end coordinates for the server, and this is where we have to add sequence name and dataset from the view->view_sequence struct.
 Then the request is process via the zmapThreads interface and there is a sequence of data structures that have data copied between them in a similar process to the one described above for returning status codes.
 </p>
-<h5>Further work! Do not ignore!</h5>
-<p>It would be useful to perform a similar process  throguh the threads and server code when adding dataset.
+<h5>Getting the sequence info to the pipe servers</h5>
+<p>The ZMapFeatureSequenceMap contains the sequence name and dataset and can be extende to conatin further information if needed, so the best plan is to pass that struct through to the pipe servers.  Note that it contains start and end coordinates of the sequence in question but we can request data for a part of the sequence and have to pass start and end separately (as implemented previously).
+</p>
+<p>The first step is to add a ZMapFeatureSequenceMap to the <b>ConnectionData</b> struct, which is private to <b>zmapView.c</b>.  This is used by zmapView.c to hold information set up by <b>createConnection()</b> and various requests in the step list so that it can be passed to requests by <b>dispatchContextRequest()</b>.
+Note that each request has a private data structure containing the information for that request only and that we could achieve the same reult more simply by making the ConnectionData struct accessable to the server code.
+</p>
+<p>Step 2 is to add a ZMapFeatureSequenceMap to the <b>ZMapServerReqOpen</b> struct, which is defined in <b>zmapServerProtocol.h</b> and to copy from the ConnectionData struct in dispatchContextRequest().
+</p>
+<p>Step 3 is in <b>zmapServerProtocolHandler.c/zMapServerRequestHandler()</b> where we take the data in the ZMapServerReqOpen struct and pass the field individually to <b>zMapServerOpenConnection()</b>.  Bizzarely, zmapServer.c includes zmapServer_P.h which does not include zmapServerProtocol.h.  This means that to add this extra parameter we have to change <b>zmapServer.c</b> and each of the server modules.  To avoid having to do this again we can include </b>zmapServerProtocol.h</b> in the server module and use the data structures defined there.  It's a public header. Ideally we could remove the request specific data structures and adapt the view's private ConnectionData structure (and then be able to add or change parameters easily) but that would involve changing a lot of code.
 </p>
 
 <h4>Note 1 - lists of sequences held by the view</h4>
@@ -446,7 +457,7 @@ This is called indirectly via window_cbs_G->command().  Note that zmapWindowFetc
 </p>
 
 <h4>Note 5 - XRemote interface via control (main) window</h4>
-<p>This corresponds to the user main window 'create' button ???? This is likely to change when XRemote is updated.  dataset is left undefined  as configuration is not accessable here.
+<p>This corresponds to the user main window 'create' button ???? This is likely to change when XRemote is updated.  dataset is defined from the app_context data now included in the ZMapStruct.
 </p>
 
 <a name="loose_ends"></a>
@@ -458,11 +469,18 @@ This is called indirectly via window_cbs_G->command().  Note that zmapWindowFetc
  </td></tr>
 <tr> <td>zmapAppconnect.c </td> <td>createThreadCB()</td> <td>dataset needs to be defined via a widget</td> </tr>
 <tr> <td>zmapAppremote.c </td> <td>createZMap()</td> <td>dataset needs to be defined via XML</td> </tr>
-<tr> <td>zmapAppremote.c </td> <td>insertView()</td> <td>See note 5 <b>possible bug</b></td> </tr>
+<tr> <td>zmapAppremote.c </td> <td>insertView()</td> <td>See note 5</td> </tr>
 <tr> <td>zmapControlWindowMenubar.c</td> <td>newCB()</td> <td>As for note 5: incomplete configuration</b></td> </tr>
-
-
 </table>
+
+<h4>A problem</h4>
+<p>When started from otterlace ZMap does not read its configuration in a way that results in dataset or sequence being accessable. What was actually happening was that teh zmap view was created vvia the new_view XRemote command that didi not have access to the configuration data. This is a faairly obscure area to understand, refer to <a href="Design/notes/app_callbacks.shtml">Application Callbacks</a> for a summary.
+</p>
+<h4>Another problem</h4>
+<p>ZMap should create a view window if the "win-id" arg is not given. The function that checks this did not work, instead reported that an argument was set if it was coded as a possible arg rather than given on the command line.
+</p>
+
+
 </fieldset>
 
 
