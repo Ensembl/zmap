@@ -1,0 +1,403 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 6 May 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.120 </h1>
+
+<p>Last Release Date: 07/04/2011</p>
+
+
+<h3>Current Release Date:  6 May 2011 at 13h.47m.51s</h3>
+
+
+<p>This report covers 2011-04-07 to 2011-05-06</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=207617">207617</a>, Resolved (Tue Apr 19 16:56:17 2011)
+<p>ZMap should send the complete stderr of pipe servers back to its clients</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211591">211591</a>, Resolved (Wed Apr 13 12:01:39 2011)
+<p>loss of marked region following reverse complementing in Zmap</p>
+<p>gm5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211614">211614</a>, Resolved (Fri Apr 08 12:50:43 2011)
+<p>copy and pasting in the DNA search window in Zmap.</p>
+<p>mpk@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_04_07.08_58_02.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.29259/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtilsGUI.h, zmapUtils/zmapGUIutils.c: tidy
+	  up cursor routines, add a no-entry cursor.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtils.h, zmapUtils/Makefile.am,
+	  zmapUtils/zmapRadixSort.c: zmapRadixSort now comiles but is not
+	  called so is safe to include
+
+
+  </li>
+  <li> src/: include/ZMap/zmapUtils.h, zmapUtils/zmapRadixSort.c,
+	  zmapView/zmapViewFeatureMask.c,
+	  zmapWindow/items/zmapWindowContainerSummarise.c: saved debugged
+	  radix sort code - iffed out so quite safe
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: add macro for window-only busy
+	  cursor calls.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowColBump.c:
+	  replace busy cursor calls with internal macro for busy cursor.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDraw.c: fix bug causing separator
+	  drawing to crash and fix busy cursor macro calls.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: add to allow separate busy cursors
+	  for non-windows and windows functions, try to make cursor go/off
+	  better.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: small adjustment to busy cursor
+	  going off.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapString.h, zmapUtils/zmapString.c: redo
+	  remove spaces func so it also removes control chars.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: change remove spaces call to
+	  remove spaces + control chars call, allows cut/paste of FASTA dna
+	  directly into dna search window.
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureContext.c,
+	  zmapView/zmapViewRemoteReceive.c, zmapWindow/zmapWindow.c: fixed
+	  lower cased features_loaded message + removed load cols debug
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: turn off debug output.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark_P.h: add comment to header.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeatureFuncs.c, zmapWindow_P.h: add
+	  blixem call func that gives position to center on.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: fix bug in offset position for
+	  sequence not starting at one.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: add code to call blixem with
+	  mouse position when called from column background.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: remove erroneous leading tab from
+	  own_sequence search string.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: fix missing newline in print.
+
+
+  </li>
+  <li> src/zmapUtils/zmapCoords.c: add func. to map coords to a given
+	  base offset.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2Dumper.c: fix start_not_found nomenclature.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix buglets in start_not_found &
+	  end_not_found processing.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: sequence or peptide are now
+	  just mode SEQUENCE.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: use proper call to test is
+	  feature is peptide.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNAChoose.c: fix bugs in coords caused
+	  by broken handling of sequences not starting at 1.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureShow.c: switch to single sequence
+	  mode and fix start nto found name.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowStats.c: fix single sequence mode.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: fix bug where we don't
+	  unhighlight correctly for reverse stranded for dna/3 frame.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: switch to single sequence
+	  mode and fix start not found name.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: move to single sequence
+	  mode, use func to decide if sequence is dna or peptide.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: add support to colour displayed
+	  text.
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtils.h: add function to map coords to
+	  arbitrary offset.
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsGUI.h: add support for colouring text.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureUtils.c: move to single sequence mode,
+	  fix start not found name, fix bugs in tranlation code.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureData.c: move to single sequence mode.
+	  Fix coding/non-coding terms for exons.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureDNA.c: move to single sequence mode.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTranscript.c: add some transcript
+	  feature functions, e.g. annotated exons.
+
+
+  </li>
+  <li> src/zmapFeature/Makefile.am: add zmapFeatureTranscript.c to
+	  build.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: move to single
+	  sequence mode.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.c: remove detailed
+	  exon stuff, put in zmapFeature, add calls to test sequence type.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem.c: add text selection
+	  colour.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: move to single sequence mode.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemText.c: remove exon stuff to
+	  zmapFeature, fix bugs in 'show translation in zmap' code.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: dna choose now returns chosen
+	  sequence coords.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: add code to colour transcript
+	  text in separate window.
+
+
+  </li>
+  <li> src/zmapFeature/: zmapStyle.c, zmapFeatureTypes.c: add code to
+	  support colouring exon and translation text to show coding, frame
+	  etc.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyleUtils.c: move to single sequence mode.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTranscript.c: add some debug code.
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c, include/ZMap/zmapStyle.h:
+	  add code to support colouring exon and translation text to show
+	  coding, frame etc.
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add annotated exon struct, fix
+	  start_not_found name, add new sequence and transcript funcs.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature.c: add funcs to test type of
+	  sequence, fix start_not_found name.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature3FrameTranslation.c: add funcs to test
+	  type of sequence.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureContext.c: fix bug in getting dna,
+	  tidy up unused code.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: missed removal of fields in
+	  internal struct.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTranscript.c: remove unused variables,
+	  fix debug print routine.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w7/smapconvert.c: fix bug in start_not_found setting, fix various
+	  trivial compile errors.
+
+
+  </li>
+  <li> w3rdparty/: include-config, libs-config: remove setting of
+	  PKG_CONFIG_PATH, produces errors in package finding.
+
+
+  </li>
+  <li> wmake/: LINUX_64_BLXNEW_DEF, LINUX_64_DEF: fix up path to gtk
+	  install in /software.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Fixed a bug where start coord was not being bounds checked
+</li>
+
+<li>
+Incremented version to 4.1.16
+</li>
+
+<li>
+Fixed a regression where the initial display range was being overwritten
+</li>
+
+<li>
+Fixed a regression where Blixem was not centering on the start coord
+</li>
+
+<li>
+Fixed a regression where Blixem was not using the start coord correctly
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
