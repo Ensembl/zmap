@@ -21,31 +21,30 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions that operate on the feature context such as
  *              for reverse complementing.
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 31 11:50 2011 (edgrif)
+ * Last edited: May  6 13:15 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.60 2011-04-08 14:00:42 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.61 2011-05-06 12:17:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+
+
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapFeature_P.h>
+
+
 
 /* This isn't ideal, but there is code calling the getDNA functions
  * below, not checking return value... */
@@ -93,14 +92,10 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
 static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
 static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
-static void coordToOneBased(int *start_inout, int *end_inout,int block_start) ;
 
 static gboolean executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
 static void postExecuteProcess(ContextExecute execute_data);
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean nextIsQuoted(char **text) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void copyQuarkCB(gpointer data, gpointer user_data) ;
 
 static void feature_context_execute_full(ZMapFeatureAny feature_any,
@@ -279,6 +274,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
     {
       char *tmp = NULL ;
       GArray *exons ;
+      gboolean revcomp = FALSE ;
       ZMapFeatureBlock block = NULL ;
       int start = 0, end = 0 ;
 
@@ -286,19 +282,16 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
       end = transcript->x2 ;
       exons = transcript->feature.transcript.exons ;
 
-      if ((tmp = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) && coordsInBlock(block, &start, &end))
+      if (transcript->strand == ZMAPSTRAND_REVERSE)
+	revcomp = TRUE ;
+
+      if ((tmp = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) && coordsInBlock(block, &start, &end)
+	  && (dna = getFeatureBlockDNA((ZMapFeatureAny)transcript, start, end, revcomp)))
 	{
-	  gboolean revcomp = FALSE;
-
-	  if (transcript->strand == ZMAPSTRAND_REVERSE)
-	    revcomp = TRUE;
-
 	  if (!spliced || !exons)
 	    {
 	      int i, offset, length;
 	      gboolean upcase_exons = TRUE;
-
-	      dna = getDNA(tmp, start, end, revcomp) ;
 
 	      /* Paint the exons in uppercase. */
 	      if (upcase_exons)
@@ -785,9 +778,9 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
   if (fetchBlockDNAPtr(feature_any, &block) && coordsInBlock(block, &start, &end))
     {
       /* Transform block coords to 1-based for fetching sequence. */
-      coordToOneBased(&start, &end, block->block_to_sequence.block.x1) ;
+      zMapFeature2BlockCoords(block, &start, &end) ;
+
       dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
-//zMapLogWarning("get DNA %d (%d)",start,block->block_to_sequence.block.x1+start-1);
     }
 
   return dna ;
@@ -836,21 +829,6 @@ static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end
 
   return result ;
 }
-
-static void coordToOneBased(int *start_inout, int *end_inout,int block_start)
-{
-  *end_inout -= (block_start - 1) ;
-
-  *start_inout -= (block_start - 1) ;
-
-  return ;
-}
-
-
-
-
-
-
 
 
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
@@ -974,7 +952,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
     feature->strand = ZMAPSTRAND_FORWARD ;
 
 
-  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  if (zMapFeatureSequenceIsPeptide(feature))
     {
       /* Original & Unique IDs need redoing as they include the frame which probably change on revcomp. */
       ZMapFrame curr_frame ;
@@ -991,7 +969,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
       feature->original_id = feature->unique_id = feature_id ;
     }
-  else if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  else if (zMapFeatureSequenceIsDNA(feature))
     {
       /* Unique ID needs redoing as it includes the coords which change on revcomp. */
       ZMapFeatureBlock block ;
@@ -1251,40 +1229,6 @@ gboolean zMapFeatureContextGetMasterAlignSpan(ZMapFeatureContext context,int *st
 
       return(res);
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Probably not needed with the change to the ini style config file. */
-
-/* Look through string to see if next non-space char is a quote mark, if it is return TRUE
- * and set *text to point to the quote mark, otherwise return FALSE and leave *text unchanged. */
-static gboolean nextIsQuoted(char **text)
-{
-  gboolean quoted = FALSE ;
-  char *text_ptr = *text ;
-
-  while (*text_ptr)
-    {
-      if (!(g_ascii_isspace(*text_ptr)))
-	{
-	  if (*text_ptr == '"')
-	    {
-	      quoted = TRUE ;
-	      *text = text_ptr ;
-	    }
-	  break ;
-	}
-
-      text_ptr++ ;
-    }
-
-  return quoted ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 
 static void feature_context_execute_full(ZMapFeatureAny feature_any,
