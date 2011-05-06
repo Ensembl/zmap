@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Dec 15 13:57 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.16 2010-12-20 12:19:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.17 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_ITEM_H
@@ -95,7 +95,7 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
 gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item);
 
-void zMapWindowCanvasItemGetBounds(ZMapWindowCanvasItem canvas_item) ;
+
 
 void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item);
 
@@ -128,10 +128,6 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item,
 					    ZMapStyleColourType colour_type,
 					    GdkColor *default_fill_colour,
                                   GdkColor *border_colour) ;
-void zMapWindowCanvasItemUnmark(ZMapWindowCanvasItem canvas_item);
-void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
-			      GdkColor            *colour,
-			      GdkBitmap           *bitmap);
 
 void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
 

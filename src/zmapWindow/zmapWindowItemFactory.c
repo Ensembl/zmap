@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May  6 12:16 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.97 2011-05-06 11:17:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.98 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1017,7 +1017,9 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	}
       else
 	{
-	  new_canvas_item = ZMAP_CANVAS_ITEM(feature_item);
+        zMapAssertNotReached(); // run_data->canvasItem is always null: see both calls to this function
+
+        new_canvas_item = ZMAP_CANVAS_ITEM(feature_item);
 	  zMapWindowCanvasItemClear(new_canvas_item);
 	}
 
@@ -1068,6 +1070,8 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	    }
 	  else
 	    {
+            zMapAssertNotReached(); // run_data->canvasItem is always null: see both calls to this function
+
 	      new_canvas_item = ZMAP_CANVAS_ITEM(feature_item);
 	      zMapWindowCanvasItemClear(new_canvas_item);
 	    }
@@ -1462,6 +1466,11 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
       else
 	{
 	  canvas_item = ZMAP_CANVAS_ITEM(feature_item);
+
+            // MH17 NOTE the transcriptFeature class does not implement a clear fucntion so this does nothing
+            // see canvasItem.c  "currently fantasy psuedo code"
+            // feature item will alsways be NULL anyway
+        zMapAssertNotReached();
 
 	  zMapWindowCanvasItemClear(canvas_item);
 	  foo_canvas_item_set(feature_item, "y", feature_start, NULL);

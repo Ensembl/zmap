@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb  4 09:12 2011 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.13 2011-02-18 10:27:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.14 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,15 +42,6 @@
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindow_P.h>				    /* Why do we need this, can we remove it ? */
 
-
-
-typedef enum
-  {
-    WINDOW_ITEM_BACKGROUND,
-    WINDOW_ITEM_UNDERLAY,
-    WINDOW_ITEM_OVERLAY,
-    WINDOW_ITEM_COUNT
-  } ZMapWindowCanvasItemType ;
 
 
 /* This class is basically a foocanvas group, and might well be one... */
@@ -121,19 +112,10 @@ typedef struct _zmapWindowCanvasItemStruct
 
   ZMapFeature feature ;					    /* The Feature that this Canvas Item represents  */
 
-  /* These items (underlay etc.) are separate from the group and need to be mapped,
-   * realized and drawn by us. */
-  FooCanvasItem *items[WINDOW_ITEM_COUNT];
-
-  /* It feels instinctively wrong to me that every single feature is going to carry this mark
-   * stuff. I feel we should be adding/removing dynamically the mark item as things are used
-   * to mark or not. */
-  FooCanvasItem *mark_item ;
 
   unsigned int interval_type ;
 
   /* Item flags. */
-  unsigned int auto_resize_background : 1 ;
   unsigned int debug : 1 ;
 
 } zmapWindowCanvasItemStruct ;

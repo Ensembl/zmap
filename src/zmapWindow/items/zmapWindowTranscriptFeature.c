@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 22 07:44 2011 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.14 2011-02-24 13:59:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.15 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,8 +84,6 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 
 /* Local globals. */
 static ZMapWindowCanvasItemClass canvas_item_class_G ;
-static gboolean create_locus_text_G = FALSE ;
-
 
 
 /*
@@ -161,29 +159,9 @@ static void zmap_window_transcript_feature_class_init(ZMapWindowTranscriptFeatur
 
 static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canvas_item)
 {
-  ZMapFeature feature;
 
   (* canvas_item_class_G->post_create)(canvas_item);
 
-  if (create_locus_text_G && (feature = canvas_item->feature) && feature->feature.transcript.locus_id)
-    {
-      FooCanvasGroup *parent;
-      FooCanvasItem *item;
-      char *text;
-      text = (char *)g_quark_to_string(feature->feature.transcript.locus_id);
-
-      parent = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_OVERLAY]);
-
-      item = foo_canvas_item_new(parent,
-				 foo_canvas_text_get_type(),
-				 "font",   "Lucida Console",
-				 "anchor", GTK_ANCHOR_NW,
-				 "x",      0.0,
-				 "y",      0.0,
-				 "text",   text,
-				 NULL);
-      foo_canvas_item_hide(item);
-    }
 }
 
 
@@ -379,65 +357,6 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   tra
       break;
     }
 
-  if(create_locus_text_G && colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
-    {
-      FooCanvasGroup *overlay;
-      if((overlay = FOO_CANVAS_GROUP(transcript->items[WINDOW_ITEM_OVERLAY])))
-	{
-	  ZMapWindowTranscriptFeature transcript_feature;
-	  GList *list;
-
-	  list = overlay->item_list;
-	  transcript_feature = ZMAP_WINDOW_TRANSCRIPT_FEATURE(transcript);
-
-	  while(list)
-	    {
-	      FooCanvasItem *o_interval;
-
-	      o_interval = FOO_CANVAS_ITEM(list->data);
-
-	      if(o_interval == transcript->mark_item)
-		{
-		  list = list->next;
-		  continue;
-		}
-
-	      foo_canvas_item_show(o_interval);
-
-	      transcript_feature->overlay_reparented = g_list_prepend(transcript_feature->overlay_reparented,
-								      list->data);
-
-	      zMapWindowCanvasItemReparent(o_interval, foo_canvas_root(o_interval->canvas));
-
-	      foo_canvas_item_raise_to_top(o_interval);
-
-	      list = list->next;
-	    }
-
-	}
-    }
-  else if(create_locus_text_G)
-    {
-      FooCanvasGroup *overlay;
-      if((overlay = FOO_CANVAS_GROUP(transcript->items[WINDOW_ITEM_OVERLAY])))
-	{
-	  ZMapWindowTranscriptFeature transcript_feature;
-	  GList *list;
-
-	  transcript_feature = ZMAP_WINDOW_TRANSCRIPT_FEATURE(transcript);
-
-	  list = transcript_feature->overlay_reparented;
-
-	  while(list)
-	    {
-	      foo_canvas_item_hide(FOO_CANVAS_ITEM(list->data));
-	      zMapWindowCanvasItemReparent(list->data, overlay);
-	      list = list->next;
-	    }
-	  g_list_free(transcript_feature->overlay_reparented);
-	  transcript_feature->overlay_reparented = NULL;
-	}
-    }
 
   return ;
 }

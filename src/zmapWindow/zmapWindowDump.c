@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.17 2010-06-14 15:40:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.18 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -885,16 +885,6 @@ static void itemCB(gpointer data, gpointer user_data)
               }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-            foo = zMapWindowCanvasItemGetUnderlay(item);
-            if(foo && FOO_IS_CANVAS_GROUP(foo))
-              g_list_foreach((gpointer) (FOO_CANVAS_GROUP(foo)->item_list),itemCB,user_data);
-
-            // the features
-            g_list_foreach(FOO_CANVAS_GROUP(item)->item_list, itemCB, user_data) ;
-
-            foo = zMapWindowCanvasItemGetOverlay(item);
-            if(foo && FOO_IS_CANVAS_GROUP(foo))
-              g_list_foreach((gpointer) (FOO_CANVAS_GROUP(foo)->item_list),itemCB,user_data);
         }
       }
     else

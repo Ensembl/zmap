@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.14 2010-08-26 08:04:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.15 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -131,93 +131,6 @@ GType zMapWindowAlignmentFeatureGetType(void)
   return group_type;
 }
 
-void zmap_window_alignment_feature_clear(ZMapWindowCanvasItem canvas_item)
-{
-  ZMapWindowAlignmentFeature alignment;
-  ZMapFeatureTypeStyle style;
-  gboolean parse_gaps = FALSE, show_gaps = FALSE ;
-
-  alignment = ZMAP_WINDOW_ALIGNMENT_FEATURE(canvas_item);
-
-  style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item);
-
-//  zMapStyleGetGappedAligns(style, &parse_gaps, &show_gaps) ;
-  parse_gaps = zMapStyleIsParseGaps(style);
-  show_gaps = zMapStyleIsShowGaps(style);
-
-  if(alignment->flags.no_gaps_hidden  == 0 &&
-     alignment->flags.no_gaps_display == 1 &&
-     show_gaps)
-    {
-      zMapWindowAlignmentFeatureGappedDisplay(alignment);
-    }
-  else if(alignment->flags.gapped_display == 1 && !show_gaps)
-    {
-      /* remove all the gapped items... */
-
-      /* restore the no gaps hidden item. */
-      zMapWindowAlignmentFeatureUngappedDisplay(alignment);
-    }
-
-  return ;
-}
-
-void zMapWindowAlignmentFeatureGappedDisplay(ZMapWindowAlignmentFeature alignment)
-{
-  FooCanvasGroup *group;
-
-  group = FOO_CANVAS_GROUP(alignment);
-
-  /* Quickly check for list with one item. */
-  if(alignment->flags.no_gaps_hidden == 0   &&
-     alignment->no_gaps_hidden_item == NULL &&
-     group->item_list != NULL               &&
-     group->item_list == group->item_list_end)
-    {
-      FooCanvasItem *item;
-
-      item = alignment->no_gaps_hidden_item = FOO_CANVAS_ITEM(group->item_list->data);
-
-      g_list_free(group->item_list);
-      group->item_list = group->item_list_end = NULL;
-
-      if(item->object.flags & FOO_CANVAS_ITEM_MAPPED)
-	(* FOO_CANVAS_ITEM_GET_CLASS(item)->unmap)(item);
-
-      if(item->object.flags & FOO_CANVAS_ITEM_REALIZED)
-	(* FOO_CANVAS_ITEM_GET_CLASS(item)->unrealize)(item);
-
-      alignment->flags.no_gaps_hidden  = 1;
-      alignment->flags.no_gaps_display = 1;
-    }
-
-  return ;
-}
-
-void zMapWindowAlignmentFeatureUngappedDisplay(ZMapWindowAlignmentFeature alignment)
-{
-  FooCanvasGroup *group;
-
-  group = FOO_CANVAS_GROUP(alignment);
-
-  if(!group->item_list && alignment->no_gaps_hidden_item)
-    {
-      ZMapWindowCanvasItem canvas_item;
-      FooCanvasItem *temp_parent;
-
-      canvas_item = ZMAP_CANVAS_ITEM(alignment);
-
-      temp_parent = canvas_item->items[WINDOW_ITEM_UNDERLAY];
-
-      alignment->no_gaps_hidden_item->parent = temp_parent;
-
-      /* This will look through all of temp_parent's children... */
-      foo_canvas_item_reparent(alignment->no_gaps_hidden_item, group);
-    }
-
-  return ;
-}
-
 
 /* object impl */
 static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatureClass alignment_class)
@@ -236,7 +149,6 @@ static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatur
 
   canvas_class->set_colour   = zmap_window_alignment_feature_set_colour;
   canvas_class->add_interval = zmap_window_alignment_feature_add_interval;
-  canvas_class->clear        = zmap_window_alignment_feature_clear;
 
   if(c_colours_G.colour_init == FALSE)
     {

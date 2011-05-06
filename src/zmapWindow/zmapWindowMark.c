@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Mar 10 16:30 2011 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.30 2011-03-22 12:30:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.31 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,7 +76,8 @@ typedef struct _ZMapWindowMarkStruct
 
   gboolean        mark_set ;				    /* internal flag for whether mark is set.  */
 
-  FooCanvasItem           *mark_src_item ;		    /* This is the item that is the src of
+  FooCanvasItem           *mark_rectangle;      /* the item mark */
+  FooCanvasItem           *mark_src_item ;	/* This is the item that is the src of
 							       the mark. Can be NULL if mark set
 							       via rubber band. */
 
@@ -290,7 +291,6 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
 	  /* undo highlighting */
 	  markItem(mark, mark->mark_src_item, FALSE) ;
 
-	  mark->mark_src_item = NULL ;
 	}
 
       /* reset all the coords */
@@ -504,7 +504,8 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 
       zmapWindowMarkReset(mark) ;
 
-      mark->mark_src_item = item ;
+      /* Put an overlay over the marked item. */
+      markItem(mark, item, TRUE) ;
 
       /* Get hold of the block this item sits in. */
       mark->block_container =
@@ -526,9 +527,6 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
         mark->seq_start = block->block_to_sequence.block.x1 ;
       if (mark->seq_end > block->block_to_sequence.block.x2)
         mark->seq_end = block->block_to_sequence.block.x2 ;
-
-      /* Put an overlay over the marked item. */
-      markItem(mark, mark->mark_src_item, TRUE) ;
 
       /* Now put the overlays above/below the marked region. */
       markRange(mark) ;
@@ -928,23 +926,52 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
 /* Mark/unmark an item with a highlight colour. */
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
 {
+  if(mark->mark_rectangle)     /* remove previous if set, we need to do this to clear and also if setting */
+    {
+//    zMapWindowCanvasItemUnmark((ZMapWindowCanvasItem)item);
+      gtk_object_destroy(GTK_OBJECT(mark->mark_rectangle));
+      mark->mark_src_item = NULL ;
+      mark->mark_rectangle = NULL;
+    }
+
   if (set_mark)
     {
       GdkColor  *mark_colour;
       GdkBitmap *mark_stipple;
+      double x1, y1, x2, y2;
+      ZMapWindowContainerGroup parent;
+      ZMapWindowContainerOverlay overlay;
 
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = mark->stipple;
 
-      zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
-    }
-  else
-    {
-      zMapWindowCanvasItemUnmark((ZMapWindowCanvasItem)item);
+// previous code: convert to a ZMapWindoCanvasItem  to call a fucntion that converts back to a FooCanvasItem
+//    zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
+
+      foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
+
+      parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
+      overlay = zmapWindowContainerGetOverlay(parent);
+
+      mark->mark_src_item = item;
+      mark->mark_rectangle = foo_canvas_item_new(FOO_CANVAS_GROUP(overlay),
+                                       FOO_TYPE_CANVAS_RECT,
+#ifdef DEBUG_ITEM_MARK
+                                       "outline_color_gdk", &outline,
+                                       "width_pixels", 1,
+#endif /* DEBUG_ITEM_MARK */
+                                       "fill_color_gdk", mark_colour,
+                                       "fill_stipple",   mark_stipple,
+                                       "x1",             x1,
+                                       "x2",             x2,
+                                       "y1",             y1,
+                                       "y2",             y2,
+                                       NULL);
     }
 
   return ;
 }
+
 
 
 /* The range markers are implemented as overlays in the block container. This makes sense because

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 26 12:54 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.21 2010-06-14 15:40:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.22 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,8 +171,6 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 
 	    if (feature->flags.has_boundary)
 	      {
-		basic->auto_resize_background = 1;
-
 		which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
 	      }
 
@@ -194,7 +192,6 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	case ZMAP_WINDOW_BASIC_BOX:
 	default:
 	  {
-	    basic->auto_resize_background = 1;
 
 	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic),
 				       FOO_TYPE_CANVAS_RECT,

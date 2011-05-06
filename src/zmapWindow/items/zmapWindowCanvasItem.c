@@ -31,11 +31,12 @@
  * HISTORY:
  * Last edited: May  6 12:37 2011 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.40 2011-05-06 11:38:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.41 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
+
 
 #include <string.h>		/* memcpy */
 #include <zmapWindowCanvas.h>
@@ -47,7 +48,6 @@ typedef enum
   {
     WINDOW_CANVAS_ITEM_0,		/* zero == invalid property id */
     WINDOW_CANVAS_ITEM_INTERVAL_TYPE,
-    WINDOW_CANVAS_ITEM_AUTO_RESIZE_BG,
     WINDOW_CANVAS_ITEM_FEATURE,
     WINDOW_CANVAS_ITEM_USER_HIDDEN,
     WINDOW_CANVAS_ITEM_CODE_HIDDEN,
@@ -126,27 +126,10 @@ static void window_canvas_item_bounds (FooCanvasItem *item,
 				       double *x2, double *y2);
 #endif /* WINDOW_CANVAS_ITEM_BOUNDS_REQUIRED */
 
-#ifdef AUTO_RESIZE_OFF
-static void expand_background(ZMapWindowCanvasItem canvas_item,
-			      double *x1_in, double *y1_in,
-			      double *x2_in, double *y2_in);
-#endif /* AUTO_RESIZE_OFF */
-static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_item,
-					  FooCanvasItem *canvas_item,
-					  FooCanvasRE *rect) ;
-static void getMaxBackgroundSize(FooCanvasItem *canvas_item,
-				 double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
-static void crop_background_rectangle(ZMapWindowCanvasItem window_canvas_item,
-				      FooCanvasItem       *canvas_item,
-				      FooCanvasRE         *rect) ;
 
 static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_item, GError **error);
 
 /* A couple of accessories */
-static void window_canvas_item_invoke_update (FooCanvasItem *item,
-					      double i2w_dx,
-					      double i2w_dy,
-					      int flags);
 static double window_canvas_item_invoke_point (FooCanvasItem *item,
 					       double x, double y,
 					       int cx, int cy,
@@ -157,10 +140,8 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 				    GType               *type_to_use);
 static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_data);
 static void window_item_feature_destroy(gpointer window_item_feature_data);
-static void zmap_canvas_item_purge_group(FooCanvasGroup *group);
-static GQuark zmap_window_canvas_item_get_domain(void) ;
 
-static void printBounds(FooCanvasItem *item, char *txt) ;
+static GQuark zmap_window_canvas_item_get_domain(void) ;
 
 
 
@@ -282,24 +263,11 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup *parent,
 
 	  if (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
 	    (* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item) ;
-#if 0
-{        GObject *object ;
-        #ifdef AUTO_RESIZE_OFF
-	  expand_background(canvas_item, NULL, NULL, NULL, NULL);
-#endif /* AUTO_RESIZE_OFF */
 
-
-	  /* This needs to be removed and replaced by zMapWindowCanvasItemGetFeature() */
-
-#ifdef RDS_DONT_INCLUDE
-        object = G_OBJECT(item);
-        g_object_set_data(object, ITEM_FEATURE_DATA, feature);
-        g_object_set_data(object, ITEM_FEATURE_TYPE, GUINT_TO_POINTER(ITEM_FEATURE_SIMPLE));
-#endif
-}
-#endif
 	  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
+// done by zmap_window_canvas_item_init()
+// NOTE commenting this out doubles the stats!
 	  zmapWindowItemStatsIncr(&(canvas_item_class->stats)) ;
 
 	}
@@ -376,26 +344,6 @@ gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item)
   return is_subpart ;
 }
 
-
-/*!
- * \brief   Function to access the ZMapFeature
- * \details Although a little surprising, NULL maybe returned legitimately,
- *          as not all ZMapWindowCanvasItem subclasses require features...
- *          It is architected this way so that we can have _all_ the items
- *          on the canvas below ZMapWindowContainerFeatureSet extend
- *          ZMapWindowCanvasItem .
- * \param   canvas_item The owning ZMapWindowCanvasItem
- * \return  The ZMapFeature or NULL. NULL maybe returned legitimately!
- */
-void zMapWindowCanvasItemGetBounds(ZMapWindowCanvasItem canvas_item)
-{
-  ZMapFeature feature = NULL;
-
-  if(canvas_item && ZMAP_IS_CANVAS_ITEM(canvas_item))
-    feature = canvas_item->feature;
-
-  return ;
-}
 
 
 
@@ -491,9 +439,6 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
     }
 
 
-#ifdef AUTO_RESIZE_OFF
-  expand_background(canvas_item, NULL, &top, NULL, &bottom);
-#endif /* AUTO_RESIZE_OFF */
 
   return interval;
 }
@@ -589,47 +534,7 @@ void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item)
   return ;
 }
 
-void zMapWindowCanvasItemClearOverlay(ZMapWindowCanvasItem canvas_item)
-{
-  FooCanvasGroup *group;
 
-  group = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_OVERLAY]);
-
-  zmap_canvas_item_purge_group(group);
-
-  return ;
-}
-
-void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item)
-{
-  FooCanvasGroup *group;
-
-  group = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_UNDERLAY]);
-
-  zmap_canvas_item_purge_group(group);
-
-  return ;
-}
-
-FooCanvasItem *zMapWindowCanvasItemGetOverlay(FooCanvasItem *canvas_item)
-{
-  FooCanvasItem *foo;
-
-  if(!ZMAP_IS_CANVAS_ITEM(canvas_item))
-      return(NULL);
-  foo = ZMAP_CANVAS_ITEM(canvas_item)->items[WINDOW_ITEM_OVERLAY];
-  return(foo);
-}
-
-FooCanvasItem *zMapWindowCanvasItemGetUnderlay(FooCanvasItem *canvas_item)
-{
-  FooCanvasItem *foo;
-
-  if(!ZMAP_IS_CANVAS_ITEM(canvas_item))
-      return(NULL);
-  foo = ZMAP_CANVAS_ITEM(canvas_item)->items[WINDOW_ITEM_UNDERLAY];
-  return(foo);
-}
 
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
 {
@@ -956,88 +861,6 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
 
 
 
-/*!
- * \brief   Function to mark the canvas item
- *
- * \details Marks the canvas item by drawing an overlay
- *          the same size as the background. The overlay
- *          will be a rectangle drawn with a stipple (bitmap)
- *          using the supplied colour.
- *
- * \param   canvas_item The ZMapWindowCanvasItem to mark
- * \param   colour      The GdkColor to use for the mark
- * \param   bitmap      The GdkBitmap to use for the mark
- *
- * \return  void
- */
-void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
-			      GdkColor            *colour,
-			      GdkBitmap           *bitmap)
-{
-  double x1, y1, x2, y2;
-
-  if(canvas_item->mark_item)
-    zMapWindowCanvasItemUnmark(canvas_item);
-
-  if (canvas_item->items[WINDOW_ITEM_OVERLAY] && canvas_item->items[WINDOW_ITEM_BACKGROUND])
-    {
-      FooCanvasGroup *parent;
-#ifdef DEBUG_ITEM_MARK
-      GdkColor outline;
-
-      gdk_color_parse("red", &outline);
-#endif /* DEBUG_ITEM_MARK */
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_item->items[WINDOW_ITEM_BACKGROUND]),
-				 &x1, &y1, &x2, &y2);
-
-      parent = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_OVERLAY]);
-
-      canvas_item->mark_item = foo_canvas_item_new(parent,
-						   FOO_TYPE_CANVAS_RECT,
-#ifdef DEBUG_ITEM_MARK
-						   "outline_color_gdk", &outline,
-						   "width_pixels", 1,
-#endif /* DEBUG_ITEM_MARK */
-						   "fill_color_gdk", colour,
-						   "fill_stipple",   bitmap,
-						   "x1",             x1,
-						   "x2",             x2,
-						   "y1",             y1,
-						   "y2",             y2,
-						   NULL);
-
-      canvas_item->mark_item = zmapWindowLongItemCheckPointFull(canvas_item->mark_item, NULL,
-								x1, y1, x2, y2);
-
-      /* We need to update ourselves now. the canvas doesn't know how to. */
-      foo_canvas_item_request_update(FOO_CANVAS_ITEM(canvas_item));
-    }
-
-  return ;
-}
-
-
-/*!
- * \brief   Removes any mark
- * \param   canvas_item The ZMapWindowCanvasItem to unmark
- * \return  void
- */
-void zMapWindowCanvasItemUnmark(ZMapWindowCanvasItem canvas_item)
-{
-  if(canvas_item->mark_item)
-    {
-      gtk_object_destroy(GTK_OBJECT(canvas_item->mark_item));
-
-      canvas_item->mark_item = NULL;
-    }
-
-  return ;
-}
-
-
-
-
-
 /*
  *                Internals routines
  */
@@ -1054,40 +877,6 @@ static GQuark zmap_window_canvas_item_get_domain(void)
 
 
 
-static void zmap_canvas_item_purge_group(FooCanvasGroup *group)
-{
-  GList *list;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  zMapLogReturnIfFail(FOO_IS_CANVAS_GROUP(group));
-
-  list = group->item_list;
-  while(list)
-    {
-      FooCanvasItem *child;
-      child = list->data;
-      list = list->next;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("%s(): gtk_object_destroy() on %p\n", __PRETTY_FUNCTION__, child) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      gtk_object_destroy(GTK_OBJECT(child));
-    }
-
-  g_list_free(group->item_list);
-  group->item_list = group->item_list_end = NULL;
-
-  return ;
-}
 
 
 static void redraw_and_repick_if_mapped (FooCanvasItem *item)
@@ -1256,11 +1045,6 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 						    "The type to use when creating a new interval",
 						    0, 127, 0, ZMAP_PARAM_STATIC_WO));
 
-  g_object_class_install_property(gobject_class, WINDOW_CANVAS_ITEM_AUTO_RESIZE_BG,
-				  g_param_spec_uint("auto-resize", "auto resize background",
-						    "Turn on to automatically resize the background for non-scaling types",
-						    0, 127, 0, ZMAP_PARAM_STATIC_WO));
-
   g_object_class_install_property(gobject_class, WINDOW_CANVAS_ITEM_FEATURE,
 				  g_param_spec_pointer("feature", "feature",
 						       "ZMapFeatureAny pointer",
@@ -1325,10 +1109,6 @@ static void zmap_window_canvas_item_init (ZMapWindowCanvasItem canvas_item)
   group->xpos = 0.0;
   group->ypos = 0.0;
 
-  canvas_item->auto_resize_background = TRUE;
-
-  canvas_item->mark_item = NULL;
-
   zmapWindowItemStatsIncr(&(canvas_item_class->stats)) ;
 
   return ;
@@ -1352,15 +1132,6 @@ static void zmap_window_canvas_item_set_property (GObject *gobject, guint param_
 
   switch (param_id)
     {
-    case WINDOW_CANVAS_ITEM_AUTO_RESIZE_BG:
-      {
-	ZMapWindowCanvasItem canvas_item;
-
-	canvas_item = ZMAP_CANVAS_ITEM(gobject);
-
-	canvas_item->auto_resize_background = g_value_get_uint(value);
-      }
-      break;
     case WINDOW_CANVAS_ITEM_INTERVAL_TYPE:
       {
 	guint type = 0;
@@ -1438,7 +1209,7 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 {
   ZMapWindowCanvasItem canvas_item;
   ZMapWindowCanvasItemClass canvas_item_class ;
-  int i;
+//  int i;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1449,22 +1220,6 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
   canvas_item = ZMAP_CANVAS_ITEM(gtkobject);
   canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
-
-
-  for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if(canvas_item->items[i])
-	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("%s(): gtk_object_destroy() on %p\n", __PRETTY_FUNCTION__, GTK_OBJECT(canvas_item->items[i])) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	  gtk_object_destroy(GTK_OBJECT(canvas_item->items[i]));
-	  canvas_item->items[i] = NULL;
-	}
-    }
 
   canvas_item->feature = NULL;
 
@@ -1523,8 +1278,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
 {
   FooCanvasGroup *group;
-  FooCanvasItem *remove_me;
-  int i;
+//  FooCanvasItem *remove_me;
+//  int i;
 #ifdef DEBUG_BACKGROUND_BOX
   GdkColor outline = {0};
   GdkColor fill    = {0};
@@ -1548,50 +1303,14 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
    * FooCanvasItem interface they'll get drawn how and in what order we want them to be.
    */
 
-  /* background is drawn _first_, below _everything_ else!  */
-  canvas_item->items[WINDOW_ITEM_BACKGROUND] = foo_canvas_item_new(group, FOO_TYPE_CANVAS_RECT,
-								   "x1", 0.0, "y1", 0.0,
-								   "x1", 0.0, "y2", 0.0,
-#ifdef DEBUG_BACKGROUND_BOX
-								   "width_pixels",      1,
-								   "outline_color_gdk", &outline,
-								   "fill_color_gdk",    &fill,
-#endif /* DEBUG_BACKGROUND_BOX */
-								   NULL);
 
-  /* underlays will be drawn next. */
-  canvas_item->items[WINDOW_ITEM_UNDERLAY] = foo_canvas_item_new(group, FOO_TYPE_CANVAS_GROUP,
-								 "x", 0.0,
-								 "y", 0.0,
-								 NULL);
 
-  /* If this were the draw cycle the item_list members would be drawn now */
-
-  /* overlays last to always be seen */
-  canvas_item->items[WINDOW_ITEM_OVERLAY] = foo_canvas_item_new(group, FOO_TYPE_CANVAS_GROUP,
-								"x", 0.0,
-								"y", 0.0,
-								NULL);
-
-  g_list_free(group->item_list);
-  group->item_list = group->item_list_end = NULL;
 
 #ifdef NEVER_INCLUDE_DEBUG_EVENTS
   g_signal_connect(G_OBJECT(canvas_item->items[WINDOW_ITEM_BACKGROUND]), "event",
 		   G_CALLBACK(canvasItemEventCB), NULL);
 #endif /* NEVER_INCLUDE_DEBUG_EVENTS */
 
-  for (i = 0; i < WINDOW_ITEM_COUNT; ++i)  // mh17: 0 was 10, assumed to be a typo, ITEM_COUNT==3
-    {
-      if ((remove_me = canvas_item->items[i]))
-	{
-	  if (remove_me->object.flags & FOO_CANVAS_ITEM_MAPPED)
-	    (* FOO_CANVAS_ITEM_GET_CLASS (remove_me)->unmap) (remove_me);
-
-	  if (remove_me->object.flags & FOO_CANVAS_ITEM_REALIZED)
-	    (* FOO_CANVAS_ITEM_GET_CLASS (remove_me)->unrealize) (remove_me);
-	}
-    }
 
   return ;
 }
@@ -1628,17 +1347,11 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
 /* Update handler for canvas groups */
 static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
-  ZMapWindowCanvasItem canvas_item;
   FooCanvasGroup *canvas_group;
-  FooCanvasItem *update_me;
-  FooCanvasRE *bg_rect;
   gboolean visible;
   double xpos, ypos;
-  int i;
 
   visible = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE) ;
-
-  canvas_item = ZMAP_CANVAS_ITEM(item);
 
   /* chain up, to update all the interval items that are legitimately part of the group, first... */
   (* group_parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
@@ -1648,76 +1361,6 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
   xpos = canvas_group->xpos;
   ypos = canvas_group->ypos;
 
-  if((canvas_item->auto_resize_background)
-     && visible
-     && (FOO_IS_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND]))
-     && (bg_rect = FOO_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND])))
-    {
-      maximise_background_rectangle(canvas_item, item, bg_rect);
-
-      if(flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)
-	{
-	  crop_background_rectangle(canvas_item, item, bg_rect);
-	}
-    }
-
-  /* Now update the illegitimate children of the group. */
-  for (i = 0; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if(!(update_me = canvas_item->items[i]))
-	continue;
-
-      /* these if's should really be included Code has been added to zmapWindowCollectionFeature,c to
-	 realize and map the items but it does not have the desired effect however: this does what's
-	 required with no extra warning messages
-
-      if(!(update_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
-	continue;
-
-      if(!(update_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
-	continue;
-
-      */
-
-      if(!(update_me->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    continue ;
-
-      if(FOO_IS_CANVAS_GROUP(update_me) && FOO_CANVAS_GROUP(update_me)->item_list == NULL)
-	continue ;
-
-      /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
-       * can't find any definition anywhere of what map and realize signify,
-       * can only see that they set the MAPPED and REALIZED flags
-       * However, this causes the underlay and overlay features to draw as required.
-       * Q: would CollectionFeature be better coded as another layer of CanvasItemGroup?
-       * then we'd only have one lot of code to debug
-       */
-
-/*
-      *** WE GET FOO_CANVAS_CRITICAL_ERRORS *** if realize gets called
-      as it does a request_update, which is not allowed from within an update
-
-      if(!(update_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
-          (* FOO_CANVAS_ITEM_GET_CLASS(update_me)->realize)(update_me);
-      if(!(update_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
-          (* FOO_CANVAS_ITEM_GET_CLASS(update_me)->map)(update_me);
-*/
-      window_canvas_item_invoke_update(update_me, i2w_dx + xpos, i2w_dy + ypos, flags);
-
-      if (update_me->x2 != 0.0 && update_me->y2 != 0.0
-	  && update_me->x1 != update_me->x2 && update_me->y1 != update_me->y2)
-	{
-	  item->x1 = MIN ((update_me->x1), item->x1);
-	  item->y1 = MIN ((update_me->y1), item->y1);
-	  item->x2 = MAX ((update_me->x2), item->x2);
-	  item->y2 = MAX ((update_me->y2), item->y2);
-	}
-      else
-	{
-	  printf("child %d had zero size\n", i);
-	}
-
-    }
 
   return ;
 }
@@ -1726,24 +1369,8 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
 
 static void zmap_window_canvas_item_realize (FooCanvasItem *item)
 {
-  ZMapWindowCanvasItem canvas_item;
-  FooCanvasItem *realize_me;
-  int i;
-
-  canvas_item = ZMAP_CANVAS_ITEM(item);
 
   (* group_parent_class_G->realize)(item);
-
-  for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if(!(realize_me = canvas_item->items[i]))
-	continue;
-      else
-	{
-	  if(!realize_me->object.flags & FOO_CANVAS_ITEM_REALIZED)
-	    (* FOO_CANVAS_ITEM_GET_CLASS(realize_me)->realize)(realize_me);
-	}
-    }
 
   return ;
 }
@@ -1752,21 +1379,8 @@ static void zmap_window_canvas_item_realize (FooCanvasItem *item)
 /* Unrealize handler for canvas groups */
 static void zmap_window_canvas_item_unrealize (FooCanvasItem *item)
 {
-  ZMapWindowCanvasItem canvas_item;
-  FooCanvasItem *unrealize_me;
-  int i;
-
-  canvas_item = ZMAP_CANVAS_ITEM(item);
 
   (* group_parent_class_G->unrealize) (item);
-
-  for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if(!(unrealize_me = canvas_item->items[i]))
-	continue;
-      else if(unrealize_me->object.flags & FOO_CANVAS_ITEM_REALIZED)
-	(* FOO_CANVAS_ITEM_GET_CLASS(unrealize_me)->unrealize)(unrealize_me);
-    }
 
   return ;
 }
@@ -1775,8 +1389,6 @@ static void zmap_window_canvas_item_unrealize (FooCanvasItem *item)
 static void zmap_window_canvas_item_map (FooCanvasItem *item)
 {
   ZMapWindowCanvasItem canvas_item;
-  FooCanvasItem *map_me;
-  int i;
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
 
@@ -1785,33 +1397,9 @@ static void zmap_window_canvas_item_map (FooCanvasItem *item)
       printf("%p - zmap_window_canvas_item_map: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
 	     item, item->x1, item->y1, item->x2, item->y2);
 
-
-      if (canvas_item->items[WINDOW_ITEM_BACKGROUND])
-	{
-	  FooCanvasItem *background = FOO_CANVAS_ITEM(canvas_item->items[WINDOW_ITEM_BACKGROUND]) ;
-
-	  printf("%p - zmap_window_canvas_item_map: background->x1=%g, background->y1=%g, background->x2=%g, background->y2=%g\n",
-		 item, background->x1, background->y1, background->x2, background->y2);
-	}
     }
 
   (* group_parent_class_G->map) (item);
-
-  for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if ((map_me = canvas_item->items[i]))
-	{
-	  if ((map_me->object.flags & FOO_CANVAS_ITEM_VISIBLE) &&
-	      !(map_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
-	    {
-	      if (!(map_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
-		(* FOO_CANVAS_ITEM_GET_CLASS(map_me)->realize)(map_me);
-
-	      if ((FOO_CANVAS_ITEM_GET_CLASS(map_me)->map))
-		(*FOO_CANVAS_ITEM_GET_CLASS(map_me)->map)(map_me);
-	    }
-	}
-    }
 
   return ;
 }
@@ -1819,29 +1407,9 @@ static void zmap_window_canvas_item_map (FooCanvasItem *item)
 /* Unmap handler for canvas groups */
 static void zmap_window_canvas_item_unmap (FooCanvasItem *item)
 {
-  ZMapWindowCanvasItem canvas_item;
-  FooCanvasItem *unmap_me;
-  int i;
-
-  canvas_item = ZMAP_CANVAS_ITEM(item);
 
   (* group_parent_class_G->unmap) (item);
 
-  for (i = 0; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if ((unmap_me = canvas_item->items[i]))
-	{
-	  if ((unmap_me->object.flags & FOO_CANVAS_ITEM_VISIBLE) &&
-	      !(unmap_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
-	    {
-	      if (!(unmap_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
-		(* FOO_CANVAS_ITEM_GET_CLASS(unmap_me)->realize)(unmap_me);
-
-	      if ((FOO_CANVAS_ITEM_GET_CLASS(unmap_me)->unmap))
-		(*FOO_CANVAS_ITEM_GET_CLASS(unmap_me)->unmap)(unmap_me);
-	    }
-	}
-    }
 
   return ;
 }
@@ -1852,8 +1420,6 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
 {
   ZMapWindowCanvasItem canvas_item;
   FooCanvas *foo_canvas;
-  FooCanvasItem *draw_me = NULL;
-  int i;
 
   foo_canvas = item->canvas;
 
@@ -1873,46 +1439,10 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
       printf("%p - zmap_window_canvas_item_draw: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
 	     item, item->x1, item->y1, item->x2, item->y2);
 
-
-      if (canvas_item->items[WINDOW_ITEM_BACKGROUND])
-	{
-	  FooCanvasItem *background = FOO_CANVAS_ITEM(canvas_item->items[WINDOW_ITEM_BACKGROUND]) ;
-
-	  printf("%p - zmap_window_canvas_item_draw: background->x1=%g, background->y1=%g, background->x2=%g, background->y2=%g\n",
-		 item, background->x1, background->y1, background->x2, background->y2);
-	}
     }
 
 
-  for (i = (item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? 0 : WINDOW_ITEM_COUNT) ; i < WINDOW_ITEM_COUNT; ++i)
-    {
-      if (i == WINDOW_ITEM_OVERLAY)
-	{
-	  (* group_parent_class_G->draw)(item, drawable, expose) ;
-	}
-
-      if ((draw_me = canvas_item->items[i]))
-	{
-if(canvas_item->debug)
-{
-      printf("%p - zmap_window_canvas_item_draw: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
-            item, item->x1, item->y1, item->x2, item->y2);
-
-}
-	  if ((draw_me->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    {
-	      if (!(draw_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
-		(* FOO_CANVAS_ITEM_GET_CLASS(draw_me)->realize)(draw_me) ;
-
-	      if (!(draw_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
-		(*FOO_CANVAS_ITEM_GET_CLASS(draw_me)->map)(draw_me) ;
-
-	      if ((FOO_CANVAS_ITEM_GET_CLASS(draw_me)->draw))
-		(*FOO_CANVAS_ITEM_GET_CLASS(draw_me)->draw)(draw_me, drawable, expose) ;
-	    }
-	}
-    }
-
+  (* group_parent_class_G->draw)(item, drawable, expose) ;
 
   return ;
 }
@@ -1922,55 +1452,7 @@ if(canvas_item->debug)
 static double zmap_window_canvas_item_point (FooCanvasItem *item, double x, double y, int cx, int cy,
 					     FooCanvasItem **actual_item)
 {
-  FooCanvasGroup *group;
-  FooCanvasItem *child, *point_item;
-  int x1, y1, x2, y2;
-  double gx, gy;
-  double dist, best;
-
-  group = FOO_CANVAS_GROUP (item);
-
-  x1 = cx - item->canvas->close_enough;
-  y1 = cy - item->canvas->close_enough;
-  x2 = cx + item->canvas->close_enough;
-  y2 = cy + item->canvas->close_enough;
-
-  best = 0.0;
-  *actual_item = NULL;
-
-  gx = x - group->xpos;
-  gy = y - group->ypos;
-
-  dist = 0.0; /* keep gcc happy */
-
-  if((child = ZMAP_CANVAS_ITEM(item)->items[WINDOW_ITEM_BACKGROUND]))
-    {
-      if(debug_point_method_G)
-	printf("->point(canvas_item=%p, x=%f, y=%f, cx=%d, cy=%d)\n", item, x, y, cx, cy);
-
-      if (!((child->x1 > x2) ||
-	    (child->y1 > y2) ||
-	    (child->x2 < x1) ||
-	    (child->y2 < y1)))
-	{
-
-	  point_item = NULL;
-
-	  if ((child->object.flags & FOO_CANVAS_ITEM_MAPPED)
-	      && FOO_CANVAS_ITEM_GET_CLASS (child)->point)
-	    {
-	      dist = window_canvas_item_invoke_point (child, gx, gy, cx, cy, &point_item);
-	      if((point_item != NULL) &&
-		 ((int)(dist * item->canvas->pixels_per_unit_x + 0.5) <= item->canvas->close_enough))
-		{
-		  best = dist;
-		  *actual_item = point_item;
-		}
-	    }
-	}
-    }
-
-  return best;
+    return (*group_parent_class_G->point)(item, x, y, cx, cy, actual_item) ;
 }
 
 static void zmap_window_canvas_item_translate (FooCanvasItem *item, double dx, double dy)
@@ -1990,42 +1472,12 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 					    double *x1_out, double *y1_out,
 					    double *x2_out, double *y2_out)
 {
-  ZMapWindowCanvasItem canvas_item;
-  FooCanvasGroup *group;
-  FooCanvasItem *background;
 
   if(ZMAP_IS_CANVAS_ITEM(item))
     {
       double x1, x2, y1, y2;
-      double gx = 0.0, gy = 0.0;
 
-      group = FOO_CANVAS_GROUP(item);
-      canvas_item = ZMAP_CANVAS_ITEM(item);
-
-      gx = group->xpos;
-      gy = group->ypos;
-
-#ifdef DEBUG
-      if(canvas_item->feature && canvas_item->feature->original_id == g_quark_from_string("Em:BU659745.1"))
-	printf("Em:BU659745.1");
-#endif /* DEBUG */
-
-      if ((background = canvas_item->items[WINDOW_ITEM_BACKGROUND]))
 	{
-	  gboolean fix_undrawn_have_zero_size = TRUE;
-
-	  (* FOO_CANVAS_ITEM_GET_CLASS(background)->bounds)(background, &x1, &y1, &x2, &y2);
-
-	  /* test this! */
-#ifdef DEBUG_BACKGROUND_BOX
-	  if(fix_undrawn_have_zero_size && x1 == y1 && x2 == y2 && x1 == -0.5)
-#else  /* !DEBUG_BACKGROUND_BOX */
-	  if(fix_undrawn_have_zero_size && x1 == x2 && y1 == y2 && x1 == y1 && x1 == 0.0)
-#endif /* !DEBUG_BACKGROUND_BOX */
-	    {
-	      FooCanvasRE *rect;
-	      rect = (FooCanvasRE *)background;
-
 	      if (!(item->object.flags & FOO_CANVAS_ITEM_REALIZED))
 		(*group_parent_class_G->realize)(item);
 
@@ -2034,35 +1486,17 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 
 	      (*group_parent_class_G->bounds)(item, &x1, &y1, &x2, &y2) ;
 
-	      if(canvas_item->debug == TRUE)
-		{
-		  printf("%p - zmap_window_canvas_item_bounds: rect->x1=%g, rect->y1=%g, rect->x2=%g, rect->y2=%g\n",
-			 canvas_item, rect->x1, rect->y1, rect->x2, rect->y2);
-		}
-
-	      rect->x1 = (x1 -= gx);
-	      rect->x2 = (x2 -= gx);
-	      rect->y1 = (y1 -= gy);
-	      rect->y2 = (y2 -= gy);
-
-	      if(canvas_item->debug == TRUE)
-		{
-		  printf("%p - zmap_window_canvas_item_bounds: rect->x1=%g, rect->y1=%g, rect->x2=%g, rect->y2=%g\n",
-			 canvas_item, rect->x1, rect->y1, rect->x2, rect->y2);
-		}
-	    }
 	}
 
       if(x1_out)
-	*x1_out = x1 + gx;
+      *x1_out = x1;
       if(x2_out)
-	*x2_out = x2 + gx;
+      *x2_out = x2;
 
       if(y1_out)
-	*y1_out = y1 + gy;
+      *y1_out = y1;
       if(y2_out)
-	*y2_out = y2 + gy;
-
+      *y2_out = y2;
     }
 
   return ;
@@ -2219,272 +1653,6 @@ static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_i
 }
 
 
-/* this is my go at rewriting this, I'm not sure what problem the above code was trying
- * to solve because there are no comments.....sigh..... */
-static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_item,
-					  FooCanvasItem *canvas_item,
-					  FooCanvasRE *rect)
-{
-  double x1,y1,x2,y2;
-
-  if (window_canvas_item->debug)
-    {
-      printf("%p - initial canvas coords:"
-	     " canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
-	     canvas_item, canvas_item->x1, canvas_item->y1, canvas_item->x2, canvas_item->y2) ;
-
-      printf("%p - initial background coords: rect->x1=%g, rect->y1=%g, rect->x2=%g, rect->y2=%g\n",
-	     canvas_item, rect->x1, rect->y1, rect->x2, rect->y2);
-    }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printBounds(canvas_item, "initial canvas item:") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  getMaxBackgroundSize(canvas_item, &x1, &y1, &x2, &y2) ;
-
-  rect->x1 = (x1) ;
-  rect->y1 = (y1) ;
-  rect->x2 = (x2) ;
-  rect->y2 = (y2) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  {
-    FooCanvasItem *rect_item ;
-
-  printBounds(canvas_item, "canvas item:") ;
-
-  rect_item = (FooCanvasItem *)rect;
-  printBounds(rect_item, "rect_item:") ;
-  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-/* put this back in the above routine...no need for it to be separate now.... */
-static void getMaxBackgroundSize(FooCanvasItem *canvas_item,
-				 double *x1_out, double *y1_out, double *x2_out, double *y2_out)
-{
-  ZMapWindowCanvasItem window_canvas_item = (ZMapWindowCanvasItem)canvas_item ;
-  double x1, x2, y1, y2 ;
-  FooCanvasGroup *parent ;
-  FooCanvasItem *child ;
-  GList *next ;
-  double c_x1, c_y1, c_x2, c_y2 ;
-
-
-  /* Get max length for background item based on feature start/end. */
-  y1 = 0.0 ;
-  y2 = (window_canvas_item->feature->x2 - window_canvas_item->feature->x1) + 1 ;
-
-
-  /* Get max width for background item based on widest feature child. */
-  c_x1 = c_y1 = c_x2 = c_y2 = 0.0 ;
-  x1 = 1000000.0 ;
-  x2 = 0.0 ;
-  parent = FOO_CANVAS_GROUP(canvas_item) ;
-  next = parent->item_list ;
-  while (next)
-    {
-      child = FOO_CANVAS_ITEM(next->data) ;
-
-      foo_canvas_item_get_bounds(child, &c_x1, &c_y1, &c_x2, &c_y2) ;
-
-      if (c_x1 < x1)
-	x1 = c_x1 ;
-
-      if (c_x2 > x2)
-	x2 = c_x2 ;
-
-      next = next->next ;
-    }
-
-  *x1_out = x1 ;
-  *y1_out = y1 ;
-  *x2_out = x2 ;
-  *y2_out = y2 ;
-
-  return ;
-}
-
-
-
-
-
-
-static void crop_background_rectangle(ZMapWindowCanvasItem window_canvas_item,
-				      FooCanvasItem       *canvas_item,
-				      FooCanvasRE         *rect)
-{
-  FooCanvas *foo_canvas;
-  FooCanvasItem *crop_item;
-  double scroll_x1, scroll_y1, scroll_x2, scroll_y2;
-  double iwx1, iwy1, iwx2, iwy2;
-  gboolean crop_needed = TRUE;
-
-  foo_canvas = canvas_item->canvas;
-  crop_item  = (FooCanvasItem *)rect;
-
-  if(crop_needed)
-    {
-      iwx1 = rect->x1;
-      iwy1 = rect->y1;
-      iwx2 = rect->x2;
-      iwy2 = rect->y2;
-
-      /* x unused ATM */
-      scroll_x1 = foo_canvas->scroll_x1;
-      scroll_x2 = foo_canvas->scroll_x2;
-
-      scroll_y1 = foo_canvas->scroll_y1;
-      scroll_y2 = foo_canvas->scroll_y2;
-
-      foo_canvas_item_w2i(crop_item, &scroll_x1, &scroll_y1);
-      foo_canvas_item_w2i(crop_item, &scroll_x2, &scroll_y2);
-
-      if (!(iwy2 < scroll_y1) && !(iwy1 > scroll_y2) && ((iwy1 < scroll_y1) || (iwy2 > scroll_y2)))
-	{
-	  if(iwy1 < scroll_y1)
-	    {
-	      rect->y1 = scroll_y1 - 1.0;
-	    }
-
-	  if(iwy2 > scroll_y2)
-	    {
-	      rect->y2 = scroll_y2 + 1.0;
-	    }
-	}
-    }
-
-  return ;
-}
-
-
-#ifdef AUTO_RESIZE_OFF
-static void expand_background(ZMapWindowCanvasItem canvas_item,
-			      double *x1_in, double *y1_in,
-			      double *x2_in, double *y2_in)
-{
-  FooCanvasItem *background;
-  ZMapFeature feature;
-  double x1, x2, y1, y2;
-
-  if((background = canvas_item->items[WINDOW_ITEM_BACKGROUND]))
-    {
-      feature = (ZMapFeature)canvas_item->feature;
-
-      if(y1_in && y2_in)
-	{
-	  double top, bottom;
-
-	  top    = *y1_in;
-	  bottom = *y2_in;
-
-	  g_object_get(G_OBJECT(background), "y1", &y1, "y2", &y2, NULL);
-
-	  if(top < y1)
-	    y1 = top;
-
-	  if(bottom > y2)
-	    y2 = bottom;
-
-	  if(y1 < 0.0)
-	    g_warning("unexpected value [%f] for y1.", y1);
-	}
-      else if(feature)
-	{
-	  y1 = 0.0;
-
-	  y2 = (double)(feature->x2 - feature->x1 + 1.0);
-	}
-
-      if(x1_in && x2_in)
-	{
-	  double left, right;
-
-	  left  = *x1_in;
-	  right = *x2_in;
-
-	  g_object_get(G_OBJECT(background), "x1", &x1, "x2", &x2, NULL);
-
-	  if(left < x1)
-	    x1 = left;
-
-	  if(right > x2)
-	    x2 = right;
-
-	  if(x1 < 0.0)
-	    g_warning("unexpected value [%f] for x1.", x1);
-	}
-      else if(feature)
-	{
-	  ZMapFeatureTypeStyle style = NULL;
-
-	  style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item);
-
-	  x1 = 0.0;
-
-	  x2 = zMapStyleGetWidth(style) - 1.0;
-	}
-
-      foo_canvas_item_set(background,
-			  "x1", x1, "x2", x2,
-			  "y1", y1, "y2", y2,
-			  NULL);
-
-      /* long items update too! */
-      zMapWindowCanvasLongItemCheck(ZMAP_CANVAS(background->canvas),
-				    background, y1, y2);
-
-    }
-
-  return ;
-}
-#endif /* AUTO_RESIZE_OFF */
-
-/*
- * This routine invokes the update method of the item
- * Please notice, that we take parent to canvas pixel matrix as argument
- * unlike virtual method ::update, whose argument is item 2 canvas pixel
- * matrix
- *
- * I will try to force somewhat meaningful naming for affines (Lauris)
- * General naming rule is FROM2TO, where FROM and TO are abbreviations
- * So p2cpx is Parent2CanvasPixel and i2cpx is Item2CanvasPixel
- * I hope that this helps to keep track of what really happens
- *
- */
-static void window_canvas_item_invoke_update (FooCanvasItem *item,
-					      double i2w_dx,
-					      double i2w_dy,
-					      int flags)
-{
-  int child_flags;
-
-  child_flags = flags;
-
-  /* apply object flags to child flags */
-  child_flags &= ~FOO_CANVAS_UPDATE_REQUESTED;
-
-  if (item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE)
-    child_flags |= FOO_CANVAS_UPDATE_REQUESTED;
-
-  if (item->object.flags & FOO_CANVAS_ITEM_NEED_DEEP_UPDATE)
-    child_flags |= FOO_CANVAS_UPDATE_DEEP;
-
-  if (child_flags & GCI_UPDATE_MASK) {
-    if (FOO_CANVAS_ITEM_GET_CLASS (item)->update)
-      FOO_CANVAS_ITEM_GET_CLASS (item)->update (item, i2w_dx, i2w_dy, child_flags);
-  }
-
-  /* If this fail you probably forgot to chain up to
-   * FooCanvasItem::update from a derived class */
-  zMapLogReturnIfFail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
-
-  return;
-}
 
 
 /*
@@ -2613,7 +1781,7 @@ static void window_item_feature_destroy(gpointer window_item_feature_data)
   return ;
 }
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printBounds(FooCanvasItem *item, char *txt)
 {
   double x1, y1, x2, y2 ;
@@ -2640,7 +1808,7 @@ static void printBounds(FooCanvasItem *item, char *txt)
 
   return ;
 }
-
+#endif
 
 
 

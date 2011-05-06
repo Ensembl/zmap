@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: May  6 12:40 2011 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.18 2011-05-06 11:42:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.19 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,7 +110,7 @@ static FooCanvasItemClass *group_parent_class_G = NULL ;
 static gboolean debug_G = FALSE ;
 
 
-/* 
+/*
  *                        External interface.
  */
 
@@ -490,7 +490,7 @@ gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature)
 
 
 
-/* 
+/*
  *                    Internal routines.
  */
 
@@ -499,15 +499,15 @@ gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature)
 /* Called by the windowTextItem object (basic display widget for dna
  * or peptide sequence) in response to the user clicking on a base or
  * peptide.
- * 
+ *
  * index1/2 are ZERO-based and are offsets into the text. Thus for
  * peptides the coords are in peptide space and for DNA they are in DNA
  * space.
- * 
+ *
  * Note also that as we zoom in and the scrolled-region shrinks that index1/2
  * will themselves be offset from the start of the sequence. It's arguable
  * whether the offsetting should have been dealt with by the text widget...
- * 
+ *
  *  */
 static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
 						    double cellx1, double celly1,
@@ -763,11 +763,7 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 
 static void zmap_window_sequence_feature_init(ZMapWindowSequenceFeature sequence)
 {
-  ZMapWindowCanvasItem canvas_item ;
-  FooCanvasItem *item ;
-
-  canvas_item = ZMAP_CANVAS_ITEM(sequence) ;
-  canvas_item->auto_resize_background = 1 ;
+  FooCanvasItem *item;
 
   /* initialise the floating stuff */
   sequence->float_settings.zoom_x = 0.0 ;

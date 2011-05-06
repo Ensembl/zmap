@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Oct 21 16:13 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.13 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.14 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,7 @@ static void zmap_window_text_feature_init        (ZMapWindowTextFeature      tex
        * the size of the displayed test not the extent of the feature
        * This is for a single line short text feature not a sequence that wraps round
        */
-  canvas_item->auto_resize_background = 0;
+
   return ;
 }
 
@@ -296,17 +296,6 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_it
   return ;
 }
 
-static void invoke_item_set_colour(gpointer item_data, gpointer user_data)
-{
-  FooCanvasItem *interval = FOO_CANVAS_ITEM(item_data);
-  EachItemData each_item_data = (EachItemData)user_data;
-
-  window_text_feature_item_set_colour(each_item_data->parent, interval, NULL,
-				      each_item_data->colour_type,
-				      each_item_data->default_fill,each_item_data->border);
-
-  return ;
-}
 
 static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item,
 						FooCanvasItem         *interval,
@@ -316,7 +305,6 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
                                     GdkColor              *border)
 {
   ZMapFeatureTypeStyle style;
-  FooCanvasItem *bg_item, *underlay ;
 
   GdkColor *select_fill = NULL, *select_draw = NULL, *select_border = NULL ;
   GdkColor *normal_fill = NULL, *normal_draw = NULL, *normal_border = NULL ;
@@ -401,38 +389,11 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 			  "fill_color_gdk", text,
 			  NULL);
 
-      if ((bg_item = text_item->items[WINDOW_ITEM_BACKGROUND]))
-	{
-	  foo_canvas_item_set(bg_item,
-			      "fill_color_gdk", text_background,
-			      NULL);
-	}
     }
   else
     {
       window_text_feature_item_set_colour(text_item, interval, sub_feature, colour_type, default_fill,border) ;
     }
-
-  if ((underlay = text_item->items[WINDOW_ITEM_UNDERLAY]))
-    {
-      EachItemDataStruct each_item_data = {};
-      GdkColor red;
-
-      each_item_data.parent       = text_item;
-      each_item_data.colour_type  = colour_type;
-      each_item_data.default_fill = default_fill;
-      each_item_data.default_fill = border;
-
-      if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
-	{
-	  gdk_color_parse("red", &red);
-	  each_item_data.default_fill = &red;
-	}
-
-      g_list_foreach(FOO_CANVAS_GROUP(underlay)->item_list,
-		     invoke_item_set_colour, &each_item_data);
-    }
-
 
   return ;
 }
@@ -452,8 +413,6 @@ static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem
   char *font_name = "monotype" ;
 
 
-  gboolean mark_real_extent = FALSE;
-
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text)->get_style)(text)))
     {
       char *tmp_font;
@@ -470,40 +429,6 @@ static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem
 			     "font",   font_name,
 			     "anchor", GTK_ANCHOR_NW,
 			     NULL);
-
-  if(mark_real_extent)
-    {
-      FooCanvasPoints points;
-      double coords[8];
-      int line_width = 1;
-
-      left  = 0.0;
-      right = 5.0;
-
-      coords[0] = right;
-      coords[1] = top;
-
-      coords[2] = left;
-      coords[3] = top;
-
-      coords[4] = left;
-      coords[5] = bottom;
-
-      coords[6] = right;
-      coords[7] = bottom;
-
-      points.coords     = &coords[0];
-      points.num_points = 4;
-      points.ref_count  = 1;
-
-      foo_canvas_item_new(FOO_CANVAS_GROUP(text->items[WINDOW_ITEM_UNDERLAY]),
-			  foo_canvas_line_get_type(),
-			  "width_pixels", line_width,
-			  "points",       &points,
-			  "join_style",   GDK_JOIN_BEVEL,
-			  "cap_style",    GDK_CAP_BUTT,
-			  NULL);
-    }
 
   return item;
 }
