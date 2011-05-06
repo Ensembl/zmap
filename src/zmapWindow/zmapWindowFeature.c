@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 31 12:26 2011 (edgrif)
+ * Last edited: May  6 12:13 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.213 2011-04-05 13:29:14 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.214 2011-05-06 11:14:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -725,7 +725,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
 	{
 	  /* Adjust for when its known that the start exon is incomplete.... */
 	  if (feature->feature.transcript.flags.start_not_found)
-	    start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
+	    start_incr = feature->feature.transcript.start_not_found - 1 ; /* values are 1 <= start_not_found <= 3 */
 
 	  peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
 
@@ -1584,7 +1584,7 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
       if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, sequence_name)))
 	{
 	  pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
-						    FALSE, &(pfetch_data->text_buffer));
+						    FALSE, NULL, &(pfetch_data->text_buffer));
 
 	  pfetch_data->widget_destroy_handler_id =
 	    g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy",
@@ -1718,8 +1718,8 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
     case ZMAPSTYLE_MODE_TEXT:
     case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_GRAPH:
-    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_SEQUENCE:
+
 //      gtk_widget_set_events(GTK_WIDGET(top_item),GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
 // not a widget it's a canvas item
 // see if this speeds up up! (no difference)
