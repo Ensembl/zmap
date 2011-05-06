@@ -29,9 +29,9 @@
  * Exported functions: See ZMap/zmapUtils.h
  *              
  * HISTORY:
- * Last edited: Mar 21 11:28 2011 (edgrif)
+ * Last edited: Apr 21 21:29 2011 (edgrif)
  * Created: Tue Nov 17 13:29:50 2009 (edgrif)
- * CVS info:   $Id: zmapCoords.c,v 1.4 2011-03-31 10:57:04 edgrif Exp $
+ * CVS info:   $Id: zmapCoords.c,v 1.5 2011-05-06 10:58:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,3 +94,18 @@ void zmapCoordsZeroBased(int *start_inout, int *end_inout)
 }
 
 
+/* Convert given coords to offsets from base. Offsets start at start_value which would
+ * commonly be 0 or 1 or give zero or one-based coords.
+ * 
+ * Coords are assumed to be >= base and start_value >= 0
+ *  */
+void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_inout)
+{
+  if (start_inout)
+    *start_inout = (*start_inout - base) + start_value ;
+
+  if (end_inout)
+    *end_inout = (*end_inout - base) + start_value ;
+
+  return ;
+}
