@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  6 09:47 2011 (edgrif)
+ * Last edited: May  6 12:59 2011 (edgrif)
  * Created: Sun Apr 17 21:31:18 2011 (edgrif)
- * CVS info:   $Id: zmapFeatureTranscript.c,v 1.1 2011-05-06 11:36:03 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTranscript.c,v 1.2 2011-05-06 12:08:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,7 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
 			       int *curr_cds_pos, int *trans_spliced_pos) ;
 static void exonDestroy(ZMapFullExon exon) ;
 static void exonListFree(gpointer data, gpointer user_data_unused) ;
-
+static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
 
 
 /* 
@@ -102,7 +102,8 @@ static void exonListFree(gpointer data, gpointer user_data_unused) ;
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
 					 GList **exon_regions_list_out)
 {
-  gboolean result = FALSE;
+  gboolean result = FALSE ;
+  gboolean exon_debug = FALSE ;
 
   if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
     {
@@ -140,6 +141,9 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 	}
 
       zMapFeatureTranscriptExonForeach(feature, getDetailedExon, &full_data) ;
+
+      if (exon_debug)
+	g_list_foreach(exon_list, printDetailedExons, NULL) ;
 
       if (include_protein && full_data.translation)
 	g_free(full_data.translation) ;
@@ -490,3 +494,47 @@ static void exonListFree(gpointer data, gpointer user_data_unused)
 
 
 
+static void printDdetailedExons(gpointer exon_data, gpointer user_data)
+{
+  ZMapFullExon exon = (ZMapFullExon)exon_data;
+
+  printf("Exon: Span %d -> %d (%d)\n",
+	 exon->exon_span.x1,
+	 exon->exon_span.x2,
+	 (exon->exon_span.x2 - exon->exon_span.x1 + 1));
+  printf("  CDS Span %d -> %d (%d)\n",
+	 exon->cds_span.x1,
+	 exon->cds_span.x2,
+	 (exon->cds_span.x2 - exon->cds_span.x1 + 1));
+  printf("  Pep Span %d -> %d (%d)\n",
+	 exon->pep_span.x1,
+	 exon->pep_span.x2,
+	 (exon->pep_span.x2 - exon->pep_span.x1 + 1));
+  printf("  Phase = %d, End Phase = %d\n", exon->phase, exon->end_phase);
+
+  if(exon->peptide)
+    {
+      char *pep_start, *pep_end;
+      int print_length;
+      int peptide_length;
+
+      peptide_length = strlen(exon->peptide);
+
+      print_length = (((peptide_length / 2) > 10) ? 10 : (peptide_length / 2));
+
+      pep_start = g_strndup(exon->peptide, print_length);
+      pep_end   = g_strndup(exon->peptide + peptide_length - print_length, print_length);
+
+      printf("  Translation (%d):\n", peptide_length);
+      printf("  %s...%s\n", pep_start, pep_end);
+
+      if(pep_start)
+	g_free(pep_start);
+      if(pep_end)
+	g_free(pep_end);
+    }
+  else
+    printf("  Non coding exon\n");
+
+  return ;
+}
