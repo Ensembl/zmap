@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 11 09:43 2011 (edgrif)
+ * Last edited: May  6 12:47 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.366 2011-04-11 08:44:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.367 2011-05-06 11:48:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1427,8 +1427,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
    * Need to merge sequence and non-sequence feature code....too much repetition...
    */
 
-
-  if (feature_arg->type == ZMAPSTYLE_MODE_RAW_SEQUENCE || feature_arg->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  if (feature_arg->type == ZMAPSTYLE_MODE_SEQUENCE)
     {
       /* sequence like feature. */
       ZMapWindowSequenceFeature sequence_feature = NULL ;
@@ -1445,7 +1444,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       end = sub_item_coords_end ;
 
 
-      if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+      if (zMapFeatureSequenceIsDNA(feature))
 	{
 	  seq_term = "DNA" ;
 	}
@@ -1478,7 +1477,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 
-      if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+      if (zMapFeatureSequenceIsPeptide(feature))
 	{
 	  g_free(select.feature_desc.sub_feature_start);
 	  g_free(select.feature_desc.sub_feature_end);
@@ -1731,7 +1730,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     {
       select.secondary_text = alternative_clipboard_text ;
     }
-  else if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  else if (zMapFeatureSequenceIsDNA(feature))
     {
       char *dna_string, *seq_name;
 
@@ -1745,7 +1744,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 					      dna_string);
       g_free(seq_name);
     }
-  else if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  else if (zMapFeatureSequenceIsPeptide(feature))
     {
       ZMapPeptide translation;
       char *dna_string, *seq_name;
@@ -5157,8 +5156,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
   switch (feature->type)
     {
     case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_SEQUENCE:
       *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
       break ;
     case ZMAPSTYLE_MODE_TRANSCRIPT:
