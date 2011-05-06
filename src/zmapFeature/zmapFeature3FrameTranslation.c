@@ -29,27 +29,26 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 11 16:31 2011 (edgrif)
+ * Last edited: May  6 14:38 2011 (edgrif)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.9 2011-05-06 12:13:46 edgrif Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.10 2011-05-06 13:57:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapFeature_P.h>
 
 
-void zmapFeature3FrameTranslationDestroySequenceData(ZMapFeature feature);
 
 
+static void destroySequenceData(ZMapFeature feature) ;
 static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
-static void translation_set_populate(ZMapFeatureBlock     feature_block,
-				     ZMapFeatureSet       feature_set,
+static void translation_set_populate(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set,
 				     ZMapFeatureTypeStyle style,
-				     char *seq_name,
-				     char *seq);
+				     char *seq_name, char *seq) ;
 
 
 
@@ -164,9 +163,9 @@ void zMapFeature3FrameTranslationAddSequenceData(ZMapFeature feature, char *pept
 
   if (zMapFeatureSequenceIsPeptide(feature) && !(feature->feature.sequence.sequence))
     {
-      feature->feature.sequence.sequence = peptide_str;
-      feature->feature.sequence.length   = sequence_length;
-      feature->feature.sequence.type     = ZMAPSEQUENCE_PEPTIDE;
+      feature->feature.sequence.sequence = peptide_str ;
+      feature->feature.sequence.length   = sequence_length ;
+      feature->feature.sequence.type     = ZMAPSEQUENCE_PEPTIDE ;
     }
 
   return ;
@@ -174,14 +173,13 @@ void zMapFeature3FrameTranslationAddSequenceData(ZMapFeature feature, char *pept
 
 
 
-void zmapFeature3FrameTranslationDestroySequenceData(ZMapFeature feature)
+static void destroySequenceData(ZMapFeature feature)
 {
   if (zMapFeatureSequenceIsPeptide(feature) && (feature->feature.sequence.sequence))
     {
-      g_free(feature->feature.sequence.sequence);
-      feature->feature.sequence.sequence = NULL;
-      feature->feature.sequence.length = 0;
-      feature->feature.sequence.type = ZMAPSEQUENCE_NONE;
+      g_free(feature->feature.sequence.sequence) ;
+      feature->feature.sequence.sequence = NULL ;
+      feature->feature.sequence.length = 0 ;
     }
 
   return ;
@@ -255,8 +253,7 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
 
       if ((translation = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
         {
-	  /* clear sequence? */
-	  zmapFeature3FrameTranslationDestroySequenceData(translation) ;
+	  destroySequenceData(translation) ;
 	}
       else
         {
