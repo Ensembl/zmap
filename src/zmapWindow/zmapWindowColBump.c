@@ -22,24 +22,19 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Column bumping functions.
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  6 16:04 2011 (edgrif)
+ * Last edited: May  6 12:02 2011 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.84 2011-04-08 10:47:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.85 2011-05-06 11:03:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
@@ -1047,9 +1042,9 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
     }
 
-  if(proceed)
+  if (proceed)
     {
-      if (feature->type != ZMAPSTYLE_MODE_GRAPH && feature->type != ZMAPSTYLE_MODE_PEP_SEQUENCE)
+	if (feature->type != ZMAPSTYLE_MODE_GRAPH && !zMapFeatureSequenceIsPeptide(feature))
 	{
 	  /* Some features are drawn with different widths to indicate things like score. In this case
 	   * their offset needs to be corrected to place them centrally. (We always do this which
