@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 24 09:45 2011 (edgrif)
+ * Last edited: May  6 12:16 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.96 2011-04-05 13:29:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.97 2011-05-06 11:17:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,7 +132,11 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data, ZMapFeature feature
                                             double feature_offset,
                                             double x1, double y1, double x2, double y2,
                                             ZMapFeatureTypeStyle style);
-static FooCanvasItem *drawSeqFeature(RunSet run_data, ZMapFeature feature,
+static FooCanvasItem *drawSequenceFeature(RunSet run_data, ZMapFeature feature,
+					  double feature_offset,
+					  double x1, double y1, double x2, double y2,
+					  ZMapFeatureTypeStyle style);
+static FooCanvasItem *drawDNAFeature(RunSet run_data, ZMapFeature feature,
                                      double feature_offset,
                                      double x1, double y1, double x2, double y2,
                                      ZMapFeatureTypeStyle style);
@@ -199,8 +203,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPSTYLE_MODE_BASIC,        drawSimpleFeature},
   {ZMAPSTYLE_MODE_ALIGNMENT,    drawAlignFeature},
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
-  {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
-  {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_SEQUENCE, drawSequenceFeature},
   {ZMAPSTYLE_MODE_ASSEMBLY_PATH, drawAssemblyFeature},
   {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
   {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
@@ -548,8 +551,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    break ;
 	  }
 
-	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	case ZMAPSTYLE_MODE_SEQUENCE:
 	  {
 	    method_table = factory->methods;
 
@@ -1612,7 +1614,31 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   return feature_item;
 }
 
-static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
+static FooCanvasItem *drawSequenceFeature(RunSet run_data,  ZMapFeature feature,
+					  double feature_offset,
+					  double x1, double y1, double x2, double y2,
+					  ZMapFeatureTypeStyle style)
+{
+  FooCanvasItem *item = NULL ;
+
+
+  if (zMapFeatureSequenceIsDNA(feature))
+    item = drawDNAFeature(run_data, feature,
+			  feature_offset,
+			  x1, y1, x2, y2,
+			  style) ;
+  else
+    item = drawPepFeature(run_data, feature,
+			  feature_offset,
+			  x1, y1, x2, y2,
+			  style) ;
+
+  return item ;
+}
+
+
+
+static FooCanvasItem *drawDNAFeature(RunSet run_data,  ZMapFeature feature,
                                      double feature_offset,
                                      double x1, double y1, double x2, double y2,
                                      ZMapFeatureTypeStyle style)
@@ -1814,11 +1840,11 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
     printf("start for text = %d\n", start) ;
 
 
-  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  if (zMapFeatureSequenceIsDNA(feature))
     {
       seq_ptr = feature->feature.sequence.sequence + start - 1 ;
     }
-  else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  else if (zMapFeatureSequenceIsPeptide(feature))
     {
       int protein_start;
       /* Get the protein index that the world y corresponds to. */
@@ -1938,12 +1964,12 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
   /* Create the "parent" canvas item for the text item itself. */
   canvas_item = zMapWindowCanvasItemCreate(parent, text_start, feature, style) ;
 
-  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  if (zMapFeatureSequenceIsDNA(feature))
     {
       allocate_func_cb   = canvas_allocate_dna_cb;
       fetch_text_func_cb = canvas_fetch_feature_text_cb;
     }
-  else if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  else if (zMapFeatureSequenceIsPeptide(feature))
     {
       allocate_func_cb   = canvas_allocate_protein_cb;
       fetch_text_func_cb = canvas_fetch_feature_text_cb;
