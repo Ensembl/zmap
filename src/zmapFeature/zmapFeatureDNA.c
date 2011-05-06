@@ -22,23 +22,19 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 11 14:50 2010 (edgrif)
+ * Last edited: May  6 12:34 2011 (edgrif)
  * Created: Tue Apr  7 10:32:21 2009 (rds)
- * CVS info:   $Id: zmapFeatureDNA.c,v 1.9 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureDNA.c,v 1.10 2011-05-06 11:34:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
 
 
 #include <ZMap/zmapUtils.h>
@@ -87,22 +83,23 @@ char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block)
 /* sigh... canonicalise! */
 GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block)
 {
-  GQuark dna_id = 0;
-  char *dna_name = NULL;
+  GQuark dna_id = 0 ;
+  char *dna_name = NULL ;
 
-  dna_name = zMapFeatureDNAFeatureName(block);
+  dna_name = zMapFeatureDNAFeatureName(block) ;
 
-  if(dna_name)
+  if (dna_name)
     {
-      dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE,
+      dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_SEQUENCE,
 				   dna_name, ZMAPSTRAND_FORWARD,
 				   block->block_to_sequence.block.x1,
 				   block->block_to_sequence.block.x2,
-				   0, 0);
-      g_free(dna_name);
+				   0, 0) ;
+
+      g_free(dna_name) ;
     }
 
-  return dna_id;
+  return dna_id ;
 }
 
 
@@ -137,8 +134,7 @@ gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *
 void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int sequence_length)
 {
 
-  if(!dna_feature->feature.sequence.sequence &&
-     dna_feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+  if (zMapFeatureSequenceIsDNA(dna_feature))
     {
       dna_feature->feature.sequence.sequence = dna_str;
       dna_feature->feature.sequence.length   = sequence_length;
@@ -165,20 +161,20 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 
   dna_feature_set = zMapFeatureBlockGetSetByID(block, dna_set_id);
 
-  if(dna_feature_set)
+  if (dna_feature_set)
     {
       char *feature_name, *sequence, *ontology;
       GQuark dna_id;
       int block_start, block_end;
 
       block_start = block->block_to_sequence.block.x1 ;
-      block_end   = block->block_to_sequence.block.x2 ;
+      block_end = block->block_to_sequence.block.x2 ;
 
       feature_name = zMapFeatureDNAFeatureName(block);
 
-      dna_id       = zMapFeatureDNAFeatureID(block);;
+      dna_id = zMapFeatureDNAFeatureID(block);;
 
-      if(block->sequence.sequence)
+      if (block->sequence.sequence)
 	{
 	  /* hmm, we've already got dna */
 
@@ -198,13 +194,14 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 	  dna_feature = zMapFeatureCreateFromStandardData(feature_name,
 							  sequence,
 							  ontology,
-							  ZMAPSTYLE_MODE_RAW_SEQUENCE,
+							  ZMAPSTYLE_MODE_SEQUENCE,
 							  style,
 							  block_start,
 							  block_end,
 							  FALSE, 0.0,
 							  strand) ;
 
+	  zMapFeatureSequenceSetType(dna_feature, ZMAPSEQUENCE_DNA) ;
 	  zMapFeatureDNAAddSequenceData(dna_feature, dna_str, sequence_length);
 
 	  zMapFeatureSetAddFeature(dna_feature_set, dna_feature);

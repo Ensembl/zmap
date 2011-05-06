@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindowCanvas.h
  * HISTORY:
- * Last edited: Feb 18 11:03 2011 (edgrif)
+ * Last edited: May  6 12:37 2011 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.39 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.40 2011-05-06 11:38:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2536,8 +2536,7 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	  case ZMAPSTYLE_MODE_TEXT:
 	    type = ZMAP_TYPE_WINDOW_TEXT_FEATURE;
 	    break;
-	  case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-	  case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	  case ZMAPSTYLE_MODE_SEQUENCE:
 	    type = ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE;
 	    break;
 	  case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
