@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Apr 13 11:19 2011 (edgrif)
+ * Last edited: May  6 08:50 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.89 2011-04-13 10:48:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.90 2011-05-06 12:04:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,6 +122,23 @@ typedef struct
 }AlignBlockMenuStruct, *AlignBlockMenu;
 
 
+typedef struct
+{
+  ZMapFeature feature ;
+
+  gboolean cds ;
+  gboolean spliced ;
+
+  ZMapFeatureTypeStyle sequence_style ;
+
+  GdkColor *non_coding ;
+  GdkColor *coding ;
+  GdkColor *split ;
+
+  GList *text_attrs ;
+} MakeTextAttrStruct, *MakeTextAttr ;
+
+
 
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
 
@@ -157,10 +174,18 @@ static void insertSubMenus(GString *branch_point_string,
                            ZMapGUIMenuItem sub_menus,
                            ZMapGUIMenuItem item,
                            GArray **items_array);
+
 static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key,
                                                                       gpointer data,
                                                                       gpointer user_data,
-                                                                      char **error_out);
+                                                                      char **error_out) ;
+
+static gboolean getSeqColours(ZMapFeatureTypeStyle style, 
+			      GdkColor **non_coding_out, GdkColor **coding_out, GdkColor **split_out) ;
+static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboolean cds,
+				     GdkColor *non_coding_out, GdkColor *coding_out, GdkColor *split_out) ;
+static void createExonTextTag(gpointer data, gpointer user_data) ;
+static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 
 
@@ -443,9 +468,12 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
   ZMapFeatureContext context ;
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
   int seq_len ;
+  int user_start = 0, user_end = 0 ;
 
-//  feature = (ZMapFeature)zMapWindowCanvasItemIntervalGetObject(menu_data->item) ;
-  feature = zMapWindowCanvasItemGetFeature(menu_data->item);     // this function is used to get the feature in the function that makes this menu
+  /* Retrieve feature selected by user. */
+  feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
+  user_start = feature->x1 ;
+  user_end = feature->x2 ;
 
   context = menu_data->window->feature_context ;
 
@@ -479,8 +507,10 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     default:
-      zMapAssertNotReached() ;				    /* exits... */
-      break ;
+      {
+	zMapAssertNotReached() ;				    /* exits... */
+	break ;
+      }
     }
 
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -498,7 +528,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       else
 	dialog_type = ZMAP_DIALOG_EXPORT ;
 
-      dna = zmapWindowDNAChoose(menu_data->window, menu_data->item, dialog_type) ;
+      dna = zmapWindowDNAChoose(menu_data->window, menu_data->item, dialog_type, &user_start, &user_end) ;
     }
   else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
@@ -509,31 +539,61 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       dna = zMapFeatureGetFeatureDNA(feature) ;
     }
 
+
   if (!dna)
     {
       zMapWarning("%s", "No DNA available") ;
     }
   else
     {
-      /* Would be better to have the dna functions calculate and return this.... */
       seq_len = strlen(dna) ;
-
 
       if (menu_item_id == ZMAPCDS || menu_item_id == ZMAPTRANSCRIPT || menu_item_id == ZMAPUNSPLICED
 	  || menu_item_id == ZMAPCHOOSERANGE)
 	{
-	  char *title ;
+	  GList *text_attrs = NULL ;
 	  char *dna_fasta ;
+	  char *window_title ;
+	  ZMapFeatureTypeStyle style ;
+	  GdkColor *non_coding, *coding, *split ;
+
+	  window_title = g_strdup_printf("%s%s%s",
+					 seq_name,
+					 gene_name ? ":" : "",
+					 gene_name ? gene_name : "") ;
 
 	  dna_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, seq_name, molecule_type, gene_name, seq_len, dna) ;
 
-	  title = g_strdup_printf("%s%s%s",
-				  seq_name,
-				  gene_name ? ":" : "",
-				  gene_name ? gene_name : "") ;
-	  zMapGUIShowText(title, dna_fasta, FALSE) ;
-	  g_free(title) ;
+	  /* Transcript annotation only supported if whole transcript shown, add annotation of
+	   * partial transcript as an enhancement if/when users ask for it. */
+	  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+	      && (user_start <= feature->x1 && user_end >= feature->x2)
+	      && ((style = zMapFindStyle(menu_data->window->context_map->styles,
+					 zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+		  && getSeqColours(style, &non_coding, &coding, &split)))
+	    {
+	      char *dna_fasta_title ;
+	      int title_len ;
 
+	      text_attrs = getTranscriptTextAttrs(feature, spliced, cds,
+						  non_coding, coding, split) ;
+
+	      /* Find out length of FASTA title so we can offset for it. */
+	      dna_fasta_title = zMapFASTATitle(ZMAPFASTA_SEQTYPE_DNA, seq_name, molecule_type, gene_name, seq_len) ;
+	      title_len = strlen(dna_fasta_title) - 1 ;	    /* Get rid of newline in length. */
+
+	      /* If user chose a DNA range then offset for that too. */
+	      if (user_start)
+		user_start = feature->x1 - user_start ;
+	      title_len += user_start ;
+
+	      /* Now offset all the exons to take account of title length. */
+	      g_list_foreach(text_attrs, offsetTextAttr, GINT_TO_POINTER(title_len)) ;
+	    }
+
+	  zMapGUIShowTextFull(window_title, dna_fasta, FALSE, text_attrs, NULL) ;
+
+	  g_free(window_title) ;
 	  g_free(dna_fasta) ;
 	}
       else
@@ -747,7 +807,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
     {
       /* Adjust for when its known that the start exon is incomplete.... */
       if (feature->feature.transcript.flags.start_not_found)
-	start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
+	start_incr = feature->feature.transcript.start_not_found - 1 ; /* values are 1 <= start_not_found <= 3 */
 
       peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
 
@@ -1429,12 +1489,12 @@ static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny
 #if MH17_DONT_INCLUDE   // can't do this due top scope
 void dumpConfig(GHashTable *f2c, GHashTable *f2s)
 {
-      GList *iter;
-      ZMapFeatureSetDesc gff_set;
-      ZMapFeatureSource gff_src;
-      gpointer key, value;
-      GHashTable * cols = zMap_g_hashlist_create();
-      GList *l;
+  GList *iter;
+  ZMapFeatureSetDesc gff_set;
+  ZMapFeatureSource gff_src;
+  gpointer key, value;
+  GHashTable * cols = zMap_g_hashlist_create();
+  GList *l;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *error = NULL ;
@@ -1447,11 +1507,11 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
       if (error)
-      {
-        zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
 
-        g_error_free(error) ;
-      }
+	  g_error_free(error) ;
+	}
     }
 
 
@@ -1460,49 +1520,50 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
       GIOStatus status ;
 
       if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
-      {
-        zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
 
-        g_error_free(error) ;
-      }
+	  g_error_free(error) ;
+	}
     }
 
 
+
+  zMap_g_hash_table_iter_init (&iter, f2c);
+  while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+    {
+      gff_set = (ZMapFeatureSetDesc) value;
+      zMap_g_hashlist_insert(cols,value,key);
+    }
+
+  printf("\n[columns]\n");
+
+  zMap_g_hash_table_iter_init (&iter, cols);
+  while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+    {
+      char *sep = "";
+      printf("%s = ");
+      for(l = (GList *) value;l;l = l->next)
+	{
+	  printf(" %s %s",sep,g_quark_to_string(GPOINTER_TO_UINT(l->data)));
+	  sep = ";";
+	}
+      printf("\n");
+    }
+
+  zMap_g_hashlist_destroy(cols);
+
+  printf("\nf[featureset-style]\n");
+  zMap_g_hash_table_iter_init (&iter, f2s);
+  while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+    {
+      gff_src = (ZMapFeatureSource) value;
+      printf("%s = %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
+	     g_quark_to_string(GPOINTER_TO_UINT(gff_src->style_id)));
+										     }
   return ;
 }
 
-      zMap_g_hash_table_iter_init (&iter, f2c);
-      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
-      {
-            gff_set = (ZMapFeatureSetDesc) value;
-            zMap_g_hashlist_insert(cols,value,key);
-      }
-
-      printf("\n[columns]\n");
-
-      zMap_g_hash_table_iter_init (&iter, cols);
-      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
-      {
-            char *sep = "";
-            printf("%s = ");
-            for(l = (GList *) value;l;l = l->next)
-            {
-                  printf(" %s %s",sep,g_quark_to_string(GPOINTER_TO_UINT(l->data)));
-                  sep = ";";
-            }
-            printf("\n");
-      }
-
-      zMap_g_hashlist_destroy(cols);
-
-      printf("\nf[featureset-style]\n");
-      zMap_g_hash_table_iter_init (&iter, f2s);
-      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
-      {
-            gff_src = (ZMapFeatureSource) value;
-            printf("%s = %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)), g_quark_to_string(GPOINTER_TO_UINT(gff_src->style_id);
-      }
-}
 #endif
 
 static void dumpContext(ZMapWindow window)
@@ -1675,11 +1736,11 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 }
 
 
-void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
-                                      ZMapGUIMenuItem each_align,
-                                      ZMapGUIMenuItem each_block,
-                                      char *root,
-                                      GArray **items_array_out)
+ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
+				       ZMapGUIMenuItem each_align,
+				       ZMapGUIMenuItem each_block,
+				       char *root,
+				       GArray **items_array_out)
 {
   zMapAssert(window);
   AlignBlockMenuStruct data = {0};
@@ -1696,3 +1757,140 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
 
   return ;
 }
+
+
+/* Get colours for coding, non-coding etc of sequence. */
+static gboolean getSeqColours(ZMapFeatureTypeStyle style, 
+			      GdkColor **non_coding_out, GdkColor **coding_out, GdkColor **split_out)
+{
+  gboolean result =  FALSE ;
+
+  /* I'm sure this is not the way to access these...find out from Malcolm where we stand on this... */
+  if (style->mode_data.sequence.non_coding.normal.fields_set.fill
+      && style->mode_data.sequence.coding.normal.fields_set.fill
+      && style->mode_data.sequence.split_codon.normal.fields_set.fill)
+    {
+      *non_coding_out = (GdkColor *)(&(style->mode_data.sequence.non_coding.normal.fill)) ;
+      *coding_out = (GdkColor *)(&(style->mode_data.sequence.coding.normal.fill)) ;
+      *split_out = (GdkColor *)(&(style->mode_data.sequence.split_codon.normal.fill)) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/* Given a transcript feature get the annotated exons for that feature and create
+ * corresponding text attributes for each one, these give position of annotated
+ * exon and it's colour. */
+static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboolean cds,
+				     GdkColor *non_coding, GdkColor *coding, GdkColor *split)
+{
+  GList *text_attrs = NULL ;
+  GList *exon_list = NULL ;
+
+  if (zMapFeatureAnnotatedExonsCreate(feature, FALSE, &exon_list))
+    {
+      MakeTextAttrStruct text_data ;
+
+      text_data.feature = feature ;
+      text_data.cds = cds ;
+      text_data.spliced = spliced ;
+      text_data.non_coding = non_coding ;
+      text_data.coding = coding ;
+      text_data.split = split ;
+      text_data.text_attrs = text_attrs ;
+
+      g_list_foreach(exon_list, createExonTextTag, &text_data) ;
+
+      text_attrs = text_data.text_attrs ;
+
+      zMapFeatureAnnotatedExonsDestroy(exon_list) ;
+    }
+
+  return text_attrs ;
+}
+
+/* Create a text attribute for a given annotated exon. */
+static void createExonTextTag(gpointer data, gpointer user_data)
+{
+  ZMapFullExon exon = (ZMapFullExon)data ;
+  MakeTextAttr text_data = (MakeTextAttr)user_data ;
+  GList *text_attrs_list = text_data->text_attrs ;
+  ZMapGuiTextAttr text_attr = NULL ;
+
+  /* Text buffer positions are zero-based so "- 1" for all positions. */
+  if (!(text_data->spliced))
+    {
+      text_attr = g_new0(ZMapGuiTextAttrStruct, 1) ;
+
+      text_attr->start = exon->unspliced_span.x1 - 1 ;
+      text_attr->end = exon->unspliced_span.x2 - 1 ;
+    }
+  else
+    {
+      if (!(text_data->cds) || exon->region_type != EXON_NON_CODING)
+	{
+	  text_attr = g_new0(ZMapGuiTextAttrStruct, 1) ;
+
+	  if ((text_data->cds))
+	    {
+	      text_attr->start = exon->cds_span.x1 - 1 ;
+	      text_attr->end = exon->cds_span.x2 - 1 ;
+	    }
+	  else
+	    {
+	      text_attr->start = exon->spliced_span.x1 - 1 ;
+	      text_attr->end = exon->spliced_span.x2 - 1 ;
+	    }
+	}
+    }  
+
+
+  if (text_attr)
+    {
+      switch (exon->region_type)
+	{
+	case EXON_NON_CODING:
+	  text_attr->background = text_data->non_coding ;
+
+	  break ; 
+
+	case EXON_CODING:
+	  {
+	    text_attr->background = text_data->coding ;
+
+	    break ;
+	  }
+
+	case EXON_START_NOT_FOUND:
+	case EXON_SPLIT_CODON:
+	  text_attr->background = text_data->split ;
+
+	  break ;
+
+	default:
+	  zMapAssertNotReached() ;
+	}
+
+      text_attrs_list = g_list_append(text_attrs_list, text_attr) ;
+      
+      text_data->text_attrs = text_attrs_list ;
+    }
+
+  return ;
+}
+
+
+/* Offset text attributes by given amount. */
+static void offsetTextAttr(gpointer data, gpointer user_data)
+{
+  ZMapGuiTextAttr text_attr = (ZMapGuiTextAttr)data ; 
+  int offset = GPOINTER_TO_INT(user_data) ;
+
+  text_attr->start += offset ;
+  text_attr->end += offset ;
+
+  return ;
+}
+
