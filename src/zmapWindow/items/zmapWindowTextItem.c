@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowTextItem.h
  * HISTORY:
- * Last edited: Mar 31 13:56 2011 (edgrif)
+ * Last edited: Apr 17 21:24 2011 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.15 2011-03-31 13:11:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.16 2011-05-06 11:42:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1108,6 +1108,9 @@ static void zmap_window_text_item_get_property(GObject *object,
     case PROP_TEXT_REQUESTED_HEIGHT:
       g_value_set_double(value, text->requested_height);
       break;
+    case PROP_TEXT_SELECT_COLOR_GDK:
+      g_value_set_boxed(value, &(text->select_colour)) ;
+      break ;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
       break;
