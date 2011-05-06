@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowSequenceFeature.h
  * HISTORY:
- * Last edited: Mar 31 12:48 2011 (edgrif)
+ * Last edited: May  6 12:40 2011 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.17 2011-03-31 11:50:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.18 2011-05-06 11:42:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,37 +58,6 @@ enum
 
     PROP_LAST,
   };
-
-
-
-typedef struct
-{
-  ZMapFeature feature;
-  FooCanvasItem *item;
-  int translation_start;
-  int translation_end;
-  char *translation;
-  int cds_coord_counter;
-  int phase_length;
-  GList **full_exons;
-  gboolean result;
-} ItemShowTranslationTextDataStruct, *ItemShowTranslationTextData;
-
-
-typedef struct
-{
-  ZMapSpanStruct exon_span;
-  ZMapSpanStruct cds_span;
-  ZMapSpanStruct pep_span;
-  char *peptide;
-  unsigned int phase     ;
-  unsigned int end_phase ;
-}ZMapFullExonStruct, *ZMapFullExon;
-
-
-
-
-
 
 
 static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureClass sequence_class);
@@ -127,17 +96,7 @@ static GType float_group_axis_get_type (void);
 static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_feature,
 					     guint signal_id,
 					     int first_index, int final_index, int start, int end);
-static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
-						gboolean       include_protein,
-						FooCanvasItem *item,
-						GList        **list_out) ;
-static void get_detailed_exons(gpointer exon_data, gpointer user_data) ;
-static ZMapFullExon zmapExonCreate(void) ;
-static void exonListFree(gpointer data, gpointer user_data_unused) ;
-static void zmapExonDestroy(ZMapFullExon exon) ;
 
-static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
-static char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
 
 static void coordsDNA2Pep(ZMapFeature feature, int *start_inout, int *end_inout) ;
 
@@ -236,24 +195,27 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		deselect = TRUE ;			    /* 1st time deselect any existing highlight. */
 		event = FALSE ;
 
-		/* oh gosh....what does this do..... */
-		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list) ;
+		/* Get positions/translation etc of all exons. */
+		zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list) ;
 
 		if (sub_part)
 		  {
 		    ZMapFeatureSubPartSpan span ;
 		    int start, end ;
 
+		    /* Fix up this code in a minute...should be made into an exonlist as well
+		     * with common code..... */
+
 		    span = zMapWindowCanvasItemIntervalGetData(item) ;
 
 		    current_exon = (ZMapFullExon)(g_list_nth_data(exon_list, span->index - 1)) ;
 
-		    start = current_exon->exon_span.x1 ;
-		    end = current_exon->exon_span.x2 ;
+		    start = current_exon->sequence_span.x1 ;
+		    end = current_exon->sequence_span.x2 ;
 
 		    zMapFeature2BlockCoords(block, &start, &end) ;
 
-		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		    if (zMapFeatureSequenceIsPeptide(feature))
 		      coordsDNA2Pep(feature, &start, &end) ;
 
 		    zMapWindowTextItemSelect(text_item,
@@ -262,21 +224,92 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		  }
 		else
 		  {
-		    exon_list_member = g_list_first(exon_list);
+		    ZMapFeatureTypeStyle style ;
+		    ZMapStyleColourType colour_type = ZMAPSTYLE_COLOURTYPE_NORMAL ;
+		    GdkColor *non_coding_background, *non_coding_foreground, *non_coding_outline ;
+		    GdkColor *coding_background, *coding_foreground, *coding_outline ;
+		    GdkColor *split_codon_background, *split_codon_foreground, *split_codon_outline ;
+		    GdkColor *in_frame_background, *in_frame_foreground, *in_frame_outline ;
+		    gboolean result ;
 
+		    style = feature->style ;
+
+		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
+						 &non_coding_background, &non_coding_foreground, &non_coding_outline) ;
+
+		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
+						 &coding_background, &coding_foreground, &coding_outline) ;
+
+		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS, colour_type,
+						 &split_codon_background, &split_codon_foreground, &split_codon_outline) ;
+
+		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
+						 &in_frame_background, &in_frame_foreground, &in_frame_outline) ;
+
+
+		    /* default is coding. */
+
+		    exon_list_member = g_list_first(exon_list);
 		    do
 		      {
-			int start, end ;
+			int start, end, orig_start = 0, orig_end = 0 ;
+			gboolean is_pep ;
 
 			current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
-			start = current_exon->exon_span.x1 ;
-			end = current_exon->exon_span.x2 ;
+			start = current_exon->sequence_span.x1 ;
+			end = current_exon->sequence_span.x2 ;
 
 			zMapFeature2BlockCoords(block, &start, &end) ;
 
-			if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-			  coordsDNA2Pep(feature, &start, &end) ;
+			if ((is_pep = zMapFeatureSequenceIsPeptide(feature)))
+			  {
+			    orig_start = start ;
+			    orig_end = end ;
+
+			    coordsDNA2Pep(feature, &start, &end) ;
+			  }
+
+			switch (current_exon->region_type)
+			  {
+			  case EXON_NON_CODING:
+			    g_object_set(G_OBJECT(text_item),
+					 "select-color-gdk", non_coding_background,
+					 NULL) ;
+			    break ; 
+
+			  case EXON_CODING:
+			    {
+			      GdkColor *coding_colour = coding_background ;
+
+			      if (is_pep)
+				{
+				  int start_from_pep = start, end_from_pep = end ;
+
+				  zMapSequencePep2DNA(&start_from_pep, &end_from_pep,
+						      feature->feature.sequence.frame) ;
+
+				  if (orig_start == start_from_pep)
+				    coding_colour = in_frame_background ;
+				}
+
+
+			    g_object_set(G_OBJECT(text_item),
+					 "select-color-gdk", coding_colour,
+					 NULL) ;
+			    break ;
+			    }
+
+			  case EXON_START_NOT_FOUND:
+			  case EXON_SPLIT_CODON:
+			    g_object_set(G_OBJECT(text_item),
+					 "select-color-gdk", split_codon_background,
+					 NULL) ;
+			    break ;
+
+			  default:
+			    zMapAssertNotReached() ;
+			  }
 
 			zMapWindowTextItemSelect(text_item,
 						 start, end,
@@ -290,8 +323,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
 
 		/* Tidy up. */
-		g_list_foreach(exon_list, exonListFree, NULL) ;
-		g_list_free(exon_list) ;
+		zMapFeatureAnnotatedExonsDestroy(exon_list) ;
 
 		break ;
 	      }
@@ -307,7 +339,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
 		    zMapFeature2BlockCoords(block, &start, &end) ;
 
-		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		    if (zMapFeatureSequenceIsPeptide(feature))
 		      coordsDNA2Pep(feature, &start, &end) ;
 
 		    zMapWindowTextItemSelect(text_item,
@@ -358,13 +390,13 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
   zMapFeature2BlockCoords(block, &start, &end) ;
 
 
-  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  if (zMapFeatureSequenceIsPeptide(feature))
     zMapSequenceDNA2Pep(&start, &end, feature->feature.sequence.frame) ;
 
 
   if (debug_G)
     printf("Feature %s, coord_type %s,   region_start/end: %d, %d   seq start/end: %d, %d\n",
-	   feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE ? "Peptide" : "DNA",
+	   zMapFeatureSequenceIsPeptide(feature) ? "Peptide" : "DNA",
 	   coord_type == ZMAPSEQUENCE_PEPTIDE ? "Peptide" : "DNA",
 	   region_start, region_end,
 	   start, end) ;
@@ -463,292 +495,6 @@ gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature)
  */
 
 
-static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
-						gboolean       include_protein,
-						FooCanvasItem *item,
-						GList        **list_out)
-{
-  gboolean result = FALSE;
-
-  if(ZMAPFEATURE_IS_TRANSCRIPT(feature))
-    {
-      ItemShowTranslationTextDataStruct full_data = { NULL };
-      int translation_start, translation_end;
-
-      /* This lot should defo be in a function
-       * zMapFeatureTranslationStartCoord(feature);
-       */
-      if(ZMAPFEATURE_HAS_CDS(feature))
-	translation_start = feature->feature.transcript.cds_start;
-      else
-	translation_start = feature->x1;
-
-      if(feature->feature.transcript.flags.start_not_found)
-	translation_start += (feature->feature.transcript.start_phase - 1);
-
-      /* This lot should defo be in a function
-       * zMapFeatureTranslationEndCoord(feature);
-       */
-      if(ZMAPFEATURE_HAS_CDS(feature))
-	translation_end = feature->feature.transcript.cds_end;
-      else
-	translation_end = feature->x2;
-
-      full_data.feature      = feature;
-      full_data.item         = item;
-      full_data.full_exons   = list_out;
-      full_data.result       = result;
-      full_data.translation_start = translation_start;
-      full_data.translation_end   = translation_end;
-
-      if(include_protein)
-	{
-	  int real_length;
-	  full_data.translation = zMapFeatureTranslation(feature, &real_length);
-	}
-
-      zMapFeatureTranscriptExonForeach(feature, get_detailed_exons,
-				       &full_data);
-
-      if(include_protein && full_data.translation)
-	g_free(full_data.translation);
-
-      /* In case there are no exons */
-      result = full_data.result;
-
-      if (result && full_data.phase_length < full_data.cds_coord_counter)
-	{
-	  ZMapFullExon last_exon;
-	  GList *last;
-
-	  if ((last = g_list_last(*(full_data.full_exons))))
-	    {
-	      char *updated_pep;
-	      last_exon = (ZMapFullExon)(last->data);
-	      updated_pep = g_strdup_printf("%sX", last_exon->peptide);
-	      g_free(last_exon->peptide);
-	      last_exon->peptide = updated_pep;
-	      last_exon->pep_span.x2 += 1;
-	    }
-	}
-    }
-
-  return result;
-}
-
-
-static void get_detailed_exons(gpointer exon_data, gpointer user_data)
-{
-  ItemShowTranslationTextData full_data = (ItemShowTranslationTextData)user_data;
-  ZMapSpan exon_span = (ZMapSpan)exon_data;
-  ZMapFullExon full_exon = NULL;
-  FooCanvasItem *item;
-  ZMapFeature feature;
-  int tr_start, tr_end;
-
-  full_exon = zmapExonCreate();
-
-  full_exon->exon_span = *exon_span; /* struct copy */
-
-  feature  = full_data->feature;
-  item     = full_data->item;
-  tr_start = full_data->translation_start;
-  tr_end   = full_data->translation_end;
-
-  /* chop out the correct bit of sequence */
-
-  if (!(tr_start > exon_span->x2 || tr_end   < exon_span->x1))
-    {
-      /* translate able exon i.e. not whole UTR exon. */
-      int pep_start, pep_length, phase_length;
-      int ex1, ex2, coord_length, start, end;
-      char *peptide;
-
-      ex1 = exon_span->x1;
-      ex2 = exon_span->x2;
-
-      if (ex1 < tr_start)
-	{
-	  /* exon is part utr */
-	  ex1 = tr_start;
-	  if(feature->feature.transcript.flags.start_not_found)
-	    full_exon->phase = (feature->feature.transcript.start_phase - 1);
-	}
-      else if (ex1 == tr_start)
-	{
-	  if(feature->feature.transcript.flags.start_not_found)
-	    full_exon->phase = (feature->feature.transcript.start_phase - 1);
-	}
-      else
-	{
-	  full_exon->phase = full_data->cds_coord_counter % 3;
-	}
-
-      coord_length = (ex2 - ex1 + 1);
-
-      if (ex2 > tr_end)
-	{
-	  /* exon is part utr */
-	  ex2 = tr_end;
-	  full_exon->end_phase = -1;
-	  coord_length = (ex2 - ex1 + 1);
-	}
-      else
-	{
-	  full_exon->end_phase = (full_exon->phase + coord_length) % 3 ;
-	}
-
-      start = full_data->cds_coord_counter + 1;
-      full_exon->cds_span.x1 = start;
-
-      full_data->cds_coord_counter += coord_length;
-
-      end = full_data->cds_coord_counter;
-      full_exon->cds_span.x2 = end;
-
-      /* Keep track of the phase length and save this part of protein */
-      phase_length  = coord_length;
-      phase_length -= full_exon->end_phase;
-      phase_length += full_exon->phase;
-
-      pep_length = (phase_length / 3);
-      pep_start  = ((full_data->phase_length) / 3);
-
-      /* _only_ count _full_ codons in this length. */
-      full_exon->pep_span.x1   = pep_start + 1;
-      full_data->phase_length += (pep_length * 3);
-      full_exon->pep_span.x2   = (int)(full_data->phase_length / 3);
-
-      if(full_data->translation)
-	{
-	  peptide = full_data->translation + pep_start;
-
-	  full_exon->peptide = g_strndup(peptide, pep_length);
-	}
-    }
-  else
-    {
-      full_exon->peptide = NULL;
-    }
-
-  *(full_data->full_exons) = g_list_append(*(full_data->full_exons), full_exon) ;
-
-  /* what more can we do? */
-  full_data->result = TRUE;
-
-  return ;
-}
-
-
-static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
-{
-  char *pep_str = NULL ;
-  ZMapFeatureContext context ;
-  ZMapPeptide peptide ;
-  char *dna_str, *name, *free_me ;
-
-  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-							   ZMAPFEATURE_STRUCT_CONTEXT));
-
-  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
-    {
-      free_me = dna_str;					    /* as we potentially move ptr. */
-      name    = (char *)g_quark_to_string(feature->original_id);
-
-      if(feature->feature.transcript.flags.start_not_found)
-	dna_str += (feature->feature.transcript.start_phase - 1);
-
-      peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
-
-      if(length)
-	{
-	  *length = zMapPeptideLength(peptide);
-	  if (zMapPeptideHasStopCodon(peptide))
-	    *length = *length - 1;
-	}
-
-      pep_str = zMapPeptideSequence(peptide);
-      pep_str = g_strdup(pep_str);
-
-      zMapPeptideDestroy(peptide);
-      g_free(free_me);
-    }
-
-  return pep_str ;
-}
-
-static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
-{
-  char *seq;
-
-  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      seq = zMapFeatureTranscriptTranslation(feature, length);
-    }
-  else
-    {
-      GArray *rubbish;
-      int i, l;
-      char c = '.';
-
-      l = feature->x2 - feature->x1 + 1;
-
-      rubbish = g_array_sized_new(TRUE, TRUE, sizeof(char), l);
-
-      for(i = 0; i < l; i++)
-	{
-	  g_array_append_val(rubbish, c);
-	}
-
-      seq = rubbish->data;
-
-      if(length)
-	*length = l;
-
-      g_array_free(rubbish, FALSE);
-    }
-
-  return seq;
-}
-
-
-static ZMapFullExon zmapExonCreate(void)
-{
-  ZMapFullExon exon = NULL ;
-
-  exon = g_new0(ZMapFullExonStruct, 1) ;
-  exon->peptide = NULL ;
-
-  return exon ;
-}
-
-
-/* A GFunc() callback to free each exon element of the exons list. */
-static void exonListFree(gpointer data, gpointer user_data_unused)
-{
-  ZMapFullExon exon = (ZMapFullExon)data ;
-
-  zmapExonDestroy(exon) ;
-
-  return ;
-}
-
-
-
-
-static void zmapExonDestroy(ZMapFullExon exon)
-{
-  zMapAssert(exon);
-
-  if (exon->peptide)
-    g_free(exon->peptide) ;
-
-  g_free(exon) ;
-
-  return ;
-}
-
-
 
 /* Called by the windowTextItem object (basic display widget for dna
  * or peptide sequence) in response to the user clicking on a base or
@@ -804,7 +550,7 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
 
 
   /* If peptide, convert to peptide coords for block for this position. */
-  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  if (zMapFeatureSequenceIsPeptide(feature))
     {
       int dummy = first_char_index ;
 
@@ -821,7 +567,7 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
   dna_start = seq_start ;
   dna_end = seq_end ;
 
-  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  if (zMapFeatureSequenceIsPeptide(feature))
     zMapSequencePep2DNA(&dna_start, &dna_end, feature->feature.sequence.frame) ;
 
   zMapBlock2FeatureCoords(block, &dna_start, &dna_end) ;
