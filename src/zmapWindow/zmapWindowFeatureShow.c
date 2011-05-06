@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements textual display of feature details in a
  *              gtk notebook widget.
@@ -33,9 +33,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  5 14:26 2011 (edgrif)
+ * Last edited: May  6 12:07 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.32 2011-04-05 13:27:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.33 2011-05-06 11:07:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -514,20 +514,23 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 	break ;
       }
-    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_SEQUENCE:
       {
-	chapter_title = "DNA Sequence" ;
-	page_title = "Details" ;
+	if (zMapFeatureSequenceIsDNA(feature))
+	  {
+	    chapter_title = "DNA Sequence" ;
+	    page_title = "Details" ;
+	  }
+	else
+	  {
+	    chapter_title = "Peptide Sequence" ;
+	    page_title = "Details" ;
+	  }
 
 	break ;
       }
-    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
-      {
-	chapter_title = "Peptide Sequence" ;
-	page_title = "Details" ;
 
-	break ;
-      }
+
     default:
       {
 	zMapAssertNotReached() ;
@@ -579,9 +582,6 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   /* Feature specific stuff. */
   if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      char *query_phase ;				    /* Not used...yet... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       char *query_length ;
 
       subsection = zMapGUINotebookCreateSubsection(page, "Align") ;
@@ -604,17 +604,6 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						"string", query_length,
 						NULL) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I'm not sure we can set this meaningfully at the moment.... */
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Query phase",
-						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-						"string",
-						g_strdup(zMapFeaturePhase2Str(feature->feature.homol.target_phase)),
-						NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
       /* Get a list of all the matches for this sequence.... */
       getAllMatches(show->zmapWindow, feature, item, subsection) ;
     }
@@ -635,7 +624,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						NULL) ;
 
       if (feature->feature.transcript.flags.start_not_found)
-	tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_phase)) ;
+	tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_not_found)) ;
       else
 	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
