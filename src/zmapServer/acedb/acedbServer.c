@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 28 08:51 2011 (edgrif)
+ * Last edited: May  6 12:01 2011 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.165 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.166 2011-05-06 11:01:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3429,13 +3429,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	    }
 	}
-      else if (g_ascii_strcasecmp(tag, "Sequence") == 0)
+      else if (g_ascii_strcasecmp(tag, "Sequence") == 0
+	       || g_ascii_strcasecmp(tag, "Peptide") == 0)
 	{
-	  mode = ZMAPSTYLE_MODE_RAW_SEQUENCE ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Peptide") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_PEP_SEQUENCE ;
+	  mode = ZMAPSTYLE_MODE_SEQUENCE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Assembly_path") == 0)
 	{
