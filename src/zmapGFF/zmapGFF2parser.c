@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 13 15:51 2011 (edgrif)
+ * Last edited: Apr 27 14:34 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.131 2011-04-13 15:16:02 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.132 2011-05-06 11:00:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,9 +83,8 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out, ZMapStrand *strand_out, double *percent_ID_out) ;
 static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
 				     ZMapStrand *strand_out, int *length_out, GArray **path_out) ;
-static gboolean getCDSAttrs(char *attributes,
-			    gboolean *start_not_found_out, int *start_phase_out,
-			    gboolean *end_not_found_out) ;
+static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_out, int *start_start_not_found_out) ;
+static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_out) ;
 static gboolean getVariationString(char *attributes,
 				   GQuark *SO_acc_out, char **name_str_out, char **variation_str_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -1519,8 +1518,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
-	  gboolean start_not_found = FALSE, end_not_found = FALSE ;
-	  int start_phase = 0 ;
 
 	  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
 	   * out of sync with how homols with gaps are given.... */
@@ -1547,19 +1544,18 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    }
 
 
-	  /* Shouldn't we be getting phase from what's passed in ??????? actually we are not
-	   * recording phase in the right place...it's needs to be part of an exon.... */
-
-
-
-
-	  if (result && (result = getCDSAttrs(attributes,
-					      &start_not_found, &start_phase,
-					      &end_not_found)))
+	  if (result)
 	    {
-	      result = zMapFeatureAddTranscriptStartEnd(feature,
-							start_not_found, start_phase,
-							end_not_found) ;
+	      gboolean start_not_found_flag = FALSE, end_not_found_flag = FALSE ;
+	      int start_not_found = 0 ;
+
+	      if (getCDSStartAttr(attributes, &start_not_found_flag, &start_not_found)
+		  || getCDSEndAttr(attributes, &end_not_found_flag))
+		{
+		  result = zMapFeatureAddTranscriptStartEnd(feature,
+							    start_not_found_flag, start_not_found,
+							    end_not_found_flag) ;
+		}
 	    }
 
 	  if (result && (exon_ptr || intron_ptr))
@@ -2353,49 +2349,54 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
 
 /*
  *
- * Format of CDS attribute section is:
+ * Format of Start_not_found attribute section is:
  *
- *          class "obj_name" [; start_not_found phase] [; end_not_found]
+ *      ............  [; start_not_found position]  .............
  *
- * Format string extracts   phase for start_not_found
+ * Format string extracts position for start_not_found
  *
  *  */
-static gboolean getCDSAttrs(char *attributes,
-			    gboolean *start_not_found_out, int *start_phase_out,
-			    gboolean *end_not_found_out)
+static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_flag_out, int *start_not_found_out)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
   char *target ;
-  gboolean start_not_found = FALSE, end_not_found = FALSE ;
 
   if ((target = strstr(attributes, "start_not_found")))
     {
-      start_not_found = FALSE ;
       int attr_fields ;
       char *attr_format_str = "%*s %d %*s" ;
-      int start_phase = 0 ;
+      int start_not_found = 0 ;
 
-      start_not_found =  TRUE ;
-
-      attr_fields = sscanf(target, attr_format_str, &start_phase) ;
+      attr_fields = sscanf(target, attr_format_str, &start_not_found) ;
 
       if (attr_fields == 1)
 	{
-	  if (start_phase < 1 || start_phase > 3)
-	    result = FALSE ;
-	}
+	  if (start_not_found >= 1 && start_not_found <= 3)
+	    {
+	      *start_not_found_flag_out = TRUE ;
 
-      if (result)
-	{
-	  *start_not_found_out = start_not_found ;
+	      *start_not_found_out = start_not_found ;
 
-	  *start_phase_out = start_phase ;
+	      result = TRUE ;
+	    }
 	}
     }
 
+  return result ;
+}
 
-  if (result && (target = strstr(attributes, "end_not_found")))
-    *end_not_found_out = end_not_found = TRUE ;
+
+
+static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_flag_out)
+{
+  gboolean result = FALSE ;
+  char *target ;
+
+  if ((target = strstr(attributes, "end_not_found")))
+    {
+      *end_not_found_flag_out = TRUE ;
+      result = TRUE ;
+    }
 
   return result ;
 }
