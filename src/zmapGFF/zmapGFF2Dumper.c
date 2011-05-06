@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan 14 13:38 2011 (edgrif)
+ * Last edited: Apr 27 13:56 2011 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.28 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.29 2011-05-06 10:59:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -551,7 +551,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 
 	g_string_append_printf(gff_string, GFF_SEP_PHASE,
 			       ((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
-				? phase2Char(feature->feature.transcript.start_phase)
+				? phase2Char(feature->feature.transcript.start_not_found)
 				: '.')) ;
 
 
@@ -769,7 +769,7 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature    feature,
 			     transcript->cds_end,
 			     '.',
 			     strand2Char(feature->strand),
-			     phase2Char(transcript->start_phase)) ;
+			     phase2Char(transcript->start_not_found)) ;
 
       result = dump_transcript_identifier(feature, transcript,
 					  gff_string, error,
