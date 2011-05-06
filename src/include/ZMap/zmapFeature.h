@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Mar 31 11:32 2011 (edgrif)
+ * Last edited: May  6 13:10 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.193 2011-03-31 10:34:43 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.194 2011-05-06 12:11:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -42,6 +42,7 @@
 
 /* Some basic macros. */
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
+#define ZMAPFEATURE_REVERSE(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_REVERSE)
 
 #define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->type == ZMAPSTYLE_MODE_BASIC)
 
@@ -107,15 +108,12 @@ typedef enum {
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
 #define FRAME_PREFIX "FRAME-"				    /* For text versions. */
-typedef enum {ZMAPFRAME_NONE = 0,
-	      ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
+typedef enum {ZMAPFRAME_NONE = 0, ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
 
-typedef enum {ZMAPPHASE_NONE = 0,
-	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
+typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
 /* as in BLAST*, i.e. target is DNA, Protein, DNA translated */
-typedef enum {ZMAPHOMOL_NONE = 0,
-	      ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
+typedef enum {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 
 /* Used to specify the degree of colinearity between two alignment blocks. */
@@ -169,6 +167,13 @@ typedef struct ZMapSequenceStruct_
 
 
 
+/* Could represent anything that has a span. */
+typedef struct
+{
+  Coord x1, x2 ;
+} ZMapSpanStruct, *ZMapSpan ;
+
+
 /* We have had this but would like to have a simple "span" sort....as below... */
 typedef struct
 {
@@ -177,11 +182,37 @@ typedef struct
 
 
 
-/* Could represent anything that has a span. */
+/* Assumes x1 <= x2. */
+#define ZMAP_SPAN_LENGTH(SPAN_STRUCT)                 \
+  (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1) 
+
+
+
+/* This is a kind of "annotated" exon struct as it contains a lot more useful info. than
+ * just the span, all derived from the the transcript feature.
+ * 
+ * Note that for EXON_NON_CODING none of the cds/peptide stuff is populated. */
+typedef enum {EXON_INVALID, EXON_NON_CODING, EXON_CODING, EXON_SPLIT_CODON, EXON_START_NOT_FOUND} ExonRegionType ;
+
 typedef struct
 {
-  Coord x1, x2 ;
-} ZMapSpanStruct, *ZMapSpan ;
+  ExonRegionType region_type ;
+
+  /* Various coords of the exon region in different contexts. */
+  ZMapSpanStruct sequence_span ;			    /* coords on reference sequence. */
+  ZMapSpanStruct unspliced_span ;			    /* 1-based version of sequence_span. */
+  ZMapSpanStruct spliced_span ;				    /* 1-based coords in spliced transcript. */
+  ZMapSpanStruct cds_span ;				    /* 1-based coords within cds of transcript. */
+  ZMapSpanStruct pep_span ;				    /* coords within peptide translation of cds. */
+
+  /* Start and end phases of a cds. */
+  int start_phase ;
+  int end_phase ;
+
+  char *peptide ;					    /* Optionally carries peptide translation. */
+
+} ZMapFullExonStruct, *ZMapFullExon ;
+
 
 
 /* the following is used to store alignment gap information */
@@ -520,7 +551,10 @@ typedef struct
   /* If cds == TRUE, then these must show the position of the cds in sequence coords... */
   Coord cds_start, cds_end ;
 
-  ZMapPhase start_phase ;
+  /* If start of cds is known to be missing this gives start position in cds for translation,
+   * i.e. it must have a value in the range 1 -> 3. */
+  int start_not_found ;
+
   GArray *exons ;					    /* Of ZMapSpanStruct. */
   GArray *introns ;					    /* Of ZMapSpanStruct. */
 
@@ -871,6 +905,8 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
+void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
+
 
 /* ***************
  * FEATURE METHODS
@@ -924,8 +960,8 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 				      gboolean cds, Coord cds_start, Coord cds_end,
 				      GArray *exons, GArray *introns) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
-					  gboolean start_not_found, ZMapPhase start_phase,
-					  gboolean end_not_found) ;
+					  gboolean start_not_found_flag, int start_not_found,
+					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
@@ -940,6 +976,11 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
+
+gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;
+gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature) ;
+gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature) ;
+
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 					int length, ZMapStrand strand, GArray *path) ;
 gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession) ;
@@ -1173,6 +1214,8 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 			     int exon_start, int exon_end,
 			     int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
+gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, GList **exon_list_out) ;
+void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
 
 
@@ -1212,6 +1255,9 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
+
+char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
+char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
 
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
