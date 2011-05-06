@@ -27,14 +27,15 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  6 12:59 2011 (edgrif)
+ * Last edited: May  6 13:40 2011 (edgrif)
  * Created: Sun Apr 17 21:31:18 2011 (edgrif)
- * CVS info:   $Id: zmapFeatureTranscript.c,v 1.2 2011-05-06 12:08:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTranscript.c,v 1.3 2011-05-06 12:42:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
+#include <string.h>
 #include <zmapFeature_P.h>
 
 
@@ -128,7 +129,7 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 	      full_data.trans_start = (full_data.trans_start + full_data.start_offset) - 1 ;
 	    }
 
-	  full_data.full_exons   = exon_regions_list_out ;
+	  full_data.full_exons = exon_regions_list_out ;
 	}
 
       /* SHOULD WE ALLOW USER TO TRANSLATE ANY TRANSCRIPT ?? PROBABLY USEFUL....
@@ -143,7 +144,7 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
       zMapFeatureTranscriptExonForeach(feature, getDetailedExon, &full_data) ;
 
       if (exon_debug)
-	g_list_foreach(exon_list, printDetailedExons, NULL) ;
+	g_list_foreach(*exon_regions_list_out, printDetailedExons, NULL) ;
 
       if (include_protein && full_data.translation)
 	g_free(full_data.translation) ;
@@ -198,11 +199,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
     }
   else
     {
-      int feature_pos, exon_start, exon_end,
-	utr_5_start, utr_5_end, split_5_start, split_5_end,
-	cds_start, cds_end,
-	utr_3_start, utr_3_end, split_3_start, split_3_end, tr_start, tr_end ;
-
+      int feature_pos, exon_start, exon_end ;
 
       feature_pos = exon_start = exon_span->x1 ;
       exon_end = exon_span->x2 ;
@@ -494,25 +491,38 @@ static void exonListFree(gpointer data, gpointer user_data_unused)
 
 
 
-static void printDdetailedExons(gpointer exon_data, gpointer user_data)
+static void printDetailedExons(gpointer exon_data, gpointer user_data)
 {
   ZMapFullExon exon = (ZMapFullExon)exon_data;
 
   printf("Exon: Span %d -> %d (%d)\n",
-	 exon->exon_span.x1,
-	 exon->exon_span.x2,
-	 (exon->exon_span.x2 - exon->exon_span.x1 + 1));
+	 exon->sequence_span.x1,
+	 exon->sequence_span.x2,
+	 (exon->sequence_span.x2 - exon->sequence_span.x1 + 1)) ;
+
+  printf("Exon: Span %d -> %d (%d)\n",
+	 exon->unspliced_span.x1,
+	 exon->unspliced_span.x2,
+	 (exon->unspliced_span.x2 - exon->unspliced_span.x1 + 1)) ;
+
+  printf("Exon: Span %d -> %d (%d)\n",
+	 exon->spliced_span.x1,
+	 exon->spliced_span.x2,
+	 (exon->spliced_span.x2 - exon->spliced_span.x1 + 1)) ;
+
   printf("  CDS Span %d -> %d (%d)\n",
 	 exon->cds_span.x1,
 	 exon->cds_span.x2,
-	 (exon->cds_span.x2 - exon->cds_span.x1 + 1));
+	 (exon->cds_span.x2 - exon->cds_span.x1 + 1)) ;
+
   printf("  Pep Span %d -> %d (%d)\n",
 	 exon->pep_span.x1,
 	 exon->pep_span.x2,
-	 (exon->pep_span.x2 - exon->pep_span.x1 + 1));
-  printf("  Phase = %d, End Phase = %d\n", exon->phase, exon->end_phase);
+	 (exon->pep_span.x2 - exon->pep_span.x1 + 1)) ;
 
-  if(exon->peptide)
+  printf("  Phase = %d, End Phase = %d\n", exon->start_phase, exon->end_phase) ;
+
+  if (exon->peptide)
     {
       char *pep_start, *pep_end;
       int print_length;
@@ -523,18 +533,18 @@ static void printDdetailedExons(gpointer exon_data, gpointer user_data)
       print_length = (((peptide_length / 2) > 10) ? 10 : (peptide_length / 2));
 
       pep_start = g_strndup(exon->peptide, print_length);
-      pep_end   = g_strndup(exon->peptide + peptide_length - print_length, print_length);
+      pep_end = g_strndup(exon->peptide + peptide_length - print_length, print_length);
 
       printf("  Translation (%d):\n", peptide_length);
       printf("  %s...%s\n", pep_start, pep_end);
 
       if(pep_start)
-	g_free(pep_start);
+	g_free(pep_start) ;
+
       if(pep_end)
-	g_free(pep_end);
+	g_free(pep_end) ;
     }
-  else
-    printf("  Non coding exon\n");
+
 
   return ;
 }
