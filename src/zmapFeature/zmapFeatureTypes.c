@@ -21,25 +21,20 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions for manipulating Type structs and sets of
  *              type structs.c
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 31 07:13 2011 (edgrif)
+ * Last edited: May  6 13:08 2011 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.110 2011-03-31 10:36:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.111 2011-05-06 12:08:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <stdio.h>
 #include <memory.h>
@@ -1162,18 +1157,17 @@ GHashTable *zMapStyleGetAllPredefined(void)
    * same screen space whether it's displayed frame specific or
    * not.  I thought this was important considering the column is
    * very wide. */
-  /* Despite seeming to be frame specific, they all get drawn in the
-   * same column at the moment so it's not frame specific!
-   * 
-   * UM no, not true, they are in seperate cols in 3 frame mode...
-   *  */
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FT_NAME, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
   {
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
+    char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
+    char *coding_colours = "normal fill darkgreen ; normal draw black ; selected fill pink" ;
+    char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *in_frame_colours = "normal fill green ; normal draw black ; selected fill pink" ;
 
     /* we need draw colour here as well.... */
     g_object_set(G_OBJECT(curr),
-		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_PEP_SEQUENCE,
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_ALL,
@@ -1191,6 +1185,10 @@ GHashTable *zMapStyleGetAllPredefined(void)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS, in_frame_colours,
 		 NULL);
   }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
@@ -1201,9 +1199,12 @@ GHashTable *zMapStyleGetAllPredefined(void)
 			       ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
   {
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
+    char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
+    char *coding_colours = "normal fill green ; normal draw black ; selected fill pink" ;
+    char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
 
     g_object_set(G_OBJECT(curr),
-		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_RAW_SEQUENCE,
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
@@ -1217,6 +1218,11 @@ GHashTable *zMapStyleGetAllPredefined(void)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+
 		 NULL);
   }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
@@ -1279,13 +1285,13 @@ GHashTable *zMapStyleGetAllPredefined(void)
   {
     char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
 
-    g_object_set(G_OBJECT(curr),
     /* MH17: NOTE style mode was _TEXT ans get passed all the way to draw_show_translation
      * but the style is only used to define text colours and the text drawing and callbacks
      * for cursor handling are hard coded -> I suspect an incomplete implemntation
      * there is a #warning to this effect in draw_show_translation()
      */
-		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_PEP_SEQUENCE,
+    g_object_set(G_OBJECT(curr),
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,

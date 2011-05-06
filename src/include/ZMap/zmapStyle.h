@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Mar 24 08:18 2011 (edgrif)
+ * Last edited: Apr 15 15:45 2011 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.63 2011-03-31 10:56:19 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.64 2011-05-06 12:09:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -176,6 +176,13 @@ typedef enum
     STYLE_PROP_ALIGNMENT_MASK_SETS,
     STYLE_PROP_ALIGNMENT_SUMMARISE,
 
+    STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
+    STYLE_PROP_SEQUENCE_CODING_COLOURS,
+    STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS,
+    STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS,
+    STYLE_PROP_SEQUENCE_START_CODON_COLOURS,
+    STYLE_PROP_SEQUENCE_STOP_CODON_COLOURS,
+
     STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
 
     STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS,
@@ -278,6 +285,17 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE           "alignment-summarise"
 
+
+/* Sequence properties. */
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS       "sequence-non-coding-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS           "sequence-coding-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS      "sequence-split-codon-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS  "sequence-in-frame-coding-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_START_CODON_COLOURS      "sequence-start-codon-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_STOP_CODON_COLOURS       "sequence-stop-codon-colours"
+
+
+
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
 
@@ -299,6 +317,9 @@ typedef enum
  * 
  *  */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZMAP_STYLE_MODE_LIST(_)                                                                          \
 _(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
 _(ZMAPSTYLE_MODE_BASIC,         , "basic"        , "Basic box features "                           , "") \
@@ -311,6 +332,20 @@ _(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "         
 _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define ZMAP_STYLE_MODE_LIST(_)                                                                          \
+_(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
+_(ZMAPSTYLE_MODE_BASIC,         , "basic"        , "Basic box features "                           , "") \
+_(ZMAPSTYLE_MODE_ALIGNMENT,     , "alignment"    , "Usual homology structure "                     , "") \
+_(ZMAPSTYLE_MODE_TRANSCRIPT,    , "transcript"   , "Usual transcript like structure "              , "") \
+_(ZMAPSTYLE_MODE_SEQUENCE,      , "sequence"     , "DNA or Peptide Sequence "                      , "") \
+_(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "                                , "") \
+_(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
+_(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
+_(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
+_(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
+
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 
@@ -539,15 +574,23 @@ typedef struct
 
 } ZMapStyleBasicStruct, *ZMapStyleBasic ;
 
-/*! @struct ZMapSequenceGraph zmapStyle_P.h
- *  @brief Sequence feature
- *
- * (currently this is empty) */
+
+
+/* Sequence features - dna or peptide */
 typedef struct
 {
-  char *dummy ;
+
+  /* Colours for highlighting parts of sequence. */
+  ZMapStyleFullColourStruct non_coding ;
+  ZMapStyleFullColourStruct coding ;
+  ZMapStyleFullColourStruct split_codon ;
+  ZMapStyleFullColourStruct in_frame_coding ;
+
+  ZMapStyleFullColourStruct start_codon ;
+  ZMapStyleFullColourStruct stop_codon ;
 
 } ZMapStyleSequenceStruct, *ZMapStyleSequence ;
+
 
 /*! @struct ZMapTextGraph zmapStyle_P.h
  *  @brief Text feature
@@ -689,7 +732,7 @@ typedef struct _zmapFeatureTypeStyleStruct
                                                  identified by its unique id. */
 
   char *description ;                               /*!< Description of what this style
-                                                 represents. */
+						      represents. */
 
   ZMapStyleMode mode ;                              /*!< Specifies how features that
                                                  reference this style will be processed. */

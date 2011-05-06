@@ -1,4 +1,4 @@
-/*  Last edited: Mar 24 09:12 2011 (edgrif) */
+/*  Last edited: Apr 15 15:35 2011 (edgrif) */
 /*  File: zmapStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  and formerly Ed Griffiths (edgrif@sanger.ac.uk)
@@ -30,7 +30,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.63 2011-03-31 10:56:19 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.64 2011-05-06 12:05:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -281,9 +281,29 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.summarise), ZMAPSTYLE_MODE_ALIGNMENT },
 
 
+    { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
+            "non-coding exon region colour", "Colour used to highlight UTR section of an exon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.non_coding), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,
+            "coding exon region colour", "Colour used to highlight coding section of an exon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.coding), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS,
+            "coding exon split codon colour", "Colour used to highlight split codon coding section of an exon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.coding), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS,
+            "in-frame coding exon region colour", "Colour used to highlight coding section of an exon that is in frame.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.in_frame_coding), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_START_CODON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_START_CODON_COLOURS,
+            "start codon colour", "Colour used to highlight start codon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.start_codon), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_STOP_CODON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_STOP_CODON_COLOURS,
+            "stop codon colour", "Colour used to highlight stop codon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.stop_codon), ZMAPSTYLE_MODE_SEQUENCE },
+
+
     { STYLE_PROP_TRANSCRIPT_CDS_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,
             "CDS colours", "Colour used to CDS section of a transcript.",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.CDS_colours)  ,ZMAPSTYLE_MODE_TRANSCRIPT},
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.CDS_colours), ZMAPSTYLE_MODE_TRANSCRIPT},
 
     { STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ASSEMBLY_PATH_NON_COLOURS,
             "non-path colours", "Colour used for unused part of an assembly path sequence.",
@@ -728,8 +748,13 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style)
     case ZMAPSTYLE_MODE_BASIC:
     case ZMAPSTYLE_MODE_TRANSCRIPT:
     case ZMAPSTYLE_MODE_ALIGNMENT:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case ZMAPSTYLE_MODE_RAW_SEQUENCE:
     case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    case ZMAPSTYLE_MODE_SEQUENCE:
+
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
       {
       valid = TRUE ;
@@ -807,8 +832,12 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
       case ZMAPSTYLE_MODE_TRANSCRIPT:
       case ZMAPSTYLE_MODE_ALIGNMENT:
       case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       case ZMAPSTYLE_MODE_RAW_SEQUENCE:
       case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      case ZMAPSTYLE_MODE_SEQUENCE:
         {
           break ;
         }
@@ -875,8 +904,13 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
           break ;
         }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       case ZMAPSTYLE_MODE_RAW_SEQUENCE:
       case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      case ZMAPSTYLE_MODE_SEQUENCE:
+
       case ZMAPSTYLE_MODE_TEXT:
         {
           if (!(style->colours.normal.fields_set.fill) || !(style->colours.normal.fields_set.draw))
@@ -1027,8 +1061,13 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
       switch (style->mode)
       {
       case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       case ZMAPSTYLE_MODE_PEP_SEQUENCE:
       case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      case ZMAPSTYLE_MODE_SEQUENCE:
+
       case ZMAPSTYLE_MODE_TEXT:
         {
           if (!(style->colours.normal.fields_set.fill))
@@ -1112,6 +1151,7 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
     case STYLE_PROP_GLYPH_ALT_COLOURS:
       full_colour = &(style->mode_data.glyph.glyph_alt_colours) ;
       break;
+
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
       full_colour = &(style->mode_data.alignment.perfect) ;
       break;
@@ -1121,12 +1161,34 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
     case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
       full_colour = &(style->mode_data.alignment.noncolinear) ;
       break;
+
+    case STYLE_PROP_SEQUENCE_NON_CODING_COLOURS:
+      full_colour = &(style->mode_data.sequence.non_coding) ;
+      break;
+    case STYLE_PROP_SEQUENCE_CODING_COLOURS:
+      full_colour = &(style->mode_data.sequence.coding) ;
+      break;
+    case STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS:
+      full_colour = &(style->mode_data.sequence.split_codon) ;
+      break;
+    case STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS:
+      full_colour = &(style->mode_data.sequence.in_frame_coding) ;
+      break;
+    case STYLE_PROP_SEQUENCE_START_CODON_COLOURS:
+      full_colour = &(style->mode_data.sequence.start_codon) ;
+      break;
+    case STYLE_PROP_SEQUENCE_STOP_CODON_COLOURS:
+      full_colour = &(style->mode_data.sequence.stop_codon) ;
+      break;
+
     case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
       full_colour = &(style->mode_data.transcript.CDS_colours) ;
       break;
+
     case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
       full_colour = &(style->mode_data.assembly_path.non_path_colours) ;
       break;
+
     default:
       zMapAssertNotReached() ;
       break;
@@ -1577,7 +1639,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
   case STYLE_PARAM_TYPE_COLOUR:      return(sizeof(ZMapStyleFullColourStruct)); break;      // a real structure
   case STYLE_PARAM_TYPE_SQUARK:      return(sizeof(GQuark));    break;     // gchar * stored as a quark eg name
 
-      // enums: size not defined by ansi C
+    // enums: size not defined by ansi C
   case STYLE_PARAM_TYPE_MODE:        return(sizeof(ZMapStyleMode));       break;
   case STYLE_PARAM_TYPE_COLDISP:     return(sizeof(ZMapStyleColumnDisplayState)); break;
   case STYLE_PARAM_TYPE_BUMP:        return(sizeof(ZMapStyleBumpMode));   break;
@@ -1747,9 +1809,9 @@ static void zmap_feature_type_style_init(ZMapFeatureTypeStyle style)
  *  */
 
 static void zmap_feature_type_style_set_property(GObject *gobject,
-                                     guint param_id,
-                                     const GValue *value,
-                                     GParamSpec *pspec)
+						 guint param_id,
+						 const GValue *value,
+						 GParamSpec *pspec)
 {
   ZMapFeatureTypeStyle style;
   ZMapStyleParam param;
@@ -1760,6 +1822,8 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
   zmap_feature_type_style_set_property_full(style,param,value,FALSE);
 }
+
+
 
 #if 0
 static void zmap_feature_type_style_copy_set_property(GObject *gobject,
@@ -1777,6 +1841,8 @@ static void zmap_feature_type_style_copy_set_property(GObject *gobject,
   zmap_feature_type_style_set_property_full(style,param,value,FALSE);
 }
 #endif
+
+
 
 // is_set flags are stored as bits in a char array
 // for g_object we extract this as a string of hex digits in upper case
@@ -1829,20 +1895,20 @@ static void zmap_bin_to_hex(gchar *dest,guchar *src, int len)
 }
 
 static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style,
-                                     ZMapStyleParam param,
-                                     const GValue *value,
-                                     gboolean copy)
+						      ZMapStyleParam param,
+						      const GValue *value,
+						      gboolean copy)
 {
   gboolean result = TRUE ;
 
-      // if we are in a copy constructor then only set properties that have been set in the source
-      // (except for the is_set array of course, which must be copied first)
+  // if we are in a copy constructor then only set properties that have been set in the source
+  // (except for the is_set array of course, which must be copied first)
 
-      /* will we ever be in a copy constructor?
-       * we use zMapStyleCopy() rather than a g_object(big_complex_value)
-       * if someone programmed a GObject copy function what would happen?
-       * ... an exercise for the reader
-       */
+  /* will we ever be in a copy constructor?
+   * we use zMapStyleCopy() rather than a g_object(big_complex_value)
+   * if someone programmed a GObject copy function what would happen?
+   * ... an exercise for the reader
+   */
   if(copy && param->id != STYLE_PROP_IS_SET)
     {
       ZMapStyleParam isp = &zmapStyleParams_G[STYLE_PROP_IS_SET];
@@ -1860,13 +1926,13 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       if(!(style->is_set[param->flag_ind] & param->flag_bit))
         return;
     }
-      /* if the property is mode specific and invalid don't set it
-       * ideally all styles should have a mode set
-       * but if the mode is set in a parent style it may not be set
-       * explicitly in this style
-       * So we imply the mode here and if it does not match a parent
-       * The we log a warning in the merge
-       */
+  /* if the property is mode specific and invalid don't set it
+   * ideally all styles should have a mode set
+   * but if the mode is set in a parent style it may not be set
+   * explicitly in this style
+   * So we imply the mode here and if it does not match a parent
+   * The we log a warning in the merge
+   */
   if(param->mode && !style->mode)   // ie not set, could test the is_set bit but this is equivalent
     {
       style->mode = param->mode;
@@ -1879,9 +1945,9 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       return;
     }
 
-      // set the value
+  // set the value
   switch(param->type)
-  {
+    {
     case STYLE_PARAM_TYPE_BOOLEAN:
       * (gboolean *) (((void *) style) + param->offset) = g_value_get_boolean(value);
       break;
@@ -1923,19 +1989,19 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
 
       // enums treated as uint. This is a pain: can we know how big an enum is?
       // Some pretty choice code but it's not safe to do it the easy way
-#define STYLE_SET_PROP(s_param, s_type)\
-    case s_param : *(s_type *)  (((void *) style) + param->offset) = (s_type) g_value_get_uint(value);\
-    break
+#define STYLE_SET_PROP(s_param, s_type)					\
+      case s_param : *(s_type *)  (((void *) style) + param->offset) = (s_type) g_value_get_uint(value); \
+      break
 
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_MODE,            ZMapStyleMode);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_COLDISP,         ZMapStyleColumnDisplayState);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_BUMP,            ZMapStyleBumpMode);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
-    STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_MODE,            ZMapStyleMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_COLDISP,         ZMapStyleColumnDisplayState);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_BUMP,            ZMapStyleBumpMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
 
     case STYLE_PARAM_TYPE_UINT:
       * (guint *) (((void *) style) + param->offset) = g_value_get_uint(value);
@@ -1943,13 +2009,13 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
 
     default:
       break;
-  }
+    }
 
-      // now set the is_set bit
+  // now set the is_set bit
   style->is_set[param->flag_ind] |= param->flag_bit;
 
 
-      // do the param specific stuff
+  // do the param specific stuff
   {
     ZMapStyleParam p2;
 
@@ -1984,11 +2050,11 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
         break;
 
       case STYLE_PROP_MODE:
-            // set non zero default vaues for mode data
+	// set non zero default vaues for mode data
         if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-        {
+	  {
             style->mode_data.alignment.unmarked_colinear = TRUE;
-        }
+	  }
         break;
       default:
         break;

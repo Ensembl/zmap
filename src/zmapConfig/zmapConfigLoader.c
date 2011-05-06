@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Holds functions for reading config stanzas for various
  *              different parts of code....ummm, not well compartmentalised.
@@ -30,9 +30,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
  * HISTORY:
- * Last edited: Mar 15 08:07 2011 (edgrif)
+ * Last edited: Apr 15 15:29 2011 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.44 2011-04-05 13:29:14 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.45 2011-05-06 12:09:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1229,6 +1229,13 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE, FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
+      { ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SEQUENCE_START_CODON_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SEQUENCE_STOP_CODON_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+
       { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
       {NULL}
@@ -1353,8 +1360,14 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE,   G_TYPE_DOUBLE, style_set_property, FALSE },
 
-    { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SEQUENCE_START_CODON_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SEQUENCE_STOP_CODON_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
 
+    { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  G_TYPE_STRING, style_set_property, FALSE },
 
     {NULL}
   };
