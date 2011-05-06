@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Mar 21 11:13 2011 (edgrif)
+ * Last edited: Apr 21 21:25 2011 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.50 2011-04-08 10:45:29 mh17 Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.51 2011-05-06 11:22:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -226,6 +226,7 @@ gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
 
 gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *end_inout) ;
 void zmapCoordsZeroBased(int *start_inout, int *end_inout) ;
+void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_inout) ;
 
 
 /* zmapRadixSort.c */
