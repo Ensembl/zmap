@@ -27,16 +27,17 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 31 11:35 2011 (edgrif)
+ * Last edited: May  6 12:25 2011 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.80 2011-03-31 10:36:00 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.81 2011-05-06 11:27:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
 
 #include <string.h>
 #include <unistd.h>
 
-#include <ZMap/zmap.h>
 #include <zmapFeature_P.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
@@ -271,10 +272,10 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
               }
           }
           break;
+
         case ZMAPSTYLE_MODE_ALIGNMENT:
         case ZMAPSTYLE_MODE_BASIC:
-        case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-        case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+        case ZMAPSTYLE_MODE_SEQUENCE:
 	case ZMAPSTYLE_MODE_TEXT:
 	case ZMAPSTYLE_MODE_GRAPH:
 	case ZMAPSTYLE_MODE_GLYPH:
@@ -779,6 +780,8 @@ void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inou
 
 
 
+
+
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out)
 {
   gboolean done = FALSE;
@@ -1072,6 +1075,80 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
 
 
 
+char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
+{
+  char *pep_str = NULL ;
+  ZMapFeatureContext context ;
+  ZMapPeptide peptide ;
+  char *dna_str, *name, *free_me ;
+
+  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+							   ZMAPFEATURE_STRUCT_CONTEXT));
+
+  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
+    {
+      free_me = dna_str;					    /* as we potentially move ptr. */
+      name    = (char *)g_quark_to_string(feature->original_id);
+
+      if (feature->feature.transcript.flags.start_not_found)
+	dna_str += (feature->feature.transcript.start_not_found - 1) ;
+
+      peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
+
+      if(length)
+	{
+	  *length = zMapPeptideLength(peptide);
+	  if (zMapPeptideHasStopCodon(peptide))
+	    *length = *length - 1;
+	}
+
+      pep_str = zMapPeptideSequence(peptide);
+      pep_str = g_strdup(pep_str);
+
+      zMapPeptideDestroy(peptide);
+      g_free(free_me);
+    }
+
+  return pep_str ;
+}
+
+char *zMapFeatureTranslation(ZMapFeature feature, int *length)
+{
+  char *seq;
+
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      seq = zMapFeatureTranscriptTranslation(feature, length);
+    }
+  else
+    {
+      GArray *rubbish;
+      int i, l;
+      char c = '.';
+
+      l = feature->x2 - feature->x1 + 1;
+
+      rubbish = g_array_sized_new(TRUE, TRUE, sizeof(char), l);
+
+      for(i = 0; i < l; i++)
+	{
+	  g_array_append_val(rubbish, c);
+	}
+
+      seq = rubbish->data;
+
+      if(length)
+	*length = l;
+
+      g_array_free(rubbish, FALSE);
+    }
+
+  return seq;
+}
+
+
+
+
 
 
 /*
@@ -1313,7 +1390,7 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 	      if (first_exon)
 		{
 		  if (feature->feature.transcript.flags.start_not_found)
-		    phase = feature->feature.transcript.start_phase ;
+		    phase = feature->feature.transcript.start_not_found ;
 		  else
 		    phase = 0 ;
 		}
