@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  8 15:02 2011 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.37 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.38 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -61,6 +61,7 @@ extern gboolean zmap_server_styles_debug_G;
     _(ZMAP_SERVERREQ_FEATURES, , "features", "features", "Get the context features.") \
     _(ZMAP_SERVERREQ_SEQUENCE, , "sequence", "sequence", "Get the context sequence.") \
     _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence", "getsequence", "Get an arbitrary (named) sequence.") \
+    _(ZMAP_SERVERREQ_GETSTATUS, , "getstatus", "getstatus", "Get server exit code and STDERR.") \
     _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.")
 
 ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
@@ -112,6 +113,7 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
   gboolean sequence_server;         /* get DNA or not? */
+  ZMapFeatureSequenceMap sequence_map;  /* which sequence + dataset */
   gint zmap_start,zmap_end;         /* start, end coords based from 1 */
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 
@@ -242,6 +244,17 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
+  gint exit_code;
+  gchar *stderr_out;
+
+} ZMapServerReqGetStatusStruct, *ZMapServerReqGetStatus ;
+
+
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
+
 } ZMapServerReqTerminateStruct, *ZMapServerReqTerminate ;
 
 
@@ -257,6 +270,7 @@ typedef union
   ZMapServerReqNewContextStruct get_context ;
   ZMapServerReqGetFeaturesStruct get_features ;
   ZMapServerReqGetSequenceStruct get_sequence;
+  ZMapServerReqGetStatusStruct get_status;
   ZMapServerReqTerminateStruct terminate;
 } ZMapServerReqUnion ;
 

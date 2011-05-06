@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 23 13:03 2011 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.114 2011-04-05 14:53:29 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.115 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,7 @@
 
 
 
-static ZMap createZMap(void *app_data) ;
+static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 static void destroyZMap(ZMap zmap) ;
 static void killFinal(ZMap *zmap) ;
 static void killViews(ZMap zmap) ;
@@ -133,14 +133,14 @@ void zMapInit(ZMapCallbacks callbacks)
 
 /* Create a new zmap which is blank with no views. Returns NULL on failure.
  * Note how I casually assume that none of this can fail. */
-ZMap zMapCreate(void *app_data)
+ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
 {
   ZMap zmap = NULL ;
 
   /* No callbacks, then no zmap creation. */
   zMapAssert(zmap_cbs_G) ;
 
-  zmap = createZMap(app_data) ;
+  zmap = createZMap(app_data,seq_map) ;
 
   /* Make the main/toplevel window for the ZMap. */
   zmapControlWindowCreate(zmap) ;
@@ -170,16 +170,17 @@ gboolean zMapRaise(ZMap zmap)
 
 
 /* Might rename this to be more meaningful maybe.... */
-ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
+ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapView view = NULL ;
 
-  zMapAssert(zmap && sequence && *sequence
-	     && (start > 0 && (end == 0 || end > start))) ;
+  zMapAssert(zmap && sequence_map->sequence && *sequence_map->sequence
+	     && (sequence_map->start > 0 &&
+           (sequence_map->end == 0 || sequence_map->end > sequence_map->start))) ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
-  if ((view = zmapControlAddView(zmap, sequence, start, end)))
+  if ((view = zmapControlAddView(zmap, sequence_map)))
     {
       zmapControlWindowSetGUIState(zmap) ;
     }
@@ -532,11 +533,11 @@ void zmapControlResetCB(ZMap zmap)
 
 
 
-ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end)
+ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapView view = NULL ;
 
-  if ((view = zmapControlNewWindow(zmap, sequence, start, end)))
+  if ((view = zmapControlNewWindow(zmap, sequence_map)))
     {
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
@@ -566,7 +567,7 @@ gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
 
 /* Note that we rely on the struct being set to binary zeros to act as initialisation for most
  * fields. */
-static ZMap createZMap(void *app_data)
+static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
 {
   ZMap zmap = NULL ;
 
@@ -581,6 +582,7 @@ static ZMap createZMap(void *app_data)
   zmap->zmap_id = g_strdup_printf("ZMap.%d", zmap_num) ;
 
   zmap->app_data = app_data ;
+  zmap->default_sequence = seq_map;
 
   /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
@@ -663,8 +665,10 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
             " <start value=\"%d\" />"
             " <end value=\"%d\" />"
             " <status value=\"%d\" message=\"%s\" />"
+            " <exit_code value=\"%d\" />"
+            " <stderr value=\"%s\" />"
             "</request></zmap>",
-            lfd->xwid, featurelist, lfd->start, lfd->end, (int) lfd->status,emsg) ;
+            lfd->xwid, featurelist, lfd->start, lfd->end, (int) lfd->status,emsg, lfd->exit_code,lfd->stderr_out ? lfd->stderr_out : "") ;
      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
     if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)

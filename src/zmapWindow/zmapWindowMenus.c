@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  6 08:50 2011 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.90 2011-05-06 12:04:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.91 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,8 +84,12 @@ enum
 							       in this column. */
     BLIX_SET,						    /* Blixem all matches for all features
 							       in this column. */
-    BLIX_MULTI_SETS					    /* Blixem all matches for all features
+    BLIX_MULTI_SETS,					    /* Blixem all matches for all features
 							       in the list of columns in the blixem config file. */
+
+    BLIX_SEQ                                        /* Blixem short reads data from the marl */
+    /* MH17 NOTE BLIX_SEQ is a range of values, do not add more */
+    /* this is a temporary implementation till we can blixem a short reads column */
   } ;
 
 
@@ -1324,12 +1328,67 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 }
 
 
+ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
+                                     ZMapGUIMenuItemCallbackFunc callback_func,
+                                     gpointer callback_data)
+{
+      /* get a list of featuresets from the window's context_map */
+      static ZMapGUIMenuItem menu = NULL;
+      ZMapGUIMenuItem m;
+      static int n_menu = 0;
+
+      ItemMenuCBData cbdata  = (ItemMenuCBData) callback_data;
+      GList *fs_list = cbdata->window->context_map->seq_data_featuresets;
+      GList *fsl;
+      int n_sets = g_list_length(fs_list);
+      int i = 0;
+
+      if(!n_sets || !zmapWindowMarkIsSet(cbdata->window->mark))
+            return NULL;
+
+      if(n_menu < n_sets)
+      {
+            /* as this derives from config data read on creating the view
+             * it will not change unless we reconfig and open another view
+             * alloc enough for all views
+             */
+            if(menu)
+            {
+                  for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
+                        g_free(m->name);
+                  g_free(menu);
+            }
+            menu = g_new0(ZMapGUIMenuItemStruct, n_sets + 1);
+      }
+
+      for(i = 0, m = menu, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
+      {
+            const gchar *fset;
+
+            m->type = ZMAPGUI_MENU_NORMAL;
+
+            fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
+            m->name = g_strdup_printf("Blixem short reads data from mark - %s", fset);
+            m->id = BLIX_SEQ + i;
+            m->callback_func = blixemMenuCB;
+      }
+
+      m->type = ZMAPGUI_MENU_NONE;
+      m->name = NULL;
+
+      /* this overrides data in the menus as given in the args, but index and func are always NULL */
+      zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+      return menu;
+}
+
 
 /* call blixem either for a single type of homology or for all homologies. */
 static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowAlignSetType requested_homol_set ;
+  char *seq_set = NULL;
 
   switch(menu_item_id)
     {
@@ -1345,16 +1404,35 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       break;
+
+    case BLIX_SEQ:      /* one or more sets starting gtom BLIX_SEQ */
     default:
-      zMapAssertNotReached() ;
+      {
+            GList *l;
+            int i;
+
+            for(i = menu_item_id - BLIX_SEQ,
+                        l = menu_data->window->context_map->seq_data_featuresets;
+                        i && l; l = l->next, i--)
+                  continue;
+
+            if(l)
+                  seq_set = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+      }
       break;
+
     }
 
   /* Called on a column or an item ? */
-  if (menu_data->item == menuDataItemToColumn(menu_data->item))
-    zmapWindowCallBlixemOnPos(menu_data->window, requested_homol_set, menu_data->x, menu_data->y) ;
+  if(menu_item_id >= BLIX_SEQ)
+  {
+    zmapWindowCallBlixemOnPos(menu_data->window, ZMAPWINDOW_ALIGNCMD_SEQ, seq_set,
+      menu_data->x, menu_data->y) ;
+  }
+  else if ((FooCanvasGroup *) menu_data->item == menuDataItemToColumn(menu_data->item))
+    zmapWindowCallBlixemOnPos(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
   else
-    zmapWindowCallBlixem(menu_data->window, requested_homol_set) ;
+    zmapWindowCallBlixem(menu_data->window, requested_homol_set, seq_set) ;
 
   g_free(menu_data) ;
 

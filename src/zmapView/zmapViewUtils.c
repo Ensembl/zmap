@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.24 2010-10-13 09:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.25 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -235,7 +235,8 @@ void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReq
 ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list,
 						       ZMapViewConnection view_con,
 						       ZMapServerReqType request_type,
-						       gpointer request_data)
+						       gpointer request_data,
+                                           StepListActionOnFailureType on_fail)
 {
   ZMapViewConnectionRequest request = NULL ;
   ZMapViewConnectionStep step ;
@@ -246,6 +247,8 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
       step->state = request->state = STEPLIST_PENDING ;           // some duplication here?
       request->request_data = request_data ;
       step->connection_req = request ;
+      if(on_fail != 0)
+            step->on_fail = on_fail ;
 //printf("add request %d to %s\n",request_type,view_con->url);
     }
 
@@ -274,6 +277,7 @@ ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB d
       zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_NEWCONTEXT,REQUEST_ONFAIL_CANCEL_THREAD) ;
       zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURES,  REQUEST_ONFAIL_CANCEL_THREAD) ;
       zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_SEQUENCE,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD) ;
       zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_TERMINATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
       return(step_list);

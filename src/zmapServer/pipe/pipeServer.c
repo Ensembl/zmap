@@ -35,7 +35,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.33 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.34 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,11 +52,15 @@
  * GENERALISE IT MORE TO DEAL WITH BLOCKS...I'LL DO THAT NEXT....EG */
 
 
+#include <sys/types.h>  /* for waitpid() */
+#include <sys/wait.h>
+#include <string.h>
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
+#include <ZMap/zmapServerProtocol.h>
 #include <zmapServerPrototype.h>
 #include <pipeServer_P.h>
 #include <ZMap/zmapConfigIni.h>
@@ -81,7 +85,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 
 static gboolean pipe_server_spawn(PipeServer server,GError **error);
-static ZMapServerResponseType openConnection(void *server, gboolean sequence_server,gint zmap_start,gint zmap_end) ;
+static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
@@ -97,6 +101,7 @@ static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext featu
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -132,6 +137,7 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs)
   pipe_funcs->get_features = getFeatures ;
   pipe_funcs->get_context_sequences = getContextSequence ;
   pipe_funcs->errmsg = lastErrorMsg ;
+  pipe_funcs->get_status = getStatus;
   pipe_funcs->close = closeConnection;
   pipe_funcs->destroy = destroyConnection ;
 
@@ -258,6 +264,63 @@ static gboolean createConnection(void **server_out,
  * in case of errors or hangups eventually we will time out and an error popped up.
  * downside is limited to not having the data, which is what happens anyway
  */
+
+typedef struct pipe_arg
+{
+      char *arg;
+      char type;
+#define PA_INT    1
+#define PA_STRING   2
+/*
+ * this runs in a thread and can be accessed by several at once
+ * must use auto variables for state
+ */
+      char flag;
+} pipeArgStruct, *pipeArg;
+
+
+#define PA_START  1
+#define PA_END  2
+#define PA_DATASET  4
+#define PA_SEQUENCE  8
+
+pipeArgStruct pipe_args[] =
+{
+      { "start", PA_INT,PA_START },
+      { "end", PA_INT,PA_END },
+      { "dataset", PA_STRING,PA_DATASET },
+      { "gff_seqname", PA_STRING,PA_SEQUENCE },
+      { NULL, 0, 0 }
+};
+#define PIPE_MAX_ARGS   8    // extra args we add on to the query, including the program and terminating NULL
+
+static char *make_arg(pipeArg pipe_arg, char *prefix,PipeServer server)
+{
+      char *q = NULL;
+
+      switch(pipe_arg->flag)
+      {
+      case PA_START:
+            if(server->zmap_start && server->zmap_end)
+                  q = g_strdup_printf("%s%s=%d",prefix,pipe_arg->arg,server->zmap_start);
+            break;
+      case PA_END:
+            if(server->zmap_start && server->zmap_end)
+                  q = g_strdup_printf("%s%s=%d",prefix,pipe_arg->arg,server->zmap_end);
+            break;
+      case PA_DATASET:
+            /* if NULL will not work but won't crash either */
+            if(server->sequence_map->dataset)
+                  q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->dataset);
+            break;
+      case PA_SEQUENCE:
+            if(server->sequence_map->sequence)
+                  q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->sequence);
+            break;
+      }
+      return(q);
+}
+
 static gboolean pipe_server_spawn(PipeServer server,GError **error)
 {
   gboolean result = FALSE;
@@ -266,6 +329,10 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   GError *pipe_error = NULL;
   int i;
   gint err_fd;
+  pipeArg pipe_arg;
+  char arg_done = 0;
+  char *mm = "--";
+  char *minus = mm+2;   /* this gets left as per the last arg */
 
   q_args = g_strsplit(server->query,"&",0);
   argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + g_strv_length(q_args)));
@@ -277,32 +344,53 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
        * ... now they are in [ZMap].  We now work with chromosome coords.
        */
 
-      if(server->zmap_start && server->zmap_end)  /* NB: makes no sense if only one is supplied */
-      {
-            char *p = q_args[i-1];
-            char *q;
+      char *p = q_args[i-1];
+      char *q;
 
-            if(!g_ascii_strncasecmp(p,"start=",6) && server->zmap_start)
+      for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
+      {
+            minus = mm+2;
+            if(*p == '-')     /* optional -- allow single as well */
             {
-                  q = g_strdup_printf("start=%d",server->zmap_start);
-                  g_free(q_args[i-1]);
-                  q_args[i-1] = q;
+                  p++;
+                  mm--;
             }
-            else if(!g_ascii_strncasecmp(p,"end=",4) && server->zmap_end)
+            if(*p == '-')
             {
-                  q = g_strdup_printf("end=%d",server->zmap_end);
-                  g_free(q_args[i-1]);
-                  q_args[i-1] = q;
+                  p++;
+                  mm--;
+            }
+            if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
+            {
+                  arg_done |= pipe_arg->flag;
+                  q = make_arg(pipe_arg,minus,server);
+                  if(q)
+                  {
+                        g_free(q_args[i-1]);
+                        q_args[i-1] = q;
+                  }
+
             }
       }
 
       argv[i] = q_args[i-1];
   }
 
+      /* add on if not defined already */
+  for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
+  {
+      if(!(arg_done & pipe_arg->flag))
+      {
+            char *q;
+            q = make_arg(pipe_arg,minus,server);
+            if(q)
+                  argv[i++] = q;
 
+      }
+  }
 
   argv[i]= NULL;
-#if 1 // MH17_DEBUG_ARGS
+#if MH17_DEBUG_ARGS
 {
 char *x = "";
 int j;
@@ -316,8 +404,9 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
 #endif
   zMapThreadForkLock();
 
-  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,G_SPAWN_CHILD_INHERITS_STDIN, // can't not give a flag!
-                                    NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
+  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
+      G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
+      NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
   if(result)
   {
     server->gff_pipe = g_io_channel_unix_new(pipe_fd);
@@ -346,16 +435,50 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
  */
 
 // NB: otterlace would prefer to get all of STDERR, which needs a slight rethink
-gchar *pipe_server_get_stderr(PipeServer server)
+
+/* we read this on any explicit error and at the end of reading features (end of GFF)
+ * This assumes we always do this and also that the script exits in a timely manner
+ * we also get the exit code at this point as this is when we decide a script has finished
+ */
+void pipe_server_get_stderr(PipeServer server)
 {
+  GError *gff_pipe_err = NULL;
+#if !MH17_SINGLE_LINE
+  int status;
+  gsize length;
+
+      /* if we are running a file:// then there's no gff_stderr */
+  if(!server->gff_stderr || server->stderr_output)    /* only try once */
+      return;
+
+      /* MH17: NOTE this is a Linux/Mac only function,
+       * GLib does not appear to wrap this stuff up in a portable way
+       * which is in fact hte reason for using it
+       * if you can find a portable version of waitpid() then feel free to change this code
+       */
+  if(server->child_pid)
+  {
+      waitpid(server->child_pid,&status,0);
+      if(WIFEXITED(status))
+      {
+            server->exit_code =  WEXITSTATUS(status);  /* 8 bits only */
+      }
+      else
+      {
+            server->exit_code = 0x1ff;     /* abnormal exit */
+      }
+  }
+
+  if(g_io_channel_read_to_end (server->gff_stderr, &server->stderr_output, &length, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+  {
+      server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
+  }
+#else
+
   GIOStatus status ;
   gsize terminator_pos = 0;
-  GError *gff_pipe_err = NULL;
   gchar * msg = NULL;
   GString *line;
-
-  if(!server->gff_stderr)
-      return(NULL);
 
   line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
 
@@ -386,10 +509,12 @@ gchar *pipe_server_get_stderr(PipeServer server)
 
     g_string_free(line,TRUE);
     return(msg);
+
+#endif
 }
 
 
-static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server,gint zmap_start,gint zmap_end)
+static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen req_open)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
@@ -402,8 +527,10 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
     {
       GError *gff_pipe_err = NULL ;
 
-      server->zmap_start = zmap_start;
-      server->zmap_end = zmap_end;
+      server->zmap_start = req_open->zmap_start;
+      server->zmap_end = req_open->zmap_end;
+
+      server->sequence_map = req_open->sequence_map;
 
       if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
       {
@@ -416,7 +543,7 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
             retval = TRUE;
       }
 
-      server->sequence_server = sequence_server;         /* if not then drop any DNA data */
+      server->sequence_server = req_open->sequence_server;         /* if not then drop any DNA data */
       server->parser = zMapGFFCreateParser() ;
       server->gff_line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
 
@@ -436,7 +563,11 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
 	if(!retval || result != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    setLastErrorMsg(server, &gff_pipe_err) ;
-	    result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                /* we don't know if it died or not
+                 * but will find out via the getStatus request
+                 * we need DIED status to make this happen
+                 */
+	    result = ZMAP_SERVERRESPONSE_SERVERDIED ;
 	  }
     }
 
@@ -883,6 +1014,28 @@ static char *lastErrorMsg(void *server_in)
 }
 
 
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+{
+      PipeServer server = (PipeServer)server_conn ;
+
+      *stderr_out = NULL;     /* for file:// or default */
+      *exit_code = 0;
+
+      if(server->child_pid)
+      {
+            /* in case of a failure this may already have been done */
+            pipe_server_get_stderr(server);
+
+            *exit_code = server->exit_code;
+            *stderr_out = server->stderr_output;
+//can't do this or else it won't be read
+//            if(server->exit_code)
+//                  return ZMAP_SERVERRESPONSE_SERVERDIED;
+
+      }
+      return ZMAP_SERVERRESPONSE_OK;
+}
+
 
 static ZMapServerResponseType closeConnection(void *server_in)
 {
@@ -1023,6 +1176,9 @@ static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout)
   char *msg = "failed";
 
   zMapAssert(server && gff_pipe_err_inout);
+
+  pipe_server_get_stderr(server);         /* get this regardless */
+  /* normally we get stderr on the getStatus call bu in case of an error we don't get there */
 
   gff_pipe_err = *gff_pipe_err_inout ;
   if(gff_pipe_err)
@@ -1190,14 +1346,9 @@ static gboolean getServerInfo(PipeServer server, ZMapServerInfo info)
 /* mgh: if we get an error such as pipe broken then let's look at stderr and if there's a message there report it */
 static void setErrMsg(PipeServer server, char *new_msg)
 {
-  gchar *errmsg;
 
-  errmsg = pipe_server_get_stderr(server);
-  if(errmsg)
-  {
-      g_free(new_msg);
-      new_msg = errmsg;       // explain the cause of the error not the symptom
-  }
+  pipe_server_get_stderr(server);         /* get this regardless */
+  /* normally we get stderr on the getStatus call bu in case of an error we don't get there */
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;

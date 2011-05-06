@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 25 14:41 2010 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.43 2010-09-16 14:18:55 mh17 Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.44 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -285,8 +285,17 @@ static char *application_execute_command(char *command_text, gpointer app_contex
 static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response_data)
 {
   char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
+  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
-  zmapAppCreateZMap(app, sequence, request_data->start, request_data->end) ;
+      /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
+      // default sequence may be NULL
+  if(app->default_sequence)
+        seq_map->dataset = app->default_sequence->dataset;
+  seq_map->sequence = sequence;
+  seq_map->start = request_data->start;
+  seq_map->end = request_data->end;
+
+  zmapAppCreateZMap(app, seq_map) ;
 
   response_data->handled = TRUE;
   /* that screwy rabbit */

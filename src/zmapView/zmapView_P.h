@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar 15 14:19 2011 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.73 2011-03-15 14:34:09 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.74 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -340,10 +340,11 @@ char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMapHomolType align_type,
 				      int position, ZMapFeatureSet feature_set, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
-			    ZMapHomolType homol_type, 
+			    ZMapHomolType homol_type,
 			    int position, int start, int end,
 			    ZMapWindowAlignSetType align_set,
-			    GList *features, ZMapFeatureSet feature_set, GList *local_sequences,
+			    GList *features, ZMapFeatureSet feature_set,
+                      char *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit) ;
 
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
@@ -377,7 +378,8 @@ void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReq
 ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list,
 						       ZMapViewConnection view_con,
 						       ZMapServerReqType request_type,
-						       gpointer request_data) ;
+						       gpointer request_data,
+                                           StepListActionOnFailureType on_fail) ;
 ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB dispatch_func,
                                       StepListProcessDataCB process_func,
                                       StepListFreeDataCB free_func);

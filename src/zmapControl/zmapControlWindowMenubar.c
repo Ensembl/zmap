@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,17 +24,17 @@
  *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code for the menubar in a zmap window.
- *              
+ *
  *              NOTE that this code uses the itemfactory which is
  *              deprecated in GTK 2, BUT to replace it means
  *              understanding their UI manager...we need to do this
  *              but its quite a lot of work...
- *              
+ *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
  * Last edited: Sep 24 13:56 2009 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.38 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.39 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,7 +108,7 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Set Developer status",  NULL,    developerCB, 0, NULL },
  { "/_View",         NULL,         NULL, 0, "<Branch>" },
 #ifdef ALLOW_POPOUT_PANEL
- { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL }, 
+ { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif	/* ALLOW_POPOUT_PANEL */
  { "/View/Statistics", NULL,       showStatsCB, 0, NULL },
  { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
@@ -400,7 +400,7 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
   if (!(result = zMapLaunchWebBrowser(web_page, &error)))
     {
       zMapWarning("Error: %s\n", error->message) ;
-      
+
       g_error_free(error) ;
     }
   else
@@ -482,14 +482,14 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 
 
 #ifdef ALLOW_POPOUT_PANEL
-static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) 
+static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 {
   GtkWidget *toplevel;
   ZMap zmap = (ZMap)data;
-  
+
   if((toplevel = zMapGUIPopOutWidget(zmap->button_info_box, zmap->zmap_id)))
     gtk_widget_show_all(toplevel);
-  
+
   return ;
 }
 #endif /* ALLOW_POPOUT_PANEL */
@@ -500,6 +500,7 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   ZMap zmap = (ZMap)cb_data ;
   char *new_sequence ;
   ZMapView view ;
+  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   /* these should be passed in ...... */
   int start = 1, end = 0 ;
@@ -507,7 +508,13 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   /* Get a new sequence to show.... */
   if ((new_sequence = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, "New Sequence:", FALSE)))
     {
-      if ((view = zmapControlAddView(zmap, new_sequence, start, end)))
+#warning need dataset defined here as well as start,end
+      zMapAssert(zmap->default_sequence);
+      seq_map->sequence = zmap->default_sequence->dataset;
+      seq_map->sequence = new_sequence;
+      seq_map->start = start;
+      seq_map->end = end;
+      if ((view = zmapControlAddView(zmap, seq_map)))
 	zMapViewConnect(view, NULL) ;				    /* return code ???? */
     }
 

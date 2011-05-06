@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Apr 13 11:30 2011 (edgrif)
  * Created: Mon Mar 14 10:38:39 2011 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.2 2011-04-13 10:44:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.3 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,9 +46,9 @@
 
 
 /* Cover function for the fuller zmapWindowCallBlixemOnPos() function. */
-void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set)
+void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, char *source)
 {
-  zmapWindowCallBlixemOnPos(window, requested_homol_set, 0.0, 0.0) ;
+  zmapWindowCallBlixemOnPos(window, requested_homol_set, source, 0.0, 0.0) ;
 
   return ;
 }
@@ -58,6 +58,7 @@ void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_ho
 /* Call blixem for selected features, feature column or columns. Gets
  * called from menus and from keyboard short cut. */
 void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set,
+                         char *source,          /* for short reads data */
 			       double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL ;
@@ -66,7 +67,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     focus_item = zmapWindowItemGetTrueItem(focus_item) ;
-	  
+
   if (!focus_item && requested_homol_set != ZMAPWINDOW_ALIGNCMD_FEATURES)
     focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
 
@@ -124,7 +125,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	      {
 		selected_features = TRUE ;
 	      }
-	  
+
 	    found_feature = TRUE ;
 
 	    break ;
@@ -151,7 +152,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 								     ZMAPFEATURE_STRUCT_BLOCK) ;
 	  zMapAssert(align->block) ;
 
-      
+
 	  if (zmapWindowMarkIsSet(window->mark))
 	    {
 	      zmapWindowMarkGetSequenceRange(window->mark, &(align->start), &(align->end)) ;
@@ -164,8 +165,17 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	    }
 
 
+        if(requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+          {
+            align->homol_type = ZMAPHOMOL_N_HOMOL ;
+
+            align->source = source ;
+            align->homol_set = requested_homol_set ;
+          }
+
+
 	  /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
-	  if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+	  else if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
 

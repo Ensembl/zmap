@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 16:08 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.316 2011-04-08 10:47:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.317 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2421,6 +2421,13 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	    }
 	}
     }
+
+  {
+  GList *seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, cbdata);
+      /* list all short reads data, temp access till we get wiggle plots running */
+  if(seq_menus)
+      menu_sets = g_list_append(menu_sets, seq_menus);
+  }
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  6 12:47 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.367 2011-05-06 11:48:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.368 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2083,7 +2083,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
     window->normal_cursor = zMapGUIGetCursor(DEFAULT_CURSOR) ;
   window->busy_cursor = zMapGUIGetCursor(BUSY_CURSOR) ;
   window->window_busy_cursor = zMapGUIGetCursor("zmap_noentry") ;
-  
+
   window->cursor_busy_count = 0 ;
 
 
@@ -4040,7 +4040,7 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
     {
       fetch_data->start = block->block_to_sequence.block.x1 ;
       fetch_data->end   = block->block_to_sequence.block.x2 ;
-zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+//zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
 
     }
   else if (zmapWindowMarkIsSet(window->mark) &&
@@ -4048,7 +4048,7 @@ zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end)
     {
       fetch_data->start = start;
       fetch_data->end   = end;
-zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+//zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
     }
   else
     load = FALSE;
@@ -4081,7 +4081,7 @@ so just request whatever region is requested regardless
       for(col_list = featureset_name_list;col_list;col_list = col_list->next)
             fset_list = g_list_concat(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),FALSE), fset_list);
 
-zMapLogWarning("fetch %d: %d %d",use_mark,fetch_data->start,fetch_data->end);
+//zMapLogWarning("fetch %d: %d %d",use_mark,fetch_data->start,fetch_data->end);
 
       fetch_data->feature_set_ids = fset_list;
 
@@ -4248,7 +4248,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	zmapWindowCallBlixem(window, requested_homol_set) ;
+	zmapWindowCallBlixem(window, requested_homol_set, NULL) ;
 
 	break ;
       }

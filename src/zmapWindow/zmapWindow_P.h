@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 27 08:50 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.287 2011-05-06 12:03:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.288 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1003,8 +1003,8 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
 
-void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set) ;
-void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, double x, double y) ;
+void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, char *source) ;
+void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, char *source, double x, double y) ;
 
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)

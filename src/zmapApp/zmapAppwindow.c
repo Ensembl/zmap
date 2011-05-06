@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 22 11:56 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.77 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.78 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,7 @@
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
-static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_out) ;
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 static void checkConfigDir(void) ;
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
@@ -107,10 +107,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   ZMapAppContext app_context ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *quit_button ;
-  char *sequence ;
-  int start, end ;
   int log_size ;
   int sleep_seconds = 0 ;
+  ZMapFeatureSequenceMap seq_map;
+
   /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
 
 
@@ -242,27 +242,22 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* If user specifyed a sequence in the config. file or on the command line then
    * display it straight away, app exits if bad command line params supplied. */
-  sequence = NULL;
-  start = 1 ;
-  end = 0 ;
-  if(app_context->default_sequence)
+  seq_map = app_context->default_sequence;
+  if(!seq_map->start)
   {
-      sequence = app_context->default_sequence->sequence ;
-      start = app_context->default_sequence->start;
-      end = app_context->default_sequence->end;
+      seq_map->start = 1;
+      seq_map->end = 0;
   }
 
-  if (!sequence)
-    checkForCmdLineSequenceArg(argc, argv, &sequence) ;
 
-  checkForCmdLineStartEndArg(argc, argv, &start, &end) ;
+//  if (!sequence)
+  checkForCmdLineSequenceArg(argc, argv, &seq_map->dataset, &seq_map->sequence);
 
+  checkForCmdLineStartEndArg(argc, argv, &seq_map->start, &seq_map->end) ;
 
-
-  if (sequence)
-    {
-      zmapAppCreateZMap(app_context, sequence, start, end) ;
-    }
+      /* show default sequence is based on whether or not we are controlled via XRemote */
+  if (seq_map->sequence && !zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
+      zmapAppCreateZMap(app_context, seq_map) ;
 
   app_context->state = ZMAPAPP_RUNNING ;
 
@@ -585,13 +580,28 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
   return FALSE;                 /* TRUE means it stops! */
 }
 
-/* Did user specify seqence/start/end on command line. */
-static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_out)
+/* Did user specify seqence/start/end on command line? */
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out)
 {
   char *sequence ;
 
   if ((sequence = zMapCmdLineFinalArg()))
+  {
+    if(dataset_out)
+    {
+      gchar *delim;
+
+      delim = g_strstr_len(sequence,-1,"/");
+      if(delim)
+      {
+            *dataset_out = sequence;
+            *delim++ = 0;
+            sequence = delim;
+      }
+    }
+
     *sequence_out = sequence ;
+  }
 
   return ;
 }
@@ -736,7 +746,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       char *tmp_string  = NULL;
       int tmp_int = 0;
 
-      /* Do we show the main window? */
+      /* Do we show the main window? if not then on ZMap close we should exit */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
 	app_context->show_mainwindow = tmp_bool;
@@ -751,12 +761,21 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-      /* default sequence to display */
+            /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
+      app_context->default_sequence = (ZMapFeatureSequenceMap) g_new0(ZMapFeatureSequenceMapStruct,1);
+
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_DATASET, &tmp_string))
+      {
+                  /* if not supplied meeds to appear in all the pipe script URLs */
+            app_context->default_sequence->dataset = tmp_string;
+      }
+
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
       {
-            ZMapFeatureSequenceMap s;
-            app_context->default_sequence = s = (ZMapFeatureSequenceMap) g_new0(ZMapFeatureSequenceMapStruct,1);
+            ZMapFeatureSequenceMap s = app_context->default_sequence;
+
 	      s->sequence = tmp_string;
             s->start = 1;
             if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,

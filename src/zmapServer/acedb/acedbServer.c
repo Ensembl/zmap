@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  6 12:01 2011 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.166 2011-05-06 11:01:46 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.167 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,7 +162,7 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server,gboolean sequence_server,gint zmap_start, gint zmap_end) ;
+static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
@@ -178,6 +178,7 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -275,6 +276,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->get_features = getFeatures ;
   acedb_funcs->get_context_sequences = getContextSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
+  acedb_funcs->get_status = getStatus ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
 
@@ -361,15 +363,15 @@ static gboolean createConnection(void **server_out,
  * set "quiet" mode on so that we can get dna, gff and other stuff back unadulterated by
  * extraneous information. */
 // mh17: added sequence_server flag for compatability with pipeServer, it's not used here
-static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server,gint zmap_start,gint zmap_end)
+static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen req_open)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
   resetErr(server) ;
 
-  server->zmap_start = zmap_start;
-  server->zmap_end   = zmap_end;
+  server->zmap_start = req_open->zmap_start;
+  server->zmap_end   = req_open->zmap_end;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
@@ -697,6 +699,14 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
     }
 
   return result ;
+}
+
+
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+{
+      *exit_code = 0;
+      *stderr_out = NULL;
+      return ZMAP_SERVERRESPONSE_OK;
 }
 
 

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 25 14:42 2010 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.13 2010-09-16 11:57:40 mh17 Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.14 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,12 +288,19 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
   ViewConnectData view_params = &(input_data->view_params);
   ZMapView view;
   char *sequence;
+  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
     {
-      if ((view = zMapAddView(zmap, sequence,
-			      view_params->start,
-			      view_params->end)))
+#warning we need to get dataset (= species) from otterlace with added XML
+      zMapAssert(zmap->default_sequence);
+      seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
+
+      seq_map->sequence = sequence;
+      seq_map->start = view_params->start;
+      seq_map->end = view_params->end;
+
+      if ((view = zMapAddView(zmap, seq_map)))
         {
           zMapViewReadConfigBuffer(view, view_params->config);
 

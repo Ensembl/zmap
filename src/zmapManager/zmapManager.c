@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,12 +25,12 @@
  *
  * Description: Handles a list of zmaps which it can delete and add
  *              to.
- *              
+ *
  * Exported functions: See zmapManager.h
  * HISTORY:
  * Last edited: Oct 28 09:26 2009 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.25 2010-06-14 15:40:14 mh17 Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.26 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ ZMapCallbacksStruct zmap_cbs_G = {destroyedCB, quitReqCB} ;
 /* This routine must be called just once before any other zmaps routine, it is a fatal error
  * if the caller calls this routine more than once. The caller must supply all of the callback
  * routines.
- * 
+ *
  * Note that since this routine is called once per application we do not bother freeing it
  * via some kind of zmaps terminate routine. */
 void zMapManagerInit(ZMapManagerCallbacks callbacks)
@@ -104,14 +104,14 @@ ZMapManager zMapManagerCreate(void *gui_data)
 
 /* Add a new zmap window with associated thread and all the gubbins.
  * Return indicates what happened on trying to add zmap.
- * 
+ *
  * Policy is:
  *
  * If no connection can be made for the view then the zmap is destroyed,
  * if any connection succeeds then the zmap is added but errors are reported,
  * if sequence is NULL a blank zmap is created.
  *  */
-ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out)
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = NULL ;
@@ -119,9 +119,9 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start
 
   zMapAssert(zmaps) ;
 
-  if ((zmap = zMapCreate((void *)zmaps)))
+  if ((zmap = zMapCreate((void *)zmaps, sequence_map)))
     {
-      if (!sequence)
+      if (!sequence_map->sequence)
 	{
 	  /* No sequence so just add blank zmap. */
 	  result = ZMAPMANAGER_ADD_NOTCONNECTED ;
@@ -129,7 +129,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start
       else
 	{
 	  /* Try to load the sequence. */
-	  if ((view = zMapAddView(zmap, sequence, start, end))
+	  if ((view = zMapAddView(zmap, sequence_map))
 	      && zMapConnectView(zmap, view))
 	    {
 	      result = ZMAPMANAGER_ADD_OK ;
@@ -150,7 +150,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_out = zmap ;
 
-      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;      
+      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
     }
 
   return result ;
@@ -165,15 +165,15 @@ guint zMapManagerCount(ZMapManager zmaps)
 
 
 /* Reset an existing ZMap, this call will:
- * 
+ *
  *    - leave the ZMap window displayed and hold onto user information such as machine/port
  *      sequence etc so user does not have to add the data again.
  *    - Free all ZMap window data that was specific to the view being loaded.
  *    - Kill the existing server thread and start a new one from scratch.
- * 
+ *
  * After this call the ZMap will be ready for the user to try again with the existing
  * machine/port/sequence or to enter data for a new sequence etc.
- * 
+ *
  *  */
 gboolean zMapManagerReset(ZMap zmap)
 {

@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Mar 15 14:30 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.55 2011-03-15 14:35:55 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.56 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,6 +173,7 @@ typedef struct BlixemDataStruct
   GList *features ;
 
   ZMapFeatureSet feature_set ;
+  char *source;
 
   ZMapFeatureBlock block ;
 
@@ -273,7 +274,7 @@ typedef struct BasicFeatureDumpStructName
 
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
-			       ZMapHomolType align_type, 
+			       ZMapHomolType align_type,
 			       int position, int start, int end,
 			       GList *features, ZMapFeatureSet feature_set,
 			       blixemData blixem_data, char **err_msg) ;
@@ -440,7 +441,8 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
   /* Make a list of all the sequences held locally in the database. */
   blixem_data.known_sequences = g_hash_table_new(NULL, NULL) ;
 
-  g_hash_table_foreach(feature_set->features, checkForLocalSequence, &blixem_data) ;
+  if(feature_set)
+      g_hash_table_foreach(feature_set->features, checkForLocalSequence, &blixem_data) ;
 
   g_hash_table_destroy(blixem_data.known_sequences) ;
   blixem_data.known_sequences = NULL ;
@@ -480,7 +482,8 @@ gboolean zmapViewCallBlixem(ZMapView view,
 			    ZMapFeatureBlock block, ZMapHomolType homol_type,
 			    int position, int start, int end,
 			    ZMapWindowAlignSetType align_set,
-			    GList *features, ZMapFeatureSet feature_set, GList *local_sequences,
+			    GList *features, ZMapFeatureSet feature_set,
+                      char *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
@@ -501,6 +504,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
     blixem_data.show_whole_range = TRUE ;
 
   blixem_data.local_sequences = local_sequences ;
+  blixem_data.source = source;
 
   blixem_data.align_set = align_set;
 
@@ -615,7 +619,7 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
-			       ZMapHomolType align_type, 
+			       ZMapHomolType align_type,
 			       int position, int start, int end,
 			       GList *features, ZMapFeatureSet feature_set,
 			       blixemData blixem_data, char **err_msg)
@@ -638,7 +642,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   blixem_data->features = features ;
 
   blixem_data->feature_set = feature_set ;
-  
+
   blixem_data->block = block ;
 
   /* ZMap uses the new blixem so default format is GFF by default. */
@@ -1010,7 +1014,7 @@ static gboolean addFeatureDetails(blixemData blixem_data)
 	feature = (ZMapFeature)(blixem_data->features->data) ;
       else
 	feature = zMap_g_hash_table_nth(blixem_data->feature_set->features, 0) ;
-      
+
       if (feature->strand == ZMAPSTRAND_REVERSE)
 	blixem_data->opts = "X-BR";
       else
@@ -1371,6 +1375,26 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	  g_list_foreach(set_list, getSetList, blixem_data) ;
 	}
 
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+      {
+// chr4-04     source1     region      215000      300000      0.000000    .     .     dataType=short-read
+
+            /* MH17: not sure whre eblx and seqbl come in
+             * the feature writing code just goes straight to gff
+             * via code like this:
+             */
+            char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
+
+            g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\%f\t.\t.\t%s\t\n",
+                   ref_name, blixem_data->source,
+                   "region",          // zMapSOAcc2Term(feature->SO_accession),
+                   blixem_data->mark_start, blixem_data->mark_end,
+                   0.0, "dataType=short-read" ) ;       // is this also SO??
+
+            printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
+
+      }
+
       if (blixem_data->homol_max)
 	{
 	  if ((num_homols = g_list_length(blixem_data->align_list)) && blixem_data->homol_max < num_homols)
@@ -1525,7 +1549,7 @@ static void processSetList(gpointer data, gpointer user_data)
 #if MH17_GIVES_SPURIOUS_ERRORS
 	  /*
 	    We get a featureset to column mapping that includes all possible
-	    but without features for eachione the set does not get created
+	    but without features for each one the set does not get created
 	    in which case here a not found error is not an error
 	    but not finding the column or featureset in the first attempt is
 	    previous code would not have found *_trunc featuresets!

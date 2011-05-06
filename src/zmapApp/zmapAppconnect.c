@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  * Exported functions: See zmapApp_P.h
  * HISTORY:
  * Last edited: Feb  4 16:20 2010 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.27 2010-06-14 15:40:12 mh17 Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.28 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,17 +124,17 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 
 
 /* sequence etc can be unspecified to create a blank zmap. */
-void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end)
+void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map)
 {
   ZMap zmap ;
   GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
 
   /* Set the text.  This is done even if it's already set, ah well! */
-  if (sequence)
-    gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence);
+  if (sequence_map->sequence)
+    gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence_map->sequence);
 
-  add_result = zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap) ;
+  add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap) ;
   if (add_result == ZMAPMANAGER_ADD_DISASTER)
     {
       zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
@@ -148,7 +148,7 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
     {
       /* If we tried to load a sequence but couldn't connect then warn user, otherwise
        * we just created the requested blank zmap. */
-      if (sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
+      if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
 	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
 
       gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
@@ -159,7 +159,7 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
                           ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
                           ZMAPDATA_COLUMN, (gpointer)zmap,
                           -1);
-#ifdef RDS_NEVER_INCLUDE_THIS_CODE      
+#ifdef RDS_NEVER_INCLUDE_THIS_CODE
       zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
                 (row + 1), row_text[0], row_text[1]) ;
 #endif /* RDS_NEVER_INCLUDE_THIS_CODE */
@@ -172,8 +172,8 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
 
 
 
-/* 
- *         Internal routines. 
+/*
+ *         Internal routines.
  */
 
 static void createThreadCB(GtkWidget *widget, gpointer cb_data)
@@ -181,6 +181,7 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
   char *sequence = "", *start_txt, *end_txt ;
   int start = 1, end = 0 ;
+  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
   if (sequence && strlen(sequence) == 0)		    /* gtk_entry returns "" for "no text". */
@@ -205,9 +206,14 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   else
     end = 0 ;
 
+      /* MH17: this is a bodge FTM, we need a dataset widget as well */
+  seq_map->dataset = app_context->default_sequence->dataset;
+  seq_map->sequence = sequence;
+  seq_map->start = start;
+  seq_map->end = end;
 
   /* N.B. currently the user is allowed to create a blank zmap, may need to revisit this... */
-  zmapAppCreateZMap(app_context, sequence, start, end) ;
+  zmapAppCreateZMap(app_context, seq_map) ;
 
 
 

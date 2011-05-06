@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Mar 31 15:07 2011 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.19 2011-03-31 14:08:15 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.20 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,8 +176,6 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
   get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
   int i;
 
-  zMapAssert(arg_name && result) ;
-
   zMapAssert(arg_context_G) ;
   arg_context = arg_context_G ;
 
@@ -191,21 +189,34 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 	    {
 	      if(g_quark_from_string(entries->long_name) == g_quark_from_string(arg_name))
 		{
-		  val_set = TRUE;
-		  if(entries->arg == G_OPTION_ARG_NONE &&
-		     ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
-		    result->b = *(gboolean *)(entries->arg_data);
-		  else if(entries->arg == G_OPTION_ARG_INT &&
-			  ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
-		    result->i = *(int *)(entries->arg_data);
-		  else if(entries->arg == G_OPTION_ARG_DOUBLE &&
-			  ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
-		    result->f = *(double *)(entries->arg_data);
-		  else if(entries->arg == G_OPTION_ARG_STRING &&
-			  ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
-		    result->s = *(char **)(entries->arg_data);
-		  else
-		    val_set = FALSE;
+		      if(entries->arg == G_OPTION_ARG_NONE &&
+                       ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
+                  {
+                        if(result)
+      		            result->b = *(gboolean *)(entries->arg_data);
+                        val_set = TRUE;
+                  }
+		      else if(entries->arg == G_OPTION_ARG_INT &&
+      			ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
+                  {
+                        if(result)
+            		      result->i = *(int *)(entries->arg_data);
+                        val_set = TRUE;
+                  }
+		      else if(entries->arg == G_OPTION_ARG_DOUBLE &&
+      			ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
+                        {
+                        if(result)
+            		      result->f = *(double *)(entries->arg_data);
+                        val_set = TRUE;
+                  }
+		      else if(entries->arg == G_OPTION_ARG_STRING &&
+      			ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
+                  {
+                        if(result)
+            		      result->s = *(char **)(entries->arg_data);
+                        val_set = TRUE;
+                  }
 		}
 	      entries++;
 	    }

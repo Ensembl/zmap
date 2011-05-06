@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: May  6 13:10 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.194 2011-05-06 12:11:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.195 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -648,7 +648,7 @@ typedef struct ZMapFeatureStruct_
 
   /* MOVE THIS...WE ONLY NEED IT IN SOME FEATURES....NEEDS SOME RESEARCH BECAUSE WHILE
    * THIS IS BASICALLY AN ALIGNMENT THING THERE MAY BE OTHER FEATURES THAT HAVE SCORES...
-   * 
+   *
    * e.g. TRANSCRIPTS WILL NEED SCORE BECAUSE THEY MAY BE PRODUCED BY PREDICTION PROGRAMS...
    *  */
   float score ;
@@ -859,16 +859,22 @@ typedef struct
                                            * They are in display order left to right
                                            */
 
+  GList * seq_data_featuresets;           /* sources of BAM data */
+
+
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;
 
 
 
 /* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
 /* MH17: moved from zmapView.h */
+/* currently (Apr 2011) this is used for the 'default-sequence' or the one loeaded vuia Otterlace */
+/* multiple aligns must also include this if used */
 typedef struct
 {
-  char *sequence ;                                  /* Sequence + start/end coords. */
-  int start, end ;
+  char *dataset ;       /* eg human */
+  char *sequence ;      /* eg chr6-18 */
+  int start, end ;      /* chromosome coordinates */
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
 

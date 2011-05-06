@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  1 10:12 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.124 2011-04-01 12:07:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.125 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -178,7 +178,8 @@ typedef enum
     ZMAPWINDOW_ALIGNCMD_NONE,
     ZMAPWINDOW_ALIGNCMD_FEATURES,
     ZMAPWINDOW_ALIGNCMD_SET,
-    ZMAPWINDOW_ALIGNCMD_MULTISET
+    ZMAPWINDOW_ALIGNCMD_MULTISET,
+    ZMAPWINDOW_ALIGNCMD_SEQ
   } ZMapWindowAlignSetType ;
 
 typedef struct ZMapWindowCallbackCommandAlignStructName
@@ -201,6 +202,8 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
   GList *features ;					    /* Optional list of alignment features. */
 
   ZMapFeatureSet feature_set ;
+
+  char *source;                                     /* a featureset name */
 
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 

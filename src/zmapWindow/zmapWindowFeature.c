@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May  6 12:13 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.214 2011-05-06 11:14:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.215 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1131,6 +1131,14 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
 	}
     }
+
+      /* get BAM/ short reads data */
+  {
+  GList *seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
+      /* list all short reads data, temp access till we get wiggle plots running */
+  if(seq_menus)
+      menu_sets = g_list_append(menu_sets, seq_menus);
+  }
 
 
   /* DNA/Peptide ops. */

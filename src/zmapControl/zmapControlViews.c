@@ -33,7 +33,7 @@ name
  * HISTORY:
  * Last edited: Dec  9 16:15 2008 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.29 2011-04-05 14:53:29 mh17 Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.30 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,7 +86,7 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 
 /* New func for brand new view windows.... */
-ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
+ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapView zmap_view = NULL ;
   GtkWidget *curr_container, *view_container ;
@@ -102,7 +102,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   else
     curr_container = NULL ;
 
-  view_title = zMapViewGetSequenceName(sequence, start, end) ;
+  view_title = zMapViewGetSequenceName(sequence_map) ;
 
   /* Record what your current parent is. */
   if (curr_container)
@@ -121,7 +121,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
 
 
 
-  if (!(view_window = zMapViewCreate(xremote_widget, view_container, sequence, start, end, (void *)zmap)))
+  if (!(view_window = zMapViewCreate(xremote_widget, view_container, sequence_map, (void *)zmap)))
     {
       /* remove window we just added....not sure we need to do anything with remaining view... */
       ZMapViewWindow remaining_view ;

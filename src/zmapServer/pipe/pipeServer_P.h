@@ -29,7 +29,7 @@
  *
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.12 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.13 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -39,9 +39,6 @@
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
 #define FILE_PROTOCOL_STR "GFF File"
 
-#define PIPE_MAX_ARGS	6	// extra args we add on to the query, including the program and terminating NULL
-#define PIPE_ARG_ZMAP_START	"zmap_start"
-#define PIPE_ARG_ZMAP_END	"zmap_end"
 
 
 
@@ -56,15 +53,18 @@ typedef struct _PipeServerStruct
   GIOChannel *gff_stderr ;    // the pipe we read the script's error output from
   GPid child_pid;
   gint zmap_start,zmap_end;   // display coordinates of interesting region
-  gint wait;                  // delay before gettign data, mainly for testing
+  gint wait;                  // delay before getting data, mainly for testing
 
   ZMapURLScheme scheme;       // pipe:// or file://
   gchar *data_dir;            // default location for data files (when protocol is file://)
 
   char *styles_file ;
 
-  gboolean error ;					    /* TRUE if any error occurred. */
+  gboolean error ;            /* TRUE if any error occurred. */
   char *last_err_msg ;
+  gchar *stderr_output;        // all of it
+  gint exit_code;
+
   char *protocol;             // GFF Pipe or File
 
   ZMapFeatureContext req_context ;
@@ -72,6 +72,7 @@ typedef struct _PipeServerStruct
   GString * gff_line ;
   ZMapServerResponseType result ;
 
+  ZMapFeatureSequenceMap sequence_map;
   gboolean sequence_server;
 
   GHashTable *source_2_sourcedata;  // mapping data as per config file

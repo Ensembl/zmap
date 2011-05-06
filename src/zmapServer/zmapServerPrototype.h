@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.39 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.40 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -65,7 +65,7 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 ZMapURL url, char *format,
                                          char *version_str, int timeout) ;
 
-typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, gboolean sequence_server,gint zmap_start,gint zmap_end) ;
+typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, ZMapServerReqOpen req_open) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerInfo info) ;
 
@@ -96,6 +96,8 @@ typedef ZMapServerResponseType
 typedef ZMapServerResponseType
                  (*ZMapServerGetContextSequences)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
 
+typedef ZMapServerResponseType
+                 (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
 
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 
@@ -118,6 +120,7 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGetFeatures get_features ;
   ZMapServerGetContextSequences get_context_sequences ;
   ZMapServerGetErrorMsgFunc errmsg ;
+  ZMapServerGetStatusFunc get_status;
   ZMapServerCloseFunc close ;
   ZMapServerDestroyFunc destroy ;
 } ZMapServerFuncsStruct, *ZMapServerFuncs ;

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb 23 13:01 2011 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.65 2011-04-05 14:53:29 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.66 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -114,6 +114,9 @@ typedef struct
 typedef struct
 {
   char *err_msg;        // from the server mainly
+  gchar *stderr_out;
+  gint exit_code;
+
   GList *feature_sets ;
   int start,end;        // requested coords
   gboolean status;      // load sucessful?
@@ -197,8 +200,7 @@ typedef struct
 
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
-			      char *sequence, int start, int end,
-			      void *app_data) ;
+			      ZMapFeatureSequenceMap sequence_map, void *app_data) ;
 void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget);
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
@@ -212,7 +214,7 @@ void zMapViewStats(ZMapViewWindow view_window,GString *text) ;
 ZMapViewSession zMapViewSessionGetData(ZMapViewWindow view_window) ;
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
-char *zMapViewGetSequenceName(char *name,int start,int end);
+char *zMapViewGetSequenceName(ZMapFeatureSequenceMap sequence_map);
 void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;

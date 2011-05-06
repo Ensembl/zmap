@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 10 16:57 2010 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.38 2010-12-10 14:35:50 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.39 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,7 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(("%s: request failed....\n", zMapThreadGetThreadID(thread))) ;
 
-		error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("(a) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
 
 		/* Signal that we failed. */
 		zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, request) ;
@@ -190,7 +190,7 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(("%s: request failed....\n", zMapThreadGetThreadID(thread))) ;
 
-		error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("(b) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
 
 		/* Signal that we failed. */
 		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg) ;
@@ -198,7 +198,6 @@ void *zmapNewThread(void *thread_args)
 		break ;
 	      }
 	    case ZMAPTHREAD_RETURNCODE_BADREQ:
-	    case ZMAPTHREAD_RETURNCODE_SERVERDIED:
 	      {
 		char *error_msg ;
 
@@ -212,29 +211,48 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(("%s: server died....\n", zMapThreadGetThreadID(thread))) ;
 
-		error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("(c) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		/* not sure we need to do this...happens in the cleanup routine.... */
 
 		/* Signal that we failed. */
-		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
+            zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 		thread_cb->thread_died = TRUE ;
 
-		thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST,
-							   error_msg) ;
+		thread_cb->initial_error = g_strdup(error_msg) ;
 
 		goto clean_up ;
 	      }
 
+          case ZMAPTHREAD_RETURNCODE_SERVERDIED:
+            {
+            char *error_msg ;
+
+            ZMAPTHREAD_DEBUG(("%s: server died....\n", zMapThreadGetThreadID(thread))) ;
+
+            error_msg = g_strdup_printf("(d) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+
+            thread_cb->thread_died = TRUE ;
+
+            thread_cb->initial_error = g_strdup(error_msg) ;
+
+zMapLogWarning("server died","");
+            /* must continue on to getStatus if it's in the step list
+             * zmapServer functions will not run if status is DIED
+             */
+            zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
+//            goto clean_up ;
+            break;
+            }
 
           case ZMAPTHREAD_RETURNCODE_QUIT:
             {
             char * error_msg;
-            error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
+            error_msg = g_strdup_printf("(e) %s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
             zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
             }
             // we've already closed the connection and cleaned up data

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 11 15:02 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.50 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: dasServer.c,v 1.51 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,7 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server,gboolean sequence_server,gint zmap_start,gint zmap_end) ;
+static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
@@ -110,6 +110,7 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
 static ZMapServerResponseType closeConnection(void *server) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -194,6 +195,7 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->get_features = getFeatures ;
   das_funcs->get_context_sequences = getContextSequence ;
   das_funcs->errmsg       = lastErrorMsg ;
+  das_funcs->get_status   = getStatus ;
   das_funcs->close        = closeConnection;
   das_funcs->destroy      = destroyConnection ;
 
@@ -332,15 +334,15 @@ static gboolean createConnection(void **server_out,
 
 /* Need to check that the server has the dsn requested */
 // mh17: added sequence_server flag for compatability with pipeServer, it's not used here
-static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server,gint zmap_start, gint zmap_end)
+static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen req_open)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
   ZMapDAS1DSN dsn = NULL;
   requestParseDetailStruct detail = {0};
 
-  server->zmap_start = zmap_start;
-  server->zmap_end = zmap_end;
+  server->zmap_start = req_open->zmap_start;
+  server->zmap_end = req_open->zmap_end;
 
   if(server->protocol == g_quark_from_string("file"))
     return result;
@@ -457,6 +459,14 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
   *have_mode = FALSE ;
 
   return result ;
+}
+
+
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+{
+      *exit_code = 0;
+      *stderr_out = NULL;
+      return ZMAP_SERVERRESPONSE_OK;
 }
 
 

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb  8 15:17 2010 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.78 2010-09-16 11:57:40 mh17 Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.79 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -83,6 +83,8 @@ typedef struct _ZMapStruct
 
   void            *app_data ;				    /* Data passed back to all callbacks
 							       registered for this ZMap. */
+
+  ZMapFeatureSequenceMap default_sequence;             /* piinter to app_context default_sequence */
 
   /* Widget stuff for the Zmap. */
   GtkTooltips     *tooltips ;
@@ -179,13 +181,13 @@ void zmapControlButtonTooltips(ZMap zmap) ;
 void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc) ;
 
-ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end) ;
+ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
 
 void zmapControlClose(ZMap zmap) ;
 void zmapControlRemoveWindow(ZMap zmap) ;
 
-ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end) ;
+ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 int zmapControlNumViews(ZMap zmap) ;
 gboolean zmapControlRemoveView(ZMap zmap, ZMapView view) ;
 

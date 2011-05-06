@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:22 2010 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.31 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.32 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -129,7 +129,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
-void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end) ;
+void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
