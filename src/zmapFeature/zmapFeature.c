@@ -21,25 +21,20 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements feature contexts, sets and features themselves.
  *              Includes code to create/merge/destroy contexts and sets.
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Apr  5 08:31 2011 (edgrif)
+ * Last edited: May  6 13:12 2011 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.144 2011-04-08 14:00:42 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.145 2011-05-06 12:13:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <stdio.h>
 #include <strings.h>
@@ -746,22 +741,21 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
  * are different for different features.
  *  */
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
-					  gboolean start_not_found, ZMapPhase start_phase,
-					  gboolean end_not_found)
+					  gboolean start_not_found_flag, int start_not_found,
+					  gboolean end_not_found_flag)
 {
   gboolean result = TRUE ;
 
   zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-	     && ((!start_not_found && start_phase == ZMAPPHASE_NONE)
-		 || (start_phase >= ZMAPPHASE_0 && start_phase <= ZMAPPHASE_2))) ;
+	     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) ;
 
-  if (start_not_found)
+  if (start_not_found_flag)
     {
-      feature->feature.transcript.flags.start_not_found = 1 ;
-      feature->feature.transcript.start_phase = start_phase ;
+      feature->feature.transcript.flags.start_not_found = TRUE ;
+      feature->feature.transcript.start_not_found = start_not_found ;
     }
 
-  if (end_not_found)
+  if (end_not_found_flag)
     feature->feature.transcript.flags.end_not_found = 1 ;
 
   return result ;
@@ -927,6 +921,45 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 
   return result ;
 }
+
+
+
+
+
+/* Returns TRUE if feature is a sequence feature and is DNA, FALSE otherwise. */
+gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+
+  if (feature->type == ZMAPSTYLE_MODE_SEQUENCE && feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Returns TRUE if feature is a sequence feature and is Peptide, FALSE otherwise. */
+gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+
+  if (feature->type == ZMAPSTYLE_MODE_SEQUENCE && feature->feature.sequence.type == ZMAPSEQUENCE_PEPTIDE)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -3207,13 +3240,10 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
 	    break ;
 	  }
-	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-	  mode = ZMAPSTYLE_MODE_RAW_SEQUENCE ;    // mh17 these were MODE_TEXT which cannot be correct
+	case ZMAPSTYLE_MODE_SEQUENCE:
+	  mode = ZMAPSTYLE_MODE_SEQUENCE ;
 	  break ;
-	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
-	  mode = ZMAPSTYLE_MODE_PEP_SEQUENCE ;
-	  break ;
-      case ZMAPSTYLE_MODE_ASSEMBLY_PATH: // mh17: hoping this works...
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH: // mh17: hoping this works...
 	case ZMAPSTYLE_MODE_TEXT:
 	case ZMAPSTYLE_MODE_GLYPH:
 	case ZMAPSTYLE_MODE_GRAPH:
