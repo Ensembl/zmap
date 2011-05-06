@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr  5 17:18 2011 (edgrif)
+ * Last edited: May  5 10:45 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.239 2011-04-05 16:41:34 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.240 2011-05-06 10:57:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2784,7 +2784,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  if (thread_has_died || steps_finished)
 	    {
-	      printf("%s%s",
+	      printf("%s%s\n",
 		     thread_has_died ? "Thread died " : "",
 		     steps_finished ? "Steps finished " : "") ;
 
