@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Apr  7 10:13 2011 (edgrif)
+ * Last edited: Apr 20 21:33 2011 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.44 2011-04-07 09:58:18 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.45 2011-05-06 11:23:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -77,6 +77,19 @@ typedef enum
 #define ZMAPGUI_CURSOR_CROSSHAIR "zmap_crosshair"
 #define ZMAPGUI_CURSOR_CIRCLE    "zmap_circle"
 #define ZMAPGUI_CURSOR_NOENTRY   "zmap_noentry"
+
+
+
+/* Struct to hold text attributes for zMapGUIShowTextFull(), the attributes are applied
+ * to text in the range  start -> end  (zero-based coords). */
+typedef struct ZMapGuiTextAttrStructName
+{
+  int start, end ;					    /* text indices. */
+
+  /* Text colours. */
+  GdkColor *foreground ;
+  GdkColor *background ;
+} ZMapGuiTextAttrStruct, *ZMapGuiTextAttr ;
 
 
 
@@ -455,7 +468,8 @@ void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 void zMapGUISetHelpURL(char *URL_base) ;
 
 void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
-GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkTextBuffer **buffer_out);
+GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
+			       GtkTextBuffer **buffer_out);
 
 char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char *file_suffix) ;
 char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory, char *file_suffix,
