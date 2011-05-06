@@ -28,16 +28,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 14 13:38 2011 (edgrif)
+ * Last edited: May  6 12:29 2011 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.11 2011-02-24 13:56:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.12 2011-05-06 11:29:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmap.h>
 
 #include <string.h>
 #include <glib-object.h>
 #include <gobject/gvaluecollector.h>
-#include <ZMap/zmap.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapStyle.h>
@@ -60,8 +61,7 @@
 #define FEATURE_DATA_TYPE_BASIC         (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_BASIC         << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
 #define FEATURE_DATA_TYPE_ALIGNMENT     (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_ALIGNMENT     << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
 #define FEATURE_DATA_TYPE_TRANSCRIPT    (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_TRANSCRIPT    << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
-#define FEATURE_DATA_TYPE_RAW_SEQUENCE  (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_RAW_SEQUENCE  << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
-#define FEATURE_DATA_TYPE_PEP_SEQUENCE  (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_PEP_SEQUENCE  << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
+#define FEATURE_DATA_TYPE_SEQUENCE  (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_SEQUENCE  << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
 #define FEATURE_DATA_TYPE_ASSEMBLY_PATH (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_ASSEMBLY_PATH << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
 #define FEATURE_DATA_TYPE_TEXT          (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_TEXT          << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
 #define FEATURE_DATA_TYPE_GRAPH         (FEATURE_DATA_TYPE_FEATURE + (ZMAPSTYLE_MODE_GRAPH         << FEATURE_DATA_FEATURE_SHAPE_SHIFT))
@@ -249,8 +249,7 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 	FEATURE_DATA_TYPE_BASIC,
 	FEATURE_DATA_TYPE_ALIGNMENT,
 	FEATURE_DATA_TYPE_TRANSCRIPT,
-	FEATURE_DATA_TYPE_RAW_SEQUENCE,
-	FEATURE_DATA_TYPE_PEP_SEQUENCE,
+	FEATURE_DATA_TYPE_SEQUENCE,
 	FEATURE_DATA_TYPE_ASSEMBLY_PATH,
 	FEATURE_DATA_TYPE_TEXT,
 	FEATURE_DATA_TYPE_GRAPH,
@@ -561,8 +560,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 		  case ZMAPSTYLE_MODE_TEXT:
 		    term_id = g_quark_from_string("Text") ;
 		    break ;
-		  case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-		  case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+		  case ZMAPSTYLE_MODE_SEQUENCE:
 		    term_id = g_quark_from_string("Sequence") ;
 		    break ;
 		  default:
@@ -586,8 +584,13 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 		term_id = g_quark_from_string("Match");
 		break;
 	      case ZMAPFEATURE_SUBPART_EXON_CDS:
+		term_id = g_quark_from_string("Coding Exon");
+		break;
 	      case ZMAPFEATURE_SUBPART_EXON:
-		term_id = g_quark_from_string("Exon");
+		if (feature->feature.transcript.flags.cds)
+		  term_id = g_quark_from_string("Non-coding Exon") ;
+		else
+		  term_id = g_quark_from_string("Exon") ;
 		break;
 	      case ZMAPFEATURE_SUBPART_INTRON:
 	      case ZMAPFEATURE_SUBPART_INTRON_CDS:
