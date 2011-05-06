@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Shows a dialog window allowing user to choose a section
  *              of DNA to export. Initially the DNA section is that
@@ -32,17 +32,13 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 18 09:55 2011 (edgrif)
+ * Last edited: May  6 12:04 2011 (edgrif)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.14 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.15 2011-05-06 11:05:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
 
 
 #include <string.h>
@@ -74,6 +70,9 @@ typedef struct
   int dna_start ;
   int dna_end ;
   int dna_flanking ;
+  int sequence_start ;
+  int sequence_end ;
+
   gboolean revcomp ;
 
   char *dna ;
@@ -112,8 +111,9 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
-/* Returns the DNA chosen by the user. */
-char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type)
+/* Returns the DNA chosen by the user with the start/end coords. */
+char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type,
+			  int *sequence_start_out, int *sequence_end_out)
 {
   char *dna = NULL ;
   GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry, *start_end ;
@@ -149,8 +149,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 
   block_start = block->block_to_sequence.block.x1 ;
   block_end   = block->block_to_sequence.block.x2 ;
-
-
 
   dna_data = g_new0(DNASearchDataStruct, 1) ;
   dna_data->window = window ;
@@ -255,8 +253,13 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   if (dialog_result == GTK_RESPONSE_ACCEPT)
     {
       dna_data->entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(dna_data->dna_entry)) ;
+
       getDNA(dna_data) ;
+
+      /* Return results. */
       dna = dna_data->dna ;
+      *sequence_start_out = dna_data->sequence_start ;
+      *sequence_end_out = dna_data->sequence_end ;
     }
 
   /* and finally clear up ! */
@@ -399,55 +402,59 @@ static void getDNA(DNASearchData dna_data)
   char *feature_txt = NULL ;
   char *err_text = NULL ;
   char *dna ;
-  int start, end, dna_len ;
+  int start, end ;
   int block_start;
 
-  if (!checkCoords(dna_data))
-    return ;
-
-  block_start = dna_data->block->block_to_sequence.block.x1;
-
-  if (dna_data->window->display_forward_coords)
+  if (checkCoords(dna_data))
     {
-      block_start = zmapWindowCoordToDisplay(dna_data->window, block_start);
-    }
+      block_start = dna_data->block->block_to_sequence.block.x1 ;
 
-  /* Convert to relative coords.... */
-  start = dna_data->dna_start - block_start + 1 ;
-  end   = dna_data->dna_end   - block_start + 1 ;
-  dna   = dna_data->block->sequence.sequence ;
-  dna_len = strlen(dna) ;
+      if (dna_data->window->display_forward_coords)
+	block_start = zmapWindowCoordToDisplay(dna_data->window, block_start) ;
 
-  /* Note that gtk_entry returns "" for no text, _not_ NULL. */
-  feature_txt = dna_data->entry_text ;
-  feature_txt = g_strdup(feature_txt) ;
-  feature_txt = g_strstrip(feature_txt) ;
-
-  if (strlen(feature_txt) == 0)
-    err_text = g_strdup("no feature name supplied but is required for FASTA file.") ;
-  else if ((start < 0 || start > dna_len)
-	   || (end < 0 || end > dna_len)
-	   || (start - dna_data->dna_flanking < 0 || end + dna_data->dna_flanking > dna_len))
-    err_text = g_strdup_printf("start/end +/- flanking must be within range %d -> %d",
-			       dna_data->block->block_to_sequence.block.x1,
-			       dna_data->block->block_to_sequence.block.x2) ;
-
-  if (err_text)
-    {
-      zMapMessage("Please correct and retry: %s", err_text) ;
-    }
-  else
-    {
+      /* Convert to relative coords.... */
+      start = dna_data->dna_start ;
+      end = dna_data->dna_end ;
+      zMapBlock2FeatureCoords(dna_data->block, &start, &end) ;
       start = start - dna_data->dna_flanking ;
       end   = end + dna_data->dna_flanking ;
 
-      dna_data->dna = zMapFeatureGetDNA((ZMapFeatureAny)(dna_data->block), start, end, dna_data->revcomp) ;
+      dna   = dna_data->block->sequence.sequence ;
+
+      /* Note that gtk_entry returns "" for no text, _not_ NULL. */
+      feature_txt = dna_data->entry_text ;
+      feature_txt = g_strdup(feature_txt) ;
+      feature_txt = g_strstrip(feature_txt) ;
+
+      if (!feature_txt || !*feature_txt)
+	{
+	  err_text = g_strdup("no feature name supplied but is required for FASTA file.") ;
+	}
+      else if (start < dna_data->block->block_to_sequence.block.x1
+	       || end > dna_data->block->block_to_sequence.block.x2)
+	{
+	  err_text = g_strdup_printf("start/end +/- flanking must be within range %d -> %d",
+				     dna_data->block->block_to_sequence.block.x1,
+				     dna_data->block->block_to_sequence.block.x2) ;
+	}
+
+      if (err_text)
+	{
+	  zMapMessage("Please correct and retry: %s", err_text) ;
+
+	  g_free(err_text) ;
+	}
+      else
+	{
+	  if ((dna_data->dna = zMapFeatureGetDNA((ZMapFeatureAny)(dna_data->block), start, end, dna_data->revcomp)))
+	    {
+	      dna_data->sequence_start = start ;
+	      dna_data->sequence_end = end ;
+	    }
+	}
+
+      g_free(feature_txt) ;
     }
-
-  if (err_text)
-    g_free(err_text) ;
-
-  g_free(feature_txt) ;
 
   return ;
 }
