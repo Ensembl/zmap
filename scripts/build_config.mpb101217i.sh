@@ -5,7 +5,7 @@
 # Needs the i386 flag for compile and link.
 #
 
-CFLAGS_args="$CFLAGS_args -arch i386"
+CFLAGS_args="$CFLAGS_args"
 
 
 GLIB_GENMARSHAL=/opt/local/bin/glib-genmarshal
@@ -18,7 +18,7 @@ LIBTOOLIZE=glibtoolize
 
 DX_COND_doc=no
 
-LDFLAGS_args="-arch i386 -Xlinker -syslibroot  -Xlinker /opt/local/lib -Xlinker -bind_at_load"
+LDFLAGS_args="-Xlinker -syslibroot  -Xlinker /opt/local/lib -Xlinker -bind_at_load"
 
 PATH=$GTK_PREFIX/bin:$PATH
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
