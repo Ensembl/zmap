@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May  6 12:20 2011 (edgrif)
+ * Last edited: May  6 13:39 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.65 2011-05-06 11:20:54 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.66 2011-05-06 12:42:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -682,7 +682,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
     {
       /* code attempts to get font size and then set window size accordingly, it now appears
        * to get this wrong so I have hacked this for now... */
-      TextAttrsStruct text_attrs_data = {0, 0, buffer} ;
+      TextAttrsStruct text_attrs_data = {buffer} ;
 
 
       zMapGUIGetFontWidth(font, &width) ;
