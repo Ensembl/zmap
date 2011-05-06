@@ -9,6 +9,7 @@ libZMapFeature_la_SOURCES =    \
 zmapFeature.c                  \
 zmapFeature_P.h                \
 zmapFeature3FrameTranslation.c \
+zmapFeatureTranscript.c        \
 zmapFeatureContext.c           \
 zmapFeatureContextUtils.c      \
 zmapFeatureDNA.c               \
