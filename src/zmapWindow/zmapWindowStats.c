@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions for window statistics, e.g. number of boxes drawn.
  *              Note that individual feature stats are updated in the
@@ -30,18 +30,13 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 25 14:49 2010 (edgrif)
+ * Last edited: May  6 12:09 2011 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.16 2010-06-14 15:40:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.17 2011-05-06 11:10:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
@@ -129,11 +124,10 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
 	  switch (feature->type)
 	    {
-          case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+	    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 
 	    case ZMAPSTYLE_MODE_BASIC:
-	    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-	    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	    case ZMAPSTYLE_MODE_SEQUENCE:
 	    case ZMAPSTYLE_MODE_GRAPH:
 	    case ZMAPSTYLE_MODE_GLYPH:
 	    case ZMAPSTYLE_MODE_TEXT:
@@ -145,14 +139,8 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
 	      break ;
-          case ZMAPSTYLE_MODE_META:
+	    case ZMAPSTYLE_MODE_META:
 	    default:
-
-	     
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapAssertNotReached() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	      break ;
 	    }
 
@@ -223,8 +211,7 @@ static void resetStats(gpointer data, gpointer user_data_unused)
   switch (any_stats->feature_type)
     {
     case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_SEQUENCE:
     case ZMAPSTYLE_MODE_GRAPH:
     case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_TEXT:
@@ -258,8 +245,7 @@ static void printStats(gpointer data, gpointer user_data)
   switch (any_stats->feature_type)
     {
     case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_SEQUENCE:
     case ZMAPSTYLE_MODE_GRAPH:
     case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_TEXT:
