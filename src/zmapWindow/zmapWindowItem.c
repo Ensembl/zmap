@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 13 11:45 2011 (edgrif)
+ * Last edited: Apr 27 08:49 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.148 2011-04-13 10:45:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.149 2011-05-06 11:11:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -312,11 +312,23 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   zmapWindowFocusClearOverlayManagers(window->focus) ;
 
 
-  /* Highlight DNA and Peptide sequences corresponding to feature (if visible). */
-  zmapWindowItemHighlightDNARegion(window, TRUE, item, ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
+  /* Highlight DNA and Peptide sequences corresponding to feature (if visible),
+   * note we only do this if the feature is forward or non-stranded, makes no sense otherwise. */
+  if (ZMAPFEATURE_REVERSE(feature))
+    {
+      /* Deselect any already selected sequence as focus item is now the reverse strand item. */
+      zmapWindowItemUnHighlightDNA(window, item) ;
 
-  zmapWindowItemHighlightTranslationRegions(window, TRUE, item, ZMAPFRAME_NONE,
-					    ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+      zmapWindowItemUnHighlightTranslations(window, item) ;
+    }
+  else
+    {
+      zmapWindowItemHighlightDNARegion(window, TRUE, item,
+				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
+
+      zmapWindowItemHighlightTranslationRegions(window, TRUE, item,
+						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+    }
 
 
   zMapWindowHighlightFocusItems(window);
@@ -493,7 +505,7 @@ FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *
       if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) &&
          (feature_name = zMapFeatureDNAFeatureName(block)))
         {
-          dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE,
+          dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_SEQUENCE,
                                        feature_name,
                                        ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
                                        block->block_to_sequence.block.x1,
@@ -1278,6 +1290,9 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
   return;
 }
 #endif
+
+
+
 
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  *
