@@ -19,27 +19,22 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
+ *        Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
  *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Various GUI convenience functions for messages, text,
  *              notebook creation and so on.
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  7 10:09 2011 (edgrif)
+ * Last edited: May  6 12:20 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.64 2011-04-07 09:58:18 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.65 2011-05-06 11:20:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <gtk/gtk.h>
@@ -87,6 +82,15 @@ typedef struct CursorNameStructName
 } CursorNameStruct, *CursorName ;
 
 
+typedef struct TextAttrsStructName
+{
+  GtkTextBuffer *buffer ;
+} TextAttrsStruct, *TextAttrs ;
+
+
+
+
+
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 			    gboolean modal, int display_timeout, gboolean close_button,
@@ -110,6 +114,7 @@ static void radioButtonCBDataDestroy(gpointer data) ;
 static GdkCursor *makeCustomCursor(char *cursor_name) ;
 static GdkCursor *makeStandardCursor(char *cursor_name) ;
 
+static void setTextAttrs(gpointer data, gpointer user_data) ;
 
 
 /* Holds an alternative URL for help pages if set by the application. */
@@ -602,7 +607,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
 {
   GtkWidget *dialog ;
 
-  dialog = zMapGUIShowTextFull(title, text, edittable, NULL) ;
+  dialog = zMapGUIShowTextFull(title, text, edittable, NULL, NULL) ;
 
   return ;
 }
@@ -617,7 +622,8 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @param buffer_out   location to return the text buffer to.
  * @return             the GtkWidget *dialog
  */
-GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkTextBuffer **buffer_out)
+GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
+			       GtkTextBuffer **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   GtkWidget *dialog, *scrwin, *view ;
@@ -657,19 +663,10 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
   if (buffer_out)
     *buffer_out = buffer ;
 
-  /* Construct a list of possible fonts to use. */
+  /* Construct a list of possible fonts to use, they must be fixed width but take care
+   * altering this list as some fixed width fonts seem to come back as variable width ! */
   fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
   fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I tried to give several alternative fonts but some of them, e.g. Cursor, do not display
-   * as monospace even though they apparently are...I don't know why... */
-  fixed_font_list = g_list_append(fixed_font_list, "Serif") ;
-  fixed_font_list = g_list_append(fixed_font_list, "Cursor") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
@@ -685,6 +682,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
     {
       /* code attempts to get font size and then set window size accordingly, it now appears
        * to get this wrong so I have hacked this for now... */
+      TextAttrsStruct text_attrs_data = {0, 0, buffer} ;
 
 
       zMapGUIGetFontWidth(font, &width) ;
@@ -704,6 +702,12 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
 	text_width = 700 ;
 
       gtk_widget_modify_font(view, font_desc) ;
+
+
+      /* Set any specified text attributes. */
+      g_list_foreach(text_attributes, setTextAttrs, &text_attrs_data) ;
+
+
 
       gtk_window_set_default_size(GTK_WINDOW(dialog), text_width, text_height) ;
     }
@@ -1822,4 +1826,195 @@ GdkCursor *makeStandardCursor(char *cursor_name)
 
   return cursor ;
 }
+
+
+/* Convert ZMapGuiTextAttr to GTK TextTag structs. */
+static void setTextAttrs(gpointer data, gpointer user_data)
+{
+  ZMapGuiTextAttr text_attrs = (ZMapGuiTextAttr)data ;
+  TextAttrs text_attr_data = (TextAttrs)user_data ;
+  GtkTextBuffer *buffer = text_attr_data->buffer ;
+  GtkTextIter start, end ;
+  GtkTextTag *tag ;
+  char *first_attr, *second_attr ;
+  gpointer first_value, second_value ; 
+  int iter_start, iter_end ;
+  int line_start, line_end, line_diff ;
+  char *curr_char ;
+  int tmp_start, tmp_end, tmp_line_start, tmp_line_end ;
+  gboolean text_debug = FALSE ;
+
+
+
+  /* 
+   * Create a tag to colour the text.
+   */
+
+  /* note that there is no array style call so you cannot (neatly) dynamically
+   * construct the args so here call is with all possible args but setting them
+   * so that required ones come first and the rest are NULL. */
+  first_attr = second_attr = NULL ;
+  first_value = second_value = NULL ;
+
+  if (text_attrs->foreground)
+    {
+      first_attr = "foreground-gdk" ;
+      first_value = text_attrs->foreground ;
+    }
+
+  if (text_attrs->background)
+    {
+      if (!first_attr)
+	{
+	  first_attr = "background-gdk" ;
+	  first_value = text_attrs->background ;
+	}
+      else
+	{
+	  second_attr = "background-gdk" ;
+	  second_value = text_attrs->background ;
+	}
+    }
+
+  /* Create anonymous tags as we don't reuse them. */
+  tag = gtk_text_buffer_create_tag(buffer, NULL,
+				   first_attr, first_value,
+				   second_attr, second_value,
+				   NULL) ;
+
+
+
+  /* 
+   * Now calculate the correct range in the text over which to apply the tag.
+   */
+
+  /* We are given character positions and need to widen them to iter positions
+   * which are inter-character positions. */
+  iter_start = text_attrs->start ;
+  iter_end = text_attrs->end + 1 ;
+
+  /* Newlines in the text count as characters so we need to modify the
+   * character start/ends to take account of them otherwise highlighting
+   * is done in wrong place. (NOTE: really gtk should allow us to request this.)
+   * Finding the number of newlines and hence our true position is iterative (we
+   * don't know the content of the text so can't count newlines directly). */
+  tmp_start = iter_start ;
+  tmp_end = iter_end ;
+
+  /* Find out where we are intially. */
+  gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
+  gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_start + 1) ;
+
+  /* Pathological case is that we are at a newline so bump over it. */
+  if (*(curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE)) == '\n')
+    {
+      gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start + 1) ;
+      gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end + 1) ;
+
+      curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+    }
+
+
+  /* Get number of newlines from our current line position and correct start/end position. */
+  line_start = gtk_text_iter_get_line(&start) ;
+  line_end = gtk_text_iter_get_line(&end) ;
+
+  tmp_start += line_start ;
+  tmp_end += line_start ;
+
+
+  /* Find out where we are now. */
+  gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
+  gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
+
+  if (text_debug)
+    curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+
+
+  /* If adjusting our position has bumped us on a few lines then correct
+   * our position again, we have to iterate here because each correction
+   * may move us past more newlines but we do stop in the end. */
+  tmp_line_start = gtk_text_iter_get_line(&start) ;
+
+  while (tmp_line_start != line_start)
+    {
+      int diff ;
+
+      diff = tmp_line_start - line_start ;
+
+      tmp_start += diff ;
+      tmp_end += diff ;
+
+      gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
+      gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
+
+      if (text_debug)
+	curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+
+      line_start = tmp_line_start ;
+      tmp_line_start = gtk_text_iter_get_line(&start) ;
+    }
+
+
+  iter_start = tmp_start ;
+  iter_end = tmp_end ;
+
+
+  /* Extent of this text may be spread over several lines so adjust for that. */
+  tmp_start = iter_start ;
+  tmp_end = iter_end ;
+
+  line_start = gtk_text_iter_get_line(&start) ;
+  line_end = gtk_text_iter_get_line(&end) ;
+
+  line_diff = line_end - line_start ;
+  tmp_end += line_diff ;
+
+  gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
+  gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
+
+  if (text_debug)
+    curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+
+
+  /* If adjusting our position has bumped us on a few lines then correct
+   * our position again, we have to iterate here because each correction
+   * may move us past more newlines. */
+  tmp_line_end = gtk_text_iter_get_line(&end) ;
+
+  while (tmp_line_end != line_end)
+      {
+	int diff ;
+
+	diff = tmp_line_end - line_end ;
+
+	tmp_end += diff ;
+
+	gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
+	gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
+
+	if (text_debug)
+	  curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+
+	line_end = tmp_line_end ;
+	tmp_line_end = gtk_text_iter_get_line(&end) ;
+      }
+
+
+    iter_start = tmp_start ;
+    iter_end = tmp_end ;
+
+
+
+  /* 
+   * Phew...now apply the tag to the text.
+   */
+
+  gtk_text_buffer_apply_tag(buffer, tag, &start, &end) ;
+
+
+
+  return ;
+}
+
 
