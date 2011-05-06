@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
  * HISTORY:
- * Last edited: Apr 13 11:02 2011 (edgrif)
+ * Last edited: Apr 27 08:50 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.286 2011-04-13 10:44:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.287 2011-05-06 12:03:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -838,7 +838,8 @@ void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow,
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type) ;
 void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;
-char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type) ;
+char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type,
+			  int *sequence_start_out, int *sequence_end_out) ;
 
 void zmapWindowFullReposition(ZMapWindow window) ;
 void zmapWindowResetWidth(ZMapWindow window) ;
