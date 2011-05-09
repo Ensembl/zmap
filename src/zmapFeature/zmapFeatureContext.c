@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  6 13:15 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.61 2011-05-06 12:17:16 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.62 2011-05-09 13:37:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -779,7 +779,6 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
     {
       /* Transform block coords to 1-based for fetching sequence. */
       zMapFeature2BlockCoords(block, &start, &end) ;
-
       dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
     }
 
@@ -826,7 +825,6 @@ static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end
     {
       *start_inout = *end_inout = 0 ;
     }
-
   return result ;
 }
 

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.13 2011-04-06 13:43:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.14 2011-05-09 13:37:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,7 +90,7 @@ static void add_colinear_lines_and_markers(gpointer data, gpointer user_data);
 static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 				  ZMapStrand ref_strand, MatchType match_type,
 				  FooCanvasItem *item, ZMapFeature feature,int block_offset) ;
-static gboolean fragments_splice(char *fragment_a, char *fragment_b, gboolean reversed);
+static gboolean fragments_splice(char *fragment_a, char *fragment_b);
 //static void process_feature(ZMapFeature prev_feature);
 static void destroyListAndData(GList *item_list) ;
 static void itemDestroyCB(gpointer data, gpointer user_data);
@@ -233,7 +233,7 @@ zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_
       /* MH17 NOTE
        *
        * for reverse strand we need to splice backwards
-       * logically we could has a mixed series
+       * logically we could have a mixed series
        * we do get duplicate series and these can be reversed
        * we assume any reversal is a series break
        * and do not attempt to splice inverted exons
@@ -243,15 +243,16 @@ zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_
       prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
                          prev_feature->x2,
                          prev_feature->x2 + 2,
-                         prev_reversed);
+                         0); //prev_reversed);
 
             // 5' end of exon: get 2 bases from intron
+            // NB if reversed we need 3 bases
       curr = zMapFeatureGetDNA((ZMapFeatureAny)curr_feature,
                          curr_feature->x1 - 2,
                          curr_feature->x1,
-                         curr_reversed);
+                         0); //curr_reversed);
 
-      if ((prev_reversed == curr_reversed) && !fragments_splice(prev, curr, prev_reversed))
+      if ((prev_reversed == curr_reversed) && !fragments_splice(prev, curr))
       {
         FooCanvasGroup *parent;
         ZMapFeatureTypeStyle style;
@@ -554,41 +555,30 @@ These can be configured in/out via styles:
 sub-features=non-concensus-splice:nc-splice-glyph
 */
 
-static gboolean fragments_splice(char *fragment_a, char *fragment_b, gboolean reversed)
+static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 {
   gboolean splice = FALSE;
-  char spliceosome[7];
 
     // NB: DNA always reaches us as lower case, see zmapUtils/zmapDNA.c
   if(!fragment_a || !fragment_b)
     return(splice);
 
-  if(reversed)    /* bases have already been complemented & order reversed */
-  {
-      spliceosome[0] = fragment_b[2];
-      spliceosome[1] = fragment_b[1];
-      spliceosome[2] = fragment_b[0];
-      spliceosome[3] = fragment_a[0];
-      spliceosome[4] = fragment_a[1];
-      spliceosome[5] = '\0';
-  }
-  else
-  {
-      spliceosome[0] = fragment_a[0];
-      spliceosome[1] = fragment_a[1];
-      spliceosome[2] = fragment_a[2];
-      spliceosome[3] = fragment_b[0];
-      spliceosome[4] = fragment_b[1];
-      spliceosome[5] = '\0';
-  }
+      /* we have fwd strand bases (not reverse complemented)
+       * but need to test both directions as splicing is not strand sensitive...
+       */
 
   if(!g_ascii_strncasecmp(fragment_b, "AG",2))
     {
-      if(!g_ascii_strncasecmp(&spliceosome[1],"GT",2) || !g_ascii_strncasecmp(&spliceosome[0],"GGC",3))
+      if(!g_ascii_strncasecmp(fragment_a+1,"GT",2) || !g_ascii_strncasecmp(fragment_a,"GGC",3))
+           splice = TRUE;
+    }
+  else if(!g_ascii_strncasecmp(fragment_a+1, "GA",2))
+    {
+      if(!g_ascii_strncasecmp(fragment_b+1,"TG",2) || !g_ascii_strncasecmp(fragment_b,"CGG",3))
            splice = TRUE;
     }
 #if 0
-zMapLogWarning("nc splice %s %d = %d",spliceosome,reversed,splice);
+zMapLogWarning("nc splice = %d (%.3s, %.3s)",splice,fragment_a,fragment_b);
 #endif
   return splice;
 }
