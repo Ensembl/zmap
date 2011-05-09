@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: Mar 15 14:30 2011 (edgrif)
+ * Last edited: May  6 17:31 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.56 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.57 2011-05-09 11:03:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,8 @@ enum
     BLX_ARGV_RM_TMP_FILES,      /* -r */
     BLX_ARGV_START_FLAG,        /* -S */
     BLX_ARGV_START,             /* [start] */
+    BLX_ARGV_OFFSET_FLAG,       /* -O */
+    BLX_ARGV_OFFSET,            /* [offset] */
     BLX_ARGV_SHOW_WHOLE,        /* -z */
     BLX_ARGV_NEGATE_COORDS,     /* -N */
     BLX_ARGV_REVERSE_STRAND,    /* -R */
@@ -123,6 +125,8 @@ typedef struct BlixemDataStruct
   /* Blixem can either initially zoom to position or show the whole picture. */
   gboolean show_whole_range ;
 
+  /* Blixem can rebase the coords to show them with a different origin, offset is used to do this. */
+  int offset ;
 
   /* The ref. sequence and features are shown in blixem over the range  (position +/- (scope / 2)) */
 
@@ -275,7 +279,7 @@ typedef struct BasicFeatureDumpStructName
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       ZMapHomolType align_type,
-			       int position, int start, int end,
+			       int offset, int position, int start, int end,
 			       GList *features, ZMapFeatureSet feature_set,
 			       blixemData blixem_data, char **err_msg) ;
 static gboolean addFeatureDetails(blixemData blixem_data) ;
@@ -395,7 +399,8 @@ static gboolean debug_G = TRUE ;
  *      - feature is only used to get the type of alignment to be displayed.
  *  */
 gboolean zmapViewBlixemLocalSequences(ZMapView view,
-				      ZMapFeatureBlock block, ZMapHomolType align_type, int position,
+				      ZMapFeatureBlock block, ZMapHomolType align_type,
+				      int offset, int position,
 				      ZMapFeatureSet feature_set, GList **local_sequences_out)
 {
   gboolean status = TRUE ;
@@ -407,7 +412,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
   zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  status = initBlixemData(view, block, align_type, position, 0, 0, NULL, feature_set, &blixem_data, &err_msg) ;
+  status = initBlixemData(view, block, align_type, 0, position, 0, 0, NULL, feature_set, &blixem_data, &err_msg) ;
 
   blixem_data.errorMsg = NULL ;
 
@@ -480,10 +485,10 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
  *  */
 gboolean zmapViewCallBlixem(ZMapView view,
 			    ZMapFeatureBlock block, ZMapHomolType homol_type,
-			    int position, int start, int end,
+			    int offset, int position, int start, int end,
 			    ZMapWindowAlignSetType align_set,
 			    GList *features, ZMapFeatureSet feature_set,
-                      char *source, GList *local_sequences,
+			    char *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
@@ -493,7 +498,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
   status = initBlixemData(view, block, homol_type,
-			  position, start, end,
+			  offset, position, start, end,
 			  features, feature_set, &blixem_data, &err_msg) ;
 
   if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
@@ -620,7 +625,7 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       ZMapHomolType align_type,
-			       int position, int start, int end,
+			       int offset, int position, int start, int end,
 			       GList *features, ZMapFeatureSet feature_set,
 			       blixemData blixem_data, char **err_msg)
 {
@@ -628,6 +633,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->view  = view ;
 
+  blixem_data->offset = offset ;
   blixem_data->position = position ;
   blixem_data->mark_start = start ;
   blixem_data->mark_end = end ;
@@ -1157,6 +1163,22 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("-r");
   else
     missed += 1;
+
+
+  /* Rebase coords in blixem by offset. */
+  if (blixem_data->position)
+    {
+      int offset ;
+
+      offset = blixem_data->offset ;
+
+      paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-O") ;
+      paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
+    }
+  else
+    {
+      missed += 2;
+    }
 
 
   /* Start with blixem centred here. */
