@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *
  * HISTORY:
- * Last edited: Apr  1 10:12 2011 (edgrif)
+ * Last edited: May  6 17:13 2011 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.125 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.126 2011-05-09 11:00:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -191,6 +191,9 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
 
   /* Align specific section. */
   ZMapHomolType homol_type ;				    /* DNA or Peptide alignments. */
+
+  int offset ;						    /* Offset for displaying coords with
+							       different base. */
 
   int position ;					    /* Centre position for alignment viewing. */
 
