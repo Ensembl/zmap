@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 13 11:30 2011 (edgrif)
+ * Last edited: May  6 17:19 2011 (edgrif)
  * Created: Mon Mar 14 10:38:39 2011 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.3 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.4 2011-05-09 11:01:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_ho
 /* Call blixem for selected features, feature column or columns. Gets
  * called from menus and from keyboard short cut. */
 void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set,
-                         char *source,          /* for short reads data */
+			       char *source,          /* for short reads data */
 			       double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL ;
@@ -152,6 +152,9 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 								     ZMAPFEATURE_STRUCT_BLOCK) ;
 	  zMapAssert(align->block) ;
 
+	  /* We should have a flag to do the offsetting, I thought we did but it seems to have
+	   * vanished. */
+	  align->offset = -window->min_coord ;
 
 	  if (zmapWindowMarkIsSet(window->mark))
 	    {
@@ -165,18 +168,16 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	    }
 
 
-        if(requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-          {
-            align->homol_type = ZMAPHOMOL_N_HOMOL ;
+	  if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+	    {
+	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-            align->source = source ;
-            align->homol_set = requested_homol_set ;
-          }
-
-
-	  /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
+	      align->source = source ;
+	      align->homol_set = requested_homol_set ;
+	    }
 	  else if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
+	      /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
 	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
 	      align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
