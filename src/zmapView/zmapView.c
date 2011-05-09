@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May  5 10:45 2011 (edgrif)
+ * Last edited: May  6 17:31 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.241 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.242 2011-05-09 11:04:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3381,7 +3381,7 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
       /* Got the sequences so launch blixem. */
       if ((status = zmapViewCallBlixem(zmap_view, align->block,
 				       align->homol_type,
-				       align->position, align->start, align->end,
+				       align->offset, align->position, align->start, align->end,
 				       align->homol_set,
 				       align->features, align->feature_set, NULL, get_sequence->sequences,
 				       &blixem_pid, &(zmap_view->kill_blixems))))
@@ -4104,12 +4104,14 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 
   if (align_cmd->homol_set == ZMAPWINDOW_ALIGNCMD_NONE
       || !(status = zmapViewBlixemLocalSequences(view, align_cmd->block, align_cmd->homol_type,
-						 align_cmd->position, align_cmd->feature_set, &local_sequences)))
+						 align_cmd->offset, align_cmd->position,
+						 align_cmd->feature_set, &local_sequences)))
     {
       GPid blixem_pid ;
 
       if ((status = zmapViewCallBlixem(view, align_cmd->block,
 				       align_cmd->homol_type,
+				       align_cmd->offset,
 				       align_cmd->position, align_cmd->start, align_cmd->end,
 				       align_cmd->homol_set,
 				       align_cmd->features, align_cmd->feature_set, align_cmd->source, NULL,

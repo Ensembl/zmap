@@ -25,9 +25,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Mar 15 14:19 2011 (edgrif)
+ * Last edited: May  6 17:30 2011 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.74 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.75 2011-05-09 11:02:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -338,13 +338,14 @@ gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMapHomolType align_type,
-				      int position, ZMapFeatureSet feature_set, GList **local_sequences_out) ;
+				      int offset, int position,
+				      ZMapFeatureSet feature_set, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    ZMapHomolType homol_type,
-			    int position, int start, int end,
+			    int offset, int position, int start, int end,
 			    ZMapWindowAlignSetType align_set,
 			    GList *features, ZMapFeatureSet feature_set,
-                      char *source, GList *local_sequences,
+			    char *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit) ;
 
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
