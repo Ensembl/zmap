@@ -31,9 +31,9 @@
  * Exported functions: see zmapView_P.h
  *
  * HISTORY:
- * Last edited: May  6 17:31 2011 (edgrif)
+ * Last edited: May  9 16:42 2011 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.57 2011-05-09 11:03:12 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.58 2011-05-10 08:25:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,21 +66,21 @@ enum
     BLX_ARGV_PROGRAM,           /* blixem */
 
     /* We either have a config_file or this host/port */
-    BLX_ARGV_NETID_PORT_FLAG,   /* -P */
+    BLX_ARGV_NETID_PORT_FLAG,   /* --fetch-server */
     BLX_ARGV_NETID_PORT,        /* [hostname:port] */
 
     BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
     BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
 
-    BLX_ARGV_RM_TMP_FILES,      /* -r */
-    BLX_ARGV_START_FLAG,        /* -S */
+    BLX_ARGV_RM_TMP_FILES,      /* --remove-input-files */
+    BLX_ARGV_START_FLAG,        /* -s */
     BLX_ARGV_START,             /* [start] */
-    BLX_ARGV_OFFSET_FLAG,       /* -O */
+    BLX_ARGV_OFFSET_FLAG,       /* -m */
     BLX_ARGV_OFFSET,            /* [offset] */
-    BLX_ARGV_SHOW_WHOLE,        /* -z */
-    BLX_ARGV_NEGATE_COORDS,     /* -N */
-    BLX_ARGV_REVERSE_STRAND,    /* -R */
-    BLX_ARGV_TYPE_FLAG,         /* -m */
+    BLX_ARGV_SHOW_WHOLE,        /* --zoom-whole */
+    BLX_ARGV_NEGATE_COORDS,     /* -n */
+    BLX_ARGV_REVERSE_STRAND,    /* -r */
+    BLX_ARGV_TYPE_FLAG,         /* -t */
     BLX_ARGV_TYPE,              /* 'n' or 'p' */
     BLX_ARGV_SEQBL_FLAG,        /* -x */
     BLX_ARGV_SEQBL,             /* [seqbl file] */
@@ -1149,7 +1149,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     }
   else if (blixem_data->netid && blixem_data->port)
     {
-      paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("-P");
+      paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("--fetch-server");
       paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
     }
   else
@@ -1160,7 +1160,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* For testing purposes remove the "-r" flag to leave the temporary files.
    * (keep_tempfiles = true in blixem stanza of ZMap file) */
   if (!blixem_data->keep_tmpfiles)
-    paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("-r");
+    paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files");
   else
     missed += 1;
 
@@ -1172,7 +1172,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
       offset = blixem_data->offset ;
 
-      paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-O") ;
+      paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
       paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
     }
   else
@@ -1191,7 +1191,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       if (blixem_data->view->revcomped_features)
 	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
-      paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-S") ;
+      paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-s") ;
       paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start) ;
     }
   else
@@ -1201,20 +1201,20 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   /* Show whole blixem range ? */
   if (blixem_data->show_whole_range)
-    paramString[BLX_ARGV_SHOW_WHOLE - missed] = g_strdup("-z") ;
+    paramString[BLX_ARGV_SHOW_WHOLE - missed] = g_strdup("--zoom-whole") ;
   else
     missed += 1 ;
 
   /* acedb users always like reverse strand to have same coords as forward strand but
    * with a '-' in front of the coord. */
   if (blixem_data->negate_coords)
-    paramString[BLX_ARGV_NEGATE_COORDS - missed] = g_strdup("-N") ;
+    paramString[BLX_ARGV_NEGATE_COORDS - missed] = g_strdup("-n") ;
   else
     missed += 1 ;
 
   /* Start with reverse strand showing. */
   if (blixem_data->view->revcomped_features)
-    paramString[BLX_ARGV_REVERSE_STRAND - missed] = g_strdup("-R") ;
+    paramString[BLX_ARGV_REVERSE_STRAND - missed] = g_strdup("-r") ;
   else
     missed += 1 ;
 
@@ -1222,11 +1222,11 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* type of alignment data, i.e. nucleotide or peptide. Compulsory. Note that type
    * can be NONE if blixem called for non-alignment column, something requested by
    * annotators for just looking at transcripts/dna. */
-  paramString[BLX_ARGV_TYPE_FLAG - missed] = g_strdup("-m");
+  paramString[BLX_ARGV_TYPE_FLAG - missed] = g_strdup("-t");
   if (blixem_data->align_type == ZMAPHOMOL_NONE || blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
-    paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'n') ;
+    paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'N') ;
   else
-    paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'p') ;
+    paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'P') ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* NOT NEEDED ANY MORE.... */
