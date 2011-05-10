@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  6 17:19 2011 (edgrif)
+ * Last edited: May  9 16:38 2011 (edgrif)
  * Created: Mon Mar 14 10:38:39 2011 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.4 2011-05-09 11:01:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.5 2011-05-10 08:26:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -154,7 +154,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 
 	  /* We should have a flag to do the offsetting, I thought we did but it seems to have
 	   * vanished. */
-	  align->offset = -window->min_coord ;
+	  align->offset = window->min_coord ;
 
 	  if (zmapWindowMarkIsSet(window->mark))
 	    {
