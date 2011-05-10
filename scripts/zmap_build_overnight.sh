@@ -1,33 +1,72 @@
 #!/bin/bash
 
-# cron.sh
+# ================= README ==================
+
+# Build zmap for all architectures specified in $ZMAP_BUILD_MACHINES.
+#
+# This script is run _every_ night as a cron job so be careful
+# when altering it.
+#
+# Builds/logs are in OVERNIGHT.BUILD file/directory.
+#
+# Main Build Parameters:
+#
+# Version incremented        no
+#        Docs created        no
+#     Docs checked in        no
+#  
+
+
+
 trap '' INT
 trap '' TERM
 trap '' QUIT
 
-# Install into zmap crontab 
-# Configuring variables
+
+
+RC=0
 
 # ================== CONFIG ================== 
+# Configuration variables
+
+
+# where everything is located.
+BASE_DIR=~zmap
+
+# SRC_MACHINE= The machine to log into to start everything going
 SRC_MACHINE=tviewsrv
-CVS_CHECKOUT_SCRIPT=~zmap/prefix/scripts/build_bootstrap.sh
-GLOBAL_LOG=~zmap/BUILDS/OVERNIGHT.BUILD.LOG
+
+# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
+CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
+
+
+# Output place for build
+BUILDS_DIR=$BASE_DIR/BUILDS
+BUILD_PREFIX='OVERNIGHT.BUILD'
+
+# GLOBAL_LOG= The place to hold the log file
+GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
+
+# ERROR_RECIPIENT= Someone to email
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
+
+# ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=yes
 
-# For development make sure these are set
-#CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
-#GLOBAL_LOG=~/BUILDS/OVERNIGHT.BUILD.LOG
-#ERROR_RECIPIENT=
-#ENSURE_UP_TO_DATE=no
+# OUTPUT dir
+OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
+
+
+
 
 # ================== MAIN PART ================== 
-MAIL_SUBJECT="ZMap Build Failed (control script)"
+MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
 fi
 
+mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
 
 # Errors before here only end up in stdout/stderr
@@ -67,7 +106,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line             ; \
-./root_checkout.sh RELEASE_LOCATION=~/BUILDS/OVERNIGHT ZMAP_MASTER_RT_TO_CVS=no || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION='$OUTPUT' || _rm_exit; \
 :                                               ; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
@@ -89,6 +128,14 @@ if [ $? != 0 ]; then
 	cat $TMP_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
     rm -f $TMP_LOG
+
+    RC=1
+else
+    if [ "x$ERROR_RECIPIENT" != "x" ]; then
+	tail $GLOBAL_LOG | mailx -s "ZMap $BUILD_PREFIX Succeeded" $ERROR_RECIPIENT
+    fi
 fi
 
+
+exit $RC
 # ================== END OF SCRIPT ================== 

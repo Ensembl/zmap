@@ -1,50 +1,61 @@
 #!/bin/bash
 
+# ================= README ==================
+
+# Build zmap for all architectures specified in $ZMAP_BUILD_MACHINES.
+#
+# Builds/logs are in ONE_OFF.BUILD file/directory.
+#
+# Main Build Parameters:
+#
+# Version incremented        no
+#        Docs created        no
+#     Docs checked in        no
+#  
+
+
 
 trap '' INT
 trap '' TERM
 trap '' QUIT
 
-# ================= README ==================
 
-# Script  to  produce a  binary  for  all  architectures specified  in
-# $ZMAP_BUILD_MACHINES.    This   script   is  almost   identical   to
-# zmap_overnight.sh, but builds no documentation or distribution so is
-# quite a bit quicker.
-
-# Assuming  all builds well,  the $OUTPUT  directory will  contain the
-# results.
+RC=0
 
 # ================== CONFIG ================== 
 # Configuration variables
+
+# where everything is located.
+BASE_DIR=~zmap
 
 # SRC_MACHINE= The machine to log into to start everything going
 SRC_MACHINE=tviewsrv
 
 # CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
-CVS_CHECKOUT_SCRIPT=$(dirname $0)/build_bootstrap.sh
+CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
+
+# Output place for build
+BUILDS_DIR=$BASE_DIR/BUILDS
+BUILD_PREFIX='ONE_OFF.BUILD'
 
 # GLOBAL_LOG= The place to hold the log file
-GLOBAL_LOG=~/BUILDS/TODAY.BUILD.LOG
+GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 
 # ERROR_RECIPIENT= Someone to email
-ERROR_RECIPIENT=
+ERROR_RECIPIENT=zmapdev@sanger.ac.uk
 
 # ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=yes
 
-# OUTPUT dir. If changed, also edit RELEASE_LOCATION= later on...
-# Sadly no expansion of variable is possible there!
-OUTPUT=~/BUILDS/TODAY
+# OUTPUT dir
+OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
 
-# For development make sure these are set
-#CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
-#GLOBAL_LOG=~/BUILDS/TODAY.BUILD.LOG
-#ERROR_RECIPIENT=
-ENSURE_UP_TO_DATE=no
 
-# ================== MAIN PART ================== 
-MAIL_SUBJECT="ZMap Build Failed (control script)"
+
+
+# ================== MAIN PART ==================
+
+MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
@@ -52,6 +63,7 @@ fi
 
 mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
+
 
 # Errors before here only end up in stdout/stderr
 # Errors after here should be mailed to $ERROR_RECIPIENT
@@ -69,6 +81,7 @@ if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
     }
     cd $old_dir
 fi
+
 
 # A one step copy, run, cleanup!
 # The /bin/kill -9 -$$; line is there to make sure no processes are left behind if the
@@ -90,7 +103,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line             ; \
-./root_checkout.sh RELEASE_LOCATION=~/BUILDS/TODAY ZMAP_MASTER_RT_TO_CVS=yes ZMAP_MASTER_BUILD_DOCS=no ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no ZMAP_MASTER_BUILD_DIST=yes ZMAP_MASTER_RT_RELEASE_NOTES=yes ZMAP_MASTER_DOCS2WEB=no ZMAP_CLUSTER_CONFIG_FILE=~/cluster.config.sh || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION='$OUTPUT' || _rm_exit; \
 :                                               ; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
@@ -112,6 +125,14 @@ if [ $? != 0 ]; then
 	cat $TMP_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
     rm -f $TMP_LOG
+
+    RC=1
+else
+    if [ "x$ERROR_RECIPIENT" != "x" ]; then
+	tail $GLOBAL_LOG | mailx -s "ZMap $BUILD_PREFIX Succeeded" $ERROR_RECIPIENT
+    fi
 fi
 
+
+exit $RC
 # ================== END OF SCRIPT ================== 

@@ -1,35 +1,74 @@
 #!/bin/bash
 
-# zmap_build_development.sh
+# ================= README ==================
 
-#trap '' INT
-#trap '' TERM
-#trap '' QUIT
+# Build zmap for all architectures specified in $ZMAP_BUILD_MACHINES.
+#
+# Builds/logs are in ONE_OFF.BUILD file/directory.
+#
+# Main Build Parameters:
+#
+# Version incremented        yes
+#        Docs created        no
+#     Docs checked in        no
+#  
 
-# Configuring variables
+
+
+trap '' INT
+trap '' TERM
+trap '' QUIT
+
+
+RC=0
 
 # ================== CONFIG ================== 
+# Configuration variables
+
+
+# where everything is located.
+BASE_DIR=~zmap
+
+# SRC_MACHINE= The machine to log into to start everything going
 SRC_MACHINE=tviewsrv
-CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
-GLOBAL_LOG=~/BUILDS/latest.build.log
+
+# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
+CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
+
+# Output place for build
+BUILDS_DIR=$BASE_DIR/BUILDS
+BUILD_PREFIX='DEVELOPMENT.BUILD'
+
+# GLOBAL_LOG= The place to hold the log file
+GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
+
+# ERROR_RECIPIENT= Someone to email
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
+
+# ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=yes
+
+# OUTPUT dir
+OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
+
+# Give user a chance to cancel.
 SLEEP=15
 
-# For development make sure these are set
-#CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
-#GLOBAL_LOG=~/BUILDS/OVERNIGHT.BUILD.LOG
-#ERROR_RECIPIENT=
-#ENSURE_UP_TO_DATE=no
-#SLEEP=1
+
 
 
 # ================== MAIN PART ================== 
+
+MAIL_SUBJECT="ZMap Build Failed (control script)"
+
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
 fi
 
+mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
+
+
 
 # make sure a couple of things are sane.
 SCRIPT_NAME=$(basename $0)
@@ -118,11 +157,9 @@ chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line   ; \
 ./root_checkout.sh -t      || _rm_exit; \
 :                                     ; \
-rm -f root_checkout.sh ZMAP_MASTER_RT_TO_CVS=no  || exit 1;   \
+rm -f root_checkout.sh RELEASE_LOCATION='$OUTPUT' ZMAP_MASTER_RT_TO_CVS=no  || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
-# does this reset $?...probably....see comment below....
-#echo "Finished."
 
 # ================== ERROR HANDLING ================== 
 
@@ -140,13 +177,17 @@ if [ $? != 0 ]; then
     echo ""                                              >> $TMP_LOG
     echo "Full log can be found $(hostname):$GLOBAL_LOG" >> $TMP_LOG
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	cat $TMP_LOG | mailx -s "ZMap Build Failed (control script)" $ERROR_RECIPIENT
+	cat $TMP_LOG | mailx -s "ZMap $BUILD_PREFIX Failed (control script)" $ERROR_RECIPIENT
     fi
     rm -f $TMP_LOG
+
+    RC=1
 else
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	tail $GLOBAL_LOG | mailx -s "ZMap Build Succeeded" $ERROR_RECIPIENT
+	tail $GLOBAL_LOG | mailx -s "ZMap $BUILD_PREFIX Succeeded" $ERROR_RECIPIENT
     fi
 fi
 
+
+exit $RC
 # ================== END OF SCRIPT ================== 
