@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zmap_do_build.sh
+# zmap_build_development.sh
 
 #trap '' INT
 #trap '' TERM
@@ -10,7 +10,6 @@
 
 # ================== CONFIG ================== 
 SRC_MACHINE=tviewsrv
-#SRC_MACHINE=deskpro16113
 CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
 GLOBAL_LOG=~/BUILDS/latest.build.log
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
@@ -23,6 +22,8 @@ SLEEP=15
 #ERROR_RECIPIENT=
 #ENSURE_UP_TO_DATE=no
 #SLEEP=1
+
+
 # ================== MAIN PART ================== 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
@@ -115,9 +116,9 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line   ; \
-./root_checkout.sh -t -u   || _rm_exit; \
+./root_checkout.sh -t      || _rm_exit; \
 :                                     ; \
-rm -f root_checkout.sh     || exit 1;   \
+rm -f root_checkout.sh ZMAP_MASTER_RT_TO_CVS=no  || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
 # does this reset $?...probably....see comment below....
