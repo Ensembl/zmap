@@ -367,9 +367,9 @@ if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
   _checkout_message_out "*** WARNING : If this is in production! Edit ZMAP_MASTER_BUILD_DEVELOPMENT_DIR in build_bootstrap.sh ***"
 fi
 
-_checkout_message_out "Running ./zmap_build_and_tar.sh $options TAR_TARGET=$tar_target"
+_checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target"
 
-\$SCRIPTS_DIR/zmap_build_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
+\$SCRIPTS_DIR/zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
 \$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
 
