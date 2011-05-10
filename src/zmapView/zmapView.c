@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  6 17:31 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.242 2011-05-09 11:04:14 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.243 2011-05-10 08:22:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1928,6 +1928,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	    }
 
 	  //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
+        zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
 	  // start a new server connection
 	  // can optionally use an existing one -> pass in second arg
@@ -3324,8 +3325,11 @@ printf("\nview styles lists after merge:\n");
 	    zmapViewSessionAddServerInfo(zmap_view->session_data, connect_data->database_path) ;
 
           if(connect_data->get_features)  /* may be nul if server died */
-	      getFeatures(zmap_view, connect_data->get_features, connect_data) ;
+          {
+            zMapStopTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(connect_data->get_features->context->req_feature_set_names->data)));
 
+	      getFeatures(zmap_view, connect_data->get_features, connect_data) ;
+          }
             /* we record succcessful requests, if some fail they will get zapped in checkstateconnections() */
           zmap_view->sources_loading--;
 	  }
