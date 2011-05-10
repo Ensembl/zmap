@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowSequenceFeature.h
  * HISTORY:
- * Last edited: May  6 12:40 2011 (edgrif)
+ * Last edited: May 10 16:54 2011 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.19 2011-05-06 14:02:21 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.20 2011-05-10 15:55:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -282,6 +282,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 			    {
 			      GdkColor *coding_colour = coding_background ;
 
+			      /* For peptides make inframe column a different colour. */
 			      if (is_pep)
 				{
 				  int start_from_pep = start, end_from_pep = end ;
@@ -302,10 +303,27 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
 			  case EXON_START_NOT_FOUND:
 			  case EXON_SPLIT_CODON:
-			    g_object_set(G_OBJECT(text_item),
-					 "select-color-gdk", split_codon_background,
-					 NULL) ;
-			    break ;
+			    {
+			      GdkColor *coding_colour = split_codon_background ;
+
+			      /* For peptides only show split codon for inframe col.,
+			       * confusing otherwise. */
+			      if (is_pep)
+				{
+				  int start_from_pep = start, end_from_pep = end ;
+				  
+				  zMapSequencePep2DNA(&start_from_pep, &end_from_pep,
+						      feature->feature.sequence.frame) ;
+
+				  if (orig_start != start_from_pep)
+				    coding_colour = coding_background ;
+				}
+
+			      g_object_set(G_OBJECT(text_item),
+					   "select-color-gdk", coding_colour,
+					   NULL) ;
+			      break ;
+			    }
 
 			  default:
 			    zMapAssertNotReached() ;
