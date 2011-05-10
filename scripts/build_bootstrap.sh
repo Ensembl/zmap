@@ -178,7 +178,7 @@ zmap_message_out "About to parse options: $*"
 usage="$0 -d -t -r -u VARIABLE=VALUE"
 while getopts ":dtru" opt ; do
     case $opt in
-	d  ) ZMAP_MASTER_RELEASE_NOTES=$ZMAP_TRUE      ;;
+	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
 	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
@@ -258,7 +258,7 @@ if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
         FORCE_NOTES='-f'
     fi
 
-    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh $NO_CVS $FORCE_NOTES || \
+    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $NO_CVS $FORCE_NOTES || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
 
     # We need to copy the changed web header into the master directory from the directory it was run in.
@@ -467,7 +467,7 @@ if [ "x$ZMAP_MASTER_CVS_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     zmap_message_err "Need to code release notes bit..."
 
     # This is done in zmap_build_rt_release_notes.sh
-    $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh || zmap_message_rm_exit "Failed to successfully build release notes from cvs."
+    $SCRIPTS_DIR/zmap_make_cvs_release_notes.sh || zmap_message_rm_exit "Failed to successfully build release notes from cvs."
 fi
 
 if [ "x$ZMAP_MASTER_BUILD_DOCS" == "x$ZMAP_TRUE" ]; then
