@@ -22,6 +22,15 @@ ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=""
 
 
 
+#Hack to get stuff working....
+# including VARIABLE=VALUE settings from command line
+if [ $# -gt 0 ]; then
+    eval "$*"
+fi
+
+
+
+
 if [ -f root_develop.sh ]; then
     echo "Development preamble..."
     . ./root_develop.sh
@@ -131,10 +140,12 @@ if [ "x$gen_checkout_script" != "x" ]; then
     cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
     src_dir=$CVS_MODULE.master
 
+    _checkout_message_out "done a cvs checkout"
   else
  
     src_dir=$ZMAP_MASTER_BUILD_COPY_DIR
 
+    _checkout_message_out "just doing a copy"
   fi
 
   _checkout_message_out "cp -r $src_dir $CVS_MODULE"
@@ -218,22 +229,26 @@ if [ $# -gt 0 ]; then
 fi
 
 
-_checkout_message_out "MASTER VARIABLE SETTINGS:"
-_checkout_message_out "ZMAP_MASTER_HOST=$ZMAP_MASTER_HOST"
-_checkout_message_out "ZMAP_MASTER_NOTIFY_MAIL=$ZMAP_MASTER_NOTIFY_MAIL"
-_checkout_message_out "ZMAP_MASTER_BUILD_DOCS=$ZMAP_MASTER_BUILD_DOCS"
-_checkout_message_out "ZMAP_MASTER_BUILD_DOXYGEN_DOCS=$ZMAP_MASTER_BUILD_DOXYGEN_DOCS"
-_checkout_message_out "ZMAP_MASTER_CVS_RELEASE_NOTES=$ZMAP_MASTER_CVS_RELEASE_NOTES"
-_checkout_message_out "ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_MASTER_RT_RELEASE_NOTES"
-_checkout_message_out "ZMAP_MASTER_FORCE_RELEASE_NOTES=$ZMAP_MASTER_FORCE_RELEASE_NOTES"
-_checkout_message_out "ZMAP_MASTER_DOCS2WEB=$ZMAP_MASTER_DOCS2WEB"
-_checkout_message_out "ZMAP_MASTER_WEBPUBLISH=$ZMAP_MASTER_WEBPUBLISH"
-_checkout_message_out "ZMAP_MASTER_BUILD_DIST=$ZMAP_MASTER_BUILD_DIST"
-_checkout_message_out "ZMAP_MASTER_BUILD_CANVAS_DIST=$ZMAP_MASTER_BUILD_CANVAS_DIST"
-_checkout_message_out "ZMAP_BUILD_MACHINES=$ZMAP_BUILD_MACHINES"
-_checkout_message_out "ZMAP_MASTER_RUN_TEST_SUITE=$ZMAP_MASTER_RUN_TEST_SUITE"
-_checkout_message_out "ZMAP_MASTER_INC_REL_VERSION=$ZMAP_MASTER_INC_REL_VERSION"
-_checkout_message_out "ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_MASTER_INC_UPDATE_VERSION"
+zmap_message_out "MASTER VARIABLE SETTINGS:"
+zmap_message_out "ZMAP_MASTER_HOST=$ZMAP_MASTER_HOST"
+zmap_message_out "ZMAP_MASTER_NOTIFY_MAIL=$ZMAP_MASTER_NOTIFY_MAIL"
+
+zmap_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
+zmap_message_out "ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR"
+
+zmap_message_out "ZMAP_MASTER_BUILD_DOCS=$ZMAP_MASTER_BUILD_DOCS"
+zmap_message_out "ZMAP_MASTER_BUILD_DOXYGEN_DOCS=$ZMAP_MASTER_BUILD_DOXYGEN_DOCS"
+zmap_message_out "ZMAP_MASTER_CVS_RELEASE_NOTES=$ZMAP_MASTER_CVS_RELEASE_NOTES"
+zmap_message_out "ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_MASTER_RT_RELEASE_NOTES"
+zmap_message_out "ZMAP_MASTER_FORCE_RELEASE_NOTES=$ZMAP_MASTER_FORCE_RELEASE_NOTES"
+zmap_message_out "ZMAP_MASTER_DOCS2WEB=$ZMAP_MASTER_DOCS2WEB"
+zmap_message_out "ZMAP_MASTER_WEBPUBLISH=$ZMAP_MASTER_WEBPUBLISH"
+zmap_message_out "ZMAP_MASTER_BUILD_DIST=$ZMAP_MASTER_BUILD_DIST"
+zmap_message_out "ZMAP_MASTER_BUILD_CANVAS_DIST=$ZMAP_MASTER_BUILD_CANVAS_DIST"
+zmap_message_out "ZMAP_BUILD_MACHINES=$ZMAP_BUILD_MACHINES"
+zmap_message_out "ZMAP_MASTER_RUN_TEST_SUITE=$ZMAP_MASTER_RUN_TEST_SUITE"
+zmap_message_out "ZMAP_MASTER_INC_REL_VERSION=$ZMAP_MASTER_INC_REL_VERSION"
+zmap_message_out "ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_MASTER_INC_UPDATE_VERSION"
 
 
 # We need to remove the previous one first...
@@ -378,6 +393,8 @@ for host in $ZMAP_BUILD_MACHINES
   do
   zmap_message_out "Logging into $host to run build there."
 
+
+  # Generate the build script.
   # N.B. Substitution _will_ occur in this HERE doc.
   (cat $gen_checkout_script - <<EOF
 # from 'for host in \$ZMAP_BUILD_MACHINES' loop
