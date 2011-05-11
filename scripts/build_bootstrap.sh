@@ -20,6 +20,8 @@
 # For Production it should be unset and root_develop.sh should not exist!
 ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=""
 
+
+
 if [ -f root_develop.sh ]; then
     echo "Development preamble..."
     . ./root_develop.sh
@@ -30,11 +32,20 @@ chmod g+w $0 || zmap_message_err "Failed to chmod g+w $0"
 
 # ================== SETUP ================== 
 FILES_TO_REMOVE=
+
+
 # First we need to make a file to do the checking out
 # This will then get copied to the various hosts to do the checking out on those hosts
-
 gen_checkout_script=zmap_checkout_$$.sh
+
 zmap_tmp_dir=""
+
+
+# Default script does a cvs checkout, alternative is to copy
+# and existing zmap directory.
+#
+
+if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
 
 # The 'EOF' means _no_ substitution takes place.
 (
@@ -115,12 +126,23 @@ if [ "x$gen_checkout_script" != "x" ]; then
   # unfortunately this needs recreating...
   _checkout_mk_cd_dir $zmap_tmp_dir
 
-  # Need -P prune flag to ensure we don't get a load of old empty directories.
-  _checkout_message_out "Running cvs checkout $CVS_MODULE"
-  cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
-  _checkout_message_out "cp -r $CVS_MODULE.master $CVS_MODULE"
-  cp -r $CVS_MODULE.master $CVS_MODULE
+  if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" == "x" ]; then
+
+    # Need -P prune flag to ensure we don't get a load of old empty directories.
+    _checkout_message_out "Running cvs checkout $CVS_MODULE"
+    cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
+    src_dir=$CVS_MODULE.master
+
+  else
+ 
+    src_dir=$ZMAP_MASTER_BUILD_COPY_DIR
+
+  fi
+
+  _checkout_message_out "cp -r $src_dir $CVS_MODULE"
+  cp -r $src_dir $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $src_dir"
 fi
+
 
 # update this to be absolute
 gen_checkout_script=$save_root/$gen_checkout_script
@@ -138,6 +160,7 @@ echo >/dev/null
 
 EOF
 ) > $gen_checkout_script
+
 
 
 # source the generated checkout script.
@@ -163,7 +186,6 @@ set -o history
 
 
 
-
 # We also need to provide a cleanup function to remove the gen_checkout_script
 function zmap_message_rm_exit
 {
@@ -172,6 +194,7 @@ function zmap_message_rm_exit
     zmap_message_exit "$@"
 }
 
+
 # add checkout script to list of files to remove on exit
 zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
 
@@ -179,11 +202,11 @@ zmap_message_out "About to parse options: $*"
 
 # Get the options the user may have requested
 usage="$0 -d -t -r -u VARIABLE=VALUE"
-while getopts ":dtru" opt ; do
+while getopts ":drtu" opt ; do
     case $opt in
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
-	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
+	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
 	\? ) zmap_message_rm_exit "$usage"
     esac

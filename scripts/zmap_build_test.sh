@@ -22,6 +22,13 @@ trap '' QUIT
 
 RC=0
 
+
+# Script takes 2 args, first is the directory to copy the source
+# code from, second is name to give directory under ~zmap...
+SRC_DIR=$1
+DEST_DIR=$2
+
+
 # ================== CONFIG ================== 
 # Configuration variables
 
@@ -36,7 +43,7 @@ CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS
-BUILD_PREFIX='ONE_OFF.BUILD'
+BUILD_PREFIX=$DEST_DIR
 
 # GLOBAL_LOG= The place to hold the log file
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
@@ -45,7 +52,7 @@ GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
 
 # ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
-ENSURE_UP_TO_DATE=yes
+ENSURE_UP_TO_DATE=no
 
 # OUTPUT dir
 OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
@@ -103,7 +110,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line             ; \
-./root_checkout.sh RELEASE_LOCATION='$OUTPUT' || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION='$OUTPUT' ZMAP_MASTER_BUILD_COPY_DIR='$SRC_DIR' || _rm_exit; \
 :                                               ; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
