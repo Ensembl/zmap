@@ -45,8 +45,6 @@ zmap_tmp_dir=""
 # and existing zmap directory.
 #
 
-if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
-
 # The 'EOF' means _no_ substitution takes place.
 (
 cat <<'EOF'
