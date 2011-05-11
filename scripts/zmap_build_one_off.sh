@@ -128,11 +128,15 @@ if [ $? != 0 ]; then
 
     RC=1
 else
+    MAIL_SUBJECT="ZMap $BUILD_PREFIX Succeeded"
+
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	tail $GLOBAL_LOG | mailx -s "ZMap $BUILD_PREFIX Succeeded" $ERROR_RECIPIENT
+	tail $GLOBAL_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
 fi
 
+
+echo $MAIL_SUBJECT
 
 exit $RC
 # ================== END OF SCRIPT ================== 

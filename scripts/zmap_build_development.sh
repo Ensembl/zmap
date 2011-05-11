@@ -69,7 +69,6 @@ mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
 
 
-
 # make sure a couple of things are sane.
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
@@ -112,7 +111,12 @@ if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
 Now we are going to cvs update '$CVS_CHECKOUT_SCRIPT' in $(pwd)
 
 EOF
-    cvs update -C $up2date || { echo "Failed to update $CVS_CHECKOUT_SCRIPT"; exit 1; }
+    cvs update -C $up2date || {
+         echo "Failed to update $CVS_CHECKOUT_SCRIPT";
+	 echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
+	     mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+         exit 1;
+    }
     cd $old_dir
     echo "cvs updated."
 fi
@@ -183,11 +187,15 @@ if [ $? != 0 ]; then
 
     RC=1
 else
+    MAIL_SUBJECT="ZMap $BUILD_PREFIX Succeeded"
+
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	tail $GLOBAL_LOG | mailx -s "ZMap $BUILD_PREFIX Succeeded" $ERROR_RECIPIENT
+	tail $GLOBAL_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
 fi
 
+
+echo $MAIL_SUBJECT
 
 exit $RC
 # ================== END OF SCRIPT ================== 
