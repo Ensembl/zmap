@@ -36,7 +36,7 @@ SRC_MACHINE=tviewsrv
 CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
 # Output place for build
-BUILDS_DIR=$BASE_DIR/BUILDS
+BUILDS_DIR=$BASE_DIR/BUILDS/DEVELOPMENT
 BUILD_PREFIX='DEVELOPMENT.BUILD'
 
 # GLOBAL_LOG= The place to hold the log file
@@ -159,16 +159,13 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line   ; \
-./root_checkout.sh -t -u   || _rm_exit; \
+./root_checkout.sh -t -u RELEASE_LOCATION='$OUTPUT' ZMAP_MASTER_RT_TO_CVS=no || _rm_exit; \
 :                                     ; \
-rm -f root_checkout.sh RELEASE_LOCATION='$OUTPUT' ZMAP_MASTER_RT_TO_CVS=no  || exit 1;   \
+rm -f root_checkout.sh || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
 
 # ================== ERROR HANDLING ================== 
-
-# whatever is supposed to happen here doesn't work even if the build
-# fails we get the succeeded message.
 
 if [ $? != 0 ]; then
     # There was an error, email someone about it!
@@ -181,7 +178,7 @@ if [ $? != 0 ]; then
     echo ""                                              >> $TMP_LOG
     echo "Full log can be found $(hostname):$GLOBAL_LOG" >> $TMP_LOG
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	cat $TMP_LOG | mailx -s "ZMap $BUILD_PREFIX Failed (control script)" $ERROR_RECIPIENT
+	cat $TMP_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
     rm -f $TMP_LOG
 
