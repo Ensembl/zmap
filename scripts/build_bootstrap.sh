@@ -450,8 +450,8 @@ if [ \$check_base == \$zmap_tmp_dir ]; then
   _checkout_message_out "Cleaning up $check_dir"
   rm -rf ./* || _checkout_message_exit "Failed removing files."
   cd ..      || _checkout_message_exit "Failed cd .."
-#  _checkout_message_out "Removing Directory \$zmap_tmp_dir"
-#  rmdir \$zmap_tmp_dir
+  _checkout_message_out "Removing Directory \$zmap_tmp_dir"
+  rmdir \$zmap_tmp_dir
 fi
 
 EOF
