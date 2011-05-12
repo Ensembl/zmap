@@ -417,7 +417,7 @@ for host in $ZMAP_BUILD_MACHINES
 # Because we can't cvs checkout reliably on some machines!
 # See RT ticket #58607
 _checkout_message_out "scp -r $MASTER_SRC_REMOTEPATH ./$CVS_MODULE"
-scp -r MASTER_SRC_REMOTEPATH ./$CVS_MODULE
+scp -r $MASTER_SRC_REMOTEPATH ./$CVS_MODULE
 
 
 [ ! -f \$SRC_DIR/configure ] || _checkout_message_exit "\$SRC_DIR should not contain configure yet!"
