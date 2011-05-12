@@ -68,6 +68,7 @@ mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
 
 
+
 # make sure a couple of things are sane.
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
