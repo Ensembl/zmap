@@ -394,7 +394,7 @@ tar_target=$(hostname):$ZMAP_BUILD_CONTAINER
 
 
 if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" == "x" ]; then
-  MASTER_SRC_REMOTEPATH=$tar_target
+  MASTER_SRC_REMOTEPATH=$tar_target/$CVS_MODULE
 else
   MASTER_SRC_REMOTEPATH=$(hostname):$MASTER_SRC_DIR
 fi
@@ -419,7 +419,7 @@ for host in $ZMAP_BUILD_MACHINES
 
 # Because we can't cvs checkout reliably on some machines!
 # See RT ticket #58607
-_checkout_message_out "scp -r $MASTER_SRC_REMOTEPATH/ ./"
+_checkout_message_out "scp -r $MASTER_SRC_REMOTEPATH ./"
 scp -r $MASTER_SRC_REMOTEPATH/ ./
 
 
