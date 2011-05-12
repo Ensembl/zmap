@@ -25,7 +25,6 @@ RC=0
 # ================== CONFIG ================== 
 # Configuration variables
 
-
 # where everything is located.
 BASE_DIR=~zmap
 
@@ -36,7 +35,7 @@ SRC_MACHINE=tviewsrv
 CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
 # Output place for build
-BUILDS_DIR=$BASE_DIR/BUILDS.TEST/DEVELOPMENT
+BUILDS_DIR=$BASE_DIR/BUILDS/DEVELOPMENT
 BUILD_PREFIX='DEVELOPMENT_BUILD'
 
 # GLOBAL_LOG= The place to hold the log file

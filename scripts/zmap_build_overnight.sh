@@ -29,7 +29,6 @@ RC=0
 # ================== CONFIG ================== 
 # Configuration variables
 
-
 # where everything is located.
 BASE_DIR=~zmap
 
@@ -39,10 +38,9 @@ SRC_MACHINE=tviewsrv
 # CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
 CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
-
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS
-BUILD_PREFIX='OVERNIGHT.BUILD'
+BUILD_PREFIX='OVERNIGHT_BUILD'
 
 # GLOBAL_LOG= The place to hold the log file
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
@@ -60,6 +58,7 @@ OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
 
 
 # ================== MAIN PART ================== 
+
 MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then

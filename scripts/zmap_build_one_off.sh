@@ -36,7 +36,7 @@ CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS
-BUILD_PREFIX='ONE_OFF.BUILD'
+BUILD_PREFIX='ONE_OFF_BUILD'
 
 # GLOBAL_LOG= The place to hold the log file
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
