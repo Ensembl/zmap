@@ -25,8 +25,14 @@ RC=0
 
 # Script takes 2 args, first is the directory to copy the source
 # code from, second is name to give directory under ~zmap...
-SRC_DIR=$1
-DEST_DIR=$2
+if (( $# != 2 )) ; then
+  echo "script needs two args:  $0 <src_dir> <dest_dir>"
+  exit 1
+else
+  SRC_DIR=$1
+  DEST_DIR=$2
+fi
+
 
 
 # ================== CONFIG ================== 
@@ -42,14 +48,15 @@ SRC_MACHINE=tviewsrv
 CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
 # Output place for build
-BUILDS_DIR=$BASE_DIR/BUILDS
+BUILDS_DIR=$BASE_DIR/BUILDS.TEST
 BUILD_PREFIX=$DEST_DIR
 
 # GLOBAL_LOG= The place to hold the log file
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 
 # ERROR_RECIPIENT= Someone to email
-ERROR_RECIPIENT=zmapdev@sanger.ac.uk
+#ERROR_RECIPIENT=zmapdev@sanger.ac.uk
+ERROR_RECIPIENT=edgrif@sanger.ac.uk
 
 # ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=no
@@ -58,18 +65,32 @@ ENSURE_UP_TO_DATE=no
 OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
 
 
-
-
 # ================== MAIN PART ==================
 
 MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 
+
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
 fi
-
-mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
+
+
+# Check src/dest directories.
+if [ ! -d $SRC_DIR ] || [ ! -r $SRC_DIR ] ; then
+  errmg="Directory $SRC_DIR either does not exist or is not readable."
+  echo $errmsg
+  echo $errmsg | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+  exit 1; 
+fi
+
+
+mkdir -p $OUTPUT || { 
+	echo "Failed to make build directory $OUTPUT"
+	echo "Failed to make build directory $OUTPUT" | \
+	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+	exit 1; 
+    }
 
 
 # Errors before here only end up in stdout/stderr
