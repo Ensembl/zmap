@@ -138,18 +138,18 @@ if [ "x$gen_checkout_script" != "x" ]; then
     # Need -P prune flag to ensure we don't get a load of old empty directories.
     _checkout_message_out "Running cvs checkout $CVS_MODULE"
     cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
-    src_dir=$CVS_MODULE.master
+    MASTER_SRC_DIR=$CVS_MODULE.master
 
     _checkout_message_out "done a cvs checkout"
   else
  
-    src_dir=$ZMAP_MASTER_BUILD_COPY_DIR
+    MASTER_SRC_DIR=$ZMAP_MASTER_BUILD_COPY_DIR
 
     _checkout_message_out "just doing a copy"
   fi
 
   _checkout_message_out "cp -r $src_dir $CVS_MODULE"
-  cp -r $src_dir $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $src_dir"
+  cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $src_dir"
 fi
 
 
@@ -331,7 +331,7 @@ if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
 
     PATH_TO_MODIFIED_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$CVS_MODULE -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
 
-    PATH_TO_MASTER_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$CVS_MODULE.master -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
+    PATH_TO_MASTER_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$MASTER_SRC_DIR -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
 
     chmod u+w $PATH_TO_MASTER_WEB_HEADER || zmap_message_err  "Failed to chmod $PATH_TO_MASTER_WEB_HEADER"
     rm -f $PATH_TO_MASTER_WEB_HEADER     || zmap_message_exit "Failed to remove $PATH_TO_MASTER_WEB_HEADER"
@@ -401,9 +401,9 @@ for host in $ZMAP_BUILD_MACHINES
 
 # Because we can't cvs checkout reliably on some machines!
 # See RT ticket #58607
-_checkout_message_out "scp -r $tar_target/$CVS_MODULE.master ./$CVS_MOUDLE"
+_checkout_message_out "scp -r $tar_target/$MASTER_SRC_DIR ./$CVS_MODULE"
 
-scp -r $tar_target/$CVS_MODULE.master ./$CVS_MODULE
+scp -r $tar_target/$MASTER_SRC_DIR ./$CVS_MODULE
 
 [ ! -f \$SRC_DIR/configure ] || _checkout_message_exit "\$SRC_DIR should not contain configure yet!"
 
