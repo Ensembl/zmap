@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 16:08 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.317 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.318 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,6 +77,7 @@ typedef struct _ZMapCanvasDataStruct
   double curr_x_offset ;
 //  double curr_y_offset ;
 
+  int feature_count;
 
   /* Records current canvas item groups, these are the direct parent groups of the display
    * types they contain, e.g. curr_root_group is the parent of the align */
@@ -676,7 +677,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 /* The feature set will be filtered on supplied frame by ProcessFeature.
  * ProcessFeature splits the feature sets features into the separate strands.
  */
-void zmapWindowDrawFeatureSet(ZMapWindow window,
+int zmapWindowDrawFeatureSet(ZMapWindow window,
 			      GHashTable *styles,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col_wcp,
@@ -773,9 +774,14 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
   }
 
-  zMapStopTimer("DrawFeatureSet","ProcessFeature");
+  {
+  char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
+  zMapStopTimer("DrawFeatureSet",str);
+  g_free(str);
+  }
 
 
+#if MH17_CODE_DOES_NOTHING
   if (featureset_data.feature_count > 0)
     {
       ZMapWindowContainerGroup column_container_parent;
@@ -789,7 +795,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
 	}
     }
-
+#endif
 
       /* Use the style from the feature set attached to the
        * column... Better than using what is potentially a diff
@@ -816,7 +822,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
           {
             ZMapStyleBumpMode bump_mode ;
 
-            zMapStartTimer("DrawFeatureSet","Bump");
+//            zMapStartTimer("DrawFeatureSet","Bump fwd");
 
 	      if ((bump_mode =
                   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)forward_container))
@@ -825,7 +831,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
             }
 
-            zMapStopTimer("DrawFeatureSet","Bump");
+//            zMapStopTimer("DrawFeatureSet","Bump fwd");
           }
 
           /* try 3 frame stuff here...more complicated */
@@ -868,7 +874,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  zmapWindowColumnSetState(window, reverse_col_wcp, ZMAPSTYLE_COLDISPLAY_INVALID, FALSE) ;
 	}
 
-  return ;
+  return featureset_data.feature_count;
 }
 
 
@@ -944,6 +950,7 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
 
+
   return ;
 }
 
@@ -1008,12 +1015,16 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 
   canvas_data->masked = masked;
 
+  canvas_data->feature_count = 0;
+
 
   /* we iterate through the window's canvas data to mask existing features */
   zmapWindowContainerUtilsExecute(canvas_data->window->feature_root_group,
                              ZMAPCONTAINER_LEVEL_FEATURESET,
                              container_mask_cb, canvas_data);
 
+
+  zMapStartTimer("DrawContext","");
 
   /* We iterate through the diff context to draw new data */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)diff_context,
@@ -1022,6 +1033,11 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
                                     NULL,
                                     canvas_data);
 
+  {
+  char *str = g_strdup_printf("Context has %d features",canvas_data->feature_count);
+  zMapStopTimer("DrawContext",str);
+  g_free(str);
+  }
 
       /* unbumped features might be wider */
   zmapWindowFullReposition(canvas_data->window) ;
@@ -1734,7 +1750,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 		    zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
-		    zmapWindowDrawFeatureSet(window,
+		    canvas_data->feature_count += zmapWindowDrawFeatureSet(window,
 					     window->context_map->styles,
 					     feature_set,
 					     tmp_forward,
@@ -2186,7 +2202,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
       column_group = zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(featureset_data->curr_reverse_col)) ;
     }
 
-  featureset_data->feature_count++;
+//  featureset_data->feature_count++;
 
 
 
@@ -2210,6 +2226,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
     g_warning("definitely need a style '%s' for feature '%s'",
 	      g_quark_to_string(feature->style_id),
 	      g_quark_to_string(feature->original_id));
+
+  if(feature_item)
+      featureset_data->feature_count++;
   return ;
 }
 
@@ -2423,7 +2442,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
     }
 
   {
-  GList *seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, cbdata);
+  ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, cbdata);
       /* list all short reads data, temp access till we get wiggle plots running */
   if(seq_menus)
       menu_sets = g_list_append(menu_sets, seq_menus);

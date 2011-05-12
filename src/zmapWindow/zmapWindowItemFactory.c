@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May  6 12:16 2011 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.98 2011-05-06 14:02:21 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.99 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -491,7 +491,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
         case ZMAPSTYLE_MODE_TEXT:
 	  {
-#ifndef RDS_REMOVED_STATS
+#ifdef RDS_REMOVED_STATS
 	    ZMapWindowStatsBasic stats ;
 	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
 	    stats->features++ ;
@@ -506,7 +506,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
         case ZMAPSTYLE_MODE_GRAPH:
 	  {
-#ifndef RDS_REMOVED_STATS
+#ifdef RDS_REMOVED_STATS
 	    ZMapWindowStatsBasic stats ;
 	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
 	    stats->features++ ;
@@ -521,7 +521,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
         case ZMAPSTYLE_MODE_TRANSCRIPT:
 	  {
-#ifndef RDS_REMOVED_STATS
+#ifdef RDS_REMOVED_STATS
 	    ZMapWindowStatsTranscript stats ;
 	    stats = zmapWindowStatsAddTranscript(parent_stats, feature) ;
 	    stats->transcripts++ ;

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  6 13:15 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.62 2011-05-09 13:37:01 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.63 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,7 +134,7 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
   cb_data.start = context->parent_span.x1;
   cb_data.end   = context->parent_span.x2 ;
 
-zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
+//zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
 
   /* Because this doesn't allow for execution at context level ;( */
   zMapFeatureContextExecute((ZMapFeatureAny)context,
@@ -849,11 +849,11 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
             /* we revcomp a complete context so reflect in the parent span */
 
-zMapLogWarning("rev comp align 1, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
+//zMapLogWarning("rev comp align 1, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
         zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
                            feature_align->sequence_span.x1,
                            feature_align->sequence_span.x2) ;
-zMapLogWarning("rev comp align 2, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
+//zMapLogWarning("rev comp align 2, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
       }
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:

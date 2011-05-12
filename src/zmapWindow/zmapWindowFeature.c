@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May  6 12:13 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.215 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.216 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1134,7 +1134,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
       /* get BAM/ short reads data */
   {
-  GList *seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
+  ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
       /* list all short reads data, temp access till we get wiggle plots running */
   if(seq_menus)
       menu_sets = g_list_append(menu_sets, seq_menus);

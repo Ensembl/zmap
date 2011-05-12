@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 27 08:50 2011 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.288 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.289 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1144,6 +1144,11 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item) ;
+
+ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
+                                     ZMapGUIMenuItemCallbackFunc callback_func,
+                                     gpointer callback_data);
+
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleBumpMode curr_bump_mode) ;
@@ -1362,7 +1367,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     FooCanvasGroup **forward_col_out,
                                     FooCanvasGroup **reverse_col_out,
 				    FooCanvasGroup **separator_col_out);
-void zmapWindowDrawFeatureSet(ZMapWindow window,
+int zmapWindowDrawFeatureSet(ZMapWindow window,
 			      GHashTable *styles,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col,

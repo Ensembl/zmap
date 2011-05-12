@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar 12 12:58 2010 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.14 2011-03-14 11:35:17 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.15 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -135,7 +135,7 @@ extern gboolean zmap_timing_G;
 // NULL args should be  ""
 #define zMapPrintTime(FUNC, ID, OPT)   \
    { if(ZMAP_GLOBAL_TIMER) \
-      printf("%s\t%.3f\t%s\t%s\n", \
+      zMapLogMessage("Timer %s\t%.3f\t%s\t%s\n", \
             FUNC,\
             g_timer_elapsed(ZMAP_GLOBAL_TIMER, NULL),\
             ID,OPT); \

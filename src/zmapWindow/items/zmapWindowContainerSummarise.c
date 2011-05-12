@@ -26,7 +26,7 @@
  * Description:   avoids displaying features that cannot be seen at the current zoom level
  *                NOTE see Design_notes/notes/canvas_tweaks.html
  *
- * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.4 2011-04-08 10:45:29 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.5 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -232,7 +232,7 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset)
 #if !MH17_DONT_INLCUDE
       if(window->n_col_cover_show)
       {
-            printf("summarise %s: %d+%d/%d, max was %d\n",g_quark_to_string(fset->unique_id),
+            zMapLogWarning("summarise %s: %d+%d/%d, max was %d\n",g_quark_to_string(fset->unique_id),
                   window->n_col_cover_show,window->n_col_cover_hide,
                   window->n_col_cover_show + window->n_col_cover_hide,
                   window->n_col_cover_list);
@@ -320,7 +320,7 @@ GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset)
       GList *features;
 
       zMap_g_hash_table_get_data(&features, fset->features);
-#if !MH17_test_radix_sort
+#if MH17_test_radix_sort
 /* see zmapRadixSort.c for performance stats */
 printf("%s has %d items\n",g_quark_to_string(fset->unique_id),g_list_length(features));
 zMapStartTimer("normal sort","");

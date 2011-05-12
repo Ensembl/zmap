@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Mar 31 15:07 2011 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.20 2011-05-06 14:52:20 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.21 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -356,6 +356,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
 
+    { ZMAPARG_TIMING,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_TIMING_DESC,  ZMAPARG_NO_ARG },
+
     /* Must be the last entry. */
     { G_OPTION_REMAINING, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING_ARRAY, NULL,
       ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
@@ -366,12 +368,15 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
   if (entries[0].arg_data == NULL)
     {
+      extern gboolean zmap_timing_G;
+
       entries[0].arg_data = &(arg_context->version);
       entries[1].arg_data = &(arg_context->serial);
       entries[2].arg_data = &(arg_context->start);
       entries[3].arg_data = &(arg_context->end);
       entries[4].arg_data = &(arg_context->sleep);
-      entries[5].arg_data = &(arg_context->sequence_arg);
+      entries[5].arg_data = &(zmap_timing_G);
+      entries[6].arg_data = &(arg_context->sequence_arg);
     }
 
   return &entries[0] ;

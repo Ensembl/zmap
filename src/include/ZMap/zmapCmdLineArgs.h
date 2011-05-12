@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 13 17:43 2010 (edgrif)
  * Created: Mon Feb  7 08:19:50 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.h,v 1.9 2011-03-01 16:22:42 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.h,v 1.10 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_H
@@ -125,6 +125,7 @@ typedef union
 #define ZMAPARG_CONFIG_FILE    "conf_file"
 #define ZMAPARG_CONFIG_DIR     "conf_dir"
 #define ZMAPARG_WINDOW_ID      "win_id"
+#define ZMAPARG_TIMING         "timing"
 
 
 

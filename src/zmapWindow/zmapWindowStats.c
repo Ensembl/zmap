@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: May  6 12:09 2011 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.17 2011-05-06 11:10:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.18 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@
  * not only the numbers of features but also the numbers of boxes drawn etc. */
 
 
-/* 
+/*
  * Stats struct for each set of stats for each container.
  * (Opaque pointer declared in zmapWindow_P.h).
  */
@@ -77,7 +77,7 @@ static gint feature2StyleCompare(gconstpointer a, gconstpointer b) ;
 
 
 
-/* 
+/*
  *                  External functions
  */
 
@@ -105,7 +105,10 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
   stats->num_context_children++ ;
   stats->num_canvas_children++ ;
 
-
+#if MH17_THIS_CONTAINS_VERY_SLOW_LIST_APPEND_CALLS_FOR_LARGE_FEATURESETS
+/* eg for 200k trembl we scna the whiole list 200k times, twice */
+/* but the caller needs the return */
+#endif
   /* If its a zmapfeature then some extra stats are recorded. */
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
     {
@@ -151,11 +154,12 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	      stats_any = g_slice_alloc0(num_bytes) ;
 	      stats_any->feature_type = feature->type ;
 	      stats_any->style_id = feature->style_id ;
-	      
+
 	      stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
 	    }
 	}
     }
+
 
   return stats_any ;
 }
@@ -198,8 +202,8 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats)
 
 
 
-/* 
- *                            Internal functions 
+/*
+ *                            Internal functions
  */
 
 

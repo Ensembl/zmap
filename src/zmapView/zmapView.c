@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  6 17:31 2011 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.243 2011-05-10 08:22:56 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.244 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1218,12 +1218,12 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zmapViewBusy(zmap_view, TRUE) ;
 
-      zMapStartTimer("RevComp","");
+      zMapStartTimer("RevComp","Context");
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
-      zMapStopTimer("RevComp","Feature");
+      zMapStopTimer("RevComp","Context");
 
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;

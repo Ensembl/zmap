@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 13 17:39 2010 (edgrif)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.11 2011-03-14 11:35:18 mh17 Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.12 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
@@ -47,6 +47,7 @@
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
 #define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
+#define ZMAPARG_TIMING_DESC         "switch on timing functions"
 
 #define ZMAPARG_NO_ARG         "<none>"
 #define ZMAPARG_COORD_ARG      "coord"
@@ -66,7 +67,8 @@ enum {ARG_SET = 1,					    /* Special value, do not alter. */
       ARG_SERIAL,
       ARG_START, ARG_END,
       ARG_CONF_FILE, ARG_CONF_DIR,
-      ARG_WINID
+      ARG_WINID,
+      ARG_TIMING
 } ;
 
 
@@ -85,6 +87,7 @@ typedef struct _ZMapCmdLineArgsStruct
   /* All option values are stored here for later reference. */
   gboolean version ;
   gboolean serial ;
+  gboolean timing ;
 
   int start, end ;
   int sleep;      /* not used but needed */
