@@ -25,7 +25,7 @@ ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=""
 #Hack to get stuff working....
 # including VARIABLE=VALUE settings from command line
 
-if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" == "x" ]; then
+if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
     if [ $# -gt 0 ]; then
 	    eval "$*"
     fi
