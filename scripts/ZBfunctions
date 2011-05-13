@@ -158,9 +158,7 @@ ZBRemoteDirectories ()
     
     ZBRbuildBase=$ZBRBaseDir/BUILDS
     ZBROverDir="$ZBRBaseDir/BUILD.OVERNIGHT"
-    ZBROverBinDir="$ZBRBaseDir/BIN.OVERNIGHT"
     ZBRDevDir="$ZBRBaseDir/BUILD.DEVELOPMENT"
-    ZBRDevBinDir="$ZBRBaseDir/BIN.DEVELOPMENT"
 }
 
 # WARNING INSANITY FOLLOWS
@@ -213,9 +211,8 @@ ZBBaseDir=$real_home
 ZBbuildBase=$ZBBaseDir/BUILDS
 ZBReleaseBase=$ZBbuildBase/RELEASE_NOTES
 ZBOverDir="$ZBBaseDir/BUILD.OVERNIGHT"
-ZBOverBinDir="$ZBBaseDir/BIN.OVERNIGHT"
 ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
-ZBDevBinDir="$ZBBaseDir/BIN.DEVELOPMENT"
+
 
 # Add new build machines to this list, separate with a blank within the single string.
 # NOTE THAT THE FIRST MACHINE IN THE LIST _MUST_ BE ABLE TO BUILD THE DOCS....see loop
@@ -240,9 +237,7 @@ ZBgetRTtickets=getRTtickets
 # REMOTE DIRECTORIES
 ZBRbuildBase=""
 ZBROverDir=""
-ZBROverBinDir=""
 ZBRDevDir=""
-ZBRDevBinDir=""
 
 fi
 
