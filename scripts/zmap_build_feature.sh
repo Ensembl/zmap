@@ -130,7 +130,7 @@ cd /var/tmp                || exit 1;   \
 rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
-export ZMAP_MASTER_BUILD_COPY_DIR='$SRC_DIR' \ 
+export ZMAP_MASTER_BUILD_COPY_DIR='$SRC_DIR' ; \ 
 : Change the variables in next line             ; \
 ./root_checkout.sh RELEASE_LOCATION='$OUTPUT' || _rm_exit; \
 :                                               ; \
