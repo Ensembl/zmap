@@ -49,7 +49,7 @@ CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
 
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS.TEST
-BUILD_PREFIX=$DEST_DIR
+BUILD_PREFIX="FEATURE_$DEST_DIR"
 
 # GLOBAL_LOG= The place to hold the log file
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
