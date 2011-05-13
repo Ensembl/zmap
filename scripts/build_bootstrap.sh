@@ -30,8 +30,6 @@ if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
     if [ $# -gt 0 ]; then
 	    eval "$*"
     fi
-
-    echo "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
 fi
 
 
@@ -115,6 +113,9 @@ _checkout_message_out "Start of script."
 
 TODAY=`date +"%a %b %e %Y"`
 _checkout_message_out "Today is $TODAY"
+
+
+_checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
 
 
 save_root=$(pwd)
