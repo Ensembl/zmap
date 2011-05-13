@@ -1,0 +1,434 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '13 May 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.126 </h1>
+
+<p>Last Release Date: 06/05/2011</p>
+
+
+<h3>Current Release Date: 13 May 2011 at 13h.44m.41s</h3>
+
+
+<p>This report covers 2011-05-06 to 2011-05-13</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=214555">214555</a>, Resolved (Thu May 12 13:23:20 2011)
+<p>n/c splice markers broken again</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapView/zmapView.c: fix missing newline in print.
+
+
+  </li>
+  <li> src/zmapUtils/zmapCoords.c: add func. to map coords to a given
+	  base offset.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2Dumper.c: fix start_not_found nomenclature.
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix buglets in start_not_found &
+	  end_not_found processing.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: sequence or peptide are now
+	  just mode SEQUENCE.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: use proper call to test is
+	  feature is peptide.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNAChoose.c: fix bugs in coords caused
+	  by broken handling of sequences not starting at 1.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureShow.c: switch to single sequence
+	  mode and fix start nto found name.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowStats.c: fix single sequence mode.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItem.c: fix bug where we don't
+	  unhighlight correctly for reverse stranded for dna/3 frame.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: switch to single sequence
+	  mode and fix start not found name.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: move to single sequence
+	  mode, use func to decide if sequence is dna or peptide.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: add support to colour displayed
+	  text.
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtils.h: add function to map coords to
+	  arbitrary offset.
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsGUI.h: add support for colouring text.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureUtils.c: move to single sequence mode,
+	  fix start not found name, fix bugs in tranlation code.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureData.c: move to single sequence mode.
+	  Fix coding/non-coding terms for exons.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureDNA.c: move to single sequence mode.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTranscript.c: add some transcript
+	  feature functions, e.g. annotated exons.
+
+
+  </li>
+  <li> src/zmapFeature/Makefile.am: add zmapFeatureTranscript.c to
+	  build.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCanvasItem.c: move to single
+	  sequence mode.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.c: remove detailed
+	  exon stuff, put in zmapFeature, add calls to test sequence type.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowTextItem.c: add text selection
+	  colour.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: move to single sequence mode.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemText.c: remove exon stuff to
+	  zmapFeature, fix bugs in 'show translation in zmap' code.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow_P.h: dna choose now returns chosen
+	  sequence coords.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMenus.c: add code to colour transcript
+	  text in separate window.
+
+
+  </li>
+  <li> src/zmapFeature/: zmapStyle.c, zmapFeatureTypes.c: add code to
+	  support colouring exon and translation text to show coding, frame
+	  etc.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyleUtils.c: move to single sequence mode.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTranscript.c: add some debug code.
+
+
+  </li>
+  <li> src/: zmapConfig/zmapConfigLoader.c, include/ZMap/zmapStyle.h:
+	  add code to support colouring exon and translation text to show
+	  coding, frame etc.
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add annotated exon struct, fix
+	  start_not_found name, add new sequence and transcript funcs.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature.c: add funcs to test type of
+	  sequence, fix start_not_found name.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature3FrameTranslation.c: add funcs to test
+	  type of sequence.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureContext.c: fix bug in getting dna,
+	  tidy up unused code.
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUIutils.c: missed removal of fields in
+	  internal struct.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTranscript.c: remove unused variables,
+	  fix debug print routine.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_05_06.13_47_51.shtml
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.8158/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeature3FrameTranslation.c: fix stupid bug in
+	  clearing/populating translation arrays.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDump.c, zmapWindowItemDebug.c,
+	  zmapWindowItemFactory.c, zmapWindowMark.c,
+	  items/zmapWindowAlignmentFeature.c,
+	  items/zmapWindowBasicFeature.c, items/zmapWindowCanvasItem.c,
+	  items/zmapWindowCanvasItem.h, items/zmapWindowCanvasItem_I.h,
+	  items/zmapWindowSequenceFeature.c, items/zmapWindowTextFeature.c,
+	  items/zmapWindowTranscriptFeature.c: canvas items simplified
+	  stage 1
+
+
+  </li>
+  <li> src/: include/ZMap/zmapConfigStrings.h,
+	  include/ZMap/zmapControl.h, include/ZMap/zmapFeature.h,
+	  include/ZMap/zmapManager.h, include/ZMap/zmapServerProtocol.h,
+	  include/ZMap/zmapView.h, include/ZMap/zmapWindow.h,
+	  zmapApp/zmapApp_P.h, zmapApp/zmapAppconnect.c,
+	  zmapApp/zmapAppremote.c, zmapApp/zmapAppwindow.c,
+	  zmapConfig/zmapConfigLoader.c, zmapControl/zmapControl.c,
+	  zmapControl/zmapControlRemoteReceive.c,
+	  zmapControl/zmapControlViews.c,
+	  zmapControl/zmapControlWindowMenubar.c,
+	  zmapControl/zmapControl_P.h, zmapManager/zmapManager.c,
+	  zmapServer/zmapServer.c, zmapServer/zmapServer.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/zmapServer_P.h,
+	  zmapServer/acedb/acedbServer.c, zmapServer/das/dasServer.c,
+	  zmapServer/pipe/pipeServer.c, zmapServer/pipe/pipeServer_P.h,
+	  zmapThreads/zmapSlave.c, zmapUtils/zmapCmdLineArgs.c,
+	  zmapView/zmapView.c, zmapView/zmapViewCallBlixem.c,
+	  zmapView/zmapViewUtils.c, zmapView/zmapView_P.h,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowFeatureFuncs.c,
+	  zmapWindow/zmapWindowMenus.c, zmapWindow/zmapWindow_P.h: added
+	  config and request login and UI for BAM via Blixem
+
+
+  </li>
+  <li> src/include/ZMap/zmapWindow.h: add offset param to alignment
+	  callback.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureFuncs.c: add offset to data
+	  passed back in align callback.
+
+
+  </li>
+  <li> src/zmapView/: zmapView_P.h, zmapView.c: add offset to calls to
+	  blixem code.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: specify offset so blixem can
+	  rebase coords it displays.
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeatureContext.c,
+	  zmapWindow/items/zmapWindowContainerFeatureSetUtils.c: fixed
+	  mc-splice markers
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: added timing calls
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: update args code to use new
+	  blixem args.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureFuncs.c: new blix args just need
+	  the start coord to map to 1.
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_05_10.09_58_22.shtml
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2011_05_10.10_06_34.shtml
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowSequenceFeature.c: Adam asked if
+	  we could only show split codons for the inframe peptide column,
+	  so I've done that.
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.24512/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.9882/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.30269/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.17943/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapCmdLineArgs.h,
+	  include/ZMap/zmapUtilsDebug.h, zmapFeature/zmapFeatureContext.c,
+	  zmapUtils/zmapCmdLineArgs.c, zmapUtils/zmapCmdLineArgs_P.h,
+	  zmapView/zmapView.c, zmapWindow/zmapWindowDrawFeatures.c,
+	  zmapWindow/zmapWindowFeature.c,
+	  zmapWindow/zmapWindowItemFactory.c, zmapWindow/zmapWindowStats.c,
+	  zmapWindow/zmapWindow_P.h,
+	  zmapWindow/items/zmapWindowContainerSummarise.c: gathering
+	  statisics
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.16405/ZMap/scripts/versioner run by zmap
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Fixed a bug with the --invert-sort option
+</li>
+
+<li>
+Fixed a bug with the hide-big-picture option
+</li>
+
+<li>
+dotter-first-match now finds the correct sequence to dotter
+</li>
+
+<li>
+Fixes to do with --dotter-first-match option
+</li>
+
+<li>
+Fixed a bug with the dotter-first-match argument
+</li>
+
+<li>
+Fixed bugs with command-line arguments, and implemented --map-coords
+</li>
+
+<li>
+Changed command-line arguments and added new --map-coords argument
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
