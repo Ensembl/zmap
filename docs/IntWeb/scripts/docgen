@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# <!-- $Id: docgen,v 1.1 2011-01-10 15:43:19 edgrif Exp $ -->
+# <!-- $Id: docgen,v 1.2 2011-05-13 13:35:03 mh17 Exp $ -->
 # generate a *.shtml file to STDOUT from headerless *.html
 # css is in ZMap/doc/css/dev_server.css
 # menu data is in ZMap/doc/<design>/scripts/ plus also the current dir (file.rel)
@@ -138,6 +138,7 @@ sub gen_file
 
       while($_ = <IFILE>)                       # include our html source
       {
+            s/Design_notes/Design/g;
             print OFILE $_;
       }
 

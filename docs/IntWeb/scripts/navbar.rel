@@ -1,9 +1,9 @@
 ,Home,
 index,Documentation Root
-Design_notes/index,Contents,
-Design_notes/misc/about,About,
-Design_notes/misc/convert,Migration,
-,ZMap Modules,Design_notes/modules/
+Design/index,Contents,
+Design/misc/about,About,
+Design/misc/convert,Migration,
+,ZMap Modules,Design/modules/
 zmapApp,,
 zmapConfig,,
 zmapControl,,
@@ -23,8 +23,9 @@ zmapView,,
 zmapWindow,,
 zmapWindow_items,zmapWindow/items,
 zmapXML,,
-,Build,Design_notes/build/
+,Build,Development/
 build,build,
+cvs_git,cvs_git,
 fix_copyright,CopyRight,
 debugging,Debug-Zmap,
 macosx,TheMac,
@@ -32,7 +33,3 @@ macosx,TheMac,
 ../foocanvas/foocanvas,Foo Canvas,
 ../foocanvas/foocanvas_build,Foo Build,
 ../g2/g2,G2,
-,User Doc,user_doc/
-standalone,Running Zmap,
-styles,Styles,
-configuration,Config,

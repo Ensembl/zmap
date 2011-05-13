@@ -1,9 +1,9 @@
 #!/bin/tcsh
 # rebuild all pages
-# must be run from ZMap/doc directory
+# must be run from ZMap/docs/Intweb directory
 
 docgen *.html
-cd Design_notes
+cd Design
 docgen *.html
 cd modules
 docgen *.html
@@ -11,9 +11,8 @@ cd ../misc
 docgen *.html
 cd ../notes
 docgen *.html
-cd ../build
+cd ../../Development
 docgen *.html
-cd ../../user_doc
-docgen *.html
+
 
 echo "need to update this for other directories eg foocanvas"
