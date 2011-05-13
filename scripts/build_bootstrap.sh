@@ -30,6 +30,8 @@ if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
     if [ $# -gt 0 ]; then
 	    eval "$*"
     fi
+
+    echo "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
 fi
 
 
@@ -411,9 +413,13 @@ for host in $ZMAP_BUILD_MACHINES
   do
   zmap_message_out "Logging into $host to run build there."
 
+  zmap_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
+
+
 
   # Generate the build script.
   # N.B. Substitution _will_ occur in this HERE doc.
+  #
   (cat $gen_checkout_script - <<EOF
 # from 'for host in \$ZMAP_BUILD_MACHINES' loop
 
