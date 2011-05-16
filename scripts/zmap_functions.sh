@@ -148,6 +148,25 @@ function zmap_goto_cvs_module_root
     fi
 }
 
+# Usage: zmap_goto_cvs_module_root
+function zmap_goto_zmap_root
+{
+	LOCATION=$(pwd)
+	current=$(pwd)
+	zmap_message_out "Navigating out of $LOCATION"
+	while [ "x$LOCATION" != "xZMap" ];
+	  do
+	  zmap_message_out "Leaving $LOCATION."
+	  LOCATION=$(dirname $LOCATION)
+	  CVS_MODULE_LOCAL=$(basename $current)
+	  current=$(dirname $current)
+	  zmap_cd $current
+	done
+
+	CVS_MODULE=$(basename $LOCATION)
+	zmap_cd $CVS_MODULE_LOCAL
+}
+
 # Usage: zmap_dump_environment <filename>
 function zmap_dump_environment
 {

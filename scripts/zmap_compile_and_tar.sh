@@ -44,7 +44,10 @@ INSTALL_PREFIX=prefix_root
 zmap_cd $BASE_DIR
 
 # We can then go to the correct place
-zmap_goto_cvs_module_root
+#zmap_goto_cvs_module_root
+
+zmap_goto_zmap_root
+
 
 mkdir $INSTALL_PREFIX
 
