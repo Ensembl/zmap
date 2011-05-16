@@ -65,22 +65,24 @@ mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
 
 
+# DISABLED...NOT REALLY CORRECT ANYWAY..........
+#
 # Errors before here only end up in stdout/stderr
 # Errors after here should be mailed to $ERROR_RECIPIENT
-if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
-    old_dir=$(pwd)
-    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
-    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
-    cd $new_dir
-    export CVS_RSH=ssh
-    cvs update -C $up2date || { 
-	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
-	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
-	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
-	exit 1; 
-    }
-    cd $old_dir
-fi
+#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
+#    old_dir=$(pwd)
+#    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
+#    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
+#    cd $new_dir
+#    export CVS_RSH=ssh
+#    cvs update -C $up2date || { 
+#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
+#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
+#	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+#	exit 1; 
+#    }
+#    cd $old_dir
+#fi
 
 
 # A one step copy, run, cleanup!

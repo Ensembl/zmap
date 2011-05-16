@@ -43,7 +43,7 @@ zmap_tmp_dir=""
 
 
 # Default script does a cvs checkout, alternative is to copy
-# and existing zmap directory.
+# an existing zmap directory.
 #
 
 # The 'EOF' means _no_ substitution takes place.
@@ -131,11 +131,16 @@ if [ "x$gen_checkout_script" != "x" ]; then
   if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" == "x" ]; then
 
     # Need -P prune flag to ensure we don't get a load of old empty directories.
-    _checkout_message_out "Running cvs checkout $CVS_MODULE"
-    cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
-    MASTER_SRC_DIR=$CVS_MODULE.master
+#    _checkout_message_out "Running cvs checkout $CVS_MODULE"
+#    cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
+#    MASTER_SRC_DIR=$CVS_MODULE.master
+#
+#    _checkout_message_out "done a cvs checkout"
 
-    _checkout_message_out "done a cvs checkout"
+    _checkout_message_out "Running git checkout origin"
+    git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git ZMap
+
+
   else
  
     MASTER_SRC_DIR=$ZMAP_MASTER_BUILD_COPY_DIR
