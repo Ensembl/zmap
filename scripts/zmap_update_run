@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# Script to update this scripts directory and run a build script.
+#
+# NOTE that we assume that build scripts are special in that we won't
+# have branches of them, i.e. they will be the same in _ALL_ branches.
+#
+
+
+# Usage: message_out Your Message
+function message_out
+{
+    now=$(date +%H:%M:%S)
+    echo "[$SCRIPT_NAME ($now)] $*"
+}
+
+# Usage: message_err Your Message
+function message_err
+{
+    now=$(date +%H:%M:%S)
+    echo "[$SCRIPT_NAME ($now)] $* !" >&2
+}
+
+# Usage: message_exit Your Message
+function message_exit
+{
+    message_err $*
+    exit 1 ;
+}
+
+
+RC=0
+git_branch='origin'
+
+
+# Update this directory from git repository.
+#
+echo "Updating current directory from git $git_branch"
+git pull $git_branch || message_exit "git pull failed"
+
+
+
+# If a program was specified then get hold of it's name and args.
+#
+if (( $# != 0 )) ; then
+
+  prog=$1
+  shift
+  args=$*
+
+  echo "Running '$prog' with args: '$args'"
+
+  eval $prog $args  ||  message_exit "$prog failed"
+fi
+
+
+
+exit $RC
