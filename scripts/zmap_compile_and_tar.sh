@@ -43,10 +43,12 @@ INSTALL_PREFIX=prefix_root
 # We know that this is in cvs
 zmap_cd $BASE_DIR
 
+# Hack this for now...we know we are just above ZMap anyway....
 # We can then go to the correct place
 #zmap_goto_cvs_module_root
-
-zmap_goto_zmap_root
+cd ..
+CVS_MODULE=ZMap
+CVS_MODULE_LOCAL=ZMap
 
 
 mkdir $INSTALL_PREFIX
