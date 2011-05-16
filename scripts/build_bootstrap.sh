@@ -137,9 +137,10 @@ if [ "x$gen_checkout_script" != "x" ]; then
 #
 #    _checkout_message_out "done a cvs checkout"
 
-    _checkout_message_out "Running git checkout origin"
-    git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git ZMap
-
+    _checkout_message_out "Running git clone zmap.git"
+    git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $CVS_MODULE.master
+    MASTER_SRC_DIR=$CVS_MODULE.master
+    _checkout_message_out "done a git clone"
 
   else
  
