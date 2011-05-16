@@ -32,7 +32,7 @@ BASE_DIR=~zmap
 SRC_MACHINE=tviewsrv
 
 # CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
-CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
+CVS_CHECKOUT_SCRIPT=$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts/build_bootstrap.sh
 
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS
