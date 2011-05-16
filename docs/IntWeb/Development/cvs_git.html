@@ -83,7 +83,7 @@ git is very powerful and has far more features than are needed by the ZMap team 
 cd ~zmap/git
 git cvsimport -a -v ZMap
 </pre>
-This takes about 30 minutes, after which the ~/zmap/git directory contains a copy of the CVS source tree/
+This takes about 30 minutes (or maybe slightly longer), after which the ~/zmap/git directory contains a copy of the CVS source tree.  It runs through the same process of fetching and then compressing several times - don't panic!
 </p>
 
 <h3>Create a bare repository</h3>
@@ -107,7 +107,9 @@ Edit the <code>description</code> file in <code>zmap.git</code> to set the descr
 <h3>Setting up access permissions</h3>
 <p>We have set the master repository to be group-writable with the --shared option in the above section.  We need to make sure the owner of the repository is the zmap group, which will already be the case if we created the master repository as the zmap user (if not, then we can change the group with chown or chgrp, but this will overwrite the 's' in the group permissions, so we would need to put that back).  We should also run the following 'setfacl' commands to ensure that all file permissions are inherited when new files are created.
 <pre>
-export GIT_DIR=/repos/git/annotools/zmap.git
+export GIT_DIR=/repos/git/annotools/zmap.git    (bash?)
+setenv GIT_DIR /repos/git/annotools/zmap.git    (tcsh?)
+
 setfacl -d -m g::rwx $GIT_DIR/{refs,objects,branches}
 setfacl -m g::rwx $GIT_DIR/{refs,objects,branches}
 setfacl -m g::rw $GIT_DIR/HEAD
@@ -137,6 +139,8 @@ deskpro1[fred]6: git config --global user.email fred@sanger.ac.uk
 If you cloned a repository, then by default you will already have the 'origin' alias set up to point to the repository that you cloned.  Use 'git remote -v' to view existing aliases.  You can also explicitly set up an alias to a specific repository as follows:
 <pre>
 deskpro1[fred]16: git remote zmap ~zmap/git
+(Note: in out example this is not a repository, try git.internal.....
+Acutally not needed here so skip this)
 </pre>
 </p>
 
@@ -164,7 +168,7 @@ mac18480i[gb10]16: git tg
 <font color="green">2010-04-21 17:23:03 +0000</font>  <font color="yellow">(RELEASE-4_9_50)</font>
 <font color="green">2010-03-26 15:17:20 +0000</font>  <font color="yellow">(RELEASE-4_9_49)</font>
 <font color="green">2010-02-26 16:37:06 +0000</font>  <font color="yellow">(RELEASE-4_9_48)</font>
-<font color="green">2009-11-03 18:28:23 +0000</font> 
+<font color="green">2009-11-03 18:28:23 +0000</font>
 </pre>
 </p>
 <p>You can specify a tool to view diffs with by using 'git difftool' rather than 'git diff'.  To set the default tool used by difftool to, say, diffuse, use:
@@ -176,7 +180,7 @@ git config --global diff.tool diffuse
 <h3>Setting up repository options</h3>
 <p>As git allows you to perform operations on all files that have been modified, there is value in having it ignore certain files, e.g. object and temporary files.  This is done by specifying file names or patterns in a file called '.gitignore' (generally placed in the top level directory of the project), or in .git/info/exclude.  Generally, .git/info/exclude is used for things that are applicable to your local repository only.  A .gitignore file can be checked in as part of the project, so it can be used for anything that is also useful to other developers on the project.
 </p>
-<p>For example, the .gitignore file might contain:
+<p>For example, the .gitignore file might contain:  (DS_Store is a mac thing)
 <pre>
 *.[oa]
 *~
@@ -202,6 +206,15 @@ remote: Compressing objects: 100% (463/463), done.
 remote: Total 2532 (delta 2064), reused 2532 (delta 2064)
 Receiving objects: 100% (2532/2532), 1.53 MiB, done.
 Resolving deltas: 100% (2064/2064), done.
+</pre>
+Or for ZMap:
+<pre>
+mac18480i[gb10]253: mkdir zmap
+mac18480i[gb10]254: cd zmap
+mac18480i[gb10]255: git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git ZMap
+Cloning into ZMap...
+</pre>
+<pre>
 mac18480i[gb10]256: cd seqtools/
 mac18480i[gb10]257: ls -a
 .		..		.git		.gitignore	src
@@ -254,7 +267,7 @@ Here are lines that are either unchanged from the common
 ancestor, or cleanly resolved because only one side changed.
 &lt;&lt;&lt;&lt;&lt;&lt;&lt; yours:sample.txt
 Conflict resolution is hard;
-let´s go shopping.
+letï¿½s go shopping.
 =======
 Git makes conflict resolution easy.
 &gt;&gt;&gt;&gt;&gt;&gt;&gt; theirs:sample.txt
