@@ -15,11 +15,6 @@
 
 
 
-trap '' INT
-trap '' TERM
-trap '' QUIT
-
-
 RC=0
 
 # ================== CONFIG ================== 
@@ -32,7 +27,7 @@ BASE_DIR=~zmap
 SRC_MACHINE=tviewsrv
 
 # CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
-CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
+CVS_CHECKOUT_SCRIPT=$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts/build_bootstrap.sh
 
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS/DEVELOPMENT
@@ -58,7 +53,7 @@ SLEEP=15
 
 # ================== MAIN PART ================== 
 
-MAIL_SUBJECT="ZMap Build Failed (control script)"
+MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
@@ -100,29 +95,32 @@ Errors will be reported to '$ERROR_RECIPIENT'
 EOF
 
 
-# If we need to update from cvs...
-if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
-    old_dir=$(pwd)
-    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
-    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
-    cd $new_dir
-    export CVS_RSH=ssh
-    cat <<EOF
-Now we are going to cvs update '$CVS_CHECKOUT_SCRIPT' in $(pwd)
-
-EOF
-    cvs update -C $up2date || {
-         echo "Failed to update $CVS_CHECKOUT_SCRIPT";
-	 echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
-	     mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
-         exit 1;
-    }
-    cd $old_dir
-    echo "cvs updated."
-fi
-
-[ -f $CVS_CHECKOUT_SCRIPT ] || { echo "Failed to find $CVS_CHECKOUT_SCRIPT"; exit 1; }
-
+# DISABLED...NOT REALLY CORRECT ANYWAY..........
+#
+# Errors before here only end up in stdout/stderr
+# Errors after here should be mailed to $ERROR_RECIPIENT
+#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
+#    old_dir=$(pwd)
+#    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
+#    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
+#    cd $new_dir
+#    export CVS_RSH=ssh
+#    cat <<EOF
+#Now we are going to cvs update '$CVS_CHECKOUT_SCRIPT' in $(pwd)
+#
+#EOF
+#    cvs update -C $up2date || {
+#         echo "Failed to update $CVS_CHECKOUT_SCRIPT";
+#	 echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
+#	     mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+#         exit 1;
+#    }
+#    cd $old_dir
+#    echo "cvs updated."
+#fi
+#
+#[ -f $CVS_CHECKOUT_SCRIPT ] || { echo "Failed to find $CVS_CHECKOUT_SCRIPT"; exit 1; }
+#
 
 cat <<EOF
 
@@ -144,8 +142,19 @@ EOF
 
 sleep $SLEEP
 
+trap '' INT
+trap '' TERM
+trap '' QUIT
+
 echo "Now running..."
+
 # A one step copy, run, cleanup!
+# The /bin/kill -9 -$$; line is there to make sure no processes are left behind if the
+# root_checkout.sh looses one... In testing, but appears kill returns non-zero in $?
+# actually it's probably the bash process returning the non-zero, but the next test
+# appears to succeed if we enter _rm_exit(), which is what we want. 
+# We use ssh -x so that during testing FowardX11=no is forced so that zmap_test_suite.sh
+# doesn't try to use the forwarded X11 connection, which will be the user's own not zmap's
 cat $CVS_CHECKOUT_SCRIPT | ssh zmap@$SRC_MACHINE '/bin/bash -c "\
 function _rm_exit                       \
 {                                       \
