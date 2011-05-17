@@ -610,7 +610,9 @@ TAR_FILE=$(pwd)/Complete_build.tar.gz
 # add it to list of files to remove on exit
 zmap_edit_variable_add FILES_TO_REMOVE $TAR_FILE
 
-tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
+zmap_message_out "About to do: tar -zcf$TAR_FILE $zmap_tmp_dir"
+#tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
+tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
 
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
     zmap_tar_old_releases $ZMAP_RELEASES_DIR

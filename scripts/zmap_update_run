@@ -34,32 +34,34 @@ RC=0
 git_branch='origin'
 
 
+echo
+
 # Update this directory from git repository.
 #
-echo
 echo "Updating current directory from git $git_branch"
+echo "==============================================="
 git pull $git_branch || message_exit "git pull failed"
-echo
-echo
+echo "==============================================="
+
 
 # If a program was specified then get hold of it's name and args.
 #
 if (( $# != 0 )) ; then
 
+  echo
+
   prog=$1
   shift
   args=$*
 
-  echo
+
   echo "Running '$prog' with args: '$args'"
-
+  echo"==============================================="
   eval $prog $args  ||  message_exit "$prog failed"
-
-  echo
-  echo
+  echo"==============================================="
 
 fi
 
-
+echo
 
 exit $RC
