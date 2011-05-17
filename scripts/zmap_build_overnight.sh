@@ -23,7 +23,6 @@ trap '' TERM
 trap '' QUIT
 
 
-
 RC=0
 
 # ================== CONFIG ================== 
@@ -36,7 +35,7 @@ BASE_DIR=~zmap
 SRC_MACHINE=tviewsrv
 
 # CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
-CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
+CVS_CHECKOUT_SCRIPT=$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts/build_bootstrap.sh
 
 # Output place for build
 BUILDS_DIR=$BASE_DIR/BUILDS
@@ -57,7 +56,7 @@ OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
 
 
 
-# ================== MAIN PART ================== 
+# ================== MAIN PART ==================
 
 MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 
@@ -68,22 +67,26 @@ fi
 mkdir -p $OUTPUT
 rm -f $GLOBAL_LOG
 
+
+# DISABLED...NOT REALLY CORRECT ANYWAY..........
+#
 # Errors before here only end up in stdout/stderr
 # Errors after here should be mailed to $ERROR_RECIPIENT
-if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
-    old_dir=$(pwd)
-    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
-    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
-    cd $new_dir
-    export CVS_RSH=ssh
-    cvs update -C $up2date || { 
-	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
-	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
-	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
-	exit 1; 
-    }
-    cd $old_dir
-fi
+#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
+#    old_dir=$(pwd)
+#    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
+#    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
+#    cd $new_dir
+#    export CVS_RSH=ssh
+#    cvs update -C $up2date || { 
+#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
+#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
+#	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+#	exit 1; 
+#    }
+#    cd $old_dir
+#fi
+
 
 # A one step copy, run, cleanup!
 # The /bin/kill -9 -$$; line is there to make sure no processes are left behind if the
