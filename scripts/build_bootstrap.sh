@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # This file get run on the $SRC_MACHINE as checkout.sh from cron.sh
