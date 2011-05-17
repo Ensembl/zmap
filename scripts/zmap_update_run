@@ -1,9 +1,10 @@
 #!/bin/bash
 #
-# Script to update this scripts directory and run a build script.
+# Script to update this scripts directory and optionally run a build script.
 #
-# NOTE that we assume that build scripts are special in that we won't
-# have branches of them, i.e. they will be the same in _ALL_ branches.
+# NOTE that this script assumes that you want to use the build scripts
+# scripts in the master copy. If you are developing different versions
+# of the scripts then don't run this script !
 #
 
 
@@ -35,10 +36,11 @@ git_branch='origin'
 
 # Update this directory from git repository.
 #
+echo
 echo "Updating current directory from git $git_branch"
 git pull $git_branch || message_exit "git pull failed"
-
-
+echo
+echo
 
 # If a program was specified then get hold of it's name and args.
 #
@@ -48,9 +50,14 @@ if (( $# != 0 )) ; then
   shift
   args=$*
 
+  echo
   echo "Running '$prog' with args: '$args'"
 
   eval $prog $args  ||  message_exit "$prog failed"
+
+  echo
+  echo
+
 fi
 
 
