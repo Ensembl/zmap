@@ -58,6 +58,11 @@ CVS_MODULE=ZMap
 CVS_ROOT=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap"
 CVS_RSH="ssh"
 
+
+# needs to parametrised and passed in to this script.
+GIT_BRANCH='develop'
+
+
 export CVS_ROOT CVS_RSH
 
 if [ "x$SCRIPT_NAME" == "x" ]; then
@@ -136,10 +141,14 @@ if [ "x$gen_checkout_script" != "x" ]; then
 #
 #    _checkout_message_out "done a cvs checkout"
 
-    _checkout_message_out "Running git clone zmap.git"
-    git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $CVS_MODULE.master
     MASTER_SRC_DIR=$CVS_MODULE.master
-    _checkout_message_out "done a git clone"
+
+    # clone the zmap repository and switch to named branch.
+    _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
+    git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
+
+    _checkout_message_out "switching to git branch $GIT_BRANCH"
+    ( cd $MASTER_SRC_DIR ; git checkout $GIT_BRANCH )
 
   else
  
