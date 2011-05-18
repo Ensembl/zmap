@@ -35,29 +35,26 @@ RC=0
 
 echo
 
+
 # Update this directory from git repository.
 #
-echo "Updating current directory from git $git_branch"
-echo "==============================================="
+echo "============= Starting update of current directory from git"
 git pull || message_exit "git pull failed"
-echo "==============================================="
+echo "============= Finished update"
 
 
 # If a program was specified then get hold of it's name and args.
 #
 if (( $# != 0 )) ; then
 
-  echo
-
   prog=$1
   shift
   args=$*
 
-
-  echo "Running '$prog' with args: '$args'"
-  echo "==============================================="
+  echo
+  echo "============= Started '$prog' with args: '$args'"
   eval $prog $args  ||  message_exit "$prog failed"
-  echo "==============================================="
+  echo "============= Finished '$prog'"
 
 fi
 
