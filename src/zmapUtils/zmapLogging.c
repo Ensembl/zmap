@@ -158,7 +158,7 @@ gboolean zMapLogCreate(char *logname)
 
   zMapAssert(!log) ;
 
-#if MH17_debug_foo_canvas
+#if 1 //MH17_debug_foo_canvas
 extern void (*foo_log_stack)(void);
 extern void (*foo_timer)(char *, char *, char *);
 
