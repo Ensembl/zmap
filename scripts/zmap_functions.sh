@@ -148,24 +148,36 @@ function zmap_goto_cvs_module_root
     fi
 }
 
-# Usage: zmap_goto_cvs_module_root
-function zmap_goto_zmap_root
-{
-	LOCATION=$(pwd)
-	current=$(pwd)
-	zmap_message_out "Navigating out of $LOCATION"
-	while [ "x$LOCATION" != "xZMap" ];
-	  do
-	  zmap_message_out "Leaving $LOCATION."
-	  LOCATION=$(dirname $LOCATION)
-	  CVS_MODULE_LOCAL=$(basename $current)
-	  current=$(dirname $current)
-	  zmap_cd $current
-	done
 
-	CVS_MODULE=$(basename $LOCATION)
-	zmap_cd $CVS_MODULE_LOCAL
+# This is a bit of a hack to mimic behaviour/variables that were used with cvs.
+function zmap_goto_git_root
+{
+    path=$(pwd)
+    current=$(basename $path)
+
+    zmap_message_out "Navigating out of $path, currently at $current"
+
+    while [ "x$current" != "xZMap" ];
+      do
+
+      path=$(dirname $path)
+
+      current=$(basename $path)
+
+      # zmap_message_out "Now at $path and $current"
+
+    done
+
+    zmap_cd $path
+
+    if ! [ -d .git ]; then 
+	zmap_message_exit "Failed to find .git directory, not in git clone dir"
+    fi
+
+    CVS_MODULE=$current
+    CVS_MODULE_LOCAL=$current
 }
+
 
 # Usage: zmap_dump_environment <filename>
 function zmap_dump_environment

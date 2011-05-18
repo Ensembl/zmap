@@ -134,7 +134,8 @@ fi
 zmap_cd $BASE_DIR
 
 # We can then go to the correct place
-zmap_goto_cvs_module_root
+#zmap_goto_cvs_module_root
+zmap_goto_git_root
 
 # Get the path of some files
 ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP=$(find . -name $ZMAP_RELEASE_NOTES_TIMESTAMP | grep -v CVS)

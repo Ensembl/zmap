@@ -1,11 +1,19 @@
 #!/bin/bash
 #
-# Runs the cvs2cl tool (available from http://www.red-bean.com/cvs2cl/) to give
-# changes in all the directories we are interested in.
+# Extracts changes made to code repositories into a change file for cvs or
+# git repositories.
 #
+#
+# - for cvs runs the cvs2cl tool (available from http://www.red-bean.com/cvs2cl/) 
+# to give changes in all the directories we are interested in.
 # Note that you can get help on cvs2cl using:   "perldoc cvs2cl"
 #
-# Script should be invoked like this: cvschanges '2004-03-01<2004-04-01' target_dir
+#
+# For git just uses the native git log command.
+#
+#
+# Script should be invoked like this:
+#                 zmap_cvs_changes '2004-03-01<2004-04-01' target_dir
 #
 # Some day I will add user friendly options to do months automatically....note from
 # the above that you need to include the first day of the _next_ month to get all of
@@ -85,10 +93,15 @@ while getopts ":aszo:d:e:t:" opt ; do
          change_suffix=$cvs
          changes_filename="$cvs.$changename" ;;
     z  ) cvs="zmap"
-         export CVSROOT=':ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap'
+         git_dir=~zmap/BUILD.DEVELOPMENT/ZMap
          dirs=$zmap_dirs
          change_suffix=$cvs
          changes_filename="$cvs.$changename" ;;
+#    z  ) cvs="zmap"
+#         export CVSROOT=':ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap'
+#         dirs=$zmap_dirs
+#         change_suffix=$cvs
+#         changes_filename="$cvs.$changename" ;;
     o  ) filename_set=$OPTARG ;;
     d  ) start_date=$OPTARG;;
     e  ) end_date=$OPTARG;;
@@ -116,7 +129,7 @@ changes_file="$changes_dir/$changes_filename"
 zmap_message_out "Getting changes for $cvs..."
 
 
-if [[ $cvs == "acedb" || $cvs == "zmap" ]] ; then
+if [[ $cvs == "acedb" ]] ; then
     # Need to make sure the date stuff is passed correctly to cvs, format must be:
     #
     # cvs2cl.pl  -l "-d'2004-03-01<2004-04-01'"  [other args]

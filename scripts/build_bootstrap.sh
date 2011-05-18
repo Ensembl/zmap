@@ -157,8 +157,8 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "just doing a copy"
   fi
 
-  _checkout_message_out "cp -r $src_dir $CVS_MODULE"
-  cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $src_dir"
+  _checkout_message_out "About to  cp -r $MASTER_SRC_DIR $CVS_MODULE"
+  cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $MASTER_SRC_DIR"
 fi
 
 
