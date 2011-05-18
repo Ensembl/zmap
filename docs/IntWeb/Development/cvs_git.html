@@ -351,5 +351,54 @@ git tag -am "tag comment" tagname
 <h3>Intro</h3>
 <p>Git-flow is an add on package that allows easy maintainance of development production and feature repositories/clones.See <a href="http://jeffkreeftmeijer.com/2010/why-arent-you-using-git-flow/">here</a> for a brief description and sales pitch.
 </p>
+<p>There are no doubt many way to work with git and we choose a few procedures that work for us.
+</p>
 
+<h3>Creating branches locally and sharing these via the remote repository</h3>
+<p>
+From a fresh git repository on git.internal.sanger.ac.uk we can create a local clone as above.  In the local clone we can create new branches:
+<pre>
+> git branch develop
+> git branch production
+</pre>
+and then push these to the remote (git.internal.sanger.ac.uk):
+<pre>
+> git push origin develop
+> git push origin production
+</pre>
+after which we can see these from another clone:
+<pre>
+> git branch -a
+  develop
+  master
+* production
+  remotes/origin/HEAD -> origin/master
+  remotes/origin/develop
+  remotes/origin/master
+  remotes/origin/production
+</pre>
+From another clone we would need to do:
+<pre>
+> git pull origin
+</pre>
+to see the branches locally, or we could check them out.
+</p>
+
+<h3>Using git flow</h3>
+<p>We set up git flow to create feature branches from develop and can create a new feature branch like this:
+<pre>
+> git flow feature start my_thing
+</pre>
+then edit some files, and commit them.
+</p>
+<p> After committing the files we can switch branches using (eg):
+<pre>
+> git checkout feature/BAM
+</pre>
+which will change all the files as needed. <b>NOTE</b> that there appears to be a bug in git flow in that after creating a new feature branch and editing a file then git checkout will switch branches but not change the files. The files are flagged as modified, so that gives us some warning.  After doing a commit the git checkout will refuse to switch if changes are pending.
+'git add' does not affect this, you must commit a file first.  It;s possible the bug is in plain git of course!
+</p>
+<h3>Updating documentation</h3>
+<p>Non feature specific documentation should be updated using the branch develop, which will allow it to be pushed/merged into the remote repository easily.
+</p>
 </fieldset>
