@@ -377,7 +377,7 @@ after which we can see these from another clone:
   remotes/origin/master
   remotes/origin/production
 </pre>
-From another clone we would nned to do:
+From another clone we would need to do:
 <pre>
 > git pull origin
 </pre>
@@ -385,7 +385,7 @@ to see the branches locally, or we could check them out.
 </p>
 
 <h3>Using git flow</h3>
-<p>We set up git flow to create feature branches from develop and can creta e a new feature branch like this:
+<p>We set up git flow to create feature branches from develop and can create a new feature branch like this:
 <pre>
 > git flow feature start my_thing
 </pre>
@@ -395,10 +395,10 @@ then edit some files, and commit them.
 <pre>
 > git checkout feature/BAM
 </pre>
-which will change all the files as needed. <b>NOTE</b> that there appears to be a but in git flow in that after creating a new feature branch and editing a file then git checkout will switch branches but not change the files. The files are flagged as modified, so that gives us some warning.  After doing a commit the git checkout will refuse to switch if changes are pending.
+which will change all the files as needed. <b>NOTE</b> that there appears to be a bug in git flow in that after creating a new feature branch and editing a file then git checkout will switch branches but not change the files. The files are flagged as modified, so that gives us some warning.  After doing a commit the git checkout will refuse to switch if changes are pending.
 'git add' does not affect this, you must commit a file first.  It;s possible the bug is in plain git of course!
-
+</p>
 <h3>Updating documentation</h3>
-<p>Non feature specific documentation should be updated using the brach develop, which will allow it to be pushed/merged into the remote repository easily.
+<p>Non feature specific documentation should be updated using the branch develop, which will allow it to be pushed/merged into the remote repository easily.
 </p>
 </fieldset>
