@@ -259,8 +259,8 @@ sub cvs_commit{
 
     print STDERR "current directory '".getcwd()."'\n";
 
-    system($sysadd) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
-    system($syscommit) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
+    system($sysadd) == 0 or die "ERROR $0: Couldn't do '$sysadd'\n";
+    system($syscommit) == 0 or die "ERROR $0: Couldn't do '$syscommit'\n";
 }
 
 1;
