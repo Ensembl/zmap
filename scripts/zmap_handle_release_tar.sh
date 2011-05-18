@@ -66,7 +66,7 @@ function zmap_untar_file
 
 	if [ $? != 0 ]; then
 	    zmap_cd /tmp
-#	    rm -rf $untar_tmp
+	    rm -rf $untar_tmp
 	    zmap_message_exit "Failed to untar $package"
 	else
 	    package_dir=$(ls)

@@ -31,7 +31,6 @@ function message_exit
 
 
 RC=0
-git_branch='origin'
 
 
 echo
@@ -40,7 +39,7 @@ echo
 #
 echo "Updating current directory from git $git_branch"
 echo "==============================================="
-git pull $git_branch || message_exit "git pull failed"
+git pull || message_exit "git pull failed"
 echo "==============================================="
 
 
@@ -56,9 +55,9 @@ if (( $# != 0 )) ; then
 
 
   echo "Running '$prog' with args: '$args'"
-  echo"==============================================="
+  echo "==============================================="
   eval $prog $args  ||  message_exit "$prog failed"
-  echo"==============================================="
+  echo "==============================================="
 
 fi
 

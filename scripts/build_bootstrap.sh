@@ -611,8 +611,8 @@ TAR_FILE=$(pwd)/Complete_build.tar.gz
 zmap_edit_variable_add FILES_TO_REMOVE $TAR_FILE
 
 zmap_message_out "About to do: tar -zcf$TAR_FILE $zmap_tmp_dir"
-#tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
-tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
+tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
+#tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
 
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
     zmap_tar_old_releases $ZMAP_RELEASES_DIR
@@ -627,17 +627,17 @@ if [ "x$RELEASE_LOCATION" == "x" ]; then
 fi
 
 
-#$SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
-#    zmap_message_rm_exit "Failed to release what we've built here today."
 $SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
-    zmap_message_err "Failed to release what we've built here today."
+    zmap_message_rm_exit "Failed to release what we've built here today."
+#$SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
+#    zmap_message_err "Failed to release what we've built here today."
 
 
 
-#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-#    $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_RELEASE_LEVEL || \
-#	zmap_message_rm_exit "Failed to update symlink"
-#fi
+if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+    $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_RELEASE_LEVEL || \
+	zmap_message_rm_exit "Failed to update symlink"
+fi
 
 
 if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
@@ -655,10 +655,11 @@ if [ "x$ZMAP_MASTER_REMOVE_FOLDER" == "x$ZMAP_TRUE" ]; then
     rm -rf $zmap_tmp_dir || zmap_message_rm_exit "Failed to remove $zmap_tmp_dir"
 fi
 
+
 # And the tar file
-#rm -f $TAR_FILE
+rm -f $TAR_FILE
 # remove it from list of files to remove on exit
-#zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
+zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
 
 # N.B. We now have no $SCRIPTS_DIR
 
