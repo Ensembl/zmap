@@ -31,7 +31,7 @@ function message_exit
 
 
 RC=0
-git_branch='origin'
+git_branch='develop'
 
 
 echo
