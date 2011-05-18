@@ -59,8 +59,14 @@ if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
 fi
 
-mkdir -p $OUTPUT
+
+
 rm -f $GLOBAL_LOG
+
+
+
+mkdir -p $OUTPUT
+
 
 
 
