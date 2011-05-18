@@ -398,4 +398,7 @@ then edit some files, and commit them.
 which will change all the files as needed. <b>NOTE</b> that there appears to be a but in git flow in that after creating a new feature branch and editing a file then git checkout will switch branches but not change the files. The files are flagged as modified, so that gives us some warning.  After doing a commit the git checkout will refuse to switch if changes are pending.
 'git add' does not affect this, you must commit a file first.  It;s possible the bug is in plain git of course!
 
+<h3>Updating documentation</h3>
+<p>Non feature specific documentation should be updated using the brach develop, which will allow it to be pushed/merged into the remote repository easily.
+</p>
 </fieldset>
