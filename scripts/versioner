@@ -256,7 +256,7 @@ sub cvs_tag{
 
 #    my $sys = "cvs tag -c -F $tag >/dev/null";
 
-    my $systag = "git tag -a $tag -m $tag >/dev/null";
+    my $systag = "git tag -a -m $tag $tag >/dev/null";
     my $syspush = "git push --tags" ;
 
 
