@@ -409,4 +409,63 @@ which will change all the files as needed. <b>NOTE</b> that there appears to be 
 <p>The build system generates a lot of makefiles via bootstrap and runconfig and these are untracked. Switching branches may require running these again.
 </p>
 
+
+<h3>Here are some notes on git flow usage from the git flow downloads page</h3>
+
+
+<h4>Typical usage:</h4>
+
+<pre>
+Initialization
+
+To initialize a new repo with the basic branch structure, use:
+
+    git flow init
+
+This will then interactively prompt you with some questions on which branches
+you would like to use as development and production branches, and how you would
+like your prefixes be named. You may simply press Return on any of those
+questions to accept the (sane) default suggestions.
+
+
+Creating feature/release/hotfix/support branches
+
+    * To list/start/finish feature branches, use:
+
+        git flow feature
+        git flow feature start &lt;name&gt; [&lt;base&gt;]
+        git flow feature finish &lt;name&gt;
+
+      For feature branches, the &lt;base&gt; arg must be a commit on develop.
+
+
+    * To list/start/finish release branches, use:
+
+        git flow release
+        git flow release start &lt;release&gt; [&lt;base&gt;]
+        git flow release finish &lt;release&gt;
+
+      For release branches, the &lt;base&gt; arg must be a commit on develop.
+
+
+    * To list/start/finish hotfix branches, use:
+
+        git flow hotfix
+        git flow hotfix start &lt;release&gt; [&lt;base&gt;]
+        git flow hotfix finish &lt;release&gt;
+
+      For hotfix branches, the &lt;base&gt; arg must be a commit on master.
+
+
+    * To list/start support branches, use:
+
+        git flow support
+        git flow support start &lt;release&gt; &lt;base&gt;
+
+      For support branches, the &lt;base&gt; arg must be a commit on master.
+</pre>
+
+
+
+
 </fieldset>
