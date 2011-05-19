@@ -324,11 +324,42 @@ git push origin         to push our changes to origin (any conflicts must be res
 
 
 <h3>Tagging a release/build</h3>
-<p>Tag a release using the 'git tag' command.  Use the -a option so that you get an annotated tag (otherwise Git will create a 'lightweight' tag, which is not so useful - <a href="http://www.rockstarprogrammer.org/post/2008/oct/16/git-tag-does-wrong-thing-default/">this post</a> explains why).
+
+<p>Tag a release using the 'git tag' command.  Use the -a option so that you
+get an annotated tag (otherwise Git will create a 'lightweight' tag, which is
+not so useful -
+<a href="http://www.rockstarprogrammer.org/post/2008/oct/16/git-tag-does-wrong-thing-default/">this post</a>
+explains why).
+
 <pre>
 git tag -am "tag comment" tagname
 </pre>
 </p>
+
+
+<h3>Push/Pull and tags</h3>
+
+<p>By default when you issue a <b>git pull</b> you get the tags in the repository, when you do a
+<b>git push</b> tags you created in your clone are not by default passed to the repository.
+To get the tags into the repository you need to the --tags option:</p>
+
+<pre>
+
+Tag your clone and push the tag to the repository:
+
+git pull
+git tag -a -m "your reason for tag" YOUR_TAG
+git push --tags
+
+
+Get any tags from the repository:
+
+git pull
+
+</pre>
+
+
+
 
 <h3>How are tags combined?</h3>
 <p>man git-merge reveals how branches are combined and we need to know the converse - how to clone a previous version of a branch before the merge.
@@ -346,17 +377,121 @@ git tag -am "tag comment" tagname
 
 </fieldset>
 
+
 <a name="gitflow"></a>
-<fieldset><legend>Git Flow - managing  development and release streams</legend>
+<h2>Git Flow - managing  development and release streams</h2>
+
 <h3>Intro</h3>
-<p>Git-flow is an add on package that allows easy maintainance of development production and feature repositories/clones.See <a href="http://jeffkreeftmeijer.com/2010/why-arent-you-using-git-flow/">here</a> for a brief description and sales pitch.
-</p>
-<p>There are no doubt many way to work with git and we choose a few procedures that work for us.
-</p>
+
+<p>Git-flow is an add on package that allows easy maintainance of development
+production and feature repositories/clones.See
+<a href="http://jeffkreeftmeijer.com/2010/why-arent-you-using-git-flow/">here</a>
+for a brief description and sales pitch.  </p>
+
+<p>There are no doubt many way to work with git and we choose a few procedures
+that work for us.</p>
+
+
+<h3>Initialising the repository and your clone of the repository</h3>
+
+<p>The <b>git flow init</b> command is advertised as being able to:</p>
+
+<ul>
+  <li>Set up a new repository
+  <li>Add branches to an existing repository
+  <li>Initialise a cloned repository
+</ul>
+
+<p>We used 2) and 3) and it does not seem to work smoothly. You have to create
+the production and development branches in your local clone yourself otherwise
+the command terminates, it doesn't seem to cope that easily with adding them to
+an existing repository and you seem to end up with a redundant "master" branch.</p>
+
+<p>Experiments show that the command does in fact work cleanly if you follow
+the following sequence:</p>
+
+<pre>
+# Create an empty repository which gets called '.git'
+&gt; git flow init
+Initialized empty Git repository in /nfs/users/nfs_e/edgrif/CHECKOUT/GIT_TEST/.git/
+No branches exist yet. Base branches must be created now.
+Branch name for production releases: [master] production
+Branch name for "next release" development: [develop] 
+
+How to name your supporting branch prefixes?
+Feature branches? [feature/] 
+Release branches? [release/] 
+Hotfix branches? [hotfix/] 
+Support branches? [support/] 
+Version tag prefix? [] V_
+
+
+# clone this repostiory:
+&gt; git clone ./.git my_git
+Cloning into my_git...
+done.
+
+
+# This produces a nice clean structure with develop as the current branch:
+&gt; git branch -a
+* develop
+  remotes/origin/HEAD -> origin/develop
+  remotes/origin/develop
+  remotes/origin/production
+
+
+# Before using git flow on your clone make sure you have a local "production" branch by checking out "production"
+&gt; git checkout production
+Branch production set up to track remote branch production from origin.
+Switched to a new branch 'production'
+
+&gt; git branch -a
+  develop
+* production
+  remotes/origin/HEAD -> origin/develop
+  remotes/origin/develop
+  remotes/origin/production
+
+
+# Now run git flow init to set up branching names/structure <b>exactly</b> as you did when
+# you set up the repository
+&gt; git flow init
+
+Which branch should be used for bringing forth production releases?
+   - develop
+   - production
+Branch name for production releases: [production] 
+
+Which branch should be used for integration of the "next release"?
+   - develop
+Branch name for "next release" development: [develop] 
+
+How to name your supporting branch prefixes?
+Feature branches? [feature/] 
+Release branches? [release/] 
+Hotfix branches? [hotfix/] 
+Support branches? [support/] 
+Version tag prefix? []
+
+
+# You end up with the same structure and branch names.
+&gt; git branch -a
+* develop
+  production
+  remotes/origin/HEAD -> origin/develop
+  remotes/origin/develop
+  remotes/origin/production
+
+
+# Now you can add files to your clone and push to the repository.
+</pre>
+
 
 <h3>Creating branches locally and sharing these via the remote repository</h3>
-<p>
-From a fresh git repository on git.internal.sanger.ac.uk we can create a local clone as above.  In the local clone we can create new branches:
+
+<p> From a fresh git repository on git.internal.sanger.ac.uk we can create a
+local clone as above.  In the local clone we can create new branches:
+
 <pre>
 > git branch develop
 > git branch production
@@ -398,6 +533,7 @@ then edit some files, and commit them.
 which will change all the files as needed. <b>NOTE</b> that there appears to be a bug in git flow in that after creating a new feature branch and editing a file then git checkout will switch branches but not change the files. The files are flagged as modified, so that gives us some warning.  After doing a commit the git checkout will refuse to switch if changes are pending.
 'git add' does not affect this, you must commit a file first.  It's possible the bug is in plain git of course!
 </p>
+
 <h3>Updating documentation</h3>
 <p>Non feature specific documentation should be updated using the branch develop, which will allow it to be pushed/merged into the remote repository easily.
 </p>
