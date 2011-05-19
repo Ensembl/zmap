@@ -7,12 +7,12 @@
 <p>
 </p>Especially at low zoom levels high volume columns are displayed with many features overlapping with the result that most are not visible despite being drawn on the canvas.  Experiments with <a href="Design_notes/notes/canvas_tweaks.shtml#summarise">filtering out invisible features</a> from the display while still presenting the same picture show that improvements in speed by a factor of 20x are realistic.
 </p>
-<p>Features displayed in low resolutions are not very useful to annotators - the display at low zoom levels serves mainly to show where features are and a denisity plot would give more information - as mentioned above overlapping features are not visible and help no-one.  These kind of display have been requested specifically for <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> data.
-</p>
-<h3>GC content</h3>
-<p>A related requirement is th show GC content which is a rolling average calculated from the DNA sequence and this can be displayed as a histogram or wiggle plot.
+<p>Features displayed in low resolutions are not very useful to annotators - the display at low zoom levels serves mainly to show where features are and a density plot would give more information - as mentioned above overlapping features are not visible and help no-one.  These kinds of display have been requested specifically for <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> data.
 </p>
 
+<h3>GC content</h3>
+<p>A related requirement is to show <a href="Design_notes/notes/density.shtml">GC content</a> which is a rolling average calculated from the DNA sequence and this can be displayed as a histogram or wiggle plot.
+</p>
 </fieldset>
 
 <fieldset><legend>Display output</legend>
@@ -29,77 +29,105 @@
 <p>
 Typically the density scale will be chosen as logarithmic.
 </p>
-<p>Other browsers (eg GBrowse - server side web based) implement density plots by using pre-computed bins based on different zoom levels but this imposes a requirement on the data source.  Figures such as "a few minutes for 16k features" have been mentioned for this pre-computation and this is not a good option for Zmap.
+<p>Other browsers (eg GBrowse - server side web based) implement density plots by using pre-computed bins based on different zoom levels but this imposes a requirement on the data source.  Figures such as "a few minutes for 16k features" have been mentioned for this pre-computation and this is not a good option for ZMap - it would increase the data needed to display the initial view, and the intention is to make this as fast as possible.
 </p>
-<p>Previous dicsussions have focussed on producing a summary display in ZMap before loading large datasets and this also implies pre-computation of bins of data but there are some difficulties with this approach:
-<ul>
-<li> unless the bins are computed off-line (and updated whenever the data set is updated) then this would imply a <i>reduction</i> in speed.  Using the pipeServer model of data transport data is requested from an external source, processed into GFF and output directly to ZMap and obviously can be passed through on the fly. To compute bins of data volumes to be sent to ZMap first would require the whole data set to be received by the pipeServer script before sending any of it the ZMap; effectively it would take twice as long to load.
-<li> if bins are pre-computed then that requires the same extra function to be supported by many different data sources, or to be performed by the pipeServer interface scripts.  This introduces the possibility of faulty or non implemented function and also of unpredicatble delays (following database updates).
-<li> any external source or script would have to work in terms of fixed size bins relating either to a fraction of the sequence range or a fixed number of bases, and would have to provide several levels of these.  These would not map onto the ZMap display directly and there woudl be a technical problem to solve in terms of mapping a sequence range onto display pixels.  Supplying the external script with ZMap display paramters is not practical as users are likely to resize the ZMap window and also to zoom to different levels.
-</ul>
+<p>
 </p>
 </fieldset>
 
-<fieldset><legend>Implementing density plots in ZMap</legend>
-<h3>Configuration - styles</h3>
+<fieldset><legend>Implementing fixed style density plots in ZMap</legend>
+<p>Here we define how to display a coverage featureset as a density plot.  The data is supplied via GFF and includes start and end coordinates for the bins and a score which is the number of features in the bin.  Note that even though the display is likely to be log(score) we need the actual number so as to be able to combine bins as zoom level changes.
+</p>
 <p>Whether or not to produce a density plot will be determined by a column's style using some new parameters.
-A seperate style will be added for optional density mode displays and each normal features style will refer to this. It is also valid to define a featureset or column as a density plot regardless of the zoom level.
+A new mode (density) will be introduced which is automatically a graph mode display but allows bins to be combined.
+Density mode styles will trigger base features being re-processed into display data structures based on pixel boundaries.
+If multiple featuresets appear in a density column they will be combined into the same density display.
+</p>
+
+<h3>Configuration</h3>
+<p>
+<pre>
+[density-plot]
+mode=density
+graph-mode = heatmap | histogram | line  # default = heatmap
+graph-scale = log | linear        # default = log
+colours = normal fill border # default = fill white; border black
+# frame-colours are also possible according to frame mode
+</pre>
+For a heatmap the colours used will be calculated according to the scale and between the fill and border colours, with border being the maximum density.
+</p>
+<p>
+Other existing style parameters will be used in a density mode style:
+<pre>
+width =  pixels
+min-score = 0     # number of features for minimum score
+max-score = 2000  # number of features for max score
+
+min-mag =
+max-mag =
+</pre>
+Note that min-score and max-score define the number of steps in the display and also the behaviour of a heatmap - 0 will mean no features and displays as the fill colour and a single feature will be the next step up.
+</p>
+
+<h3>Bumping density plots</h3>
+<p>It is a requirement to bump a heatmap into a histogram and it is possible that other options could be asked for. We can introduce new bump modes and/or bump styles to achieve this.  Note that a lot of bump modes make little sense for binned data.
+</p>
+
+
+<h3>Implementation - drawing the plots</h3>
+
+<h4>Change of philosophy - virtual features</h4>
+<p>There are some problems with simply drawing bins as received:
+<ul>
+<li> It is easy to imagine in excess of 10k features in a column. if we have several of these then we have performance problems.
+<li> If we overlap bins at low zoom then we still see the maximum level (histograms and line plots) but for heatmaps we may miss data.
+<li> Bins may not map well to pixel boundaries.
+</ul>
+</p>
+
+<p>To avoid performance overheads due to large amount of data a single density plot canvas item will be added per column and this will handle the display and selection of all bins. Please note the following:
+<ul>
+<li>This item will cover the whole extent of the column, ie it will range from start to end coordinate of its parent, and will set the width of the column as the width of the widest bin.
+<li>It will be added transparently from the Item Factory when a source bin item is added to the canvas.
+<li>Each source bin itme added will be added to a data structure (a list) held by the density item but not added to the canvas directly.
+<li>The FToIHash will point to the real canvas item, for each source bin added (a many to one relationship)
+<li>On draw or zoom the density item will calculate a list of display bins, which will be based on pixel boundaries and may hold several source bins depending on zoom.  Initially we will use a simple GList for both the source and display bins, and if perfomance is an issue add on one or more layers of skip list to allow efficient lookup.  Note that each list is initially a GList, but the code will be written in such a way as to allow easy modification of this.
+<li>It will draw any section of the plot on expose, driving the GDK_Draw function from its internal display list.
+<li> For a wiggle plot a single GDK_PolyLine call will be used - there cannot be more than 1200 lines for this on current monitors.
+<li>For histograms and heatmaps rectangles will be drawn for each bin.
+<li>mouse and keyboard events will be handled and the relevant display or source bin used to extract the relevant information and respond as for individual features at present.
+</ul>
+</p>
+
+
+
+<h3>Other implementation issues</h3>
+<p> The window status bar, feature details window, and feature search dialog will all need tweaking to work well with density data.  In particular feature search makes no sense for density columns and the assumptions in the feature context FtoIHash such as 'each feature has exactly one corresponding canvas item' will be broken.
+</p>
+
+</fieldset>
+
+<fieldset><legend>Implementing low-zoom triggered density plots in ZMap</legend>
+<h4>(under construction)</h4>
+<p>
+A separate style will be added for optional density mode displays and each normal feature's style will refer to this (in a later implementation).
 </p>
 <p>Bumping the column will revert to using the normal style. The density style bump mode will be used to control whether or not this is allowed.
 </p>
-<p>A density mode style will automatically also be a graph mode style and graph-mode configuration will be used to drive the display. The difference between simple graph mode and density graph mode is that one used features and the other feature-frequencies per pixel.
+<p>A density mode style will automatically also be a graph mode style and graph-mode configuration will be used to drive the display. The difference between simple graph mode and density graph mode is that one uses features and the other feature-frequencies per pixel.
 </p>
-<p>Note that a column style may be set independantly of the included featuresets or can be inferred by merging the  featureset styles.  All featuresets in a column will be treated as one for the purposes of density plots.
+<p>Note that a column style may be set independantly of the included featuresets or can be inferred by merging the featureset styles.  All featuresets in a column will be treated as one for the purposes of density plots.
 (for example if we created a UniProt column then Swissprot and Trembl would be displayed in different colours as at present when displayed at high zoom but would be combined to create a single density plot.
 </p>
 <p>Note that although most of the relevant data consists of alignments some high volume data (eg ensembl_variation) are basic features and therefore these parameters must apply to all style modes.
 </p>
 
 <pre>
-[density-plot-trembl]
-mode=density
-graph-mode = heatmap | histogram | line  # default = heatmap
-graph-scale = log | linear        # default = linear
-colours = normal fill border # default = fill white; border black
-# frame-colours are also possible according to frame mode
-
 [trembl]
 density-style = density-plot-trembl
 </pre>
-For a heatmap the colours used will be calculated according to the scale and between the fill and border colours, with border being the maximum density.
-</p>
-<p>
-Existing style parameters will be used in a density mode style:
-<pre>
-width =  pixels
-min-score = 0     # number of features for minimum score
-max-score = 2000  # number of features for max score
 
-max-mag = num-features
-</pre>
-Note that min-score and max-score define the number of steps in the display and also the behaviour of a heatmap - 0 will mean no features and displays as the fill colour and a single feature will be the next step up.
-</p>
-
-<h4>TDB:</h4>
-<p>
-<ul>
-<li> go over <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> again and pay more attention to bumped and unbumped coverage displays.  What is the source data?
-</ul></p>
-
-<h3>Implementation - drawing the plots</h3>
-<h4>Change of philosophy - virtual features</h4>
-<p>Currently all displayed features are real and exist in the feature context. To preserve this significan design assumption it may be easiest to create a virtual column and create virtual features corresponding to the desity display at the current zoom level, where the bins for counting features correspond to vertical pixels.  Given a sorted list of features these can be calculated quite quickly.</p>
-<p>
-As the zoom level changes and we switch to the real data, we hide the virtual column ad display the real one.
-</p>
-<p> This process will be comapatable with denisty data provided externally that has biological significance eg Cage and DiTag data, where the tags are of necessity 20-40 bases long and cluster together.  Zmap can be provide with external features from a density featureset with a style set to match.
-</p>
-
-<h4>Implementation - drawing bins</h4>
-<p>The simplest way to draw a density plot will be to draw one feature (rectangle, no border) per vertical pixel. For a heatmap these bins will appear to merge if they are the same colour. It may be possible to merge such features for real but it's not clear there would be any benefit.  For minimum zoom we are looking at about 1000 features maximum which is not a great performance overhead.
-</p>
-
-<h4>Implementation - triggering density plot or normal features</h4>
+<h4>Implementation</h4>
 <p>Normally we would wish to display a density plot when the zoom level is such that features are not readily discernable due to overlap.  This is a) to give extra information and b) to implement a faster display.  Using the foo canvas we are limited to nominally 1000 pixels at minumum zoom and 30k pixels at maximum, but note that future developments may change this.  However we expect future technology to allow us to display significantly more features in less time.  We do wish to avoid drawing 30k density features - this would be missing the point of using these.  A solution would be to impose a maximum number of these in the style and increase the vertical size of the bins by whole numbers of pixesl as the xoom level increases.
 </p>
 <p>One way to decide when to switch between display modes would be the existing min and max zoom parameters in styles and this looks like a good place to start.  The disadvantage is that to achieve best results the style has to be set appropriately for the data and this is a trial &amp; error technique and will always be a compromise.
@@ -111,7 +139,11 @@ What is important is that there is a clear switch between one style and the othe
 </p>
 </fieldset>
 
+
+
+<a name="GC_content"></a>
 <fieldset><legend>GC content</legend>
+<h4>(needs to be reviewed, ref to density plots above)</h4>
 <h3>Not a density plot</h3>
 <p>GC content provides an easy way to implement wiggle plots as a graph mode feature whcih can later be used  in a density plot environment subject to configuration.  Note that they are defined as style mode = graph!
 </p>
