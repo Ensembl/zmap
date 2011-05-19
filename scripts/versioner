@@ -13,6 +13,10 @@ use Cwd qw(abs_path getcwd);
 use File::Basename;
 
 my $QUIET = 0;
+
+my $PROGNAME = basename($0) ;
+
+
 {
     my $checkout_dir = 'ZMap';
     sub checkout_dir{
@@ -35,7 +39,7 @@ my $QUIET = 0;
 
 	$checkout_dir = $path;
 
-        print STDERR "Using '" .checkout_dir() . "' as Checkout Directory.\n" unless $QUIET;
+        message_out("Using '" .checkout_dir() . "' as Checkout Directory.\n") unless $QUIET;
     }
 }
 
@@ -101,6 +105,12 @@ my $QUIET = 0;
 
     $VERSION_STR  = $VS_PREFIX . $VERSION_STR unless $version_only;
 
+
+    message_out("just testing") ;
+    exit 0 ;
+
+
+
     # ===================================================== #
     # Now do the work...
     set_checkout_dir($SRC, checkout_dir());
@@ -109,9 +119,7 @@ my $QUIET = 0;
 
     my $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
 
-    print STDERR "The CVS tag should be $cvs_tag. \n" unless $QUIET;
-
-    print "$cvs_tag\n";
+    message_out("Repository tag is set to: $cvs_tag.\n") unless $QUIET;
 
     cvs_tag(checkout_dir, $cvs_tag) if $do_tag;
 
@@ -135,7 +143,11 @@ my $QUIET = 0;
 	{
 	cvs_commit($version_path, "/") if $commit;
 
-	my $sys = "mv -f $version_path.backup $version_path";
+	# THIS HAS TO BE WRONG...it overwrites the new file with the old !
+	# my $sys = "mv -f $version_path.backup $version_path";
+	# system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
+
+	my $sys = "rm -f $version_path.backup";
 	system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 	}
       }
@@ -144,11 +156,11 @@ my $QUIET = 0;
 
     if ( $commit )
       {
-      print STDERR "Development Version is now $cvs_tag\n" unless $QUIET;
+      message_out("Development Version is now $cvs_tag\n") unless $QUIET;
       }
     else
       {
-      print STDERR "Local Version is now $cvs_tag, previous version in $version_path.backup\n" unless $QUIET;
+      message_out("Local Version is now $cvs_tag, previous version in $version_path.backup\n") unless $QUIET;
       }
 
 
@@ -162,6 +174,16 @@ my $QUIET = 0;
 # ================================================================== #
 #                      SUBS                                          #
 # ================================================================== #
+
+# dumb message func.
+sub message_out{
+    my ($msg) = @_;
+
+    print "[$PROGNAME] $msg\n" ;
+}
+
+
+
 
 # This _should_ safely find the $file in $path 
 # assuming checkout directory $name
@@ -178,13 +200,16 @@ sub find_file{
 # to logic in $rotate
 sub increment_numbers{
     my ($req, $file, $rotate) = @_;
-    my $bak   = "${file}.bak";
+    my $new_file   = "${file}.new";
     my @ppvar = values(%$req);
+
     return unless @ppvar;
+
     my $reg   = join("|", @ppvar);
-    
-    open(my $fhIN, "< $file") or die "ERROR $0: Couldn't open file '$file' : $! \n";
-    open(my $fhOUT, "> $bak") or die "ERROR $0: Couldn't open backup for file '$file': $! \n";
+
+
+    open(my $fhIN, "< $file") or die "ERROR $0: Couldn't open version file '$file' : $! \n";
+    open(my $fhOUT, "> $new_file") or die "ERROR $0: Couldn't open new version file '$file': $! \n";
     while(<$fhIN>){
         # look for ZMAP_{VERSION,RELEASE,UPDATE} NUMBER and increment number.
         # $rotate has logic for how we do this!
@@ -194,8 +219,9 @@ sub increment_numbers{
     close $fhIN;
     close $fhOUT;
 
+    # Replace old version file with new one.
     unlink $file;
-    rename $bak, $file;
+    rename $new_file, $file;
 
     return ;
 }
