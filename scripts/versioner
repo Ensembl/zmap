@@ -204,12 +204,12 @@ sub increment_numbers{
 # variables (present in $req) from the $file in $tag.
 sub make_cvs_tag{
     my ($file, $req, $tag) = @_;
-    
+
     my @ppvar = values(%$req);
     return unless @ppvar;
     my $reg   = join("|", @ppvar);
 
-    
+
     open(my $fhIN, "< $file") or die "ERROR $0: Couldn't open file '$file' : $! \n";
     while(<$fhIN>){
         s/^(\#define\s($reg))\s*(\d+)/$1 . " " .($3 + 1)/e;
@@ -230,14 +230,17 @@ sub cvs_tag{
 
 #    my $sys = "cvs tag -c -F $tag >/dev/null";
 
-    my $sys = "git tag -a $tag -m $tag >/dev/null";
+    my $systag = "git tag -a $tag -m $tag >/dev/null";
+    my $syspush = "git push --tags" ;
+
 
     chdir($co);
-    
+
     print STDERR "current directory '".getcwd()."'\n";
     print STDERR "*** Running $sys ***\n";
 
-    system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
+    system($systag) == 0 or die "ERROR $0: Couldn't do '$systag'\n";
+    system($syspush) == 0 or die "ERROR $0: Couldn't do '$syspush'\n";
 
 }
 
@@ -254,6 +257,7 @@ sub cvs_commit{
 
     my $sysadd = "git add $b >/dev/null";
     my $syscommit = "git commit -m '$0 run by ".(getpwuid($<))[0]."' $b >/dev/null";
+    my $syspush = "git push" ;
 
     chdir($d);
 
@@ -261,7 +265,10 @@ sub cvs_commit{
 
     system($sysadd) == 0 or die "ERROR $0: Couldn't do '$sysadd'\n";
     system($syscommit) == 0 or die "ERROR $0: Couldn't do '$syscommit'\n";
+    system($syspush) == 0 or die "ERROR $0: Couldn't do '$syspush'\n";
+
 }
+
 
 1;
 __END__
