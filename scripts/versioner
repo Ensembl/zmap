@@ -237,7 +237,7 @@ sub cvs_tag{
     chdir($co);
 
     print STDERR "current directory '".getcwd()."'\n";
-    print STDERR "*** Running $sys ***\n";
+    print STDERR "*** Running $systag ***\n";
 
     system($systag) == 0 or die "ERROR $0: Couldn't do '$systag'\n";
     system($syspush) == 0 or die "ERROR $0: Couldn't do '$syspush'\n";
