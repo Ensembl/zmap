@@ -269,6 +269,7 @@ typedef enum
 /* graph properties. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
 
 /* alignment properties */
@@ -312,27 +313,11 @@ typedef enum
  * form
  *          if (element)
  *            do_something ;
- * 
+ *
  * Many of the enums have an ordering that is relied on by various functions.
- * 
+ *
  *  */
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZMAP_STYLE_MODE_LIST(_)                                                                          \
-_(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
-_(ZMAPSTYLE_MODE_BASIC,         , "basic"        , "Basic box features "                           , "") \
-_(ZMAPSTYLE_MODE_ALIGNMENT,     , "alignment"    , "Usual homology structure "                     , "") \
-_(ZMAPSTYLE_MODE_TRANSCRIPT,    , "transcript"   , "Usual transcript like structure "              , "") \
-_(ZMAPSTYLE_MODE_RAW_SEQUENCE,  , "raw-sequence" , "DNA Sequence "                                 , "") \
-_(ZMAPSTYLE_MODE_PEP_SEQUENCE,  , "pep-sequence" , "Peptide Sequence "                             , "") \
-_(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "                                , "") \
-_(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
-_(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
-_(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
-_(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 #define ZMAP_STYLE_MODE_LIST(_)                                                                          \
 _(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
@@ -343,6 +328,7 @@ _(ZMAPSTYLE_MODE_SEQUENCE,      , "sequence"     , "DNA or Peptide Sequence "   
 _(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "                                , "") \
 _(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
 _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
+_(ZMAPSTYLE_MODE_DENSITY,       , "density"      , "Graphs of various types using binned data "    , "") \
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
@@ -407,7 +393,16 @@ ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
 #define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                           \
 _(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting. "           , "") \
 _(ZMAPSTYLE_GRAPH_LINE,      , "line"     , "Just points joining a line. ", "") \
+_(ZMAPSTYLE_GRAPH_HEATMAP,   , "heatmap"  , "Colour coded score. ", "") \
 _(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph."    , "")
+
+ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
+
+/* Specifies the style of graph. */
+#define ZMAP_STYLE_GRAPH_SCALE_LIST(_)                                           \
+_(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting. "           , "") \
+_(ZMAPSTYLE_GRAPH_LINEAR,      , "linear"   , "show data as given. ", "") \
+_(ZMAPSTYLE_GRAPH_LOG,   , "log"      , "convert data to log scale. ", "") \
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 

@@ -105,6 +105,21 @@ Note that min-score and max-score define the number of steps in the display and 
 <p> The window status bar, feature details window, and feature search dialog will all need tweaking to work well with density data.  In particular feature search makes no sense for density columns and the assumptions in the feature context FtoIHash such as 'each feature has exactly one corresponding canvas item' will be broken.
 </p>
 
+<h3>Effort needed</h3>
+<p>
+What needs to happen:
+<ul>
+<li> styles to define display parameters
+<li> implemement density canvas item (interface to canvas)... cut and paste
+<li> on display and zoom compute display bins
+<li> on expose draw a series of poly lines OTF or rectangles from the bins data for the exposed region
+<li> catch mouse click on column: show info on status bar: look up bin from canvas item...
+<li> catch double click: show feature dialog ?
+<li> patch feature serach to avoid density columns
+<li> resolve canvas_item->feature references
+</ul>
+</p>
+
 </fieldset>
 
 <fieldset><legend>Implementing low-zoom triggered density plots in ZMap</legend>
