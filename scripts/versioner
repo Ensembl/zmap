@@ -105,12 +105,6 @@ my $PROGNAME = basename($0) ;
 
     $VERSION_STR  = $VS_PREFIX . $VERSION_STR unless $version_only;
 
-
-    message_out("just testing") ;
-    exit 0 ;
-
-
-
     # ===================================================== #
     # Now do the work...
     set_checkout_dir($SRC, checkout_dir());
@@ -120,6 +114,8 @@ my $PROGNAME = basename($0) ;
     my $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
 
     message_out("Repository tag is set to: $cvs_tag.\n") unless $QUIET;
+
+    print "$cvs_tag\n";
 
     cvs_tag(checkout_dir, $cvs_tag) if $do_tag;
 
@@ -179,7 +175,7 @@ my $PROGNAME = basename($0) ;
 sub message_out{
     my ($msg) = @_;
 
-    print "[$PROGNAME] $msg\n" ;
+    print STDERR "[$PROGNAME] $msg\n" ;
 }
 
 
