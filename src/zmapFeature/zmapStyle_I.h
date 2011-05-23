@@ -67,6 +67,7 @@ typedef enum
     STYLE_PARAM_TYPE_3FRAME,              // ZMapStyle3FrameMode
     STYLE_PARAM_TYPE_SCORE,               // ZMapStyleScoreMode
     STYLE_PARAM_TYPE_GRAPH_MODE,          // ZMapStyleGraphMode
+    STYLE_PARAM_TYPE_GRAPH_SCALE,          // ZMapStyleGraphScale
     STYLE_PARAM_TYPE_BLIXEM,              // ZMapStyleBlixemType
     STYLE_PARAM_TYPE_GLYPH_STRAND,        // ZMapStyleGlyphStrand
     STYLE_PARAM_TYPE_GLYPH_ALIGN,         // ZMapStyleGlyphAlign
@@ -140,22 +141,6 @@ typedef struct _zmapFeatureTypeStyleClassStruct
 
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Enum -> String Decs */
-/* const char *zMapStyleMode2Str(ZMapStyleMode mode); */
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleMode2Str,            ZMapStyleMode);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyle3FrameMode2Str, ZMapStyle3FrameMode) ;
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleGraphMode2Str,       ZMapStyleGraphMode);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleGlyphMode2Str,       ZMapStyleGlyphMode);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourType2Str,      ZMapStyleColourType);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourTarget2Str,    ZMapStyleColourTarget);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleScoreMode2Str,       ZMapStyleScoreMode);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleBumpMode2Str,     ZMapStyleBumpMode);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /*! @} end of zmapstyles docs. */

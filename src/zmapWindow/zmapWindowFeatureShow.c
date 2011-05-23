@@ -748,7 +748,7 @@ GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
 
   if (show->xml_curr_notebook)
     zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
-    
+
   g_free(show) ;
 
   return(evidence) ;

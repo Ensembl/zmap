@@ -1710,8 +1710,10 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	  case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	    type = ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE;
 	    break;
+        case ZMAPSTYLE_MODE_GRAPH:
+          type = ZMAP_TYPE_WINDOW_GRAPH_FEATURE;
+          break
 	  case ZMAPSTYLE_MODE_BASIC:
-	  case ZMAPSTYLE_MODE_GRAPH:
 	  case ZMAPSTYLE_MODE_GLYPH:
 	  default:
 	    type = ZMAP_TYPE_WINDOW_BASIC_FEATURE;

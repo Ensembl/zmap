@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
@@ -124,11 +124,11 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class);
 
 
 static char *gtype_to_message_string(GType feature_any_gtype);
-static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
+static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id,
 					       GValue *value, GParamSpec *pspec);
-static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
+static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id,
 						GValue *value, GParamSpec *pspec);
-static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
+static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_id,
 					   GValue *value, GParamSpec *pspec);
 
 static gboolean invoke_get_func_valist(gpointer        user_data,
@@ -163,7 +163,7 @@ GType zMapFeatureDataGetType(void)
 
   if(type == 0)
     {
-      static const GTypeInfo info = 
+      static const GTypeInfo info =
 	{
 	  sizeof (zmapFeatureDataClass),
 	  (GBaseInitFunc) NULL,
@@ -176,18 +176,18 @@ GType zMapFeatureDataGetType(void)
 	  (GInstanceInitFunc)zmap_feature_data_init,
 	  NULL
 	};
-    
+
       type = g_type_register_static (G_TYPE_OBJECT,
 				     ZMAP_FEATURE_DATA_NAME,
-				     &info, 0);      
+				     &info, 0);
     }
 
   return type;
 }
 
 
-static void apply(GParamSpecPool *pool, const char *name, 
-		  const char *nick, const char *blurb, 
+static void apply(GParamSpecPool *pool, const char *name,
+		  const char *nick, const char *blurb,
 		  DataTypeForFeatures children)
 {
   GParamSpec *pspec;
@@ -239,10 +239,10 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
   if((pspec_pool = pspec_pool_G) == NULL)
     {
-      int apply_to_all[] = { 
+      int apply_to_all[] = {
 	14,				/* how many?  */
-	FEATURE_DATA_TYPE_FEATURE_CONTEXT, 
-	FEATURE_DATA_TYPE_FEATURE_ALIGNMENT,  
+	FEATURE_DATA_TYPE_FEATURE_CONTEXT,
+	FEATURE_DATA_TYPE_FEATURE_ALIGNMENT,
 	FEATURE_DATA_TYPE_FEATURE_BLOCK,
 	FEATURE_DATA_TYPE_FEATURE_FEATURESET,
 	FEATURE_DATA_TYPE_FEATURE,
@@ -267,12 +267,12 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct end         = { PROP_DATA_END,    G_TYPE_INT, apply_to_all };
       DataTypeForFeaturesStruct length      = { PROP_DATA_LENGTH, G_TYPE_INT, apply_to_all };
       DataTypeForFeaturesStruct strand      = { PROP_DATA_STRAND, G_TYPE_INT, apply_to_all };
-      
+
       DataTypeForFeaturesStruct cds_length  = { PROP_DATA_CDS_LENGTH,   G_TYPE_INT, apply_to_transcripts };
       DataTypeForFeaturesStruct utr5_length = { PROP_DATA_5_UTR_LENGTH, G_TYPE_INT, apply_to_transcripts };
       DataTypeForFeaturesStruct utr3_length = { PROP_DATA_3_UTR_LENGTH, G_TYPE_INT, apply_to_transcripts };
       DataTypeForFeaturesStruct locus       = { PROP_DATA_LOCUS,      G_TYPE_STRING, apply_to_transcripts };
-      
+
       DataTypeForFeaturesStruct query_start  = { PROP_DATA_QUERY_START,  G_TYPE_INT, apply_to_alignments };
       DataTypeForFeaturesStruct query_end    = { PROP_DATA_QUERY_END,    G_TYPE_INT, apply_to_alignments };
       DataTypeForFeaturesStruct query_length = { PROP_DATA_QUERY_LENGTH, G_TYPE_INT, apply_to_alignments };
@@ -290,7 +290,7 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeatures *table; /* and a pointer */
       const char *name, *nick, *blurb = NULL;
       int i;
-      
+
       pspec_pool = g_param_spec_pool_new(FALSE);
 
       table = &full_table[0];
@@ -333,7 +333,7 @@ static char *gtype_to_message_string(GType feature_any_gtype)
 
       for(i = ZMAPSTYLE_MODE_BASIC; i <= ZMAPSTYLE_MODE_GLYPH; i++)
 	{
-	  string_array[FEATURE_DATA_TYPE_FEATURE + (i << FEATURE_DATA_FEATURE_SHAPE_SHIFT)] = 
+	  string_array[FEATURE_DATA_TYPE_FEATURE + (i << FEATURE_DATA_FEATURE_SHAPE_SHIFT)] =
 	    g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr(i));
 	}
     }
@@ -346,7 +346,7 @@ static char *gtype_to_message_string(GType feature_any_gtype)
 
 
 
-static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
+static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id,
 					       GValue *value, GParamSpec *pspec)
 {
   gboolean result = FALSE ;
@@ -439,7 +439,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
   return result;
 }
 
-static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
+static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id,
 						GValue *value, GParamSpec *pspec)
 {
   gboolean result = FALSE;
@@ -469,7 +469,7 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
 	result = TRUE;
 
 	break;
-      }      
+      }
     default:
       result = FALSE;
       break;
@@ -478,7 +478,7 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
   return result;
 }
 
-static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
+static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_id,
 					   GValue *value, GParamSpec *pspec)
 {
   gboolean result;
@@ -623,9 +623,9 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
  * \details This makes ZMapFeatures kind of inside out
  * gobjects. ZMapFeatures are _NOT_ and should _NEVER_ be GObjects,
  * but it would be nice to have some of the functionality the GObject
- * code affords. Probably shouldn't be used in a loop! The code 
+ * code affords. Probably shouldn't be used in a loop! The code
  * inspects the feature and any supplied sub feature for the property
- * names supplied and fills in the pointers supplied just as 
+ * names supplied and fills in the pointers supplied just as
  * g_object_get would do.
  *
  * \param feature_any The ZMapFeatureAny feature to inspect.
@@ -635,9 +635,9 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
  * \return TRUE on success, FALSE on failure.
  */
 
-gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any, 
+gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
 			    ZMapFeatureSubPartSpan sub_feature,
-			    const gchar           *first_property_name, 
+			    const gchar           *first_property_name,
 			    ...)
 {
   ZMapFeature feature;
@@ -706,7 +706,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
   gboolean result = FALSE;
 
   name = first_property_name;
-  
+
   while (name)
     {
       GValue value = { 0, };
@@ -714,7 +714,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
       gchar *error;
 
       result = FALSE;
-      
+
       pspec = g_param_spec_pool_lookup (pspec_pool,
 					name,
 					pool_member_type,
@@ -738,14 +738,14 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 			 gtype_to_message_string(pool_member_type));
 	      break;
 	    }
-      
+
 	  g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
-	  
+
 	  if(get_func)
 	    result = (get_func)(user_data, pspec->param_id, &value, pspec);
-	  
+
 	  G_VALUE_LCOPY (&value, var_args, 0, &error);
-	  
+
 	  if (error)
 	    {
 	      g_warning ("%s: %s", G_STRFUNC, error);
@@ -753,7 +753,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 	      g_value_unset (&value);
 	      break;
 	    }
-	  
+
 	  g_value_unset (&value);
 	}
 
@@ -784,7 +784,7 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
   GParameter *params;
   const gchar *name;
   guint n_params = 0, n_alloced_params = 16;
-  
+
   if(!create_func)
     return return_pointer;
 
@@ -832,7 +832,7 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
 	  n_params++;
 	  name = va_arg (var_args, gchar*);
 	}
-      
+
       return_pointer = (create_func)(user_data, n_params, params);
 
       while (n_params--)

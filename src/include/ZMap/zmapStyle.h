@@ -162,6 +162,8 @@ typedef enum
 
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
+    STYLE_PROP_GRAPH_SCALE,
+    STYLE_PROP_GRAPH_DENSITY,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -268,6 +270,7 @@ typedef enum
 
 /* graph properties. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY   "graph-density"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
@@ -328,7 +331,6 @@ _(ZMAPSTYLE_MODE_SEQUENCE,      , "sequence"     , "DNA or Peptide Sequence "   
 _(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "                                , "") \
 _(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
 _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
-_(ZMAPSTYLE_MODE_DENSITY,       , "density"      , "Graphs of various types using binned data "    , "") \
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
@@ -400,11 +402,11 @@ ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
 /* Specifies the style of graph. */
 #define ZMAP_STYLE_GRAPH_SCALE_LIST(_)                                           \
-_(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting. "           , "") \
-_(ZMAPSTYLE_GRAPH_LINEAR,      , "linear"   , "show data as given. ", "") \
-_(ZMAPSTYLE_GRAPH_LOG,   , "log"      , "convert data to log scale. ", "") \
+_(ZMAPSTYLE_GRAPH_SCALE_INVALID,   , "invalid"  , "Initial setting. "           , "") \
+_(ZMAPSTYLE_GRAPH_SCALE_LINEAR,    , "linear"   , "show data as given. ", "") \
+_(ZMAPSTYLE_GRAPH_SCALE_LOG,       , "log"      , "convert data to log scale. ", "") \
 
-ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
+ZMAP_DEFINE_ENUM(ZMapStyleGraphScale, ZMAP_STYLE_GRAPH_SCALE_LIST);
 
 
 
@@ -608,6 +610,8 @@ typedef struct
   ZMapStyleGraphMode mode ;                         /*!< Graph style. */
 
   double baseline ;                                 /*!< zero level for graph.  */
+  ZMapStyleGraphScale scale;        // log or linear
+  gboolean density;                 // density plot: recalc bins on zoom & use whole column foo
 
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
 
@@ -860,6 +864,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2Mode,            ZMapStyleMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphScale,       ZMapStyleGraphScale) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
 //ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
@@ -875,6 +880,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapStyleMode2ExactStr,            ZMapStyleMode) 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColDisplayState2ExactStr, ZMapStyleColumnDisplayState) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyle3FrameMode2ExactStr, ZMapStyle3FrameMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphScale2ExactStr,       ZMapStyleGraphScale) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColourType) ;
 //ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
@@ -1065,6 +1071,8 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 #define zMapStyleBaseline(style)   (style->mode_data.graph.baseline)
+#define zMapStyleGraphMode(style)   (style->mode_data.graph.mode)
+#define zMapStyleDensity(style)   (style->mode_data.graph.density)
 
 gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag) ;
 gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag) ;

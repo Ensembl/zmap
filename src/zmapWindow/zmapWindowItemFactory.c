@@ -198,6 +198,7 @@ static void drawFeatureExon(FooCanvasItem *feature_item,
  * Static function tables for drawing features in various ways.
  */
 
+
 const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPSTYLE_MODE_INVALID,      invalidFeature},
   {ZMAPSTYLE_MODE_BASIC,        drawSimpleFeature},
@@ -518,6 +519,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 	    break;
 	  }
+
 
         case ZMAPSTYLE_MODE_TRANSCRIPT:
 	  {
@@ -2117,6 +2119,9 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
 
   return feature_item ;
 }
+
+
+
 
 /*!
  * \brief Accessory function for drawAlignFeature.

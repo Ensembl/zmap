@@ -131,7 +131,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
 	    case ZMAPSTYLE_MODE_BASIC:
 	    case ZMAPSTYLE_MODE_SEQUENCE:
-	    case ZMAPSTYLE_MODE_GRAPH:
+          case ZMAPSTYLE_MODE_GRAPH:
 	    case ZMAPSTYLE_MODE_GLYPH:
 	    case ZMAPSTYLE_MODE_TEXT:
 	      num_bytes = sizeof(ZMapWindowStatsBasicStruct) ;

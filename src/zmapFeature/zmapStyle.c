@@ -241,6 +241,12 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_GRAPH_BASELINE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,
             "graph baseline", "Sets the baseline for graph values.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.baseline),ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_SCALE, STYLE_PARAM_TYPE_GRAPH_SCALE, ZMAPSTYLE_PROPERTY_GRAPH_SCALE,
+            "graph-scale", "Graph Scale",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.scale) ,ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_DENSITY, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,
+            "graph-density", "Density plot",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.density) ,ZMAPSTYLE_MODE_GRAPH },
 
 
     { STYLE_PROP_ALIGNMENT_PARSE_GAPS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,
@@ -1646,6 +1652,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
   case STYLE_PARAM_TYPE_3FRAME:      return(sizeof(ZMapStyle3FrameMode)); break;
   case STYLE_PARAM_TYPE_SCORE:       return(sizeof(ZMapStyleScoreMode));  break;
   case STYLE_PARAM_TYPE_GRAPH_MODE:  return(sizeof(ZMapStyleGraphMode));  break;
+  case STYLE_PARAM_TYPE_GRAPH_SCALE: return(sizeof(ZMapStyleGraphScale));  break;
   case STYLE_PARAM_TYPE_BLIXEM:      return(sizeof(ZMapStyleBlixemType)); break;
   case STYLE_PARAM_TYPE_GLYPH_STRAND:return(sizeof(ZMapStyleGlyphStrand)); break;
   case STYLE_PARAM_TYPE_GLYPH_ALIGN: return(sizeof(ZMapStyleGlyphAlign)); break;
@@ -1723,6 +1730,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
     case STYLE_PARAM_TYPE_3FRAME:              // ZMapStyle3FrameMode
     case STYLE_PARAM_TYPE_SCORE:               // ZMapStyleScoreMode
     case STYLE_PARAM_TYPE_GRAPH_MODE:          // ZMapStyleGraphMode
+    case STYLE_PARAM_TYPE_GRAPH_SCALE:         // ZMapStyleGraphScale
     case STYLE_PARAM_TYPE_BLIXEM:              // ZMapStyleBlixemType
     case STYLE_PARAM_TYPE_GLYPH_STRAND:        // ZMapStyleGlyphStrand
     case STYLE_PARAM_TYPE_GLYPH_ALIGN:         // ZMapStyleGlyphAlign
@@ -1999,6 +2007,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_SCALE,     ZMapStyleGraphScale);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
@@ -2197,6 +2206,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
     STYLE_GET_PROP (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_SCALE     , ZMapStyleGraphScale);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign);
