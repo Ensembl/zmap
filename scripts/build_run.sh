@@ -87,7 +87,7 @@ usage="$PROGNAME [ -a <user_mail_id> -d -e -l <release_dir in BUILDS> -m -t -r -
 while getopts ":a:bdef:il:mrtuz:" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
-	b  ) BATCH='yes' ;
+	b  ) BATCH='yes' ;;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
 	e  ) ENSURE_UP_TO_DATE="yes" ;;
 	f  ) FEATURE_DIR=$OPTARG ;;
