@@ -4,7 +4,7 @@
 
 # Build zmap for all architectures specified in $ZMAP_BUILD_MACHINES.
 #
-# Builds/logs are in ONE_OFF.BUILD file/directory.
+# Builds/logs are in FEATURE_XXX.BUILD file/directory.
 #
 # Main Build Parameters:
 #
@@ -12,12 +12,6 @@
 #        Docs created        no
 #     Docs checked in        no
 #  
-
-
-
-trap '' INT
-trap '' TERM
-trap '' QUIT
 
 
 RC=0
@@ -34,35 +28,22 @@ else
 fi
 
 
-
-# ================== CONFIG ================== 
-# Configuration variables
-
-# where everything is located.
-BASE_DIR=~zmap
-
-# SRC_MACHINE= The machine to log into to start everything going
-SRC_MACHINE=tviewsrv
-
-# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
-CVS_CHECKOUT_SCRIPT=$BASE_DIR/prefix/scripts/build_bootstrap.sh
-
 # Output place for build
-BUILDS_DIR=$BASE_DIR/BUILDS.TEST
 BUILD_PREFIX="FEATURE_$DEST_DIR"
+OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
 
-# GLOBAL_LOG= The place to hold the log file
-GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
+ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
-# ERROR_RECIPIENT= Someone to email
-#ERROR_RECIPIENT=zmapdev@sanger.ac.uk
-ERROR_RECIPIENT=edgrif@sanger.ac.uk
 
+# I'm not sure this works any more.....
 # ENSURE_UP_TO_DATE= cvs update the directory where $CVS_CHECKOUT_SCRIPT is [ yes | no ]
 ENSURE_UP_TO_DATE=no
 
-# OUTPUT dir
-OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
+
+./build_run.sh -a $ERROR_RECIPIENT -e -f SRC_DIR -l $OUTPUT $BUILD_PREFIX || RC=1
+
+
+
 
 
 # ================== MAIN PART ==================

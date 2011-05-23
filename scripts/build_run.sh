@@ -13,8 +13,6 @@
 
 
 
-
-
 # Usage:    message_out "Your Message"
 function message_out
 {
@@ -122,22 +120,17 @@ GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 
 
 
-# plug together env. vars...
-#
-ENV_OPTIONS=''
-
-if [ -n "$FEATURE_DIR" ] ; then
-
-  ENV_OPTIONS="$ENV_OPTIONS ZMAP_MASTER_BUILD_COPY_DIR=$FEATURE_DIR"
-
-fi
-
-
 # Plug together options..........
 #
 
 # simple flags first...
 CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION"
+
+if [ -n "$FEATURE_DIR" ] ; then
+
+  CMD_OPTIONS="$CMD_OPTIONS -f $FEATURE_DIR"
+
+fi
 
 if [ -n "$RELEASE_LOCATION" ] ; then
 
@@ -160,6 +153,10 @@ fi
 
 
 
+
+
+
+
 if [ -z $BATCH ] ; then
 
   cat <<EOF
@@ -170,9 +167,7 @@ about to run build script '$CVS_CHECKOUT_SCRIPT' on '$SRC_MACHINE' (via ssh)
 
 build_prefix is '$BUILD_PREFIX'
 
-with ENV options '$ENV_OPTIONS'
-
-and command options '$CMD_OPTIONS'
+with command options '$CMD_OPTIONS'
 
 global output log is '$GLOBAL_LOG'
 
@@ -276,7 +271,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line   ; \
-'$ENV_OPTIONS' ./root_checkout.sh '$CMD_OPTIONS' || _rm_exit; \
+./root_checkout.sh '$CMD_OPTIONS' || _rm_exit; \
 :                                     ; \
 rm -f root_checkout.sh || exit 1;   \
 "' > $GLOBAL_LOG 2>&1

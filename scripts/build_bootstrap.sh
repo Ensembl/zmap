@@ -1,15 +1,58 @@
 #!/bin/bash
-
+#
 # This file get run on the $SRC_MACHINE as checkout.sh from cron.sh
-
+#
 # It may also be run as ./build_bootstrap.sh by a user possibly with arguments
-
+#
 # The logic is as follows. 
 # 1. Checkout a full copy of ZMap module from cvs
 # 2. possibly tag/version increment zmap version in cvs
 # 3. Do all the builds requested.
 #    This involves ssh to each host
 #    building docs on this machine?
+#
+#
+#
+
+
+# Provide a cleanup function to remove the gen_checkout_script and other tmp files.
+#
+function zmap_message_rm_exit
+{
+    zmap_message_err "Removing $FILES_TO_REMOVE"
+    rm -f $FILES_TO_REMOVE
+    zmap_message_exit "$@"
+}
+
+
+
+zmap_message_out "About to parse options: $*"
+
+# Get the options the user may have requested
+usage="$0 -d -t -r -u VARIABLE=VALUE"
+while getopts ":df:rtu" opt ; do
+    case $opt in
+	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
+	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
+	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
+	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
+	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
+	\? ) zmap_message_rm_exit "$usage"
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+# try to get rid of this as I think we no longer need it......
+# including VARIABLE=VALUE settings from command line
+if [ $# -gt 0 ]; then
+    eval "$*"
+fi
+
+
+
+
+
 
 # For use when developing so not every edit in the scripts dir needs a cvs commit...
 # It should be a scp location e.g. 'hostname:/path/to/scripts' 
@@ -30,27 +73,31 @@ fi
 
 chmod g+w $0 || zmap_message_err "Failed to chmod g+w $0"
 
-# ================== SETUP ================== 
+
+
 FILES_TO_REMOVE=
 
 
-# First we need to make a file to do the checking out
-# This will then get copied to the various hosts to do the checking out on those hosts
+
+#------------------------------------------------------------------------------
+# Generate a checkout script to do the checking out, this will then get copied
+# to the various hosts to do the checking out on those hosts.
+#
 gen_checkout_script=zmap_checkout_$$.sh
 
 zmap_tmp_dir=""
-
-
-# Default script does a cvs checkout, alternative is to copy
-# an existing zmap directory.
-#
 
 # The 'EOF' means _no_ substitution takes place.
 (
 cat <<'EOF'
 #!/bin/bash
-
+#
 # Generated! Can be found in build_bootstrap.sh
+#
+# By default this script does a repository checkout, alternative is to copy an 
+# existing zmap directory, e.g. a feature branch directory.
+#
+
 
 ECHO=echo
 
@@ -106,6 +153,16 @@ _checkout_message_out "Start of script."
 
 TODAY=`date +"%a %b %e %Y"`
 _checkout_message_out "Today is $TODAY"
+
+
+# Get the options the user may have requested
+usage="$0 -f <zmap directory>"
+while getopts ":f:" opt ; do
+    case $opt in
+	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
+	\? ) zmap_message_rm_exit "$usage"
+    esac
+done
 
 
 _checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
@@ -174,28 +231,40 @@ SRC_DIR=$CHECKOUT_BASE/src
 DOC_DIR=$CHECKOUT_BASE/doc
 
 
-
-
 # This shouldn't fail and makes sure source can be tested.
 echo >/dev/null
 
 EOF
 ) > $gen_checkout_script
+#
+# end of generated script section.
+#------------------------------------------------------------------------------
 
 
-
-# source the generated checkout script.
+# Now source the generated checkout script in this scripts process.
 # This both checks out ZMap module and sets variables for use later by this script!
-. ./$gen_checkout_script ||  { echo "Failed to load ./$gen_checkout_script"; exit 1; }
+#
+if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
+  CHECKOUT_OPTS="-f $ZMAP_MASTER_BUILD_COPY_DIR"
+else
+  CHECKOUT_OPTS=''
+fi
 
-# N.B. $gen_checkout_script is now an absolute path
+. ./$gen_checkout_script $CHECKOUT_OPTS ||  { echo "Failed to load ./$gen_checkout_script" ; exit 1 ; }
 
+
+# add checkout script to list of files to remove on exit
+zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
+
+
+# Here we copy from the development dir to the checked out one.  
 if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
-    # Here we copy from the development dir to the checked out one.  
     _checkout_message_out "*** WARNING: Developing! Using $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR ***"
     chmod 755 $BASE_DIR/*.sh
     scp -r $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR/*.sh $BASE_DIR/
 fi
+
+
 
 # We're not going to actually do  a build here, but we will build docs
 # if requested, and/or anything else that isn't architecture dependent
@@ -206,39 +275,28 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
-
-# We also need to provide a cleanup function to remove the gen_checkout_script
-function zmap_message_rm_exit
-{
-    zmap_message_err "Removing $FILES_TO_REMOVE"
-    rm -f $FILES_TO_REMOVE
-    zmap_message_exit "$@"
-}
-
-
-# add checkout script to list of files to remove on exit
-zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
-
-zmap_message_out "About to parse options: $*"
-
-# Get the options the user may have requested
-usage="$0 -d -t -r -u VARIABLE=VALUE"
-while getopts ":drtu" opt ; do
-    case $opt in
-	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
-	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
-	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
-	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
-	\? ) zmap_message_rm_exit "$usage"
-    esac
-done
-
-shift $(($OPTIND - 1))
-
-# including VARIABLE=VALUE settings from command line
-if [ $# -gt 0 ]; then
-    eval "$*"
-fi
+# Moved higher up to allow better use of args....
+#zmap_message_out "About to parse options: $*"
+#
+## Get the options the user may have requested
+#usage="$0 -d -t -r -u VARIABLE=VALUE"
+#while getopts ":drtu" opt ; do
+#    case $opt in
+#	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
+#	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
+#	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
+#	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
+#	\? ) zmap_message_rm_exit "$usage"
+#    esac
+#done
+#
+#shift $(($OPTIND - 1))
+#
+## including VARIABLE=VALUE settings from command line
+#if [ $# -gt 0 ]; then
+#    eval "$*"
+#fi
+#
 
 
 zmap_message_out "MASTER VARIABLE SETTINGS:"
