@@ -16,6 +16,7 @@
 #                           Docs created    no
 #                        Docs checked in    no
 #
+# Error reporting gets done by the build_run.
 
 
 RC=0
@@ -25,8 +26,7 @@ BUILD_PREFIX='OVERNIGHT_BUILD'
 OUTPUT=$BUILD_PREFIX
 
 
-# Error reporting gets done by the build_run.
-./build_run.sh -e -l $OUTPUT $BUILD_PREFIX || RC=1
+./build_run.sh -b -e -l $OUTPUT $BUILD_PREFIX || RC=1
 
 
 exit $RC
