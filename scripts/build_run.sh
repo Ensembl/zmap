@@ -20,6 +20,10 @@ function message_out
 {
     now=$(date +%H:%M:%S)
     echo "[$PROGNAME ($now)] $*"
+
+    if [ -n $BATCH ] ; then
+	echo $* | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+    fi
 }
 
 # Usage:    message_exit "Your Message"
@@ -56,6 +60,8 @@ BUILDS_DIR="$BASE_DIR/BUILDS"
 
 # ERROR_RECIPIENT= Someone to email
 ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
+MAIL_SUBJECT="ZMap Build Failed (control script)"
+
 
 # OUTPUT dir
 OUTPUT=$BUILDS_DIR
@@ -67,27 +73,26 @@ SLEEP=15
 TAG_RELEASE_BUILD=no
 
 
-# Give extra info ?
-VERBOSE=yes
-
 TAG_CVS=''
 INC_REL_VERSION=''
 INC_UPDATE_VERSION=''
 RELEASES_DIR=''
 RT_TO_CVS=''
-
-
+FEATURE_DIR=''
+BATCH=''
 
 
 # Do args.
 #
 usage="$PROGNAME [ -a <user_mail_id> -d -e -l <release_dir in BUILDS> -m -t -r -u -z ]   <build prefix>"
 
-while getopts ":a:del:mrtuz:" opt ; do
+while getopts ":a:bdef:il:mrtuz:" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
+	b  ) BATCH='yes' ;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
 	e  ) ENSURE_UP_TO_DATE="yes" ;;
+	f  ) FEATURE_DIR=$OPTARG ;;
 	l  ) RELEASE_LOCATION=$OPTARG ;;
 	m  ) RT_TO_CVS='no' ;;
 	r  ) INC_REL_VERSION='-r'    ;;
@@ -105,6 +110,8 @@ shift $(($OPTIND - 1))
 
 if [ $# == 1 ]; then
   BUILD_PREFIX=$1
+
+  MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 else
   message_exit "No build prefix specifed: $usage"
 fi
@@ -115,9 +122,21 @@ GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 
 
 
+# plug together env. vars...
+#
+ENV_OPTIONS=''
+
+if [ -n "$FEATURE_DIR" ] ; then
+
+  ENV_OPTIONS="$ENV_OPTIONS ZMAP_MASTER_BUILD_COPY_DIR=$FEATURE_DIR"
+
+fi
+
 
 # Plug together options..........
 #
+
+# simple flags first...
 CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION"
 
 if [ -n "$RELEASE_LOCATION" ] ; then
@@ -141,7 +160,7 @@ fi
 
 
 
-if [ $VERBOSE == "yes" ] ; then
+if [ -z $BATCH ] ; then
 
   cat <<EOF
 
@@ -151,7 +170,9 @@ about to run build script '$CVS_CHECKOUT_SCRIPT' on '$SRC_MACHINE' (via ssh)
 
 build_prefix is '$BUILD_PREFIX'
 
-with options '$CMD_OPTIONS'
+with ENV options '$ENV_OPTIONS'
+
+and command options '$CMD_OPTIONS'
 
 global output log is '$GLOBAL_LOG'
 
@@ -168,12 +189,19 @@ fi
 #
 
 
-MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
+# do some checks.......
+#
 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
 fi
 
+
+if [ -n "$FEATURE_DIR" ] ; then
+    if [ ! -d $$FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
+	message_exit "$FEATURE_DIR is not a directory or is not readable."
+    fi
+fi
 
 mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT" 
 
@@ -204,18 +232,20 @@ fi
 
 
 
-# Give user a chance to cancel, must be before we start ssh otherwise
-# we will leave running processes all over the place. After this we trap
-# any attempts to Cntl-C etc.
-cat <<EOF
+# If not run as batch then give user a chance to cancel, must be before we
+# start ssh otherwise we will leave running processes all over the place.
+# After this we trap any attempts to Cntl-C etc.
+#
+if [ -z $BATCH ] ; then
+    message_out "Pausing for $SLEEP seconds, hit Cntl-C to abort cleanly."
 
-Pausing for $SLEEP seconds, hit Cntl-C to abort cleanly.
+    sleep $SLEEP
+fi
 
-EOF
 
 
-sleep $SLEEP
-
+# trap attempts to kill script to prevent dangling processes on other machines.
+#
 trap '' INT
 trap '' TERM
 trap '' QUIT
@@ -246,13 +276,15 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line   ; \
-./root_checkout.sh '$CMD_OPTIONS' || _rm_exit; \
+'$ENV_OPTIONS' ./root_checkout.sh '$CMD_OPTIONS' || _rm_exit; \
 :                                     ; \
 rm -f root_checkout.sh || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
 
 # ================== ERROR HANDLING ================== 
+
+# should we mail about build success or just for batch mode...???
 
 if [ $? != 0 ]; then
     # There was an error, email someone about it!
@@ -280,7 +312,7 @@ fi
 
 
 echo $MAIL_SUBJECT
-
+echo
 
 
 exit $RC

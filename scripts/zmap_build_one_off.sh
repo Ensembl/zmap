@@ -20,11 +20,11 @@ RC=0
 
 BUILD_PREFIX='ONE_OFF_BUILD'
 OUTPUT=$BUILD_PREFIX
-ERROR_ID='edgrif@sanger.ac.uk'
+ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
 
 # Error reporting gets done by the build_run.
-./build_run.sh -a $ERROR_ID -e -l $OUTPUT $BUILD_PREFIX || RC=1
+./build_run.sh -a $ERROR_RECIPIENT -e -l $OUTPUT $BUILD_PREFIX || RC=1
 
 
 exit $RC
