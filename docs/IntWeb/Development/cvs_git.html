@@ -322,6 +322,18 @@ git push origin         to push our changes to origin (any conflicts must be res
 <p>You can 'rebase' your local branch to the one you want to merge it to so that when you merge your changes you will get a linear history, even for non-fast-forward merges.  <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#using-git-rebase">This</a> page explains how to do this and <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">this one</a> explains why having a linear history can be really useful.  However, note that <font color="red"><i>you should not rebase any changes that might already have been fetched by anyone else (i.e. anything in the master repository).</i></font>  <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#problems-With-rewriting-history">This page</a> explains why not.  Also, as described above, when you have a linear history you will get a fast-forward merge by default and lose the branch history, which may not be what you want.  Perhaps the best of boths worlds is to do a rebase followed by a <code>git merge --no-ff</code>, effectively giving a linear history but also preserving branch history.
 </p>
 
+<h3>Compile info</h3>
+<p>The programs should have some version info built into them that can be displayed via a help dialog to allow us to identify exactly what version of the source code was used to build the program. We can use the 'git describe' command to supply this information. This tells us the last tag that our code was based on, how many commits there have been since that tag, and the commit ID of the current commit. It can also tell us whether we are using a dirty tree if we use the --dirty option, e.g.
+<pre>
+mac18480i[gb10]137: git describe --dirty
+v4.1.17-94-g1c9cd13
+mac18480i[gb10]138: git describe HEAD~94
+v4.1.17
+### edit some files ###
+mac18480i[gb10]139: git describe --dirty
+v4.1.17-94-g1c9cd13-dirty
+</pre>
+</p>
 
 <h3>Tagging a release/build</h3>
 
