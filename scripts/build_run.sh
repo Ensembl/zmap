@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #
 # Do not use directly, instead use one of the zmap_build_XXXX scripts
@@ -34,6 +35,7 @@ function message_exit
 
 
 RC=0
+
 PROGNAME=`basename $0`
 
 
@@ -78,21 +80,23 @@ RELEASES_DIR=''
 RT_TO_CVS=''
 FEATURE_DIR=''
 BATCH=''
+GIT_FEATURE_INFO=''
 
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -d -e -l <release_dir in BUILDS> -m -t -r -u -z ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -d -e -f <zmap feature branch> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
 
-while getopts ":a:bdef:il:mrtuz:" opt ; do
+while getopts ":a:bdf:gil:mrtuz:" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BATCH='yes' ;;
-	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
-	e  ) ENSURE_UP_TO_DATE="yes" ;;
+	d  ) ZMAP_MASTER_BUILD_DIST=$ZMAP_TRUE   ;;
 	f  ) FEATURE_DIR=$OPTARG ;;
+	g  ) GIT_FEATURE_INFO='-g' ;;
 	l  ) RELEASE_LOCATION=$OPTARG ;;
 	m  ) RT_TO_CVS='no' ;;
+	n  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
@@ -124,7 +128,8 @@ GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 #
 
 # simple flags first...
-CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION"
+CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
+
 
 if [ -n "$FEATURE_DIR" ] ; then
 
@@ -151,7 +156,20 @@ if [ -n "$RT_TO_CVS" ] ; then
 
 fi
 
+if [ -n "$ZMAP_MASTER_RT_RELEASE_NOTES" ] ; then
 
+    CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_MASTER_RT_RELEASE_NOTES"
+
+    # for now we force the release notes production....
+    CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_FORCE_RELEASE_NOTES=yes"
+
+fi
+
+if [ -n "$ZMAP_MASTER_BUILD_DIST" ] ; then
+
+    CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_BUILD_DIST=$ZMAP_MASTER_BUILD_DIST"
+
+fi
 
 
 
@@ -220,10 +238,24 @@ if ! echo $CVS_CHECKOUT_SCRIPT | egrep -q "(^)/" ; then
 fi
 
 
+# We don't support this option at the moment, it seems kind of useless
+# given that we either check out a new version of the code or don't want
+# the code updated at all.
 #
-#[ -f $CVS_CHECKOUT_SCRIPT ] || { echo "Failed to find $CVS_CHECKOUT_SCRIPT"; exit 1; }
-#
-
+#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
+#    old_dir=$(pwd)
+#    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
+#    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
+#    cd $new_dir
+#    export CVS_RSH=ssh
+#    cvs update -C $up2date || { 
+#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
+#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
+#	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+#	exit 1; 
+#    }
+#    cd $old_dir
+#fi
 
 
 
