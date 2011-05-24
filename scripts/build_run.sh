@@ -211,7 +211,7 @@ fi
 
 
 if [ -n "$FEATURE_DIR" ] ; then
-    if [ ! -d $$FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
+    if [ ! -d $FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
 	message_exit "$FEATURE_DIR is not a directory or is not readable."
     fi
 fi
