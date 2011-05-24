@@ -1,7 +1,5 @@
 #!/bin/bash
-
-# ================= README ==================
-
+#
 # Build zmap for all architectures specified in $ZMAP_BUILD_MACHINES.
 #
 # Builds/logs are in ONE_OFF.BUILD file/directory.
@@ -13,7 +11,8 @@
 #                           Docs created    no
 #                        Docs checked in    no
 #
-
+# Error reporting gets done by the build_run.
+#
 
 RC=0
 
@@ -23,7 +22,6 @@ OUTPUT=$BUILD_PREFIX
 ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
 
-# Error reporting gets done by the build_run.
 ./build_run.sh -a $ERROR_RECIPIENT -e -l $OUTPUT $BUILD_PREFIX || RC=1
 
 
