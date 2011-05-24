@@ -32,7 +32,7 @@ OUTPUT=$BUILDS_DIR/$BUILD_PREFIX
 ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
 
-./build_run.sh -a $ERROR_RECIPIENT -e -f SRC_DIR -g -l $OUTPUT $BUILD_PREFIX || RC=1
+./build_run.sh -a $ERROR_RECIPIENT -f SRC_DIR -g -l $OUTPUT $BUILD_PREFIX || RC=1
 
 
 exit $RC
