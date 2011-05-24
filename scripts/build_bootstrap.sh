@@ -26,14 +26,23 @@ function zmap_message_rm_exit
 
 
 
+# default branch
+BRANCH='develop'
+
+GIT_VERSION_INFO=''
+
+
+
 zmap_message_out "About to parse options: $*"
 
 # Get the options the user may have requested
-usage="$0 -d -t -r -u VARIABLE=VALUE"
-while getopts ":df:rtu" opt ; do
+usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -t -u VARIABLE=VALUE"
+while getopts ":b:df:grtu" opt ; do
     case $opt in
+	b  ) BRANCH=$OPTARG ;;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
+	g  ) GIT_VERSION_INFO=$ZMAP_TRUE ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
 	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
@@ -43,14 +52,12 @@ done
 
 shift $(($OPTIND - 1))
 
+
 # try to get rid of this as I think we no longer need it......
 # including VARIABLE=VALUE settings from command line
 if [ $# -gt 0 ]; then
     eval "$*"
 fi
-
-
-
 
 
 
@@ -87,7 +94,9 @@ gen_checkout_script=zmap_checkout_$$.sh
 
 zmap_tmp_dir=""
 
+
 # The 'EOF' means _no_ substitution takes place.
+#
 (
 cat <<'EOF'
 #!/bin/bash
@@ -105,10 +114,7 @@ CVS_MODULE=ZMap
 CVS_ROOT=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap"
 CVS_RSH="ssh"
 
-
-# needs to parametrised and passed in to this script.
-GIT_BRANCH='develop'
-
+BRANCH='develop'
 
 export CVS_ROOT CVS_RSH
 
@@ -156,9 +162,10 @@ _checkout_message_out "Today is $TODAY"
 
 
 # Get the options the user may have requested
-usage="$0 -f <zmap directory>"
-while getopts ":f:" opt ; do
+usage="$0 -b <branch> -f <zmap directory>"
+while getopts ":b:f:" opt ; do
     case $opt in
+	b  ) BRANCH=$OPTARG ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
 	\? ) zmap_message_rm_exit "$usage"
     esac
@@ -204,14 +211,14 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
     git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
-    _checkout_message_out "switching to git branch $GIT_BRANCH"
-    ( cd $MASTER_SRC_DIR ; git checkout $GIT_BRANCH )
+    _checkout_message_out "switching to git branch $BRANCH"
+    ( cd $MASTER_SRC_DIR ; git checkout $BRANCH )
 
   else
  
     MASTER_SRC_DIR=$ZMAP_MASTER_BUILD_COPY_DIR
 
-    _checkout_message_out "just doing a copy"
+    _checkout_message_out "just doing a copy of $ZMAP_MASTER_BUILD_COPY_DIR"
   fi
 
   _checkout_message_out "About to  cp -r $MASTER_SRC_DIR $CVS_MODULE"
@@ -239,6 +246,7 @@ EOF
 #
 # end of generated script section.
 #------------------------------------------------------------------------------
+
 
 
 # Now source the generated checkout script in this scripts process.
@@ -374,6 +382,17 @@ zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
     [ "x$RELEASE_LOCATION" != "x" ] || RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
 fi
+
+
+# For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
+if [ -n "$GIT_VERSION_INFO" ] ; then
+    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
+    GIT_VERSION_INFO=`./git_version.sh`
+
+    ./set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
+fi
+
+
 
 
 # Make the release notes, this needs to happen before building and before
