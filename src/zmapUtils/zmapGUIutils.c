@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May  6 13:39 2011 (edgrif)
+ * Last edited: May 24 15:36 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
  * CVS info:   $Id: zmapGUIutils.c,v 1.66 2011-05-06 12:42:16 edgrif Exp $
  *-------------------------------------------------------------------
@@ -336,11 +336,17 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
  *  */
 void zMapGUIShowAbout(void)
 {
-#if GTK_MAJOR_VERSION == (2) && GTK_MINOR_VERSION >= (6)
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
-                      "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
+			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
+  char *version_string ;
+
+  /* If this is a development branch show the development string as well as the version number. */
+  if ((zMapGetDevelopmentIDString()))
+    version_string = g_strdup_printf("%s  -- Dev Version: %s", zMapGetVersionString(), zMapGetDevelopmentIDString()) ;
+  else
+    version_string = g_strdup(zMapGetVersionString()) ;
 
   gtk_show_about_dialog(NULL,
 			"authors", authors,
@@ -348,10 +354,11 @@ void zMapGUIShowAbout(void)
 			"copyright", zMapGetCopyrightString(),
 			"license", zMapGetLicenseString(),
 			"name", zMapGetAppName(),
-			"version", zMapGetVersionString(),
+			"version", version_string,
 			"website", zMapGetWebSiteString(),
 			NULL) ;
-#endif
+
+  g_free(version_string) ;
 
   return ;
 }

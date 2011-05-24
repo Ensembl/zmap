@@ -25,7 +25,7 @@
  *
  * Description:
  * HISTORY:
- * Last edited: May 19 11:06 2011 (edgrif)
+ * Last edited: May 24 15:39 2011 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
  * CVS info:   $Id: zmapUtils_P.h,v 1.175 2011-05-13 14:03:10 zmap Exp $
  *-------------------------------------------------------------------
@@ -44,6 +44,9 @@
 #define ZMAP_UPDATE 132
 
 
+/* ZMap Feature ID...used for development only, should be NULL in release code.
+ * In development code will have a per-code-branch unique ID. */
+#define ZMAP_DEVELOPMENT_ID NULL
 
 
 /* Create a copyright string for dialogs etc. */
