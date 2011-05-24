@@ -1,7 +1,5 @@
 #!/bin/bash
-
-# ================= README ==================
-
+#
 # Build zmap for all architectures specified in $ZMAP_BUILD_MACHINES.
 #
 # This script is run _every_ night as a cron job so be careful
@@ -17,7 +15,7 @@
 #                        Docs checked in    no
 #
 # Error reporting gets done by the build_run.
-
+#
 
 RC=0
 
@@ -30,4 +28,3 @@ OUTPUT=$BUILD_PREFIX
 
 
 exit $RC
-
