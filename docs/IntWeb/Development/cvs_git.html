@@ -534,6 +534,26 @@ which will change all the files as needed. <b>NOTE</b> that there appears to be 
 'git add' does not affect this, you must commit a file first.  It's possible the bug is in plain git of course!
 </p>
 
+<h3>git flow and version numbers</h3>
+
+
+<p>ZMap has a version number which is used to identify the version/release/update of the code.
+This version number is incremented at the start of a development cycle and becomes the version
+of the released code.</p>
+
+<p>The development version number is easy to maintain as there is no need to change it during
+work on the development branch. This is not true for work on feature branches however because
+for large features the version may need to be incremented several times as the branch code
+is given to users, bugs are fixed, features added and a new build created. This means that
+the feature branch version number us likely to be different (ahead or even behind) of the
+development branch version.</p>
+
+<p>Our decision is that when the feature is merged back into the development branch,
+the development branch version number will be the one that persists. This will probably
+require the use of some "hook" code in git-flow to ensure that this happens the right way.</p>
+
+
+
 <h3>Updating documentation</h3>
 <p>Non feature specific documentation should be updated using the branch develop, which will allow it to be pushed/merged into the remote repository easily.
 </p>
