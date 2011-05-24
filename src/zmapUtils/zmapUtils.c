@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jun  5 17:55 2009 (edgrif)
+ * Last edited: May 24 15:19 2011 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
  * CVS info:   $Id: zmapUtils.c,v 1.36 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
@@ -156,6 +156,13 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
   return result ;
 }
 
+
+/* Get's the development id or the empty string if this is not development code. The development
+ * ID will only be set for development branches. */
+char *zMapGetDevelopmentIDString(void)
+{
+  return ZMAP_DEVELOPMENT_ID ;
+}
 
 
 /*!
