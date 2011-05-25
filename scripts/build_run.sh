@@ -13,36 +13,13 @@
 #
 
 
-
-# Usage:    message_out "Your Message"
-function message_out
-{
-    now=$(date +%H:%M:%S)
-    echo "[$PROGNAME ($now)] $*"
-
-    if [ -n $BATCH ] ; then
-	echo $* | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
-    fi
-}
-
-# Usage:    message_exit "Your Message"
-function message_exit
-{
-    message_out $*
-    exit 1
-}
-
-
-
+# Program stuff.
 RC=0
-
 PROGNAME=`basename $0`
+GLOBAL_LOG=''
 
 
-echo "args: $*"
-
-
-# ================== CONFIG ================== 
+# ================== BUILD CONFIG ================== 
 # Configuration variables
 
 # where everything is located.
@@ -83,6 +60,35 @@ BATCH=''
 GIT_FEATURE_INFO=''
 
 
+
+# Usage:    message_out "Your Message"
+function message_out
+{
+    now=$(date +%H:%M:%S)
+
+    log_msg="[$PROGNAME ($now)] $*"
+
+    echo "$log_msg"
+
+    if [ -n $GLOBAL_LOG ] ; then
+	echo "$log_msg" >> $GLOBAL_LOG
+    fi
+
+    if [ -n $BATCH ] ; then
+	echo "$log_msg" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+    fi
+}
+
+# Usage:    message_exit "Your Message"
+function message_exit
+{
+    message_out $*
+    exit 1
+}
+
+
+
+
 # Do args.
 #
 usage="$PROGNAME [ -a <user_mail_id> -d -e -f <zmap feature branch> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
@@ -119,9 +125,21 @@ else
 fi
 
 
-# GLOBAL_LOG= The place to hold the log file
+# We do not know the directory for the logfile until here so cannot start logging
+# until this point, from this point this script prints any messages to stdout
+# and to the logfile.
+#
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 
+# do we really need this anymore...
+#if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
+#    GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
+#fi
+
+
+rm -f $GLOBAL_LOG || message_exit "Cannot log from previous build: $GLOBAL_LOG"
+
+message_out "ZMap $BUILD_PREFIX Started"
 
 
 # Plug together options..........
@@ -205,11 +223,6 @@ fi
 # do some checks.......
 #
 
-if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
-    GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
-fi
-
-
 if [ -n "$FEATURE_DIR" ] ; then
     if [ ! -d $FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
 	message_exit "$FEATURE_DIR is not a directory or is not readable."
@@ -217,8 +230,6 @@ if [ -n "$FEATURE_DIR" ] ; then
 fi
 
 mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT" 
-
-rm -f $GLOBAL_LOG || message_exit "Cannot rm -f $GLOBAL_LOG"
 
 
 
@@ -306,7 +317,7 @@ chmod 755 root_checkout.sh || _rm_exit; \
 ./root_checkout.sh '$CMD_OPTIONS' || _rm_exit; \
 :                                     ; \
 rm -f root_checkout.sh || exit 1;   \
-"' > $GLOBAL_LOG 2>&1
+"' >> $GLOBAL_LOG 2>&1
 
 
 # ================== ERROR HANDLING ================== 
