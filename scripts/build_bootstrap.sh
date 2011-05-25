@@ -45,12 +45,12 @@ usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -t -u VARIABLE=VALUE"
 while getopts ":b:df:grtu" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
-	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
+	d  ) ZMAP_MASTER_RT_RELEASE_NOTES="yes"   ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
-	g  ) GIT_VERSION_INFO=$ZMAP_TRUE ;;
-	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
-	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
-	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
+	g  ) GIT_VERSION_INFO="yes" ;;
+	r  ) ZMAP_MASTER_INC_REL_VERSION="yes"    ;;
+	t  ) ZMAP_MASTER_TAG_CVS="yes"            ;;
+	u  ) ZMAP_MASTER_INC_UPDATE_VERSION="yes" ;;
 	\? ) zmap_message_rm_exit "$usage"
     esac
 done
@@ -177,9 +177,6 @@ while getopts ":b:f:" opt ; do
 done
 
 
-_checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
-
-
 save_root=$(pwd)
 
 _checkout_message_out "Running in $save_root on $(hostname)"
@@ -220,6 +217,8 @@ if [ "x$gen_checkout_script" != "x" ]; then
     ( cd $MASTER_SRC_DIR ; git checkout $BRANCH )
 
   else
+
+      _checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
  
     MASTER_SRC_DIR=$ZMAP_MASTER_BUILD_COPY_DIR
 
@@ -266,10 +265,6 @@ fi
 . ./$gen_checkout_script $CHECKOUT_OPTS ||  { echo "Failed to load ./$gen_checkout_script" ; exit 1 ; }
 
 
-# add checkout script to list of files to remove on exit
-zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
-
-
 # Here we copy from the development dir to the checked out one.  
 if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
     _checkout_message_out "*** WARNING: Developing! Using $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR ***"
@@ -287,6 +282,8 @@ fi
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
+# add checkout script to list of files to remove on exit
+zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
 
 
 zmap_message_out "MASTER VARIABLE SETTINGS:"
