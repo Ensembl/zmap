@@ -365,11 +365,11 @@ fi
 
 # For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
 if [ -n "$GIT_VERSION_INFO" ] ; then
-    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
-    GIT_VERSION_INFO=`$SCRIPTS_DIR/git_version.sh`
 
     zmap_message_out "About to insert GIT version info into $version_file"
 
+    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
+    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
     $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
 fi
 
