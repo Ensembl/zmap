@@ -136,9 +136,9 @@ GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 #fi
 
 
-rm -f $GLOBAL_LOG || message_exit "Cannot log from previous build: $GLOBAL_LOG"
+rm -f $GLOBAL_LOG || message_exit "Cannot remove log from previous build: $GLOBAL_LOG"
 
-message_out "ZMap $BUILD_PREFIX Started"
+message_out "ZMap $BUILD_PREFIX Build Started"
 
 
 # Plug together options..........
@@ -194,25 +194,20 @@ fi
 
 if [ -z "$BATCH" ] ; then
 
-  cat <<EOF
+    message_out "Build parameters are"
 
-'$0' build script running on '$(hostname)', 
+    cat <<EOF
 
-about to run build script '$CVS_CHECKOUT_SCRIPT' on '$SRC_MACHINE' (via ssh)
-
-build_prefix is '$BUILD_PREFIX'
-
-with command options '$CMD_OPTIONS'
-
-global output log is '$GLOBAL_LOG'
-
-errors will be reported to '$ERROR_RECIPIENT'
+        Running on: '$(hostname)'
+      Build script: '$CVS_CHECKOUT_SCRIPT'
+      Build_prefix: '$BUILD_PREFIX'
+   Command options: '$CMD_OPTIONS'
+        Global log: '$GLOBAL_LOG'
+Errors reported to: '$ERROR_RECIPIENT'
 
 EOF
 
 fi
-
-
 
 
 # OK, off we go......
