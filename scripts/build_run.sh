@@ -70,11 +70,11 @@ function message_out
 
     echo "$log_msg"
 
-    if [ -n $GLOBAL_LOG ] ; then
+    if [ -n "$GLOBAL_LOG" ] ; then
 	echo "$log_msg" >> $GLOBAL_LOG
     fi
 
-    if [ -n $BATCH ] ; then
+    if [ -n "$BATCH" ] ; then
 	echo "$log_msg" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
     fi
 }
@@ -85,7 +85,6 @@ function message_exit
     message_out $*
     exit 1
 }
-
 
 
 
@@ -193,7 +192,7 @@ fi
 
 
 
-if [ -z $BATCH ] ; then
+if [ -z "$BATCH" ] ; then
 
   cat <<EOF
 
@@ -274,7 +273,7 @@ fi
 # start ssh otherwise we will leave running processes all over the place.
 # After this we trap any attempts to Cntl-C etc.
 #
-if [ -z $BATCH ] ; then
+if [ -z "$BATCH" ] ; then
     message_out "Pausing for $SLEEP seconds, hit Cntl-C to abort cleanly."
 
     sleep $SLEEP
