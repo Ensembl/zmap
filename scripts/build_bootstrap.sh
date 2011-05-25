@@ -14,6 +14,8 @@
 #
 #
 
+PROG_NAME=`basename $0`
+
 
 # Provide a cleanup function to remove the gen_checkout_script and other tmp files.
 #
@@ -33,7 +35,10 @@ GIT_VERSION_INFO=''
 
 
 
-zmap_message_out "About to parse options: $*"
+echo "[$PROGNAME] Start of script, running in $PWD"
+
+
+echo "About to parse options: $*"
 
 # Get the options the user may have requested
 usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -t -u VARIABLE=VALUE"
@@ -155,7 +160,7 @@ function _checkout_mk_cd_dir
     fi
 }
 
-_checkout_message_out "Start of script."
+_checkout_message_out "Start of checkout script (created by build_bootstrap)."
 
 TODAY=`date +"%a %b %e %Y"`
 _checkout_message_out "Today is $TODAY"
@@ -282,29 +287,6 @@ fi
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
-
-# Moved higher up to allow better use of args....
-#zmap_message_out "About to parse options: $*"
-#
-## Get the options the user may have requested
-#usage="$0 -d -t -r -u VARIABLE=VALUE"
-#while getopts ":drtu" opt ; do
-#    case $opt in
-#	d  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
-#	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
-#	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
-#	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
-#	\? ) zmap_message_rm_exit "$usage"
-#    esac
-#done
-#
-#shift $(($OPTIND - 1))
-#
-## including VARIABLE=VALUE settings from command line
-#if [ $# -gt 0 ]; then
-#    eval "$*"
-#fi
-#
 
 
 zmap_message_out "MASTER VARIABLE SETTINGS:"
