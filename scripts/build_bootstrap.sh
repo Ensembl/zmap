@@ -389,6 +389,8 @@ if [ -n "$GIT_VERSION_INFO" ] ; then
     version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
     GIT_VERSION_INFO=`./git_version.sh`
 
+    zmap_message_out "About to insert GIT version info into $version_file"
+
     ./set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
 fi
 
