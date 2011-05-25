@@ -236,7 +236,7 @@ mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT"
 # make sure a couple of things are sane.
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
- SCRIPT_DIR=$(dirname $0)
+SCRIPT_DIR=$(dirname $0)
 if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
    BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
 else
@@ -290,8 +290,7 @@ trap '' QUIT
 
 
 
-echo "Now running and cannot be cleanly aborted..."
-echo
+message_out "Build now running and cannot be cleanly aborted..."
 
 
 # A one step copy, run, cleanup!
@@ -349,8 +348,7 @@ else
 fi
 
 
-echo $MAIL_SUBJECT
-echo
+message_out $MAIL_SUBJECT
 
 
 exit $RC
