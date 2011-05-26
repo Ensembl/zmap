@@ -30,114 +30,362 @@ legend{ font-weight: bold }
 </style>
 
 
-<h1>Installing ZMap - the gory details</h1>
 
-<p>This document covers the installation of zmap and its dependencies on linux
+<h1>The ZMap Build System</h1>
+
+
+<h2>Overview</h2>
+
+<p>There are three major tasks for the zmap build system:</p>
+
+<b><ol>
+  <li>Compiling zmap during day to day development.</li>
+  <li>Building a full zmap distribution.</li>
+  <li>Installing zmap from a distribution file.</li>
+</ol></b>
+
+<p>Compiling zmap involves the developer in initially running the autoconf tools to create
+the right makefiles and thereafter simply running make to rebuild zmap.</p>
+
+<p>Building a distribution is done via one of a number of scripts which do all the work
+for the developer to produce a distribution. This includes checking out code or using an
+existing checkout, compiling on several different platforms, optionally preparing documentation,
+repository tagging and much else.</p>
+
+<p>Installing involves gunzipping/untarring the distribution file for ZMap and then running
+the ./configure script with the right parameters to build zmap. It may also involve installing
+various zmap dependencies, some of which are distributed with zmap.</p>
+
+
+<p>This document describes these tasks in detail.</p>
+
+
+
+
+<h2>1) Day to day Compiling of ZMap</h2>
+
+
+<p>Assuming that you have a copy of the ZMap source code as ./ZMap then:</p>
+
+
+<pre>
+1) Use the autoconf tools to create the makefiles for compiling zmap:
+
+&gt; cd ZMap/src
+
+&gt; ./bootstrap
+</pre>
+
+<p>The bootstrap script runs a number of tools from the autoconf package
+to create the configure script, the bootstrap script will in the end be
+replaced by the standard autoreconf script which is now part of the autoconf
+package.</p>
+
+
+<pre>
+2) Run the ./configure script:
+
+&gt; cd build/XXXXX           # Where XXXXX is 'linux', 'macosx' etc.
+
+&gt; ../../runconfig
+</pre>
+
+<p>The runconfig script encapsulates common parameters required to run the
+./configure script on the various platforms, e.g. on the Mac the
+includes/libraries required by zmap are found in /opt/local, and passes them to configure.</p>
+
+<pre>
+3) Run the make:
+
+&gt; make
+</pre>
+
+<p>You should now find that you have a zmap executable in your current directory. To test
+the excutable simply run it with the --version argument:</p>
+
+<pre>
+&gt; ./zmap --version
+ZMap - 0.1.132
+&gt;
+</pre>
+
+
+<p><b>NOTE</b> bootstrap and runconfig must be rerun each time a new source file is added to
+the code or each time the build is done on a new machine. While not strictly necessary it
+is cleaner to run the make "distclean" target before bootstrap/runconfig when compiling
+on a different machine:</p>
+
+<pre>
+&gt; cd ZMap/src/build/&lt;curr_build_dir&gt;
+
+&gt; make distclean
+
+&gt; cd ../../                  # back to 'src' directory
+
+&gt; ./bootstrap
+
+&gt; cd build/&lt;new_build_dir&gt;
+
+&gt; ../../runconfig
+
+&gt; make
+</pre>
+
+
+
+
+<h2>2) How to make a distribution</h2>
+
+<p>Making distributions is done as the zmap userid on the master build machine
+(currently tviewsrv). Usual practice is to ssh into tviewsrv as zmap:</p>
+
+<pre>
+&gt; ssh -l zmap tviewsrv
+</pre>
+
+<p>This ensures that you are logged in to the right machine with the correct environment.</p>
+
+<p>There are scripts to do several different kinds of distribution build and
+they should all be run from a checkout of the ZMap respository. For convenience
+there is one in ~zmap/BUILD_SCRIPTS:</p>
+
+<pre>
+&gt; cd ~/BUILD_SCRIPTS/ZMap/scripts
+&gt; ls
+Author			    build_config.tviewsrv.sh	set_dev_description.pl	      zmap_handle_release_tar.sh
+CopyRight		    build_run.sh		setup_libs_otter.sh	      zmap_machine_perf.sh
+CopyRight.txt		    buildaceconn		versioner		      zmap_make_SOURCES_list.sh
+
+etc. etc.
+
+build_config.mac18480i.sh   methods2style.pl		zmap_foocanvas_tasks.sh       zmap_x11_helper.sh
+build_config.mpb101217i.sh  process_rt_tickets_file.pl	zmap_functions.sh
+build_config.sh		    process_stack_dump.pl	zmap_functions_web.sh
+</pre>
+
+
+<p>Before running any of the scripts the script directory should be updated from
+the code repository to ensure the latest versions of the scripts are used:</p>
+
+<pre>
+&gt; ./zmap_update_run [build_script args] 
+</pre>
+
+<p> As can be seen the updating script can be run simply to update the directory or can
+take the name of a build script and any arguments and will run that script after doing the
+update:</p>
+
+<pre>
+&gt; ./zmap_update_run ./zmap_build_one_off.sh
+
+============= Starting update of current directory from git
+remote: Counting objects: 7, done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 4 (delta 3), reused 0 (delta 0)
+Unpacking objects: 100% (4/4), done.
+From git.internal.sanger.ac.uk:/repos/git/annotools/zmap
+   32393db..e0c682c  develop    -> origin/develop
+Updating 32393db..e0c682c
+Fast-forward
+ scripts/build_run.sh |   25 ++++++++++---------------
+ 1 files changed, 10 insertions(+), 15 deletions(-)
+============= Finished update
+
+============= Started './zmap_build_one_off.sh' with args: ''
+[build_run.sh (16:29:58)] ZMap ONE_OFF_BUILD Build Started
+[build_run.sh (16:29:58)] Build parameters are
+
+        Running on: 'tviewsrv'
+      Build script: '/nfs/users/nfs_z/zmap/BUILD_SCRIPTS/ZMap/scripts/build_bootstrap.sh'
+      Build_prefix: 'ONE_OFF_BUILD'
+   Command options: '    RELEASE_LOCATION=/nfs/users/nfs_z/zmap/BUILDS/ONE_OFF_BUILD'
+        Global log: '/nfs/users/nfs_z/zmap/BUILDS/ONE_OFF_BUILD.LOG'
+Errors reported to: 'edgrif@sanger.ac.uk'
+
+<font color="red">[build_run.sh (16:29:58)] Pausing for 15 seconds, hit Cntl-C to abort cleanly. ****</font>
+[build_run.sh (16:30:13)] Build now running and cannot be cleanly aborted...
+[build_run.sh (16:40:57)] ZMap ONE_OFF_BUILD Succeeded
+============= Finished './zmap_build_one_off.sh'
+
+&gt;
+</pre>
+
+<p><font color="red">****</font> The build scripts all launch jobs on other
+machines via ssh, you are given a chance to interrupt the build script before
+this happens but after that the script cannot be interrupted to ensure that the
+remote jobs are cleaned up correctly (see text in red in above output).</p>
+
+<p>The build takes some time to complete mainly depending on how busy the Sanger network is. On completion
+the build scripts write to the terminal and to a log file but also mail the zmap developers to give the
+result of the build:</p>
+
+<pre>
+Date: Wed, 25 May 2011 15:45:17 +0100
+From: Zmap developers <zmap@sanger.ac.uk>
+To: edgrif@sanger.ac.uk
+Subject: ZMap ONE_OFF_BUILD Succeeded
+
+[root_checkout.sh (15:45:17)] Binary reports version=ZMap - 0.1.132
+[root_checkout.sh (15:45:17)] 
+[root_checkout.sh (15:45:17)] Results:
+[root_checkout.sh (15:45:17)] --------
+[root_checkout.sh (15:45:17)] Build run on  tviewsrv mac18480i cbi4e
+[root_checkout.sh (15:45:17)] Version according to binaries should be 0-1-132
+[root_checkout.sh (15:45:17)] Binaries, code, doc, dist etc can be found in
+/nfs/users/nfs_z/zmap/BUILDS/ONE_OFF_BUILD
+[root_checkout.sh (15:45:17)] For more information see
+/nfs/users/nfs_z/zmap/BUILDS/ONE_OFF_BUILD/README
+[root_checkout.sh (15:45:17)] --------
+[root_checkout.sh (15:45:17)] Successfully reached last line of script!
+</pre>
+
+
+
+<p>If the build worked the results will be in:</p>
+
+<pre>
+~zmap/BUILDS/<b>XXXXXXX</b>
+</pre>
+
+<p>where <b>XXXXXXX</b> depends on which build script was run, e.g. DEVELOPMENT.</p>
+
+<p>Each distribution has the following contents:</p>
+
+<pre>
+<font color="red">Copies of the master and slave build trees</font>
+  drwxr-xr-x 11 zmap zmap   4096 May 25 14:22 ZMap
+  drwxr-xr-x 11 zmap zmap   4096 May 25 14:31 ZMap.cbi4d
+  drwxr-xr-x 11 zmap zmap   4096 May 25 14:28 ZMap.mac18480i
+  drwxr-xr-x 11 zmap zmap   4096 May 25 14:25 ZMap.tviewsrv
+
+<font color="red">Links to the build products in the build trees</font>
+  lrwxrwxrwx  1 zmap zmap     26 May 25 14:33 Darwin_i386 -> ZMap.mac18480i/prefix_root
+  lrwxrwxrwx  1 zmap zmap     25 May 25 14:33 Linux_i686 -> ZMap.tviewsrv/prefix_root
+  lrwxrwxrwx  1 zmap zmap     22 May 25 14:33 Linux_x86_64 -> ZMap.cbi4d/prefix_root
+
+<font color="red">autoconf "dist" files for zmap and packages it depends on</font>
+  drwxr-xr-x  2 zmap zmap   4096 May 25 14:25 Dist
+
+<font color="red">README for this zmap build</font>
+  -rw-r--r--  1 zmap zmap   2001 May 25 14:33 README
+
+<font color="red">Build logs for individual build machines</font>
+  -rw-r--r--  1 zmap zmap 480284 May 25 14:31 cbi4d.log
+  -rw-r--r--  1 zmap zmap 380025 May 25 14:28 mac18480i.log
+  -rw-r--r--  1 zmap zmap 391869 May 25 14:25 tviewsrv.log
+</pre>
+
+
+<p>Users on Sanger systems can use the binaries from the build product directories, for
+users who need to build their own zmap all the dist files they require are in the Dist
+subdirectory.</p>
+
+
+<h3>The Different Types Of Distribution Build</h2>
+
+<p>The distribution build scripts are all prefixed with "zmap_build_", their purpose/usage is
+summarised in the following table:</p>
+
+<table border cellpadding=10>
+  <tr>
+    <th>Script</th>
+    <th>GIT Branch</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>zmap_build_overnight.sh</td>
+    <td>develop</td>
+    <td>Run from cron job as daily build test.</td>
+  </tr>
+  <tr>
+    <td>zmap_build_one_off.sh</td>
+    <td>develop</td>
+    <td>Run to produce a one off build with no tagging etc.</td>
+  </tr>
+  <tr>
+    <td>zmap_build_feature.sh</td>
+    <td>feature_XXXX</td>
+    <td>Produces distribution from a particular feature branch.</td>
+  </tr>
+  <tr>
+    <td>zmap_build_development.sh</td>
+    <td>develop</td>
+    <td>Produces a build of the current develop branch.</td>
+  </tr>
+  <tr>
+    <td>zmap_build_release.sh</td>
+    <td>release</td>
+    <td>Produce a release build with repository tagging, full docs etc.</td>
+  </tr>
+</table>
+
+
+<h3>"Release" Builds</h2>
+
+<p>Each time we build a new release of zmap we tag the release so we can
+recreate the code from git at any time. We also update the version number held
+in the code itself so that all the next development session takes place with
+this new code version number for bug reporting etc.</p>
+
+<p>And we also create a set of release notes which need to be hand editted
+afterwards, they live in ZMap/doc/IntWeb/Release_notes.</p>
+
+
+<h3>Using particular dependency Versions</h2>
+
+<p>To use a particular acedb release (assuming bash):</p>
+
+<pre>
+&gt; ZMAP_ACEDB_RELEASE_DIR=2009_10_20 ; ./zmap_do_build.sh
+</pre>
+
+<p>To use a particular seqtools release (assuming bash):</p>
+
+<pre>
+&gt; ZMAP_SEQTOOLS_RELEASE_CONTAINER=XXXXX ; ./zmap_do_build.sh
+</pre>
+
+
+<h3>Overnight Build</h2>
+
+<p>zmap_overnight.sh is run as a cron job on the central build machine
+(currently tviewsrv) as the zmap userid. The cron invocation is:</p>
+
+<pre>
+00 23 * * * ~/prefix/scripts/zmap_overnight.sh > ~/BUILDS/cron.log 2>&1
+</pre>
+
+<p>Note that cron.log congtains any errors that might occur before builds log
+file gets created.</p>
+
+
+<h2>3) Installing ZMap</h2>
+
+<p>This section covers the installation of zmap and its dependencies on linux
 and Mac systems. The first part of the document covers building and installing
 ZMap assuming that all of the dependencies have been installed. Later
 sections cover installing the dependencies themselves.</p>
 
 
-
-
-
-<h2>ZMap Install</h2>
-
-
-<h3>Changes Made to our Build System to get it to work</h3>
-
-
-<p>In the scripts directory:</p>
-
-<pre>
-build_config.mac.sh & build_config.mac18480i.sh
-
-altered stuff to point to /opt/local
-
-</pre>
-
-
-<p>In src directory:</p>
-
-<pre>
-Makefile.am
-
-commented out include $(srcdir)/am_doxygen.am until I can find a way to conditionally
-include it.
-
-</pre>
-
-
-<pre>
-configure.ac
-
-- changed:
-
-AC_PREREQ(2.59)
-
-to 
-
-AC_PREREQ(2.65)
-
-
-
-- commented out all of doxygen (lines beginning DX_).
-
-
-- changed:
-
-zmap.pc
-dotZMap:dotZmap.in
-$srcdir/$DX_CONFIG:Doxyfile.in
-])
-
-AC_OUTPUT
-
-to
-
-
-zmap.pc
-dotZMap:dotZmap.in
-])
-
-#$srcdir/$DX_CONFIG:Doxyfile.in
-#
-
-AC_OUTPUT
-
-i.e. commented out the doxyfile bit, this needs to be made configurable...
-
-</pre>
-
-<pre>
-runbootstrap
-
-for darwin added:
-
-
-    export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"
-
-</pre>
-
-
-<h3>Running a build within the ZMap source tree</h3>
+<h3>Compiling ZMap and producing a dist file</h3>
 
 <pre>
 
-1) run the script to set up the tree for creating a ./configure script.
+1) run the script to create the ./configure script:
 
 > cd ZMap/src
-> ./runbootstrap
+> ./bootstrap
 
 
-2) Produce and run the ./configure
+2) Run the ./configure via the runconfig script:
 
-then for linux
+for linux
 > cd build/linux
 
-and for the mac
+or for the mac
 > cd build/mac
 
+then
 > ../../runconfig
 
 
@@ -162,7 +410,7 @@ and for the mac
 
 2) cd zmap-V-R-U 
 
-3) run ./configure:
+3) run ./configure as follows:
 
 
 For Sanger linux machines:
@@ -180,70 +428,11 @@ setenv PKG_CONFIG_PATH /opt/local/lib/pkgconfig/
 
 
 
-<h2>Running the ZMap developer build system</h2>
+
+<h2>Installing ZMap's Dependencies</h2>
 
 
-<p>Well it's not really magic, just logging in to each node, running a script,
-clearing up and logging out.  An example from one of the uses follows, and
-explanation of what's going on.</p>
-
-</p>
-
-<pre>
-cat $CVS_CHECKOUT_SCRIPT | ssh -x $HOST '/bin/bash -c "\
-function _rm_exit                       \
-{                                       \
-   echo Master Script Failed...;        \
-   rm -f root_checkout.sh;              \
-   /bin/kill -9 -$$;                    \
-   exit 1;                              \
-};                                      \
-cd /var/tmp                || exit 1;   \
-rm -f root_checkout.sh     || exit 1;   \
-cat - > root_checkout.sh   || exit 1;   \
-chmod 755 root_checkout.sh || _rm_exit; \
-./root_checkout.sh RELEASE_LOCATION=~/BUILDS/OVERNIGHT ZMAP_MASTER_RT_TO_CVS=no || _rm_exit; \
-:                                               ; \
-rm -f root_checkout.sh     || exit 1;   \
-"' > output.log 2>&1
-</pre>
-
-<p>Note we run bash on the remote host. This explains some of the odd quoting.</p>
-
-
-
-<h2>Installing Dependencies</h2>
-
-
-<h3>ZMap Foocanvas Install</h3>
-
-<p>The following description assumes that you have the <b>patched</b> version
-of the foocanvas which includes the extensions needed by ZMap.</p>
-
-<pre>
-For a standard /usr or /usr/local system:
-
-> ./autogen.sh
-
-
-For a MacPorts /opt/local system:
-
-> export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"  # NOTE the spaces !!!!!
-
-> ./autogen.sh --prefix=/opt/local
-
-
-and then in either case:
-
-> make
-
-> sudo make install
-
-</pre>
-
-
-<h3>AceConn Instal</h3>
-
+<h3>AceConn Install</h3>
 
 <pre>
 For a MacPorts /opt/local system glibtoolize and the path to aclocal
@@ -268,9 +457,8 @@ and then for all systems:
 
 
 
-
-
 <h2>MacPort Install</h2>
+
 
 
 <pre>
@@ -412,8 +600,8 @@ Supported devices:
     FIG
     X11
     Xdbe
-    GD              <<<<<<< These two are vital !! 
-    GD (GIF)        <<<<<<<
+    GD              &lt;------ These two are vital !! 
+    GD (GIF)        &lt;------
 
 > sudo make install
 
@@ -426,6 +614,127 @@ and that's it.
 
 
 
+<h2>Appendix</h2>
+
+
+<h3>1) Details Of The ZMap Build Scripts</h2>
+
+<p>This text was taken from the original README file in <b>ZMap/scripts</b> and
+has been updated in an effort to make it more current and more readable.</p>
+
+<p>The zmap build scripts are to be found in the <b>ZMap/scripts</b> sub directory.
+The directory contains some scripts that are also used by the build scripts
+in <b>ZMap/src</b> for configuration: build_config.sh and the associated build.XXXX
+scripts.</p>
+
+
+<h4>Scripts: overview</h4>
+
+
+<p>Most of the scripts are run by hand but zmap_build_overnight.sh is run from
+a cron job to care should be taken in altering it (and the scripts it calls).</p>
+
+
+<p>If you add scripts to this directory then here are some points to note:</p>
+
+<ol>
+  <li><p>scripts must either be perl or bash, i.e. not sh, csh, awk or ksh.</p></li>
+
+  <li><p>If you write a bash script then you should make use of the general
+      functions and variables in the  ZBfunctions script file.  This file is
+      now being  phased out  in favour of  a separate  zmap_functions.sh and
+      build_config.sh.  zmap_functions.sh holds the common functions as 
+      ZBfunctions did, but not the variables.  The build_config.sh and its
+      fellows take care of the setting of common variables now.</p></li>
+
+  <li><p>The scripts get copied to ~zmap/prefix/scripts which the zmap
+      developers and the zmap userid have on their path. While this is where your
+      script will be found, you should not assume that this is where your script
+      will be running from.</p></li>
+
+  <li><p>pipes over ssh are utilised quite a bit in the build_bootstrap.sh script.
+      These can be spotted as code that looks similar to</p>
+
+      <pre>
+      cat $script | ssh $host '/bin/bash -c "\
+      cd /var/tmp                  || exit 1;\
+      cat - > host_checkout.sh     || exit 1;\
+      chmod 755 host_checkout.sh   || exit 1;\
+      ./host_checkout.sh           || exit 1;\
+      rm -f host_checkout.sh       || exit 1;\
+      "' > $host.log 2>&1
+      </pre>
+
+      <p>This enables 3 important features:</p>
+      <ul>
+	<li> a reasonably atomic run of the script on the remote host
+	<li> no dependecies on the remote host
+	<li> complete, simple logging of events on the remote host
+      </ul></li>
+</ol>
+
+<p>The build scripts all have the same call sequence:</p>
+
+<pre>
+zmap_build_XXXXX.sh --> build_run.sh --> build_bootstrap.sh
+
+
+zmap_build_XXXXX.sh - simple flag/parameter setting scripts for different build types
+
+       build_run.sh - sets up environment (logging, build parameters etc) and then
+                      launches the build and handles reporting the result.
+
+ build_bootstrap.sh - checks out or copies code, builds release notes, builds the code
+                      on the different build machines, constructs the distribution from
+                      all the build results.
+
+</pre>
+
+
+<h4>Scripts: code building</h4>
+
+<p>Building the code is a sub-part of the distribution build process
+and itself consists of a number of stages:</p>
+
+<pre>
+developer run build:
+
+src/bootstrap -> scripts/build_config.sh \
+  -> scripts/build_config.&lt;mach_type&gt;.sh -> scripts/build_config.&lt;node&gt;.sh
+
+
+or from the automated/master builds:
+
+scripts/build_bootstrap.sh -> src/bootstrap \
+  -> scripts/build_config.sh -> scripts/build_config.&lt;mach_type&gt;.sh \
+     -> scripts/build_config.&lt;node&gt;.sh
+
+</pre>
+
+
+<p>While this seems complex it allows overriding for machine type and then for
+particular nodes, we need this flexibility to deal with amongst other things
+differing levels of gtk on different machines.</p>
+
+<p>NOTE that it's a bit confusing to have all this in different directories,
+but it is more convenient for the developer in their day to day work.</p>
+
+
+
+<h4>Scripts: distribution building</h4>
+
+
+<p>Over time scripts have become obsolete or restructured or renamed, some of
+this work is ongoing.</p>
+
+
+<p>In particular configuration via the ZBfunctions "dot-script" method didn't
+work very well on mulitple machine architectures.  It has been replaced with
+zmap_functions.sh and build_config.sh.  build_config.sh tries to load
+build_config.$(uname).sh and build_config.$(hostname -s).sh to be more flexible
+in terms of architecture and machine configuration differences. This is
+combined with a small number of cover scripts (zmap_build_XXXX.sh) to do the
+various types of build.</p>
 
 
 
@@ -433,12 +742,137 @@ and that's it.
 
 
 
+Scripts cover the following tasks:
+
+<table border cellpadding=10>
+  <tr>
+    <th>Task</th>
+    <th>Script</th>
+  </tr>
+
+  <tr>
+    <td>Get lastest CVS copy of Ace-Con package
+	used by zmap, compile and put libs in
+	correct ~zmap/prefix/XXXX/lib dirs.</td>
+
+    <td>buildaceconn</td>
+  </tr>
+  
+
+  <tr>
+    <td>Make a zmap release directory containing
+	a consistent set of zmap and acedb binaries
+	from ~zmap/prefix/XXXX/bin</td>
+
+    <td>zmap_build_release.sh</td>
+  </tr>
+
+  <tr>
+    <td>Copy the required acedb binaries from an
+	acedb release directory into ~zmap/prefix/XXXX/bin</td>
+    <td>zmap_fetch_acedbbinaries.sh</td>
+  </tr>
+
+  <tr>
+    <td>Interrogate/Set release version of zmap source code</td>
+    <td>versioner</td>
+  </tr>
+
+  <tr>
+    <td>Set up common functions/variables for all scripts
+	in this directory. (deprecated)</td>
+
+    <td>ZBfunctions</td>
+  </tr>
+
+  <tr>
+    <td>Update ~zmap/prefix/scripts to latest code and
+	optionally run a command using the shell script.
+	Can be run as a cron job... Care needed when editing.</td>
+    <td>zmap_build_development.sh</td>
+  </tr>
+
+  <tr>
+    <td>Update ~zmap/prefix/scripts to latest code and
+	optionally run a command using the shell script.
+	Can be run as a cron job... Care needed when editing.</td>
+    <td>zmap_build_overnight.sh</td>
+  </tr>
+  <tr>
+    <td>Do a complete build of zmap on various machines
+	using ssh. </td>
+    <td>build_bootstrap.sh</td>
+  </tr>
+
+  <tr>
+    <td>Produce zmap documentation for website etc. </td>
+    <td>zmap_make_docs.sh</td>
+  </tr>
+
+  <tr>
+    <td>Set symbolic links in ~zmap that point to
+	OVERNIGHT, DEVELOPMENT & RELEASE dirs.</td>
+    <td>zmap_symlink.sh</td>
+  </tr>
+
+  <tr>
+    <td>Compile zmap on a specific machine and
+	optionally test that it runs.</td>
+    <td>zmap_compile_and_tar.sh</td>
+  </tr>
+
+  <tr>
+    <td>Update the zmap web development site and
+	optionally update the external website.</td>
+    <td>zmap_update_web.sh</td>
+  </tr>
+</table>
 
 
 
 
+<h4>The versioner script</h4>
+
+<p>Here's how to get the version number for setting up a directory name...this is already
+in the script.</p>
+
+<pre>
+&gt; versioner -path $HOME/ZMap/ZMap/src/include/ZMap/ -show -V -quiet
+0-1-3
+&gt;
+</pre>
+
+<p>heres how to get the tag....</p>
+
+<pre>
+&gt; versioner -path $HOME/ZMap/ZMap/src/include/ZMap/ -show  -quiet
+RELEASE_0-1-3
+&gt;
+</pre>
+
+<p>the script can also tag the whole of cvs...</p>
+
+<pre>
+&gt; versioner -path <your ZMap directory> -tag -increment -update -cvs
+</pre>
 
 
+<p>It can also be used to increment any file containing the zmap version strings such as
+ZMap/src/include/ZMap/zmapXRemote.h, to do this on a locally cvs edited file without
+tagging cvs etc do this:</p>
+
+<pre>
+&gt; versioner -increment -update -path <your ZMap directory> -file src/include/ZMap/zmapXRemote.h
+
+e.g.
+
+&gt; versioner -increment -update -path /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/ -file src/include/ZMap/zmapXRemote.h
+Using '/nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap' as Checkout Directory.
+The CVS tag should be RELEASE_1-1-3. 
+RELEASE_1-1-3
+Local Version is now RELEASE_1-1-4, previous version in /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/include/ZMap/zmapXRemote.h.backup
+&gt;
+</pre>
 
 <!--#include virtual="/perl/footer"-->
 
