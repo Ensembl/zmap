@@ -137,9 +137,10 @@ depending on the feature's style
 
 NB in zmapWindowBasicFeature.c this process is repeeated.
 
-What we need to do is to change drawSimpleGraphFeature() so that it makes a singleton graph column item and adds the source features to this instead of callint zmapWindowCanvasItemCreate(), which will be clean.
+What we need to do is to change drawSimpleGraphFeature() so that it makes a singleton graph column item
+and adds the source features to this instead of calling zmapWindowCanvasItemCreate(), which will be clean.
 
-Either the class data needs to include a hash of existing graph column items or look up existing ones in the parent.
+Either the class data needs to include a hash of existing graph column items or we look up existing ones in the parent.
 
 Glyphs also get run thro' basic feature, which is odd.
 </pre>

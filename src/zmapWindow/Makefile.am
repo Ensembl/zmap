@@ -119,6 +119,9 @@ items/zmapWindowFeatures_I.h \
 items/zmapWindowGlyphItem.c \
 items/zmapWindowGlyphItem.h \
 items/zmapWindowGlyphItem_I.h \
+items/zmapWindowGraphItem.c \
+items/zmapWindowGraphItem.h \
+items/zmapWindowGraphItem_I.h \
 items/zmapWindowLongItem.c \
 items/zmapWindowLongItem.h \
 items/zmapWindowLongItem_I.h \

@@ -955,7 +955,6 @@ static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
 
 	feature_item = FOO_CANVAS_ITEM(new_canvas_item);
     }
-
   return feature_item ;
 }
 

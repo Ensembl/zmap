@@ -57,7 +57,7 @@ enum
 
 static void zmap_window_transcript_feature_class_init  (ZMapWindowTranscriptFeatureClass transcript_class);
 static void zmap_window_transcript_feature_init        (ZMapWindowTranscriptFeature      transcript);
-static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canvas_item) ;
+//static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canvas_item) ;
 static void zmap_window_transcript_feature_set_property(GObject               *object,
 							guint                  param_id,
 							const GValue          *value,
@@ -107,7 +107,8 @@ GType zMapWindowTranscriptFeatureGetType(void)
 	  NULL,           /* class_data */
 	  sizeof (zmapWindowTranscriptFeature),
 	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) zmap_window_transcript_feature_init
+	  (GInstanceInitFunc) zmap_window_transcript_feature_init,
+        NULL
 	};
 
       group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
@@ -146,7 +147,7 @@ static void zmap_window_transcript_feature_class_init(ZMapWindowTranscriptFeatur
 
   gobject_class->dispose     = zmap_window_transcript_feature_destroy;
 
-  canvas_class->post_create  = zmap_window_transcript_feature_post_create;
+//  canvas_class->post_create  = zmap_window_transcript_feature_post_create;
   canvas_class->add_interval = zmap_window_transcript_feature_add_interval;
   canvas_class->set_colour   = zmap_window_transcript_feature_set_colour;
 
@@ -156,14 +157,15 @@ static void zmap_window_transcript_feature_class_init(ZMapWindowTranscriptFeatur
 }
 
 
-
+#if 0
+// mh17: canvas item post create removed
 static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canvas_item)
 {
 
   (* canvas_item_class_G->post_create)(canvas_item);
 
 }
-
+#endif
 
 static void zmap_window_transcript_feature_init(ZMapWindowTranscriptFeature transcript)
 {

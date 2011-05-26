@@ -93,7 +93,7 @@ static void zmap_window_canvas_item_get_property(GObject               *object,
 static void zmap_window_canvas_item_destroy     (GtkObject *gtkobject);
 
 
-static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item);
+//static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item);
 static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 					       FooCanvasItem         *interval,
 					       ZMapFeatureSubPartSpan unused,
@@ -1079,7 +1079,7 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   item_class->translate = zmap_window_canvas_item_translate;
   item_class->bounds    = zmap_window_canvas_item_bounds;
 
-  window_class->post_create  = zmap_window_canvas_item_post_create;
+//  window_class->post_create  = zmap_window_canvas_item_post_create;
   window_class->check_data   = zmap_window_canvas_item_check_data;
   window_class->set_colour   = zmap_window_canvas_item_set_colour;
   window_class->get_style    = zmap_window_canvas_item_get_style;
@@ -1269,12 +1269,15 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 
 
+#if 0
 /* This function is kind of a disaster from the memory and processing point of view,
  * it has taken the original basic feature item and bloated by adding:
  *
  * FOO_TYPE_CANVAS_RECT, FOO_TYPE_CANVAS_GROUP & FOO_TYPE_CANVAS_GROUP
  *
  *  */
+/* MH17 since tidying up the struct, this does nothing so bye bye */
+
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
 {
   FooCanvasGroup *group;
@@ -1314,6 +1317,7 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
 
   return ;
 }
+#endif
 
 static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item)
 {
@@ -1606,7 +1610,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
     }
   else if(g_type_is_a(interval_type, FOO_TYPE_CANVAS_RE)      ||
 	  g_type_is_a(interval_type, FOO_TYPE_CANVAS_POLYGON) ||
-	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_ITEM))
+	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_FEATURE))
     {
       foo_canvas_item_set(interval,
 			  "fill_color_gdk", fill,
@@ -1711,10 +1715,12 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	    type = ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE;
 	    break;
         case ZMAPSTYLE_MODE_GRAPH:
-          type = ZMAP_TYPE_WINDOW_GRAPH_FEATURE;
-          break
+          type = ZMAP_TYPE_WINDOW_GRAPH_ITEM;
+          break;
+        case ZMAPSTYLE_MODE_GLYPH:
+//          type = ZMAP_TYPE_WINDOW_GLYPH_FEATURE;
+//          break;
 	  case ZMAPSTYLE_MODE_BASIC:
-	  case ZMAPSTYLE_MODE_GLYPH:
 	  default:
 	    type = ZMAP_TYPE_WINDOW_BASIC_FEATURE;
 	    break;

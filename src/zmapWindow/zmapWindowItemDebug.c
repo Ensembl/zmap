@@ -382,7 +382,7 @@ static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
   if (ZMAP_IS_WINDOW_BASIC_FEATURE(item))
     *str_out = "ZMAP_WINDOW_BASIC_FEATURE" ;
   if (ZMAP_IS_WINDOW_GLYPH_ITEM(item))
-    *str_out = "ZMAP_WINDOW_GLYPH_ITEM" ;
+    *str_out = "ZMAP_WINDOW_GLYPH_FEATURE" ;
   if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(item))
     *str_out = "ZMAP_WINDOW_SEQUENCE_FEATURE" ;
   if (ZMAP_IS_WINDOW_TEXT_FEATURE(item))
