@@ -96,12 +96,12 @@ while getopts ":a:bdf:gil:mrtuz:" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BATCH='yes' ;;
-	d  ) ZMAP_MASTER_BUILD_DIST=$ZMAP_TRUE   ;;
+	d  ) ZMAP_MASTER_BUILD_DIST='yes'   ;;
 	f  ) FEATURE_DIR=$OPTARG ;;
 	g  ) GIT_FEATURE_INFO='-g' ;;
 	l  ) RELEASE_LOCATION=$OPTARG ;;
 	m  ) RT_TO_CVS='no' ;;
-	n  ) ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_TRUE   ;;
+	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes'   ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;

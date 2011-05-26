@@ -22,7 +22,7 @@ OUTPUT=$BUILD_PREFIX
 ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
 
-./build_run.sh -a $ERROR_RECIPIENT -l $OUTPUT $BUILD_PREFIX || RC=1
+./build_run.sh -a $ERROR_RECIPIENT -d -l $OUTPUT $BUILD_PREFIX || RC=1
 
 
 exit $RC
