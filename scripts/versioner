@@ -138,9 +138,9 @@ my $PROGNAME = basename($0) ;
 	{
 	cvs_commit($version_path, "/") if $commit;
 
-	# THIS HAS TO BE WRONG...it overwrites the new file with the old !
-	# my $sys = "mv -f $version_path.backup $version_path";
-	# system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
+	# See the comment above...slightly tricksie....!!
+	my $sys = "mv -f $version_path.backup $version_path";
+	system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 
 	my $sys = "rm -f $version_path.backup";
 	system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
