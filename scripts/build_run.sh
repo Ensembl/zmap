@@ -58,7 +58,7 @@ RT_TO_CVS=''
 FEATURE_DIR=''
 BATCH=''
 GIT_FEATURE_INFO=''
-
+ZMAP_MASTER_BUILD_DIST=''
 
 
 # Usage:    message_out "Your Message"
@@ -194,17 +194,17 @@ fi
 
 if [ -z "$BATCH" ] ; then
 
-    message_out "Build parameters are"
+    message_out "Build parameters are:"
 
     cat <<EOF
-
+===================
         Running on: '$(hostname)'
       Build script: '$CVS_CHECKOUT_SCRIPT'
       Build_prefix: '$BUILD_PREFIX'
    Command options: '$CMD_OPTIONS'
         Global log: '$GLOBAL_LOG'
 Errors reported to: '$ERROR_RECIPIENT'
-
+===================
 EOF
 
 fi
