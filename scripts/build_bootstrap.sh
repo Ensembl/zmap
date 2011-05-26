@@ -14,7 +14,17 @@
 #
 #
 
+
+# Let's not mess about...this script is called by a script that has specifically called
+# this version of the script so all other scripts we call should be based on this scripts
+# directory....surely.....
+#
 PROG_NAME=`basename $0`
+
+BASE_DIR=`dirname $0`
+
+
+
 
 
 # Provide a cleanup function to remove the gen_checkout_script and other tmp files.
@@ -42,15 +52,19 @@ BRANCH='develop'
 GIT_VERSION_INFO=''
 
 
-message_out "Start of build bootstrap, running in $PWD"
-
-
-message_out "Trying build_config and funcs here....."
 
 # I don't know what the history is for.....who cares ???
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+
+
+
+message_out "Start of build bootstrap, running in $PWD"
+
+message_out "Trying build_config and funcs here....."
+
 
 
 

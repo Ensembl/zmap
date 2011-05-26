@@ -19,37 +19,36 @@ PROGNAME=`basename $0`
 GLOBAL_LOG=''
 
 
-# ================== BUILD CONFIG ================== 
 # Configuration variables
-
-# where everything is located.
-BASE_DIR=~zmap
+#
 
 # SRC_MACHINE= The machine to log into to start everything going
-SRC_MACHINE=tviewsrv
+SRC_MACHINE='tviewsrv'
 
-# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
-CVS_CHECKOUT_SCRIPT=$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts/build_bootstrap.sh
-
-# Output place for build
-BUILDS_DIR="$BASE_DIR/BUILDS"
-
+# SSH_ID is userid which we use to ssh in for other machines.
+SSH_ID='zmap'
 
 # ERROR_RECIPIENT= Someone to email
 ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
+
+# default mail subject.
 MAIL_SUBJECT="ZMap Build Failed (control script)"
 
+# where everything is located.
+BASE_DIR=~zmap
+SCRIPTS_DIR="$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts"
+BUILDS_DIR="$BASE_DIR/BUILDS"
 
-# OUTPUT dir
+
+# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
+BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
+FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
+
+
+# Various build params.
 OUTPUT=$BUILDS_DIR
-
-# Give user a chance to cancel.
 SLEEP=15
-
-# Is build a tag/release build ?
 TAG_RELEASE_BUILD=no
-
-
 TAG_CVS=''
 INC_REL_VERSION=''
 INC_UPDATE_VERSION=''
@@ -61,21 +60,24 @@ GIT_FEATURE_INFO=''
 ZMAP_MASTER_BUILD_DIST=''
 
 
+
+# try to load useful shared shell functions...after this we will have access to
+# common message funcs.
+. $FUNCTIONS_SCRIPT || { echo "Failed to load common functions file: $FUNCTIONS_SCRIPT"; exit 1; }
+
+
+# This script needs to explicitly send stuff to the log file whereas
+# the script makes sure that output from scripts it calls goes to the logfile
+# automatically. Hence here we have some variants on the zmap_message_ funcs.
+#
+
 # Usage:    message_out "Your Message"
 function message_out
 {
-    now=$(date +%H:%M:%S)
-
-    log_msg="[$PROGNAME ($now)] $*"
-
-    echo "$log_msg"
+    zmap_message_out "$*"
 
     if [ -n "$GLOBAL_LOG" ] ; then
-	echo "$log_msg" >> $GLOBAL_LOG
-    fi
-
-    if [ -n "$BATCH" ] ; then
-	echo "$log_msg" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+	zmap_message_out "$*" >> $GLOBAL_LOG
     fi
 }
 
@@ -83,6 +85,11 @@ function message_out
 function message_exit
 {
     message_out $*
+
+    if [ -n "$BATCH" ] ; then
+	zmap_message_out "$*" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+    fi
+
     exit 1
 }
 
@@ -116,9 +123,10 @@ done
 shift $(($OPTIND - 1))
 
 if [ $# == 1 ]; then
-  BUILD_PREFIX=$1
+    BUILD_PREFIX=$1
 
-  MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
+    # redo mail subject now we have a name for the build.
+    MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
 else
   message_exit "No build prefix specifed: $usage"
 fi
@@ -126,28 +134,59 @@ fi
 
 # We do not know the directory for the logfile until here so cannot start logging
 # until this point, from this point this script prints any messages to stdout
-# and to the logfile.
+# _and_ to the logfile.
 #
 GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
 
-# do we really need this anymore...
-#if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
-#    GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
-#fi
 
-
+# remove any previous log.
 rm -f $GLOBAL_LOG || message_exit "Cannot remove log from previous build: $GLOBAL_LOG"
+
 
 message_out "ZMap $BUILD_PREFIX Build Started"
 
 
-# Plug together options..........
+# do some set up and basic checks.......
 #
 
-# simple flags first...
+if [ -n "$FEATURE_DIR" ] ; then
+    if [ ! -d $FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
+	message_exit "$FEATURE_DIR is not a directory or is not readable."
+    fi
+fi
+
+mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT" 
+
+
+# We don't support this option at the moment, it seems kind of useless
+# given that we either check out a new version of the code or don't want
+# the code updated at all.
+#
+#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
+#    old_dir=$(pwd)
+#    new_dir=$(dirname  $BUILD_SCRIPT)
+#    up2date=$(basename $BUILD_SCRIPT)
+#    cd $new_dir
+#    export CVS_RSH=ssh
+#    cvs update -C $up2date || { 
+#	echo "Failed to cvs update $BUILD_SCRIPT"
+#	echo "Failed to cvs update $BUILD_SCRIPT" | \
+#	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+#	exit 1; 
+#    }
+#    cd $old_dir
+#fi
+
+
+
+
+# Plug together command options..........
+#
+
+# all single letter flags...
 CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
 
-
+# Now flags with options
 if [ -n "$FEATURE_DIR" ] ; then
 
   CMD_OPTIONS="$CMD_OPTIONS -f $FEATURE_DIR"
@@ -190,8 +229,12 @@ fi
 
 
 
+#
+# OK, off we go......
+#
 
-
+# Give some build info....
+#
 if [ -z "$BATCH" ] ; then
 
     message_out "Build parameters are:"
@@ -199,7 +242,7 @@ if [ -z "$BATCH" ] ; then
     cat <<EOF
 ===================
         Running on: '$(hostname)'
-      Build script: '$CVS_CHECKOUT_SCRIPT'
+      Build script: '$BUILD_SCRIPT'
       Build_prefix: '$BUILD_PREFIX'
    Command options: '$CMD_OPTIONS'
         Global log: '$GLOBAL_LOG'
@@ -208,60 +251,6 @@ Errors reported to: '$ERROR_RECIPIENT'
 EOF
 
 fi
-
-
-# OK, off we go......
-#
-
-
-# do some checks.......
-#
-
-if [ -n "$FEATURE_DIR" ] ; then
-    if [ ! -d $FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
-	message_exit "$FEATURE_DIR is not a directory or is not readable."
-    fi
-fi
-
-mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT" 
-
-
-
-# make sure a couple of things are sane.
-SCRIPT_NAME=$(basename $0)
-INITIAL_DIR=$(pwd)
-SCRIPT_DIR=$(dirname $0)
-if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
-   BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
-else
-   BASE_DIR=$SCRIPT_DIR
-fi
-
-
-if ! echo $CVS_CHECKOUT_SCRIPT | egrep -q "(^)/" ; then
-    CVS_CHECKOUT_SCRIPT=$INITIAL_DIR/$SCRIPT_DIR/$CVS_CHECKOUT_SCRIPT
-fi
-
-
-# We don't support this option at the moment, it seems kind of useless
-# given that we either check out a new version of the code or don't want
-# the code updated at all.
-#
-#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
-#    old_dir=$(pwd)
-#    new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
-#    up2date=$(basename $CVS_CHECKOUT_SCRIPT)
-#    cd $new_dir
-#    export CVS_RSH=ssh
-#    cvs update -C $up2date || { 
-#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
-#	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
-#	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
-#	exit 1; 
-#    }
-#    cd $old_dir
-#fi
-
 
 
 # If not run as batch then give user a chance to cancel, must be before we
@@ -276,13 +265,11 @@ fi
 
 
 
-# trap attempts to kill script to prevent dangling processes on other machines.
+# trap any attempts by user to kill script to prevent dangling processes on other machines.
 #
 trap '' INT
 trap '' TERM
 trap '' QUIT
-
-
 
 message_out "Build now running and cannot be cleanly aborted..."
 
@@ -294,7 +281,7 @@ message_out "Build now running and cannot be cleanly aborted..."
 # appears to succeed if we enter _rm_exit(), which is what we want. 
 # We use ssh -x so that during testing FowardX11=no is forced so that zmap_test_suite.sh
 # doesn't try to use the forwarded X11 connection, which will be the user's own not zmap's
-cat $CVS_CHECKOUT_SCRIPT | ssh zmap@$SRC_MACHINE '/bin/bash -c "\
+cat $BUILD_SCRIPT | ssh "$SSH_ID@$SRC_MACHINE" '/bin/bash -c "\
 function _rm_exit                       \
 {                                       \
    echo Master Script Failed...;        \
