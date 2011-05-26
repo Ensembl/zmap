@@ -44,6 +44,18 @@ GIT_VERSION_INFO=''
 
 message_out "Start of build bootstrap, running in $PWD"
 
+
+message_out "Trying build_config and funcs here....."
+
+# I don't know what the history is for.....who cares ???
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+set -o history
+. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+
+
+
+
 message_out "About to parse options: $*"
 
 # Get the options the user may have requested
@@ -284,9 +296,9 @@ fi
 # if requested, and/or anything else that isn't architecture dependent
 
 # Now we have a checkout we can source these
-. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
-set -o history
-. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+#. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+#set -o history
+#. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 # add checkout script to list of files to remove on exit
 zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
