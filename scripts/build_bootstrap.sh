@@ -21,7 +21,7 @@
 #
 PROG_NAME=`basename $0`
 
-BASE_DIR=`dirname $0`
+BASE_DIR="$PWD"
 
 echo "PROG_NAME = $PROG_NAME  in directory  $BASE_DIR"
 
