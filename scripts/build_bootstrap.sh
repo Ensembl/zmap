@@ -23,7 +23,7 @@ PROG_NAME=`basename $0`
 
 BASE_DIR=`dirname $0`
 
-
+echo "PROG_NAME = $PROG_NAME  in directory  $BASE_DIR"
 
 
 
