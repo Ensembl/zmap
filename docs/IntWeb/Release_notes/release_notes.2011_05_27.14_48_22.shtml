@@ -1,0 +1,553 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '27 May 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- Summaries of changes... --!>
+
+<h1>Summary Of Changes And Bug Fixes For ZMap 0.1.133 </h1>
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Acedb Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Seqtools Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.133 </h1>
+
+<p>Last Release Date: 13/05/2011</p>
+
+
+<h3>Current Release Date: 27 May 2011 at 14h.48m.22s</h3>
+
+
+<p>This report covers 2011-05-13 to 2011-05-27</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from git]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+</li>
+
+<li>
+/var/tmp/zmap.26091/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+"update last release notes to 27/05/2011"
+</li>
+
+<li>
+"update release notes file to release_notes.2011_05_27.12_33_30.shtml"
+</li>
+
+<li>
+"new zmap release notes for 27 May 2011"
+</li>
+
+<li>
+"replace cvs stuff with git stuff."
+</li>
+
+<li>
+"script to git commit etc."
+</li>
+
+<li>
+"fix args bug."
+</li>
+
+<li>
+"change to use build_run.sh"
+</li>
+
+<li>
+"fix up options handling."
+</li>
+
+<li>
+"add some more messages"
+</li>
+
+<li>
+"add dist file flag."
+</li>
+
+<li>
+"fix up base dir."
+</li>
+
+<li>
+"fix small buglet."
+</li>
+
+<li>
+"fix up base dir."
+</li>
+
+<li>
+"fix up base dir."
+</li>
+
+<li>
+"fix up base dir."
+</li>
+
+<li>
+"try to fix up common function loading."
+</li>
+
+<li>
+"try to fix up common function loading."
+</li>
+
+<li>
+"try to fix up common function loading."
+</li>
+
+<li>
+"try to fix up common function loading."
+</li>
+
+<li>
+"try to fix up common function loading."
+</li>
+
+<li>
+"fix up output to look better."
+</li>
+
+<li>
+"fix bug in version stuff that I introduced."
+</li>
+
+<li>
+"fix up faulty logic in dot scripts in build_bootstrap"
+</li>
+
+<li>
+"fix dist file flag."
+</li>
+
+<li>
+all docs for build stuff in build_system.shtml
+</li>
+
+<li>
+"trival comment change only."
+</li>
+
+<li>
+"update build documentation for new scripts etc."
+</li>
+
+<li>
+"Improve logging."
+</li>
+
+<li>
+"Improve logging."
+</li>
+
+<li>
+"fix up messaging/logging."
+</li>
+
+<li>
+"Improve logging."
+</li>
+
+<li>
+"fix errors."
+</li>
+
+<li>
+"fix errors."
+</li>
+
+<li>
+"fix errors."
+</li>
+
+<li>
+"fix errors."
+</li>
+
+<li>
+"add debug stuff."
+</li>
+
+<li>
+"fix feature info code."
+</li>
+
+<li>
+"fix another stupid bug."
+</li>
+
+<li>
+"fix stupid bugs."
+</li>
+
+<li>
+"fix silly bad arg flag bug."
+</li>
+
+<li>
+"add support for feature branch string."
+</li>
+
+<li>
+"add support for feature branch string."
+</li>
+
+<li>
+"tidy up."
+</li>
+
+<li>
+Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+"add come docs about git flow."
+</li>
+
+<li>
+"change to use build_run.sh"
+</li>
+
+<li>
+"tidy up params."
+</li>
+
+<li>
+"fix up feature branch info param + small tidy up bits."
+</li>
+
+<li>
+"parameterise build and add code to insert feature branch info."
+</li>
+
+<li>
+"script to put gti feature tag/description into zmap header file."
+</li>
+
+<li>
+Added note about compile info to git documentation
+</li>
+
+<li>
+"add script to retrieve git branch/tag/version information."
+</li>
+
+<li>
+"fix stupid typo."
+</li>
+
+<li>
+"fix up better feature dir arg handling."
+</li>
+
+<li>
+"fix up messaging etc for scripts."
+</li>
+
+<li>
+"fix up messaging etc for scripts."
+</li>
+
+<li>
+"scripts/build_run.sh"
+</li>
+
+<li>
+"replace with new script to call build_run.sh"
+</li>
+
+<li>
+/var/tmp/zmap.28235/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+"fix bug in versioner...not good code."
+</li>
+
+<li>
+"change to use new unified build_run.sh script"
+</li>
+
+<li>
+"fix buglet in versioner."
+</li>
+
+<li>
+"write up git flow stuff."
+</li>
+
+<li>
+"improve error messages and fix but in version file handling."
+</li>
+
+<li>
+"add some git flow stuff."
+</li>
+
+<li>
+/var/tmp/zmap.24722/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+"do release update by hand"
+</li>
+
+<li>
+"fix push bug with tags."
+</li>
+
+<li>
+"fix push bug with tags."
+</li>
+
+<li>
+increment version number
+</li>
+
+<li>
+/var/tmp/zmap.23007/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+fix typo.
+</li>
+
+<li>
+replace more cvs stuff with git
+</li>
+
+<li>
+replace cvs references with git.
+</li>
+
+<li>
+Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+fix branch.
+</li>
+
+<li>
+Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+added untracked gotchas in cvs-git doc in develop branch this time
+</li>
+
+<li>
+Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+fix typo.
+</li>
+
+<li>
+fixed typos on cvs-git doc
+</li>
+
+<li>
+Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+doc update
+</li>
+
+<li>
+Merge branch 'feature/foo' into develop
+</li>
+
+<li>
+reverted debug, to push docs to master
+</li>
+
+<li>
+doc update re git flow
+</li>
+
+<li>
+fix typo.
+</li>
+
+<li>
+fix typo.
+</li>
+
+<li>
+fix typo.
+</li>
+
+<li>
+fix up build to work again.
+</li>
+
+<li>
+a test
+</li>
+
+<li>
+turned on foo debug
+</li>
+
+<li>
+clearing updates to origin
+</li>
+
+<li>
+more work to do on this file.
+</li>
+
+<li>
+add debug info.
+</li>
+
+<li>
+add debug info.
+</li>
+
+<li>
+add debug info.
+</li>
+
+<li>
+fix typo.
+</li>
+
+<li>
+remoev cvs references.
+</li>
+
+<li>
+fix up directory stuff.
+</li>
+
+<li>
+fix up directory stuff.
+</li>
+
+<li>
+fix up faulty path.
+</li>
+
+<li>
+fix up faulty path.
+</li>
+
+<li>
+fix up scripts to use git.
+</li>
+
+<li>
+add script to update directory and optionally run a build command.
+</li>
+
+<li>
+updated git import notes
+</li>
+
+<li>
+add FEATURE_ prefix to build/dir name.
+</li>
+
+<li>
+fix up feature dir location.
+</li>
+
+<li>
+/var/tmp/zmap.15446/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+update release notes file to release_notes.2011_05_13.14_53_04.shtml
+</li>
+
+<li>
+new zmap release notes for 13 May 2011
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Acedb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Reading frame is now calculated from the mapped coords rather than the original coords
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
