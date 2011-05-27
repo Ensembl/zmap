@@ -98,9 +98,9 @@ function message_exit
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -d -e -f <zmap feature branch> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -d -f <zmap feature branch> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
 
-while getopts ":a:bdf:gil:mrtuz:" opt ; do
+while getopts ":a:bdf:gil:mnrtuz:" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BATCH='yes' ;;
