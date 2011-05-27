@@ -33,6 +33,8 @@ BRANCH='develop'
 
 GIT_VERSION_INFO=''
 
+FILES_TO_REMOVE=
+
 
 
 # I don't know what the history is for.....who cares ???
@@ -41,20 +43,13 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
-
-
 zmap_message_out "Start of build bootstrap, running in $PWD"
 
-zmap_message_out "Trying build_config and funcs here....."
-
-
-
-
-
-
-zmap_message_out "About to parse options: $*"
 
 # Get the options the user may have requested
+#
+zmap_message_out "About to parse options: $*"
+
 usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -t -u VARIABLE=VALUE"
 while getopts ":b:df:grtu" opt ; do
     case $opt in
@@ -101,7 +96,7 @@ chmod g+w $0 || zmap_message_err "Failed to chmod g+w $0"
 
 
 
-FILES_TO_REMOVE=
+
 
 
 
@@ -282,9 +277,9 @@ else
   CHECKOUT_OPTS=''
 fi
 
-zmap_message_out "About to run checkout script $gen_checkout_script $CHECKOUT_OPTS"
+zmap_message_out "Starting running checkout script $gen_checkout_script $CHECKOUT_OPTS"
 . ./$gen_checkout_script $CHECKOUT_OPTS ||  { zmap_message_out "Failed to load ./$gen_checkout_script" ; exit 1 ; }
-zmap_message_out "Finished $gen_checkout_script"
+zmap_message_out "Finished running checkout script $gen_checkout_script"
 
 
 # Here we copy from the development dir to the checked out one.  
@@ -498,6 +493,7 @@ for host in $ZMAP_BUILD_MACHINES
   do
   zmap_message_out "Logging into $host to run build there."
 
+  #-----------------------------------------------------------------------------------
   # Generate the build script.
   # N.B. Substitution _will_ occur in this HERE doc.
   #
@@ -560,6 +556,8 @@ chmod 755 host_checkout.sh || _rm_exit; \
 rm -f host_checkout.sh     || exit 1;   \
 "' > $host.log 2>&1
 
+  # end of generated script/run
+  #-----------------------------------------------------------------------------------
 
 
   if [ $? != 0 ]; then
