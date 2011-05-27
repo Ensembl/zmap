@@ -58,7 +58,8 @@ FEATURE_DIR=''
 BATCH=''
 GIT_FEATURE_INFO=''
 ZMAP_MASTER_BUILD_DIST=''
-
+ZMAP_MASTER_RT_RELEASE_NOTES=''
+ZMAP_MASTER_FORCE_RELEASE_NOTES=''
 
 
 # try to load useful shared shell functions...after this we will have access to
@@ -108,7 +109,7 @@ while getopts ":a:bdf:gil:mrtuz:" opt ; do
 	g  ) GIT_FEATURE_INFO='-g' ;;
 	l  ) RELEASE_LOCATION=$OPTARG ;;
 	m  ) RT_TO_CVS='no' ;;
-	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes'   ;;
+	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes' ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
