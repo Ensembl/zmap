@@ -239,17 +239,14 @@ fi
 if [ -z "$BATCH" ] ; then
 
     message_out "Build parameters are:"
-
-    cat <<EOF
-===================
-        Running on: '$(hostname)'
-      Build script: '$BUILD_SCRIPT'
-      Build_prefix: '$BUILD_PREFIX'
-   Command options: '$CMD_OPTIONS'
-        Global log: '$GLOBAL_LOG'
-Errors reported to: '$ERROR_RECIPIENT'
-===================
-EOF
+    message_out "==================="
+    message_out "        Running on: $(hostname)"
+    message_out "      Build script: $BUILD_SCRIPT"
+    message_out "      Build_prefix: $BUILD_PREFIX"
+    message_out "   Command options: $CMD_OPTIONS"
+    message_out "        Global log: $GLOBAL_LOG"
+    message_out "Errors reported to: $ERROR_RECIPIENT"
+    message_out "==================="
 
 fi
 

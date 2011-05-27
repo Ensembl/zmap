@@ -37,11 +37,11 @@ function zmap_message_rm_exit
 }
 
 
-function message_out
-{
-    now=$(date +%H:%M:%S)
-    echo "[$PROG_NAME ($now)] $*"
-}
+#function message_out
+#{
+#    now=$(date +%H:%M:%S)
+#    echo "[$PROG_NAME ($now)] $*"
+#}
 
 
 
@@ -61,16 +61,16 @@ set -o history
 
 
 
-message_out "Start of build bootstrap, running in $PWD"
+zmap_message_out "Start of build bootstrap, running in $PWD"
 
-message_out "Trying build_config and funcs here....."
-
-
+zmap_message_out "Trying build_config and funcs here....."
 
 
 
 
-message_out "About to parse options: $*"
+
+
+zmap_message_out "About to parse options: $*"
 
 # Get the options the user may have requested
 usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -t -u VARIABLE=VALUE"
@@ -110,9 +110,9 @@ ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=""
 
 
 if [ -f root_develop.sh ]; then
-    message_out "Development preamble..."
+    zmap_message_out "Development preamble..."
     . ./root_develop.sh
-    message_out ZMAP_MASTER_BUILD_DEVELOPMENT_DIR is '$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR'
+    zmap_message_out ZMAP_MASTER_BUILD_DEVELOPMENT_DIR is '$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR'
 fi
 
 chmod g+w $0 || zmap_message_err "Failed to chmod g+w $0"
@@ -294,12 +294,12 @@ else
   CHECKOUT_OPTS=''
 fi
 
-. ./$gen_checkout_script $CHECKOUT_OPTS ||  { message_out "Failed to load ./$gen_checkout_script" ; exit 1 ; }
+. ./$gen_checkout_script $CHECKOUT_OPTS ||  { zmap_message_out "Failed to load ./$gen_checkout_script" ; exit 1 ; }
 
 
 # Here we copy from the development dir to the checked out one.  
 if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
-    message_out "*** WARNING: Developing! Using $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR ***"
+    zmap_message_out "*** WARNING: Developing! Using $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR ***"
     chmod 755 $BASE_DIR/*.sh
     scp -r $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR/*.sh $BASE_DIR/
 fi
