@@ -142,7 +142,7 @@ my $PROGNAME = basename($0) ;
 	my $sys = "mv -f $version_path.backup $version_path";
 	system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 
-	my $sys = "rm -f $version_path.backup";
+	$sys = "rm -f $version_path.backup";
 	system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 	}
       }
