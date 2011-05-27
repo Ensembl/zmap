@@ -1,0 +1,450 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '27 May 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.132 </h1>
+
+<p>Last Release Date: 13/05/2011</p>
+
+
+<h3>Current Release Date: 27 May 2011 at 12h.33m.30s</h3>
+
+
+<p>This report covers 2011-05-13 to 2011-05-27</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+commit 80f4a5096f1793512a62ae177edc070f43f012ee
+Author: zmap <zmap@sanger.ac.uk>
+Date:   Fri May 20 15:54:33 2011 +0100
+
+    /var/tmp/zmap.28235/ZMap/scripts/versioner run by zmap
+
+commit f332f1c6b7c76756403de791da5e8df77f7c26f3
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Fri May 20 15:41:24 2011 +0100
+
+    "fix bug in versioner...not good code."
+
+commit 5998f2bc752316503ab31bc41932b6fc804e8e6f
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Fri May 20 15:32:33 2011 +0100
+
+    "change to use new unified build_run.sh script"
+
+commit 9f6aa27079d97e200475f71fad07c5ee2be60a4c
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 17:25:22 2011 +0100
+
+    "fix buglet in versioner."
+
+commit 0bc4132a2365291d8bf169bbf8a422ce19fc5896
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 17:25:03 2011 +0100
+
+    "write up git flow stuff."
+
+commit ea16583f94fcf44c7dc58d5c6a3bc913430c2387
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 13:58:47 2011 +0100
+
+    "improve error messages and fix but in version file handling."
+
+commit 62952f44e34ec92d9dedd38387e6f2a70a1d386e
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 13:58:13 2011 +0100
+
+    "add some git flow stuff."
+
+commit e57180dbe110ae49457f23b707c7b94bc544432e
+Author: zmap <zmap@sanger.ac.uk>
+Date:   Thu May 19 11:19:12 2011 +0100
+
+    /var/tmp/zmap.24722/ZMap/scripts/versioner run by zmap
+
+commit a55ebee160021c2a3750b2826b264a93d166a99b
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 11:07:18 2011 +0100
+
+    "do release update by hand"
+
+commit 207d31466fe8aca0dd0ea05053586e34363ce73b
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 10:51:52 2011 +0100
+
+    "fix push bug with tags."
+
+commit 2519cd621564fb4fa17ebc4080195364e571f5a2
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Thu May 19 10:48:29 2011 +0100
+
+    "fix push bug with tags."
+
+commit 0b315b2528dc0d09f1addb1ffecd1d67365f738a
+Author: zmap <zmap@sanger.ac.uk>
+Date:   Wed May 18 17:05:10 2011 +0100
+
+    increment version number
+
+commit f59cb03cc8cfd697c40ab5b6a3333b5144ba490c
+Author: zmap <zmap@sanger.ac.uk>
+Date:   Wed May 18 16:43:08 2011 +0100
+
+    /var/tmp/zmap.23007/ZMap/scripts/versioner run by zmap
+
+commit 8e945dd9c1ba4c9dd5f5981b3a2e6a5db3aca3a9
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 16:28:48 2011 +0100
+
+    fix typo.
+
+commit e43f5aace0c9cc9517f73fba28bdfb65b9f1d1a5
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 16:19:22 2011 +0100
+
+    replace more cvs stuff with git
+
+commit 3564c7007f925da840f8f27e85b0b9749ece3da5
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 15:53:33 2011 +0100
+
+    replace cvs references with git.
+
+commit a7da319427ba836222645df5fca3246d15fa45e9
+Merge: 20d25a8 87de857
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 11:33:33 2011 +0100
+
+    Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+
+commit 20d25a8a12a7abfc2bca2bf060c29d410a31dc4e
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 11:33:18 2011 +0100
+
+    fix branch.
+
+commit 87de857af5587edaa8c4d015e715e4e301fa2cae
+Merge: 8bad768 1a48849
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 10:12:36 2011 +0100
+
+    Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+
+commit 8bad768fff8386699dc245dd168f50b83ed7da9c
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 10:11:19 2011 +0100
+
+    added untracked gotchas in cvs-git doc in develop branch this time
+
+commit 1a48849b55b0be271a0610feab1c728dcf0ffe83
+Merge: ea505f2 ce718e1
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 10:06:02 2011 +0100
+
+    Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+
+commit ea505f24896b3f82cd02e816b2f3ed003a7562d4
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 10:05:28 2011 +0100
+
+    fix typo.
+
+commit ce718e17f9cf233effba758c03e4ef73616e466a
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 09:48:23 2011 +0100
+
+    fixed typos on cvs-git doc
+
+commit 9d644ec95714858ba512833f1e2f25e7d15a57f3
+Merge: f41a82a 2a89474
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 09:23:28 2011 +0100
+
+    Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+
+commit f41a82a3644801e06b8d90f8f003f92e87e612bb
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 09:22:45 2011 +0100
+
+    doc update
+
+commit 515565b815aed717767026cf0ca6d5735dd2d18a
+Merge: 33cc007 a297083
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 09:18:45 2011 +0100
+
+    Merge branch 'feature/foo' into develop
+
+commit a297083c382ae74bd3628b2dbf1b9bf50f436c80
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 09:18:41 2011 +0100
+
+    reverted debug, to push docs to master
+
+commit 0d4c528420c1cbcddd68bddf391e493160d1d51c
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 09:11:35 2011 +0100
+
+    doc update re git flow
+
+commit 2a89474fd48b1a6e6e473b93f944ed0688aed389
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 09:07:56 2011 +0100
+
+    fix typo.
+
+commit 678a9a6edfb39518a77f37a497528b6ef36f33a6
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 09:04:00 2011 +0100
+
+    fix typo.
+
+commit bf47c46684e749f9d9609e58122d8e8871824547
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 09:03:05 2011 +0100
+
+    fix typo.
+
+commit 0c8f5cdf101ca6e06255ffe5f3c2be08ac6cb1fe
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Wed May 18 08:59:32 2011 +0100
+
+    fix up build to work again.
+
+commit d49f8805eb1527c034281ca123a6a9d786724335
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 08:37:04 2011 +0100
+
+    a test
+
+commit 03c7e97cb621aef57a20418cd6854221b5452e63
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Wed May 18 08:33:43 2011 +0100
+
+    turned on foo debug
+
+commit 33cc007ad48cd10112e3dabb6b2734216ad8b9ed
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Tue May 17 15:50:46 2011 +0100
+
+    clearing updates to origin
+
+commit d0c3b30d1b7eef1cc5d35165f25520b8d3e6c7d5
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Tue May 17 12:05:06 2011 +0100
+
+    more work to do on this file.
+
+commit 5f639289281dfd4d39c8fa4db67622c0d9d328e2
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Tue May 17 09:49:02 2011 +0100
+
+    add debug info.
+
+commit b18b657d4fd84355cf5520a30daf2dd80556fa0c
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Tue May 17 09:31:08 2011 +0100
+
+    add debug info.
+
+commit bba887976ccbce909de5127cde37bf8022a1754c
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Tue May 17 09:01:30 2011 +0100
+
+    add debug info.
+
+commit dada8f650b76908eb411db577979b15cbb776291
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Tue May 17 08:40:52 2011 +0100
+
+    fix typo.
+
+commit 9818b0cc4a2147aa4b0997ea0a3c28016e846254
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Tue May 17 07:36:01 2011 +0100
+
+    remoev cvs references.
+
+commit 118109c53c01990aba3ccbe3db199c35bc1f3cd6
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Mon May 16 16:28:24 2011 +0100
+
+    fix up directory stuff.
+
+commit 18e4814aa370e4781e272043050a2326cfa65803
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Mon May 16 16:00:00 2011 +0100
+
+    fix up directory stuff.
+
+commit 638d2b421ebe0788579e05b41084d0cb75c56ce6
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Mon May 16 15:18:31 2011 +0100
+
+    fix up faulty path.
+
+commit 5f9cac8f939b79679ca8986080942461e411b484
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Mon May 16 15:10:05 2011 +0100
+
+    fix up faulty path.
+
+commit 8594fda46e5e27bee2b83e1bb86b63cfd177250a
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Mon May 16 13:55:14 2011 +0100
+
+    fix up scripts to use git.
+
+commit c74ea03de95552f2836fbb67faab2ffa40125237
+Author: Ed Griffiths <edgrif@sanger.ac.uk>
+Date:   Mon May 16 13:09:41 2011 +0100
+
+    add script to update directory and optionally run a build command.
+
+commit d05b5e53051e522850a796c023d90267ebcb8ee3
+Author: malcolm hinlsey <mh17@sanger.ac.uk>
+Date:   Mon May 16 10:30:07 2011 +0100
+
+    updated git import notes
+
+commit d9fd3ca2a293199044f5791cacd7395b7cad3d38
+Author: edgrif <edgrif>
+Date:   Fri May 13 16:10:42 2011 +0000
+
+    add FEATURE_ prefix to build/dir name.
+
+commit 272052f7d15ab3fc0b58647cf88fdc08b7fc55cc
+Author: edgrif <edgrif>
+Date:   Fri May 13 14:17:59 2011 +0000
+
+    fix up feature dir location.
+
+commit 6a4af4f9fd8fe6f2de0a516203b0058b4ae2027f
+Author: zmap <zmap>
+Date:   Fri May 13 14:03:10 2011 +0000
+
+    /var/tmp/zmap.15446/ZMap/scripts/versioner run by zmap
+
+commit d88d58eee777a7dbc97e2c9a843852f3b53886ae
+Author: zmap <zmap>
+Date:   Fri May 13 13:53:38 2011 +0000
+
+    update release notes file to release_notes.2011_05_13.14_53_04.shtml
+
+commit b2cb545d43884afb9f81fdfd967003399cf338a7
+Author: zmap <zmap>
+Date:   Fri May 13 13:53:37 2011 +0000
+
+    new zmap release notes for 13 May 2011
+
+commit 830e6d2af05a7c398efb595a7219d71ec0457988
+Author: zmap <zmap>
+Date:   Fri May 13 13:42:29 2011 +0000
+
+    /var/tmp/zmap.26566/ZMap/scripts/versioner run by zmap
+
+commit 5b2ad456551f008e5afc1d2c45a31a54c50e8adf
+Author: mh17 <mh17>
+Date:   Fri May 13 13:35:03 2011 +0000
+
+    updated obscure docs
+
+commit d301eb2db00cfd2b87e7df3c8c3cfab28f6e83f1
+Author: zmap <zmap>
+Date:   Fri May 13 13:02:21 2011 +0000
+
+    update release notes file to release_notes.2011_05_13.14_01_47.shtml
+
+commit ca3715d0955d1548dd27c293c64db818d40556c4
+Author: zmap <zmap>
+Date:   Fri May 13 13:02:20 2011 +0000
+
+    new zmap release notes for 13 May 2011
+
+commit 46f51164add7ff223df0d47485a38c1ef99b3750
+Author: edgrif <edgrif>
+Date:   Fri May 13 13:00:22 2011 +0000
+
+    fix up feature dir location.
+
+commit 5888dc313ad0ebb2ae549ee983817aaf8071a5aa
+Author: zmap <zmap>
+Date:   Fri May 13 12:54:59 2011 +0000
+
+    /var/tmp/zmap.5689/ZMap/scripts/versioner run by zmap
+
+commit 3ebf7947e48e00f69f133d3df5a5dfcfacec0ea2
+Author: zmap <zmap>
+Date:   Fri May 13 12:45:36 2011 +0000
+
+    update last release notes to 13/05/2011
+
+commit ea77ed6641770421555348eb45b99608f950a2d8
+Author: zmap <zmap>
+Date:   Fri May 13 12:45:35 2011 +0000
+
+    update release notes file to release_notes.2011_05_13.13_44_41.shtml
+
+commit 20510b5897355bea1271458ea08034e2110eb2db
+Author: zmap <zmap>
+Date:   Fri May 13 12:45:34 2011 +0000
+
+    new zmap release notes for 13 May 2011
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+Reading frame is now calculated from the mapped coords rather than the original coords
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
