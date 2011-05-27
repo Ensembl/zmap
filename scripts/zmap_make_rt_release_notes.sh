@@ -240,6 +240,37 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <!--#include virtual="/perl/header" -->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
+
+<!-- Summaries of changes... --!>
+
+<h1>Summary Of Changes And Bug Fixes For ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h1>
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Acedb Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Seqtools Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+
+
 <!-- The release version, etc... --!>
 
 <h1>RT Tickets Resolved/Code Changes For ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h1>
@@ -422,7 +453,7 @@ EOF
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <fieldset>
-<legend><b>ZMap Changes/Fixes [from cvs]</b></legend>
+<legend><b>ZMap Changes/Fixes [from git]</b></legend>
 
 EOF
 
@@ -452,7 +483,8 @@ cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn'
 
 
 # process using perl one-liner
-perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+#perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 
 rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
 
@@ -474,7 +506,7 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 
     cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <fieldset>
-<legend><b>Aceb Changes/Fixes [from cvs]</b></legend>
+<legend><b>Acedb Changes/Fixes [from cvs]</b></legend>
 EOF
 
     TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/acedb.changefile"
