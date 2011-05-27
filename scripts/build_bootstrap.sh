@@ -15,17 +15,7 @@
 #
 
 
-# Let's not mess about...this script is called by a script that has specifically called
-# this version of the script so all other scripts we call should be based on this scripts
-# directory....surely.....
-#
-PROG_NAME=`basename $0`
-
-#BASE_DIR="$PWD"
-
-echo "PROG_NAME = $PROG_NAME  in directory  $BASE_DIR"
-
-
+RC=0
 
 # Provide a cleanup function to remove the gen_checkout_script and other tmp files.
 #
@@ -35,14 +25,6 @@ function zmap_message_rm_exit
     rm -f $FILES_TO_REMOVE
     zmap_message_exit "$@"
 }
-
-
-#function message_out
-#{
-#    now=$(date +%H:%M:%S)
-#    echo "[$PROG_NAME ($now)] $*"
-#}
-
 
 
 
@@ -192,6 +174,9 @@ function _checkout_mk_cd_dir
     fi
 }
 
+zmap_message_out "checking that zmap_message_out works in generated script." 
+
+
 _checkout_message_out "Start of checkout script (created by build_bootstrap)."
 
 TODAY=`date +"%a %b %e %Y"`
@@ -283,6 +268,9 @@ EOF
 # end of generated script section.
 #------------------------------------------------------------------------------
 
+# add checkout script to list of files to remove on exit
+zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
+
 
 
 # Now source the generated checkout script in this scripts process.
@@ -294,7 +282,9 @@ else
   CHECKOUT_OPTS=''
 fi
 
+zmap_message_out "About to run checkout script $gen_checkout_script $CHECKOUT_OPTS"
 . ./$gen_checkout_script $CHECKOUT_OPTS ||  { zmap_message_out "Failed to load ./$gen_checkout_script" ; exit 1 ; }
+zmap_message_out "Finished $gen_checkout_script"
 
 
 # Here we copy from the development dir to the checked out one.  
@@ -314,17 +304,12 @@ fi
 #set -o history
 #. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
-# add checkout script to list of files to remove on exit
-zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
-
 
 zmap_message_out "MASTER VARIABLE SETTINGS:"
 zmap_message_out "ZMAP_MASTER_HOST=$ZMAP_MASTER_HOST"
 zmap_message_out "ZMAP_MASTER_NOTIFY_MAIL=$ZMAP_MASTER_NOTIFY_MAIL"
-
 zmap_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
 zmap_message_out "ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR"
-
 zmap_message_out "ZMAP_MASTER_BUILD_DOCS=$ZMAP_MASTER_BUILD_DOCS"
 zmap_message_out "ZMAP_MASTER_BUILD_DOXYGEN_DOCS=$ZMAP_MASTER_BUILD_DOXYGEN_DOCS"
 zmap_message_out "ZMAP_MASTER_CVS_RELEASE_NOTES=$ZMAP_MASTER_CVS_RELEASE_NOTES"
@@ -513,10 +498,6 @@ for host in $ZMAP_BUILD_MACHINES
   do
   zmap_message_out "Logging into $host to run build there."
 
-  zmap_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
-
-
-
   # Generate the build script.
   # N.B. Substitution _will_ occur in this HERE doc.
   #
@@ -683,16 +664,6 @@ if [ "x$ZMAP_MASTER_BUILD_DIST" == "x$ZMAP_TRUE" ]; then
 fi
 
 
-if [ "x$ZMAP_MASTER_BUILD_CANVAS_DIST" == "x$ZMAP_TRUE" ]; then
-    # Need to write this !
-
-    zmap_message_out "Need to make dist in foocanvas..."
-
-    zmap_cd $CHECKOUT_BASE
-
-fi
-
-
 # version inc...
 if [ "x$ZMAP_MASTER_INC_REL_VERSION" == "x$ZMAP_TRUE" ]; then
 
@@ -707,6 +678,7 @@ elif [ "x$ZMAP_MASTER_INC_UPDATE_VERSION" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "ZMap Version - update number incremented."
 
 fi
+
 
 zmap_cd $save_root
 
@@ -762,9 +734,11 @@ fi
 
 
 # And the tar file
-rm -f $TAR_FILE
+rm -f $TAR_FILE || zmap_message_rm_exit "Failed to remove $TAR_FILE"
+
 # remove it from list of files to remove on exit
 zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
+
 
 # N.B. We now have no $SCRIPTS_DIR
 
@@ -803,4 +777,6 @@ zmap_message_out "Binaries, code, doc, dist etc can be found in $RELEASE_LOCATIO
 zmap_message_out "For more information see $RELEASE_LOCATION/README"
 zmap_message_out "--------"
 zmap_message_out "Successfully reached last line of script!"
+
+exit $RC
 # ================== END OF SCRIPT ================== 
