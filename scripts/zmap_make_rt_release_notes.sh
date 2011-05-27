@@ -606,58 +606,77 @@ if [ "x$UPDATE_HTML" == "xyes" ]; then
 	zmap_message_exit "Failed to move the html file to the release_notes dir"
     
     if [ "x$UPDATE_CVS" == "xyes" ]; then
-	zmap_message_out "updating html in cvs..."
+	zmap_message_out "updating html in respository..."
 
 	RELEASE_NOTES_OUTPUT=$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/$RELEASE_NOTES_OUTPUT
 
 	# ask cvs if it knows of the file
 	# cvs_unknown will have data if nothing is known.
-	cvs_unknown=$(cvs status $RELEASE_NOTES_OUTPUT 2>/dev/null | grep Status | grep Unknown)
-	if [ "x$cvs_unknown" != "x" ]; then
-	    zmap_message_out "Need to cvs add $RELEASE_NOTES_OUTPUT"
-	    cvs add $RELEASE_NOTES_OUTPUT || \
-		zmap_message_exit "cvs add failed"
-	fi
-
-	zmap_message_out cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT 
-	cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT || \
-	    zmap_message_exit "cvs commit failed for $RELEASE_NOTES_OUTPUT"
+	#cvs_unknown=$(cvs status $RELEASE_NOTES_OUTPUT 2>/dev/null | grep Status | grep Unknown)
+	#if [ "x$cvs_unknown" != "x" ]; then
+	#    zmap_message_out "Need to cvs add $RELEASE_NOTES_OUTPUT"
+	#    cvs add $RELEASE_NOTES_OUTPUT || \
+	#	zmap_message_exit "cvs add failed"
+	#fi
+        #
+	#zmap_message_out cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT 
+	#cvs commit -m "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT || \
+	#    zmap_message_exit "cvs commit failed for $RELEASE_NOTES_OUTPUT"
+	
+	zmap_message_out "Commit release notes file $RELEASE_NOTES_OUTPUT"
+	$BASE_DIR/git_commit.sh -p "new zmap release notes for $HUMAN_TODAY" $RELEASE_NOTES_OUTPUT || \
+	    zmap_message_exit "commit failed for $RELEASE_NOTES_OUTPUT"
     fi
     
 fi
 
 if [ "x$UPDATE_DEFINE" == "xyes" ]; then
     
-    cvs edit $ZMAP_PATH_TO_WEBPAGE_HEADER || zmap_message_exit "failed to cvs edit $ZMAP_PATH_TO_WEBPAGE_HEADER"
+    # This should no longer be needed as git files are r/w anyway.
+    #cvs edit $ZMAP_PATH_TO_WEBPAGE_HEADER || zmap_message_exit "failed to cvs edit $ZMAP_PATH_TO_WEBPAGE_HEADER"
+
+
     perl -i -lne 's!((.*)(ZMAPWEB_RELEASE_NOTES\s)(.*))!$2$3"'$RELEASE_FILE'"!; print ;' $ZMAP_PATH_TO_WEBPAGE_HEADER || \
 	zmap_message_exit "failed to edit webpages header"
 
 
     if [ "x$UPDATE_CVS" == "xyes" ]; then
-	zmap_message_out "updating webpages header in cvs..."
+	zmap_message_out "updating webpages header in repository..."
 
 
-	zmap_message_out cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER
-	cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER || \
-	    zmap_message_exit "cvs commit failed for $ZMAP_PATH_TO_WEBPAGE_HEADER"
+	#zmap_message_out cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER
+	#cvs commit -m "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER || \
+	#    zmap_message_exit "cvs commit failed for $ZMAP_PATH_TO_WEBPAGE_HEADER"
+
+	zmap_message_out "Commit web page file $ZMAP_PATH_TO_WEBPAGE_HEADER"
+	$BASE_DIR/git_commit.sh  -p "update release notes file to $RELEASE_FILE" $ZMAP_PATH_TO_WEBPAGE_HEADER || \
+	    zmap_message_exit "Commit failed for $ZMAP_PATH_TO_WEBPAGE_HEADER"
+
     fi
 fi
 
 if [ "x$UPDATE_DATE" == "xyes" ]; then
 
-    cvs edit $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
-	zmap_message_exit "failed to cvs edit $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
+    # no need now we are using git...
+    #cvs edit $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
+    #  zmap_message_exit "failed to cvs edit $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
 
     echo $RT_TODAY > $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
 	zmap_message_exit "Failed to write to last release file"
 
 
     if [ "x$UPDATE_CVS" == "xyes" ]; then
-	zmap_message_out "updating the last run date in cvs..."
+	zmap_message_out "updating the last run date in respository..."
 
-	zmap_message_out cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP
-    	cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
-	    zmap_message_exit "cvs commit failed for $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
+	#zmap_message_out cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP
+    	#cvs commit -m "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
+	#    zmap_message_exit "cvs commit failed for $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
+
+	zmap_message_out "Commit release notes timestamp file $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
+    	$BASE_DIR/git_commit.sh  -p "update last release notes to $RT_TODAY" $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP || \
+	    zmap_message_exit "Commit failed for $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP"
+
+
     fi
     
 fi
