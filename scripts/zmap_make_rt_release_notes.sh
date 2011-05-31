@@ -57,7 +57,7 @@ function set_zmap_version_release_update_vars
 
 
 
-CMDSTRING='[ -d<date> -n -z ] <ZMap directory>'
+CMDSTRING='[ -d<date> -f -n -z ] <ZMap directory>'
 DESCSTRING=`cat <<DESC
    -d   specify date from which changes/tickets should be extracted,
         date must be in form "dd/mm/yyyy" (defaults to date in $ZMAP_RELEASE_NOTES_TIMESTAMP)
@@ -490,10 +490,7 @@ EOF
 cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
 
 # process using perl one-liner
-#perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
-#perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 perl -nle 'print qq(</li>\n\n<li>\n$_)'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
-
 
 rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
 
@@ -591,7 +588,6 @@ EOF
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
     # process using perl one-liner (Jeremy Henty's suggestion):
-    #perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
     perl -nle 'print qq(</li>\n\n<li>\n$_)'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 
     rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
