@@ -155,8 +155,7 @@ else
     #       Ed Griffiths - 2011-05-24: "add support for feature branch string."
     # - bit of hack here to insert html tags...ah well....
     zmap_message_out "Issuing: git log --date=short --pretty=format:\"%an %ad %s\" --since=$start_date --until=$end_date > $changes_file"
-#    git log --date=short --pretty=format:"<b>%an - %ad:</b> %s" --since=$start_date --until=$end_date > $changes_file
-    git log --date=short --pretty=format:"<b>%an - %ad:</b> %s" > $changes_file
+    git log --date=short --pretty=format:"<b>%an - %ad:</b>   %s" --since=$start_date --until=$end_date > $changes_file
 fi
 
 zmap_message_out "Finished changes for $cvs..."
