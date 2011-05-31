@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May 24 15:36 2011 (edgrif)
+ * Last edited: May 31 16:18 2011 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
  * CVS info:   $Id: zmapGUIutils.c,v 1.66 2011-05-06 12:42:16 edgrif Exp $
  *-------------------------------------------------------------------
@@ -340,25 +340,15 @@ void zMapGUIShowAbout(void)
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
-  char *version_string ;
-
-  /* If this is a development branch show the development string as well as the version number. */
-  if ((zMapGetDevelopmentIDString()))
-    version_string = g_strdup_printf("%s  -- Dev Version: %s", zMapGetVersionString(), zMapGetDevelopmentIDString()) ;
-  else
-    version_string = g_strdup(zMapGetVersionString()) ;
-
   gtk_show_about_dialog(NULL,
 			"authors", authors,
 			"comments", zMapGetCommentsString(),
 			"copyright", zMapGetCopyrightString(),
 			"license", zMapGetLicenseString(),
-			"name", zMapGetAppName(),
-			"version", version_string,
+			"program-name", zMapGetAppName(),
+			"version", zMapGetAppVersionString(),
 			"website", zMapGetWebSiteString(),
 			NULL) ;
-
-  g_free(version_string) ;
 
   return ;
 }

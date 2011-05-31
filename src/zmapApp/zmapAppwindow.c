@@ -27,7 +27,7 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Oct 22 11:56 2010 (edgrif)
+ * Last edited: May 31 16:22 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
  * CVS info:   $Id: zmapAppwindow.c,v 1.78 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -640,14 +640,10 @@ static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout,
 static void checkForCmdLineVersionArg(int argc, char *argv[])
 {
   ZMapCmdLineArgsType value ;
-  gboolean show_version = FALSE ;
 
-  if (zMapCmdLineArgsValue(ZMAPARG_VERSION, &value))
-    show_version = value.b ;
-
-  if (show_version)
+  if (zMapCmdLineArgsValue(ZMAPARG_VERSION, &value) && value.b)
     {
-      printf("%s - %s\n", zMapGetAppName(), zMapGetVersionString()) ;
+      printf("%s %s\n", zMapGetAppName(), zMapGetAppVersionString()) ;
 
       exit(EXIT_SUCCESS) ;
     }

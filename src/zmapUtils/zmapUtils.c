@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 24 15:19 2011 (edgrif)
+ * Last edited: May 31 16:18 2011 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
  * CVS info:   $Id: zmapUtils.c,v 1.36 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
@@ -162,6 +162,20 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
 char *zMapGetDevelopmentIDString(void)
 {
   return ZMAP_DEVELOPMENT_ID ;
+}
+
+
+/* Returns development ID string if there is one, otherwise the Version/Release/Update string,
+ * do _not_ free the returned string.
+ */
+char *zMapGetAppVersionString(void)
+{
+  char *version_string = NULL ;
+
+  if (!(version_string = zMapGetDevelopmentIDString()))
+    version_string = zMapGetVersionString() ;
+
+  return version_string ;
 }
 
 
