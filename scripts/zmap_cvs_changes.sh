@@ -154,7 +154,10 @@ else
     # which produces ouput like this:
     #       Ed Griffiths 2011-05-24 "add support for feature branch string."
     zmap_message_out "Issuing: git log --date=short --pretty=format:\"%an %ad %s\" --since=$start_date --until=$end_date > $changes_file"
-    git log --date=short --pretty=format:"%an %ad %s" --since=$start_date --until=$end_date > $changes_file
+    #git log --date=short --pretty=format:"%an %ad %s" --since=$start_date --until=$end_date > $changes_file
+
+    # testing
+    git log --date=short --pretty=format:"%an %ad %s" > $changes_file
 fi
 
 zmap_message_out "Finished changes for $cvs..."

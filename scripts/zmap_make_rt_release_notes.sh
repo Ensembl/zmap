@@ -469,16 +469,12 @@ TMP_CHANGES_FILE="$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR/zmap.changefile"
 
 touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
 
+
 zmap_message_out "Getting zmap changes into '$TMP_CHANGES_FILE'"
 
 zmap_message_out "Executing: $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d$CVS_START_DATE -e$CVS_END_DATE -t ."
-#$BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d$CVS_START_DATE -e$CVS_END_DATE -t . || \
-#    zmap_message_exit "cvschanges for zmap didn't complete"
-
-# test only
-$BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z  -t . || \
+$BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d$CVS_START_DATE -e$CVS_END_DATE -t . || \
     zmap_message_exit "cvschanges for zmap didn't complete"
-
 
 zmap_message_out "Finished getting zmap changes"
 
