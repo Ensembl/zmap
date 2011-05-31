@@ -144,13 +144,17 @@ if [[ $cvs == "acedb" ]] ; then
     $BASE_DIR/cvs2cl --chrono -f $changes_file  -l $date $dirs
 else
     # git procedure is different....
-
+    #
     # date format for git is 2010-12-07
 
     zmap_cd $git_dir
 
-    zmap_message_out "Issuing: git log --since=$start_date --until=$end_date > $changes_file"
-    git log --since=$start_date --until=$end_date > $changes_file
+    # git can format its logs extensively, currently we use this:
+    #       git log --date=short --pretty=format:"%an %ad %s"
+    # which produces ouput like this:
+    #       Ed Griffiths 2011-05-24 "add support for feature branch string."
+    zmap_message_out "Issuing: git log --date=short --pretty=format:\"%an %ad %s\" --since=$start_date --until=$end_date > $changes_file"
+    git log --date=short --pretty=format:"%an %ad %s" --since=$start_date --until=$end_date > $changes_file
 fi
 
 zmap_message_out "Finished changes for $cvs..."

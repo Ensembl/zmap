@@ -490,7 +490,9 @@ cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn'
 
 # process using perl one-liner
 #perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
-perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+#perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+perl -nle 'print qq(</li>\n\n<li>\n$_)'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+
 
 rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
 
@@ -588,8 +590,8 @@ EOF
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
     # process using perl one-liner (Jeremy Henty's suggestion):
-perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
-
+    #perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
+    perl -nle 'print qq(</li>\n\n<li>\n$_)'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 
     rm -f $TMP_CHANGES_FILE  || zmap_message_exit "Couldn't remove $TMP_CHANGES_FILE! Odd considering rm -f use."
 
