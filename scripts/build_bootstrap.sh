@@ -37,7 +37,7 @@ FILES_TO_REMOVE=
 
 
 
-# I don't know what the history is for.....who cares ???
+# I don't know why history recording is turned on... ???
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
@@ -68,6 +68,7 @@ shift $(($OPTIND - 1))
 
 
 # try to get rid of this as I think we no longer need it......
+#
 # including VARIABLE=VALUE settings from command line
 if [ $# -gt 0 ]; then
     eval "$*"
@@ -97,12 +98,9 @@ chmod g+w $0 || zmap_message_err "Failed to chmod g+w $0"
 
 
 
-
-
-
 #------------------------------------------------------------------------------
-# Generate a checkout script to do the checking out, this will then get copied
-# to the various hosts to do the checking out on those hosts.
+# Generate a checkout script inline to do the checking out, this will then get
+# copied to the various hosts to do the checking out on those hosts.
 #
 gen_checkout_script=zmap_checkout_$$.sh
 
@@ -260,26 +258,33 @@ echo >/dev/null
 EOF
 ) > $gen_checkout_script
 #
-# end of generated script section.
+# end of inline generated script section.
 #------------------------------------------------------------------------------
+
+
 
 # add checkout script to list of files to remove on exit
 zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
 
 
+CHECKOUT_OPTS=''
+
+if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
+  CHECKOUT_OPTS="$CHECKOUT_OPTS -f $ZMAP_MASTER_BUILD_COPY_DIR"
+fi
+
+if [ -n "$BRANCH" ] ; then
+  CHECKOUT_OPTS="$CHECKOUT_OPTS -b $BRANCH"
+fi
+
 
 # Now source the generated checkout script in this scripts process.
 # This both checks out ZMap module and sets variables for use later by this script!
 #
-if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" != "x" ]; then
-  CHECKOUT_OPTS="-f $ZMAP_MASTER_BUILD_COPY_DIR"
-else
-  CHECKOUT_OPTS=''
-fi
-
 zmap_message_out "Starting running checkout script $gen_checkout_script $CHECKOUT_OPTS"
 . ./$gen_checkout_script $CHECKOUT_OPTS ||  { zmap_message_out "Failed to load ./$gen_checkout_script" ; exit 1 ; }
 zmap_message_out "Finished running checkout script $gen_checkout_script"
+
 
 
 # Here we copy from the development dir to the checked out one.  
@@ -388,7 +393,6 @@ if [ -n "$GIT_VERSION_INFO" ] ; then
 
     $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
 
-
 fi
 
 
@@ -410,7 +414,7 @@ if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
         FORCE_NOTES='-f'
     fi
 
-    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $NO_CVS $FORCE_NOTES || \
+    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $NO_CVS $FORCE_NOTES $CHECKOUT_BASE || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
 
     # We need to copy the changed web header into the master directory from the directory it was run in.
@@ -493,8 +497,9 @@ for host in $ZMAP_BUILD_MACHINES
   do
   zmap_message_out "Logging into $host to run build there."
 
+
   #-----------------------------------------------------------------------------------
-  # Generate the build script.
+  # Generate the build script inline.
   # N.B. Substitution _will_ occur in this HERE doc.
   #
   (cat $gen_checkout_script - <<EOF
@@ -555,8 +560,7 @@ chmod 755 host_checkout.sh || _rm_exit; \
 ./host_checkout.sh         || _rm_exit; \
 rm -f host_checkout.sh     || exit 1;   \
 "' > $host.log 2>&1
-
-  # end of generated script/run
+  # end of inline generated script/run
   #-----------------------------------------------------------------------------------
 
 

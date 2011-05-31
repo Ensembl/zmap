@@ -17,6 +17,8 @@ fi
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
+
+
 function set_cvs_prev_date
 {
     if [ "x$1" != "x" ]; then
@@ -55,7 +57,7 @@ function set_zmap_version_release_update_vars
 
 
 
-CMDSTRING='[ -d<date> -n -z ] VAR=VALUE'
+CMDSTRING='[ -d<date> -n -z ] <ZMap directory>'
 DESCSTRING=`cat <<DESC
    -d   specify date from which changes/tickets should be extracted,
         date must be in form "dd/mm/yyyy" (defaults to date in $ZMAP_RELEASE_NOTES_TIMESTAMP)
@@ -66,11 +68,8 @@ DESCSTRING=`cat <<DESC
 
    -z   do only zmap release notes (default is to include acedb etc. as well)
 
-Command line variables:
-
-ZMAP_RELEASE_NOTES_TIMESTAMP - file containing last release date [$ZMAP_RELEASE_NOTES_TIMESTAMP]
-ZMAP_VERSION_HEADER - header containing the version #defines [$ZMAP_VERSION_HEADER]
-ZMAP_WEBPAGE_HEADER - header containing the webpage #define [$ZMAP_WEBPAGE_HEADER]
+ZMap directory must be the base ZMap directory of the build directory so that the docs
+and the code match.
 DESC`
 
 UPDATE_CVS=yes
@@ -79,6 +78,7 @@ UPDATE_DATE=yes
 UPDATE_DEFINE=yes
 ZMAP_ONLY=no
 FORCE_NOTES=no
+ZMAP_BASEDIR=''
 
 
 # Note that the zmap user must have permissions within RT to see and query these queues
@@ -113,10 +113,14 @@ done
 
 shift $(($OPTIND - 1))
 
-# including VARIABLE=VALUE settings from command line
-if [ $# -gt 0 ]; then
-    eval "$*"
+# get ZMap dir
+#
+if [ $# -ne 1 ]; then
+  zmap_message_exit  "bad args: $*"
+else
+  ZMAP_BASEDIR=$1
 fi
+
 
 if [ "x$UPDATE_CVS" == "xyes" ]; then
    SLEEP=60
@@ -130,12 +134,16 @@ if [ "x$UPDATE_CVS" == "xyes" ]; then
    sleep $SLEEP
 fi
 
-# We know that this is in cvs
-zmap_cd $BASE_DIR
 
+# Go to respository directory...
+zmap_cd $ZMAP_BASEDIR
+
+
+# shouldn't need to do this..........
 # We can then go to the correct place
 #zmap_goto_cvs_module_root
-zmap_goto_git_root
+#zmap_goto_git_root
+
 
 # Get the path of some files
 ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP=$(find . -name $ZMAP_RELEASE_NOTES_TIMESTAMP | grep -v CVS)
@@ -480,8 +488,6 @@ EOF
 
 cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
 
-
-
 # process using perl one-liner
 #perl -lne "s!.*\*!  </li>\n  <li>!; print if !/$CVS_YEAR/" $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
@@ -569,7 +575,10 @@ EOF
 	zmap_message_exit "git log for seqtools didn't complete"
 
     zmap_message_out "Finished getting seqtools changes"
-    
+
+
+    zmap_message_out "Starting processing seqtools changes..."
+   
     cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <ul>
   <li><!-- --- Start editing Seqtools changes here... --- --!>
@@ -578,8 +587,6 @@ EOF
 
     cat $TMP_CHANGES_FILE > /dev/null || zmap_message_exit "$TMP_CHANGES_FILE doesn't exist!"
     
-    zmap_message_out "Starting processing seqtools changes..."
-
     # process using perl one-liner (Jeremy Henty's suggestion):
 perl -nle 'print qq(</li>\n\n<li>\n$1) if /^[[:blank:]]+([^[:space:]].*)$/;'  $TMP_CHANGES_FILE >> $RELEASE_NOTES_OUTPUT
 

@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #
 # Do not use directly, instead use one of the zmap_build_XXXX scripts
@@ -55,7 +54,8 @@ INC_UPDATE_VERSION=''
 RELEASES_DIR=''
 RT_TO_CVS=''
 FEATURE_DIR=''
-BATCH=''
+BRANCH=''
+CRON=''
 GIT_FEATURE_INFO=''
 ZMAP_MASTER_BUILD_DIST=''
 ZMAP_MASTER_RT_RELEASE_NOTES=''
@@ -87,7 +87,7 @@ function message_exit
 {
     message_out $*
 
-    if [ -n "$BATCH" ] ; then
+    if [ -n "$CRON" ] ; then
 	zmap_message_out "$*" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
     fi
 
@@ -98,12 +98,13 @@ function message_exit
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -d -f <zmap feature branch> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -f <zmap feature directory> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
 
-while getopts ":a:bdf:gil:mnrtuz:" opt ; do
+while getopts ":a:b:cdf:gil:mnrtuz:" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
-	b  ) BATCH='yes' ;;
+	b  ) BRANCH=$OPTARG ;;
+	c  ) CRON='yes' ;;
 	d  ) ZMAP_MASTER_BUILD_DIST='yes'   ;;
 	f  ) FEATURE_DIR=$OPTARG ;;
 	g  ) GIT_FEATURE_INFO='-g' ;;
@@ -194,6 +195,12 @@ if [ -n "$FEATURE_DIR" ] ; then
 
 fi
 
+if [ -n "$BRANCH" ] ; then
+
+  CMD_OPTIONS="$CMD_OPTIONS -b $BRANCH"
+
+fi
+
 if [ -n "$RELEASE_LOCATION" ] ; then
 
   CMD_OPTIONS="$CMD_OPTIONS RELEASE_LOCATION=$BUILDS_DIR/$RELEASE_LOCATION"
@@ -237,7 +244,7 @@ fi
 
 # Give some build info....
 #
-if [ -z "$BATCH" ] ; then
+if [ -z "$CRON" ] ; then
 
     message_out "Build parameters are:"
     message_out "==================="
@@ -252,11 +259,11 @@ if [ -z "$BATCH" ] ; then
 fi
 
 
-# If not run as batch then give user a chance to cancel, must be before we
+# If not run as cron then give user a chance to cancel, must be before we
 # start ssh otherwise we will leave running processes all over the place.
 # After this we trap any attempts to Cntl-C etc.
 #
-if [ -z "$BATCH" ] ; then
+if [ -z "$CRON" ] ; then
     message_out "Pausing for $SLEEP seconds, hit Cntl-C to abort cleanly."
 
     sleep $SLEEP
@@ -301,7 +308,7 @@ rm -f root_checkout.sh || exit 1;   \
 
 # ================== ERROR HANDLING ================== 
 
-# should we mail about build success or just for batch mode...???
+# should we mail about build success or just for cron mode...???
 
 if [ $? != 0 ]; then
     # There was an error, email someone about it!
