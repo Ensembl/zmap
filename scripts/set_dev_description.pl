@@ -29,8 +29,7 @@ open(my $fhOUT, "> $new_file") or die "ERROR $0: Couldn't open new version file 
 
 while (<$fhIN>) {
 
-  # look for ZMAP_{VERSION,RELEASE,UPDATE} NUMBER and increment number.
-  # $rotate has logic for how we do this!
+  # look for ZMAP_DEVELOPMENT_ID and add git branch/version.
   if (/$pattern/)
     {
     print $fhOUT "#define $pattern \"$dev_string\"\n" ;
