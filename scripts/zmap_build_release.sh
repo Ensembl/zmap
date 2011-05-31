@@ -21,8 +21,8 @@ SUB_DIR="RELEASE"
 ERROR_ID='edgrif@sanger.ac.uk'
 
 
-# once I've tested the -m option needs to be removed.....
-./build_run.sh -a $ERROR_ID -d -m -n -t -u -z $SUB_DIR $BUILD_PREFIX || RC=1
+# For release builds increment the 'release' number.
+./build_run.sh -a $ERROR_ID -d -n -t -r -z $SUB_DIR $BUILD_PREFIX || RC=1
 
 
 exit $RC

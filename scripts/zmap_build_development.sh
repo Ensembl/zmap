@@ -21,6 +21,7 @@ SUB_DIR="DEVELOPMENT"
 ERROR_ID='edgrif@sanger.ac.uk'
 
 
+# For development builds increment the 'update' number.
 ./build_run.sh -a $ERROR_ID -d -m -n -t -u -z $SUB_DIR $BUILD_PREFIX || RC=1
 
 
