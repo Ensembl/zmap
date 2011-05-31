@@ -289,35 +289,45 @@ summarised in the following table:</p>
 <table border cellpadding=10>
   <tr>
     <th>Script</th>
-    <th>GIT Branch</th>
+    <th>GIT Branch Used</th>
     <th>Purpose</th>
+    <th>New Release ?</th>
   </tr>
   <tr>
     <td>zmap_build_overnight.sh</td>
     <td>develop</td>
     <td>Run from cron job as daily build test.</td>
+    <td>No</td>
   </tr>
   <tr>
     <td>zmap_build_one_off.sh</td>
     <td>develop</td>
     <td>Run to produce a one off build with no tagging etc.</td>
-  </tr>
-  <tr>
-    <td>zmap_build_feature.sh</td>
-    <td>feature_XXXX</td>
-    <td>Produces distribution from a particular feature branch.</td>
+    <td>No</td>
   </tr>
   <tr>
     <td>zmap_build_development.sh</td>
     <td>develop</td>
     <td>Produces a build of the current develop branch.</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td>zmap_build_feature.sh</td>
+    <td>feature_XXXX</td>
+    <td>Produces distribution from a particular feature branch.</td>
+    <td>No</td>
   </tr>
   <tr>
     <td>zmap_build_release.sh</td>
-    <td>release</td>
+    <td>release_NNNN</td>
     <td>Produce a release build with repository tagging, full docs etc.</td>
+    <td>Yes</td>
   </tr>
 </table>
+
+<p>"New Release" implies incrementing the release number and producing and saving release
+notes to the repository.</p>
+
 
 
 <h3>"Release" Builds</h2>
