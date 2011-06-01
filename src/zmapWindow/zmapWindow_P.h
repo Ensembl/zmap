@@ -1231,13 +1231,14 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
+void zmapGetFeatureStack(ZMapFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group, ZMapFeature feature) ;
+				     FooCanvasGroup *set_group, ZMapFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;

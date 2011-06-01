@@ -184,13 +184,13 @@ typedef struct
 
 /* Assumes x1 <= x2. */
 #define ZMAP_SPAN_LENGTH(SPAN_STRUCT)                 \
-  (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1) 
+  (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1)
 
 
 
 /* This is a kind of "annotated" exon struct as it contains a lot more useful info. than
  * just the span, all derived from the the transcript feature.
- * 
+ *
  * Note that for EXON_NON_CODING none of the cds/peptide stuff is populated. */
 typedef enum {EXON_INVALID, EXON_NON_CODING, EXON_CODING, EXON_SPLIT_CODON, EXON_START_NOT_FOUND} ExonRegionType ;
 
@@ -912,6 +912,19 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
+
+
+
+/* used by item factory */
+typedef struct _zmapFeatureStack
+{
+      ZMapFeatureContext context;
+      ZMapFeatureAlignment align;
+      ZMapFeatureBlock block;
+      ZMapFeatureSet set;
+      ZMapFeature feature;
+      GQuark id;        /* used for density plots, set to zero */
+} ZMapFeatureStackStruct, *ZMapFeatureStack;
 
 
 /* ***************

@@ -89,7 +89,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	{
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  {
-	    double wx1, wy1, wx2, wy2 ;
+//	    double wx1, wy1, wx2, wy2 ;
 	    FooCanvasGroup *block_grp ;
 	    gboolean found_position = FALSE ;
 

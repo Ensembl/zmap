@@ -155,11 +155,7 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
-                                      ZMapFeatureContext context,
-                                      ZMapFeatureAlignment align,
-                                      ZMapFeatureBlock block,
-                                      ZMapFeatureSet set,
-                                      ZMapFeature feature,
+                                      ZMapFeatureStack feature_stack,
                                       gpointer handler_data);
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
@@ -508,15 +504,12 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 				     ZMapFeatureTypeStyle style,
 				     FooCanvasGroup *set_group,
-				     ZMapFeature     feature)
+				     ZMapFeatureStack     feature_stack)
 {
   FooCanvasItem *new_feature = NULL ;
-  ZMapFeatureContext context ;
-  ZMapFeatureAlignment alignment ;
-  ZMapFeatureBlock block ;
-  ZMapFeatureSet set ;
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) set_group;
   gboolean masked;
+  ZMapFeature feature = feature_stack->feature;
 
 #if MH17_REVCOMP_DEBUG
       zMapLogWarning("FeatureDraw %d-%d",feature->x1,feature->x2);
@@ -539,10 +532,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 #endif
 
 
-  /* These should be parameters, rather than continually fetch them, caller will almost certainly know these! */
-  set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-							ZMAPFEATURE_STRUCT_FEATURESET) ;
-
   masked = (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT &&  feature->feature.homol.flags.masked);
   if(masked)
     {
@@ -555,21 +544,11 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
       }
     }
 
-  block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set,
-							  ZMAPFEATURE_STRUCT_BLOCK) ;
-  alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block,
-							      ZMAPFEATURE_STRUCT_ALIGN) ;
-  context   = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment,
-							    ZMAPFEATURE_STRUCT_CONTEXT) ;
-
   new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
 					       NULL,
                                                set_group,
-                                               context,
-                                               alignment,
-                                               block,
-                                               set,
-                                               feature);
+                                               feature_stack);
+
   if(masked && container->masked && new_feature)
       foo_canvas_item_hide(new_feature);
 
@@ -1692,11 +1671,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
 
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
-                                      ZMapFeatureContext context,
-                                      ZMapFeatureAlignment align,
-                                      ZMapFeatureBlock block,
-                                      ZMapFeatureSet set,
-                                      ZMapFeature feature,
+                                      ZMapFeatureStack feature_stack,
                                       gpointer handler_data)
 {
   g_signal_connect(GTK_OBJECT(top_item), "destroy",
@@ -1717,7 +1692,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
 		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
 
 
-  switch(feature->type)
+  switch(feature_stack->feature->type)
     {
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
     case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -1826,14 +1801,18 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   FooCanvasGroup *container_features;
   ZMapStyleBumpMode bump_mode;
   ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) feature_group;
+  ZMapFeatureStackStruct feature_stack;
 
   style = feature->style;
 
   container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)feature_group));
   column_is_empty = !(container_features->item_list);
 
+#warning this should be moved into zmapWindowColBump.c/addGapsCB() for better effciency
+  zmapGetFeatureStack(&feature_stack,NULL,feature);
+
   /* This function will add the new feature to the hash. */
-  new_feature = zmapWindowFeatureDraw(window, style, FOO_CANVAS_GROUP(feature_group), feature) ;
+  new_feature = zmapWindowFeatureDraw(window, style, FOO_CANVAS_GROUP(feature_group), &feature_stack) ;
 
   if (bump_col)
     {

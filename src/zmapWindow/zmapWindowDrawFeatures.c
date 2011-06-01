@@ -120,9 +120,8 @@ typedef struct
 {
   ZMapWindow window ;
   GHashTable *styles ;
-/*  GHashTable *feature_hash ;   not used */
-  GList *feature_list;
   int feature_count;
+  ZMapFeatureStackStruct feature_stack;         /* the context of the feature */
   ZMapWindowContainerFeatures curr_forward_col ;
   ZMapWindowContainerFeatures curr_reverse_col ;
   ZMapFrame frame ;
@@ -673,6 +672,31 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
   return created;
 }
 
+
+void zmapGetFeatureStack(ZMapFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
+{
+      feature_stack->id = 0;              /* set once per col for graph features in the item factory */
+
+      feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
+
+      zMapAssert(feature_set || feature);
+
+      if(!feature_set)
+            feature_stack->set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+                                          ZMAPFEATURE_STRUCT_FEATURESET) ;
+
+      feature_stack->set       = feature_set;
+      feature_stack->block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup(
+                                          (ZMapFeatureAny) feature_set,
+                                          ZMAPFEATURE_STRUCT_BLOCK) ;
+      feature_stack->align     = (ZMapFeatureAlignment)zMapFeatureGetParentGroup(
+                                          (ZMapFeatureAny) feature_stack->block,
+                                          ZMAPFEATURE_STRUCT_ALIGN) ;
+      feature_stack->context   = (ZMapFeatureContext)zMapFeatureGetParentGroup(
+                                          (ZMapFeatureAny) feature_stack->align,
+                                          ZMAPFEATURE_STRUCT_CONTEXT) ;
+}
+
 /* Called for each feature set, it then calls a routine to draw each of its features.  */
 /* The feature set will be filtered on supplied frame by ProcessFeature.
  * ProcessFeature splits the feature sets features into the separate strands.
@@ -749,22 +773,23 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.styles        = styles ;
   featureset_data.feature_count = 0;
 
+  zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL);
 
   /* Now draw all the features in the column. */
 //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
 
   if(zMapWindowContainerSummarise(window,feature_set->style))
   {
+      GList *feature_list;
+
 #if MH17_DONT_INCLUDE
       zMapLogWarning("summarise %s zoom: %f,%f\n", g_quark_to_string(feature_set->unique_id),
             zMapStyleGetSummarise(feature_set->style),zMapWindowGetZoomFactor(window));
 #endif
-      featureset_data.feature_list = zMapWindowContainerSummariseSortFeatureSet(feature_set);
+      feature_list = zMapWindowContainerSummariseSortFeatureSet(feature_set);
 
-      g_list_foreach(featureset_data.feature_list, ProcessListFeature, &featureset_data) ;
-
-      g_list_free(featureset_data.feature_list);
-      featureset_data.feature_list = NULL;
+      g_list_foreach(feature_list, ProcessListFeature, &featureset_data) ;
+      g_list_free(feature_list);
 
       zMapWindowContainerSummariseClear(window,feature_set);
   }
@@ -2220,8 +2245,10 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 
 #endif
 
+  featureset_data->feature_stack.feature = feature;
+
   if(style)
-    feature_item = zmapWindowFeatureDraw(window, style, (FooCanvasGroup *)column_group, feature) ;
+    feature_item = zmapWindowFeatureDraw(window, style, (FooCanvasGroup *)column_group, &featureset_data->feature_stack) ;
   else
     g_warning("definitely need a style '%s' for feature '%s'",
 	      g_quark_to_string(feature->style_id),

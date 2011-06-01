@@ -16,7 +16,7 @@
 </fieldset>
 
 <fieldset><legend>Display output</legend>
-<p>Here we consider displaying any kind of feature entirely in terms of how many there are and there a few ways of representing this information.  We expect this process to be useful primarily for alignment features (eg Trembl, RNAseq)
+<p>Here we consider displaying any kind of feature entirely in terms of how many there are and there a few ways of representing this information.  We expect this process to be useful primarily for alignment features (eg RNAseq)
 </p>
 <h3>Heat map</h3>
 <p>Fixed width with each vertical pixel colour coded according to how many features overlap that region.</p>
@@ -41,7 +41,10 @@ Typically the density scale will be chosen as logarithmic.
 <p>Whether or not to produce a density plot will be determined by a column's style using some new parameters.
 A new mode (density) will be introduced which is automatically a graph mode display but allows bins to be combined.
 Density mode styles will trigger base features being re-processed into display data structures based on pixel boundaries.
-If multiple featuresets appear in a density column they will be combined into the same density display.
+</p>
+<h4>Handling multiple featuresets</h4>
+<p>Each graph is explicitly linked to a column and th etype of graph specified by a style.
+If multiple featuresets appear in a density column and they have the same style they will be combined into the same density display. If they are configured with different styles then a separate density display will be created for each.  Note thta this mainly make sense for wiggle (line) plots as histograms and heatmaps will just overlap and hide each other. Combining boxes an lines may be possible but it will be necessary to force lines to be painted on top - this can be done by ordering the density canvas items in the column.
 </p>
 
 <h3>Configuration</h3>
@@ -85,11 +88,11 @@ Note that min-score and max-score define the number of steps in the display and 
 </ul>
 </p>
 
-<p>To avoid performance overheads due to large amount of data a single density plot canvas item will be added per column and this will handle the display and selection of all bins. Please note the following:
+<p>To avoid performance overheads due to large amount of data a single density plot canvas item (<b>ZMapWindowDensityItem</b>) will be added per column and this will handle the display and selection of all bins. Please note the following:
 <ul>
 <li>This item will cover the whole extent of the column, ie it will range from start to end coordinate of its parent, and will set the width of the column as the width of the widest bin.
 <li>It will be added transparently from the Item Factory when a source bin item is added to the canvas.
-<li>Each source bin itme added will be added to a data structure (a list) held by the density item but not added to the canvas directly.
+<li>Each source bin item added will be added to a data structure (a list) held by the density item but not added to the canvas directly.
 <li>The FToIHash will point to the real canvas item, for each source bin added (a many to one relationship)
 <li>On draw or zoom the density item will calculate a list of display bins, which will be based on pixel boundaries and may hold several source bins depending on zoom.  Initially we will use a simple GList for both the source and display bins, and if perfomance is an issue add on one or more layers of skip list to allow efficient lookup.  Note that each list is initially a GList, but the code will be written in such a way as to allow easy modification of this.
 <li>It will draw any section of the plot on expose, driving the GDK_Draw function from its internal display list.
@@ -145,6 +148,53 @@ Either the class data needs to include a hash of existing graph column items or 
 Glyphs also get run thro' basic feature, which is odd.
 </pre>
 </p>
+
+<h4>Patching density items via the item factory</h4>
+<p>This is slightly intricate and not immediately obvious.
+</p>
+<h5>Preserving graph mode=histogram (non density plot graphs)</h5>
+ <p>A small preparatory task was to take simple graph features (the only implementaion so far - graph mode histogram as simple boxes) out of <b>zmapWindowBasicFeature.c</b> and to create a real <b>ZMapWindowGraphItem</b> class.  This involved creating a new file <b>zmapWindowGraphItem.c</b> based on BasicFeature and adjusting code in <b>zmapWindowItemFactory.c/</b> and zmapWindowCanvasItem.c/feature_is_drawable()</b>.
+</p>
+<p>Note that the item factory (<b>zmapWindowFToIFactoryRunSingle()</b> chooses a factory method indexed by a feature's style mode and then each one of these calls <b>zMapWindowCanvasItemCreate()</b> which determines the type of canvas item to create via <b>feature_is_drawable()</b> based on the feature's style mode, so effectively the same decision is being made twice in a row.
+</p>
+<p>As each factory method is tied directly to each style mode by the above we cannot call different methods for different types of graph and the method already defined (<b>drawSimpleGraphFeature()</b> must necessarily be used to draw other types of graph, so to avoid confusion this has been renamed to <b>drawGraphFeature()</b>
+</p>
+
+<p>After creating an empty canvas item of the correct type (previously Basic, now Graph), drawGraphFeature adds the actual data via the <b>class->add_interval()</b> function which resolves to <b>zmapWindowGraphItem.c/zmap_window_graph_item_add_interval()</b>.  This adds a foo canvas rect to the ZMapWindowCanvasItem which is a foo canvas group.
+</p>
+
+<h5>Inserting the ZMapWindowDensityItem item once per column</h5>
+<p>In <b>drawGraphFeature</b> we test the graph mode style's density flag and if set add the <b>ZMapWindowDensityItem</b> once only.  Ths is implemented by the class directly, which contains a GHashTable of these indexed by the column unique id, whcih is accessable to the factory via ther run_data->container foo canvas group.
+</p>
+<p>Note that we make this more complicated by <i>adding style_id</i> as well and we construct a composite GQuark (once) in the item factory.
+</p>
+
+<h5>Adding data to the ZMapWindowDensityItem instead of the foo canvas</h5>
+<p>Using the styles density flag as above we choose whether to call zmapWindowCanvasItemCreate or not.
+</p>
+<h6>Work in progress</h6>
+<pre>
+- graph items have been made into ZWCI and have foo rects added as intervals
+  rather than existing as a variant of basic feature
+- free standing glyphs are added as foo glyph items to basic features
+- for density plots we need to add a new type of ZWCI for the single
+  density column wide feature and then add an interval to that which
+  will be the foo extension density item
+  This is needed as the ZWCI is a foo group extension and does not draw directly
+- when canvas items get simplified then we turn the density ZWCI into a simple
+  foo extension as for other types
+
+- zMapWindowGraphDensityItemGetDensityItem() returns the ZWCI if found.
+  If not then the item factory (via drawGraphFeature()) will add it and add the interval
+  Note that we will call foo_canvas_item_new() directly rather than via zMapWindowCanvasItemCreate()
+
+- problems:
+  canvas item->feature gets accessed directly and cannot be NULL
+  We can invent a singleton feature that gets assigned data depending on mouse clicks??
+  we need to handle long items??
+  style needs to be set globally -> this looks like the add_interval() call but we need to
+  check compatablilty annd/or write the code directly
+</pre>
 
 </fieldset>
 

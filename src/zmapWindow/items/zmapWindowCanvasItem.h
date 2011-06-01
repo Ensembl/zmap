@@ -40,9 +40,7 @@
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-#include <zmapWindowGlyphItem.h>
-#include <zmapWindowLongItem.h>
-#include <zmapWindowTextItem.h>
+/* NOTE item header moved to after ZMapCanvasItem decls to allow sensible return types */
 
 
 /* This still gets added as a g_object_set_data on FooCanvasItem objects. */
@@ -76,6 +74,14 @@ typedef struct _zmapWindowCanvasItemStruct  zmapWindowCanvasItem, *ZMapWindowCan
 
 /* Class */
 typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMapWindowCanvasItemClass ;
+
+
+#include <zmapWindowGlyphItem.h>
+#include <zmapWindowGraphItem.h>
+#include <zmapWindowGraphDensityItem.h>
+#include <zmapWindowLongItem.h>
+#include <zmapWindowTextItem.h>
+
 
 
 /* Public funcs */

@@ -164,7 +164,7 @@ struct _FooCanvasItemClass {
 			  FooCanvasItem **actual_item);
 
 	void (* translate) (FooCanvasItem *item, double dx, double dy);
-	
+
 	/* Fetch the item's bounding box (need not be exactly tight).  This
 	 * should be in item-relative coordinates.
 	 */
@@ -272,7 +272,7 @@ void foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y);
  * item will be put on top of all the items in the new group.  The item's
  * coordinates relative to its new parent to *not* change -- this means that the
  * item could potentially move on the screen.
- * 
+ *
  * The item and the group must be in the same canvas.  An item cannot be
  * reparented to a group that is the item itself or that is an inferior of the
  * item.
@@ -332,7 +332,7 @@ struct _FooCanvasGroup {
 	FooCanvasItem item;
 
 	double xpos, ypos;
-	
+
 	/* Children of the group */
 	GList *item_list;
 	GList *item_list_end;
@@ -539,7 +539,7 @@ int foo_canvas_get_color (FooCanvas *canvas, const char *spec, GdkColor *color);
 /* Allocates a color from the RGB value passed into this function. */
 gulong foo_canvas_get_color_pixel (FooCanvas *canvas,
 				   guint        rgba);
-     
+
 
 /* Sets the stipple origin of the specified gc so that it will be aligned with
  * all the stipples used in the specified canvas.  This is intended for use only

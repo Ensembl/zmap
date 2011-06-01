@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
@@ -39,16 +39,12 @@
 
 
 typedef gboolean (*ZMapWindowFToIFactoryTopItemCreated)(FooCanvasItem *top_item,
-                                          ZMapFeatureContext context,
-                                          ZMapFeatureAlignment align,
-                                          ZMapFeatureBlock block,
-                                          ZMapFeatureSet set,
-                                          ZMapFeature feature,
+                                          ZMapFeatureStack feature_stack,
                                           gpointer handler_data);
 
-typedef gboolean (*ZMapWindowFToIFactoryItemFeatureSizeRequest)(ZMapFeature feature, 
-                                                  double *limits_array, 
-                                                  double *points_array_inout, 
+typedef gboolean (*ZMapWindowFToIFactoryItemFeatureSizeRequest)(ZMapFeature feature,
+                                                  double *limits_array,
+                                                  double *points_array_inout,
                                                   gpointer handler_data);
 
 typedef struct
@@ -60,22 +56,18 @@ typedef struct
 
 ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash,
                                                 ZMapWindowLongItems long_items);
-void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory, 
+void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
                                 guint line_width, /* replace with a config struct ? */
-                                ZMapWindowFToIFactoryProductionTeam signal_handlers, 
+                                ZMapWindowFToIFactoryProductionTeam signal_handlers,
                                 gpointer handler_data);
-void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory, 
-                                 ZMapFeatureSet set, 
+void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
+                                 ZMapFeatureSet set,
                                  FooCanvasGroup *container,
                                  ZMapFrame frame);
-FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory, 
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 					      FooCanvasItem        *current_item,
                                               FooCanvasGroup       *parent_container,
-                                              ZMapFeatureContext    context, 
-                                              ZMapFeatureAlignment  align, 
-                                              ZMapFeatureBlock      block,
-                                              ZMapFeatureSet        set,
-                                              ZMapFeature           feature);
+                                              ZMapFeatureStack feature_stack);
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory);
 
 
