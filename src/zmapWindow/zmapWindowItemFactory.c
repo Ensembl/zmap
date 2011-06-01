@@ -757,7 +757,7 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
   zmapWindowFToIFactoryRunSingle(run_data->factory,
       run_data->canvas_item,
       run_data->container,
-      &run_data->feature_stack);
+      run_data->feature_stack);
 
   return ;
 }
@@ -2110,7 +2110,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
       if(!run_data->feature_stack->id)
       {
             GQuark fset_id = zmapWindowContainerFeatureSetGetColumnId(fset);
-            char *x = g_strdup_printf("%s_%s",g_quark_to_string(fset_id),g_quark_to_string(style->id));
+            char *x = g_strdup_printf("%s_%s",g_quark_to_string(fset_id),g_quark_to_string(style->unique_id));
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);
@@ -2120,6 +2120,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
       canvas_item = zMapWindowGraphDensityItemGetDensityItem(parent, run_data->feature_stack->id,
             block->block_to_sequence.block.x1,block->block_to_sequence.block.x2,width);
       zMapAssert(canvas_item);
+      canvas_item->feature = feature;     /* must have one */
 
 #if MH17_SUBVERTING_THE_FACTORY
 /* we can't use this as it does not take the feature
@@ -2133,7 +2134,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 /* NOTE we know that items are not processed by another route
  * unlike alignments that get zMapWindowFeatureReplaced()
  */
- /* NOTE normally AddInterval adds a foo canvas itme and the runs another fucntion to set the colour
+ /* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
   * we add a data struct and add colurs to that in situ, as the feature has its style handy
   */
       zMapWindowGraphDensityAddItem(canvas_item, feature, 0.0, y2 - y1, x1, x2);

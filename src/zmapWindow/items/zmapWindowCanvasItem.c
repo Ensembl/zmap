@@ -1515,6 +1515,54 @@ static void window_canvas_item_bounds (FooCanvasItem *item, double *x1, double *
 #endif /* WINDOW_CANVAS_ITEM_BOUNDS_REQUIRED */
 
 
+void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
+                                    ZMapStyleColourType    colour_type,
+                                    GdkColor **fill, GdkColor **draw, GdkColor **outline,
+                                    GdkColor              *default_fill,
+                                    GdkColor              *border)
+{
+      ZMapStyleParamId colour_target = STYLE_PROP_COLOURS;
+
+      if (zMapStyleIsFrameSpecific(style))
+      {
+        switch (frame)
+          {
+          case ZMAPFRAME_0:
+            colour_target = STYLE_PROP_FRAME0_COLOURS ;
+            break ;
+          case ZMAPFRAME_1:
+            colour_target = STYLE_PROP_FRAME1_COLOURS ;
+            break ;
+          case ZMAPFRAME_2:
+            colour_target = STYLE_PROP_FRAME2_COLOURS ;
+            break ;
+          default:
+            zMapAssertNotReached() ;
+          }
+
+        zMapStyleGetColours(style, colour_target, colour_type,
+                        fill, draw, outline);
+      }
+
+      colour_target = STYLE_PROP_COLOURS;
+      if (strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
+      {
+        colour_target = STYLE_PROP_REV_COLOURS;
+      }
+
+      if (*fill == NULL && *draw == NULL && *outline == NULL)
+            zMapStyleGetColours(style, colour_target, colour_type, fill, draw, outline);
+
+
+  if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+    {
+      if(default_fill)
+            *fill = default_fill;
+      if(border)
+            *outline = border;
+    }
+}
+
 static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 					       FooCanvasItem         *interval,
 					       ZMapFeatureSubPartSpan unused,
@@ -1529,58 +1577,18 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 
   zMapLogReturnIfFail(canvas_item != NULL);
   zMapLogReturnIfFail(interval    != NULL);
-
+  zMapLogReturnIfFail(canvas_item->feature != NULL);
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
-      ZMapStyleParamId colour_target = STYLE_PROP_COLOURS;
-      ZMapFeature feature;
+      ZMapFrame frame;
+      ZMapStrand strand;
 
-      feature = canvas_item->feature;
-
-      if (feature && zMapStyleIsFrameSpecific(style))
-	{
-	  ZMapFrame frame;
-
-	  frame = zMapFeatureFrame(feature);
-
-	  switch (frame)
-	    {
-	    case ZMAPFRAME_0:
-	      colour_target = STYLE_PROP_FRAME0_COLOURS ;
-	      break ;
-	    case ZMAPFRAME_1:
-	      colour_target = STYLE_PROP_FRAME1_COLOURS ;
-	      break ;
-	    case ZMAPFRAME_2:
-	      colour_target = STYLE_PROP_FRAME2_COLOURS ;
-	      break ;
-	    default:
-	      zMapAssertNotReached() ;
-	    }
-
-	  zMapStyleGetColours(style, colour_target, colour_type,
-			      &fill, &draw, &outline);
-	}
-
-      colour_target = STYLE_PROP_COLOURS;
-      if (feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
-	{
-	  colour_target = STYLE_PROP_REV_COLOURS;
-	}
-
-      if (fill == NULL && draw == NULL && outline == NULL)
-	zMapStyleGetColours(style, colour_target, colour_type,
-			    &fill, &draw, &outline);
+      frame = zMapFeatureFrame(canvas_item->feature);
+      strand = canvas_item->feature->strand;
+      zmapWindowCanvasItemGetColours(style, strand, frame, colour_type, &fill, &draw, &outline, default_fill, border);
     }
 
-  if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
-    {
-      if(default_fill)
-            fill = default_fill;
-      if(border)
-            outline = border;
-    }
 
   interval_type = G_OBJECT_TYPE(interval);
 

@@ -101,6 +101,11 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
 gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item);
 
+void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
+      ZMapStyleColourType    colour_type,
+      GdkColor **fill, GdkColor **draw, GdkColor **outline,
+      GdkColor              *default_fill,
+      GdkColor              *border);
 
 
 void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item);
