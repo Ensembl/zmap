@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  6 13:15 2011 (edgrif)
+ * Last edited: Jun  2 10:08 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
  * CVS info:   $Id: zmapFeatureContext.c,v 1.63 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
@@ -235,7 +235,7 @@ char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean
 {
   char *dna = NULL ;
 
-  if (zMapFeatureIsValid(feature_any))
+  if (zMapFeatureIsValid(feature_any) && (start > 0 && end >= start))
     {
       dna = getFeatureBlockDNA(feature_any, start, end, revcomp) ;
     }
@@ -251,13 +251,13 @@ char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
   char *dna = NULL ;
   gboolean revcomp = FALSE ;
 
-  /* should check that feature is in context.... */
-  zMapAssert(feature) ;
+  if (zMapFeatureIsValid(feature_any))
+    {
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+	revcomp = TRUE ;
 
-  if (feature->strand == ZMAPSTRAND_REVERSE)
-    revcomp = TRUE ;
-
-  dna = getFeatureBlockDNA((ZMapFeatureAny)feature, feature->x1, feature->x2, revcomp) ;
+      dna = getFeatureBlockDNA((ZMapFeatureAny)feature, feature->x1, feature->x2, revcomp) ;
+    }
 
   return dna ;
 }
@@ -768,8 +768,6 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
   char *dna = NULL ;
   ZMapFeatureBlock block ;
   int start, end ;
-
-  zMapAssert(feature_any && (start_in > 0 && end_in >= start_in)) ;
 
   start = start_in ;
   end = end_in ;
