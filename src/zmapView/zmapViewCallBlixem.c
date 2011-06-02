@@ -1421,7 +1421,8 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
              */
             char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
 
-            g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
+            g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\t\n",
+
                    ref_name, blixem_data->source,
                    "region",          // zMapSOAcc2Term(feature->SO_accession),
                    blixem_data->mark_start, blixem_data->mark_end,

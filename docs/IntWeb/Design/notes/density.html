@@ -164,7 +164,7 @@ Glyphs also get run thro' basic feature, which is odd.
 </p>
 
 <h5>Inserting the ZMapWindowDensityItem item once per column</h5>
-<p>In <b>drawGraphFeature</b> we test the graph mode style's density flag and if set add the <b>ZMapWindowDensityItem</b> once only.  Ths is implemented by the class directly, which contains a GHashTable of these indexed by the column unique id, whcih is accessable to the factory via ther run_data->container foo canvas group.
+<p>In <b>drawGraphFeature</b> we test the graph mode style's density flag and if set add the <b>ZMapWindowDensityItem</b> once only.  Ths is implemented by the class directly, which contains a GHashTable of these indexed by the column unique id, which is accessable to the factory via ther run_data->container foo canvas group.
 </p>
 <p>Note that we make this more complicated by <i>adding style_id</i> as well and we construct a composite GQuark (once) in the item factory.
 </p>
