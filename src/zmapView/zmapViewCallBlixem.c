@@ -86,6 +86,8 @@ enum
     BLX_ARGV_SEQBL,             /* [seqbl file] */
     BLX_ARGV_FASTA_FILE,        /* [fasta file] */
     BLX_ARGV_EXBLX_FILE,        /* [exblx file] */
+    BLX_ARGV_DATASET_FLAG,      /* --dataset */
+    BLX_ARGV_DATASET,           /* [dataset] */
     BLX_ARGV_ARGC               /* argc ;) */
   } ;
 
@@ -202,6 +204,8 @@ typedef struct BlixemDataStruct
   GString *line ;
 
   GList *align_list ;
+
+  ZMapFeatureSequenceMap sequence_map;    /* where the sequwence comes from, used for BAM scripts */
 
 } blixemDataStruct, *blixemData ;
 
@@ -416,6 +420,8 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
 
   blixem_data.errorMsg = NULL ;
 
+  blixem_data.sequence_map = view->view_sequence;
+
   /* There is no way to interrupt g_hash_table_foreach(), so instead,
    * if printLine() encounters a problem, we store the error message
    * in blixem_data and skip all further processing, displaying the
@@ -510,6 +516,8 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
   blixem_data.local_sequences = local_sequences ;
   blixem_data.source = source;
+
+  blixem_data.sequence_map = view->view_sequence;
 
   blixem_data.align_set = align_set;
 
@@ -1267,7 +1275,15 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       paramString[BLX_ARGV_EXBLX_FILE - missed] = g_strdup_printf("%s", blixem_data->gff_file) ;
     }
 
-
+  if(blixem_data->sequence_map->dataset)
+  {
+      paramString[BLX_ARGV_DATASET_FLAG - missed] = g_strdup_printf("-dataset");
+      paramString[BLX_ARGV_DATASET - missed] = g_strdup_printf("%s",blixem_data->sequence_map->dataset);
+  }
+  else
+  {
+      missed += 2;
+  }
   return status ;
 }
 
