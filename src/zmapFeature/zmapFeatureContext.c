@@ -251,7 +251,7 @@ char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
   char *dna = NULL ;
   gboolean revcomp = FALSE ;
 
-  if (zMapFeatureIsValid(feature_any))
+  if (zMapFeatureIsValid((ZMapFeatureAny)feature))
     {
       if (feature->strand == ZMAPSTRAND_REVERSE)
 	revcomp = TRUE ;

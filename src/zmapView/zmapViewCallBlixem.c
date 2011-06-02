@@ -86,8 +86,7 @@ enum
     BLX_ARGV_SEQBL,             /* [seqbl file] */
     BLX_ARGV_FASTA_FILE,        /* [fasta file] */
     BLX_ARGV_EXBLX_FILE,        /* [exblx file] */
-    BLX_ARGV_DATASET_FLAG,      /* --dataset */
-    BLX_ARGV_DATASET,           /* [dataset] */
+    BLX_ARGV_DATASET,           /* --dataset=thing */
     BLX_ARGV_ARGC               /* argc ;) */
   } ;
 
@@ -1277,8 +1276,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   if(blixem_data->sequence_map->dataset)
   {
-      paramString[BLX_ARGV_DATASET_FLAG - missed] = g_strdup_printf("-dataset");
-      paramString[BLX_ARGV_DATASET - missed] = g_strdup_printf("%s",blixem_data->sequence_map->dataset);
+      paramString[BLX_ARGV_DATASET - missed] = g_strdup_printf("--dataset=%s",blixem_data->sequence_map->dataset);
   }
   else
   {
