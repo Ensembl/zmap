@@ -30,7 +30,7 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Mar 10 16:27 2011 (edgrif)
+ * Last edited: Jun  2 09:44 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
  * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.64 2011-04-08 14:00:42 mh17 Exp $
  *-------------------------------------------------------------------
@@ -1155,52 +1155,44 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
                                         ZMapXMLParser parser)
 {
   gboolean result = FALSE ;
-  ZMapXMLAttribute attr = NULL;
-  ZMapFeatureSet feature_set;
-  ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
-  RequestData request_data = (RequestData)(xml_data->user_data);
-  GQuark set_id ;
-  char *set_name ;
-  GQuark featureset_id ;
-  char *featureset_name ;
+  ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data ;
 
   if (xml_data->common.action != ZMAPVIEW_REMOTE_INVALID)
     {
+      RequestData request_data = (RequestData)(xml_data->user_data) ;
+      ZMapXMLAttribute attr = NULL ;
+      ZMapFeatureSet feature_set ;
+      GQuark featureset_id ;
+      char *featureset_name ;
+      GQuark unique_set_id ;
+      char *unique_set_name ;
+
       request_data->source_id = 0 ;			    /* reset needed for remove features. */
 
       if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
 	{
-
 	  result = TRUE ;
 
-	  set_id   = zMapXMLAttributeGetValue(attr);
-	  set_name = (char *)g_quark_to_string(set_id);
+	  /* Record original name and unique names for feature set, all look-ups are via the latter. */
+	  featureset_id = zMapXMLAttributeGetValue(attr) ;
+	  featureset_name = (char *)g_quark_to_string(featureset_id) ;
 
-        /* Make sure we have a source name. */
-        /* MH17 we need capitalised name to handle nice display of column names
-           and also to report status correctly to otterlace
-           so record what is requested exactly as is
-           The request logic will macth both types
-         */
-        featureset_id = set_id;
-        featureset_name = set_name;
-
-        set_id   = zMapFeatureSetCreateID(set_name);
-	  request_data->source_id = set_id ;
-
+	  request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
+	  unique_set_name = (char *)g_quark_to_string(unique_set_id);
 
 
 #if MH17_GET_COLUMN_NOT_FEATURESET___DONT_USE
 	  if (xml_data->common.action != ZMAPVIEW_REMOTE_LOAD_FEATURES)
 	    {
-            ZMapFeatureSetDesc set_data ;
+	      ZMapFeatureSetDesc set_data ;
 
-	      if (!(set_data = g_hash_table_lookup(request_data->view->context_map.featureset_2_column, GINT_TO_POINTER(set_id))))
+	      if (!(set_data = g_hash_table_lookup(request_data->view->context_map.featureset_2_column,
+						   GINT_TO_POINTER(unique_set_id))))
 		{
 		  char *err_msg ;
 
 		  err_msg = g_strdup_printf("Source %s not found in view->context_map.featureset_2_column",
-					    g_quark_to_string(set_id)) ;
+					    g_quark_to_string(unique_set_id)) ;
 		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 		  g_free(err_msg) ;
 
@@ -1213,18 +1205,19 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		}
 	    }
 #endif
+
 	  /* Processing for featuresets is different, if a featureset is marked to be dynamically
 	   * loaded it will not have been created yet so we shouldn't check for existence. */
 	  if (result)
 	    {
 	      /* Make sure this feature set is a child of the block........ */
-	      if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->block, featureset_id)))
+	      if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->block, unique_set_id)))
 		{
-		  feature_set = zMapFeatureSetCreate(featureset_name, NULL);
-		  zMapFeatureBlockAddFeatureSet(request_data->block, feature_set);
+		  feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
+		  zMapFeatureBlockAddFeatureSet(request_data->block, feature_set) ;
 		}
 
-	      request_data->feature_set = feature_set;
+	      request_data->feature_set = feature_set ;
 
 	      result = TRUE ;
 	    }
@@ -1245,22 +1238,22 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	{
 	  ZMapFeatureSource source_data ;
 
-        if (!(source_data = g_hash_table_lookup(request_data->view->context_map.source_2_sourcedata,
-						      GINT_TO_POINTER(set_id))))
+	  if (!(source_data = g_hash_table_lookup(request_data->view->context_map.source_2_sourcedata,
+						  GINT_TO_POINTER(unique_set_id))))
 	    {
-		char *err_msg ;
+	      char *err_msg ;
 
-		err_msg = g_strdup_printf("Source %s not found in view->context_map.source_2_sourcedata",
-			    g_quark_to_string(set_id)) ;
-		zMapXMLParserRaiseParsingError(parser, err_msg) ;
-		g_free(err_msg) ;
+	      err_msg = g_strdup_printf("Source %s not found in view->context_map.source_2_sourcedata",
+					g_quark_to_string(unique_set_id)) ;
+	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
+	      g_free(err_msg) ;
 
-		result = FALSE ;
-          }
-        else
+	      result = FALSE ;
+	    }
+	  else
 	    {
-		request_data->style_id = source_data->style_id ;
-          }
+	      request_data->style_id = source_data->style_id ;
+	    }
 
 	  if (result && (xml_data->common.action != ZMAPVIEW_REMOTE_LOAD_FEATURES))
 	    {
@@ -1270,16 +1263,16 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	      if (!(request_data->style = zMapFindStyle(request_data->view->context_map.styles, request_data->style_id)))
 	        {
-		    char *err_msg ;
+		  char *err_msg ;
 
-		    err_msg = g_strdup_printf("Style %s not found in view->context_map.styles",
-						      g_quark_to_string(request_data->style_id)) ;
-		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
-		    g_free(err_msg) ;
+		  err_msg = g_strdup_printf("Style %s not found in view->context_map.styles",
+					    g_quark_to_string(request_data->style_id)) ;
+		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		  g_free(err_msg) ;
 
-		    result = FALSE ;
-		  }
-          }
+		  result = FALSE ;
+		}
+	    }
     	}
 
       if (result)
@@ -1328,7 +1321,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	      {
 		if (!(request_data->orig_feature_set
-		      = zMapFeatureBlockGetSetByID(request_data->orig_block, featureset_id)))
+		      = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id)))
 		  {
 		    /* If we can't find the featureset it's a serious error and we can't carry on. */
 		    char *err_msg ;
@@ -1340,6 +1333,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 		    result = FALSE ;
 		  }
+
 
 		break;
 	      }
@@ -1353,6 +1347,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
   return result ;
 }
+
 
 static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_element,
 				      ZMapXMLParser parser)
