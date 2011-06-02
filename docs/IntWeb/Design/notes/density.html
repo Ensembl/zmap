@@ -177,11 +177,12 @@ Glyphs also get run thro' basic feature, which is odd.
 - graph items have been made into ZWCI and have foo rects added as intervals
   rather than existing as a variant of basic feature
 - free standing glyphs are added as foo glyph items to basic features
-- for density plots we need to add a new type of ZWCI for the single
-  density column wide feature and then add an interval to that which
+- for density plots we need to add BasicFeature for the single
+  density column wide item (a hack) and then add an interval to that which
   will be the foo extension density item
   This is needed as the ZWCI is a foo group extension and does not draw directly
-- when canvas items get simplified then we turn the density ZWCI into a simple
+  whereas foo items do
+- when canvas items get simplified then we turn the basic/density ZWCI into a simple
   foo extension as for other types
 
 - zMapWindowGraphDensityItemGetDensityItem() returns the ZWCI if found.
@@ -193,7 +194,19 @@ Glyphs also get run thro' basic feature, which is odd.
   We can invent a singleton feature that gets assigned data depending on mouse clicks??
   we need to handle long items??
   style needs to be set globally -> this looks like the add_interval() call but we need to
-  check compatablilty annd/or write the code directly
+  check compatablilty and/or write the code directly
+
+- to do:
+  paint the graph in the _draw function
+  test as for plain graph features: should display the same
+  test using two featuresets with the same data from GFF files and display as old and new style
+  display as lines not boxes -> combine data points into a poly_line
+  handle mouse clicks etc, point and bounds
+  handle long items (trivial? -> no: need to clip)
+  handle hide and show
+  re-bucket on display and zoom
+  get some timing stats
+  add on GC skew
 </pre>
 
 </fieldset>
