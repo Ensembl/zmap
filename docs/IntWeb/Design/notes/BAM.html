@@ -30,30 +30,28 @@ The major problem to solve is one of passing round information regarding what da
 <h3>[Blixem] configuration - new options</h3>
 <h4>Configuration file</h4>
 <p>
-The blixem configuration file <b>blixemrc</b> will be ammended to include a stanza for short reads data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
+The blixem configuration file <b>blixemrc</b> will be ammended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
 </p>
 <p>
 The config file already specifies the default pfetch mode for our current data type (EMBL sequences).  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular region from a particular source, without any prior knowledge of what those sequences are.  We could in the future want additional fetch methods for different data types that we don't yet know about, which may fetch sequences or just sequence data.
 </p>
-<p>The following suggestion for a config file format is an attempt to be as flexible as possible in these requirements:
+<p>The following suggestion for a config file format is an attempt to be as flexible as possible in these requirements. See the <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Blixem_Config_file">wiki page</a> for more info about the Blixem config file.
 <pre>
 [blixem]
-default-fetch = pfetch-socket  # default fetch method to use when there is no data type given for an item in the GFF file
+bulk-fetch = pfetch-socket     # default fetch method to use when there is no data type given for an item in the GFF file
+user-fetch = pfetch-http       # optionally, this can be used to specify a different fetch method for when the user double-clicks a sequence
 
 [embl]                         # config options for the embl data type
-fetch = pfetch-socket
+bulk-fetch = pfetch-socket
 
 [short-read]                   # config options for the short-read data type
-fetch = bam-fetch
+bulk-fetch = region-fetch
 
-[pfetch-socket]                # config options for this particular fetch method
-pfetch-mode = socket
-port = 22400
-node = pfetch.sanger.ac.uk
+[region-fetch]                 # config options for this particular fetch method
+script = /nfs/users/nfs_j/jh13/work/bam/bam_get
+arguments = -bam_path=/nfs/users/nfs_s/sw4/Bam/14dpf.bam -bam_cs=NCBIM37 -dataset=mouse
 
-[bam-fetch]                    # config options for this particular fetch method
-script = /software/anacode/bin/scripts/get_seqdata.pl
-arguments = stuff
+...
 </pre>
 </p>
 <p>The GFF file would then look something like:
@@ -101,12 +99,13 @@ ZMap will hold this list in the View's context_map (accessable to the Window cod
 <p>Blixem will find the script path and fixed arguments from a stanza in its configuration file 'blixemrc'.
 Other arguments will be appended as follows:
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> --analysis</td> <td>  source name of the data we wish to request</td> </tr>
-<tr> <td> --gff_sequence</td> <td> the name of the sequence eg 'chr6-18'</td> </tr>
-<tr> <td> --start</td> <td> request start coordinate</td> </tr>
-<tr> <td> --end</td> <td> request end coordinate</td> </tr>
-<tr> <td> --dataset</td> <td> where to get the sequence from eg 'human' <br /><b>Note</b> in the short term this should appear in the fixed arguments list in blixemrc.</td> </tr>
-<tr> <td> --gff_file</td> <td> where to put the output</td> </tr>
+<tr> <td> -analysis</td> <td>  source name of the data we wish to request (will this actually be used??)</td> </tr>
+<tr> <td> -chr</td> <td> the name of the reference sequence eg 'chr6-18'</td> </tr>
+<tr> <td> -start</td> <td> request start coordinate</td> </tr>
+<tr> <td> -end</td> <td> request end coordinate</td> </tr>
+<tr> <td> -dataset</td> <td>  where to get the sequence from eg 'human' <br /><b>Note</b> in the short term this should appear in the fixed arguments list in blixemrc.</td> </tr>
+<tr> <td> -bam_path</td> <td> path to the BAM file (short term: fixed args; long term: how will this be supplied?)</td></tr>
+<tr> <td> -bam_cs</td> <td> coordinate system of the BAM file, probably NCBIM37 (short term: fixed args; long term: how will this be supplied?)</td></tr>
 </table>
 
 </p>
