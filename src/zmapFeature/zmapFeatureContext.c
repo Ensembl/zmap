@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun  2 10:08 2011 (edgrif)
+ * Last edited: Jun  2 11:53 2011 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
  * CVS info:   $Id: zmapFeatureContext.c,v 1.63 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
