@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 27 14:34 2011 (edgrif)
+ * Last edited: Jun  6 11:44 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
  * CVS info:   $Id: zmapGFF2parser.c,v 1.132 2011-05-06 11:00:27 edgrif Exp $
  *-------------------------------------------------------------------
@@ -2163,7 +2163,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
     {
       if ((tag_pos = strstr(attributes, "percentID")))
 	{
-	  /* Parse "Align 157 197 +" */
+	  /* Parse "percentID 89.3" */
 	  char *attr_format_str = "%*s %lg" ;
 	  double percent_ID = 0 ;
 
