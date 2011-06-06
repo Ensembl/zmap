@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions to go from an alignment, block, column or feature
  *              in a feature context to the corresponding foocanvas group or item.
@@ -30,18 +30,13 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Feb 24 14:23 2011 (edgrif)
+ * Last edited: Jun  2 13:57 2011 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
  * CVS info:   $Id: zmapWindowItemHash.c,v 1.57 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
