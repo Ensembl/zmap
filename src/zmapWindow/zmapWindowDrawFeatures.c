@@ -27,7 +27,7 @@
  *
  * Exported functions:
  * HISTORY:
- * Last edited: Apr  6 16:08 2011 (edgrif)
+ * Last edited: Jun  6 10:53 2011 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
  * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.318 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
@@ -2345,7 +2345,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 #warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
 
 	  /* Swop focus from previous item(s)/columns to this column. */
-	  zMapWindowUnHighlightFocusItems(window) ;
+	  zmapWindowUnHighlightFocusItems(window) ;
 
 	  /* Try unhighlighting dna/translations... */
 	  zmapWindowItemUnHighlightDNA(window, item) ;

@@ -28,7 +28,7 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 18 14:50 2011 (edgrif)
+ * Last edited: Jun  6 10:52 2011 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
  * CVS info:   $Id: zmapWindowState.c,v 1.34 2011-03-31 11:12:22 edgrif Exp $
  *-------------------------------------------------------------------
@@ -624,7 +624,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	{
 	  zmapWindowFocusAddItem(window->focus, focus_item);
 
-	  zMapWindowHighlightFocusItems(window);
+	  zmapWindowHighlightFocusItems(window);
 	}
       else if ((possible_focus_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
 								     restore.item.align_id,
@@ -638,7 +638,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	{
 	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data);
 
-	  zMapWindowHighlightFocusItems(window);
+	  zmapWindowHighlightFocusItems(window);
 
 	  /* Need single hot item here for focus below.... */
 	}
