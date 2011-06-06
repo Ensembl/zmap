@@ -24,7 +24,7 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: May 31 16:02 2011 (edgrif)
+ * Last edited: Jun  6 10:21 2011 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
  * CVS info:   $Id: zmapUtils.h,v 1.51 2011-05-06 11:22:02 edgrif Exp $
  *-------------------------------------------------------------------
@@ -212,19 +212,15 @@ gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFun
 
 gboolean zMapLaunchWebBrowser(char *link, GError **error) ;
 
-
 void zMapUtilsUserInit(void) ;
 gboolean zMapUtilsUserIsDeveloper(void) ;
 gboolean zMapUtilsUserSetDeveloper(char *passwd) ;
-
-
 
 void zMapPrintQuark(GQuark quark) ;
 void zMapLogQuark(GQuark quark) ;
 gboolean zMapLogQuarkIsStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
-
 
 gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *end_inout) ;
 void zmapCoordsZeroBased(int *start_inout, int *end_inout) ;
