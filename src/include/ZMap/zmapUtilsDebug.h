@@ -25,7 +25,7 @@
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *
  * HISTORY:
- * Last edited: Mar 12 12:58 2010 (edgrif)
+ * Last edited: Jun  6 10:37 2011 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
  * CVS info:   $Id: zmapUtilsDebug.h,v 1.15 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
@@ -34,6 +34,8 @@
 #define ZMAP_UTILS_DEBUG_H
 
 #include <stdlib.h>
+#include <stdio.h>
+
 #include <glib.h>
 
 
@@ -77,14 +79,14 @@ G_STMT_START{                                             \
   G_STMT_START                                                        \
   {								      \
     if ((BOOLEAN_VAR))						      \
-      printf("%s: " #FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) ; \
+      zMapUtilsDebugPrintf(stderr, "%s: " #FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) ; \
   } G_STMT_END
 #else /* __GNUC__ */
-#define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)                      \
+#define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)		      \
   G_STMT_START                                                        \
   {								      \
     if ((BOOLEAN_VAR))						      \
-      printf("%s: " #FORMAT "\n", NULL, __VA_ARGS__) ;                \
+      zMapUtilsDebugPrintf(stderr, "%s: " #FORMAT "\n", NULL, __VA_ARGS__) ;  \
   } G_STMT_END
 #endif /* __GNUC__ */
 
@@ -154,8 +156,7 @@ extern gboolean zmap_timing_G;
 #endif /* ZMAP_DISABLE_TIMER */
 
 
-
-
+void zMapUtilsDebugPrintf(FILE *stream, char *format, ...) ;
 
 
 #endif /* ZMAP_UTILS_DEBUG_H */
