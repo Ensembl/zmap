@@ -33,7 +33,7 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  6 12:07 2011 (edgrif)
+ * Last edited: Jun  6 15:10 2011 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
  * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.33 2011-05-06 11:07:57 edgrif Exp $
  *-------------------------------------------------------------------
@@ -1628,7 +1628,11 @@ static void getAllMatches(ZMapWindow window,
       GList *headers = NULL, *types = NULL ;
       AddParaStruct para_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence"))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Strand: Sequence/Match"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence Start"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence End"))) ;
@@ -1637,7 +1641,11 @@ static void getAllMatches(ZMapWindow window,
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Score"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Percent ID"))) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
@@ -1673,11 +1681,15 @@ static void addTagValue(gpointer data, gpointer user_data)
 
   feature = getFeature(item) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (feature->feature.homol.flags.has_clone_id)
     clone_id = g_strdup(g_quark_to_string(feature->feature.homol.clone_id)) ;
   else
     clone_id = g_strdup("<NOT SET>") ;
   column_data = g_list_append(column_data, clone_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Align to col. header: "Strand: Sequence/Match" */
   strand = g_strdup_printf("       %s / %s        ",
