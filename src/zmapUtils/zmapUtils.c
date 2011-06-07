@@ -21,23 +21,19 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for the ZMap code.
  *
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 31 16:18 2011 (edgrif)
+ * Last edited: Jun  6 10:23 2011 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
  * CVS info:   $Id: zmapUtils.c,v 1.36 2010-07-08 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
 
 
 #define _ISOC99_SOURCE
@@ -683,6 +679,27 @@ gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str)
 
   return result ;
 }
+
+
+/* Call directly or via zMapDebugPrint() macros. Does a fflush every time to 
+ * ensure messages are seen in a timely way. */
+void zMapUtilsDebugPrintf(FILE *stream, char *format, ...)
+{
+  va_list args1, args2 ;
+
+  va_start(args1, format) ;
+  G_VA_COPY(args2, args1) ;
+
+  vfprintf(stream, format, args2) ;
+  fflush(stream) ;
+
+  va_end(args1) ;
+  va_end(args2) ;
+
+  return ;
+}
+
+
 
 
 

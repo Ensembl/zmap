@@ -25,7 +25,7 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: May  6 13:10 2011 (edgrif)
+ * Last edited: Jun  6 12:15 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
  * CVS info:   $Id: zmapFeature.h,v 1.195 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -504,7 +504,7 @@ typedef struct
   int length ;						    /* Length of homol/align etc. */
 
   /* Quality measures. (NEED TO GET SCORE IN HERE) */
-  double percent_id ;
+  float percent_id ;
 
 
   GQuark clone_id ;					    /* Clone this match is aligned to. */

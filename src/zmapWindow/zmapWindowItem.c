@@ -27,7 +27,7 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 27 08:49 2011 (edgrif)
+ * Last edited: Jun  6 10:51 2011 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
  * CVS info:   $Id: zmapWindowItem.c,v 1.149 2011-05-06 11:11:32 edgrif Exp $
  *-------------------------------------------------------------------
@@ -226,6 +226,19 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
  *                     Feature Item highlighting....
  */
 
+/* Highlight the given feature. */
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature)
+{
+  FooCanvasItem *feature_item ;
+  
+  if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
+						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
+    zmapWindowHighlightObject(window, feature_item, TRUE, FALSE) ;
+
+  return ;
+}
+
+
 
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
@@ -268,7 +281,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
   if (replace_highlight_item)
-    zMapWindowUnHighlightFocusItems(window) ;
+    zmapWindowUnHighlightFocusItems(window) ;
 
 
   /* For some types of feature we want to highlight all the ones with the same name in that column. */
@@ -331,7 +344,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
 
 
-  zMapWindowHighlightFocusItems(window);
+  zmapWindowHighlightFocusItems(window);
 
   return ;
 }
@@ -339,7 +352,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
 
-void zMapWindowHighlightFocusItems(ZMapWindow window)
+void zmapWindowHighlightFocusItems(ZMapWindow window)
 {
   FooCanvasItem *hot_item ;
   FooCanvasGroup *hot_column = NULL;
@@ -356,7 +369,7 @@ void zMapWindowHighlightFocusItems(ZMapWindow window)
 
 
 
-void zMapWindowUnHighlightFocusItems(ZMapWindow window)
+void zmapWindowUnHighlightFocusItems(ZMapWindow window)
 {
   FooCanvasItem *hot_item ;
   FooCanvasGroup *hot_column ;

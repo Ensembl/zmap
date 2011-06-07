@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  6 12:47 2011 (edgrif)
+ * Last edited: Jun  6 10:53 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
  * CVS info:   $Id: zmapWindow.c,v 1.368 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -4374,7 +4374,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
 	    || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-	  zMapWindowUnHighlightFocusItems(window) ;
+	  {
+	    zmapWindowUnHighlightFocusItems(window) ;
+	  }
 	else
 	  {
 	    focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
@@ -4758,7 +4760,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
     }
 
   /* Unhighlight any features/columns currently highlighted. */
-  zMapWindowUnHighlightFocusItems(window) ;
+  zmapWindowUnHighlightFocusItems(window) ;
 
   /* If we need to jump features then do it. */
   if (move_focus)
@@ -4904,7 +4906,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       ZMapFeatureColumn column;
       GQuark set_id;
 
-      zMapWindowUnHighlightFocusItems(window) ;
+      zmapWindowUnHighlightFocusItems(window) ;
 
       zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
 
