@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  6 12:25 2011 (edgrif)
+ * Last edited: Jun  7 12:07 2011 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
  * CVS info:   $Id: zmapFeatureUtils.c,v 1.81 2011-05-06 11:27:31 edgrif Exp $
  *-------------------------------------------------------------------
@@ -350,6 +350,18 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 
   return sane;
 }
+
+
+void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
+{
+  zmapFeatureRevComp(Coord, seq_start, seq_end, *coord_1, *coord_2) ;
+
+  return ;
+}
+
+
+
+
 
 /*!
  * Returns the original name of any feature type. The returned string belongs
