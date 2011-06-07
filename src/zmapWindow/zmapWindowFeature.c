@@ -29,7 +29,7 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  6 12:13 2011 (edgrif)
+ * Last edited: Jun  7 14:39 2011 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
  * CVS info:   $Id: zmapWindowFeature.c,v 1.216 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
@@ -178,6 +178,35 @@ static gboolean mouse_debug_G = FALSE ;
 
 
 
+
+
+/* Does a feature select using the same mechanism as when the user clicks on a feature.
+ * The slight caveat is that for compound objects like transcripts the object
+ * information is displayed whereas when the user clicks on a transcript the info.
+ * for the exon/intron they clicked on is also displayed. */
+gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+  FooCanvasItem *feature_item ;
+  
+  if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
+						    feature->strand, ZMAPFRAME_NONE, feature)))
+    {
+      zmapWindowUpdateInfoPanel(window, feature, feature_item, feature_item, 0, 0,  0, 0,
+				NULL, TRUE, FALSE) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
+
+
+#if MH17_NOT_CALLED
+
 /* NOTE that we make some assumptions in this code including:
  *
  * - the caller has found the correct context, alignment, block and set
@@ -199,10 +228,6 @@ static gboolean mouse_debug_G = FALSE ;
  *  */
 
 
-
-
-
-#if MH17_NOT_CALLED
 /* Add a new feature to the feature_set given by the set canvas item.
  *
  * Returns the new canvas feature item or NULL if there is some problem, e.g. the feature already
@@ -851,7 +876,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	}
 
       /* Get the feature attached to the item, checking that its type is valid */
-      feature  = zMapWindowCanvasItemGetFeature(item);
+      feature = zMapWindowCanvasItemGetFeature(item) ;
 
       if (but_event->type == GDK_BUTTON_PRESS)
 	{
