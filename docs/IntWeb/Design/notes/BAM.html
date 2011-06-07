@@ -49,11 +49,34 @@ bulk-fetch = region-fetch
 
 [region-fetch]                 # config options for this particular fetch method
 script = /nfs/users/nfs_j/jh13/work/bam/bam_get
-arguments = -bam_path=/nfs/users/nfs_s/sw4/Bam/14dpf.bam -bam_cs=NCBIM37 -dataset=mouse
+
 
 ...
 </pre>
 </p>
+<p>Assuming that we have two BAM sources configured (in ZMap) as:
+<pre>
+[ZMap]
+seq-data=14dpf;Liver
+</pre>
+the Blixem configuration file will include new stanzas for each source of BAM data in a format as follows:
+<pre>
+[14dpf]
+args=-bam_path=path_to_data_file =bam_cs=NBCIM37
+name=14dpf
+description=14 days post fertilisation
+
+[Liver]
+args=-bam_path=path_to_data_file =bam_cs=NBCIM37
+description=Adult Liver
+etc
+</pre>
+and Blixem with know to read the relevant stanza by referring to the GFF file provided by ZMap with a single line for each short-reads request.  The name of each stanza will be exactly as specifed in the source field.  For Blixem the name and description items are optional.
+</p>
+</p>
+<p>Note that this implies that the blixem configuration file must not be generated for each invocation of Blixem if the dataset changes.
+</p>
+
 <p>The GFF file would then look something like:
 <pre>
 ##gff-version 3
@@ -63,51 +86,74 @@ chr4-04	source2	region	215000	300000	0.000000	.	.	dataType=short-read      # opt
 chr4-04	vertebrate_mRNA	nucleotide_match	212438	212568	71.000000	+	.	Target=AK075066.1 125 255 +;percentID=77.1;dataType=embl
 chr4-04	vertebrate_mRNA	nucleotide_match	211806	212636	544.000000	+	.	Target=AK123078.1 831 1683 +;percentID=84;  # no dataType tag => use default-fetch
 </pre>
-Here, the source column (say, "source1") is the data that would be passed to the bam-fetch script's --analysis option.  If this doesn't make sense as the source column, we could place it in another custom data tag instead (e.g., "dataSource=source1").
+
 </p>
 <h4>Command line arguments</h4>
 <p>Note that Blixem will need to pass chromosome coords to the bam-fetch script.  ZMap should pass everything to Blixem in chromosome coords plus the required offset (via the -O argument) that Blixem will need to use to display its coords in the same coordinate system as ZMap.</p>
 <p>
-All other options relating to short-reads data will be passed in the GFF file and no further command line arguments are neeeded.
+All other options relating to short-reads data will be passed in the GFF file and Blixem configuration and no further command line arguments are needed.
 </p>
 
-<h3>[Blixem] stanza - new options</h3>
+<h3>[ZMap] stanza - new options</h3>
 <p>
 
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> SeqData</td> <td>A list of columns or featuresets containing SR data<br />
+<tr> <td> seq-data</td> <td>A list of featuresets containing SR data<br />
 As for DNA and protein featuresets we try to match both columns<br /> and featuresets to allow simple configuration.<br /> (Note: each column/featureset has options for short names and more lengthy descriptions). <br />
 Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding extra ZMap config options
  </td> </tr>
-<tr> <td> </td> <td> </td> </tr>
 </table>
 
 ZMap will hold this list in the View's context_map (accessable to the Window code) and it will be used in the short term to construct RC menus for Blixem.
 </p>
 
-<p>The [ZMap] stanza will include:
+<p>The [ZMap] stanza will also include:
 
 <table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td> dataset</td> <td> eg 'human' </td> </tr>
 <tr> <td> sequence</td> <td> eg 'chr14-10'</td> </tr>
 </table>
 </p>
+
 </fieldset>
+
 
 
 <fieldset><legend>Interface to the Request script for Short Reads data</legend>
 <p>Blixem will find the script path and fixed arguments from a stanza in its configuration file 'blixemrc'.
 Other arguments will be appended as follows:
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> -analysis</td> <td>  source name of the data we wish to request (will this actually be used??)</td> </tr>
 <tr> <td> -chr</td> <td> the name of the reference sequence eg 'chr6-18'</td> </tr>
+<tr> <td> -gff_seqname</td> <td> (alternative format of '-chr' for use by ZMap)</td> </tr>
 <tr> <td> -start</td> <td> request start coordinate</td> </tr>
 <tr> <td> -end</td> <td> request end coordinate</td> </tr>
-<tr> <td> -dataset</td> <td>  where to get the sequence from eg 'human' <br /><b>Note</b> in the short term this should appear in the fixed arguments list in blixemrc.</td> </tr>
-<tr> <td> -bam_path</td> <td> path to the BAM file (short term: fixed args; long term: how will this be supplied?)</td></tr>
-<tr> <td> -bam_cs</td> <td> coordinate system of the BAM file, probably NCBIM37 (short term: fixed args; long term: how will this be supplied?)</td></tr>
+<tr> <td> -bam_path</td> <td> path to the BAM file </td></tr>
+<tr> <td> -bam_cs</td> <td> coordinate system of the BAM file, probably NCBIM37</td></tr>
 </table>
 
+</p>
+<p>In the near future ZMap will also be able to request data from this script and all script configuration will be done via the existing pipe server mechanism.
+</p>
+<h3>ZMap configuration for BAM data requests</h3>
+<p>As specified above
+<pre>
+[ZMap]
+seq-data=14dpf;Liver
+</pre>
+will be used to specify BAM data that may be used requested by Blixem.
+ZMap will in future be able to display coverage data for BAM datasets and also request the real data from the mark by R-clicking on a coverage column..
+Each set of BAM data and coverage data will be named as distinct featuresets and these may be requested via the existing pipe server mechanism - either by a request on startup or via the columns dialog or by request from otterlace.
+We expect coverage data to be displayed by default and the users to request sub-sequences of BAM data by using the RC menu on a coverage column (although there is a request for a special pane on the load columns dialog).
+</p>
+<p>
+Each BAM pipe server will support the relevant ZMap featureset, and coverage data will link to real data via another stanza in the ZMap configuration:
+<pre>
+[Coverage]
+14dpf_coverage=14dpf		# (coverage = real data)
+</pre>
+and right clicking on a coverage column will display an option to display the real data column. (This will replace the inclusion of all BAM data sets in the RC menu as at present). Whether or not this causes the columns to switch or display together is not relevant here.  Existing ZMap configuration (eg [featureset-description]) will be used to specify display names and helpful information as at present.
+</p>
+<p>Referring to the <a href="Design/notes/RNAseq.shtml">request</a> for a new pane on the load columns dialog, the existance of a [Coverage] mapping may be used to include featuresets in this page or not, and also the existing load columns pane.
 </p>
 
 </fieldset>
