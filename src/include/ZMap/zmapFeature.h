@@ -25,7 +25,7 @@
  * Description: Data structures describing a sequence feature.
  *
  * HISTORY:
- * Last edited: Jun  6 12:15 2011 (edgrif)
+ * Last edited: Jun  7 12:04 2011 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
  * CVS info:   $Id: zmapFeature.h,v 1.195 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -1162,6 +1162,11 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
 /* UTILITY METHODS */
 
 int zmapFeatureRevCompCoord(int coord, int start, int end);
+
+void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
+
+
+
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructType type) ;
