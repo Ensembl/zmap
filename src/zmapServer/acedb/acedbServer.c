@@ -28,7 +28,7 @@
  *
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May  6 12:01 2011 (edgrif)
+ * Last edited: Jun  8 13:07 2011 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
  * CVS info:   $Id: acedbServer.c,v 1.167 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -1415,7 +1415,8 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
-	  parser = zMapGFFCreateParser() ;
+	  parser = zMapGFFCreateParser(g_quark_to_string(feature_block->original_id),
+				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
 	  if (server->has_new_tags)

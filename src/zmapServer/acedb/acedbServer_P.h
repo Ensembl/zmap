@@ -25,7 +25,7 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Aug 28 09:47 2009 (edgrif)
+ * Last edited: Jun  8 13:03 2011 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
  * CVS info:   $Id: acedbServer_P.h,v 1.26 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
@@ -92,7 +92,7 @@ typedef struct _AcedbServerStruct
 
   ZMapFeatureContext current_context ;
 
-  gint zmap_start,zmap_end;                     /* request coordinates for our one block */
+  gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
 
 } AcedbServerStruct, *AcedbServer ;
 
