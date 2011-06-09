@@ -28,7 +28,7 @@
  *              of ZMapFeatureStruct's, one for each GFF source.
  *
  * HISTORY:
- * Last edited: Apr 21 18:23 2010 (edgrif)
+ * Last edited: Jun  8 12:56 2011 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
  * CVS info:   $Id: zmapGFF.h,v 1.26 2010-10-13 09:00:37 mh17 Exp $
  *-------------------------------------------------------------------
@@ -62,55 +62,14 @@ typedef struct
 {
   int gff_version ;
 
-  char *source_name ;
-  char *source_version ;
-
   char *sequence_name ;
   int features_start ;
   int features_end ;
 } ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
-#if MH17_MOVED_TO_FEATURE_H_AND_RENAMED
-/* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
-/* NOTE: this is re-used for columns, and the order has been added
- * This really does need to be split into featureset and column structs
- * but there's too much code to chnage in one go.
- */
-typedef struct
-{
-      // really need to change feature_set to column: it's confusing
-  GQuark feature_set_id ;		/* The set name. (the display column) as a key value*/
-  GQuark feature_set_ID ;           /* The set name. (the display column) as display text*/
 
-  GQuark feature_src_ID;            // the name of the source featureset (with upper case)
-                                    // struct is keyed with normalised name
-//  char *description ;		      /* Description. */
-  char *feature_set_text;           // renamed so we can search for this
-
-  int order;                        // column ordering
-
-} ZMapGFFSetStruct, *ZMapGFFSet ;
-
-
-
-
-/* Struct holding "per source" information for GFF data. Can be used to look up the
- * style for a GFF feature plus other stuff. */
-typedef struct
-{
-  GQuark source_id ;					    /* The source name. */
-
-  GQuark source_text ;					    /* Description. */
-
-  GQuark style_id ;					    /* The style for processing the source. */
-
-} ZMapGFFSourceStruct, *ZMapGFFSource ;
-
-#endif
-
-
-ZMapGFFParser zMapGFFCreateParser(void) ;
+ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
