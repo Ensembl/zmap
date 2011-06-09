@@ -28,7 +28,7 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 19 15:23 2009 (edgrif)
+ * Last edited: Jun  8 15:12 2011 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
  * CVS info:   $Id: gffparser.c,v 1.12 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
@@ -58,7 +58,7 @@ typedef struct
 
 
 
-static int parseFile(char *filename, GHashTable *styles) ;
+static int parseFile(char *filename, char *sequence, GHashTable *styles) ;
 static GIOChannel *openFileOrDie(char *filename) ;
 static int readHeader(parserFile data) ;
 static gboolean readFeatures(parserFile data) ;
@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
 
   zMapLogCreate(NULL) ;
 
-  zMapConfigIniGetStylesFromFile(argv[2],argv[3],&styles);     //  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
-  main_rc = parseFile(argv[1], styles) ;
+  zMapConfigIniGetStylesFromFile(argv[3], argv[4], &styles);     //  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
+  main_rc = parseFile(argv[1], argv[2], styles) ;
 
   zMapLogDestroy() ;
 
@@ -98,12 +98,14 @@ int main(int argc, char *argv[])
  */
 
 
-static int parseFile(char *filename, GHashTable *styles)
+static int parseFile(char *filename, char *sequence, GHashTable *styles)
 {
   parserFileStruct data = {NULL};
 
   data.file     = openFileOrDie(filename);
-  data.parser   = zMapGFFCreateParser();
+
+  data.parser   = zMapGFFCreateParser(sequence, 0, 0) ;
+
   zMapGFFParserInitForFeatures(data.parser, styles, FALSE) ;
   data.gff_line = g_string_sized_new(2000);
 
