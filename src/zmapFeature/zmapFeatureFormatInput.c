@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug 28 10:26 2009 (edgrif)
+ * Last edited: Jun  9 11:45 2011 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
  * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.20 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
@@ -151,6 +151,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	   || g_ascii_strcasecmp(feature_type, "chromosomal_structural_element") == 0
 	   || g_ascii_strcasecmp(feature_type, "transposable_element") == 0
 	   || g_ascii_strcasecmp(feature_type, "SNP") == 0
+	   || g_ascii_strcasecmp(feature_type, "STS") == 0
 	   || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
 	   || g_ascii_strcasecmp(feature_type, "substitution") == 0)
     {
