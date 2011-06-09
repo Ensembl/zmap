@@ -21,12 +21,12 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Apr 22 14:26 2010 (edgrif)
+ * Last edited: Jun  8 12:50 2011 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
  * CVS info:   $Id: zmapGFF_P.h,v 1.27 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
@@ -37,8 +37,10 @@
 #include <ZMap/zmapGFF.h>
 
 
+/* Default gff version parsed. */
+enum {GFF_DEFAULT_VERSION = 2} ;
 
-/* Some defines for parsing stuff....may need v2 and v3 versions of these. */
+/* Some defines for parsing the feature records....may need v2 and v3 versions of these. */
 enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS = 5000} ;
 
 
@@ -128,30 +130,23 @@ typedef struct ZMapGFFParserStruct_
   int clip_start, clip_end ;				    /* Coords used for clipping. */
 
 
-
-  /* Parsing header data, need to find all this for parsing to be valid. */
+  /* File data: some derived from the file directly. */
   struct
   {
-    unsigned int done_header : 1 ;
-    unsigned int done_version : 1 ;
-    unsigned int done_source : 1 ;
-    unsigned int done_date : 1 ;
-    unsigned int done_type : 1 ;
-    unsigned int done_sequence_region : 1 ;
+    unsigned int done_header : 1 ;			    /* Is the header processed ? */
+
+    unsigned int got_gff_version : 1 ;
+    unsigned int got_sequence_region : 1 ;
   } header_flags ;
 
   int gff_version ;
 
-  char *source_name ;
-  char *source_version ;
-
-  char *date ;
-
   char *sequence_name ;
-  int features_start, features_end ;      /* in GFF these are based from 1 */
+  int features_start, features_end ;			    /* in GFF these are based from 1 */
+
 
   /* Parsing feature data. */
-  ZMapFeatureTypeStyle locus_set_style ;			    /* cached locus style. */
+  ZMapFeatureTypeStyle locus_set_style ;		    /* cached locus style. */
   GQuark locus_set_id ;					    /* If not zero then make a locus set from
 							       locus tags in sequence objects. */
 
@@ -181,10 +176,10 @@ typedef struct ZMapGFFParserStruct_
     unsigned int in_sequence_block : 1 ;
     unsigned int done_finished :1 ;
   } sequence_flags ;
+
   GString *raw_line_data ;
+
   ZMapSequenceStruct seq_data ;
-
-
 
 } ZMapGFFParserStruct ;
 
