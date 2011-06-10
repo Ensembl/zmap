@@ -178,9 +178,18 @@ git config --global diff.tool diffuse
 </pre>
 </p>
 
+
 <h3>Setting up repository options</h3>
-<p>As git allows you to perform operations on all files that have been modified, there is value in having it ignore certain files, e.g. object and temporary files.  This is done by specifying file names or patterns in a file called '.gitignore' (generally placed in the top level directory of the project), or in .git/info/exclude.  Generally, .git/info/exclude is used for things that are applicable to your local repository only.  A .gitignore file can be checked in as part of the project, so it can be used for anything that is also useful to other developers on the project.
-</p>
+
+<p>As git allows you to perform operations on all files that have been
+modified, there is value in having it ignore certain files, e.g. object and
+temporary files.  This is done by specifying file names or patterns in a file
+called '.gitignore' (generally placed in the top level directory of the
+project), or in .git/info/exclude.  Generally, .git/info/exclude is used for
+things that are applicable to your local repository only.  A .gitignore file
+can be checked in as part of the project, so it can be used for anything that
+is also useful to other developers on the project.  </p>
+
 <p>For example, the .gitignore file might contain:  (DS_Store is a mac thing)
 <pre>
 *.[oa]
@@ -188,12 +197,23 @@ git config --global diff.tool diffuse
 .DS_Store
 </pre>
 </p>
+
 <p>and my local .git/info/exclude file might contain:
 <pre>
 my_notes.txt
 mylog/*
 </pre>
 </p>
+
+<p>To get git commands to reference an excludes file that is not in the repository
+you need to add a line like this to your .gitconfig  file:</p>
+
+<pre>
+[core]
+	excludesfile = ~/.git/info/exclude
+</pre>
+
+
 
 <h3>Clone a repository</h3>
 <p>Developers should not work on the master respository but instead make a clone of it.
