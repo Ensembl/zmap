@@ -288,7 +288,7 @@ void zmapWindowZoomControlInitialise(ZMapWindow window)
   control = controlFromWindow(window);
 
   control->minZF = getMinZoom(window);
-  if(control->status == ZMAP_ZOOM_INIT)
+ if(control->status == ZMAP_ZOOM_INIT)
     control->zF    = control->minZF;
 
   /* Account for SHORT sequences (shorter than canvas height) */

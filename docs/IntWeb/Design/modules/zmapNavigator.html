@@ -34,6 +34,56 @@
 <b>zmapWindowTextPositioner.c</b> handles unoverlapping locus names.<br />
 
 <h3>Operation</h3>
-<p>Whenever the zmap window is resized fo the navigator pane's size changed the function <b>navCanvasItemEventCB()</b> is called and this calls <b>zmapWindowNavigatorFillWidget()</b> which adjusts canvas borders and scroll region to make the border size the same in pixels.
+<p>Whenever the zmap window is resized for the navigator pane's size changed the function <b>navCanvasItemEventCB()</b> is called and this calls <b>zmapWindowNavigatorFillWidget()</b> which adjusts canvas borders and scroll region to make the border size the same in pixels.
 </p>
 </legend>
+
+<fieldset><legend>The Scale Bar</legend>
+<p>This is the vertical strip at the left of the window and also at the left of the navigator that looks a bit like a ruler but is not to be confused with the window ruler which is the horizontal line drawn when the middle mouse button is pressed.
+To make matters even more confusing the scale bar is implemented in </b>zmapWindow/zmapWindowRuler.c</b>.
+</p>
+<p>Note that there are two functions that provide an interface to the scale bar code:
+<ul>
+<li> <b>zmapWindowRulerGroupDraw()</b>, called from zmapWindowNavigator.c
+<li> <b>zmapWindowRulerCanvasDraw()</b>, called from zmapWindow.c
+</ul>
+</p>
+
+<p> The navigator scale is fixed in that the navigator window is never zoomed or scrolled, but not that if the ZMap window is resized then there are more/fewer pixels available for display and the display should be adjusted to stay readable.  Currenyl (Jun 2011) locus names are un-overlapped on resize but the scale bar is not adjusted.
+</p>
+<p>The window scale bar can be zoomed and scrolled with the window, but on window resize the visible part of the scroll region changes and the display is not adjusted in any way.
+</p>
+
+<h3>Functional specification</h3>
+<p>This will be broadly as at present but with loose ends tidied up, better choice of labels, and 3 levels of tick.
+This is an opportunity to tidy up the interface to the two modules using scale bar code.
+</p>
+<p>Specifcially:
+<ul>
+<li> The navigator scale bar will be redrawn on window resize
+<li> tick marks will be chosen to hit orders of 10 depending on the zoom level.
+<li> up to three levels of tick will be shown and the MS two may have labels (which may include all ticks if only two levels are shown)
+<li> in between major ticks the fifth one may be labeled if there is enough space
+<li> ticks must have at least two pixel clear space between then and if not will not be drawn - we may transition from 10 ticks to just 3.
+</ul>
+</p>
+
+<h3>Implementation</h3>
+<h4>Choosing tick marks</h4>
+<p>For a given window the sequence range in the current scrolling region and the number of available pixels will be calculated.
+</p>
+<p>Coordinates are displayed as 1-based but at high zoom the first start coordinate may not be 1.  For example, in a sequence of 1 to 756432 bases we may only be displaying 293987 to 345123.  The highest order tick mark corresponds to the first leftmost digit that differs between start and end coordinates (NB we may need to add leading zeroes).  Note that this is not always the same as the order of end-start.  One way to calculate this would be:
+<ul>
+<li> take end-start and determine highest power of 10 included. In the example above this is 51336 ie 10k.
+</ul>
+</p>
+<p>Display all the tick marks at the highest level, there should be trailing zeros.
+</p>
+<p>Until the number of available pixels becomes too small display lower orders of tick. Between orders of 10 the middle (5) is larger and the others (12346789) are less pronounced or not displayed.  Text labels are displayed until the space available between higher order ticks is less than 5x text height (experiment with this if it looks poor).
+</p>
+<p>Text labels will be rounded to MB or KB as appropriate and minor ticks will have leading digits hidden.
+</p>
+<h4> Choosing tick width</h4>
+<p>
+</p>
+</fieldset>

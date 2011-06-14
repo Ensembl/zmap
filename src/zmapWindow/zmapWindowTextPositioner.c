@@ -316,7 +316,7 @@ void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
       /* move single items down to near their coordinate */
 
       /* NOTE this is not optimal, we're just handing out space on a first come first served basis
-       * could be improved by fuirst centring all the grouups and then expanding them subject to
+       * could be improved by first centring all the groups and then expanding them subject to
        * availability, but is it worth the effort?
        */
       foo_canvas_w2c(positioner->canvas,0,ti->span_world.x1,NULL,&item_adjust);
@@ -362,7 +362,8 @@ void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
             else
                   dx = right;       /* only move first time */
 
-            mid = ti->span_canvas.x1 + (ti->span_canvas.x2 - ti->span_canvas.x1 + 1) / 2;
+//            mid = ti->span_canvas.x1 + (ti->span_canvas.x2 - ti->span_canvas.x1 + 1) / 2;
+            mid = ti->span_canvas.x1; // just point to the start
             foo_canvas_c2w(ti->text->canvas,0,mid,NULL,&points->coords[3]);
 
             points->coords[0] = 0.0;
