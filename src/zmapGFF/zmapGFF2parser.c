@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun  9 11:30 2011 (edgrif)
+ * Last edited: Jun 14 13:43 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
  * CVS info:   $Id: zmapGFF2parser.c,v 1.132 2011-05-06 11:00:27 edgrif Exp $
  *-------------------------------------------------------------------
@@ -115,7 +115,7 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
   ZMapGFFParser parser = NULL ;
 
   if ((sequence && *sequence)
-      && ((features_start == 0 && features_end == 0) || (features_start > 0 && features_end >= features_start)))
+      && ((features_start == 1 && features_end == 0) || (features_start > 0 && features_end >= features_start)))
     {
       parser = g_new0(ZMapGFFParserStruct, 1) ;
 
