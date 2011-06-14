@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements general convenience routines for creating
  *              a GTK Notebook widget and the pages/fields within
@@ -30,18 +30,13 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  5 14:22 2011 (edgrif)
+ * Last edited: Jun  7 15:10 2011 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
  * CVS info:   $Id: zmapGUINotebook.c,v 1.26 2011-04-05 13:28:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 
@@ -1204,7 +1199,7 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
 	    tag_value_text = g_strdup("") ;
 	  break;
 	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
-	  tag_value_text = g_strdup_printf("%f", tag_value->original_data.float_value);
+	  tag_value_text = g_strdup_printf("%g", tag_value->original_data.float_value);
 	  break;
 	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
 	  tag_value_text = g_strdup_printf("%d", tag_value->original_data.int_value);

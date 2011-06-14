@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  6 10:53 2011 (edgrif)
+ * Last edited: Jun  7 15:05 2011 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
  * CVS info:   $Id: zmapWindow.c,v 1.368 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -1685,7 +1685,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  if (feature->feature.homol.percent_id)
-	    select.feature_desc.feature_percent_id = g_strdup_printf("%g", feature->feature.homol.percent_id) ;
+	    select.feature_desc.feature_percent_id = g_strdup_printf("%g%%", feature->feature.homol.percent_id) ;
 	}
 
 

@@ -29,7 +29,7 @@
  *
  * Exported functions: See ZMap/zmapString.h
  * HISTORY:
- * Last edited: Apr  8 12:45 2011 (edgrif)
+ * Last edited: Jun  8 13:21 2011 (edgrif)
  * Created: Thu Sep 20 15:21:42 2007 (edgrif)
  * CVS info:   $Id: zmapString.c,v 1.5 2011-04-08 11:46:02 edgrif Exp $
  *-------------------------------------------------------------------
@@ -72,6 +72,28 @@ int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive)
   return result ;
 }
 
+
+/* Is the string empty or white space ?....surely this should be a standard function ?? */
+gboolean zMapStringBlank(char *string)
+{
+  gboolean result = TRUE ;
+  char *curr = string ;
+
+  while (*curr)
+    {
+      if (!g_ascii_isspace(*curr))
+	{
+	  result = FALSE ;
+	  break ;
+	}
+      else
+	{
+	  curr++ ;
+	}
+    }
+
+  return result ;
+}
 
 
 /* Takes a string and removes all spaces and control chars. This is

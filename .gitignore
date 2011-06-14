@@ -1,0 +1,9 @@
+*CMarshal.*
+*/build/*
+config.*
+configure
+decomp
+install-sh
+ltmain.sh
+missing
+zmap_version.m4

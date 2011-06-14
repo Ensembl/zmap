@@ -26,7 +26,7 @@
  * Description: General string functions for ZMap.
  *
  * HISTORY:
- * Last edited: Apr  8 12:30 2011 (edgrif)
+ * Last edited: Jun  8 13:22 2011 (edgrif)
  * Created: Thu Sep 20 15:32:36 2007 (edgrif)
  * CVS info:   $Id: zmapString.h,v 1.4 2011-04-08 11:46:02 edgrif Exp $
  *-------------------------------------------------------------------
@@ -39,7 +39,7 @@
 
 int zMapStringFindMatch(char *target, char *query) ;
 int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive) ;
-
+gboolean zMapStringBlank(char *string) ;
 char *zMapStringFlatten(char *string_with_spaces) ;
 
 #endif /* ZMAP_STRING_H */
