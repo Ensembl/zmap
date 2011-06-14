@@ -1416,7 +1416,7 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double 
 void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
 void zmapWindowRulerCanvasSetRevComped(ZMapWindowRulerCanvas obj, gboolean revcomped) ;
 void zmapWindowRulerCanvasSetSpan(ZMapWindowRulerCanvas ruler, int start,int end);
-gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
+gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y,int seq_start, int seq_end, gboolean force);
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
@@ -1448,5 +1448,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark);
+
+void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 #endif /* !ZMAP_WINDOW_P_H */

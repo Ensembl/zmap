@@ -437,7 +437,7 @@ gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state,
 
 /* INTERNAL */
 
-static void rev_comp_region(ZMapWindow window, double *a, double *b)
+void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b)
 {
 /*
  * rev comp'd coords are based on sequence end (the new origin)
@@ -476,13 +476,13 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
   if (window->revcomped_features != restore.rev_comp_state)
     {
-      rev_comp_region(window, &(restore.y1), &(restore.y2)) ;
+      zmapWindowStateRevCompRegion(window, &(restore.y1), &(restore.y2)) ;
 
       /* There's a problem with positions here, we get called before everything
        * has been drawn and therefore the block can be smaller than the original
        * x1, x2 position of the mark causing the zmapWindowMarkSetWorldRange()
        * call to fail because it can't find the block....
-       * 
+       *
        * We hack this by setting x1 to zero, this will fail if have multiple
        * blocks horizontally but then so will a lot of things. */
       restore.x1 = 0.0 ;
@@ -561,7 +561,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 	  if(window_state_debug_G)
 	    print_position(position, "state_position_restore rev-comp status switched! reversing position...");
 
-	  rev_comp_region(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
+	  zmapWindowStateRevCompRegion(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
 
 
 #if MH17_REVCOMP_DEBUG

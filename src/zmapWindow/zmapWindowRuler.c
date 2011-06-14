@@ -42,6 +42,7 @@
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsFoo.h>
 #include <string.h>
 #include <math.h>
 
@@ -88,6 +89,7 @@ typedef struct _ZMapWindowRulerCanvasStruct
   guint display_forward_coords : 1;					    /* Has a coord display origin been set. */
 } ZMapWindowRulerCanvasStruct;
 
+#if 0
 /* Just a collection of ints, boring but makes it easier */
 typedef struct _ZMapScaleBarStruct
 {
@@ -110,6 +112,7 @@ typedef struct _ZMapScaleBarStruct
   gboolean display_forward_coords;	/* Has a coord display origin been set. */
   gboolean revcomped;
 } ZMapScaleBarStruct, *ZMapScaleBar;
+#endif
 
 typedef enum
   {
@@ -118,6 +121,7 @@ typedef enum
     ZMAP_SCALE_BAR_GROUP_RIGHT,
   } ZMapScaleBarGroupType;
 
+#if 0
 static gboolean initialiseScale(ZMapScaleBar ruler_out,
                                 double start, double end,
                                 int seq_start, int seq_end,
@@ -128,9 +132,16 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
                          FooCanvasGroup *group,
                          PangoFontDescription *font,
                          gboolean text_left);
+#endif
+
+void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double scroll_end,
+	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, double projection_factor);
+
+
 static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
                                            double start,
-                                           double end);
+                                           double end,
+                                          int seq_start, int seq_end);
 
 static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
@@ -272,7 +283,9 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas ruler, double y1, doubl
 
 
 /* I don't like the dependence on window here! */
-gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, double end, gboolean force)
+/* MH17 NOTE this is called from zmapWindow.c */
+/* MH17 NOTE start and end are the foo canvas scroll region */
+gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, double end,int seq_start,int seq_end, gboolean force)
 {
   gboolean drawn = FALSE;
   zMapAssert(ruler && ruler->canvas);
@@ -289,7 +302,7 @@ gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, do
 	  ruler->scaleParent = ruler->horizon = NULL;
 	}
 
-      ruler->scaleParent = rulerCanvasDrawScale(ruler, start, end);
+      ruler->scaleParent = rulerCanvasDrawScale(ruler, start, end, seq_start, seq_end);
 
       /* We either need to do this check or
        * double test = 0.0;
@@ -420,52 +433,17 @@ void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas ruler)
   return ;
 }
 
+/* MH17 NOTE this is called from zmapWindowNavigator.c */
 void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped, double start, double end)
 {
   FooCanvas *canvas = NULL;
-  ZMapScaleBarStruct scaleBar = {0};
-  PangoFontDescription *font_desc = NULL;
-  PangoFont *font = NULL;
-  double font_width  = 0.0;
-  double line_height = 0.0;
   double zoom_factor = 0.0;
 
   canvas = FOO_CANVAS(FOO_CANVAS_ITEM(parent)->canvas);
 
   zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
 
-  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
-                               g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
-                               &font, &font_desc))
-    printf("Couldn't get fixed width font\n");
-  else
-    {
-      FooCanvasItem *item ;
-      PangoLayout *playout;
-      int iwidth = -1, iheight = -1;
-
-      item = foo_canvas_item_new(parent,
-                                 FOO_TYPE_CANVAS_TEXT,
-                                 "x",         0.0,
-                                 "y",         0.0,
-                                 "text",      "X",
-                                 "font_desc", font_desc,
-                                 NULL);
-      playout = FOO_CANVAS_TEXT(item)->layout;
-
-      pango_layout_get_pixel_size( playout , &iwidth, &iheight );
-
-      font_width  = (double)iwidth;
-      line_height = (double)iheight;
-
-      gtk_object_destroy(GTK_OBJECT(item));
-    }
-
-  //line_height      = line_height / zoom_factor;
-
-  if(initialiseScale(&scaleBar, start, end, (int) start, (int) end, zoom_factor, line_height, TRUE, revcomped, project_at))
-    drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(parent), font_desc, TRUE);
-
+  zMapWindowDrawScaleBar(parent, start, end, (int) start,(int) end, zoom_factor, revcomped, project_at);
 
   return ;
 }
@@ -620,10 +598,11 @@ static void thaw_notify(ZMapWindowRulerCanvas ruler)
 /* =================================================== */
 static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
                                            double start,
-                                           double end)
+                                           double end,
+                                           int seq_start, int seq_end)
 {
   FooCanvasItem *group = NULL ;
-  ZMapScaleBarStruct scaleBar = { 0 };
+//  ZMapScaleBarStruct scaleBar = { 0 };
   double zoom_factor = 0.0;
   double height;
 
@@ -636,344 +615,268 @@ static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
   zoom_factor = FOO_CANVAS(ruler->canvas)->pixels_per_unit_y;
   height      = ruler->line_height / zoom_factor;
 
-  if(initialiseScale(&scaleBar, start, end, ruler->seq_start, ruler->seq_end, zoom_factor, height, ruler->display_forward_coords, ruler->revcomped, 1.0))
-    drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(group), ruler->font_desc, ruler->text_left);
-
-  if(scaleBar.unit)
-    g_free(scaleBar.unit);
+	zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(group), start, end, seq_start, seq_end,
+		zoom_factor, ruler->revcomped, 1.0);
 
   return group ;
 }
 
-static gboolean initialiseScale(ZMapScaleBar scale_out,
-                                double start,
-                                double end,
-                                int seq_start, int seq_end,
-                                double zoom,
-                                double line,
-				gboolean display_forward_coords,gboolean revcomped,
-                                double projection_factor)
+
+/* a rewrite */
+/* we need :
+start and end seq coord
+foo group to draw into
+window height in pixels
+start and end window coords?
+text height (font)
+*/
+/* we draw the scale on the right and text to the left */
+void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double scroll_end, int seq_start, int seq_end, double zoom_factor, gboolean revcomped, double projection_factor)
+/*
+ * scroll start and end are as displayed (NB navigator always has whole sequence)
+ * seq start and end are whole sequence in fwd strand coodinates
+ * NOTE the canvas is set (elsewhere) with a scroll region of fwd strand chromosome coord
+ * and we have to calculate 1 based fwd and revcomp'd coordinates for where to draw the ticks
+ *
+ * NOTE the locus display in the navigator assumes the same mapping so setting the scroll region
+ * here would probably break something
+ * all this makes the zmapWindowUtils functions not much use as we have a mixed set of coordinate systems
+ */
 {
-  gboolean good = TRUE;
-  int majorUnits[]      = {1   , 1000, 1000000, 1000000000, 0};
-  char *majorAlpha[]    = {"", " k" , " M"    , " G"};
-  int unitIndex         = 0;
-  int speed_factor      = 4;
-  int *iter;
-  double basesPerPixel, absolute_min, lineheight, dtmp;
-  int majorSize, diff ;
-  int i, tmp;
-  int basesBetween;
+	int seq_len;	/* # bases in the scroll region */
+	int tick;
+	int tick_coord;
+	int top, level;	/* we go many levels deep */
+	int n_pixels;	/* cannot be more than 30k due to foo */
+	int gap;		/* pixels between ticks */
+	int digit;		/* which tick out of 10 */
+	int digits;		/* how many digits in fractional part */
+	int nudge;		/* tick is 5th? make bigger */
+	char label [32];	/* only need ~8 but there you go */
+	char *unit;
+	int base;
+	PangoFontDescription *font_desc;
+	double font_width,font_height;
+	int text_height;
+	double canvas_coord;
+	GdkColor black,grey,*colour;
+	double scale_width = 70.0;
+	double tick_width;
+	int n_levels;	/* number of levels needed for BP resolution */
+	int n_hide; 	/* number we can't see at current zoom level */
+	FooCanvasGroup *lines = 0, *text = 0;
+	char *units[] = { "","","k","M","G" };
+	int i;
+	int scr_start;
+	int scr_end;
 
-  absolute_min = lineheight = basesPerPixel = dtmp = 0.0;
+	if(revcomped)
+	{
+		/* scroll coords are seq coords reflected in seq_end, we need these as -1 based -ve
+		 * typically as we never know seq_end these appear to be 1-based
+		 * but they are not eg  if we select a subsequence or zoom in
+		 * this is a complication introduced by applying revcomp to the model (feature context)
+		 * rather than the view (zmapWindow)
+		 * here scr_start,end are being set to the scroll limits of the coords we want to display
+		 */
 
-  scale_out->start  = (int)start;
-  scale_out->end    = (int)end;
-  scale_out->seq_start = seq_start;
-  scale_out->seq_end = seq_end;
-  scale_out->force_multiples_of_five = ZMAP_FORCE_FIVES;
-  scale_out->zoom_factor             = zoom * projection_factor;
-  scale_out->display_forward_coords  = display_forward_coords ;
-  scale_out->revcomped               = revcomped ;
-  scale_out->projection_factor       = projection_factor;
+		/* get fwd strand coords by reflecting in seq_end then
+		 * make these negative
+		 * then add seq_start to make them -1 based
+		 * they are already swapped (end <-> start)
+		 */
+		scr_start = -(seq_end - ((int) scroll_start) + 1) + seq_start - 2;
+		scr_end = -(seq_end - ((int) scroll_end) + 1) + seq_start - 2;
+//printf("revcomp: seq = %d,%d scroll = %f,%f, scr = %d,%d\n", seq_start,seq_end,scroll_start,scroll_end,scr_start,scr_end);
+	}
+	else
+	{
+		/* get 1-based coordinates for our subsequence */
+		scr_start = ((int) scroll_start) - seq_start + 1;
+		scr_end = ((int) scroll_end) - seq_start + 1;
+//printf("forward: seq = %d,%d scroll = %f,%f, scr = %d,%d\n",seq_start,seq_end,scroll_start,scroll_end,scr_start,scr_end);
+	}
+	seq_len = scr_end - scr_start + 1;
 
-  /* line * zoom is constant @ 14 on my machine,
-   * simply increasing this decreases the number of majors (makes it faster),
-   * hence inclusion of 'speed_factor'. May want to refine what looks good
-   * 2 or 4 are reasonable, while 10 is way OTT!
-   * 1 gives precision issues when drawing the mnor ticks. At reasonable zoom
-   * it gives about 1 pixel between minor ticks and this sometimes equates to
-   * two pixels (precision) which looks odd.
-   */
-  if(speed_factor >= 1)
-    dtmp = line * zoom * speed_factor;
-  else
-    dtmp = line * zoom;
+	if(seq_len < 10)	/* we get called on start up w/ no sequence */
+		return;
 
-  lineheight = ceil(dtmp);
-
-  /* Abosulte minimum of (ZMAP_SCALE_MINORS_PER_MAJOR * 2) + 1
-   * Explain: pixel width for each line, plus one to see it + 1 for good luck!
-   * Require 1 * text line height + 1 so they're not merged
-   *
-   */
-  diff          = scale_out->end - scale_out->start + 1;
-  basesPerPixel = diff / (diff * scale_out->zoom_factor);
-
-  lineheight  += 1.0;
-  absolute_min = (double)((ZMAP_SCALE_MINORS_PER_MAJOR * 2) + 1);
-  basesBetween = (int)floor((lineheight >= absolute_min ?
-                             lineheight : absolute_min) * basesPerPixel);
-  /* Now we know we can put a major tick every basesBetween pixels */
-  /*  printf("diff %d, bpp %f\n", diff, basesPerPixel); */
-
-  for(i = 0, iter = majorUnits; *iter != 0; iter++, i++){
-    int mod;
-    mod = basesBetween % majorUnits[i];
-
-    if(mod && mod != basesBetween)
-      unitIndex = i;
-    else if (basesBetween > majorUnits[i] && !mod)
-      unitIndex = i;
-  }
-  /*  */
-  /* Now we think we know what the major should be */
-  majorSize  = majorUnits[unitIndex];
-  scale_out->base = majorSize;
-
-  tmp = ceil((basesBetween / majorSize));
-
-  /* This isn't very elegant, and is kind of a reverse of the previous
-   * logic used */
-  if(scale_out->force_multiples_of_five == TRUE)
-    {
-      if(tmp <= 5)
-        majorSize = 5  * majorSize;
-      else if(tmp <= 10)
-        majorSize = 10 * majorSize;
-      else if (tmp <= 50)
-        majorSize = 50 * majorSize;
-      else if (tmp <= 100)
-        majorSize = 100 * majorSize;
-      else if (tmp <= 500)
-        majorSize = 500 * majorSize;
-      else if (tmp <= 1000)
-        {
-          majorSize = 1000 * majorSize;
-          unitIndex++;
-        }
-    }
-  else
-    {
-      majorSize = tmp * majorSize;
-    }
-
-  scale_out->base  = majorUnits[unitIndex];
-  scale_out->major = majorSize;
-  scale_out->unit  = g_strdup( majorAlpha[unitIndex] );
-
-  if(scale_out->major >= ZMAP_SCALE_MINORS_PER_MAJOR)
-    scale_out->minor = majorSize / ZMAP_SCALE_MINORS_PER_MAJOR;
-  else
-    scale_out->minor = 1;
-
-  return good;
-}
-
-static void drawScaleBar(ZMapScaleBar scaleBar,
-                         FooCanvasGroup *group,
-                         PangoFontDescription *font,
-                         gboolean text_left)
-{
-  int i, n, width = 0;
-  GdkColor black, white, yellow ;
-  double scale_maj, scale_line, scale_min;
-  FooCanvasPoints *points ;
-  FooCanvasGroup *lines = NULL, *text = NULL;
-  double scale_over = 70.0;
-  GString *digitUnitStr = NULL;
-  /* 20 should be enough for anyone */
-  digitUnitStr = g_string_sized_new(20);
-
-  lines = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
+	lines = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
             foo_canvas_group_get_type(),
             NULL));
-  text  = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
+  	text  = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
             foo_canvas_group_get_type(),
             NULL));
 
-  if(text_left)
-    {
-      scale_line = scale_over;
-      scale_maj  = scale_over - 10.0;
-      scale_min  = scale_over - 5.0;
-    }
-  else
-    {
-      scale_over = 0.0;
-      scale_line = scale_over;
-      scale_min  = scale_over + 5.0;
-      scale_maj  = scale_line + 10.0;
-    }
+	gdk_color_parse("black", &black) ;
+	gdk_color_parse("grey", &grey) ;
 
-  gdk_color_parse("black", &black) ;
-  gdk_color_parse("white", &white) ;
-  gdk_color_parse("yellow", &yellow) ;
+	zMapFoocanvasGetTextDimensions(((FooCanvasItem *) group)->canvas, &font_desc, &font_width, &font_height);
+	text_height = (int) (font_height);
 
-#if !ODD_CHOICE_OF_START
-  n = ceil( (scaleBar->start %
-             (scaleBar->major < ZMAP_SCALE_MINORS_PER_MAJOR
-              ? ZMAP_SCALE_MINORS_PER_MAJOR
-              : scaleBar->major
-              )
-             ) / scaleBar->minor
-            );
+	if(!font_height)
+	{
+		font_height = 14.0;	/* don't just give up ! */
+		font_width = 8.0;
+		text_height = 14;
+		zMapLogWarning("DrawScale get font size failed","");
+	}
 
-  i = (scaleBar->start - (scaleBar->start % scaleBar->minor));
-#else
-      /* as the coords we display are 1-based and the coords we iterate through and draw at are different
-       * we need to adjust the major/minor to appear at sensible places in display coords
-       */
-  {
-  int y1 = zmapWindowCoordFromOriginRaw(scaleBar->seq_start,scaleBar->seq_end,scaleBar->start,scaleBar->revcomped);
+	/* get the highest order ticks: this need to use sequence not scroll region */
+	for(tick = 1,n_levels = 1,i = seq_len; i > 9; i /= 10, tick *= 10,n_levels++)
+		continue;
 
-  if(y1 < 0)      /* ie revcomped */
-  {
-      n = (-(y1) % scaleBar->major) / scaleBar->minor;      /* get no of minors till first major */
-      i = y1 - scaleBar->minor + ((-y1) % scaleBar->minor); /* start on first minor */
-  }
-  else
-  {
-      n = (y1 % scaleBar->major) / scaleBar->minor;         /* get no of minors till first major */
-      i = y1 - (y1 % scaleBar->minor);                      /* start on first minor */
-  }
-printf("i,n,y1 = %d %d %d (%d %d %d)\n",i,n,y1,scaleBar->start,scaleBar->minor,scaleBar->major);
-  }
-#endif
+	/* get the number of pixels: this used the scroll region */
 
-  /* What I want to do here rather than worry about width of
-   * characters is to have two groups/columns. One for the
-   * numbers/units and one for the line/marks, but I haven't worked
-   * out how best to right align the numbers/units without relying on
-   * width.  Until then this works.
-   */
+	n_pixels = (int) (seq_len * zoom_factor * projection_factor);
 
-  /* < rather than <= to avoid final minor as end is seq_end + 1 */
-  for( ; i < scaleBar->end; i+=scaleBar->minor, n++)
-    {
-      /* More conditionals than I intended here... */
-      /* char *digitUnit = NULL; */
+	for(n_hide = n_levels,gap = n_pixels * tick / seq_len;gap;gap /= 10,n_hide--)
+		continue;
 
-            /* Save a lot of casting, typing and multiplication... */
-            /* offset to place the ruler in the same place as the features */
-      double i_d = (double) (i)  * scaleBar->projection_factor ;
-      int scale_pos ;
-      double scale_left = scale_min;
+	/* do we assume there are enough pixels for the highest order ticks?
+	 * no: if they shrink the window so that you can't read it then don't display
+	 */
 
-      if (i < scaleBar->start)
-        {
-          i_d = (double) (scaleBar->start) * scaleBar->projection_factor;
-        }
+	gap = (int) (((double) n_pixels) * tick / seq_len );	/* (double) or else would get overflow on big sequences */
 
-      if (n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
-        {
-            if (i == scaleBar->start && n < 5)
-            {                   /* n < 5 to stop overlap of digitUnit at some zooms */
+//printf("scale bar: %d bases (%d-%d) @(%d,%d) was @(%f,%f) tick = %d, first = %d,levels= %d,%d, %d pixels font %d, zoom %f\n",
+//seq_len, seq_start, seq_end, scr_start,scr_end, scroll_start, scroll_end,
+//tick,(scr_start / tick) * tick, n_levels,n_hide, n_pixels, text_height,zoom_factor);
 
-	      if (scaleBar->display_forward_coords)
-		  scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->seq_start, scaleBar->seq_end, scaleBar->start, scaleBar->revcomped) ;
+	/* we need a lot of levels to cope with large sequences zoomed in a lot */
+	/* to get down to single base level */
+	for(level = n_levels,top = 1;level >= 0 && tick > 0;level--, tick /= 10, gap /= 10, top = 0)
+	{
+		if(!gap)
+			break;
 
-	      else
-		  scale_pos = scaleBar->start ;
-            g_string_printf(digitUnitStr, "%d", scale_pos);
-            }
-        }
-      else                      /* Majors */
-        {
-          if (i && i >= scaleBar->start)
-            {
-              scale_left = scale_maj;
-
-	      if (scaleBar->display_forward_coords)
+		if(top)
 		{
-              scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->seq_start, scaleBar->seq_end, i, scaleBar->revcomped) ;
-		  scale_pos = (scale_pos / scaleBar->base) ;
-		}
-	      else
-		scale_pos = (i / scaleBar->base) ;
+			base = 1;
+			digits = 1;
+			for(i = 1;base <= tick && i < 5;i++,base *= 1000, digits += 2)
+				continue;
 
-              g_string_printf(digitUnitStr,
-                              "%d%s",
-                              scale_pos,
-                              scaleBar->unit) ;
-            }
-          else
-            {
-	      /* I guess this means "do the first one".... */
-	      if (scaleBar->display_forward_coords)
+			unit = units[--i];
+			base /= 1000;
+			digits -= 2;
+		}
+//printf("level %d gap = %d, tick = %d, base = %d, digits = %d\n",level,gap,tick,base,digits);
+
+
+		for(tick_coord = (scr_start / tick) * tick;;tick_coord += tick)
 		{
-              scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->seq_start, scaleBar->seq_end, scaleBar->start, scaleBar->revcomped) ;
+			if(tick_coord < scr_start)
+				continue;
+			if(tick_coord > scr_end)
+				break;
 
-		  if (abs(scale_pos) > 1)
-		    {
-		      scale_pos = (scale_pos / scaleBar->base) ;
 
-		      g_string_printf(digitUnitStr,
-				      "%d%s",
-				      scale_pos,
-				      scaleBar->unit);
-		    }
-		  else
-		    g_string_printf(digitUnitStr, "%d", scale_pos);
+			digit =  (tick_coord / tick) % 10;
+			if(top || digit)			/* don't draw ticks over higher order ticks */
+			{
+				nudge = (digit == 5 || digit == -5);
+				if((nudge && gap > 1) || gap > 2)	/* don't crowd ticks together */
+				{
+					/* draw the tick, with a number if appropriate */
+
+					int draw_at = tick_coord;
+
+					if(revcomped)
+					{
+						/* tick coord is # bases off the end due to revcomp mixture */
+						/* this is the scr_start calc from above reversed */
+						/* but we draw 1 bp backwards */
+						draw_at = tick_coord + seq_end - seq_start + 2 + 1;
+						/* extra + 1 to base coordinates as for fwd strand,
+						   base occupies space away from origin afetr coordinate */
+					}
+					else
+					{
+						draw_at = tick_coord + seq_start - 1;
+					}
+
+					label[0] = 0;
+					canvas_coord = (double) draw_at;
+//if(top) printf("coord: %d %d (%d,%d) = %d\n", tick_coord, digit, seq_start,seq_end,draw_at);
+
+					canvas_coord *= projection_factor;
+
+					tick_width = 4.0 * (level - n_hide);
+					colour = &black;
+					if(nudge)
+					{
+						tick_width += 3.0;
+						if(gap < 3)
+							colour = &grey;
+					}
+					else if(gap < 5)
+					{
+						colour = &grey;
+					}
+
+					zMapDrawLine(lines, scale_width - tick_width,  canvas_coord,
+						scale_width, canvas_coord, colour, 1.0) ;
+
+					if((gap > text_height * 2))
+					{
+	      				FooCanvasItem *item = NULL;
+						double x = 0.0;
+						int num,frac;
+						char *sign = "";
+
+						num = tick_coord / base;
+						if(num < 0)
+							num = -num;
+						frac = tick_coord % base;
+						if(frac < 0)
+							frac = -frac;
+						if(tick_coord < 0)
+							sign = "-";
+
+						if(frac)
+						{
+							/* this ought to be easier but we get to cope with
+							 * leading and trailing zeroes and -ve zeroes
+							 * and then the % operator is a bit flaky w/ -ve numbers
+							 */
+							char *p;
+
+							p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
+							while(*--p == '0')
+								continue;
+							if(*p != '.')
+								p++;
+							strcpy(p,unit);
+						}
+						else
+						{
+							sprintf(label,"%s%d%s",sign,num,unit);
+						}
+
+						item = foo_canvas_item_new(text,
+							foo_canvas_text_get_type(),
+							"x",          x,
+							"y",          canvas_coord,
+							"text",       label,
+							"font_desc",  font_desc,
+							"fill_color", "black",
+							// anchor centre means middle of text item is at coordinate?
+							"anchor",     GTK_ANCHOR_W,
+							NULL);
+					}
+
+//if(top) printf("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
+				}
+			}
 		}
-	      else
-		{
-		  scale_pos = scaleBar->start ;
-		  g_string_printf(digitUnitStr, "%d", scale_pos);
-		}
-            }
-        }
+	}
 
-      /* =========================================================== */
+	/* one vertical line */
+	zMapDrawLine(lines, scale_width, scroll_start * projection_factor,
+		scale_width, scroll_end  * projection_factor, &black, 1.0) ;
 
-      zMapDrawLine(lines, scale_left,  i_d, scale_line, i_d, &black, 1.0) ;
-
-      if(digitUnitStr->len > 0)
-        {
-          FooCanvasItem *item = NULL;
-          double x = 0.0;
-
-          if(text_left)
-            {
-              /* width = strlen(digitUnit); */
-              width = digitUnitStr->len;
-              x = ((scale_maj) - (5.0 * (double)width));
-            }
-
-          item = foo_canvas_item_new(text,
-                                     foo_canvas_text_get_type(),
-                                     "x",          x,
-                                     "y",          i_d,
-                                     "text",       digitUnitStr->str,
-                                     "font_desc",  font,
-                                     "fill_color", "black",
-                                     "anchor",     (text_left ? GTK_ANCHOR_CENTER : GTK_ANCHOR_W ),
-                                     NULL);
-          g_string_truncate(digitUnitStr, 0);
-          /* g_free(digitUnit); */
-        }
-
-    }
-
-  g_string_free(digitUnitStr, TRUE);
-
-  /* draw the vertical line of the scalebar. */
-    /* allocate a new points array */
-  points = foo_canvas_points_new(2) ;
-
-  /* fill out the points */
-  points->coords[0] = scale_line ;
-  points->coords[1] = scaleBar->start * scaleBar->projection_factor;
-  points->coords[2] = scale_line ;
-  points->coords[3] = scaleBar->end * scaleBar->projection_factor;
-
-
-//zMapLogWarning("scale extent %f %f",points->coords[1],points->coords[3]);
-
-  /* draw the line, unfortunately we need to use GDK_CAP_PROJECTING here to make it work */
-  foo_canvas_item_new(lines,
-                      foo_canvas_line_get_type(),
-                      "points", points,
-                      "fill_color_gdk", &black,
-                      "width_units", 1.0,
-                      "cap_style", GDK_CAP_PROJECTING,
-                      NULL);
-
-  /* free the points array */
-  foo_canvas_points_free(points) ;
-
-  /* Arrange groups to remove overlapping */
-  if(text_left)
+//  if(text_left)
     {
       g_object_set_data(G_OBJECT(text),
                         ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
@@ -983,21 +886,8 @@ printf("i,n,y1 = %d %d %d (%d %d %d)\n",i,n,y1,scaleBar->start,scaleBar->minor,s
                         GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
       positionLeftRight(text, lines);
     }
-  else
-    {
-      g_object_set_data(G_OBJECT(lines),
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
-                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
-      g_object_set_data(G_OBJECT(text),
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
-                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
-      positionLeftRight(lines, text);
 
-    }
-
-  return ;
 }
-
 
 
 

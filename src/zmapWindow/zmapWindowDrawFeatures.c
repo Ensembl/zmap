@@ -325,7 +325,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
-
   /* HOPE THIS IS THE RIGHT PLACE TO SET ZOOM FOR LONG_ITEMS... */
   zmapWindowLongItemSetMaxZoom(window->long_items, zMapWindowGetZoomMax(window)) ;
 

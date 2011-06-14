@@ -106,6 +106,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	    if (found_position)
 	      {
 		/* Use first feature in set to get alignment type etc. */
+		/* MH17: but you can have empty columns ... */
 		feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
 
 		found_feature = TRUE ;
@@ -148,7 +149,11 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	  /* Set up general command field for callback. */
 	  align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
 
-	  align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+	  if(feature)	/* may be null if (temporary) blixem BAM option selected */
+	  	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+								     ZMAPFEATURE_STRUCT_BLOCK) ;
+	  else
+	  	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
 								     ZMAPFEATURE_STRUCT_BLOCK) ;
 	  zMapAssert(align->block) ;
 
