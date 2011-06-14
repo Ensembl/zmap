@@ -87,6 +87,8 @@ enum
     BLX_ARGV_FASTA_FILE,        /* [fasta file] */
     BLX_ARGV_EXBLX_FILE,        /* [exblx file] */
     BLX_ARGV_DATASET,           /* --dataset=thing */
+    BLX_ARGV_COVERAGE,		  /* --show-coverage */
+    BLX_ARGV_SQUASH,		  /* --squash_matches */
     BLX_ARGV_ARGC               /* argc ;) */
   } ;
 
@@ -284,6 +286,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       ZMapHomolType align_type,
 			       int offset, int position, int start, int end,
 			       GList *features, ZMapFeatureSet feature_set,
+			       ZMapWindowAlignSetType align_set,
 			       blixemData blixem_data, char **err_msg) ;
 static gboolean addFeatureDetails(blixemData blixem_data) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
@@ -415,7 +418,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
   zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  status = initBlixemData(view, block, align_type, 0, position, 0, 0, NULL, feature_set, &blixem_data, &err_msg) ;
+  status = initBlixemData(view, block, align_type, 0, position, 0, 0, NULL, feature_set, ZMAPWINDOW_ALIGNCMD_NONE, &blixem_data, &err_msg) ;
 
   blixem_data.errorMsg = NULL ;
 
@@ -504,7 +507,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
   status = initBlixemData(view, block, homol_type,
 			  offset, position, start, end,
-			  features, feature_set, &blixem_data, &err_msg) ;
+			  features, feature_set, align_set, &blixem_data, &err_msg) ;
 
   if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
     blixem_data.format_data = &gff_data ;
@@ -518,7 +521,6 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
   blixem_data.sequence_map = view->view_sequence;
 
-  blixem_data.align_set = align_set;
 
   if (status)
     status = makeTmpfiles(&blixem_data) ;
@@ -634,6 +636,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       ZMapHomolType align_type,
 			       int offset, int position, int start, int end,
 			       GList *features, ZMapFeatureSet feature_set,
+			       ZMapWindowAlignSetType align_set,
 			       blixemData blixem_data, char **err_msg)
 {
   gboolean status = TRUE ;
@@ -648,6 +651,8 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   blixem_data->negate_coords = TRUE ;			    /* default for havana. */
 
   blixem_data->align_type = align_type ;
+
+  blixem_data->align_set = align_set;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   blixem_data->feature = feature ;
@@ -944,7 +949,8 @@ static gboolean addFeatureDetails(blixemData blixem_data)
 
 
   /* Set min/max range for blixem scope and clamp to our sequence. */
-  if (blixem_data->scope_from_mark && blixem_data->mark_start && blixem_data->mark_end)
+  if ((blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  	|| (blixem_data->scope_from_mark && blixem_data->mark_start && blixem_data->mark_end))
     {
       blixem_data->scope_min = blixem_data->mark_start ;
       blixem_data->scope_max = blixem_data->mark_end ;
@@ -1282,6 +1288,17 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   {
       missed += 2;
   }
+
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  {
+  	paramString[BLX_ARGV_COVERAGE - missed] = g_strdup("--show-coverage");
+  	paramString[BLX_ARGV_SQUASH - missed] = g_strdup("--squash-matches");
+  }
+  else
+  {
+  	missed += 2;
+  }
+
   return status ;
 }
 
@@ -1290,7 +1307,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 {
   gboolean status = TRUE ;
   GError  *channel_error = NULL ;
-  gboolean seqbl_file = FALSE ;
+//  gboolean seqbl_file = FALSE ;
   char *header ;
   int start, end ;
 
@@ -1309,6 +1326,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
   /*
    * Write the file headers.
    */
+#if 0
   if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
     {
       /* Open the exblx file, always needed. */
@@ -1343,7 +1361,17 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	}
     }
   else
+#endif
+#warning legacy blixem file format code iffed out!
     {
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+      {
+            if(blixem_data->mark_start < start)
+            	start = blixem_data->mark_start;
+            if(blixem_data->mark_end > end)
+            	end = blixem_data->mark_end;
+      }
+
       header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
 			       g_quark_to_string(blixem_data->block->original_id),
 			       start, end) ;
