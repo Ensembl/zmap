@@ -28,7 +28,7 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar 25 14:41 2010 (edgrif)
+ * Last edited: Jun 15 09:54 2011 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
  * CVS info:   $Id: zmapAppremote.c,v 1.44 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
@@ -114,13 +114,19 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   ZMapAppContext app_context = (ZMapAppContext)app_context_data;
   ZMapCmdLineArgsType value ;
 
+  /* should we be doing this if no win_id specified (see next call) ????? CHECK THIS OUT.... */
   zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME,
                               ZMAP_DEFAULT_REQUEST_ATOM_NAME,
                               ZMAP_DEFAULT_RESPONSE_ATOM_NAME,
-                              application_execute_command, app_context_data);
+                              application_execute_command, app_context_data) ;
 
-  /* Set ourselves up to send requests _to_ an external program. */
-  if (zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, &value))
+
+  /* Set ourselves up to send requests to an external program if we are given their window id. */
+  if (!zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, &value))
+    {
+      zMapLogMessage("%s", "--win_id option not specified.") ;
+    }
+  else
     {
       unsigned long clientId = 0;
       char *win_id = NULL;
@@ -159,16 +165,20 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               if ((ret_code = zMapXRemoteSendRemoteCommand(client, req, &resp)) != 0)
                 {
-                  zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code);
-                  if(resp)
+                  zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code) ;
+
+                  if (resp)
                     {
                       zMapLogWarning("Full response was %s", resp);
                       g_free(resp);
                     }
                   else
-                    zMapLogWarning("%s", "No response was received!");
-                  app_context->xremote_client = NULL;
-                  zMapXRemoteDestroy(client);
+		    {
+		      zMapLogWarning("%s", "No response was received!");
+		    }
+
+                  app_context->xremote_client = NULL ;
+                  zMapXRemoteDestroy(client) ;
                 }
 
 	      g_free(req);
@@ -179,8 +189,6 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
           zMapLogWarning("%s", "Failed to get window id.");
         }
     }
-  else
-    zMapLogWarning("%s", "--win_id option not specified.");
 
     return ;
 }
