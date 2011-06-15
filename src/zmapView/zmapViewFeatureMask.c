@@ -85,6 +85,8 @@ typedef struct _ZMapMaskFeatureSetData
       ZMapView view;
       GQuark mask_me;         /* current new featureset for masking */
       GList *redisplay;       /* existing columns that get masked */
+      gboolean perfect;		/* don't mask incomplete homologies */
+//      gboolean exact;		/* exact splicing always NOTE: not used but hard coding could be moved tp this flag */
 }
 ZMapMaskFeatureSetDataStruct, *ZMapMaskFeatureSetData;
 
@@ -98,7 +100,7 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
                                                          gpointer user_data,
                                                          char **error_out);
 
-static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker);
+static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker,gboolean perfect);
 
 static GList *sortFeatureset(ZMapFeatureSet fset);
 
@@ -119,6 +121,7 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
       GList *masked_by;
 
       data->view = view;
+      data->perfect = FALSE;		/* original default */
 
             /* this is the featuresets from the context not the display columns */
       for(fset = new_feature_set_names;fset;fset = fset->next)
@@ -141,6 +144,9 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
             {
                   GList *l;
                   GQuark self = g_quark_from_string("self");
+                  GQuark perfect = g_quark_from_string("perfect");
+                  GQuark imperfect = g_quark_from_string("imperfect");
+//                  GQuark exact = g_quark_from_string("exact");
                   GQuark set_id = GPOINTER_TO_UINT(fset->data);
                   gboolean self_only = TRUE;
 
@@ -148,7 +154,11 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
                   {
                         set_id = GPOINTER_TO_UINT(l->data);
 
-                        if(set_id == self)
+				if(set_id == perfect)
+					data->perfect = TRUE;
+				else if(set_id == imperfect)
+					data->perfect = FALSE;
+                        else if(set_id == self)
                               set_id = GPOINTER_TO_UINT(fset->data);
                         else
                               self_only = FALSE;
@@ -267,7 +277,7 @@ PDEBUG("mask new by all: fset, style, masked by = %s, %s, %s\n", g_quark_to_stri
 
 
             if(masker_set)
-                  mask_set_with_set(feature_set, masker_set);
+                  mask_set_with_set(feature_set, masker_set,cb_data->perfect);
         }
       }
       break;
@@ -459,10 +469,11 @@ zMapStopTimer("radix sort","");
       return(l_out);
 }
 
-static gboolean maskOne(GList *mask_top, GList *f, GList *mask,  gboolean exact)
+static gboolean maskOne(GList *mask_top, GList *f, GList *mask,  gboolean exact, gboolean perfect)
 {
       GList *l;
       ZMapFeature f_feat,m_feat;
+      /* NOTE f and mask point to the first feature item after the lists header structs */
 
       /* assuming strand data is not relevant and coordinates are always on fwd strand ...
        * see zmapFeature.h/ ZMapFeatureStruct.x1
@@ -474,6 +485,25 @@ static gboolean maskOne(GList *mask_top, GList *f, GList *mask,  gboolean exact)
 #if FILE_DEBUG
 if(twitter) PDEBUG("fa %d-%d:",f_feat->x1,f_feat->x2);
 #endif
+
+		if(perfect)
+		{
+		/*
+		 * annotators want to see all these
+		 * we may add a menu option to show/hide these
+		 */
+			GList *last;
+			ZMapFeature last_feat;
+
+ 			if(f_feat->feature.homol.y1 != 1)
+      			return FALSE;
+      		for(last = f;last->next; last = last->next)
+      			continue;
+            	last_feat = (ZMapFeature) last->data;
+            	if(last_feat->feature.homol.y2 != last_feat->feature.homol.length)
+            		return FALSE;
+		}
+
             for(;l;l = l->next)
             {
                   m_feat = (ZMapFeature) l->data;
@@ -506,16 +536,19 @@ if(twitter) PDEBUG(" ma %d-%d",m_feat->x1,m_feat->x2);
             }
             if(!l)
                   return(FALSE);
+
             if(exact)                     /* set up for next block */
                   l = l->next;
 #if FILE_DEBUG
 if(twitter) PDEBUG("%s","\n");
 #endif
       }
+
+
       return(TRUE);
 }
 
-static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker)
+static void mask_set_with_set(ZMapFeatureSet masked, ZMapFeatureSet masker, gboolean perfect)
 {
       GList *ESTset,*mRNAset;
       GList *EST,*mRNA;
@@ -613,7 +646,7 @@ if(twitter) PDEBUG("EST %s = %d-%d (%d), mRNA = %s %d-%d (%d)\n",
 #endif
                   if(!mrna->masked && !est->masked && mrna->x2 >= est->x2)
                   {
-                        if(maskOne(EST,EST->next,mRNA->next,exact))
+                        if(maskOne(EST,EST->next,mRNA->next,exact,perfect))
                         {     /* this EST is covered by this mRNA */
                               GList *l;
                               ZMapFeature f;
@@ -754,7 +787,7 @@ PDEBUG("mask old %s with new %s\n",g_quark_to_string(feature_set->unique_id),g_q
 #if FILE_DEBUG
 //PDEBUG("%s","has masker in block\n");
 #endif
-                              mask_set_with_set(feature_set,masker_set);
+                              mask_set_with_set(feature_set,masker_set,cb_data->perfect);
                               cb_data->redisplay = g_list_prepend(cb_data->redisplay,
                                     GUINT_TO_POINTER(feature_set->unique_id));
                         }
