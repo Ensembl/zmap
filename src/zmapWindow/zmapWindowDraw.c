@@ -620,7 +620,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 
 
 /* MH17: acedb only gives us lower cased names
-   previously capitalised name can=me from req_featuresets ???
+   previously capitalised name came from req_featuresets ???
       if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
    but we can patch up from the [ZMap] columns list
 */
@@ -648,6 +648,11 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
   ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)col_group;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
+
+if(featureset->original_id == g_quark_to_string("hexExon"))
+printf("visible? %s  %d %d\n",g_quark_to_string(featureset->unique_id),
+	zmapWindowContainerHasFeatures(container),
+	zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
 
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
