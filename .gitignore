@@ -7,3 +7,9 @@ install-sh
 ltmain.sh
 missing
 zmap_version.m4
+Makefile.in
+*.shtml
+aclocal.m4
+autom4te.cache/
+compile
+depcomp

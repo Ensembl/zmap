@@ -197,6 +197,11 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
 
+void zmapWindowHideEmpty(ZMapWindow window);
+static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                      ZMapContainerLevelType level, gpointer user_data);
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -894,7 +899,8 @@ void zmapWindowRemoveEmptyColumns(ZMapWindow window,
       remove_data.strand = ZMAPSTRAND_FORWARD ;
       g_list_foreach(forward_group->item_list, removeEmptyColumnCB, &remove_data) ;
     }
-
+	// MH17 NOTE the function removeEmptyColumnCB() is 1300 lines south of here
+	// and does nothing except call the function immediately below this one
   if (reverse_group)
     {
       remove_data.strand = ZMAPSTRAND_REVERSE ;
@@ -949,11 +955,52 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
 
+	zmapWindowHideEmpty(window);
+  return ;
+}
+
+
+/* columns get created if they are to be drawn but may contain no features
+   in which case depending on the style they should be hidden
+   featuresets are created from GFF if a feature is defined so will not exist if empty
+   but to record failed requests when operating the load columns dialog
+   we need to have the featureset in the feature context to record what has been loaded
+   so these get created within justMergeContext() if they do not exist.
+   So we have to hide empty columns after displaying all the featuresets
+ */
+void zmapWindowHideEmpty(ZMapWindow window)
+{
+  zmapWindowContainerUtilsExecute(window->feature_root_group,
+				  ZMAPCONTAINER_LEVEL_FEATURESET,
+				  hideEmptyCB,
+				  window);
+
+  zmapWindowContainerRequestReposition(window->feature_root_group);
 
   return ;
 }
 
 
+static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                      ZMapContainerLevelType level, gpointer user_data)
+{
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+	  if ((!zmapWindowContainerHasFeatures(container)) &&
+      	(!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+    	  {
+    	     zmapWindowColumnHide((FooCanvasGroup *)container) ;
+    	  }
+      }
+      break ;
+    default:
+      break ;
+    }
+
+  return ;
+}
 
 void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window)
 {
@@ -1037,6 +1084,8 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
   zMapStopTimer("DrawContext",str);
   g_free(str);
   }
+
+  zmapWindowHideEmpty(canvas_data->window);
 
       /* unbumped features might be wider */
   zmapWindowFullReposition(canvas_data->window) ;
@@ -1230,10 +1279,10 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       if (valid_frame && valid_strand)
       {
-
+#define MH17_PRINT_CREATE_COL	0
 #if MH17_PRINT_CREATE_COL
       /* now only a sensible number created. */
-      zMapLogWarning("create column  %s/%s S-%d F-%d\n",
+      printf("create column  %s/%s S-%d F-%d\n",
             g_quark_to_string(column_id),g_quark_to_string(display_id),
             column_strand,column_frame);
 #endif
@@ -1259,7 +1308,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
     if(add_to_hash)
     {
-#if MH17_PRINT_CREATE_COL
+#if 0 //MH17_PRINT_CREATE_COL
 zMapLogWarning("adding hash %s -> %s\n",g_quark_to_string(feature_set_id),g_quark_to_string(column_id));
 #endif
       gboolean status;
@@ -1667,6 +1716,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
 
           }
+
+          // attempted fix: crashes
+          // zmapWindowRemoveEmptyColumns(window, FOO_CANVAS_GROUP(forward_group), FOO_CANVAS_GROUP(reverse_group));
 
         zMapStopTimer("DrawBlock","");
 
