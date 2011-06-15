@@ -27,7 +27,7 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun  9 11:30 2011 (edgrif)
+ * Last edited: Jun 14 13:43 2011 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
  * CVS info:   $Id: zmapGFF2parser.c,v 1.132 2011-05-06 11:00:27 edgrif Exp $
  *-------------------------------------------------------------------

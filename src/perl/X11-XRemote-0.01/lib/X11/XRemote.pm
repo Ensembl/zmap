@@ -53,7 +53,7 @@ sub new ($){
         '_response_list' => [], 
         '_handle'        => undef,
         '__DEBUG'        => $DEBUG_VALUE,
-        map { "_".lc(substr($_,1)) => $p->{$_} } keys(%$p)
+        map { "_".substr($_,1) => $p->{$_} } keys(%$p)
     };
     bless($self, $class);
     if(my $xrh = X11::XRemote::Handle::init_obj($class)){
