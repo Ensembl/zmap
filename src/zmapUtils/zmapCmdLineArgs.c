@@ -269,6 +269,7 @@ static void makeContext(int argc, char *argv[])
   /* Set default values. */
   arg_context->version = ZMAPARG_INVALID_BOOL;
   arg_context->serial = ZMAPARG_INVALID_BOOL;
+  arg_context->peer_id  = ZMAPARG_INVALID_STR ;
   arg_context->start   = ZMAPARG_INVALID_INT;
   arg_context->end     = ZMAPARG_INVALID_INT ;
   arg_context->config_file_path = arg_context->config_dir = ZMAPARG_INVALID_STR;
@@ -344,11 +345,12 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_SERIAL,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
 
+    { ZMAPARG_PEER_ID, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_ID_DESC, ZMAPARG_PEER_ID_ARG },
+
     { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
       ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
 
-    { ZMAPARG_SEQUENCE_END,   0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
-      ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+    { ZMAPARG_SEQUENCE_END,   0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
 
     { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
 
@@ -371,12 +373,13 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
       entries[0].arg_data = &(arg_context->version);
       entries[1].arg_data = &(arg_context->serial);
-      entries[2].arg_data = &(arg_context->start);
-      entries[3].arg_data = &(arg_context->end);
-      entries[4].arg_data = &(arg_context->sleep);
-      entries[5].arg_data = &(zmap_timing_G);
-      entries[6].arg_data = &(zmap_shrink_G);
-      entries[7].arg_data = &(arg_context->sequence_arg);
+      entries[2].arg_data = &(arg_context->peer_id);
+      entries[3].arg_data = &(arg_context->start);
+      entries[4].arg_data = &(arg_context->end);
+      entries[5].arg_data = &(arg_context->sleep);
+      entries[6].arg_data = &(zmap_timing_G);
+      entries[7].arg_data = &(zmap_shrink_G);
+      entries[8].arg_data = &(arg_context->sequence_arg);
     }
 
   return &entries[0] ;
@@ -394,6 +397,9 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_WINDOW_ID, 0, ARG_NO_FLAGS,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_WINDOW_ID_DESC, ZMAPARG_WINID_ARG },
+    { ZMAPARG_PEER_ID, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_PEER_ID_DESC, ZMAPARG_PEER_ID_ARG },
     { NULL }
   };
 
@@ -402,6 +408,7 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
       entries[0].arg_data = &(arg_context->config_file_path);
       entries[1].arg_data = &(arg_context->config_dir);
       entries[2].arg_data = &(arg_context->window);
+      entries[3].arg_data = &(arg_context->peer_id);
     }
 
   return &entries[0];

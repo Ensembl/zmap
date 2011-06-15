@@ -87,6 +87,7 @@ zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
 zmapManager/libZMapManager.la \
+zmapRemoteControl/libZMapRemoteControl.la \
 zmapUtils/libZMapUtils.la     \
 zmapView/libZMapView.la       \
 zmapWindow/libZMapWindow.la   \
@@ -107,7 +108,7 @@ $(NULL)
 
 # Programs we're going to compile.
 
-bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
+bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
 
 
 # Try Jeremy's new build stuff....
@@ -167,6 +168,13 @@ xremote_gui_LDADD        = $(zmap_LDADD)
 xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
+
+# The new program that knows about the xremote protocol.
+remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
+remotecontrol_LDFLAGS      = 
+remotecontrol_LDADD        = $(zmap_LDADD)
+remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
+remotecontrol_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 #

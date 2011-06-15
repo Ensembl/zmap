@@ -56,6 +56,8 @@ static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 static void checkConfigDir(void) ;
+static void checkPeerID(char **peer_id_out) ;
+
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
@@ -81,6 +83,8 @@ static void finalCleanUp(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
 
 static void setup_signal_handlers(void);
+
+static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_context_data) ;
 
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
@@ -112,18 +116,16 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /*       Application initialisation.        */
 
-  /* Since thread support is crucial we do compile and run time checks that its all intialised.
-   * the function calls look obscure but its what's recommended in the glib docs. */
-#if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
-#error "Cannot compile, threads not properly enabled."
-#endif
-
-
   /* User can ask for an immediate sleep, useful for attaching a debugger. */
   if ((sleep_seconds = checkForCmdLineSleep(argc, argv)))
     sleep(sleep_seconds) ;
 
 
+  /* Since thread support is crucial we do compile and run time checks that its all intialised.
+   * the function calls look obscure but its what's recommended in the glib docs. */
+#if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
+#error "Cannot compile, threads not properly enabled."
+#endif
   g_thread_init(NULL) ;
   if (!g_thread_supported())
     g_thread_init(NULL);
@@ -157,6 +159,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Add the ZMaps manager. */
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
+  /* Check for peer program id. */
+  checkPeerID(&(app_context->peer_unique_id)) ;
+
   /* Set up logging for application. */
   if (!zMapLogCreate(NULL))
     {
@@ -166,6 +171,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     }
 
   getConfiguration(app_context) ;
+
+
+  if (!zmapAppRemoteControlCreate(app_context))
+    {
+      printf("Could not initialise remote control interface.") ;
+    }
+
 
   {
     /* locale setting */
@@ -193,12 +205,23 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS IS THE OLD REMOTE HANDLER.... */
   /* This ensures that the widget *really* has a X Window id when it
    * comes to doing XChangeProperty.  Using realize doesn't and the
    * expose_event means we can't hide the mainwindow. */
-  g_signal_connect(G_OBJECT(toplevel), "map",
+  g_signal_connect(G_OBJECT(toplevel), "map-event",
                    G_CALLBACK(zmapAppRemoteInstaller),
                    (gpointer)app_context);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
+  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
+					   G_CALLBACK(remoteInstaller),
+					   (gpointer)app_context) ;
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
@@ -358,6 +381,8 @@ static ZMapAppContext createAppContext(void)
 
   app_context->state = ZMAPAPP_INIT ;
 
+  app_context->app_id = zMapGetAppTitle() ;
+
   app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
 
   app_context->sent_finalised = FALSE;
@@ -501,6 +526,14 @@ static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *ex
       zMapXRemoteDestroy(app_context->xremote_client) ;
     }
 
+
+  /* **NEW XREMOTE** destroy */
+  if (app_context->remote_controller)
+    {
+      zMapRemoteControlDestroy(app_context->remote_controller) ;
+      app_context->remote_controller = NULL ;
+    }
+
   /* Causes the destroy callback to be invoked which then calls the final clean up. */
   gtk_widget_destroy(app_context->app_widg);
 
@@ -636,10 +669,14 @@ static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout,
 static void checkForCmdLineVersionArg(int argc, char *argv[])
 {
   ZMapCmdLineArgsType value ;
+  gboolean show_version = FALSE ;
 
-  if (zMapCmdLineArgsValue(ZMAPARG_VERSION, &value) && value.b)
+  if (zMapCmdLineArgsValue(ZMAPARG_VERSION, &value))
+    show_version = value.b ;
+
+  if (show_version)
     {
-      printf("%s %s\n", zMapGetAppName(), zMapGetAppVersionString()) ;
+      printf("%s - %s\n", zMapGetAppName(), zMapGetVersionString()) ;
 
       exit(EXIT_SUCCESS) ;
     }
@@ -661,7 +698,7 @@ static int checkForCmdLineSleep(int argc, char *argv[])
   curr_arg = argv ;
   while (*curr_arg)
     {
-      if (g_str_has_prefix(*curr_arg, "--sleep="))
+      if (g_str_has_prefix(*curr_arg, "--" ZMAPSTANZA_APP_SLEEP "="))
 	{
 	  seconds = atoi((strstr(*curr_arg, "=") + 1)) ;
 	  break ;
@@ -694,6 +731,21 @@ static void checkConfigDir(void)
 
   return ;
 }
+
+
+/* Did caller specify a peer program id ? */
+static void checkPeerID(char **peer_id_out)
+{
+  ZMapCmdLineArgsType value = {FALSE} ;
+
+  if (zMapCmdLineArgsValue(ZMAPARG_PEER_ID, &value))
+    *peer_id_out = value.s ;
+
+  return ;
+}
+
+
+
 
 /* This function isn't very intelligent at the moment.  It's function
  * is to set the info (GError) object of the appcontext so that the
@@ -789,6 +841,12 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 
       }
 
+      /* peer unique id to use in remote control. */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_PEER_ID, &tmp_string))
+	app_context->peer_unique_id = tmp_string ;
+
+
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
@@ -836,6 +894,34 @@ static void setup_signal_handlers(void)
   sigaction(SIGBUS,  &signal_action, &prev);
   sigaction(SIGABRT, &signal_action, &prev);
 #endif /* NO_SIGACTION */
+
+  return ;
+}
+
+
+
+/* **NEW XREMOTE** 
+ *
+ * create the new xremote object.
+ */
+static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+  g_signal_handler_disconnect(app_context->app_widg, app_context->mapCB_id) ;
+  app_context->mapCB_id = 0 ;
+
+  /* Whatever happens we try to set up our remote control object, if we were
+   * given a peers unique string then we also try to connect to it. */
+  if (!zmapAppRemoteControlInit(app_context))
+    {
+      zMapCritical("%s", "Failed to initialise remote control interface.") ;
+    }
+  else if (app_context->peer_unique_id)
+    {
+      if (!zmapAppRemoteControlConnect(app_context))
+	zMapCritical("%s", "Failed to connect to peer using %s.", app_context->peer_unique_id) ;
+    }
 
   return ;
 }

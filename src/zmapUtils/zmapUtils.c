@@ -229,6 +229,21 @@ char *zMapGetLicenseString(void)
 
 
 
+/* Attempt to make some kind of unique id. */
+char *zMapMakeUniqueID(char *prefix)
+{
+  char *unique_id = NULL ;
+  gulong pid_ulong, time_ulong ;
+
+  pid_ulong = (gulong)getpid() ;
+  time_ulong = (gulong)time(NULL) ;
+
+  unique_id = g_strdup_printf("%s-%lu-%lu", prefix, pid_ulong, time_ulong) ;
+
+  return unique_id ;
+}
+
+
 
 
 /*!

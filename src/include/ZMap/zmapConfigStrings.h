@@ -176,6 +176,8 @@
 #define ZMAPSTANZA_APP_CONFIG            "ZMap"
 #define ZMAPSTANZA_APP_MAINWINDOW        "show-mainwindow"
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
+#define ZMAPSTANZA_APP_SLEEP             "sleep"
+#define ZMAPSTANZA_APP_PEER_ID           "peer-id"
 #define ZMAPSTANZA_APP_HELP_URL          "help-url"
 
 #define ZMAPSTANZA_APP_DATASET           "dataset"

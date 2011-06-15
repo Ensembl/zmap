@@ -106,13 +106,20 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
  *
  * The address of the string is then used as the unique identifier and the string
  * can be used during debugging.
+ * 
+ * If you use the magic in heap allocated structs then you _must_ reset the magic
+ * on deallocating the struct to invalidate the memory and hence catch when callers
+ * try to erroneously continue to reference it:
+ * 
+ * ZMAP_MAGIC_RESET(struct->magic) ;
+ * 
  */
 typedef char* ZMapMagic ;
 
 #define ZMAP_MAGIC_NEW(magic_var_name, type_name) static ZMapMagic magic_var_name = ZMAP_MAKESTRING((type_name))  " in file " __FILE__
 #define ZMAP_MAGIC_IS_VALID(magic_var_name, magic_ptr) ((magic_var_name) == (magic_ptr))
 #define ZMAP_MAGIC_ASSERT(magic_var_name, magic_ptr) zMapAssert(ZMAP_MAGIC_IS_VALID((magic_var_name), (magic_ptr)))
-
+#define ZMAP_MAGIC_RESET(magic_ptr) (magic_ptr) = NULL
 
 
 #define ZMAP_PTR_ZERO_FREE(ptr, struct_type) \
@@ -182,6 +189,8 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
 
 
 gboolean zMapUtilsConfigDebug(void) ;
+
+char *zMapMakeUniqueID(char *prefix) ;
 
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 

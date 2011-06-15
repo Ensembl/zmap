@@ -401,6 +401,7 @@ zmapFeature \
 zmapGFF \
 zmapMake \
 zmapManager \
+zmapRemoteControl \
 zmapServer \
 zmapThreads \
 zmapUtils \
@@ -437,6 +438,7 @@ zmapFeature/tests/Makefile
 zmapGFF/Makefile
 zmapMake/Makefile
 zmapManager/Makefile
+zmapRemoteControl/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile

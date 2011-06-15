@@ -35,6 +35,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapManager.h>
 #include <ZMap/zmapXRemote.h>
+#include <ZMap/zmapRemoteControl.h>
 
 
 /* Minimum GTK version supported. */
@@ -68,6 +69,8 @@ typedef struct _ZMapAppContextStruct
 {
   ZMapAppState state ;					    /* Needed to control exit in a clean way. */
 
+  char *app_id ;					    /* zmap app name. */
+
   int exit_timeout ;					    /* time (s) to wait before forced exit. */
 
   int exit_rc ;
@@ -87,6 +90,16 @@ typedef struct _ZMapAppContextStruct
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
 
+
+  /* **NEW XREMOTE** the new xremote object.  */
+  gulong mapCB_id ;
+  ZMapRemoteControl remote_controller ;
+
+
+
+
+
+  /* old xremote stuff... */
   gulong property_notify_event_id;
   ZMapXRemoteObj xremote_client ;			    /* The external program we are sending
 							       commands to. */
@@ -95,6 +108,8 @@ typedef struct _ZMapAppContextStruct
 
       /* Was a default sequence specified in the config. file.*/
   ZMapFeatureSequenceMap default_sequence;
+
+  char *peer_unique_id ;				    /* Peer application atom id for remote control. */
 
   char *locale;
   gboolean sent_finalised ;
@@ -128,7 +143,17 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
+
+/* old remote stuff.... */
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
 void zmapAppRemoteSendFinalised(ZMapAppContext app_context);
+
+
+/* New remote control interface */
+gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context) ;
+gboolean zmapAppRemoteControlInit(ZMapAppContext app_context) ;
+gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
+
+
 
 #endif /* !ZMAP_APP_PRIV_H */

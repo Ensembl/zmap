@@ -114,6 +114,7 @@ typedef union
 
 
 #define ZMAPARG_VERSION        "version"
+#define ZMAPARG_PEER_ID        "peer-id"
 #define ZMAPARG_SERIAL         "serial"
 #define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_SEQUENCE_START "start"
