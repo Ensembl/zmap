@@ -29,7 +29,7 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Feb 23 12:34 2011 (edgrif)
+ * Last edited: Jun 15 08:49 2011 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
  * CVS info:   $Id: zmapXRemote.h,v 1.31 2011-02-24 11:11:50 edgrif Exp $
  *-------------------------------------------------------------------
@@ -119,13 +119,16 @@ typedef enum
     ZMAPXREMOTE_SENDCOMMAND_SUCCEED          = 0,
     ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE      = 1 << 0,
     ZMAPXREMOTE_SENDCOMMAND_UNKNOWN          = 1 << 1,
+
     ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW   = 1 << 2,
-    ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH = 1 << 3,
-    ZMAPXREMOTE_SENDCOMMAND_APP_MISMATCH     = 1 << 4,
-    ZMAPXREMOTE_SENDCOMMAND_PROPERTY_ERROR   = 1 << 5,
-    ZMAPXREMOTE_SENDCOMMAND_TIMEOUT          = 1 << 6,
-    ZMAPXREMOTE_SENDCOMMAND_CLIENT_ERROR     = 1 << 7,
-    ZMAPXREMOTE_SENDCOMMAND_XML_ERROR        = 1 << 8,
+    ZMAPXREMOTE_SENDCOMMAND_X_CALL_ERROR     = 1 << 3,
+    ZMAPXREMOTE_SENDCOMMAND_PROPERTY_ERROR   = 1 << 4,
+    ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH = 1 << 5,
+    ZMAPXREMOTE_SENDCOMMAND_APP_MISMATCH     = 1 << 6,
+
+    ZMAPXREMOTE_SENDCOMMAND_TIMEOUT          = 1 << 7,
+    ZMAPXREMOTE_SENDCOMMAND_CLIENT_ERROR     = 1 << 8,
+    ZMAPXREMOTE_SENDCOMMAND_XML_ERROR        = 1 << 9,
 
     ZMAPXREMOTE_SENDCOMMAND_ISSERVER         = 1 << 15	    /* I don't understand this one, it
 							       doesn't seem to be used anywhere. */
