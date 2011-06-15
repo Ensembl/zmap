@@ -106,7 +106,7 @@ static gboolean resizeFormatStr(ZMapGFFParser parser) ;
 /* Parser must be created with the reference sequence for which features are to be
  * parsed because files may contain features for several reference sequences and
  * we need to parse only those for our reference sequence.
- * 
+ *
  * Optionally a feature start/end range may be specified, if start and end are 0 then
  * all features for the reference sequence are parsed from the gff.
  */
@@ -115,7 +115,7 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
   ZMapGFFParser parser = NULL ;
 
   if ((sequence && *sequence)
-      && ((features_start == 0 && features_end == 0) || (features_start > 0 && features_end >= features_start)))
+      && ((features_start == 1 && features_end == 0) || (features_start > 0 && features_end >= features_start)))
     {
       parser = g_new0(ZMapGFFParserStruct, 1) ;
 
@@ -205,22 +205,22 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
  * This function expects to find the GFF header in the format below, once there are
  * no more header lines (i.e. a non-"##" lines is encountered) then the header is
  * considered to have be finished.
- * 
+ *
  * The zMapGFFParseLine() function can then be used to parse the rest of the file.
- * 
- * 
+ *
+ *
  * GFFv2: no order of comment lines is given so the following lines are parsed
  * but may come in any order or may be completely absent:
- * 
+ *
  * ##gff-version 2
  * ##sequence-region chr19-03 1000000 1010000
- * 
- * 
+ *
+ *
  * GFFv3: the version line _MUST_ be there and _MUST_ be the first file line,
  * after that lines can come in any order:
- * 
- * ##gff-version 3 
- * ##sequence-region seqid start end 
+ *
+ * ##gff-version 3
+ * ##sequence-region seqid start end
  *
  *
  * Returns FALSE if there is any error in the GFF header.
@@ -1721,7 +1721,7 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
     {
       do
 	{
-	  attr_str++ ;					    /* Skip the leading '"' or ',' */	  
+	  attr_str++ ;					    /* Skip the leading '"' or ',' */
 
 	  /* We should be looking at "number number number number , ....more stuff....." */
 	  if ((fields = sscanf(attr_str, gaps_format_str, &gap.t1, &gap.t2, &gap.q1, &gap.q2)) == 4)
