@@ -1,0 +1,444 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '16 June 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- Summaries of changes... --!>
+
+<h1>Summary Of Changes And Bug Fixes For ZMap 0.1.134 </h1>
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Acedb Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Seqtools Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.134 </h1>
+
+<p>Last Release Date: 27/05/2011</p>
+
+
+<h3>Current Release Date: 16 June 2011 at 11h.27m.12s</h3>
+
+
+<p>This report covers 2011-05-27 to 2011-06-16</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69060">69060</a>, Resolved (Wed Jun 15 15:48:58 2011)
+<p>Clustering ESTs and mRNAs</p>
+<p>af2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=78097">78097</a>, Resolved (Wed Jun 15 15:45:03 2011)
+<p>Rounding error in ruler code</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=122482">122482</a>, Resolved (Wed Jun 15 16:07:02 2011)
+<p>turn off blue diamonds for consensus splice sites</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=128410">128410</a>, Resolved (Wed Jun 15 15:53:33 2011)
+<p>Incomplete homology markers</p>
+<p>mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156650">156650</a>, Resolved (Wed Jun 15 16:40:49 2011)
+<p>idea - need improved highlighting of evidence already used to build transcript</p>
+<p>mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161914">161914</a>, Resolved (Wed Jun 15 16:14:34 2011)
+<p>red diamonds differ with different bump modes in Zmap</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=176415">176415</a>, Resolved (Wed Jun 15 16:41:56 2011)
+<p>Locus column difficult to read</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=183172">183172</a>, Resolved (Wed Jun 15 16:25:12 2011)
+<p>rev comp coordinates in ladder are 1kb off</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196718">196718</a>, Resolved (Wed Jun 15 16:26:24 2011)
+<p>version 0.1.104 orange line through panel label text</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=208178">208178</a>, Resolved (Thu Jun 02 11:39:36 2011)
+<p>DNA highlighting</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209814">209814</a>, Resolved (Thu Jun 02 12:02:13 2011)
+<p>zmap GFF parsing error</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211261">211261</a>, Resolved (Wed Jun 15 16:32:31 2011)
+<p>alignments displayed 1 base out at high zoom</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211274">211274</a>, Resolved (Wed Jun 15 16:30:50 2011)
+<p>DNA fetching code always gets the first bases in the block</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=212173">212173</a>, Resolved (Thu Jun 02 11:35:05 2011)
+<p>zmap not fetching sequence for blixem from acedb</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=214553">214553</a>, Resolved (Thu Jun 02 09:59:54 2011)
+<p>saving error "Merge of new feature into View feature context failed"</p>
+<p>rn4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215229">215229</a>, Resolved (Tue Jun 07 15:21:01 2011)
+<p>percent ID always 0.00000 in feature details view</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215419">215419</a>, Resolved (Thu Jun 09 12:18:28 2011)
+<p>GFF with mixed sequence names not filtered</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215429">215429</a>, Resolved (Thu Jun 09 12:15:26 2011)
+<p>wrong format GFF header crashes server thread</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=216474">216474</a>, Resolved (Thu Jun 02 10:14:57 2011)
+<p>[/software/anacode/otter/otter_rel53.07/ensembl-otter/tk/otterlace] error log /nfs/users/nfs_g/gdr/.otter/otterlace.4053-a.log</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=216561">216561</a>, Resolved (Wed Jun 15 15:00:46 2011)
+<p>empty 3F columns</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217099">217099</a>, Resolved (Tue Jun 14 13:24:42 2011)
+<p>scale bar tick marks are chosen oddly: should be order of 10</p>
+<p>jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217170">217170</a>, Resolved (Thu Jun 02 09:52:28 2011)
+<p>Aborted: Unknown FeatureSet "Non_coding":  not found in original_block</p>
+<p>cas@sanger.ac.uk, jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217665">217665</a>, Resolved (Thu Jun 02 11:21:33 2011)
+<p>duplicated CpGs in Zmap</p>
+<p>vb1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=218678">218678</a>, Resolved (Wed Jun 15 15:36:07 2011)
+<p>EST's w/ red dots should not be masked</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from git]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   /var/tmp/zmap.16092/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update last release notes to 27/05/2011"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update release notes file to release_notes.2011_05_27.14_48_22.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "new zmap release notes for 27 May 2011"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "put back last release date for testing."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix parsing of git changes for zmap repository."
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   /var/tmp/zmap.26091/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update last release notes to 27/05/2011"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update release notes file to release_notes.2011_05_27.12_33_30.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "new zmap release notes for 27 May 2011"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "replace cvs stuff with git stuff."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "script to git commit etc."
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Acedb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Fixed a bug where dotter fails if pfetch returns 'no match'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   When sorting alignments by position, also do a secondary sort by length
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Fixed an issue where the 'squash matches' option on the settings dialog was not updated after changing the same setting on the toolbar
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Incremented version to 4.2 (start of new versioning system)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Improvements to message handling for region-fetch code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Fixed an issue with squashed matches where the row was not always highlighted correctly for selected/grouped matches
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Small comment addition
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Added toolbar icon for squash-matches option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Improved display name for short reads when 'squash matches' is enabled
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Fixed an issue where a selected short-read could be hidden by its duplicates in 'squashed matches' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Finished work to group short-reads
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   WIP: implement a better way of grouping duplicate short reads
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed an issue with the names of duplicated short reads being lost
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a bug where the region-fetch script args were not being picked up from config
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a compile error on Macs (missing include file)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a compile error on Linux due to missing include file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Fixed a bug where the coverage view labels were sometimes not drawn correctly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added squash-matches command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   By default, set the secondary sort column to be position
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added show-coverage command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Report an error if the region-fetch script fails
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   The range requested by region-fetch is now clipped to the display range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Tidied the regino-fetch code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added the --save-temp-files command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Keep original name for short reads so that we can identify pairs (until we have a better method of doing so)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   GFF parser now ignores features that are outside the reference sequence range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Delete temp files after doing a region-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   region-fetch now gets its script arguments from the config file on a per-source basis
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Merge branch 'feature/buildsys'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Removed --dirty option from git describe because it's not available in older versions of git
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Use abbreviated commit ids in build info
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Removed unused expression in configure.ac
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Fixed a bug in the build system where AM_COND_IF is not recognised in older versions of automake
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Merge branch 'feature/buildsys'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Build system now includes git-describe info in the version number
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-02:</b>   Incremented version to 4.1.20
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-02:</b>   Added --dataset argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Fixed a bug with creating temp files for region-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Merge branch 'shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-31:</b>   Fixed a bug where the parser was not ignoring blank lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-31:</b>   Added the real script arguments for the bam-fetch script
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Added code to distinguish short-read matches from other match types
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Fixed a bug where parsing a secondary input file was not adding the sequences correctly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Blixem region-fetch now calls the script specified in the config file
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
