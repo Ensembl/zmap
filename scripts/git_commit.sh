@@ -48,7 +48,7 @@ fi
 
 zmap_message_out "add, commit with push=$push for $files"
 
-git add $files || zmap_message_exit "git add failed"
+git add -f $files || zmap_message_exit "git add failed"
 
 git commit -m "\"$reason\"" $files || zmap_message_exit "git commit failed"
 
