@@ -1181,11 +1181,15 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* Rebase coords in blixem by offset. */
   if (blixem_data->position)
     {
-      int offset ;
+      int offset, tmp1,tmp2 ;
 
-      offset = blixem_data->offset ;
+      offset = tmp1 = blixem_data->offset ;
 
       paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
+      /* NOTE this function swaps start and end and inverts them, you have to provide both */
+      if (blixem_data->view->revcomped_features)
+		zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
+
       paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
     }
   else
@@ -1286,7 +1290,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   }
   else
   {
-      missed += 2;
+      missed += 1;
   }
 
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
@@ -1318,9 +1322,6 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
   /* sort out start/end if view is revcomp'd. */
   start = blixem_data->scope_min ;
   end = blixem_data->scope_max ;
-
-  if (blixem_data->view->revcomped_features)
-    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
 
   /*
@@ -1372,9 +1373,13 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
             	end = blixem_data->mark_end;
       }
 
+	if (blixem_data->view->revcomped_features)
+		zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
       header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
 			       g_quark_to_string(blixem_data->block->original_id),
 			       start, end) ;
+printf("Blixem file: %s",header);
 
       status = initFeatureFile(blixem_data->gff_file, header, blixem_data->line,
 			       &(blixem_data->gff_channel), blixem_data) ;
@@ -1453,11 +1458,12 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 
                    ref_name, blixem_data->source,
                    "region",          // zMapSOAcc2Term(feature->SO_accession),
-                   blixem_data->mark_start, blixem_data->mark_end,
+//                   blixem_data->mark_start, blixem_data->mark_end,
+			 start,end,		/* these have been revcomped and wwere set from the mark */
                    0.0, "dataType=short-read" ) ;       // is this also SO??
 
             printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
-
+printf("Blixem file: %s",blixem_data->line->str);
       }
 
       if (blixem_data->homol_max)
