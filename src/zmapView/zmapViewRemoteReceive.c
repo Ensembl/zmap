@@ -30,7 +30,7 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jun  7 15:54 2011 (edgrif)
+ * Last edited: Jun 16 10:11 2011 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
  * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.64 2011-04-08 14:00:42 mh17 Exp $
  *-------------------------------------------------------------------
@@ -1481,7 +1481,17 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	      {
 		ZMapView view = request_data->view ;
 
-		/* N.B. ALL THIS zMapBlock2FeatureCoords() WILL GO WHEN OTTERLACE PASSES US THE CHROMOSOME COORDS.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		/* I BELIEVE THIS IS NO LONGER NECESSARY AS COORDS ARE PASSED TO US AS CHROMOSOME
+		 * COORDS, I'VE LEFT THIS CODE IN UNTIL WE CAN TEST WITH THE NEW OTTERLACE
+		 * THAT IT ALL WORKS. */
+
+
+		/* 
+		 * N.B. ALL THIS zMapBlock2FeatureCoords() WILL GO WHEN OTTERLACE
+		 * PASSES US THE CHROMOSOME COORDS....
+		 */
 
 		/* If zmap is revcomp'd we need to correct position and strand.... */
 		if (view->revcomped_features)
@@ -1505,6 +1515,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		  {
 		    zMapBlock2FeatureCoords(request_data->orig_block, &start, &end) ;
 		  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 		switch(xml_data->common.action)
