@@ -1,0 +1,101 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '16 June 2011'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- Summaries of changes... --!>
+
+<h1>Summary Of Changes And Bug Fixes For ZMap 0.1.134 </h1>
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Acedb Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Seqtools Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.134 </h1>
+
+<p>Last Release Date: 16/06/2011</p>
+
+
+<h3>Current Release Date: 16 June 2011 at 13h.43m.22s</h3>
+
+
+<p>This report covers 2011-06-16 to 2011-06-16</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from git]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Acedb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
