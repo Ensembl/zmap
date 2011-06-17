@@ -21,7 +21,8 @@ SUB_DIR="DEVELOPMENT"
 ERROR_ID='edgrif@sanger.ac.uk'
 
 
-./build_run.sh -a $ERROR_ID -d -g -m -n -t -z $SUB_DIR $BUILD_PREFIX || RC=1
+#./build_run.sh -a $ERROR_ID -d -g -m -n -t -z $SUB_DIR $BUILD_PREFIX || RC=1
+./build_run.sh -a $ERROR_ID -d -g -m -n -z $SUB_DIR $BUILD_PREFIX || RC=1
 
 
 exit $RC
