@@ -1,6 +1,6 @@
 /*  File: zmapGFF2Dumper.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Dumps the features within a given block as GFF v2
  *
  * Exported functions: See ZMap/zmapGFF.h
- * HISTORY:
- * Last edited: Apr 27 13:56 2011 (edgrif)
- * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.29 2011-05-06 10:59:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

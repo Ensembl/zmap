@@ -1,4 +1,3 @@
-/*  Last edited: Dec 16 11:21 2010 (edgrif) */
 /* GNOME libraries - GdkPixbuf item for the GNOME canvas
  *
  * Copyright (C) 1999 The Free Software Foundation

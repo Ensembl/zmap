@@ -1,6 +1,6 @@
 /*  File: zmapFeatureTypes.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              type structs.c
  *
  * Exported functions: See ZMap/zmapFeature.h
- * HISTORY:
- * Last edited: May  6 13:08 2011 (edgrif)
- * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.111 2011-05-06 12:08:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

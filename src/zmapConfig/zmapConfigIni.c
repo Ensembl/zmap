@@ -1,6 +1,6 @@
 /*  File: zmapConfigIni.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk) after Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Sep 22 16:43 2010 (edgrif)
- * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.15 2010-09-22 16:05:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

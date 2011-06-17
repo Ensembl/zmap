@@ -1,6 +1,6 @@
 /*  File: zmapStyleUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * HISTORY:
- * Last edited: May  6 13:06 2011 (edgrif)
- * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.21 2011-05-06 12:06:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

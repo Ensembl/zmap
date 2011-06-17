@@ -1,6 +1,6 @@
 /*  File: zmapWindow.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  * Description: Takes the data provided by the server and displays it
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
- * HISTORY:
- * Last edited: Nov  8 11:50 2004 (rnc)
- * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.11 2010-03-04 15:15:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H

@@ -1,6 +1,6 @@
 /*  File: zmap.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,9 +27,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Created: 14 Jun 2010 (mh17)
- * CVS info:   $Id: zmap.h,v 1.1 2010-06-14 15:19:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

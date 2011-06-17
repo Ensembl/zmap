@@ -1,6 +1,6 @@
 /*  File: zmapString.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              existing library but that's not always so easy.
  *
  * Exported functions: See ZMap/zmapString.h
- * HISTORY:
- * Last edited: Jun  8 13:21 2011 (edgrif)
- * Created: Thu Sep 20 15:21:42 2007 (edgrif)
- * CVS info:   $Id: zmapString.c,v 1.5 2011-04-08 11:46:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

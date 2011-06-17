@@ -1,6 +1,6 @@
 /*  File: zmapWindowAllBase.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: There are some things common to all groups and items
  *              and this file contains them.
  *
- * HISTORY:
- * Last edited: Dec 15 13:56 2010 (edgrif)
- * Created: Wed May 12 11:45:10 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.h,v 1.5 2010-12-20 12:19:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_ALL_BASE_H

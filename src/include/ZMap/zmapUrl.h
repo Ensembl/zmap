@@ -1,6 +1,6 @@
 /*  File: zmapUrl.h
  *  Author: Roy Story (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,9 +26,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: zmapUrl.h,v 1.6 2010-03-04 15:35:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

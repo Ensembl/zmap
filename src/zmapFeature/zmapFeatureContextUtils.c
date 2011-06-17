@@ -1,6 +1,6 @@
 /*  File: zmapFeatureContextUtils.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: May 31 09:56 2007 (edgrif)
- * Created: Thu May 24 10:34:47 2007 (rds)
- * CVS info:   $Id: zmapFeatureContextUtils.c,v 1.6 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

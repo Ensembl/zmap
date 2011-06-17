@@ -1,6 +1,6 @@
 /*  File: zmapDraw.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *
  * Exported functions: See ZMap/zmapDraw.h
  *
- * HISTORY:
- * Last edited: Dec  2 15:02 2008 (rds)
- * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.70 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapConfigLoader.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,10 +29,6 @@
  *
  * Exported functions: See ZMap/zmapConfigLoader.h
  *
- * HISTORY:
- * Last edited: Apr 15 15:29 2011 (edgrif)
- * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.46 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

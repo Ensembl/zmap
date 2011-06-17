@@ -1,4 +1,3 @@
-/*  Last edited: Dec 16 11:29 2010 (edgrif) */
 /*
  * Copyright (C) 1999, 2000 Red Hat, Inc.
  * All rights reserved.

@@ -1,6 +1,6 @@
 /*  File: zmapXRemote.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              See zmapXRemoteCmds.h for commands/attributes.
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
- * HISTORY:
- * Last edited: Jun 15 08:49 2011 (edgrif)
- * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.31 2011-02-24 11:11:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapApp.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  *
  * Description: Private header for application level of zmap.
  *
- * HISTORY:
- * Last edited: Mar  2 14:22 2010 (edgrif)
- * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.32 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H

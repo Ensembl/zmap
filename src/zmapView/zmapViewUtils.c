@@ -1,6 +1,6 @@
 /*  File: zmapViewUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
- * HISTORY:
- * Last edited: Mar 11 13:27 2010 (edgrif)
- * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.25 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

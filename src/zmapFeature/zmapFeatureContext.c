@@ -1,6 +1,6 @@
 /*  File: zmapFeatureContext.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              for reverse complementing.
  *
  * Exported functions: See ZMap/zmapFeature.h
- * HISTORY:
- * Last edited: Jun  2 11:53 2011 (edgrif)
- * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.63 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

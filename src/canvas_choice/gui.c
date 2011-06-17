@@ -1,6 +1,6 @@
 /*  File: gui.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jun 10 12:10 2009 (rds)
- * Created: Fri Mar 16 09:20:26 2007 (rds)
- * CVS info:   $Id: gui.c,v 1.3 2010-03-04 14:49:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

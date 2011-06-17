@@ -1,6 +1,6 @@
 /*  File: zmapWindowDump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              formats (postscript, PNG etc.) to a file, i.e. a screen "dump".
  *
  * Exported functions: See ZMap/zmapWindow.h
- * HISTORY:
- * Last edited: Jun 19 13:38 2009 (rds)
- * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.18 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

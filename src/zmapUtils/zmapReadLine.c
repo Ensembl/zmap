@@ -1,6 +1,6 @@
 /*  File: zmapReadLine.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,10 +29,6 @@
  *              line in a separate buffer is not currently implemented.
  *              
  * Exported functions: See ZMap/zmapReadLine.h
- * HISTORY:
- * Last edited: Apr 22 13:15 2010 (edgrif)
- * Created: Thu Jun 24 19:03:50 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine.c,v 1.6 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

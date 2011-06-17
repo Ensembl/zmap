@@ -1,6 +1,6 @@
 /*  File: zmapFeature3FrameTranslation.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              dna sequence feature.
  *
  * Exported functions: See ZMap/zmapFeature.h
- * HISTORY:
- * Last edited: May  6 14:38 2011 (edgrif)
- * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.10 2011-05-06 13:57:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

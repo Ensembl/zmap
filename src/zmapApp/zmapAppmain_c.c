@@ -1,6 +1,6 @@
 /*  File: zmapAppmain_c.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: C main, if the executable is compiled/linked with
  *              main then you get a standard C executable.
  * Exported functions: None.
- * HISTORY:
- * Last edited: Nov 13 14:40 2003 (edgrif)
- * Created: Thu Nov 13 14:38:41 2003 (edgrif)
- * CVS info:   $Id: zmapAppmain_c.c,v 1.5 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

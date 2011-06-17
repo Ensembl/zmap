@@ -1,6 +1,6 @@
 /*  File: zmapGFF_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  *
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
- * HISTORY:
- * Last edited: Jun  8 12:50 2011 (edgrif)
- * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.27 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H

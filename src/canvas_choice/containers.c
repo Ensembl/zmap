@@ -1,6 +1,6 @@
 /*  File: containers.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Mar 19 12:39 2007 (rds)
- * Created: Fri Mar 16 08:55:47 2007 (rds)
- * CVS info:   $Id: containers.c,v 1.2 2010-03-04 14:48:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

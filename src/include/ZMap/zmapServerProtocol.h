@@ -1,6 +1,6 @@
 /*  File: zmapServerProtocol.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  *              the master thread to slave threads. Requests are via
  *              structs that give all the information/fields for the request/reply.
  *
- * HISTORY:
- * Last edited: Mar  8 15:02 2011 (edgrif)
- * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.38 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H

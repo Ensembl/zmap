@@ -1,6 +1,6 @@
 /*  File: zmapRadixSort.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,7 +26,6 @@
  * Description: generic radix sort for linked lists keyed by integers
  *
 
- * CVS info:   $Id: zmapRadixSort.c,v 1.2 2011-04-08 10:45:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapCmdLineArgs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,10 +30,6 @@
  *              global reference. The code is not thread safe.
  *
  * Exported functions: See ZMap/zmapCmdLine.h
- * HISTORY:
- * Last edited: Mar 31 15:07 2011 (edgrif)
- * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.21 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

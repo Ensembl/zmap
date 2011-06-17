@@ -1,6 +1,6 @@
 /*  File: zmapFeature_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  *
  * Description: Internals for zmapFeature routines.
  *
- * HISTORY:
- * Last edited: May 10 08:06 2007 (edgrif)
- * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.9 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H

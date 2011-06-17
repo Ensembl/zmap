@@ -1,4 +1,3 @@
-/*  Last edited: Oct 17 11:48 2008 (rds) */
 
 typedef struct
 {

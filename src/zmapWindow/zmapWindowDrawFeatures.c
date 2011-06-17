@@ -1,6 +1,6 @@
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Draws genomic features in the data display window.
  *
  * Exported functions:
- * HISTORY:
- * Last edited: Jun  6 10:53 2011 (edgrif)
- * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.318 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

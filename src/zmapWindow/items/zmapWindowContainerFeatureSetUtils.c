@@ -1,6 +1,6 @@
 /*  File: zmapWindowCollectionFeature.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              e.g. adding colinear lines to alignments.
  *
  * Exported functions: zmapWindowContainerFeatureSet.h
- * HISTORY:
- * Last edited: May 24 12:05 2010 (edgrif)
- * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.14 2011-05-09 13:37:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

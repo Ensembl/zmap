@@ -1,5 +1,3 @@
-/*  Last edited: 2009-11-26 12:56:38 (mgh) */
-/*  Last edited: Aug 31 11:41 2005 (rds) */
 
 #include <ZMap/zmap.h>
 

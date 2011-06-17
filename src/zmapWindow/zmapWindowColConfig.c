@@ -1,6 +1,6 @@
 /*  File: zmapWindowColConfig.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Functions to implement column configuration.
  *
  * Exported functions: See ZMap/zmapWindow.h
- * HISTORY:
- * Last edited: Feb 18 10:56 2011 (edgrif)
- * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.45 2011-03-22 12:30:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

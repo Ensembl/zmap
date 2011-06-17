@@ -1,7 +1,7 @@
 /*  File: pipeServer_P.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer_p.h by Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,9 +27,6 @@
  * Description: Defines/types etc. for the file accessing version
  *              of the server code.
  *
- * HISTORY:
- * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.13 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H

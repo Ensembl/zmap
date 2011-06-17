@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              displayed canvas items and the feature->item hash.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jun  7 14:39 2011 (edgrif)
- * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.216 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

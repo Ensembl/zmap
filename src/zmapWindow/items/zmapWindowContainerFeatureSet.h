@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerFeatureSet.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  *
  * Description: Header for class representing a column in zmap.
  *
- * HISTORY:
- * Last edited: May 24 15:40 2010 (edgrif)
- * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.21 2011-03-22 12:30:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

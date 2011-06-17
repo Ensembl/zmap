@@ -1,6 +1,6 @@
 /*  File: zmapWindowPreferences.c
  *  Author: Roy Storey (roy@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Sep 22 17:06 2010 (edgrif)
- * Created: Fri Jun  6 12:29:16 2008 (roy)
- * CVS info:   $Id: zmapWindowPreferences.c,v 1.7 2010-09-22 16:07:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

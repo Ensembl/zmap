@@ -1,6 +1,6 @@
 /*  File: zmapControlWindowMenubar.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,10 +31,6 @@
  *              but its quite a lot of work...
  *
  * Exported functions: See zmapControl_P.h
- * HISTORY:
- * Last edited: Sep 24 13:56 2009 (edgrif)
- * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.39 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

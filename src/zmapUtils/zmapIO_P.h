@@ -1,6 +1,6 @@
 /*  File: zmapIO_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  *
  * Description: Private header for IO package.
  *
- * HISTORY:
- * Last edited: Oct 17 10:27 2007 (edgrif)
- * Created: Mon Oct 15 13:56:41 2007 (edgrif)
- * CVS info:   $Id: zmapIO_P.h,v 1.3 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_IO_P_H

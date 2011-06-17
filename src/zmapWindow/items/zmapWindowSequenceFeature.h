@@ -1,6 +1,6 @@
 /*  File: zmapWindowSequenceFeature.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              DNA or a Peptide sequence. Handles display, coords,
  *              highlighting.
  *
- * HISTORY:
- * Last edited: Mar 25 10:14 2011 (edgrif)
- * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.13 2011-03-31 11:39:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapXMLWriter.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jun 14 20:10 2007 (rds)
- * Created: Tue Jul 18 16:49:49 2006 (rds)
- * CVS info:   $Id: zmapXMLWriter.c,v 1.8 2010-06-14 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

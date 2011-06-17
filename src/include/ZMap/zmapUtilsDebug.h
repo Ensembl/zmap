@@ -1,6 +1,6 @@
 /*  File: zmapUtilsDebug.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,6 @@
  *
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *
- * HISTORY:
- * Last edited: Jun  6 10:37 2011 (edgrif)
- * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.15 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H

@@ -1,6 +1,6 @@
 /*  File: dasServer_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,6 @@
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
- * HISTORY:
- * Last edited: Feb  4 15:02 2009 (edgrif)
- * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.16 2011-03-14 11:35:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H

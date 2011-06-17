@@ -1,6 +1,6 @@
 /*  File: zmapWindowLongItem_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Dec 15 15:19 2010 (edgrif)
- * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem_I.h,v 1.4 2010-12-20 12:20:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

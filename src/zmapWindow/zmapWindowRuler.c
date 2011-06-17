@@ -1,6 +1,6 @@
 /*  File: zmapWindowRuler.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Implements the scale bar shown for sequences.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jan 21 14:36 2008 (rds)
- * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.16 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
