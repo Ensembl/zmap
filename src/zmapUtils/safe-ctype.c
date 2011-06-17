@@ -1,4 +1,3 @@
-/*  Last edited: Mar  8 12:38 2005 (rds) */
 /* <ctype.h> replacement macros.
 
    Copyright (C) 2000 Free Software Foundation, Inc.

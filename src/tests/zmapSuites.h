@@ -1,6 +1,6 @@
 /*  File: zmapSuites.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Apr  3 12:02 2009 (rds)
- * Created: Mon Mar 30 20:30:25 2009 (rds)
- * CVS info:   $Id: zmapSuites.h,v 1.2 2009-04-03 15:44:00 rds Exp $
  *-------------------------------------------------------------------
  */
 

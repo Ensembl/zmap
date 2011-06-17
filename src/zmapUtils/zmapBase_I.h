@@ -1,6 +1,6 @@
 /*  File: zmapZMap_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jan 12 10:03 2009 (rds)
- * Created: Thu Jun 12 12:02:56 2008 (rds)
- * CVS info:   $Id: zmapBase_I.h,v 1.7 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

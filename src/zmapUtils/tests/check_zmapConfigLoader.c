@@ -1,6 +1,6 @@
 /*  File: check_zmapConfigLoader.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Apr  3 16:30 2009 (rds)
- * Created: Fri Apr  3 10:47:20 2009 (rds)
- * CVS info:   $Id: check_zmapConfigLoader.c,v 1.3 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowList.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *
  *
  * Exported functions:
- * HISTORY:
- * Last edited: Mar 18 14:50 2011 (edgrif)
- * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.83 2011-03-31 11:12:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

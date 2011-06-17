@@ -1,4 +1,3 @@
-/*  Last edited: Jun 22 14:00 2005 (edgrif) */
 /* Declarations for utils.c.
    Copyright (C) 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
 

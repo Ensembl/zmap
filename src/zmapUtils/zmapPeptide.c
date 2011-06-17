@@ -1,6 +1,6 @@
 /*  File: zmapPeptide.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              an alternative genetic code.
  *
  * Exported functions: See ZMap/zmapPeptide.h
- * HISTORY:
- * Last edited: May  1 15:05 2008 (rds)
- * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.18 2010-06-28 14:11:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

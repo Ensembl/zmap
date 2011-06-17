@@ -1,7 +1,6 @@
-/*  Last edited: Apr 15 10:42 2010 (edgrif) */
 /*  File: zmapUtilsLogical.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,8 +25,6 @@
  *
  * Description: Macros for manipulating bits and other logic things.
  *
- * Created: Thu Apr 15 10:23:12 2010 (edgrif)
- * CVS info:   $Id: zmapUtilsLogical.h,v 1.1 2010-04-21 09:36:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOGICAL_H

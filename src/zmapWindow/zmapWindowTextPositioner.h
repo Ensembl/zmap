@@ -1,6 +1,6 @@
 /*  File: zmapWindowTextPositioner.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jun  5 16:38 2008 (rds)
- * Created: Tue Mar 13 09:48:56 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.h,v 1.5 2011-03-18 11:38:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

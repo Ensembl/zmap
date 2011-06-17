@@ -1,6 +1,6 @@
 /*  File: zmapSO.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: Functions, structs etc. for a Sequence Ontology (SO)
  *              package.
  *
- * HISTORY:
- * Last edited: Oct 19 08:40 2010 (edgrif)
- * Created: Mon Oct 11 13:05:06 2010 (edgrif)
- * CVS info:   $Id: zmapSO.h,v 1.2 2010-10-19 15:45:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SO_H

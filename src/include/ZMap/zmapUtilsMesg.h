@@ -1,6 +1,6 @@
 /*  File: zmapUtilsMesg.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  * Description: Macros/functions for outputting various types of message
  *              in production code.
  *              
- * HISTORY:
- * Last edited: Nov 15 11:53 2006 (edgrif)
- * Created: Mon Mar 29 18:23:48 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsMesg.h,v 1.6 2010-03-04 15:15:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_MESG_H

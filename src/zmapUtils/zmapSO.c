@@ -1,6 +1,6 @@
 /*  File: zmapSO.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *
  * Exported functions: See zmapSO.h
  *              
- * HISTORY:
- * Last edited: Oct 26 14:37 2010 (edgrif)
- * Created: Mon Oct 11 12:04:13 2010 (edgrif)
- * CVS info:   $Id: zmapSO.c,v 1.4 2010-10-26 13:38:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

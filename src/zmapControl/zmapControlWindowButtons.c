@@ -1,6 +1,6 @@
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  * Description: Implement the buttons on the zmap.
  *
  * Exported functions: See zmapControl_P.h
- * HISTORY:
- * Last edited: Jul 29 10:24 2010 (edgrif)
- * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.63 2011-02-11 16:05:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

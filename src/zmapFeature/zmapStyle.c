@@ -1,8 +1,7 @@
-/*  Last edited: Apr 15 15:35 2011 (edgrif) */
 /*  File: zmapStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  and formerly Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +29,6 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.64 2011-05-06 12:05:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

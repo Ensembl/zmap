@@ -1,4 +1,3 @@
-/*  Last edited: Dec 15 13:49 2010 (edgrif) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.

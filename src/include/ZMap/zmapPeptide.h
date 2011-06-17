@@ -1,6 +1,6 @@
 /*  File: zmapPeptide.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,6 @@
  *
  * Description: Functions to translate dna to peptide.
  *
- * HISTORY:
- * Last edited: Sep 27 11:40 2007 (edgrif)
- * Created: Tue Mar 14 13:55:27 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.h,v 1.7 2010-03-04 15:15:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PEPTIDE_H

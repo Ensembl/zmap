@@ -1,6 +1,6 @@
 /*  File: zmapDNA.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description:
  *
  * Exported functions: See ZMap/zmapDNA.h
- * HISTORY:
- * Last edited: Dec  7 16:39 2010 (edgrif)
- * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.16 2010-12-07 16:40:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

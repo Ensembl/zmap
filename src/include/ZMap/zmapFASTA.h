@@ -1,6 +1,6 @@
 /*  File: zmapFASTA.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,6 @@
  *
  * Description: Interface to FASTA routines.
  *
- * HISTORY:
- * Last edited: Mar  5 13:55 2007 (edgrif)
- * Created: Fri Mar 17 16:59:08 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.h,v 1.6 2010-03-04 15:15:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DNA_H

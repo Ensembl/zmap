@@ -1,6 +1,6 @@
 /*  File: libpfetch-utils.c
  *  Author: Roy Storey (roy@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Apr  1 11:12 2009 (rds)
- * Created: Wed Jun  4 21:34:01 2008 (roy)
- * CVS info:   $Id: libpfetch-utils.c,v 1.2 2009-04-01 10:15:38 rds Exp $
  *-------------------------------------------------------------------
  */
 

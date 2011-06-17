@@ -1,6 +1,6 @@
 /*  File: long_item_test.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jun 10 12:13 2009 (rds)
- * Created: Tue Mar 20 14:51:37 2007 (rds)
- * CVS info:   $Id: long_item_test.c,v 1.3 2009-06-10 11:14:17 rds Exp $
  *-------------------------------------------------------------------
  */
 

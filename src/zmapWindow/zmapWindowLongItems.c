@@ -1,6 +1,6 @@
 /*  File: zmapWindowLongItems.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,10 +34,6 @@
  *              and perhaps we should swop to them.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jun  5 14:29 2009 (rds)
- * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.20 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

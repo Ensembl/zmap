@@ -1,6 +1,6 @@
 /*  File: zmapThreadsUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Utility functions for the slave thread interface.
  *              
  * Exported functions: See ZMap/zmapThreads.h
- * HISTORY:
- * Last edited: Jan 12 09:52 2010 (edgrif)
- * Created: Thu Jan 27 11:50:01 2005 (edgrif)
- * CVS info:   $Id: zmapThreadsUtils.c,v 1.7 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

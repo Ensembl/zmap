@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerUtils.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  *
  * Description: Utility functions for containers (context, align, block etc).
  *
- * HISTORY:
- * Last edited: May 20 10:24 2010 (edgrif)
- * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.10 2010-10-13 09:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

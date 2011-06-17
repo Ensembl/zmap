@@ -1,6 +1,6 @@
 /*  File: zmapXMLHandler.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Header file for code that needs to get xremote/xml
  *              requests executed and optionally parse the results.
  *
- * HISTORY:
- * Last edited: Jun 28 11:50 2007 (rds)
- * Created: Wed Jun 13 08:45:06 2007 (edgrif)
- * CVS info:   $Id: zmapXMLHandler.h,v 1.3 2010-03-04 15:15:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_XML_HANDLER_H

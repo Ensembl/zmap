@@ -1,6 +1,6 @@
 /*  File: zmapServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  *
  * Description:
  * Exported functions: See ZMap/zmapServer.h
- * HISTORY:
- * Last edited: Jan 14 10:10 2010 (edgrif)
- * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.50 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
