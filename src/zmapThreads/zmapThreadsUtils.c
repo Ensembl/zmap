@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for the slave thread interface.
- *              
+ *
  * Exported functions: See ZMap/zmapThreads.h
  *-------------------------------------------------------------------
  */
@@ -61,19 +61,19 @@ void zmapCondVarCreate(ZMapRequest thread_state)
     {
       zMapLogFatalSysErr(status, "%s", "cond init") ;
     }
-  
+
   thread_state->state = ZMAPTHREAD_REQUEST_INIT ;
   thread_state->request = NULL ;
-  
+
   return ;
 }
 
 void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, void *request)
 {
   int status ;
-  
+
   pthread_cleanup_push(releaseCondvarMutex, (void *)thread_state) ;
-  
+
   if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
     {
       zMapLogFatalSysErr(status, "%s", "zmapCondVarSignal mutex lock") ;
@@ -152,7 +152,7 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
     {
       zMapLogFatalSysErr(status, "%s", "zmapCondVarWait mutex lock") ;
     }
-  
+
   /* Get the relative timeout converted to absolute for the call. */
   if ((status = getAbsTime(relative_timeout, &abs_timeout)) != 0)
     zMapLogFatalSysErr(status, "%s", "zmapCondVarWaitTimed invalid time") ;
@@ -204,18 +204,20 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
 void zmapCondVarDestroy(ZMapRequest thread_state)
 {
   int status ;
-  
+
   if ((status = pthread_cond_destroy(&(thread_state->cond))) != 0)
     {
       zMapLogFatalSysErr(status, "%s", "cond destroy") ;
+//	zMapLogWarning("%s","cond_destroy");
     }
-  
+
 
   if ((status = pthread_mutex_destroy(&(thread_state->mutex))) != 0)
     {
       zMapLogFatalSysErr(status, "%s", "mutex destroy") ;
+//	zMapLogWarning("%s","mutex_destroy");
     }
-  
+
   return ;
 }
 
@@ -234,7 +236,7 @@ void zmapVarCreate(ZMapReply thread_state)
     }
 
   thread_state->state = ZMAPTHREAD_REPLY_INIT ;
-  
+
   return ;
 }
 
@@ -407,12 +409,12 @@ gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_
 void zmapVarDestroy(ZMapReply thread_state)
 {
   int status ;
-  
+
   if ((status = pthread_mutex_destroy(&(thread_state->mutex))) != 0)
     {
       zMapLogFatalSysErr(status, "%s", "mutex destroy") ;
     }
-  
+
   return ;
 }
 
@@ -420,7 +422,7 @@ void zmapVarDestroy(ZMapReply thread_state)
 
 
 
-/* 
+/*
  * -----------------------  Internal Routines  -----------------------
  */
 
@@ -446,14 +448,14 @@ static void releaseCondvarMutex(void *thread_data)
  * as far as I can see so specifying small relative timeouts will not work....
  * to this end I have inserted code to check that the relative timeout is not
  * less than a single clock tick, hardly perfect but better than nothing.
- * 
+ *
  * On the alpha you can do this:
- * 
+ *
  *       pthread_get_expiration_np(relative_timeout, &abs_timeout)
- * 
+ *
  * to get a timeout in seconds and nanoseconds but this call is unavailable on
  * Linux at least....
- * 
+ *
  *  */
 static int getAbsTime(const TIMESPEC *relative_timeout, TIMESPEC *abs_timeout)
 {

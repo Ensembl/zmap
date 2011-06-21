@@ -323,11 +323,13 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 	 *	clip the extremes and paint all
 	 */
 
+	i2w_dx = i2w_dy = 0.0;
+      foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
 
 	foo_canvas_c2w(item->canvas,0,expose->area.y,NULL,&y1);
 	foo_canvas_c2w(item->canvas,0,expose->area.y + expose->area.height - 1,NULL,&y2);
-	search.y1 = (int) y1;
-	search.y2 = (int) y2;
+	search.y1 = (int) y1 + i2w_dy;
+	search.y2 = (int) y2 + i2w_dy;
 
 	if(di->overlap)
 	{
@@ -339,6 +341,15 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 
 	zMapAssert(sl && !sl->down);	/* if the index is not NULL then we nust have a leaf node */
 
+	/* need to get items that overlap the top of the expose */
+	while(sl->prev)
+	{
+		gs = (ZMapWindowCanvasGraphSegment) sl->data;
+		if(gs->y2 < search.y1)
+			break;
+		sl = sl->prev;
+	}
+
 	/* NOTE assuming no overlap, maybe can restructure this code when implementing */
 	if(!di->overlap)
 	{
@@ -348,8 +359,10 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 		{
 			gs = (ZMapWindowCanvasGraphSegment) sl->data;
 //printf("found: %f in %f,%f\n",gs->y1,search.y1,search.y2);
-			if(gs->y1 > search.y2)		/* finsished */
+			if(gs->y1 > search.y2)		/* finished */
 				break;
+			if(gs->y2 < search.y1)
+				continue;
 
 			/*
 			   NOTE need to sort out conatiner positioning to make this work
@@ -359,11 +372,9 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 			   FTM display at world coords or 1-based, whatever is approximately right
 			*/
 
-			/* clip this one and paint */
+			/* clip this one (GDK does that? or is it X?) and paint */
 
 			/* get graph item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-			i2w_dx = i2w_dy = 0.0;
-		      foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
 		      foo_canvas_w2c (item->canvas, gs->x1 + i2w_dx, gs->y1 + i2w_dy, &cx1, &cy1);
       		foo_canvas_w2c (item->canvas, gs->x2 + i2w_dx, gs->y2 + i2w_dy, &cx2, &cy2);
 
