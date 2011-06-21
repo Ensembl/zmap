@@ -48,7 +48,6 @@ NOTE: was munged from BasicFeature
 #include <string.h>
 #include <zmapWindowGraphItem_I.h>
 
-#warning module is not complete
 
 static void zmap_window_graph_item_class_init  (ZMapWindowGraphItemClass graph_class);
 static void zmap_window_graph_item_init        (ZMapWindowGraphItem      group);

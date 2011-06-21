@@ -2113,28 +2113,31 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
       }
 
             /* adds once per column+style, then returns that repeatedly */
+            /* also adds an 'interval' foo canvas item which we need to look up */
       canvas_item = zMapWindowGraphDensityItemGetDensityItem(parent, run_data->feature_stack->id,
-            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2,width);
+            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2,width, style);
+
       zMapAssert(canvas_item);
-      canvas_item->feature = feature;     /* must have one */
+      if(!canvas_item->feature)
+      	canvas_item->feature = feature;     /* must have one */
 
-#if MH17_SUBVERTING_THE_FACTORY
-/* we can't use this as it does not take the feature
- * need a diff call, and when we make canvas items in simple foo extensions
- * then we can tidy this up
- */
 
-      zMapWindowCanvasItemAddInterval(canvas_item, NULL, 0.0, y2 - y1, x1, x2);
-#else
-/* now we are outisde the normal ZMapWindowCanvasItem dogma */
-/* NOTE we know that items are not processed by another route
- * unlike alignments that get zMapWindowFeatureReplaced()
- */
- /* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
-  * we add a data struct and add colurs to that in situ, as the feature has its style handy
-  */
-      zMapWindowGraphDensityAddItem(canvas_item, feature, 0.0, y2 - y1, x1, x2);
-#endif
+	/* now we are outisde the normal ZMapWindowCanvasItem dogma */
+	/* NOTE we know that graph items are not processed by another route
+ 	 * unlike alignments that get zMapWindowFeatureReplaced()
+ 	 */
+ 	/* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
+  	 * we add a data struct and add colurs to that in situ, as the feature has its style handy
+  	 */
+
+  	{
+  		GList *item_list;
+
+  		item_list = ((FooCanvasGroup *) canvas_item)->item_list;
+  		zMapAssert(item_list);	/* must exist, we just added it */
+
+	      zMapWindowGraphDensityAddItem((FooCanvasItem *) item_list->data, feature, x1,y1,x2,y2);
+	}
 
       feature_item = (FooCanvasItem *)canvas_item;
   }

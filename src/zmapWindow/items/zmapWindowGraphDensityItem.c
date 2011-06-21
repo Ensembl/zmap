@@ -56,13 +56,13 @@ static void zmap_window_graph_density_item_get_property(GObject               *o
                                        GValue                *value,
                                        GParamSpec            *pspec);
 
-void  zmap_window_graph_density_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
-double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item);
-void  zmap_window_graph_density_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
-void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
-
-
+static void  zmap_window_graph_density_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
+static double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item);
+static void  zmap_window_graph_density_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
+static void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 static void zmap_window_graph_density_item_destroy     (GObject *object);
+
+gint zmapGraphSegmentCmp(gconstpointer a, gconstpointer b);
 
 
 static ZMapWindowGraphDensityItemClass density_class_G = NULL;
@@ -103,38 +103,40 @@ GType zMapWindowGraphDensityItemGetType(void)
  * graph per column, so we specify therse by col_id (which includes strand) and style_id (which specifies colours)
  * (NOTE 2 diff styles could look the same but their id's would be diff)
  */
-ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end,int width)
+ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end,int width, ZMapFeatureTypeStyle style)
 {
       ZMapWindowGraphDensityItem di = NULL;
-      FooCanvasItem *foo,*interval;
+      FooCanvasItem *foo  = NULL,*interval;
 
             /* class not intialised till we make an item */
       if(density_class_G && density_class_G->density_items)
-            di = (ZMapWindowGraphDensityItem) g_hash_table_lookup( density_class_G->density_items, GUINT_TO_POINTER(id));
-      if(di)
+            foo = (FooCanvasItem *) g_hash_table_lookup( density_class_G->density_items, GUINT_TO_POINTER(id));
+      if(foo)
       {
-            return((ZMapWindowCanvasItem) &(di->__parent__));
+            return((ZMapWindowCanvasItem) foo);
       }
       else
       {
             /* need a wrapper to get ZWCI with a foo_density inside it */
             foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_BASIC_FEATURE,
                         "x", 0.0,
-                        "y", start,
+                        "y", (double) start,
                         NULL);
 
             interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_GRAPH_DENSITY,NULL);
 
             di = (ZMapWindowGraphDensityItem) interval;
             di->id = id;
-            g_hash_table_insert(density_class_G->density_items,GUINT_TO_POINTER(id),(gpointer) di);
+            g_hash_table_insert(density_class_G->density_items,GUINT_TO_POINTER(id),(gpointer) foo);
+
+		di->re_bin = style->mode_data.graph.density;
 
             /* set our bounding box at the whole column */
             /* direct access is kosher as this is an item implementation and we inherit foo */
             interval->y1 = start;
             interval->y2 = end;
             interval->x1 = 0.0;
-            interval->x2 = width;
+            interval->x2 = width + 1;
       }
       return ((ZMapWindowCanvasItem) foo);
 }
@@ -163,7 +165,7 @@ static void zmap_window_graph_density_item_class_init(ZMapWindowGraphDensityItem
 //  canvas_class->add_interval = zmap_window_graph_density_item_add_interval;
   canvas_class->check_data   = NULL;
 
-  item_class->update = zmap_window_graph_density_item_update;
+//  item_class->update = zmap_window_graph_density_item_update;
   item_class->bounds = zmap_window_graph_density_item_bounds;
   item_class->point  = zmap_window_graph_density_item_point;
   item_class->draw   = zmap_window_graph_density_item_draw;
@@ -175,13 +177,12 @@ static void zmap_window_graph_density_item_class_init(ZMapWindowGraphDensityItem
 
 static void zmap_window_graph_density_item_init (ZMapWindowGraphDensityItem graph)
 {
-
   return ;
 }
 
 
 
-/* initially this is canvas group and we avoid updating an empty list of casvas items
+/* initially this is canvas group and we avoid updating an empty list of canvas items
  * which would set the bounding box to 0
  */
 void zmap_window_graph_density_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
@@ -256,7 +257,7 @@ foo_canvas_group_point (FooCanvasItem *item, double x, double y, int cx, int cy,
 void  zmap_window_graph_density_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2)
 {
       double minx,miny,maxx,maxy;
-      FooCanvasGroup *group = FOO_CANVAS_GROUP (item);
+      FooCanvasGroup *group;
 
       minx = item->x1;
       miny = item->y1;
@@ -264,7 +265,10 @@ void  zmap_window_graph_density_item_bounds (FooCanvasItem *item, double *x1, do
       maxy = item->y2;
 
       /* Make the bounds be relative to our parent's coordinate system */
-      if (item->parent) {
+      if (item->parent)
+      {
+		group = FOO_CANVAS_GROUP (item->parent);
+
             minx += group->xpos;
             miny += group->ypos;
             maxx += group->xpos;
@@ -280,93 +284,133 @@ void  zmap_window_graph_density_item_bounds (FooCanvasItem *item, double *x1, do
 
 void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose)
 {
+	ZMapSkipList sl;
+	ZMapWindowCanvasGraphSegmentStruct search;
+	ZMapWindowCanvasGraphSegment gs;
+      int cx1, cy1, cx2, cy2;
+      double i2w_dx, i2w_dy;
+      double x1,y1,x2,y2;
+
       zMapLogWarning("density draw","");
+
+      ZMapWindowGraphDensityItem di = (ZMapWindowGraphDensityItem) item;
+
+      if(!di->display_index)
+      {
+      	if(!di->source_sorted)
+      	{
+      		di->source_bins = g_list_sort(di->source_bins,zmapGraphSegmentCmp);
+      		di->source_sorted = TRUE;
+      	}
+      	di->display_index= zMapSkipListCreate(di->source_bins, zmapGraphSegmentCmp);
+
+		/* get max overlap if needed */
+#warning overlapped graphs not implemented, need to offset by max_len
+      }
+      if(!di->display_index)
+      	return; 		/* could be an empty column or a mistake */
 
       /* paint all the data in the exposed area */
 
+	if(!di->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
+		di->gc = gdk_gc_new (item->canvas->layout.bin_window);
+	if(!di->gc)
+		return;		/* got a draw before realize ?? */
 
-#if 0
-static void
-foo_canvas_rect_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose)
-{
-      FooCanvasRE *re;
-      double x1, y1, x2, y2;
-      int cx1, cy1, cx2, cy2;
-      double i2w_dx, i2w_dy;
+	/*
+	 *	get the exposed area
+	 *	find the top (and bottom?) items
+	 *	clip the extremes and paint all
+	 */
 
-      re = FOO_CANVAS_RE (item);
 
-      /* Get canvas pixel coordinates */
-      i2w_dx = 0.0;
-      i2w_dy = 0.0;
-      foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
+	foo_canvas_c2w(item->canvas,0,expose->area.y,NULL,&y1);
+	foo_canvas_c2w(item->canvas,0,expose->area.y + expose->area.height - 1,NULL,&y2);
+	search.y1 = (int) y1;
+	search.y2 = (int) y2;
 
-      x1 = re->x1 + i2w_dx;
-      y1 = re->y1 + i2w_dy;
-      x2 = re->x2 + i2w_dx;
-      y2 = re->y2 + i2w_dy;
+	if(di->overlap)
+	{
+		zMapLogWarning("GraphDensityItem overlap not coded","");
+#warning overlapped graphs not implemented, need to offset by max_len
+	}
 
-      foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
-      foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
+	sl =  zMapSkipListFind(di->display_index, zmapGraphSegmentCmp, &search);
 
-      if (re->fill_set) {
-            if ((re->fill_color & 0xff) != 255) {
-                  GdkRectangle *rectangles;
-                  gint i, n_rectangles;
-                  GdkRectangle draw_rect;
-                  GdkRectangle part;
+	zMapAssert(sl && !sl->down);	/* if the index is not NULL then we nust have a leaf node */
 
-                  draw_rect.x = cx1;
-                  draw_rect.y = cy1;
-                  draw_rect.width = cx2 - cx1 + 1;
-                  draw_rect.height = cy2 - cy1 + 1;
+	/* NOTE assuming no overlap, maybe can restructure this code when implementing */
+	if(!di->overlap)
+	{
+		/* we have already found the first matching or previous item */
 
-                  /* For alpha mode, only render the parts of the region
-                     that are actually exposed */
-                  gdk_region_get_rectangles (expose->region,
-                                       &rectangles,
-                                       &n_rectangles);
+		for(;sl;sl = sl->next)
+		{
+			gs = (ZMapWindowCanvasGraphSegment) sl->data;
+//printf("found: %f in %f,%f\n",gs->y1,search.y1,search.y2);
+			if(gs->y1 > search.y2)		/* finsished */
+				break;
 
-                  for (i = 0; i < n_rectangles; i++) {
-                        if (gdk_rectangle_intersect (&rectangles[i],
-                                               &draw_rect,
-                                               &part)) {
-                              render_rect_alpha (FOO_CANVAS_RECT (item),
-                                             drawable,
-                                             part.x, part.y,
-                                             part.width, part.height,foo_canvas_get_color_pixel
-                                             re->fill_color);
-                        }
-                  }
+			/*
+			   NOTE need to sort out conatiner positioning to make this work
+			   di covers its container exactly, but is it offset??
+			   by analogy w/ old style ZMapWindowCanvasItems we should display
+			   'intervals' as item relative
+			   FTM display at world coords or 1-based, whatever is approximately right
+			*/
 
-                  g_free (rectangles);
-            } else {
-                  if (re->fill_stipple)
-                        foo_canvas_set_stipple_origin (item->canvas, re->fill_gc);
+			/* clip this one and paint */
 
-                  gdk_draw_rectangle (drawable,
-                                  re->fill_gc,
+			/* get graph item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
+			i2w_dx = i2w_dy = 0.0;
+		      foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
+		      foo_canvas_w2c (item->canvas, gs->x1 + i2w_dx, gs->y1 + i2w_dy, &cx1, &cy1);
+      		foo_canvas_w2c (item->canvas, gs->x2 + i2w_dx, gs->y2 + i2w_dy, &cx2, &cy2);
+
+//printf("item %f,%f %f,%f = %d,%d\n",i2w_dx,i2w_dy,gs->x1,gs->y1,cx1,cy1);
+     		      if (gs->fill_set)
+     		      {
+		            if ((gs->fill_colour & 0xff) != 255)
+		            {
+		            	zMapLogWarning("GraphDensityItem fill colour specifies alpha","");
+		            	/* see foo_canvas_rect_draw() for how to do alpha */
+		            }
+				/* we have pre-calculated pixel colours */
+				if(di->gc)
+				{
+					GdkColor c;
+
+					c.pixel = gs->fill_pixel;
+					gdk_gc_set_foreground (di->gc, &c);
+				}
+
+	                  gdk_draw_rectangle (drawable,
+                                  di->gc,
                                   TRUE,
                                   cx1, cy1,
                                   cx2 - cx1 + 1,
                                   cy2 - cy1 + 1);
-            }
-      }
+		      }
+		      if (gs->outline_set)
+		      {
+				if(di->gc)
+				{
+					GdkColor c;
 
-      if (re->outline_set) {
-            if (re->outline_stipple)
-                  foo_canvas_set_stipple_origin (item->canvas, re->outline_gc);
+					c.pixel = gs->outline_pixel;
+					gdk_gc_set_foreground (di->gc, &c);
+				}
 
-            gdk_draw_rectangle (drawable,
-                            re->outline_gc,
+		            gdk_draw_rectangle (drawable,
+                            di->gc,
                             FALSE,
                             cx1,
                             cy1,
                             cx2 - cx1,
                             cy2 - cy1);
-      }
-}
-#endif
+      		}
+		}
+	}
 }
 
 
@@ -381,7 +425,7 @@ ZMapWindowCanvasGraphSegment zmapWindowCanvasGraphSegmentAlloc(void)
             gs = g_new(ZMapWindowCanvasGraphSegmentStruct,N_GS_ALLOC);
 
             for(i = 0;i < N_GS_ALLOC;i++)
-                  zmapWindowCanvasGraphSegmentFree(gs++);
+                  zmapWindowCanvasGraphSegmentFree((gpointer) gs++);
       }
       zMapAssert(density_class_G->graph_segment_free_list);
 
@@ -394,8 +438,11 @@ ZMapWindowCanvasGraphSegment zmapWindowCanvasGraphSegmentAlloc(void)
       return(gs);
 }
 
-void zmapWindowCanvasGraphSegmentFree(ZMapWindowCanvasGraphSegment gs)
+/* need to be a ZMapSkipListFreeFunc for use as a callback */
+void zmapWindowCanvasGraphSegmentFree(gpointer thing)
 {
+	ZMapWindowCanvasGraphSegment gs = (ZMapWindowCanvasGraphSegment) thing;
+
       density_class_G->graph_segment_free_list =
             g_list_prepend(density_class_G->graph_segment_free_list, (gpointer) gs);
 }
@@ -440,10 +487,26 @@ static guint32 gdk_color_to_rgba(GdkColor *color)
   return rgba;
 }
 
+gint zmapGraphSegmentCmp(gconstpointer a, gconstpointer b)
+{
+	ZMapWindowCanvasGraphSegment gsa = (ZMapWindowCanvasGraphSegment) a;
+	ZMapWindowCanvasGraphSegment gsb = (ZMapWindowCanvasGraphSegment) b;
+
+	if(gsa->y1 < gsb->y1)
+		return(-1);
+	if(gsa->y1 > gsb->y1)
+		return(1);
+	if(gsa->y2 < gsb->y2)
+		return(-1);
+	if(gsa->y2 > gsb->y2)
+		return(1);
+	return(0);
+}
+
 /* no return, as all this data in internal to the column density item
  * bins get squashed according to zoom
  */
-void zMapWindowGraphDensityAddItem(ZMapWindowCanvasItem canvas_item, ZMapFeature feature, double y1, double y2, double x1, double x2)
+void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, double x1, double y1, double x2, double y2)
 {
   ZMapWindowCanvasGraphSegment gs;
   ZMapFeatureTypeStyle style = feature->style;
@@ -451,28 +514,26 @@ void zMapWindowGraphDensityAddItem(ZMapWindowCanvasItem canvas_item, ZMapFeature
   ZMapStrand strand;
   ZMapWindowGraphDensityItem density_item;
   GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
-  FooCanvasItem *foo;
 
   zMapAssert(style);
 
   gs = zmapWindowCanvasGraphSegmentAlloc();
   gs->feature = feature;
-  gs->x1 = x1;
-  gs->y1 = y1;
-  gs->x2 = x2;
-  gs->y2 = y2;
+  gs->x1 = x1 - foo->x1;	/* coords relative to container foo canvas item */
+  gs->y1 = y1 - foo->y1;
+  gs->x2 = x2 - foo->x1;
+  gs->y2 = y2 - foo->y1;
   gs->line = FALSE;
 
   gs->width = 1;
   gs->width_pixels = TRUE;
 
-  frame = zMapFeatureFrame(canvas_item->feature);
-  strand = canvas_item->feature->strand;
+  frame = zMapFeatureFrame(feature);
+  strand = feature->strand;
 
   zmapWindowCanvasItemGetColours(style, strand, frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
 
-  density_item = (ZMapWindowGraphDensityItem) canvas_item;
-  foo = (FooCanvasItem *) canvas_item;
+  density_item = (ZMapWindowGraphDensityItem) foo;
   zMapAssert(foo->canvas);
 
   if(fill)
@@ -491,6 +552,25 @@ void zMapWindowGraphDensityAddItem(ZMapWindowCanvasItem canvas_item, ZMapFeature
 
   /* even if they come in order we still have to sort them to be sure so just add to the front */
   density_item->source_bins = g_list_prepend(density_item->source_bins,gs);
+  density_item->source_sorted = FALSE;
+
+  /* add to the display bins if index already created */
+  if(density_item->display_index)
+  {
+  	if(density_item->re_bin)
+  	{
+  		/* need to recalc bins */
+  		/* quick fix FTM, de-calc which requires a re-calc on display */
+  		zMapSkipListDestroy(density_item->display_index, zmapWindowCanvasGraphSegmentFree);
+  		density_item->display_index = NULL;
+  	}
+  	else
+  	{
+  		density_item->display_index =
+  			zMapSkipListAdd(density_item->display_index, zmapGraphSegmentCmp, gs);
+  	}
+  }
+
 }
 
 

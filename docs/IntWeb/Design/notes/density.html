@@ -171,7 +171,15 @@ Glyphs also get run thro' basic feature, which is odd.
 
 <h5>Adding data to the ZMapWindowDensityItem instead of the foo canvas</h5>
 <p>Using the styles density flag as above we choose whether to call zmapWindowCanvasItemCreate or not.
+Having obtained out singleton data structure we add our graph iten to the source bins list.
 </p>
+<h5>Displaying data - making assumptions<h5>
+<p>A coverage display is implicitly non overlapping,; if we wish to display overlapping data the we wi8ll use two different styles which will cause two different density displays to exist.  This allows an optimisation when looking up display data on expose - we can search on start coordinate and look at the previous item to see if it overlaps the exposed region.
+</p>
+<p>It is intended to replace normal graphs with the density module (which will operate in the same way but without re-calculating bins on zoom), and in this case it is possible we may have to handle overlapping data. This can be done automatically (no configuration needed) by remembering the longest item to display and offset search coordinates by this amount. As features are expected to be small this will be efficient enough - we simply scan a sorted linked list.  Taking a hypothetical worst case this is unlikely to be time consuming.
+If necessary we can create display indexes for long and short items to provide an effcient solution wothout risking an incorrect display.
+</p>
+
 <h6>Work in progress</h6>
 <pre>
 - graph items have been made into ZWCI and have foo rects added as intervals

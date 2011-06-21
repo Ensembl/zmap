@@ -32,7 +32,7 @@
  */
 
 #ifndef ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H
-#define ZMAP_WINDOW_GARPH_DENSITY_ITEM_I_H
+#define ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H
 
 #include <glib.h>
 #include <glib-object.h>
@@ -40,7 +40,7 @@
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowGraphDensityItem.h>
 #include <ZMap/zmapStyle.h>
-
+#include <ZMap/zmapSkipList.h>
 
 
 
@@ -74,8 +74,7 @@ typedef struct _zmapWindowCanvasGraphSegment
 
 
 ZMapWindowCanvasGraphSegment zmapWindowCanvasGraphSegmentAlloc(void);
-void zmapWindowCanvasGraphSegmentFree(ZMapWindowCanvasGraphSegment gs);
-
+void zmapWindowCanvasGraphSegmentFree(gpointer thing);	/* is used as a callback, needs to be generic */
 
 typedef struct _zmapWindowGraphDensityItemClassStruct
 {
@@ -96,16 +95,23 @@ typedef struct _zmapWindowGraphDensityItemStruct
   GQuark id;
   ZMapFeatureTypeStyle style;
 
-#warning rename this and make into a skip list compatable wrapper
-  GList *source_bins;
-  GList *display_bins;
 
-      /* graphics context for all contained features, each one has its own colours that we set on draw
-       * foo_canvas_rect also has stipples but we donlt use then ATM
+  GList *source_bins;
+  gboolean source_sorted;
+  gboolean re_bin;		/* re-calculate bins according to zoom */
+  gboolean overlap;
+  int max_overlap;		/* size of the longest item */
+
+  GList *display_bins;
+  ZMapSkipList display_index;
+
+      /* graphics context for all contained features
+       * each one has its own colours that we set on draw (eg for heatmaps)
+       * foo_canvas_rect also has stipples but we don't use then ATM
+       * it alsoe pretneds to do alpha but 'X doesn't do it'
        * crib foo-canvas-rect-elipse.c for inspiration
        */
-  GdkGC *fill_gc;               /* GC for filling */
-  GdkGC *outline_gc;            /* GC for outline */
+  GdkGC *gc;               /* GC for filling */
 
 
 } zmapWindowGraphDensityItemStruct;
