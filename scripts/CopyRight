@@ -27,6 +27,7 @@
 # do a git commit -a
 # push the files back to the main repo
 #
+# git got confused so here's a comment to fool it
 
 
 use strict;
