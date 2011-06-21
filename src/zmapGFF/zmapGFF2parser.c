@@ -882,7 +882,12 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		      start = parser->features_start ;
 		      end = parser->features_end ;
 		    }
-
+		  if(parser->features_start == 1 && parser->features_end == 0)
+		    {
+		    	/* mh17 else if we read a file://  with no seq sopecified it fails */
+		      parser->features_start = start ;
+		      parser->features_end = end ;
+		    }
 		  if (g_ascii_strcasecmp(&sequence_name[0], parser->sequence_name) != 0
 		      || start > parser->features_end
 		      || end < parser->features_start)
@@ -903,6 +908,16 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		      parser->features_end = end ;
 		      parser->header_flags.got_sequence_region = TRUE ;
 		      //zMapLogWarning("get gff header: %d-%d",start,end);
+		    }
+		  if(end < start)		/* includes 1,0 */
+		    {
+		      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+						  "Invalid sequence/start/end:"
+						  " \"%s\" %d %d"
+						  " in header \"##sequence-region\" line %d: \"%s\"",
+						  parser->sequence_name,
+						  start, end,
+						  parser->line_count, line) ;
 		    }
 		}
 
