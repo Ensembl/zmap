@@ -155,9 +155,9 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 
 	  /* We should have a flag to do the offsetting, I thought we did but it seems to have
 	   * vanished. */
-	  align->offset = window->min_coord ;
+	  align->offset = window->sequence->start ;
 	  if(window->revcomped_features)
-	  	align->offset = window->max_coord;
+	  	align->offset = window->sequence->end;
 
 	  if (zmapWindowMarkIsSet(window->mark))
 	    {
