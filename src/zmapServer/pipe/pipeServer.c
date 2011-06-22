@@ -542,12 +542,10 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
       if(retval)
 	{
-	  if ((strstr(server->query, "Mus_musculus")))
-	    printf("got it\n") ;
 
 	  result = pipeGetHeader(server);
 
-
+#if 0
 	  {
 	    ZMapGFFHeader header ;
 
@@ -555,7 +553,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	      printf("got it\n") ;
 
 	  }
-
+#endif
 
 	  //zMapLogWarning("pipe query was: %s",server->query);
 

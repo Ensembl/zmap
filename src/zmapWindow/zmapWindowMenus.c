@@ -180,7 +180,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
                                                                       gpointer user_data,
                                                                       char **error_out) ;
 
-static gboolean getSeqColours(ZMapFeatureTypeStyle style, 
+static gboolean getSeqColours(ZMapFeatureTypeStyle style,
 			      GdkColor **non_coding_out, GdkColor **coding_out, GdkColor **split_out) ;
 static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboolean cds,
 				     GdkColor *non_coding_out, GdkColor *coding_out, GdkColor *split_out) ;
@@ -1339,7 +1339,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
       int n_sets = g_list_length(fs_list);
       int i = 0;
 
-      if(!n_sets || !zmapWindowMarkIsSet(cbdata->window->mark))
+      if(!n_sets)	// || !zmapWindowMarkIsSet(cbdata->window->mark))
             return NULL;
 
       if(n_menu < n_sets)
@@ -1401,7 +1401,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       break;
 
-    case BLIX_SEQ:      /* one or more sets starting gtom BLIX_SEQ */
+    case BLIX_SEQ:      /* one or more sets starting from BLIX_SEQ */
     default:
       {
             GList *l;
@@ -1422,8 +1422,10 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   /* Called on a column or an item ? */
   if(menu_item_id >= BLIX_SEQ)
   {
-    zmapWindowCallBlixemOnPos(menu_data->window, ZMAPWINDOW_ALIGNCMD_SEQ, seq_set,
-      menu_data->x, menu_data->y) ;
+   	if(zmapWindowMarkIsSet(menu_data->window->mark))
+    		zmapWindowCallBlixemOnPos(menu_data->window, ZMAPWINDOW_ALIGNCMD_SEQ, seq_set, menu_data->x, menu_data->y) ;
+    	else
+    		zMapMessage("You must set the mark first to select this option","");
   }
   else if ((FooCanvasGroup *) menu_data->item == menuDataItemToColumn(menu_data->item))
     zmapWindowCallBlixemOnPos(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
@@ -1834,7 +1836,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 
 
 /* Get colours for coding, non-coding etc of sequence. */
-static gboolean getSeqColours(ZMapFeatureTypeStyle style, 
+static gboolean getSeqColours(ZMapFeatureTypeStyle style,
 			      GdkColor **non_coding_out, GdkColor **coding_out, GdkColor **split_out)
 {
   gboolean result =  FALSE ;
@@ -1918,7 +1920,7 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 	      text_attr->end = exon->spliced_span.x2 - 1 ;
 	    }
 	}
-    }  
+    }
 
 
   if (text_attr)
@@ -1928,7 +1930,7 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 	case EXON_NON_CODING:
 	  text_attr->background = text_data->non_coding ;
 
-	  break ; 
+	  break ;
 
 	case EXON_CODING:
 	  {
@@ -1948,7 +1950,7 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 	}
 
       text_attrs_list = g_list_append(text_attrs_list, text_attr) ;
-      
+
       text_data->text_attrs = text_attrs_list ;
     }
 
@@ -1959,7 +1961,7 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 /* Offset text attributes by given amount. */
 static void offsetTextAttr(gpointer data, gpointer user_data)
 {
-  ZMapGuiTextAttr text_attr = (ZMapGuiTextAttr)data ; 
+  ZMapGuiTextAttr text_attr = (ZMapGuiTextAttr)data ;
   int offset = GPOINTER_TO_INT(user_data) ;
 
   text_attr->start += offset ;
