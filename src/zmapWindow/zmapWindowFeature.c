@@ -184,7 +184,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   FooCanvasItem *feature_item ;
-  
+
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
@@ -1365,9 +1365,14 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
                   /* need to add a * to the end to match strand and frame name mangling */
 
+
                   feature_name = g_strdup_printf("%s*",g_quark_to_string(GPOINTER_TO_UINT(evidence->data)));
                   feature_name = zMapFeatureCanonName(feature_name);    /* done in situ */
                   feature_search_id = g_quark_from_string(feature_name);
+
+			if(feature_search_id == wildcard)
+				/* catch NULL names due to ' getting escaped int &apos; */
+				continue;
 
                   items_free = zmapWindowFToIFindItemSetFull(menu_data->window,
                              menu_data->window->context_to_item,
