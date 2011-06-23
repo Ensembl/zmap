@@ -1182,9 +1182,11 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       offset = tmp1 = blixem_data->offset ;
 
       paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
+#if MH17_WONT_WORK_POST_CHROMO_COORDS
       /* NOTE this function swaps start and end and inverts them, you have to provide both */
       if (blixem_data->view->revcomped_features)
 		zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
+#endif
 
       paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
     }
