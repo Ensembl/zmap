@@ -67,7 +67,7 @@ done
 shift $(($OPTIND - 1))
 
 
-# try to get rid of this as I think we no longer need it......
+# try to get rid of this, replace with definitive command line args instead...
 #
 # including VARIABLE=VALUE settings from command line
 if [ $# -gt 0 ]; then
