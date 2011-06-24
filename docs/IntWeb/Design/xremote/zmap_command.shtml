@@ -2650,7 +2650,14 @@ that subsequent steps assume that the sequence to be displayed is specified
 here:</p>
 
 <pre>
-./xremote_gui --no_timeout --sequence=b0250 ./zmap 2>&1 tee xremote_out.txt 
+
+Old tool:
+./xremote_gui --no_timeout --sequence=b0250 ./zmap 2&gt;&amp;1 tee xremote_out.txt
+
+
+New tool:
+./remotecontrol --no_timeout --sleep=20 --sequence="chr6-18_2696324-2864370" ./zmap 2&gt;&amp;1 | tee xremote_out.txt
+
 </pre>
 
 
