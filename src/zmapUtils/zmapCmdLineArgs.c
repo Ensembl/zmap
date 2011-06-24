@@ -22,7 +22,7 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Creates a global object that contains command line
  *              args, the init function should be called once at
@@ -35,11 +35,6 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
@@ -47,14 +42,17 @@
 #include <zmapCmdLineArgs_P.h>
 #include <zmapUtils_P.h>
 
+
+
+typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context) ;
+
+
+
 static void makeContext(int argc, char *argv[]) ;
-
 static void makeOptionContext(ZMapCmdLineArgs arg_context);
-
-typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context);
-
 static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context);
 static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context);
+
 
 
 static ZMapCmdLineArgs arg_context_G = NULL ;
@@ -334,27 +332,26 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
   return;
 }
 
-#define ARG_NO_FLAGS 0
 
 static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 {
   static GOptionEntry entries[] = {
+
     /* long_name, short_name, flags, arg, arg_data, description, arg_description */
 
-    { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_VERSION, 0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
 
-    { ZMAPARG_SERIAL,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
+    { ZMAPARG_SERIAL,  0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
 
-    { ZMAPARG_PEER_ID, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_ID_DESC, ZMAPARG_PEER_ID_ARG },
+    { ZMAPARG_PEER_ID, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_ID_DESC, ZMAPARG_PEER_ID_ARG },
 
-    { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
-      ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
+    { ZMAPARG_SEQUENCE_START, 0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
 
-    { ZMAPARG_SEQUENCE_END,   0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+    { ZMAPARG_SEQUENCE_END,   0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
 
-    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_SLEEP, 0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
 
-    { ZMAPARG_TIMING,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_TIMING_DESC,  ZMAPARG_NO_ARG },
+    { ZMAPARG_TIMING,  0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_TIMING_DESC,  ZMAPARG_NO_ARG },
 
     { ZMAPARG_SHRINK,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SHRINK_DESC,  ZMAPARG_NO_ARG },
 
@@ -388,16 +385,16 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
 {
   static GOptionEntry entries[] = {
-    { ZMAPARG_CONFIG_FILE, 0, ARG_NO_FLAGS,
+    { ZMAPARG_CONFIG_FILE, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_CONFIG_FILE_DESC, ZMAPARG_FILE_ARG },
-    { ZMAPARG_CONFIG_DIR, 0, ARG_NO_FLAGS,
+    { ZMAPARG_CONFIG_DIR, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_CONFIG_DIR_DESC, ZMAPARG_DIR_ARG },
-    { ZMAPARG_WINDOW_ID, 0, ARG_NO_FLAGS,
+    { ZMAPARG_WINDOW_ID, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_WINDOW_ID_DESC, ZMAPARG_WINID_ARG },
-    { ZMAPARG_PEER_ID, 0, ARG_NO_FLAGS, 
+    { ZMAPARG_PEER_ID, 0, 0, 
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_ID_DESC, ZMAPARG_PEER_ID_ARG },
     { NULL }

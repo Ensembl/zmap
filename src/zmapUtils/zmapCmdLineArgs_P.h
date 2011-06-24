@@ -53,7 +53,7 @@
 #define ZMAPARG_DIR_ARG        "directory"
 #define ZMAPARG_WINID_ARG      "0x0000000"
 #define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
-#define ZMAPARG_PEER_ID_ARG       "unique id"
+#define ZMAPARG_PEER_ID_ARG    "unique id"
 #define ZMAPARG_SERIAL_ARG     "<none>"
 
 #define ZMAPARG_INVALID_INT -1
