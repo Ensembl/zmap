@@ -27,7 +27,7 @@
  * Description: Private header for remote control package.
  *
  * HISTORY:
- * Last edited: Nov 26 14:22 2010 (edgrif)
+ * Last edited: Jun 17 10:12 2011 (edgrif)
  * Created: Fri Sep 24 14:44:59 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -180,7 +180,11 @@ typedef struct ZMapRemoteControlStructName
   GdkAtom our_atom ;
   char *our_atom_string ;				    /* Cached because it's a pain to get the string. */
 
-  GdkAtom data_format_atom ;
+  GdkAtom data_format_atom ;				    /* Still needed ???? */
+
+
+  GtkClipboard *our_clip_board ;
+
 
 
   /* The current request, NULL when there isn't one. Can be client or server. */

@@ -34,7 +34,7 @@
  * Exported functions: See ZMap/zmapRemoteControl.h
  *              
  * HISTORY:
- * Last edited: Nov 26 17:39 2010 (edgrif)
+ * Last edited: Jun 17 17:14 2011 (edgrif)
  * Created: Fri Sep 24 14:49:23 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -48,12 +48,12 @@
 
 
 /* Text for debug/log messages.... */
-#define PEER_PREFIX "PEER"
-#define CLIENT_PREFIX "CLIENT"
-#define SERVER_PREFIX "SERVER"
+#define PEER_PREFIX "Acting as PEER"
+#define CLIENT_PREFIX "Acting as CLIENT"
+#define SERVER_PREFIX "Acting as SERVER"
 
-#define ENTER_TXT ">>> Enter  ------------------------------------------"
-#define EXIT_TXT  "<<< Exit   ------------------------------------------"
+#define ENTER_TXT ">>>> Enter >>>>"
+#define EXIT_TXT  "<<<< Exit  >>>>"
 
 
 /* Text to go into ClientMessage events...allows us to check the event is ours...
@@ -64,6 +64,7 @@
 #define CALL_SERVER      "Call Server Func"
 
 
+#define X_WIN_FORMAT "0x%x"
 
 
 /* Use this macro for _ALL_ logging calls in this code to ensure that they go to the right place. */
@@ -80,12 +81,37 @@
 
 
 
-/* For printing out events. */
+/*
+ * For printing out events.
+ */
+
+/* Irritatingly the 'time' field is in different places in different events or even completely
+ * absent, these structs deal with getting hold of it....obviously they need to be kept in step
+ * with the gdk event structs but they won't be changing much ! */
+typedef enum {EVENT_NO_TIME, EVENT_COMMON_TIME,
+	      EVENT_CROSSING_TIME, EVENT_ATOM_TIME,
+	      EVENT_SELECTION_TIME, EVENT_DND_TIME, EVENT_OWNER_TIME} TimeStuctType ;
+
+typedef struct EventCommonTimeStructName
+{
+  GdkEventType type;
+  GdkWindow *window;
+  gint8 send_event;
+  guint32 time;
+} EventCommonTimeStruct, *EventCommonTime ;
+
+
+
+/* Descriptor struct for handling producing text description of events. */
 typedef struct eventTxtStructName
 {
   char* text ;
   GdkEventMask mask ;
+  TimeStuctType time_struct_type ;
 } eventTxtStruct, *eventTxt ;
+
+
+
 
 
 
@@ -118,7 +144,11 @@ static void destroyRemoteRequest(AnyRequest remote_request) ;
 static char *getStateAsString(ZMapRemoteControl remote_control) ;
 
 static void disconnectSignalHandler(GtkWidget *widget, gulong *func_id) ;
-  static void disconnectTimerHandler(guint *func_id) ;
+static void disconnectTimerHandler(guint *func_id) ;
+
+static char *getEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event, ZMapRemoteControl remote_control) ;
+
+
 
 
 /* 
@@ -131,6 +161,7 @@ ZMAP_MAGIC_NEW(remote_control_magic_G, ZMapRemoteControlStruct) ;
 
 /* Debugging stuff... */
 static gboolean remote_debug_G = TRUE ;
+
 
 /* If zero then all events are reported otherwise any events masked will not be reported. */
 static GdkEventMask msg_exclude_mask_G = (GDK_POINTER_MOTION_MASK | GDK_EXPOSURE_MASK
@@ -171,12 +202,14 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id, char *remote_control_uni
   /* can't be earlier as we need app_id and err_XX stuff. */
   REMOTELOGMSG(remote_control, "%s", ENTER_TXT) ;
 
+
   remote_control->our_atom = gdk_atom_intern(remote_control_unique_str, FALSE) ;
   remote_control->our_atom_string = gdk_atom_name(remote_control->our_atom) ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* boolean should be TRUE here to check data format supported. */
   remote_control->data_format_atom = gdk_atom_intern("XA_STRING", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   remote_control->show_all_events = TRUE ;
 
@@ -285,6 +318,9 @@ gboolean zMapRemoteControlInit(ZMapRemoteControl remote_control, GtkWidget *remo
 	    remote_control->our_widget = remote_control_widget ;
 	    remote_control->our_window = GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget)) ;
 
+	    remote_control->our_clip_board
+	      = gtk_clipboard_get_for_display(gtk_widget_get_display(remote_control->our_widget),
+					      remote_control->our_atom) ;
 
 	    if (remote_control->show_all_events)
 	      remote_control->all_events_id = g_signal_connect(remote_control->our_widget, "event",
@@ -308,7 +344,7 @@ gboolean zMapRemoteControlInit(ZMapRemoteControl remote_control, GtkWidget *remo
 	{
 	  REMOTELOGMSG(remote_control, "",
 		       "RemoteControl object initialised:"
-		       "\tgtkwidget: %p,\tgdkwindow: %p\tXwindow: %u\tAtom: %s",
+		       "\tgtkwidget: %p,\tgdkwindow: %p\tXwindow: " X_WIN_FORMAT "\tAtom: %s",
 		       remote_control->our_widget,
 		       gtk_widget_get_window(remote_control->our_widget),
 		       remote_control->our_window,
@@ -414,7 +450,7 @@ gboolean zMapRemoteControlRequest(ZMapRemoteControl remote_control,
 		remote_control->timer_source_id = g_timeout_add(remote_control->timeout_ms, 
 								timeOutCB, remote_control) ;
 
-	      REMOTELOGMSG(remote_control, "Set selection-received handler on %u, waiting for convert",
+	      REMOTELOGMSG(remote_control, "Set selection-received handler on " X_WIN_FORMAT ", waiting for convert",
 			   GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget))) ;
 
 	      REMOTELOGMSG(remote_control, "%s", "registered request, waiting for selection-request event.") ;
@@ -513,6 +549,9 @@ static gboolean resetToReady(ZMapRemoteControl remote_control)
 {
   gboolean result = FALSE ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!(result = gdk_selection_owner_set(remote_control->our_widget->window, remote_control->our_atom,
 					 GDK_CURRENT_TIME,  /* Not sure about this, pass time in ? */
 					 FALSE)))
@@ -527,6 +566,9 @@ static gboolean resetToReady(ZMapRemoteControl remote_control)
       if (remote_control->curr_request)
 	destroyRemoteRequest(remote_control->curr_request) ;
 
+
+
+
       /* Attach event handler so we know when someone makes a request. */
       remote_control->select_clear_id = g_signal_connect(remote_control->our_widget, "selection-clear-event",
 							 (GCallback)serverSelectionClearCB, remote_control) ;
@@ -536,6 +578,17 @@ static gboolean resetToReady(ZMapRemoteControl remote_control)
 		   " on window of widget %p.",
 		   remote_control->our_atom_string, remote_control->our_widget) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (!(result = gtk_clipboard_set_with_data(GtkClipboard *clipboard,
+					     const GtkTargetEntry *targets,
+					     guint n_targets,
+					     GtkClipboardGetFunc get_func,
+					     GtkClipboardClearFunc clear_func,
+					     gpointer user_data);
+
+
+
 
   return result ;
 }
@@ -593,7 +646,7 @@ static gboolean serverSelectionClearCB(GtkWidget *widget, GdkEventSelection *eve
   x_peer_window = XGetSelectionOwner(x_display, x_property_atom) ;
 
   REMOTELOGMSG(remote_control,
-	       "Client Peer X-window %u has signalled they have a request on \"%s\".",
+	       "Client Peer X-window " X_WIN_FORMAT " has signalled they have a request on \"%s\".",
 	       x_peer_window,
 	       remote_control->our_atom_string) ;
 
@@ -618,7 +671,7 @@ static gboolean serverSelectionClearCB(GtkWidget *widget, GdkEventSelection *eve
 		    remote_control->curr_request->curr_req_time) ;
 
   REMOTELOGMSG(remote_control,
-	       "Replied to Client peer %u with XConvertSelection() asking for their request on \"%s\".",
+	       "Replied to Client peer " X_WIN_FORMAT " with XConvertSelection() asking for their request on \"%s\".",
 	       x_peer_window, remote_control->our_atom_string) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -626,7 +679,7 @@ static gboolean serverSelectionClearCB(GtkWidget *widget, GdkEventSelection *eve
   x_peer_window = XGetSelectionOwner(x_display, x_property_atom) ;
 
   REMOTELOGMSG(remote_control,
-	       "Current selection owner is: %u.",
+	       "Current selection owner is: " X_WIN_FORMAT ".",
 	       x_peer_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -689,7 +742,7 @@ static gboolean clientSelectionRequestCB(GtkWidget *widget, GdkEventSelection *s
   x_selection_str = gdk_atom_name(select_event->selection) ;
 
   REMOTELOGMSG(remote_control,
-	       "Server Peer X-window %u has signalled they want the request on \"%s\".",
+	       "Server Peer X-window " X_WIN_FORMAT " has signalled they want the request on \"%s\".",
 	       client_request->peer_window, x_selection_str) ;
 
   /* Put the request into the property/window passed into us. */
@@ -703,7 +756,7 @@ static gboolean clientSelectionRequestCB(GtkWidget *widget, GdkEventSelection *s
 		  (strlen(remote_control->curr_request->request) + 1)) ;
 
   REMOTELOGMSG(remote_control,
-	       "Put request on \"%s\" on X-window %u, request was \"%s\".",
+	       "Put request on \"%s\" on X-window " X_WIN_FORMAT ", request was \"%s\".",
 	       x_selection_str,
 	       client_request->peer_window,
 	       remote_control->curr_request->request) ;
@@ -715,7 +768,7 @@ static gboolean clientSelectionRequestCB(GtkWidget *widget, GdkEventSelection *s
 						       (GCallback)clientClientMessageCB, remote_control) ;
 
   REMOTELOGMSG(remote_control,
-	       "Attached client-event handler to our window %u.",
+	       "Attached client-event handler to our window " X_WIN_FORMAT ".",
 	       x_our_window) ;
 
 
@@ -726,7 +779,7 @@ static gboolean clientSelectionRequestCB(GtkWidget *widget, GdkEventSelection *s
 						    (GCallback)testNotifyCB, remote_control) ;
 
   REMOTELOGMSG(remote_control,
-	       "Attached test propertynotify handler to our window %u.",
+	       "Attached test propertynotify handler to our window " X_WIN_FORMAT ".",
 	       x_our_window) ;
 
 
@@ -762,10 +815,10 @@ static gboolean clientSelectionRequestCB(GtkWidget *widget, GdkEventSelection *s
 
   /* Tell the server that we've sent the request using a SelectionNotify event. */
   if (XSendEvent(x_display, client_request->peer_window, True, 0, (XEvent *)(&x_selection_event)) == 0)
-    REMOTELOGMSG(remote_control, "XSendEvent() call to send SelectionNotify to peer %u failed.",
+    REMOTELOGMSG(remote_control, "XSendEvent() call to send SelectionNotify to peer " X_WIN_FORMAT " failed.",
 		 client_request->peer_window) ;
   else
-    REMOTELOGMSG(remote_control, "XSendEvent() sent SelectionNotify to peer %u.",
+    REMOTELOGMSG(remote_control, "XSendEvent() sent SelectionNotify to peer " X_WIN_FORMAT ".",
 		 client_request->peer_window) ;
 
 
@@ -893,10 +946,10 @@ static gboolean serverSelectionNotifyCB(GtkWidget *widget, GdkEventSelection *se
 
       if ((status = gdk_event_send_client_message((GdkEvent *)&client_event,
 						  server_request->peer_window)))
-	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() sent ClientMessage to peer %u.",
+	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() sent ClientMessage to peer " X_WIN_FORMAT ".",
 		     server_request->peer_window) ;
       else
-	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() call to send ClientMessage to peer %u failed.",
+	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() call to send ClientMessage to peer " X_WIN_FORMAT " failed.",
 		     server_request->peer_window) ;
     }
 
@@ -922,10 +975,10 @@ static gboolean serverSelectionNotifyCB(GtkWidget *widget, GdkEventSelection *se
 
       if ((status = gdk_event_send_client_message((GdkEvent *)&do_request_event,
 						  remote_control->our_window)))
-	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() sent ClientMessage to peer %u.",
+	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() sent ClientMessage to peer " X_WIN_FORMAT ".",
 		     remote_control->our_window) ;
       else
-	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() call to send ClientMessage to peer %u failed.",
+	REMOTELOGMSG(remote_control, "gdk_event_send_client_message() call to send ClientMessage to peer " X_WIN_FORMAT " failed.",
 		     remote_control->our_window) ;
     }
 
@@ -973,13 +1026,17 @@ static gboolean clientClientMessageCB(GtkWidget *widget, GdkEventClient *client_
   /* We can now free our copy of the request data as the server has a copy and
    * has deleted the copy on our window. */
 
-  REMOTELOGMSG(remote_control, "%s", "Client notifed that server has request, waiting for reply.") ;
+  REMOTELOGMSG(remote_control, "%s",
+	       "Server has told us it has received the request, we now wait for the server's reply.") ;
+
   client_request->state = CLIENT_STATE_WAITING ;
 
 
-  /* This comes too late...this function is called too later for this to work here... */
+  /* This comes too late...this function is called too late for this to work here... */
 
-  REMOTELOGMSG(remote_control, "%s", "set up selection-notify handler to wait for reply from server.") ;
+  REMOTELOGMSG(remote_control,
+	       "Setting up selection-notify handler on " X_WIN_FORMAT " to wait for reply from server.",
+	       remote_control->our_window) ;
   /* Set up SelectionNotify handler which will be called when client replies to us. */
   remote_control->client_select_notify_id = g_signal_connect(remote_control->our_widget,
 							     "selection-notify-event",
@@ -1088,7 +1145,7 @@ static gboolean serverAppReplyCB(void *remote_data, void *reply, int reply_len)
 		  reply_len) ;
 
   REMOTELOGMSG(remote_control,
-	       "Put reply on \"%s\" on X-window %u.",
+	       "Put reply on \"%s\" on X-window " X_WIN_FORMAT ".",
 	       x_selection_str,
 	       remote_control->our_window) ;
 
@@ -1111,7 +1168,7 @@ static gboolean serverAppReplyCB(void *remote_data, void *reply, int reply_len)
 		  reply_len) ;
 
   REMOTELOGMSG(remote_control,
-	       "Put reply on \"%s\" on X-window %u.",
+	       "Put reply on \"%s\" on X-window " X_WIN_FORMAT ".",
 	       x_selection_str,
 	       server_request->peer_window) ;
 
@@ -1145,14 +1202,14 @@ static gboolean serverAppReplyCB(void *remote_data, void *reply, int reply_len)
   x_selection_event.selection = x_property_atom ;	    /* Don't know what to set here.... */
   x_selection_event.target = x_property_atom ;
   x_selection_event.property = x_property_atom ;
-  x_selection_event.time = CurrentTime ;
+  x_selection_event.time = CurrentTime ;		    /* IS THIS CORRECT ?? */
 
   /* Tell the server that we've sent the request using a SelectionNotify event. */
   if (XSendEvent(x_display, server_request->peer_window, True, 0, (XEvent *)(&x_selection_event)) == 0)
-    REMOTELOGMSG(remote_control, "XSendEvent() call to send SelectionNotify to peer %u failed.",
+    REMOTELOGMSG(remote_control, "XSendEvent() call to send SelectionNotify to peer " X_WIN_FORMAT " failed.",
 		 server_request->peer_window) ;
   else
-    REMOTELOGMSG(remote_control, "XSendEvent() sent SelectionNotify to peer %u.",
+    REMOTELOGMSG(remote_control, "XSendEvent() sent SelectionNotify to peer " X_WIN_FORMAT ".",
 		 server_request->peer_window) ;
 
   REMOTELOGMSG(remote_control, "%s", EXIT_TXT) ;
@@ -1438,7 +1495,7 @@ static void debugMsg(ZMapRemoteControl remote_control, const char *func_name, ch
     }
 
 						
-  g_string_append_printf(msg, "%s(%s) %s(%u) -\t",			
+  g_string_append_printf(msg, "%s(%s) %s(" X_WIN_FORMAT ") -\t",			
 			 remote_control->app_id,
 			 func_name,
 			 prefix,
@@ -1477,6 +1534,8 @@ static gboolean stderrOutputCB(gpointer user_data_unused, char *err_msg)
  * 
  * NOTE, the other event masks need filling in, I've only done the ones I'm interested in...
  *  */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer user_data)
 {
   gboolean handled = FALSE;
@@ -1485,49 +1544,60 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
   int true_index ;
   eventTxtStruct event_txt[] =
     {
-      {"GDK_NOTHING", 0},				    /* = -1 */
-      {"GDK_DELETE", 0},				    /* = 0 */
-      {"GDK_DESTROY", 0},				    /* = 1 */
-      {"GDK_EXPOSE", GDK_EXPOSURE_MASK},		    /* = 2 */
-      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK},	    /* = 3 */
-      {"GDK_BUTTON_PRESS", 0},				    /* = 4 */
-      {"GDK_2BUTTON_PRESS", 0},				    /* = 5 */
-      {"GDK_3BUTTON_PRESS", 0},				    /* = 6 */
-      {"GDK_BUTTON_RELEASE", 0},			    /* = 7 */
-      {"GDK_KEY_PRESS", 0},				    /* = 8 */
-      {"GDK_KEY_RELEASE", 0},				    /* = 9 */
-      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK},	    /* = 10 */
-      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK},	    /* = 11 */
-      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK},	    /* = 12 */
-      {"GDK_CONFIGURE", 0},				    /* = 13 */
-      {"GDK_MAP", 0},					    /* = 14 */
-      {"GDK_UNMAP", 0},					    /* = 15 */
-      {"GDK_PROPERTY_NOTIFY", 0},			    /* = 16 */
-      {"GDK_SELECTION_CLEAR", 0},			    /* = 17 */
-      {"GDK_SELECTION_REQUEST", 0},			    /* = 18 */
-      {"GDK_SELECTION_NOTIFY", 0},			    /* = 19 */
-      {"GDK_PROXIMITY_IN", 0},				    /* = 20 */
-      {"GDK_PROXIMITY_OUT", 0},				    /* = 21 */
-      {"GDK_DRAG_ENTER", 0},				    /* = 22 */
-      {"GDK_DRAG_LEAVE", 0},				    /* = 23 */
-      {"GDK_DRAG_MOTION", 0},				    /* = 24 */
-      {"GDK_DRAG_STATUS", 0},				    /* = 25 */
-      {"GDK_DROP_START", 0},				    /* = 26 */
-      {"GDK_DROP_FINISHED", 0},				    /* = 27 */
-      {"GDK_CLIENT_EVENT", 0},				    /* = 28 */
-      {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK}, /* = 29 */
-      {"GDK_NO_EXPOSE", 0},				    /* = 30 */
-      {"GDK_SCROLL", 0},				    /* = 31 */
-      {"GDK_WINDOW_STATE", 0},				    /* = 32 */
-      {"GDK_SETTING", 0},				    /* = 33 */
-      {"GDK_OWNER_CHANGE", 0},				    /* = 34 */
-      {"GDK_GRAB_BROKEN", 0},				    /* = 35 */
-      {"GDK_DAMAGE", 0},				    /* = 36 */
-      {"GDK_EVENT_LAST", 0}				    /* helper variable for decls */
+      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},				    /* = -1 */
+      {"GDK_DELETE", 0, EVENT_COMMON_TIME},				    /* = 0 */
+      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},				    /* = 1 */
+      {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},		    /* = 2 */
+
+      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},	    /* = 3 */
+      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 4 */
+      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 5 */
+      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 6 */
+      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},			    /* = 7 */
+
+      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},				    /* = 8 */
+      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},				    /* = 9 */
+
+      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 10 */
+      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 11 */
+
+      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},	    /* = 12 */
+      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},				    /* = 13 */
+
+      {"GDK_MAP", 0, EVENT_COMMON_TIME},					    /* = 14 */
+      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},					    /* = 15 */
+
+      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},			    /* = 16 */
+
+      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},			    /* = 17 */
+      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},			    /* = 18 */
+      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},			    /* = 19 */
+
+      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},				    /* = 20 */
+      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},				    /* = 21 */
+
+      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},				    /* = 22 */
+      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},				    /* = 23 */
+      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},				    /* = 24 */
+      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},				    /* = 25 */
+      {"GDK_DROP_START", 0, EVENT_DND_TIME},				    /* = 26 */
+      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},				    /* = 27 */
+
+      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},				    /* = 28 */
+
+      {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK, EVENT_NO_TIME}, /* = 29 */
+      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},				    /* = 30 */
+      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},				    /* = 31 */
+      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},				    /* = 32 */
+      {"GDK_SETTING", 0, EVENT_NO_TIME},				    /* = 33 */
+      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},				    /* = 34 */
+      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},				    /* = 35 */
+      {"GDK_DAMAGE", 0, EVENT_NO_TIME},				    /* = 36 */
+      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}				    /* helper variable for decls */
     } ;
 
-  true_index = any_event->type + 1 ;			    /* yuch, see enum values in comments above. */
 
+  true_index = any_event->type + 1 ;			    /* yuch, see enum values in comments above. */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (any_event->type == GDK_CLIENT_EVENT)
@@ -1541,13 +1611,107 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 
   if (!msg_exclude_mask_G || !(event_txt[true_index].mask & msg_exclude_mask_G))
     {
-      REMOTELOGMSG(remote_control, "Event: \"%s\"\tXWindow:%u",
+      guint32 time ;
+
+      REMOTELOGMSG(remote_control, "%s", ENTER_TXT) ;
+
+      switch (event_txt[true_index].time_struct_type)
+	{
+	case EVENT_COMMON_TIME:
+	  {
+	    EventCommonTime common = (EventCommonTime)event ;
+
+	    time = common->time ;
+
+	    break ;
+	  }
+
+	case EVENT_CROSSING_TIME:
+	  {
+	    GdkEventCrossing *crossing = (GdkEventCrossing *)event ;
+
+	    time = crossing->time ;
+
+	    break ;
+	  }
+
+	case EVENT_ATOM_TIME:
+	  {
+	    GdkEventProperty *atom_time = (GdkEventProperty *)event ;
+
+	    time = atom_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_SELECTION_TIME:
+	  {
+	    GdkEventSelection *select_time = (GdkEventSelection *)event ;
+
+	    time = select_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_DND_TIME:
+	  {
+	    GdkEventDND *dnd_time = (GdkEventDND *)event ;
+
+	    time = dnd_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_OWNER_TIME:
+	  {
+	    GdkEventOwnerChange *owner_time = (GdkEventOwnerChange *)event ;
+
+	    time = owner_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_NO_TIME:
+	default:
+	  {
+	    time = 0 ;
+	    break ;
+	  }
+	}
+
+      REMOTELOGMSG(remote_control, "Event: \"%s\"\tXWindow: %x\tTime: " X_WIN_FORMAT ".",
 		   event_txt[true_index].text,
-		   GDK_WINDOW_XWINDOW(any_event->window)) ;
+		   GDK_WINDOW_XWINDOW(any_event->window),
+		   time) ;
+
+
+      REMOTELOGMSG(remote_control, "%s", EXIT_TXT) ;
     }
 
   return handled ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer user_data)
+{
+  gboolean handled = FALSE;
+  ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
+  GdkEventAny *any_event = (GdkEventAny *)event ;
+  char *event_text ;
+
+  if ((event_text = getEventAsText(msg_exclude_mask_G, any_event, remote_control)))
+    {
+      REMOTELOGMSG(remote_control, "%s", ENTER_TXT) ;
+
+      REMOTELOGMSG(remote_control, "%s", event_text) ;
+
+      REMOTELOGMSG(remote_control, "%s", EXIT_TXT) ;
+
+      g_free(event_text) ;
+    }
+
+  return handled ;
+}
+
 
 
 
@@ -1588,4 +1752,169 @@ static char *getStateAsString(ZMapRemoteControl remote_control)
 
   return state_str ;
 }
+
+
+
+/* Candidate to go in GUI Utils....
+ * 
+ * NOTE, the other event masks need filling in, I've only done the ones I'm interested in...
+ *  */
+static char *getEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event, ZMapRemoteControl remote_control)
+{
+  char *event_as_text = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
+  GdkEventAny *any_event = (GdkEventAny *)event ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  int true_index ;
+  eventTxtStruct event_txt[] =
+    {
+      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},				    /* = -1 */
+      {"GDK_DELETE", 0, EVENT_COMMON_TIME},				    /* = 0 */
+      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},				    /* = 1 */
+      {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},		    /* = 2 */
+
+      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},	    /* = 3 */
+      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 4 */
+      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 5 */
+      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 6 */
+      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},			    /* = 7 */
+
+      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},				    /* = 8 */
+      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},				    /* = 9 */
+
+      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 10 */
+      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 11 */
+
+      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},	    /* = 12 */
+      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},				    /* = 13 */
+
+      {"GDK_MAP", 0, EVENT_COMMON_TIME},					    /* = 14 */
+      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},					    /* = 15 */
+
+      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},			    /* = 16 */
+
+      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},			    /* = 17 */
+      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},			    /* = 18 */
+      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},			    /* = 19 */
+
+      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},				    /* = 20 */
+      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},				    /* = 21 */
+
+      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},				    /* = 22 */
+      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},				    /* = 23 */
+      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},				    /* = 24 */
+      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},				    /* = 25 */
+      {"GDK_DROP_START", 0, EVENT_DND_TIME},				    /* = 26 */
+      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},				    /* = 27 */
+
+      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},				    /* = 28 */
+
+      {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK, EVENT_NO_TIME}, /* = 29 */
+      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},				    /* = 30 */
+      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},				    /* = 31 */
+      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},				    /* = 32 */
+      {"GDK_SETTING", 0, EVENT_NO_TIME},				    /* = 33 */
+      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},				    /* = 34 */
+      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},				    /* = 35 */
+      {"GDK_DAMAGE", 0, EVENT_NO_TIME},				    /* = 36 */
+      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}				    /* helper variable for decls */
+    } ;
+
+
+  true_index = any_event->type + 1 ;			    /* yuch, see enum values in comments above. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (any_event->type == GDK_CLIENT_EVENT)
+    {
+      GdkEventClient *client_event = (GdkEventClient *)any_event ;
+
+      printf("found it\n") ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  if (!msg_exclude_mask_G || !(event_txt[true_index].mask & msg_exclude_mask_G))
+    {
+      guint32 time ;
+
+      switch (event_txt[true_index].time_struct_type)
+	{
+	case EVENT_COMMON_TIME:
+	  {
+	    EventCommonTime common = (EventCommonTime)any_event ;
+
+	    time = common->time ;
+
+	    break ;
+	  }
+
+	case EVENT_CROSSING_TIME:
+	  {
+	    GdkEventCrossing *crossing = (GdkEventCrossing *)any_event ;
+
+	    time = crossing->time ;
+
+	    break ;
+	  }
+
+	case EVENT_ATOM_TIME:
+	  {
+	    GdkEventProperty *atom_time = (GdkEventProperty *)any_event ;
+
+	    time = atom_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_SELECTION_TIME:
+	  {
+	    GdkEventSelection *select_time = (GdkEventSelection *)any_event ;
+
+	    time = select_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_DND_TIME:
+	  {
+	    GdkEventDND *dnd_time = (GdkEventDND *)any_event ;
+
+	    time = dnd_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_OWNER_TIME:
+	  {
+	    GdkEventOwnerChange *owner_time = (GdkEventOwnerChange *)any_event ;
+
+	    time = owner_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_NO_TIME:
+	default:
+	  {
+	    time = 0 ;
+	    break ;
+	  }
+	}
+
+      event_as_text = g_strdup_printf("Event: \"%s\"\tXWindow: %x\tTime: %u.",
+				      event_txt[true_index].text,
+				      (unsigned int)GDK_WINDOW_XWINDOW(any_event->window),
+				      time) ;
+    }
+
+  return event_as_text ;
+}
+
+
+
+
+
 
