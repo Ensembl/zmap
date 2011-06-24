@@ -1,6 +1,6 @@
 /*  File: zmapWindowRuler.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Implements the scale bar shown for sequences.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jan 21 14:36 2008 (rds)
- * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.16 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -768,7 +764,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 		{
 			if(tick_coord < scr_start)
 				continue;
-			if(tick_coord > scr_end)
+			if(tick_coord >= scr_end)
 				break;
 
 
@@ -787,9 +783,10 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 						/* tick coord is # bases off the end due to revcomp mixture */
 						/* this is the scr_start calc from above reversed */
 						/* but we draw 1 bp backwards */
-						draw_at = tick_coord + seq_end - seq_start + 2 + 1;
+						draw_at = tick_coord + seq_end - seq_start + 2 + 1 + 1;
 						/* extra + 1 to base coordinates as for fwd strand,
 						   base occupies space away from origin afetr coordinate */
+						/* extra + 1 to compensate for + 0.5 canvas coord for fwd strand */
 					}
 					else
 					{
@@ -797,7 +794,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 					}
 
 					label[0] = 0;
-					canvas_coord = (double) draw_at;
+					canvas_coord = (double) draw_at + 0.5;	/* aim for the middle of the base */
 //if(top) printf("coord: %d %d (%d,%d) = %d\n", tick_coord, digit, seq_start,seq_end,draw_at);
 
 					canvas_coord *= projection_factor;

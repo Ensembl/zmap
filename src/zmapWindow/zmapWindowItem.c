@@ -1,6 +1,6 @@
 /*  File: zmapWindowItem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Functions to manipulate canvas items.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jun  6 10:51 2011 (edgrif)
- * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.149 2011-05-06 11:11:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

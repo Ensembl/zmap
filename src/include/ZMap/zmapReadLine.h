@@ -1,6 +1,6 @@
 /*  File: zmapReadLine.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,10 +23,6 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: The interface to a line reading package.
- * HISTORY:
- * Last edited: Apr 21 17:11 2010 (edgrif)
- * Created: Thu Jun 24 19:32:55 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine.h,v 1.4 2010-04-22 12:16:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_READLINE_H

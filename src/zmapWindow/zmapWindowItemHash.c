@@ -1,6 +1,6 @@
 /*  File: zmapWindowItemHash.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,10 +29,6 @@
  *              to the foocanvas item hierachy.
  *
  * Exported functions: See zMapWindow_P.h
- * HISTORY:
- * Last edited: Jun  2 13:57 2011 (edgrif)
- * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.57 2011-03-01 16:22:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

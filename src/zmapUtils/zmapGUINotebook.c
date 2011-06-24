@@ -1,6 +1,6 @@
 /*  File: zmapGUINotebook.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,10 +29,6 @@
  *              the Notebook.
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
- * HISTORY:
- * Last edited: Jun  7 15:10 2011 (edgrif)
- * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.26 2011-04-05 13:28:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

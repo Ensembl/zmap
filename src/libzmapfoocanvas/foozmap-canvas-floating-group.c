@@ -1,6 +1,6 @@
 /*  File: foozmap-canvas-floating-group.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Mar 23 16:47 2008 (rds)
- * Created: Thu Jan 24 08:36:25 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-floating-group.c,v 1.3 2010-12-23 11:15:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

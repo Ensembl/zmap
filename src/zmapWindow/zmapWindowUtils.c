@@ -1,6 +1,6 @@
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Utility functions for the zMapWindow code.
  *
  * Exported functions: See ZMap/zmapWindow.h
- * HISTORY:
- * Last edited: Mar 10 16:35 2011 (edgrif)
- * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.79 2011-04-05 13:29:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,10 +81,12 @@ int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 {
       /* min_coord is the start of the sequence even if revcomp'ed
        * window->sequence->start is fwd strand
+       * but note that max_coord has been incremented to cover beyoned the last base
        */
       coord = coord - window->min_coord + 1;
       if(window->revcomped_features)
-            coord -= window->max_coord - window->min_coord + 2;
+//          coord -= window->max_coord  - window->min_coord + 2;
+            coord -= window->sequence->end - window->sequence->start + 2;
 
       return(coord);
 }
@@ -115,10 +113,14 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 
 
 /* start and end in current fwd strand coordinates (revcomped is -ve) */
-/* ffunction written due to scope issues */
+/* function written due to scope issues */
 gboolean zmapWindowGetCurrentSpan(ZMapWindow window, int *start, int *end)
 {
-      zmapWindowCoordPairToDisplay(window,window->min_coord,window->max_coord,start,end);
+	/* MH17 NOTE: min and max_coord have been adjusted by
+		zmapWindowSeq2CanExt() see comment above that function
+		i'd prefer to use sequence->start,end but on revcomp this gives us chromo coords
+	  */
+      zmapWindowCoordPairToDisplay(window,window->min_coord,window->max_coord-1,start,end);
       return(TRUE);
 }
 
@@ -149,7 +151,9 @@ int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
  * better to fix in the caller by not calling this!
  */
   if(window->revcomped_features)
-      coord += window->max_coord - window->min_coord + 2;
+//      coord += window->max_coord - window->min_coord + 2;
+// max coord was seq_end+1 before revcomp
+      coord += window->sequence->end - window->sequence->start + 2;
   coord = coord + window->min_coord - 1;
 
   return coord ;

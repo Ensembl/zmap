@@ -1,7 +1,7 @@
 /*  File: pipeServer.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer.c by Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,10 +32,6 @@
  * NB:	As for the fileServer module the data is read as a single pass and then discarded.
  *
  * Exported functions: See ZMap/zmapServerPrototype.h
- * HISTORY:
- * Last edited: Jun  9 09:49 2011 (edgrif)
- * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.34 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -546,12 +542,10 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
       if(retval)
 	{
-	  if ((strstr(server->query, "Mus_musculus")))
-	    printf("got it\n") ;
 
 	  result = pipeGetHeader(server);
 
-
+#if 0
 	  {
 	    ZMapGFFHeader header ;
 
@@ -559,7 +553,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	      printf("got it\n") ;
 
 	  }
-
+#endif
 
 	  //zMapLogWarning("pipe query was: %s",server->query);
 

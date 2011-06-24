@@ -1,6 +1,6 @@
 /*  File: zmapWindowTextItem_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: Internal data structures of zmap text item for foocanvas
  *              to implement dna/peptide sequence display.
  *
- * HISTORY:
- * Last edited: Dec 15 15:19 2010 (edgrif)
- * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.10 2010-12-20 12:20:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_TEXT_ITEM_I_H

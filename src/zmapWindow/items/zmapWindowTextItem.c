@@ -1,6 +1,6 @@
 /*  File: zmapWindowTextItem.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,10 +29,6 @@
  *              and pasting coords/FASTA sequence into the select buffer.
  *
  * Exported functions: See zmapWindowTextItem.h
- * HISTORY:
- * Last edited: Apr 17 21:24 2011 (edgrif)
- * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.16 2011-05-06 11:42:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

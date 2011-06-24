@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerSummarise.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,7 +26,6 @@
  * Description:   avoids displaying features that cannot be seen at the current zoom level
  *                NOTE see Design_notes/notes/canvas_tweaks.html
  *
- * CVS info:   $Id: zmapWindowContainerSummarise.c,v 1.5 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

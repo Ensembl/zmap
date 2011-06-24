@@ -1,6 +1,6 @@
 /*  File: zmapappmain.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: Creates the first toplevel window in the zmap app.
  *
  * Exported functions: None
- * HISTORY:
- * Last edited: May 31 16:22 2011 (edgrif)
- * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.78 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

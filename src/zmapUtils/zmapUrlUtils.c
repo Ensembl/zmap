@@ -1,4 +1,3 @@
-/*  Last edited: Mar  8 15:46 2005 (rds) */
 /* Various functions of utilitarian nature.
    Copyright (C) 1995, 1996, 1997, 1998, 2000, 2001
    Free Software Foundation, Inc.

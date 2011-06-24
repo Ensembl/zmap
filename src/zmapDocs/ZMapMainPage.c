@@ -1,6 +1,6 @@
 /*  File: ZMapDoxyMainPage
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              used by doxygen tool to document ZMap.
  *              
  * Exported functions: none, dummy file.
- * HISTORY:
- * Last edited: Jan 14 17:23 2009 (edgrif)
- * Created: Tue Apr 20 09:54:38 2004 (edgrif)
- * CVS info:   $Id: ZMapMainPage.c,v 1.6 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -9,143 +9,132 @@
 #     find ~/zmap/ZMap/src -name "*.c" -exec ./CopyRight \{\} \;
 #     find ~/zmap/ZMap/src -name "*.h" -exec ./CopyRight \{\} \;
 #
+# updated June 2011 by mh17
+# now using git, so no need to operate CVS
+# added use strict and stopped the torrent of complaints
+# tidied the code a bit
+# as a one-off removed the CVS stuff and various editing logs such as:
+=begin
+ * HISTORY:
+ * Last edited: Mar 31 15:07 2011 (edgrif)
+ * Created: Fri Feb  4 18:24:37 2005 (edgrif)
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.21 2011-05-12 13:56:25 mh17 Exp $
+=cut
+#
+# to run this make a fresh git clone of the develop branch
+# try the find commands as above
+# complie and test
+# do a git commit -a
+# push the files back to the main repo
+#
 
+
+use strict;
 use warnings;
 
-my ($file, $date_found, $date_changed,$file_date,$new_date);
-my ($ofile);
-my ($year_now);
-my $CVS = 1;      # use the CVS
-my $many = 0;     # change more than one: good for testing
 
-sub change_date
+
+
+sub main
 {
-      for(@_)     # process our one argument directly
-      {
-                  # our copyright?  let's enforce nice capitalised words
-            if(/Copyright/ && /Genome/)
-            {
-                  if(m/(\d+)[- ]+(\d+)/)
-                  {
-                        $date_found = 1;
-                        $file_date = $1. '-' .$2;
+	my $file;
+	my $many = 0;     # change more than one: good for testing
 
-                        if($1 != 2006 || $2 != $year_now)
-                        {
-                              $new_date = "2006-$year_now";
-                              s/(\d+)[- ]+(\d+)/$new_date/;
-                              $date_changed = 1;
-                              print "Date changed from $file_date to $new_date\n";
-                        }
-                  }
-                  elsif(m/(\d+)/)
-                  {
-                        $date_found = 1;
-                        $file_date = $1;
-                        $new_date = "2006-$year_now";
-                        s/(\d+)/$new_date/;
-                        $date_changed = 1;
-                        print "Date changed from $file_date to $new_date\n";
-                  }
-            }
-      }
+	for(my $i = $#ARGV;$i > 0;$i--)
+	{
+		$file = shift @ARGV;
+		if($file eq "-many")
+		{
+			$many = 1;
+		}
+	}
+	$file = shift @ARGV;    # we take one file arg only
+	if(!$file) {      die("No file!\n"); }
+
+	print "$file: ";
+
+	my @time = localtime;
+
+	my $new_date =  $time[5] + 1900;
+	my $year_now = $new_date;
+	my $file_date = "??";
+	my $date_found = 0;
+	my $date_changed = 0;
+	my $lineno = 0;
+	my $file_changed = 0;
+
+	open(IFILE,$file) or die("cannot open $file\n");
+
+	my $ofile = $file . ".tmp";         # make tmp file in same directory
+
+	open(OFILE,"> ".$ofile) or die("cannot open $ofile\n");
+
+	while(<IFILE>)
+	{
+		$lineno++;
+		if($lineno < 50)
+		{
+			if (/HISTORY/i || /Last Edited:/i || /Created:/i || /CVS info/i)
+			{
+				$file_changed = 1;
+				next;
+			}
+
+				# our copyright?  let's enforce nice capitalised words
+			if ((!$date_found || $many) && /Copyright/ && /Genome/)
+			{
+				if(m/(\d+)[- ]+(\d+)/)
+				{
+					$date_found = 1;
+					$file_date = $1. '-' .$2;
+
+					if($1 != 2006 || $2 != $year_now)
+					{
+						$new_date = "2006-$year_now";
+						s/(\d+)[- ]+(\d+)/$new_date/;
+						$date_changed = 1;
+						print "Date changed from $file_date to $new_date";
+					}
+				}
+				elsif(m/(\d+)/)
+				{
+					$date_found = 1;
+					$file_date = $1;
+					$new_date = "2006-$year_now";
+					s/(\d+)/$new_date/;
+					$date_changed = 1;
+					print "Date changed from $file_date to $new_date";
+				}
+			}
+
+		}
+		print OFILE $_;
+	}
+
+	close $ofile;
+
+	if(!$date_found)
+	{
+		print "No copyright date found";
+	}
+
+	if($date_changed || $file_changed)
+	{
+		unlink $file or die ("Can't remove old file\n");
+		rename($ofile,$file) or die("Can't update file (is now called $ofile\n");
+	}
+	else
+	{
+		unlink $ofile;
+
+		if($date_found)
+		{
+			print "Copyright date was $file_date: not changed";
+		}
+	}
+	print "\n";
 }
 
-
-for($i = $#ARGV;$i > 0;$i--)
-{
-      $file = shift @ARGV;
-      if($file eq "-many")
-      {
-            $many = 1;
-      }
-      elsif($file eq "-no-CVS")
-      {
-            $CVS = 0;
-      }
-}
-$file = shift @ARGV;    # we take one file arg only
-if(!$file) {      die("No file!\n"); }
-
-print "$file: ";
-
-@time = localtime;
-
-$new_date = $year_now = $time[5] + 1900;
-$file_date = "??";
-$date_found = 0;
-$date_changed = 0;
-$lineno = 0;
-
-if($CVS)
-{
-      @args = ("cvs", "edit", $file);
-      # test if writeable: not sure if CVS return values are good
-      system(@args);
-
-      if(!(-w $file))
-      {
-            die("Cannot checkout $file from CVS - not writeable\n");
-      }
-}
-
-open(IFILE,$file) or die("cannot open $file\n");
-
-$ofile = $file . ".tmp";         # make tmp file in same directory
-$year_now = 2010;
-open(OFILE,"> ".$ofile) or die("cannot open $ofile\n");
-
-while($line = <IFILE>)
-{
-      $lineno++;
-      if($lineno < 50 && (!$date_found || $many))
-      {
-            #$line =
-            change_date($line);
-      }
-      print OFILE $line;
-}
-
-close $ofile;
-
-if(!$date_found)
-{
-      print "No copyright date found\n";
-}
-
-if($date_changed)
-{
-      unlink $file or die ("Can't remove old file\n");
-      rename($ofile,$file) or die("Can't update file\n");
-
-      if($CVS)
-      {
-            @args = ("cvs", "commit", "-m", "CopyRight date set", $file);
-            system(@args);
-            if(-w $file)
-            {
-                  die("Copyright date set but cannot commit $file to CVS: still writeable\n");
-            }
-      }
-}
-else
-{
-      unlink $ofile;
-
-      if($date_found)
-      {
-            print "Copyright date was $file_date: not changed\n";
-      }
-      if($CVS)
-      {
-            @args = ("cvs", "unedit", $file);
-            system(@args);
-            if(-w $file)
-            {
-                  die("Can't CVS unedit $file: still writeable\n");
-            }
-
-      }
-}
+main(@ARGV);
 
 

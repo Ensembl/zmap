@@ -1,6 +1,6 @@
 /*  File: zmapWindowLongItem.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,10 +30,6 @@
  *              when canvas zoomed back out.
  *
  * Exported functions: See zmapWindowLongItem.h
- * HISTORY:
- * Last edited: May 24 16:27 2010 (edgrif)
- * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.c,v 1.7 2010-06-14 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

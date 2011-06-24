@@ -1,6 +1,6 @@
 /*  File: check_zmapStyle_P.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Mar 30 21:16 2009 (rds)
- * Created: Mon Mar 30 21:14:55 2009 (rds)
- * CVS info:   $Id: check_zmapStyle_P.h,v 1.3 2010-06-14 15:40:13 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

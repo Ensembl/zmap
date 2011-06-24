@@ -1,6 +1,6 @@
 /*  File: zmapGLibUtils.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  * Description: Extra Home grown functions that are compatible with
  *              glib but not included with their distribution.
  *
- * HISTORY:
- * Last edited: Sep  7 16:49 2010 (edgrif)
- * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.28 2010-09-24 09:16:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H

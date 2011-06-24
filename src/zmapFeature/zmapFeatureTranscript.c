@@ -26,10 +26,6 @@
  * Description: Functions for processing/handling transcript features.
  *              
  * Exported functions: See ZMap/zmapFeature.h
- * HISTORY:
- * Last edited: May  6 13:40 2011 (edgrif)
- * Created: Sun Apr 17 21:31:18 2011 (edgrif)
- * CVS info:   $Id: zmapFeatureTranscript.c,v 1.3 2011-05-06 12:42:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

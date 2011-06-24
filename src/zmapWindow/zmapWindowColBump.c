@@ -1,6 +1,6 @@
 /*  File: zmapWindowColBump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: Column bumping functions.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: May  6 12:02 2011 (edgrif)
- * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.85 2011-05-06 11:03:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

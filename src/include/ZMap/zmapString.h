@@ -1,6 +1,6 @@
 /*  File: zmapString.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  *
  * Description: General string functions for ZMap.
  *
- * HISTORY:
- * Last edited: Jun  8 13:22 2011 (edgrif)
- * Created: Thu Sep 20 15:32:36 2007 (edgrif)
- * CVS info:   $Id: zmapString.h,v 1.4 2011-04-08 11:46:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STRING_H

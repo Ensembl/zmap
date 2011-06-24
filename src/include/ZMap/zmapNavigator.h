@@ -1,6 +1,6 @@
 /*  File: zmapNavigator.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,6 @@
  *
  * Description: External interface to the Navigator for sequence views.
  *              
- * HISTORY:
- * Last edited: Aug  1 12:24 2007 (rds)
- * Created: Fri Jan  7 14:38:22 2005 (edgrif)
- * CVS info:   $Id: zmapNavigator.h,v 1.7 2010-03-04 15:15:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_NAVIGATOR_H

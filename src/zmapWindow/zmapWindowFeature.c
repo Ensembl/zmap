@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              displayed canvas items and the feature->item hash.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jun  7 14:39 2011 (edgrif)
- * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.216 2011-05-12 13:56:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -188,7 +184,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   FooCanvasItem *feature_item ;
-  
+
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
@@ -1369,9 +1365,14 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
                   /* need to add a * to the end to match strand and frame name mangling */
 
+
                   feature_name = g_strdup_printf("%s*",g_quark_to_string(GPOINTER_TO_UINT(evidence->data)));
                   feature_name = zMapFeatureCanonName(feature_name);    /* done in situ */
                   feature_search_id = g_quark_from_string(feature_name);
+
+			if(feature_search_id == wildcard)
+				/* catch NULL names due to ' getting escaped int &apos; */
+				continue;
 
                   items_free = zmapWindowFToIFindItemSetFull(menu_data->window,
                              menu_data->window->context_to_item,

@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *              such as running blixem to show alignments.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: May  9 16:38 2011 (edgrif)
- * Created: Mon Mar 14 10:38:39 2011 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureFuncs.c,v 1.5 2011-05-10 08:26:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,7 +85,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	{
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  {
-	    double wx1, wy1, wx2, wy2 ;
+//	    double wx1, wy1, wx2, wy2 ;
 	    FooCanvasGroup *block_grp ;
 	    gboolean found_position = FALSE ;
 
@@ -159,7 +155,9 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 
 	  /* We should have a flag to do the offsetting, I thought we did but it seems to have
 	   * vanished. */
-	  align->offset = window->min_coord ;
+	  align->offset = window->sequence->start ;
+//	  if(window->revcomped_features)
+//	  	align->offset = window->sequence->end;
 
 	  if (zmapWindowMarkIsSet(window->mark))
 	    {

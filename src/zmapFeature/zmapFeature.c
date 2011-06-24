@@ -1,6 +1,6 @@
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              Includes code to create/merge/destroy contexts and sets.
  *
  * Exported functions: See zmapView_P.h
- * HISTORY:
- * Last edited: May  6 13:12 2011 (edgrif)
- * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.145 2011-05-06 12:13:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

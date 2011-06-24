@@ -1,6 +1,6 @@
 /*  File: zmapUtilsLog.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,6 @@
  *
  * Description: Contains macros, functions etc. for logging.
  *              
- * HISTORY:
- * Last edited: Nov 20 18:08 2009 (edgrif)
- * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.10 2010-03-04 15:15:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H

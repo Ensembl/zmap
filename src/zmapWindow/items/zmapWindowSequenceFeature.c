@@ -1,6 +1,6 @@
 /*  File: zmapWindowSequenceFeature.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,10 +29,6 @@
  *               highlighting.
  *
  * Exported functions: See zmapWindowSequenceFeature.h
- * HISTORY:
- * Last edited: May 10 16:54 2011 (edgrif)
- * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.20 2011-05-10 15:55:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

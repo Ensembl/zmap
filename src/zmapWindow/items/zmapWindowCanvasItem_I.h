@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasItem_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: Internals of the basic zmap canvas item class, all
  *              other item classes include this class.
  *
- * HISTORY:
- * Last edited: Feb  4 09:12 2011 (edgrif)
- * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.14 2011-05-06 14:02:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,4 +1,3 @@
-/*  Last edited: Mar  7 12:37 2005 (rds) */
 /* struct options.
    Copyright (C) 1995, 1996, 1997 Free Software Foundation, Inc.
 

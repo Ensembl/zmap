@@ -1,6 +1,6 @@
 /*  File: zmapWindowBasicFeature.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: May 25 12:20 2010 (edgrif)
- * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.7 2010-06-14 15:40:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_BASIC_FEATURE_H

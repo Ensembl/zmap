@@ -1,6 +1,6 @@
 /*  File: zmapXMLParse.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Dec 18 10:00 2008 (rds)
- * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.26 2010-06-14 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

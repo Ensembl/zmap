@@ -1,6 +1,6 @@
 /*  File: zmapFeatureDNA.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: May  6 12:34 2011 (edgrif)
- * Created: Tue Apr  7 10:32:21 2009 (rds)
- * CVS info:   $Id: zmapFeatureDNA.c,v 1.10 2011-05-06 11:34:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

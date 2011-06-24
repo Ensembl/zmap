@@ -1,6 +1,6 @@
 /*  File: zmapControlRemoteSend.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,6 @@
  *
  * Exported functions: See zmapControl_P.h
  *              
- * HISTORY:
- * Last edited: Dec 16 14:58 2008 (edgrif)
- * Created: Thu Jul 12 14:54:52 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteSend.c,v 1.4 2010-06-14 15:40:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

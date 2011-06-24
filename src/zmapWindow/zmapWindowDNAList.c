@@ -1,6 +1,6 @@
 /*  File: zmapWindowDNAList.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              causing the zmapwindow to scroll to that location.
  *
  * Exported functions: See zmapWindow_P.h
- * HISTORY:
- * Last edited: Jul 29 10:33 2010 (edgrif)
- * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.16 2010-07-29 09:34:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: This is the ZMap interface code, it controls both
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
- * HISTORY:
- * Last edited: Feb 23 13:03 2011 (edgrif)
- * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.115 2011-05-06 14:52:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

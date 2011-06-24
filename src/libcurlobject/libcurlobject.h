@@ -1,6 +1,6 @@
 /*  File: libcurlobj.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Oct 23 13:26 2008 (rds)
- * Created: Thu May  1 17:06:07 2008 (rds)
- * CVS info:   $Id: libcurlobject.h,v 1.2 2008-10-23 12:32:14 rds Exp $
  *-------------------------------------------------------------------
  */
 

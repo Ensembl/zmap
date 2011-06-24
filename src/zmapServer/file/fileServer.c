@@ -1,6 +1,6 @@
 /*  File: fileServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,11 +31,7 @@
  *
  * Exported functions: See ZMap/zmapServerPrototype.h
  *
- * HISTORY:
  * iff'ed out 07 Dec 2009 (mgh) - module replaced by pipeServer.c
- * Last edited: Nov 27 15:41 2009 (edgrif)
- * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.47 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

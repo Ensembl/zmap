@@ -1,6 +1,6 @@
 /*  File: utils.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,10 +26,6 @@
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Mar 20 14:47 2007 (rds)
- * Created: Fri Mar 16 10:45:48 2007 (rds)
- * CVS info:   $Id: utils.h,v 1.1 2007-03-21 12:28:32 rds Exp $
  *-------------------------------------------------------------------
  */
 

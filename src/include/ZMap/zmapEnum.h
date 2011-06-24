@@ -1,6 +1,6 @@
 /*  File: zmapEnum.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  *              to be used to produce enum types, print functions and 
  *              and more.
  *
- * HISTORY:
- * Last edited: Jun 30 09:57 2009 (rds)
- * Created: Tue Jun 10 17:27:31 2008 (rds)
- * CVS info:   $Id: zmapEnum.h,v 1.5 2010-03-04 15:15:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerStrand.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,6 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Dec 15 13:58 2010 (edgrif)
- * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand.h,v 1.6 2010-12-20 12:20:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

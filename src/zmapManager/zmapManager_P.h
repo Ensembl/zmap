@@ -1,6 +1,6 @@
 /*  File: zmapManager_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2011: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,10 +25,6 @@
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Feb 17 09:48 2006 (edgrif)
- * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager_P.h,v 1.9 2010-06-14 15:40:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_P_H
