@@ -315,6 +315,12 @@ This works with directories and several files can be moved to a new directory wi
 
 <a name="branches"></a>
 <h3>Operating branches: split, update and merge</h3>
+
+<p><font color="red">But see <a href="#gitflow">Git Flow</a>
+section for
+recommended method for merging development branch changes into a feature
+branch.</font></p>
+
 <p>The following commands are used to manage branches in a local repository:
 <pre>
 git branch              to list existing branches
@@ -325,22 +331,44 @@ git merge fred          to merge commits from fred into the current (master) bra
 git branch -D fred      to delete a branch that is no longer required
 </pre>
 </p>
-<p>After making some commits in the local repository, the following commands would be used to fetch-and-merge changes from the master repository before pushing our commits into the master repository.  This assumes that we have the alias 'origin' set up to point to the master repository, which would automatically be the case for a cloned repository.  (Aliases can be displayed with the 'git remote -v' command.)
+
+
+<p>After making some commits in the local repository, the following commands
+would be used to fetch-and-merge changes from the master repository before
+pushing our commits into the master repository.  This assumes that we have the
+alias 'origin' set up to point to the master repository, which would
+automatically be the case for a cloned repository.  (Aliases can be displayed
+with the 'git remote -v' command.)  </p>
 <pre>
 git fetch origin        to fetch changes from origin into our repository
 git merge origin        to merge changes from origin into our repository
 git pull origin         the same as doing a fetch then merge
 git push origin         to push our changes to origin (any conflicts must be resolved first)
 </pre>
-</p>
+
 
 <h3>Merges, fast-forward and rebasing</h3>
 <p>A straightforward merge, where there have been no simultaneous commits created in parallel in other repositories, can be done as a 'fast-forward' merge.  This means that a branch can be advanced along a linear sequence, so we end up with a simple, linear history.  If there have been parallel commits, then 'git merge' will introduce a new merge-commit to tie the two commits together.  This is called a non-fast-forward merge.  You do not get a merge-commit for a fast-forward merge, and therefore all history about which branch the changes were actually made on are lost.  By default, <code>git merge</code> does a fast-forward merge whenever possible, but you can override this using the <code>--no-ff</code> option.  This results in an empty merge-commit, but preserves the branch history.  This can be useful as a way of grouping related commits together (e.g. all of the commits that went into implementing a particular feature).  <a href="http://nvie.com/posts/a-successful-git-branching-model/">This page</a> describes a successful branching model that uses this method.
 </p>
 <p>When a non-fast-forward merge occurs, there is always the possibility that a conflict occurs. In this case, 'git merge' will leave conflict markers in the files and instruct you to resolve the conflicts. When you are finished, you would issue a 'git commit -a' to create the merge commit.
 </p>
-<p>You can 'rebase' your local branch to the one you want to merge it to so that when you merge your changes you will get a linear history, even for non-fast-forward merges.  <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#using-git-rebase">This</a> page explains how to do this and <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">this one</a> explains why having a linear history can be really useful.  However, note that <font color="red"><i>you should not rebase any changes that might already have been fetched by anyone else (i.e. anything in the master repository).</i></font>  <a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#problems-With-rewriting-history">This page</a> explains why not.  Also, as described above, when you have a linear history you will get a fast-forward merge by default and lose the branch history, which may not be what you want.  Perhaps the best of boths worlds is to do a rebase followed by a <code>git merge --no-ff</code>, effectively giving a linear history but also preserving branch history.
-</p>
+
+<p>You can 'rebase' your local branch to the one you want to merge it to so
+that when you merge your changes you will get a linear history, even for
+non-fast-forward merges.
+<ahref="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#using-git-rebase">This</a>
+page explains how to do this and
+<a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">this one</a>
+explains why having a linear history can be really useful.  However,
+note that <font color="red"><i>you should not rebase any changes that might
+already have been fetched by anyone else (i.e. anything in the master
+repository).</i></font>
+<a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#problems-With-rewriting-history">This page</a>
+explains why not.  Also, as described above, when you have a linear
+history you will get a fast-forward merge by default and lose the branch
+history, which may not be what you want.  Perhaps the best of boths worlds is
+to do a rebase followed by a <code>git merge --no-ff</code>, effectively giving
+a linear history but also preserving branch history.  </p>
 
 <h3>Compile info</h3>
 <p>The programs should have some version info built into them that can be displayed via a help dialog to allow us to identify exactly what version of the source code was used to build the program. We can use the 'git describe' command to supply this information. This tells us the last tag that our code was based on, how many commits there have been since that tag, and the commit ID of the current commit. It can also tell us whether we are using a dirty tree if we use the --dirty option, e.g.
@@ -551,7 +579,7 @@ From another clone we would need to do:
 to see the branches locally, or we could check them out.
 </p>
 
-<h3>Using git flow</h3>
+<h3>Setting up a new branch using git flow</h3>
 <p>We set up git flow to create feature branches from develop and can create a new feature branch like this:
 <pre>
 > git flow feature start my_thing
@@ -565,6 +593,50 @@ then edit some files, and commit them.
 which will change all the files as needed. <b>NOTE</b> that there appears to be a bug in git flow in that after creating a new feature branch and editing a file then git checkout will switch branches but not change the files. The files are flagged as modified, so that gives us some warning.  After doing a commit the git checkout will refuse to switch if changes are pending.
 'git add' does not affect this, you must commit a file first.  It's possible the bug is in plain git of course!
 </p>
+
+
+
+<h3>Updating a feature branch from the development branch</h3>
+
+<p>As work is done in the feature branch the development branch will also be changing.
+Periodically it's a good idea to update the feature branch with the development branch
+changes so that the two do not diverge too far which might make a final merge difficult.
+The recommended method for making the update is as follows:</p>
+
+<pre>
+1) make sure you are on your feature branch:            git checkout your_feature_branch
+
+2) add/commit all changes to the feature branch using   git add/commit
+
+3) switch to the local develop branch:                  git checkout develop
+
+4) update local develop branch:                         git pull origin
+
+5) resolve any conflicts arising from this:             git mergetool (or merge by hand)
+
+6) commit all the merge changes you have made:          git commit -a -m "merge in develop code."
+
+7) switch to feature branch                             git checkout your_feature_branch
+
+8) Now merge in the develop branch changes:             git rebase develop
+
+9) Resolve any conflicts:                               git mergetool
+
+10) Continue the rebase:                                git rebase --continue
+</pre>
+
+
+<p>Note that step 10) may produce further conflicts which will require merging, you
+should merge the files flagged as having conflicts and then run "git rebase --continue"
+and keep doing this until the rebase terminates cleanly.</p>
+
+<p>The method uses "rebase" to avoid introducing merge paths into the main repository and
+hence keeping it's branches as simple as possible. This is recommended good practice for
+<a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">git merges</a>
+of this type.</p>
+
+
+
 
 <h3>git flow and version numbers</h3>
 

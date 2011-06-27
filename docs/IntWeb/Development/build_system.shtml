@@ -328,6 +328,19 @@ summarised in the following table:</p>
 <p>"New Release" implies incrementing the release number and producing and saving release
 notes to the repository.</p>
 
+<h3>"Development" Builds</h2>
+
+<p>Development builds are made from the "develop" branch in the ZMap git repository. Use
+the following to make a development build:</p>
+
+
+<pre>
+&gt; ./zmap_update_run ./zmap_build_development.sh
+</pre>
+
+<p>Once the build has finished the results will be in ~zmap/BUILDS/DEVELOPMENT</p>
+
+
 
 
 <h3>"Release" Builds</h2>
