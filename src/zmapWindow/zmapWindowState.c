@@ -1,3 +1,4 @@
+/*  Last edited: Jun 27 13:52 2011 (edgrif) */
 /*  File: zmapWindowState.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -473,16 +474,19 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
   if (window->revcomped_features != restore.rev_comp_state)
     {
       zmapWindowStateRevCompRegion(window, &(restore.y1), &(restore.y2)) ;
-
-      /* There's a problem with positions here, we get called before everything
-       * has been drawn and therefore the block can be smaller than the original
-       * x1, x2 position of the mark causing the zmapWindowMarkSetWorldRange()
-       * call to fail because it can't find the block....
-       *
-       * We hack this by setting x1 to zero, this will fail if have multiple
-       * blocks horizontally but then so will a lot of things. */
-      restore.x1 = 0.0 ;
     }
+
+
+  /* There's a problem with positions here: we can be called before everything
+   * has been drawn (revcomp, window split) and therefore the block can be smaller
+   * or in a different position than the original x1, x2 position of the mark
+   * causing the zmapWindowMarkSetWorldRange() call to fail because it can't
+   * find the block....
+   *
+   * We hack this by setting x1 to zero, this will fail if have multiple
+   * blocks horizontally but then so will a lot of things. */
+  restore.x1 = 0.0 ;
+
 
   if (serialized->item.align_id != 0 && serialized->item.feature_id != 0)
     {
