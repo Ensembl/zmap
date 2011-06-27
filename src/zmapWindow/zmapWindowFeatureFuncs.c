@@ -159,7 +159,7 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 //	  if(window->revcomped_features)
 //	  	align->offset = window->sequence->end;
 
-	  if (zmapWindowMarkIsSet(window->mark))
+	  if (!found_feature && zmapWindowMarkIsSet(window->mark))
 	    {
 	      zmapWindowMarkGetSequenceRange(window->mark, &(align->start), &(align->end)) ;
 
