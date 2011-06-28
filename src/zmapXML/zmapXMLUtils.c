@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -36,7 +36,7 @@
 
 
 
-
+#include <string.h>
 #include <zmapXML_P.h>
 #include <ZMap/zmapUtils.h>
 
@@ -71,7 +71,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(ZMapXMLUtilsEventStackStruct *eve
   input = event_stack;
 
   while(input && input->event_type){ input++; size++; }
-  
+
   for(input = &event_stack[--size]; size >= 0; size--, input--)
     {
       transfer(input, &single);
@@ -88,7 +88,7 @@ GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack
   events = zMapXMLUtilsCreateEventsArray();
 
   events = zMapXMLUtilsAddStackToEventsArray(event_stack, events);
-  
+
   return events;
 }
 
@@ -136,4 +136,27 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 }
 
 
+
+/* copy a string and replace &thing; */
+/* sadly needed to unescape &apos;, no other characters are handled */
+/* quickly hacked for a bug fix, will review when the new XRemote is introduced */
+char *zMapXMLUtilsUnescapeStrdup(char *str)
+{
+	char *result = g_strdup(str);
+	char *p = result;
+
+	while (*p)
+	{
+		if(!g_ascii_strncasecmp(p,"&apos;",6))
+		{
+			*p++ = '\'';
+			strcpy(p,p+5);
+		}
+		else
+		{
+			p++;
+		}
+	}
+	return(result);
+}
 

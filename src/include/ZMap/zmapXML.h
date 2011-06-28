@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,7 +23,7 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -40,13 +40,13 @@
  * @{
  * */
 
-/*! 
+/*!
  * \brief macro to abort parsing if expression is true.
  * \param expression to test
  * \param zmapXMLParser parser object
  * \param char *message which will be returned to user
  * \retval TRUE also returning from calling function
- 
+
  * Without a validating parser it's difficult to ensure everything is
  * as it seems.  When writing start and end handlers for nested
  * elements checking correct level of nesting and that all parent
@@ -57,7 +57,7 @@
  * access to test the expression, raise an error (message) and return
  * TRUE from the handler if the expression is true.
  *
- * This should be read as 
+ * This should be read as
  * zMapXMLParserCheck, if true, error and return TRUE.
  */
 #define zMapXMLParserCheckIfTrueErrorReturn(EXPR, PARSER, MESSAGE) \
@@ -103,7 +103,7 @@ G_STMT_START{                                                      \
  * \brief A XML element object
  */
 typedef struct _zmapXMLElementStruct   *ZMapXMLElement;
-typedef struct _zmapXMLElementStruct 
+typedef struct _zmapXMLElementStruct
 {
   gboolean dirty;               /* internal flag */
   GQuark   name;                /* element name */
@@ -131,9 +131,9 @@ typedef struct _zmapXMLDocumentStruct  *ZMapXMLDocument;
 typedef struct _zmapXMLParserStruct    *ZMapXMLParser;
 typedef struct _ZMapXMLWriterStruct    *ZMapXMLWriter;
 
-typedef enum 
+typedef enum
   {
-    ZMAPXMLWRITER_OK                = 0, 
+    ZMAPXMLWRITER_OK                = 0,
     ZMAPXMLWRITER_FAILED_FLUSHING   = 101,
     ZMAPXMLWRITER_INCOMPLETE_FLUSH,
     ZMAPXMLWRITER_BAD_POSITION,
@@ -142,7 +142,7 @@ typedef enum
   } ZMapXMLWriterErrorCode;
 
 typedef enum
-  { 
+  {
     ZMAPXML_NULL_EVENT          = 0,
 
     ZMAPXML_START_ELEMENT_EVENT = 1 << 0,
@@ -221,10 +221,10 @@ typedef struct _ZMapXMLWriterEventStruct
  * everything in your handlers.
 
  */
-typedef gboolean 
+typedef gboolean
 (*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
-typedef int 
+typedef int
 (*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer, char *flushed_xml, int flushed_length, gpointer user_data);
 
 
@@ -288,7 +288,7 @@ char *zMapXMLElementStealContent(ZMapXMLElement element);
 ZMapXMLParser zMapXMLParserCreate(void *userData, gboolean validating, gboolean debug);
 void zMapXMLParserSetUserData(ZMapXMLParser parser, void *user_data);
 
-void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser, 
+void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser,
                                          ZMapXMLMarkupObjectHandler start,
                                          ZMapXMLMarkupObjectHandler end);
 void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
@@ -297,14 +297,14 @@ void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
 
 gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
                                 FILE *file);
-gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, 
-                                  void *data, 
+gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
+                                  void *data,
                                   int size);
 char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser);
 
 void zMapXMLParserPauseParsing(ZMapXMLParser parser);
 
-void zMapXMLParserRaiseParsingError(ZMapXMLParser parser, 
+void zMapXMLParserRaiseParsingError(ZMapXMLParser parser,
                                     char *error_string);
 
 ZMapXMLElement zMapXMLParserGetRoot(ZMapXMLParser parser);
@@ -333,7 +333,7 @@ long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser);
  * \brief Access to the xml at offset.
  * \param parser object
  * \param offset where element begins
- * \retval char * xml which needs to be free'd 
+ * \retval char * xml which needs to be free'd
 
  * Useful if you need to preserve a slice of XML that you don't know
  * how to parse for a round trip.
@@ -342,7 +342,7 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset);
 
 
 /* WRITER */
-ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, 
+ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback,
                                   gpointer flush_data);
 ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name);
 ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value);
@@ -363,6 +363,8 @@ GArray *zMapXMLUtilsAddStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_st
 GArray *zMapXMLUtilsAddStackToEventsArrayStart(ZMapXMLUtilsEventStackStruct *event_stack,
                                                GArray *events_array);
 GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack);
+
+char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 
 #endif /* ZMAP_XML_H */
 
