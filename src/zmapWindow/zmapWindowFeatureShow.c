@@ -744,7 +744,7 @@ GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
 
   if (show->xml_curr_notebook)
     zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
-    
+
   g_free(show) ;
 
   return(evidence) ;
@@ -1232,7 +1232,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		  gboolean found = TRUE ;
               int col_ind = 0;
 
-		  target = columns = zMapXMLAttributeValueToStr(attr) ;
+		  target = columns = zMapXMLUtilsUnescapeStrdup(zMapXMLAttributeValueToStr(attr) );
 
 		  /* We need to strtok out the titles..... */
 		  do
@@ -1289,6 +1289,8 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		      g_regex_unref(reg_ex) ;
 		    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+			g_free(columns);
 		}
 
 	      if (status)
@@ -1305,10 +1307,10 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		  else
 		    {
 		      gboolean found = TRUE ;
-		      char *target ;
+		      char *target,*columns ;
 		      GList *column_data = NULL ;
 
-		      target = zMapXMLAttributeValueToStr(attr) ;
+		      target = columns = zMapXMLUtilsUnescapeStrdup(zMapXMLAttributeValueToStr(attr) );
 
 		      do
 			{
@@ -1327,8 +1329,8 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
 		      types = column_data ;
 
+			g_free(columns);
 		    }
-
 		}
 	    }
 	}
@@ -1458,7 +1460,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
       else if((type = g_list_first(show->xml_curr_paragraph->compound_types)))
 	{
 	  gboolean found = TRUE ;
-	  char *target = content ;
+	  char * columns = zMapXMLUtilsUnescapeStrdup(content);
+	  char *target = columns ;
 	  GList *column_data = NULL ;
         int col_ind = 0;
 
@@ -1563,6 +1566,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 								  show->xml_curr_tagvalue_name, show->xml_curr_type,
 								  "compound", column_data,
 								  NULL) ;
+	g_free(columns);
 	}
     }
   else

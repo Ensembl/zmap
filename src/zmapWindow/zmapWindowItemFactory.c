@@ -751,11 +751,11 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
   if((run_data->frame != ZMAPFRAME_NONE) &&
      run_data->frame  != zmapWindowFeatureFrame(feature))
   {
-    zMapLogWarning("datalist Run filters on frame %d %d %s %s", run_data->frame,zmapWindowFeatureFrame(feature), g_quark_to_string(feature->unique_id), g_quark_to_string(run_data->set->unique_id));
+//    zMapLogWarning("datalist Run filters on frame %d %d %s %s", run_data->frame,zmapWindowFeatureFrame(feature), g_quark_to_string(feature->unique_id), g_quark_to_string(run_data->set->unique_id));
     return ;
   }
 
-    zMapLogWarning("datalist Run Single on frame %d %d %s %s @ %d-%d", run_data->frame,zmapWindowFeatureFrame(feature), g_quark_to_string(feature->unique_id), g_quark_to_string(run_data->set->unique_id),feature->x1,feature->x2);
+//    zMapLogWarning("datalist Run Single on frame %d %d %s %s @ %d-%d", run_data->frame,zmapWindowFeatureFrame(feature), g_quark_to_string(feature->unique_id), g_quark_to_string(run_data->set->unique_id),feature->x1,feature->x2);
 
   zmapWindowFToIFactoryRunSingle(run_data->factory,
 				 run_data->canvas_item,
