@@ -600,8 +600,14 @@ which will change all the files as needed. <b>NOTE</b> that there appears to be 
 
 <p>As work is done in the feature branch the development branch will also be changing.
 Periodically it's a good idea to update the feature branch with the development branch
-changes so that the two do not diverge too far which might make a final merge difficult.
-The recommended method for making the update is as follows:</p>
+changes so that the two do not diverge too far which might make a final merge of the feature
+branch back into the development branch very difficult.</p>
+
+<p>The method uses "rebase" to avoid introducing merge paths into the main repository and
+hence keeping it's branches as simple as possible. This is recommended good practice for
+<a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">git merges</a>
+of this type.</p>
+
 
 <pre>
 1) make sure you are on your feature branch:            git checkout your_feature_branch
@@ -620,20 +626,20 @@ The recommended method for making the update is as follows:</p>
 
 8) Now merge in the develop branch changes:             git rebase develop
 
-9) Resolve any conflicts:                               git mergetool
+9) Resolve any conflicts:                               git mergetool <font color="red">****</font>
 
 10) Continue the rebase:                                git rebase --continue
 </pre>
 
 
-<p>Note that step 10) may produce further conflicts which will require merging, you
-should merge the files flagged as having conflicts and then run "git rebase --continue"
+<p>Step 10) may produce further conflicts which will require merging, you
+should merge any files that were flagged as having conflicts and then run "git rebase --continue"
 and keep doing this until the rebase terminates cleanly.</p>
 
-<p>The method uses "rebase" to avoid introducing merge paths into the main repository and
-hence keeping it's branches as simple as possible. This is recommended good practice for
-<a href="http://www.kernel.org/pub/software/scm/git/docs/user-manual.html#bisect-merges">git merges</a>
-of this type.</p>
+<p><font color="red">****</font> NOTE that if you are doing the merge manually (rather than using
+a tool like "git mergetool") then you should do a "git add" for each merged file, do not do
+a "git commit" for the files though because during the rebase you are not on any branch.</p>
+
 
 
 
