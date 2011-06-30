@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 11:17 2011 (edgrif) */
+/*  Last edited: Jun 30 12:53 2011 (edgrif) */
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -32,7 +32,7 @@
  *-------------------------------------------------------------------
  */
 
-
+#include <ZMap/zmap.h>
 
 #include <glib.h>
 
