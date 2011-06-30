@@ -1,3 +1,4 @@
+/*  Last edited: Jun 29 10:08 2011 (edgrif) */
 /*  File: zmapWindowMenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1325,57 +1326,57 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 
 
 ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
-                                     ZMapGUIMenuItemCallbackFunc callback_func,
-                                     gpointer callback_data)
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
 {
-      /* get a list of featuresets from the window's context_map */
-      static ZMapGUIMenuItem menu = NULL;
-      ZMapGUIMenuItem m;
-      static int n_menu = 0;
+  /* get a list of featuresets from the window's context_map */
+  static ZMapGUIMenuItem menu = NULL;
+  ZMapGUIMenuItem m;
+  static int n_menu = 0;
 
-      ItemMenuCBData cbdata  = (ItemMenuCBData) callback_data;
-      GList *fs_list = cbdata->window->context_map->seq_data_featuresets;
-      GList *fsl;
-      int n_sets = g_list_length(fs_list);
-      int i = 0;
+  ItemMenuCBData cbdata  = (ItemMenuCBData) callback_data;
+  GList *fs_list = cbdata->window->context_map->seq_data_featuresets;
+  GList *fsl;
+  int n_sets = g_list_length(fs_list);
+  int i = 0;
 
-      if(!n_sets)	// || !zmapWindowMarkIsSet(cbdata->window->mark))
-            return NULL;
+  if(!n_sets)	// || !zmapWindowMarkIsSet(cbdata->window->mark))
+    return NULL;
 
-      if(n_menu < n_sets)
-      {
-            /* as this derives from config data read on creating the view
-             * it will not change unless we reconfig and open another view
-             * alloc enough for all views
-             */
-            if(menu)
-            {
-                  for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
-                        g_free(m->name);
-                  g_free(menu);
-            }
-            menu = g_new0(ZMapGUIMenuItemStruct, n_sets + 1);
-      }
+  if(n_menu < n_sets)
+    {
+      /* as this derives from config data read on creating the view
+       * it will not change unless we reconfig and open another view
+       * alloc enough for all views
+       */
+      if(menu)
+	{
+	  for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
+	    g_free(m->name);
+	  g_free(menu);
+	}
+      menu = g_new0(ZMapGUIMenuItemStruct, n_sets + 1);
+    }
 
-      for(i = 0, m = menu, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
-      {
-            const gchar *fset;
+  for(i = 0, m = menu, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
+    {
+      const gchar *fset;
 
-            m->type = ZMAPGUI_MENU_NORMAL;
+      m->type = ZMAPGUI_MENU_NORMAL;
 
-            fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
-            m->name = g_strdup_printf("Blixem short reads data from mark - %s", fset);
-            m->id = BLIX_SEQ + i;
-            m->callback_func = blixemMenuCB;
-      }
+      fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
+      m->name = g_strdup_printf("Blixem short reads data from mark - %s", fset);
+      m->id = BLIX_SEQ + i;
+      m->callback_func = blixemMenuCB;
+    }
 
-      m->type = ZMAPGUI_MENU_NONE;
-      m->name = NULL;
+  m->type = ZMAPGUI_MENU_NONE;
+  m->name = NULL;
 
-      /* this overrides data in the menus as given in the args, but index and func are always NULL */
-      zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+  /* this overrides data in the menus as given in the args, but index and func are always NULL */
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
-      return menu;
+  return menu;
 }
 
 
@@ -1404,29 +1405,29 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_SEQ:      /* one or more sets starting from BLIX_SEQ */
     default:
       {
-            GList *l;
-            int i;
+	GList *l;
+	int i;
 
-            for(i = menu_item_id - BLIX_SEQ,
-                        l = menu_data->window->context_map->seq_data_featuresets;
-                        i && l; l = l->next, i--)
-                  continue;
+	for(i = menu_item_id - BLIX_SEQ,
+	      l = menu_data->window->context_map->seq_data_featuresets;
+	    i && l; l = l->next, i--)
+	  continue;
 
-            if(l)
-                  seq_set = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+	if(l)
+	  seq_set = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
       }
       break;
 
     }
 
   /* Called on a column or an item ? */
-  if(menu_item_id >= BLIX_SEQ)
-  {
-   	if(zmapWindowMarkIsSet(menu_data->window->mark))
-    		zmapWindowCallBlixemOnPos(menu_data->window, ZMAPWINDOW_ALIGNCMD_SEQ, seq_set, menu_data->x, menu_data->y) ;
-    	else
-    		zMapMessage("You must set the mark first to select this option","");
-  }
+  if (menu_item_id >= BLIX_SEQ)
+    {
+      if (zmapWindowMarkIsSet(menu_data->window->mark))
+	zmapWindowCallBlixemOnPos(menu_data->window, ZMAPWINDOW_ALIGNCMD_SEQ, seq_set, menu_data->x, menu_data->y) ;
+      else
+	zMapMessage("You must set the mark first to select this option","");
+    }
   else if ((FooCanvasGroup *) menu_data->item == menuDataItemToColumn(menu_data->item))
     zmapWindowCallBlixemOnPos(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
   else

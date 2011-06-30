@@ -1,3 +1,4 @@
+/*  Last edited: Jun 30 13:16 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -155,6 +156,16 @@ typedef struct
 }MarkRegionUpdateStruct;
 
 
+
+typedef struct FeatureCoordStructType
+{
+  char *name ;
+  int start ;
+  int end ;
+  int length ;
+} FeatureCoordStruct, *FeatureCoord ;
+
+
 static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  ZMapFeatureSequenceMap sequence, void *app_data,
                                  GList *feature_set_names,
@@ -281,6 +292,9 @@ static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip);
 static gboolean within_x_percent(ZMapWindow window, double percent, double y, gboolean in_top);
 static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top);
 static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out);
+
+static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords) ;
+static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
 
 
@@ -4985,6 +4999,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)) && (length = g_list_length(selected)))
     {
       GString *text ;
+      GArray *feature_coords ;
       FooCanvasItem *item;
       ZMapWindowCanvasItem canvas_item;
       ZMapFeature item_feature ;
@@ -4994,11 +5009,15 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
       text = g_string_sized_new(512) ;
 
+      feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
+
       item = FOO_CANVAS_ITEM(selected->data) ;
+
       if (ZMAP_IS_CANVAS_ITEM(item))
 	canvas_item = ZMAP_CANVAS_ITEM( item );
       else
 	canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
+
       item_feature = zmapWindowItemGetFeature(canvas_item) ;
 
       /* Processing is different if there is only one item highlighted and it's a transcript. */
@@ -5014,7 +5033,8 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
 	  for (i = 0 ; i < item_feature->feature.transcript.exons->len ; i++)
 	    {
-	      int display_start, display_end, index ;
+	      FeatureCoordStruct feature_coord ;
+	      int index ;
 
 	      if (window->revcomped_features)
 		index = item_feature->feature.transcript.exons->len - (i + 1) ;
@@ -5023,14 +5043,15 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
 	      span = &g_array_index(item_feature->feature.transcript.exons, ZMapSpanStruct, index) ;
 
-	      zmapWindowCoordPairToDisplay(window, span->x1, span->x2,
-					   &display_start, &display_end) ;
+	      feature_coord.name = name ;
+	      feature_coord.start = span->x1 ;
+	      feature_coord.end = span->x2 ;
+	      feature_coord.length = (span->x2 - span->x1 + 1) ;
 
-	      g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
-				     name,
-				     display_start, display_end, (span->x2 - span->x1 + 1),
-				     (i < item_feature->feature.transcript.exons->len ? "\n" : "")) ;
+	      feature_coords = g_array_append_val(feature_coords, feature_coord) ;
 	    }
+
+	  makeSelectionString(window, text, feature_coords) ;
 	}
       else
 	{
@@ -5038,11 +5059,15 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
 	  while (selected)
 	    {
+	      FeatureCoordStruct feature_coord ;
+
 	      item = FOO_CANVAS_ITEM(selected->data) ;
+
 	      if (ZMAP_IS_CANVAS_ITEM(item))
 		canvas_item = ZMAP_CANVAS_ITEM( item );
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
+
 	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 
 	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item)))
@@ -5059,18 +5084,24 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 					       &selected_end, &selected_length) ;
 		}
 
-	      g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
-				     (char *)g_quark_to_string(item_feature->original_id),
-				     selected_start, selected_end, selected_length,
-				     (i < (length - 1) ? "\n" : ""));
+	      feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
+	      feature_coord.start = selected_start ;
+	      feature_coord.end = selected_end ;
+	      feature_coord.length = selected_length ;
+
+	      feature_coords = g_array_append_val(feature_coords, feature_coord) ;
 
 	      selected = selected->next;
 	      i++;
 	    }
+
+	  makeSelectionString(window, text, feature_coords) ;
 	}
 
       selected = g_list_first(selected) ;
       g_list_free(selected) ;
+
+      g_array_free(feature_coords, TRUE) ;
 
       selection = g_string_free(text, FALSE) ;
     }
@@ -5103,9 +5134,6 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
 
   item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
   zMapAssert(item_data) ;
-
-  zmapWindowCoordPairToDisplay(window, item_data->start, item_data->end,
-			       &fstart, &fend) ;
 
   flength = (item_data->end - item_data->start + 1) ;
 
@@ -5190,9 +5218,8 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
       break ;
     }
 
-  zmapWindowCoordPairToDisplay(window, feature->x1, feature->x2,
-			       selected_start, selected_end) ;
-
+  *selected_start = feature->x1 ;
+  *selected_end = feature->x2 ;
   *selected_length = *feature_length ;
 
   return populated ;
@@ -6044,4 +6071,73 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
     }
 
   return moved;
+}
+
+
+
+static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords)
+{
+  int i ;
+
+
+  for (i = 0 ; i < feature_coords->len ; i++)
+    {
+      FeatureCoord feature_coord ;
+
+      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
+
+      zmapWindowCoordPairToDisplay(window, feature_coord->start, feature_coord->end,
+				   &feature_coord->start, &feature_coord->end) ;
+
+      if (feature_coord->start > feature_coord->end)
+	zMapUtilsSwop(int, feature_coord->start, feature_coord->end) ;
+    }
+
+  g_array_sort(feature_coords, sortCoordsCB) ;
+
+  for (i = 0 ; i < feature_coords->len ; i++)
+    {
+      FeatureCoord feature_coord ;
+
+      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
+
+      g_string_append_printf(selection_str, "\"%s\"    %d %d (%d)%s",
+			     feature_coord->name,
+			     feature_coord->start, feature_coord->end, feature_coord->length,
+			     (i < feature_coords->len ? "\n" : "")) ;
+    }
+
+  return ;
+}
+
+
+/* Sorts lists of features names and their coords, sorts on name first then coord. */
+static gint sortCoordsCB(gconstpointer a, gconstpointer b)
+{
+  gint result = 0 ;
+  FeatureCoord feature_coord1 = (FeatureCoord)a ;
+  FeatureCoord feature_coord2 = (FeatureCoord)b ;
+
+  if ((result = g_ascii_strcasecmp(feature_coord1->name, feature_coord2->name)) == 0)
+    {
+      if (feature_coord1->start < feature_coord2->start)
+	{
+	  result = -1 ;
+	}
+      else if (feature_coord1->start == feature_coord2->start)
+	{
+	  if (feature_coord1->end < feature_coord2->end)
+	    result = -1 ;
+	  else if (feature_coord1->end == feature_coord2->end)
+	    result = 0 ;
+	  else
+	    result = 1 ;
+	}
+      else
+	{
+	  result = 1 ;
+	}
+    }
+
+  return result ;
 }

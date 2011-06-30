@@ -1,3 +1,4 @@
+/*  Last edited: Jun 30 12:53 2011 (edgrif) */
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -31,7 +32,7 @@
  *-------------------------------------------------------------------
  */
 
-
+#include <ZMap/zmap.h>
 
 #include <glib.h>
 
@@ -139,19 +140,19 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 	{
 	  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
-
 	  align = g_new0(ZMapWindowCallbackCommandAlignStruct, 1) ;
 
 	  /* Set up general command field for callback. */
 	  align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
 
-	  if(feature)	/* may be null if (temporary) blixem BAM option selected */
-	  	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-								     ZMAPFEATURE_STRUCT_BLOCK) ;
+	  if (feature)	/* may be null if (temporary) blixem BAM option selected */
+	    align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+								       ZMAPFEATURE_STRUCT_BLOCK) ;
 	  else
-	  	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
-								     ZMAPFEATURE_STRUCT_BLOCK) ;
+	    align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
+								       ZMAPFEATURE_STRUCT_BLOCK) ;
 	  zMapAssert(align->block) ;
+
 
 	  /* We should have a flag to do the offsetting, I thought we did but it seems to have
 	   * vanished. */
@@ -159,10 +160,12 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
 //	  if(window->revcomped_features)
 //	  	align->offset = window->sequence->end;
 
+	  /* Always set mark position if it's there.... */
+	  if (zmapWindowMarkIsSet(window->mark))
+	    zmapWindowMarkGetSequenceRange(window->mark, &(align->start), &(align->end)) ;
+
 	  if (!found_feature && zmapWindowMarkIsSet(window->mark))
 	    {
-	      zmapWindowMarkGetSequenceRange(window->mark, &(align->start), &(align->end)) ;
-
 	      align->position = align->start + ((align->end - align->start) / 2) ;
 	    }
 	  else
