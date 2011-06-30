@@ -783,10 +783,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 						/* tick coord is # bases off the end due to revcomp mixture */
 						/* this is the scr_start calc from above reversed */
 						/* but we draw 1 bp backwards */
-						draw_at = tick_coord + seq_end - seq_start + 2 + 1 + 1;
-						/* extra + 1 to base coordinates as for fwd strand,
-						   base occupies space away from origin afetr coordinate */
-						/* extra + 1 to compensate for + 0.5 canvas coord for fwd strand */
+						draw_at = tick_coord + seq_end - seq_start + 2 + 1;
 					}
 					else
 					{
@@ -794,7 +791,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 					}
 
 					label[0] = 0;
-					canvas_coord = (double) draw_at + 0.5;	/* aim for the middle of the base */
+					canvas_coord = (double) draw_at;
 //if(top) printf("coord: %d %d (%d,%d) = %d\n", tick_coord, digit, seq_start,seq_end,draw_at);
 
 					canvas_coord *= projection_factor;
@@ -821,6 +818,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 						double x = 0.0;
 						int num,frac;
 						char *sign = "";
+						double offset = revcomped ? -0.5 : 0.5;
 
 						num = tick_coord / base;
 						if(num < 0)
@@ -854,7 +852,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 						item = foo_canvas_item_new(text,
 							foo_canvas_text_get_type(),
 							"x",          x,
-							"y",          canvas_coord,
+							"y",          canvas_coord + offset,	/* display between ticks at high zoom */
 							"text",       label,
 							"font_desc",  font_desc,
 							"fill_color", "black",
