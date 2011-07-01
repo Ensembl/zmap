@@ -1,3 +1,4 @@
+/*  Last edited: Jun 30 16:08 2011 (edgrif) */
 /*  File: zmapLogging.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -259,8 +260,20 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
   /* If code details are wanted then output them in the log. */
   if (log->show_code_details)
-    g_string_append_printf(format_str, "\t%s:%s:%s:%d",
-			   ZMAPLOG_CODE_TUPLE, file, (function ? function : ""), line) ;
+    {
+      char *file_basename ;
+
+      file_basename = g_path_get_basename(file) ;
+
+      g_string_append_printf(format_str, "\t%s:%s:%s%s:%d",
+			     ZMAPLOG_CODE_TUPLE,
+			     file_basename,
+			     (function ? function : ""),
+			     (function ? "()" : ""),
+			     line) ;
+
+      g_free(file_basename) ;
+    }
 
 
   switch(log_level)
