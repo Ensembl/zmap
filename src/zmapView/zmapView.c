@@ -1,3 +1,4 @@
+/*  Last edited: Jul  1 14:29 2011 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1651,30 +1652,30 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
 static GList *zmapViewGetIniSources(char *config_str,char ** stylesfile)
 {
-     ZMapConfigIniContext context ;
-      GList *settings_list = NULL;
+  GList *settings_list = NULL;
+  ZMapConfigIniContext context ;
 
-      if ((context = zMapConfigIniContextProvide()))
-      {
+  if ((context = zMapConfigIniContextProvide()))
+    {
 
-        if(config_str)
-            zMapConfigIniContextIncludeBuffer(context, config_str);
+      if(config_str)
+	zMapConfigIniContextIncludeBuffer(context, config_str);
 
-        settings_list = zMapConfigIniContextGetSources(context);
+      settings_list = zMapConfigIniContextGetSources(context);
 #if MH17_NOT_NEEDED
-// now specified per server
-        if(stylesfile)
+      // now specified per server
+      if(stylesfile)
         {
-            zMapConfigIniContextGetString(context,
-                              ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+	  zMapConfigIniContextGetString(context,
+					ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_STYLESFILE,stylesfile);
         }
 #endif
-        zMapConfigIniContextDestroy(context);
+      zMapConfigIniContextDestroy(context);
 
-      }
+    }
 
-      return(settings_list);
+  return(settings_list);
 }
 
 
@@ -1724,9 +1725,13 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
 }
 
 
-ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark)
+ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash, GQuark featurequark)
 {
-  return(g_hash_table_lookup(hash, GUINT_TO_POINTER(featurequark)));
+  ZMapConfigSource config_source ;
+
+  config_source = g_hash_table_lookup(hash, GUINT_TO_POINTER(featurequark)) ;
+
+  return config_source ;
 }
 
 
@@ -1734,15 +1739,15 @@ ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark feature
 /* Loads features within block from the sets req_featuresets that lie within features_start
  * to features_end. The features are fetched from the data sources and added to the existing
  * view. N.B. this is asynchronous because the sources are separate threads and once
- * retrieved the features are added via a gtk event. */
-
-/* NOTE req_sources is nominally a list of featuresets.
+ * retrieved the features are added via a gtk event.
+ *
+ * NOTE req_sources is nominally a list of featuresets.
  * Otterlace could request a featureset that beolngs to ACE
  * and then we'd have to find the column for that to find it in the ACE config
+ *
+ *
+ * NOTE block is NULL for startup requests
  */
-
-
-/* NOTE block is NULL for startup requests */
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_sources,
 			  int features_start, int features_end, gboolean group_flag, gboolean terminate)
 {
@@ -1754,7 +1759,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   char *stylesfile = NULL;
   int req_start,req_end;
   ZMapViewConnection view_con ;
-
   gboolean requested = FALSE;
 
 
@@ -1762,16 +1766,16 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   sources = zmapViewGetIniSources(NULL,&stylesfile);
   hash = zmapViewGetFeatureSourceHash(sources);
 
-      /* MH17 NOTE
-       * these are forward strand coordinates
-       * see commandCB() for code previously here
-       * previous design decisions resulted in the feature conetxt being revcomped
-       * rather than just the view, and data gets revcomped when received if necessary
-       * external interfaces (eg otterlace) have no reason to know if we've turned the view
-       * upside down and will always request as forward strand
-       * only a rewuest fromn the window can be upside down, and is converted to fwd strand
-       * before calling this function
-       */
+  /* MH17 NOTE
+   * these are forward strand coordinates
+   * see commandCB() for code previously here
+   * previous design decisions resulted in the feature conetxt being revcomped
+   * rather than just the view, and data gets revcomped when received if necessary
+   * external interfaces (eg otterlace) have no reason to know if we've turned the view
+   * upside down and will always request as forward strand
+   * only a rewuest fromn the window can be upside down, and is converted to fwd strand
+   * before calling this function
+   */
   req_start = features_start;
   req_end = features_end;
 
@@ -1779,8 +1783,18 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   for ( ; req_sources ; req_sources = g_list_next(req_sources))
     {
       GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
+      char *unique_name ;
+      GQuark unique_id ;
 
-      server = zmapViewGetSourceFromFeatureset(hash,featureset);
+
+      zMapDebugPrint(FALSE, "feature set quark (%d) is: %s", featureset, g_quark_to_string(featureset)) ;
+
+      unique_name = (char *)g_quark_to_string(featureset) ;
+      unique_id = zMapFeatureSetCreateID(unique_name) ;
+
+      zMapDebugPrint(FALSE, "feature set unique quark (%d) is: %s", unique_id, g_quark_to_string(unique_id)) ;
+
+      server = zmapViewGetSourceFromFeatureset(hash, unique_id) ;
 
       if (!server && view->context_map.featureset_2_column)
 	{
@@ -1791,22 +1805,23 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	   * there is some possibility of collision if mis-configured
 	   * and what will happen will be no data
 	   */
+	  if ((GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
 
-	  GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(featureset)) ;
-	  if (GFFset)
 	    {
 	      featureset = GFFset->column_id;
 	      server = zmapViewGetSourceFromFeatureset(hash,featureset);
 	    }
 	}
 
-      //zMapLogMessage("Load features %s from %s, group = %d\n", g_quark_to_string(featureset),server->url,server->group);
 
       if (server)
 	{
 	  GList *req_featuresets = NULL;
 	  int existing = FALSE;
 	  ZMapViewConnection view_conn = NULL;
+
+	  zMapLogMessage("Load features %s from %s, group = %d\n",
+			 g_quark_to_string(featureset),server->url,server->group) ;
 
 	  // make a list of one feature only
 	  req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
