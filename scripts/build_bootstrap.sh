@@ -375,9 +375,11 @@ ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
 
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
 
-if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    [ "x$RELEASE_LOCATION" != "x" ] || RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
-fi
+# LET'S TRY ALWAYS NAMING THE RELEASE DIRECTORY....
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+#    [ "x$RELEASE_LOCATION" == "x" ] && RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+#fi
+RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
 
 
 # For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
