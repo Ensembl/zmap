@@ -1,0 +1,25 @@
+<h2>New Model Canvas</h2>
+<p>An attempt to speed things up a bit.
+</p>
+
+<h4>Problems being addressed</h4>
+<p>Code and data is quite complex and gains little - each feature on display is 10 levels deep in the Foo Canvas and positioning features in the screen is a complex process that is prone to error.
+</p>
+<p>Adding features to the canvas is a time consuming process that also involves some complex interactions with X.  The Foo Canvas is not desinged to handle the number of features displayed by ZMap.
+</p>
+
+<h3>ZMapWindowContainer</h3>
+<p>
+This will be simplified to look like the diagram below.  The feature context will remain as is with potentially many blocks and more than one align, although with present use we are restricted to a single block. If more than one block is implemented in future this will be done via a separate pane on display (a ZMapWindow) for each block, and different alignments can be locked together or otherwise.
+</p>
+<p>Within a block there will be no strand containers but instead we will add ZMapWindowColumn groups directly to the block. Reverse and forward strand columsn and the strand seperator will be identified by strand explicitly and will be positioned by using the existing columns sorting code, tweaked as necessary.
+</p>
+<p>
+Each container will hold data to specify strand and frame and also borders if any.
+</p>
+<p>As the number of columns is not very great (typically less than 100) these will be stored in a simple linked list.
+</p>
+
+<img src="Design/notes/new_model_canvas.png">
+
+
