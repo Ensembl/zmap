@@ -132,6 +132,11 @@ else
 fi
 
 
+# The parent directory for the build.
+#
+# NOTE, if you change the way the parent directory is named then you
+# should edit the crontab for the overnight build to update the directory there too.
+#
 PARENT_BUILD_DIR="$BUILDS_DIR/$BUILD_PREFIX"_BUILDS
 if [ ! -d $PARENT_BUILD_DIR ] || [ ! -r $PARENT_BUILD_DIR ] ; then
     message_exit "$PARENT_BUILD_DIR is not a directory or is not readable."
@@ -141,6 +146,9 @@ fi
 # We do not know the directory for the logfile until here so cannot start logging
 # until this point, from this point this script prints any messages to stdout
 # _and_ to the logfile.
+#
+# NOTE, if you change the name of the log file then you should edit the crontab
+# for the overnight build to update the name there too.
 #
 GLOBAL_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_BUILD.LOG
 
@@ -240,7 +248,6 @@ if [ -z "$CRON" ] ; then
     message_out "==================="
 
 fi
-
 
 
 # If not run as cron then give user a chance to cancel, must be before we
