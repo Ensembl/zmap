@@ -51,17 +51,19 @@ my $PROGNAME = basename($0) ;
 				   release ZMAP_RELEASE
 				   update  ZMAP_UPDATE)
 				   };
-    my $DEV_PREPROC_VARS = {qw(version ZMAP_VERSION
-				   release ZMAP_RELEASE
-				   update  ZMAP_UPDATE
-				   develop ZMAP_DEVELOPMENT_ID)
+#    my $DEV_PREPROC_VARS = {qw(version ZMAP_VERSION
+#				   release ZMAP_RELEASE
+#				   update  ZMAP_UPDATE
+#				   develop ZMAP_DEVELOPMENT_ID)
+#				   };
+    my $DEV_PREPROC_VARS = {qw(develop ZMAP_DEVELOPMENT_ID)
 				   };
     my $DEVELOP_REL = 0 ;
     my $VERSION_STR = "" ;
     my $DEVELOP_PREFIX = "develop-" ;
     my $VS_PREFIX    = "RELEASE_";
     my $RELEASE_STR  = "ZMAP_VERSION-ZMAP_RELEASE-ZMAP_UPDATE";
-    my $DEVELOP_STR  = "$RELEASE_STR-ZMAP_DEVELOPMENT_ID";
+    my $DEVELOP_STR  = "ZMAP_DEVELOPMENT_ID";
 
 
     my $requested    = {};
@@ -142,7 +144,7 @@ my $PROGNAME = basename($0) ;
       {
       if ( $DEVELOP_REL )
 	{
-	$VERSION_STR  = $DEVELOP_PREFIX . $VS_PREFIX . $VERSION_STR ;
+	$VERSION_STR  = $VERSION_STR ;
 	}
       else
 	{
@@ -162,7 +164,10 @@ my $PROGNAME = basename($0) ;
 
     message_out("Repository tag is set to: $cvs_tag.\n") unless $QUIET;
 
-    print "$cvs_tag\n";
+
+    print "$cvs_tag\n" ;
+    exit 0 ;
+
 
     cvs_tag(checkout_dir, $cvs_tag) if $do_tag;
 
@@ -290,7 +295,7 @@ sub make_cvs_tag{
         }
 
 	# development define is an alphanumeric string
-        s/^(\#define\s($reg))\s*(\S+)/$1 . " " .($3)/e;
+        s/^(\#define\s($reg))\s*"(\S+)"/$1 . " " .($3)/e;
         if(defined($2) && defined($3)){
             my ($ppvar, $value) = ($2, $3);
             $tag =~ s/$ppvar/$value/;
