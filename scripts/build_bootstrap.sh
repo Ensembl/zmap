@@ -366,6 +366,26 @@ zmap_message_out "All hosts alive."
 
 
 
+
+
+
+# For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
+if [ -n "$GIT_VERSION_INFO" ] ; then
+
+    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
+
+    zmap_message_out "Collecting GIT describe info..."
+
+    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
+
+    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
+
+    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
+
+fi
+
+
+
 # Get current version stuff... Do this before building...
 #
 zmap_message_out "Fetching version using versioner script"
@@ -388,19 +408,19 @@ mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release direct
 
 
 # For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
-if [ -n "$GIT_VERSION_INFO" ] ; then
-
-    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
-
-    zmap_message_out "Collecting GIT describe info..."
-
-    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
-
-    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
-
-    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
-
-fi
+#if [ -n "$GIT_VERSION_INFO" ] ; then
+#
+#    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
+#
+#    zmap_message_out "Collecting GIT describe info..."
+#
+#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
+#
+#    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
+#
+#    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
+#
+#fi
 
 
 
