@@ -245,6 +245,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_GRAPH_DENSITY, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,
             "graph-density", "Density plot",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.density) ,ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_DENSITY_MIN_BIN, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,
+            "graph-density-min-bin", "smallest bin size in pixels",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.min_bin) ,ZMAPSTYLE_MODE_GRAPH },
 
 
     { STYLE_PROP_ALIGNMENT_PARSE_GAPS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,

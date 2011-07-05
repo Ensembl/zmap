@@ -160,6 +160,7 @@ typedef enum
     STYLE_PROP_GRAPH_BASELINE,
     STYLE_PROP_GRAPH_SCALE,
     STYLE_PROP_GRAPH_DENSITY,
+    STYLE_PROP_GRAPH_DENSITY_MIN_BIN,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -267,6 +268,7 @@ typedef enum
 /* graph properties. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY   "graph-density"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN   "graph-density-min-bin"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
@@ -607,7 +609,10 @@ typedef struct
 
   double baseline ;                                 /*!< zero level for graph.  */
   ZMapStyleGraphScale scale;        // log or linear
+
+  int min_bin;				/* min size in pixels */
   gboolean density;                 // density plot: recalc bins on zoom & use whole column foo
+
 
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
 
@@ -1069,6 +1074,7 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 #define zMapStyleBaseline(style)   (style->mode_data.graph.baseline)
 #define zMapStyleGraphMode(style)   (style->mode_data.graph.mode)
 #define zMapStyleDensity(style)   (style->mode_data.graph.density)
+#define zMapStyleDensityMinBin(style)   (style->mode_data.graph.min_bin)
 
 gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag) ;
 gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag) ;

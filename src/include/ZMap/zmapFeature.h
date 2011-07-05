@@ -920,6 +920,8 @@ typedef struct _zmapFeatureStack
       ZMapFeatureSet set;
       ZMapFeature feature;
       GQuark id;        /* used for density plots, set to zero */
+      ZMapStrand strand;
+      ZMapFrame frame;
 } ZMapFeatureStackStruct, *ZMapFeatureStack;
 
 

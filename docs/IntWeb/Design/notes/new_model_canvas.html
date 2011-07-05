@@ -20,6 +20,56 @@ Each container will hold data to specify strand and frame and also borders if an
 <p>As the number of columns is not very great (typically less than 100) these will be stored in a simple linked list.
 </p>
 
-<img src="Design/notes/new_model_canvas.png">
+<img src="Design/notes/new_model_canvas.png"  class="img">
+
+<h3>Canvas coordinates</h3>
+<p>The feature context has coordinates specified as forward strand chromosome based from 1 (although the segment viewed is unlikely to be).  In a block these coordinates will map to zero based canvas coordinates, with the first base in the viewed sequence mapping to 0.0.
+</p>
+<p>Note that currently reverse complement operates on the feature context which is then re-displayed.
+</p>
+
+<h3>Featuresets</h3>
+<p>Following experiments with coverage displays and graph features it looks feasable to code each featureset as a single foo canvas item and to have this item handle expose events and display individual features.  This means that what were Foo Canvas Items (and ZMapWindowCanvasItems) become siomple data structures, and performance improvements of 5x on add and 3x on paint are achievable.
+</p>
+<p>Each featureset canvas item will cover the whole column and several may be added to a single column.
+</p>
+
+<h3>Complex features</h3>
+<p>Transcript features and gapped alignments consist of sereis of rectangles joined by lines and each collection of GDK primitives is regarded as a single feature (but note that individual exons may be selected and highlit.)  This extra layer of complexity will be handled by the featureset item code - it already exists in the item factory code and simply need to be moved and adjusted
+</p>
+
+<h3>Data Structuring - containers</h3>
+<p><pre>
+ZMapwindowContainer is a FooCanvasGroup
+has:
+	type				(block, column)
+	xpos,ypos (in FooCanvasGroup)
+	strand
+	frame
+	border_x,border_y		(border is outside sequence region)
+	start,end			(canvas coords of sequence region)
+</pre>
+</p>
+
+<h3>Data Structuring - canvas items</h3>
+<p>
+<pre>
+ZMapWindowCanvasItem is a FooCanvasItem
+has:
+	type				(transcript, alignment, graph, glyph etc)
+	featureset			(pointer to feature context)
+	features			(skip list of data structures for displayed items)
+	flags				(visible, bumped etc)
+
+ZMapWindowTranscriptItem is a ZMapWindowCanavsItem
+ZMapWindowAlignmentItem is a ZMapWindowCanavsItem
+etc
+</pre>
+</p>
+<p>
+Each featureset item is a class which handles display etc for indiviudual features. A data structure is used by the class to describe each displayed feature and refers back to the feature context.
+</p>
+
+
 
 

@@ -3647,7 +3647,7 @@ static void destroyConnection(ZMapView view, ZMapViewConnection view_conn)
   if(view->sequence_server == view_conn)
       view->sequence_server = NULL;
 
-  zMapThreadDestroy(view_conn->thread) ;
+//  zMapThreadDestroy(view_conn->thread) ;
 
   g_free(view_conn->url) ;
 

@@ -198,22 +198,23 @@ If necessary we can create display indexes for long and short items to provide a
   Note that we will call foo_canvas_item_new() directly rather than via zMapWindowCanvasItemCreate()
 
 - problems:
-  canvas item->feature gets accessed directly and cannot be NULL
+  canvas item->feature gets accessed directly and cannot be NULL (OK: set to first)
   We can invent a singleton feature that gets assigned data depending on mouse clicks??
   we need to handle long items??
   style needs to be set globally -> this looks like the add_interval() call but we need to
   check compatablilty and/or write the code directly
 
 - to do:
-  paint the graph in the _draw function
-  test as for plain graph features: should display the same
-  test using two featuresets with the same data from GFF files and display as old and new style
-  display as lines not boxes -> combine data points into a poly_line
+*  paint the graph in the _draw function
+*  test as for plain graph features: should display the same
+*  test using two featuresets with the same data from GFF files and display as old and new style
+* display as lines not boxes -> combine data points into a poly_line
+* display as heatmap: boxes are full width and colour coded; ok with irregular size bins?
   handle mouse clicks etc, point and bounds
   handle long items (trivial? -> no: need to clip)
   handle hide and show
-  re-bucket on display and zoom
-  get some timing stats
+* re-bucket on display and zoom
+* get some timing stats
   add on GC skew
 </pre>
 

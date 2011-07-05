@@ -1265,55 +1265,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 
 
-#if 0
-/* This function is kind of a disaster from the memory and processing point of view,
- * it has taken the original basic feature item and bloated by adding:
- *
- * FOO_TYPE_CANVAS_RECT, FOO_TYPE_CANVAS_GROUP & FOO_TYPE_CANVAS_GROUP
- *
- *  */
-/* MH17 since tidying up the struct, this does nothing so bye bye */
-
-static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
-{
-  FooCanvasGroup *group;
-//  FooCanvasItem *remove_me;
-//  int i;
-#ifdef DEBUG_BACKGROUND_BOX
-  GdkColor outline = {0};
-  GdkColor fill    = {0};
-
-  gdk_color_parse("orange", &outline);
-  gdk_color_parse("gold", &fill);
-#endif /* DEBUG_BACKGROUND_BOX */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  group = FOO_CANVAS_GROUP(canvas_item);
-
-  /* This is fun.  We add more items to ourselves... The parent object's (FooCanvasGroup).
-   * These _must_ be 'forgotten' by the group though. We do this by free'ing the item
-   * list it holds.  We hold onto the new items created and as this object implements the
-   * FooCanvasItem interface they'll get drawn how and in what order we want them to be.
-   */
-
-
-
-
-#ifdef NEVER_INCLUDE_DEBUG_EVENTS
-  g_signal_connect(G_OBJECT(canvas_item->items[WINDOW_ITEM_BACKGROUND]), "event",
-		   G_CALLBACK(canvasItemEventCB), NULL);
-#endif /* NEVER_INCLUDE_DEBUG_EVENTS */
-
-
-  return ;
-}
-#endif
 
 static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item)
 {

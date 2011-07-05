@@ -45,31 +45,20 @@
 
 
 
-/* cut down version of foo-canvas-RE for internal data
- * NOTE we also handle lines by mangling the coordinates
+/*
+ * minimal data struct to define a graph segment
+ * handle boxes as y1,y2 + width
+ * handle lines as a series of points y2 + width
  */
-/* NOTE: not a GObject, no GdkGC's */
-/* this is probably the wrong header */
+
 typedef struct _zmapWindowCanvasGraphSegment
 {
       ZMapFeature feature;
 
-      double x1, y1, x2, y2;        /* Corners of item (box or line) */
-      double width;                 /* Outline width */
+      double y1, y2;    	/* top, bottom of item (box or line) */
+	double score;		/* determines feature width, gets re-calc'd on zoom */
+	double width;
 
-
-      guint fill_colour;             /* Fill color, RGBA */
-      guint outline_colour;          /* Outline color, RGBA */
-      gulong fill_pixel;            /* Fill color */
-      gulong outline_pixel;         /* Outline color */
-
-      /* Configuration flags */
-
-      gboolean line;          /* line else is box */
-
-      gboolean fill_set;    /* Is fill color set? */
-      gboolean outline_set; /* Is outline color set? */
-      gboolean width_pixels;      /* Is outline width specified in pixels or units? */
 } ZMapWindowCanvasGraphSegmentStruct, *ZMapWindowCanvasGraphSegment;
 
 
@@ -82,7 +71,7 @@ typedef struct _zmapWindowGraphDensityItemClassStruct
 
   GHashTable *density_items;         /* singleton canvas items per column, indexed by unique id */
   GList *graph_segment_free_list;
-#define N_GS_ALLOC      100
+#define N_GS_ALLOC      1000
 
 } zmapWindowGraphDensityItemClassStruct;
 
@@ -90,17 +79,25 @@ typedef struct _zmapWindowGraphDensityItemClassStruct
 
 typedef struct _zmapWindowGraphDensityItemStruct
 {
-  zmapWindowCanvasItem __parent__;
+  FooCanvasItem __parent__;
 
   GQuark id;
   ZMapFeatureTypeStyle style;
 
+  ZMapStrand strand;
+  ZMapFrame frame;
+
+  double zoom;			/* current units per pixel */
+
+  double start,end;
 
   GList *source_bins;
   gboolean source_sorted;
+  gboolean source_used;		/* ie not re-binned, do not free */
   gboolean re_bin;		/* re-calculate bins according to zoom */
   gboolean overlap;
   int max_overlap;		/* size of the longest item */
+  int n_source_bins;
 
   GList *display_bins;
   ZMapSkipList display_index;
@@ -108,11 +105,22 @@ typedef struct _zmapWindowGraphDensityItemStruct
       /* graphics context for all contained features
        * each one has its own colours that we set on draw (eg for heatmaps)
        * foo_canvas_rect also has stipples but we don't use then ATM
-       * it alsoe pretneds to do alpha but 'X doesn't do it'
+       * it also pretneds to do alpha but 'X doesn't do it'
        * crib foo-canvas-rect-elipse.c for inspiration
        */
-  GdkGC *gc;               /* GC for filling */
+  GdkGC *gc;             	  /* GC for graphics output */
 
+  guint fill_colour;            /* Fill color, RGBA */
+  guint outline_colour;         /* Outline color, RGBA */
+  gulong fill_pixel;            /* Fill color */
+  gulong outline_pixel;         /* Outline color */
+
+  double width;                 /* Outline width */
+
+      /* Configuration flags */
+  gboolean fill_set;    	/* Is fill color set? */
+  gboolean outline_set;	 	/* Is outline color set? */
+  gboolean width_pixels;      /* Is outline width specified in pixels or units? */
 
 } zmapWindowGraphDensityItemStruct;
 

@@ -38,20 +38,65 @@
  * but we adopt slightly different approach:
  * - we use forward and backward pointers not just forward
  * - index levels are implemented by list pointers up and down not an array, which means that we
- *   do not concern ourselves with how nuch data we want to index
- * - the list layers are explicitly balanced by inserting and deletind nodes
+ *   do not concern ourselves with how nuch data we want to index and data is allocated only when needed
+ * - the list layers are explicitly balanced by inserting and deleting nodes
  * - layes are removed when they become empty
  *
  * NOTE initially we do not implement balancing, and stop at the point where
  * the data structure is secure through insert and delete operations
  */
 
+#include <memory.h>
 #include <ZMap/zmapSkipList.h>
 
 
+#if SLOW_BUT_EASY
 
 #define allocSkipList() g_new0(zmapSkipListStruct,1)
 #define freeSkipList(x) g_free(x)
+
+#else
+
+/* faster but very difficult to detect the change */
+
+#define N_SKIP_LIST_ALLOC	1000
+
+static ZMapSkipList allocSkipList(void);
+static void freeSkipList(ZMapSkipList sl);
+
+static ZMapSkipList skip_list_free_G = NULL;
+
+static ZMapSkipList allocSkipList(void)
+{
+      ZMapSkipList sl;
+
+      if(!skip_list_free_G)
+      {
+            int i;
+            sl = g_new(zmapSkipListStruct,N_SKIP_LIST_ALLOC);
+
+            for(i = 0;i < N_SKIP_LIST_ALLOC;i++)
+                  freeSkipList(sl++);
+      }
+
+      sl = skip_list_free_G;
+      skip_list_free_G = sl->next;
+
+      /* these can get re-allocated so must zero */
+      memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
+      return(sl);
+}
+
+
+/* need to be a ZMapSkipListFreeFunc for use as a callback */
+static void freeSkipList(ZMapSkipList sl)
+{
+      sl->next = skip_list_free_G;
+      skip_list_free_G = sl;
+}
+
+#endif
+
 
 
 ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
@@ -273,7 +318,7 @@ void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func)
 
 	while(skip_list)
 	{
-		if(free_func)
+		if(!skip_list->down && free_func)	/* skip list stack all points down to the same data */
 			free_func(skip_list->data);
 		delete = skip_list;
 		skip_list = (ZMapSkipList) skip_list->next;

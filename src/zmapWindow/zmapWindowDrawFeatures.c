@@ -677,7 +677,17 @@ void zmapGetFeatureStack(ZMapFeatureStack feature_stack,ZMapFeatureSet feature_s
 {
       feature_stack->id = 0;              /* set once per col for graph features in the item factory */
 
+	feature_stack->strand = ZMAPSTRAND_NONE;
+	feature_stack->frame = ZMAPFRAME_NONE;
+
       feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
+	if(feature && feature->style)	/* chicken */
+	{
+		if(zMapStyleIsStrandSpecific(feature->style))
+			feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+		if(zMapStyleIsFrameSpecific(feature->style))
+			feature_stack->frame = zmapWindowFeatureFrame(feature);
+	}
 
       zMapAssert(feature_set || feature);
 

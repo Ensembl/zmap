@@ -755,6 +755,13 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
     return ;
 
   run_data->feature_stack->feature = feature;
+  if(feature->style)	/* chicken */
+  {
+	if(zMapStyleIsStrandSpecific(feature->style))
+		run_data->feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+	if(zMapStyleIsFrameSpecific(feature->style))
+		run_data->feature_stack->frame = zmapWindowFeatureFrame(feature);
+  }
 
   zmapWindowFToIFactoryRunSingle(run_data->factory,
       run_data->canvas_item,
@@ -2062,20 +2069,18 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
   zMapAssert(style->mode == ZMAPSTYLE_MODE_GRAPH);
 
 
-  if(style->mode_data.graph.density)
+//  if(style->mode_data.graph.density)
+  if(1)
   {
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
       /* histogram graph mode */
 
-      width = zMapStyleGetWidth(style) ;
       min_score = zMapStyleGetMinScore(style) ;
       max_score = zMapStyleGetMaxScore(style) ;
 
       line_width = factory->line_width;
-
-      zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;       /* Make sure we cover the whole last base. */
 
       numerator = feature->score - min_score ;
       denominator = max_score - min_score ;
@@ -2095,19 +2100,6 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
             if (dx > 1)
             dx = 1 ;
       }
-      x1 = 0.0 + (width * zMapStyleBaseline(style)) ;
-      x2 = 0.0 + (width * dx) ;
-
-      /* If the baseline is not zero then we can end up with x2 being less than x1 so swop them for
-      * drawing, perhaps the drawing code should take care of this. */
-      if (x1 > x2)
-      {
-            double tmp ;
-
-            tmp = x1 ;
-            x1 = x2 ;
-            x2 = tmp ;
-      }
 
       if(!run_data->feature_stack->id)
       {
@@ -2121,7 +2113,8 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
             /* adds once per column+style, then returns that repeatedly */
             /* also adds an 'interval' foo canvas item which we need to look up */
       canvas_item = zMapWindowGraphDensityItemGetDensityItem(parent, run_data->feature_stack->id,
-            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2,width, style);
+            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
+            run_data->feature_stack->strand,run_data->feature_stack->frame);
 
       zMapAssert(canvas_item);
       if(!canvas_item->feature)
@@ -2133,16 +2126,18 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
  	 * unlike alignments that get zMapWindowFeatureReplaced()
  	 */
  	/* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
-  	 * we add a data struct and add colurs to that in situ, as the feature has its style handy
+  	 * we add a data struct and add colours to that in situ, as the feature has its style handy
   	 */
 
+	/* NOTE as density items get re-binned on zoom and also get drawn in different ways
+	 * (line, histogram, heatmap) we only set the item's score/width here
+	 * not the x1,x2 coordinates
+	 */
   	{
-  		GList *item_list;
+  		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
+  		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
 
-  		item_list = ((FooCanvasGroup *) canvas_item)->item_list;
-  		zMapAssert(item_list);	/* must exist, we just added it */
-
-	      zMapWindowGraphDensityAddItem((FooCanvasItem *) item_list->data, feature, x1,y1,x2,y2);
+	      zMapWindowGraphDensityAddItem(foo, feature, dx, y1, y2);
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;
