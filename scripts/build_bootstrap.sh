@@ -373,7 +373,9 @@ ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
     -path $CHECKOUT_BASE/ \
     -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
 
+
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
+
 
 # LET'S TRY ALWAYS NAMING THE RELEASE DIRECTORY....
 #if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then

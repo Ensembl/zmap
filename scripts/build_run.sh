@@ -45,15 +45,14 @@ FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
 
 
 # Various build params.
-OUTPUT=$BUILDS_DIR
 SLEEP=15
 TAG_RELEASE_BUILD=no
 TAG_CVS=''
 INC_REL_VERSION=''
 INC_UPDATE_VERSION=''
-RELEASES_DIR=''
 RT_TO_CVS=''
-FEATURE_DIR=''
+INPUT_DIR=''
+OUTPUT_DIR=''
 BRANCH=''
 CRON=''
 GIT_FEATURE_INFO=''
@@ -98,23 +97,22 @@ function message_exit
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -f <zmap feature directory> -g -l <release_dir in BUILDS> -m -n -t -r -u -z ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -f <zmap feature directory> -g -m -n -t -r -u ]   <build prefix>"
 
-while getopts ":a:b:cdf:gil:mnrtuz:" opt ; do
+while getopts ":a:b:cdf:gi:mno:rtu" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BRANCH=$OPTARG ;;
 	c  ) CRON='yes' ;;
 	d  ) ZMAP_MASTER_BUILD_DIST='yes'   ;;
-	f  ) FEATURE_DIR=$OPTARG ;;
+	i  ) INPUT_DIR=$OPTARG ;;
 	g  ) GIT_FEATURE_INFO='-g' ;;
-	l  ) RELEASE_LOCATION=$OPTARG ;;
 	m  ) RT_TO_CVS='no' ;;
 	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes' ;;
+	o  ) OUTPUT_DIR=$OPTARG ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
-	z  ) RELEASES_DIR=$OPTARG ;;
 	\? ) message_exit "Bad arg flag: $usage" ;;
     esac
 done
@@ -127,10 +125,16 @@ shift $(($OPTIND - 1))
 if [ $# == 1 ]; then
     BUILD_PREFIX=$1
 
-    # redo mail subject now we have a name for the build.
-    MAIL_SUBJECT="ZMap $BUILD_PREFIX Failed (control script)"
+    # redo _default_ mail subject now we have a name for the build.
+    MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Failed (control script)"
 else
   message_exit "No build prefix specifed: $usage"
+fi
+
+
+PARENT_BUILD_DIR="$BUILDS_DIR/$BUILD_PREFIX"_BUILDS
+if [ ! -d $PARENT_BUILD_DIR ] || [ ! -r $PARENT_BUILD_DIR ] ; then
+    message_exit "$PARENT_BUILD_DIR is not a directory or is not readable."
 fi
 
 
@@ -138,7 +142,7 @@ fi
 # until this point, from this point this script prints any messages to stdout
 # _and_ to the logfile.
 #
-GLOBAL_LOG=$BUILDS_DIR/$BUILD_PREFIX.LOG
+GLOBAL_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_BUILD.LOG
 
 
 # remove any previous log.
@@ -151,33 +155,11 @@ message_out "ZMap $BUILD_PREFIX Build Started"
 # do some set up and basic checks.......
 #
 
-if [ -n "$FEATURE_DIR" ] ; then
-    if [ ! -d $FEATURE_DIR ] || [ ! -r $FEATURE_DIR ] ; then
-	message_exit "$FEATURE_DIR is not a directory or is not readable."
+if [ -n "$INPUT_DIR" ] ; then
+    if [ ! -d $INPUT_DIR ] || [ ! -r $INPUT_DIR ] ; then
+	message_exit "$INPUT_DIR is not a directory or is not readable."
     fi
 fi
-
-mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT" 
-
-
-# We don't support this option at the moment, it seems kind of useless
-# given that we either check out a new version of the code or don't want
-# the code updated at all.
-#
-#if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
-#    old_dir=$(pwd)
-#    new_dir=$(dirname  $BUILD_SCRIPT)
-#    up2date=$(basename $BUILD_SCRIPT)
-#    cd $new_dir
-#    export CVS_RSH=ssh
-#    cvs update -C $up2date || { 
-#	echo "Failed to cvs update $BUILD_SCRIPT"
-#	echo "Failed to cvs update $BUILD_SCRIPT" | \
-#	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
-#	exit 1; 
-#    }
-#    cd $old_dir
-#fi
 
 
 
@@ -189,11 +171,12 @@ mkdir -p $OUTPUT || message_exit "Cannot mkdir $OUTPUT"
 CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
 
 # Now flags with options
-if [ -n "$FEATURE_DIR" ] ; then
+if [ -n "$INPUT_DIR" ] ; then
 
-  CMD_OPTIONS="$CMD_OPTIONS -f $FEATURE_DIR"
+  CMD_OPTIONS="$CMD_OPTIONS -f $INPUT_DIR"
 
 fi
+
 
 if [ -n "$BRANCH" ] ; then
 
@@ -201,24 +184,18 @@ if [ -n "$BRANCH" ] ; then
 
 fi
 
-if [ -n "$RELEASE_LOCATION" ] ; then
 
-  CMD_OPTIONS="$CMD_OPTIONS RELEASE_LOCATION=$BUILDS_DIR/$RELEASE_LOCATION"
+# now env. variables. I'd like to supplant these with cmd line flags.
 
-fi
+CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$BUILDS_DIR/$PARENT_BUILD_DIR"
 
-
-if [ -n "$RELEASES_DIR" ] ; then
-
-  CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$BUILDS_DIR/$RELEASES_DIR"
-
-fi
 
 if [ -n "$RT_TO_CVS" ] ; then
 
   CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_RT_TO_CVS=$RT_TO_CVS"
 
 fi
+
 
 if [ -n "$ZMAP_MASTER_RT_RELEASE_NOTES" ] ; then
 
@@ -228,6 +205,7 @@ if [ -n "$ZMAP_MASTER_RT_RELEASE_NOTES" ] ; then
     CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_FORCE_RELEASE_NOTES=yes"
 
 fi
+
 
 if [ -n "$ZMAP_MASTER_BUILD_DIST" ] ; then
 
@@ -250,7 +228,8 @@ if [ -z "$CRON" ] ; then
     message_out "==================="
     message_out "        Running on: $(hostname)"
     message_out "      Build script: $BUILD_SCRIPT"
-    message_out "      Build_prefix: $BUILD_PREFIX"
+    message_out "      Build prefix: $BUILD_PREFIX"
+    message_out "   Build directory: $BUILDS_DIR/$PARENT_BUILD_DIR"
     message_out "   Command options: $CMD_OPTIONS"
     message_out "        Global log: $GLOBAL_LOG"
     message_out "Errors reported to: $ERROR_RECIPIENT"
@@ -259,16 +238,16 @@ if [ -z "$CRON" ] ; then
 fi
 
 
+
 # If not run as cron then give user a chance to cancel, must be before we
 # start ssh otherwise we will leave running processes all over the place.
-# After this we trap any attempts to Cntl-C etc.
+# (After this we trap any attempts to Cntl-C etc.)
 #
 if [ -z "$CRON" ] ; then
     message_out "Pausing for $SLEEP seconds, hit Cntl-C to abort cleanly."
 
     sleep $SLEEP
 fi
-
 
 
 # trap any attempts by user to kill script to prevent dangling processes on other machines.
@@ -313,7 +292,7 @@ rm -f root_checkout.sh || exit 1;   \
 if [ $? != 0 ]; then
     # There was an error, email someone about it!
     TMP_LOG=/tmp/zmap_fail.$$.log
-    echo "ZMap Build Failed"                              > $TMP_LOG
+    echo "ZMap $BUILD_PREFIX Build Failed"                > $TMP_LOG
     echo ""                                              >> $TMP_LOG
     echo "Tail of log:"                                  >> $TMP_LOG
     echo ""                                              >> $TMP_LOG
@@ -327,7 +306,7 @@ if [ $? != 0 ]; then
 
     RC=1
 else
-    MAIL_SUBJECT="ZMap $BUILD_PREFIX Succeeded"
+    MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Succeeded"
 
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
 	tail $GLOBAL_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
