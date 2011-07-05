@@ -191,7 +191,7 @@ fi
 
 # now env. variables. I'd like to supplant these with cmd line flags.
 
-CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$BUILDS_DIR/$PARENT_BUILD_DIR"
+CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$PARENT_BUILD_DIR"
 
 
 if [ -n "$RT_TO_CVS" ] ; then
