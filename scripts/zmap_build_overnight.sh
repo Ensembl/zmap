@@ -20,11 +20,11 @@
 RC=0
 
 
-BUILD_PREFIX='OVERNIGHT_BUILD'
+BUILD_PREFIX='OVERNIGHT'
 OUTPUT=$BUILD_PREFIX
 
 
-./build_run.sh -b -e -g -l $OUTPUT $BUILD_PREFIX || RC=1
+./build_run.sh -b -e -g $BUILD_PREFIX || RC=1
 
 
 exit $RC

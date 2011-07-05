@@ -17,12 +17,9 @@
 RC=0
 
 
-BUILD_PREFIX='ONE_OFF_BUILD'
-OUTPUT=$BUILD_PREFIX
+BUILD_PREFIX='ONE_OFF'
 ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
-
-./build_run.sh -a $ERROR_RECIPIENT -d -g -l $OUTPUT $BUILD_PREFIX || RC=1
-
+./build_run.sh -a $ERROR_RECIPIENT -d -g $BUILD_PREFIX || RC=1
 
 exit $RC
