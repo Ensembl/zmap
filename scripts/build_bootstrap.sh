@@ -383,6 +383,9 @@ zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_
 #fi
 RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
 
+mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release directory $RELEASE_LOCATION"
+
+
 
 # For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
 if [ -n "$GIT_VERSION_INFO" ] ; then
@@ -697,10 +700,13 @@ zmap_message_out "About to do: tar -zcf$TAR_FILE $zmap_tmp_dir"
 tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
 #tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
 
-if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    zmap_tar_old_releases $ZMAP_RELEASES_DIR
-    zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
-fi
+
+# Turning this off for now as it makes life difficult for anacode.
+#
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+#    zmap_tar_old_releases $ZMAP_RELEASES_DIR
+#    zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
+#fi
 
 
 if [ "x$RELEASE_LOCATION" == "x" ]; then

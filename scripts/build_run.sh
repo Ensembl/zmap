@@ -162,6 +162,10 @@ if [ -n "$INPUT_DIR" ] ; then
 fi
 
 
+if [ -n "$OUTPUT_DIR" ] ; then
+    mkdir $OUTPUT_DIR || message_exit "$INPUT_DIR is not a directory or is not readable."
+fi
+
 
 
 # Plug together command options..........
