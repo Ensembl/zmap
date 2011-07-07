@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 08:44 2011 (edgrif) */
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -228,14 +229,17 @@ typedef struct
  * SMap in ZMap we can use SMap structs instead....BUT strand is needed here too !!!!! */
 typedef struct
 {
-      /* NOTE even if reversed coords are as start < end */
-  ZMapSpanStruct parent;          /* start/end in parent span (context) */
-  ZMapSpanStruct block;             /* start,end in align, aka child seq */
-      /* NOTE for a single align parent and block coords will be the same
-       * if another align exists then block is the coords in that align,
-       * parent is the related master_align coords
-       */
+  /* NOTE even if reversed coords are as start < end */
+  ZMapSpanStruct parent;				    /* start/end in parent span (context) */
+
+  ZMapSpanStruct block;					    /* start,end in align, aka child seq */
+
+  /* NOTE for a single align parent and block coords will be the same
+   * if another align exists then block is the coords in that align,
+   * parent is the related master_align coords
+   */
   gboolean reversed;
+
 } ZMapMapBlockStruct, *ZMapMapBlock ;
 
 
