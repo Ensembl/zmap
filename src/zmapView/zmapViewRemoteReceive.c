@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 09:13 2011 (edgrif) */
 /*  File: zmapViewRemoteRequests.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1475,10 +1476,9 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 	    if (result && !zMapXMLParserLastErrorMsg(parser))
 	      {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		ZMapView view = request_data->view ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		/* I BELIEVE THIS IS NO LONGER NECESSARY AS COORDS ARE PASSED TO US AS CHROMOSOME
 		 * COORDS, I'VE LEFT THIS CODE IN UNTIL WE CAN TEST WITH THE NEW OTTERLACE
 		 * THAT IT ALL WORKS. */
@@ -1841,7 +1841,6 @@ static void zoomWindowToFeature(ZMapView view, RequestData input_data, ResponseD
   if ((list = g_list_first(input_data->feature_list)))
     {
       ZMapFeature feature = (ZMapFeature)(list->data);
-      gboolean zoomed = FALSE ;
 
       if ((zMapWindowZoomToFeature(view_window->window, feature)))
 	{
@@ -1970,12 +1969,13 @@ static void loadFeatures(ZMapView view, RequestData input_data, ResponseData out
     }
   else
     {
-      start = input_data->block->block_to_sequence.block.x1 ;
-      end = input_data->block->block_to_sequence.block.x2 ;
+      start = input_data->block->block_to_sequence.parent.x1 ;
+      end = input_data->block->block_to_sequence.parent.x2 ;
     }
 
   if (output_data->code == ZMAPXREMOTE_OK)
-    zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, start, end, SOURCE_GROUP_DELAYED, TRUE) ;
+    zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, start, end,
+			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 
   return ;
 }
@@ -1995,13 +1995,16 @@ static void getFeatureNames(ZMapView view, RequestData input_data, ResponseData 
   window = view_window->window ;
 
 
-  if (input_data->start < input_data->block->block_to_sequence.block.x2 || input_data->end > input_data->block->block_to_sequence.block.x2)
+  /* IS THIS RIGHT ??? AREN'T WE USING PARENT COORDS...??? */
+  if (input_data->start < input_data->block->block_to_sequence.block.x2
+      || input_data->end > input_data->block->block_to_sequence.block.x2)
     {
       g_string_append_printf(output_data->messages,
 			     "Requested coords (%d, %d) are outside of block coords (%d, %d).",
 			     input_data->start, input_data->end,
 			     input_data->block->block_to_sequence.block.x1,
-                       input_data->block->block_to_sequence.block.x2) ;
+			     input_data->block->block_to_sequence.block.x2) ;
+
       output_data->code = ZMAPXREMOTE_BADREQUEST;
     }
   else
