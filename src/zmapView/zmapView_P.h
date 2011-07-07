@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 08:25 2011 (edgrif) */
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -391,7 +392,8 @@ void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
-			  int features_start, int features_end, gboolean group, gboolean terminate) ;
+			  int features_start, int features_end,
+			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
