@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 08:25 2011 (edgrif) */
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1177,7 +1178,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* Rebase coords in blixem by offset. */
   if (blixem_data->position)
     {
-      int offset, tmp1,tmp2 ;
+      int offset, tmp1 ;
 
       offset = tmp1 = blixem_data->offset ;
 
