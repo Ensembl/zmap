@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 16:18 2011 (edgrif) */
 /*  File: zmapServerProtocolHandler.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -55,6 +56,32 @@
 
 
 
+/*
+Note that these are not even in the same order!
+
+ZMAPTHREAD_RETURNCODE_OK, ZMAPTHREAD_RETURNCODE_TIMEDOUT,
+            ZMAPTHREAD_RETURNCODE_REQFAIL, ZMAPTHREAD_RETURNCODE_BADREQ,
+            ZMAPTHREAD_RETURNCODE_SERVERDIED, ZMAPTHREAD_RETURNCODE_QUIT
+
+ _(ZMAP_SERVERRESPONSE_OK, , "ok", "", "")                              \
+    _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args", "", "")          \
+    _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request", "", "")       \
+    _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed", "", "")                \
+    _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out", "", "")              \
+    _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died", "", "")
+
+ZMAPTHREAD_REPLY_INIT, ZMAPTHREAD_REPLY_WAIT, ZMAPTHREAD_REPLY_GOTDATA, ZMAPTHREAD_REPLY_REQERROR,
+            ZMAPTHREAD_REPLY_DIED, ZMAPTHREAD_REPLY_CANCELLED, ZMAPTHREAD_REPLY_QUIT } ZMapThreadReply ;
+
+*/
+
+
+
+
+
+
+
+
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
  * allows us to do this. */
 typedef struct
@@ -86,29 +113,33 @@ typedef struct
 } DrawableStruct, *Drawable ;
 
 
-gboolean zmap_server_feature2style_debug_G = FALSE;
-gboolean zmap_server_styles_debug_G = FALSE;
-
-
 static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
 				   void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
+
 static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out) ;
 static void findStyleCB(gpointer data, gpointer user_data) ;
 #if OLD_STYLES_CODE
 static gboolean getStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out) ;
 #endif
-ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out) ;
+static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out) ;
 
 static ZMapThreadReturnCode getStatus(ZMapServer server, ZMapServerReqGetStatus request, char **err_msg_out);
+static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code) ;
 
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
  * any threads can use it. */
 static ZMapProtocolInitListStruct protocol_init_G = {PTHREAD_MUTEX_INITIALIZER, NULL} ;
+
+
+
+
+gboolean zmap_server_feature2style_debug_G = FALSE;
+gboolean zmap_server_styles_debug_G = FALSE;
 
 
 
@@ -290,7 +321,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
 }
 
 
-void zMapServerCreateRequestDestroy(ZMapServerReqAny request)
+void zMapServerRequestDestroy(ZMapServerReqAny request)
 {
   switch (request->type)
     {
@@ -337,38 +368,6 @@ void zMapServerCreateRequestDestroy(ZMapServerReqAny request)
 }
 
 
-/*
-Note that these are not even in the same order!
-
-ZMAPTHREAD_RETURNCODE_OK, ZMAPTHREAD_RETURNCODE_TIMEDOUT,
-            ZMAPTHREAD_RETURNCODE_REQFAIL, ZMAPTHREAD_RETURNCODE_BADREQ,
-            ZMAPTHREAD_RETURNCODE_SERVERDIED, ZMAPTHREAD_RETURNCODE_QUIT
-
- _(ZMAP_SERVERRESPONSE_OK, , "ok", "", "")                              \
-    _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args", "", "")          \
-    _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request", "", "")       \
-    _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed", "", "")                \
-    _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out", "", "")              \
-    _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died", "", "")
-
-ZMAPTHREAD_REPLY_INIT, ZMAPTHREAD_REPLY_WAIT, ZMAPTHREAD_REPLY_GOTDATA, ZMAPTHREAD_REPLY_REQERROR,
-            ZMAPTHREAD_REPLY_DIED, ZMAPTHREAD_REPLY_CANCELLED, ZMAPTHREAD_REPLY_QUIT } ZMapThreadReply ;
-
-*/
-
-ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
-{
-      switch(code)
-      {
-      case ZMAP_SERVERRESPONSE_OK:        return(ZMAPTHREAD_RETURNCODE_OK);
-      case ZMAP_SERVERRESPONSE_BADREQ:    return(ZMAPTHREAD_RETURNCODE_BADREQ);
-      case ZMAP_SERVERRESPONSE_REQFAIL:
-      case ZMAP_SERVERRESPONSE_UNSUPPORTED:return(ZMAPTHREAD_RETURNCODE_REQFAIL);
-      case ZMAP_SERVERRESPONSE_TIMEDOUT:
-      case ZMAP_SERVERRESPONSE_SERVERDIED:return(ZMAPTHREAD_RETURNCODE_SERVERDIED);
-      }
-      return ZMAPTHREAD_RETURNCODE_REQFAIL;
-}
 
 
 /* This routine sits in the slave thread and is called by the threading interface to
@@ -398,7 +397,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     server = (ZMapServer)*slave_data ;
 
 #ifdef MH_NEVER_INCLUDE_THIS_CODE
-if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url->query,request->type);
+  if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url->query,request->type);
 #endif
 
   switch (request->type)
@@ -418,7 +417,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
-          thread_rc = thread_RC(request->response);
+	    thread_rc = thread_RC(request->response);
 	  }
 	else
 	  {
@@ -433,13 +432,13 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
       }
     case ZMAP_SERVERREQ_OPEN:
       {
-         ZMapServerReqOpen open = (ZMapServerReqOpen)request_in ;
+	ZMapServerReqOpen open = (ZMapServerReqOpen)request_in ;
 
-	  if ((request->response = zMapServerOpenConnection(server,open)) != ZMAP_SERVERRESPONSE_OK)
+	if ((request->response = zMapServerOpenConnection(server,open)) != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
-          thread_rc = thread_RC(request->response);
+	    thread_rc = thread_RC(request->response);
 	  }
 
 	break ;
@@ -453,14 +452,14 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	     = zMapServerGetServerInfo(server, &info)) != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
-          thread_rc = thread_RC(request->response);
+	    thread_rc = thread_RC(request->response);
 	  }
 	else
 	  {
 	    get_info->database_name_out = info.database_name ;
 	    get_info->database_title_out = info.database_title ;
 	    get_info->database_path_out = info.database_path ;
-          get_info->request_as_columns = info.request_as_columns ;
+	    get_info->request_as_columns = info.request_as_columns ;
 	  }
 
 	break ;
@@ -478,18 +477,18 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 						      &(feature_sets->source_2_sourcedata_inout)) ;
 
 
-      if (request->response == ZMAP_SERVERRESPONSE_OK)
-        {
-          if(zmap_server_feature2style_debug_G)       // OK status: only do this for active databases not files
-            {
-              /* Print out the featureset -> styles lists. */
-              zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out);
-            }
-        }
+	if (request->response == ZMAP_SERVERRESPONSE_OK)
+	  {
+	    if(zmap_server_feature2style_debug_G)       // OK status: only do this for active databases not files
+	      {
+		/* Print out the featureset -> styles lists. */
+		zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out);
+	      }
+	  }
         else if(request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
-          thread_rc = thread_RC(request->response);
+	    thread_rc = thread_RC(request->response);
 	  }
 	break ;
       }
@@ -512,7 +511,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 		!= ZMAP_SERVERRESPONSE_OK))
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
-          thread_rc = thread_RC(request->response);
+	    thread_rc = thread_RC(request->response);
 	  }
 	else
 	  {
@@ -525,15 +524,15 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    zMapAssert(g_hash_table_size(blocks) == 1) ;
 
 	    block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
-          if(!block->block_to_sequence.t2)
-          {
-            // mh17: this happens before getFeatures? which is where the data gets set
-            // adding the if has no effect of course
-	      block->block_to_sequence.q1 = block->block_to_sequence.t1
-	            = context->context->sequence_to_parent.c1 ;
-	      block->block_to_sequence.q2 = block->block_to_sequence.t2
-	            = context->context->sequence_to_parent.c2 ;
-          }
+	    if(!block->block_to_sequence.t2)
+	      {
+		// mh17: this happens before getFeatures? which is where the data gets set
+		// adding the if has no effect of course
+		block->block_to_sequence.q1 = block->block_to_sequence.t1
+		  = context->context->sequence_to_parent.c1 ;
+		block->block_to_sequence.q2 = block->block_to_sequence.t2
+		  = context->context->sequence_to_parent.c2 ;
+	      }
 	    block->block_to_sequence.q_strand = block->block_to_sequence.t_strand = ZMAPSTRAND_FORWARD ;
 #endif
 	  }
@@ -548,7 +547,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
-          thread_rc = thread_RC(request->response);
+	    thread_rc = thread_RC(request->response);
 	  }
 
 	break ;
@@ -566,7 +565,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
 	      {
 		*err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
-            thread_rc = thread_RC(request->response);
+		thread_rc = thread_RC(request->response);
 	      }
 	  }
 
@@ -584,22 +583,23 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
       {
         ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)request_in ;
 
-      thread_rc = getStatus(server, get_status, err_msg_out) ;
-      break ;
+	thread_rc = getStatus(server, get_status, err_msg_out) ;
+	break ;
       }
 
     case ZMAP_SERVERREQ_TERMINATE:
       {
         request->response = zMapServerCloseConnection(server);
         if(request->response == ZMAP_SERVERRESPONSE_OK)
-            request->response = zMapServerFreeConnection(server);
+	  request->response = zMapServerFreeConnection(server);
         if(request->response == ZMAP_SERVERRESPONSE_OK)
-            thread_rc = ZMAPTHREAD_RETURNCODE_QUIT ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_QUIT ;
         else
-            thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;     // server will likely evaporate and be detected
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;     // server will likely evaporate and be detected
 
         break ;
       }
+
     default:
       zMapCheck(1, "Coding error, unknown request type number: %d", request->type) ;
       break ;
@@ -608,9 +608,8 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
   /* Return server. */
   *slave_data = (void *)server ;
 #ifdef MH_NEVER_INCLUDE_THIS_CODE
-if(*slave_data) zMapLogMessage("req %s/%s req %d returns %d",server->url->protocol,server->url->query,request->type,thread_rc);
+  if(*slave_data) zMapLogMessage("req %s/%s req %d returns %d",server->url->protocol,server->url->query,request->type,thread_rc);
 #endif
-
 
   return thread_rc ;
 }
@@ -647,6 +646,12 @@ ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
 
   return thread_rc ;
 }
+
+
+
+/* 
+ *                     Internal routines
+ */
 
 
 
@@ -842,7 +847,7 @@ static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_style
 }
 
 
-    /* GFunc()    */
+/* GFunc()    */
 static void findStyleCB(gpointer data, gpointer user_data)
 {
   GQuark style_id = GPOINTER_TO_INT(data) ;
@@ -866,10 +871,7 @@ static void findStyleCB(gpointer data, gpointer user_data)
 
 
 
-
-
-
-ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out)
+static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   GHashTable *tmp_styles = NULL ;
@@ -973,47 +975,79 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 
 
   if(styles->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
-  {
-
+    {
       /* Make sure that all the styles that are required for the feature sets were found.
-      * (This check should be controlled from analysing the number of feature servers or
-      * flags set for servers.....) */
+       * (This check should be controlled from analysing the number of feature servers or
+       * flags set for servers.....) */
 
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-            && !haveRequiredStyles(tmp_styles, styles->required_styles_in, &missing_styles))
-      {
-            *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
-				      missing_styles) ;
-            g_free(missing_styles) ;
-            thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-      }
+	  && !haveRequiredStyles(tmp_styles, styles->required_styles_in, &missing_styles))
+	{
+	  *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
+					 missing_styles) ;
+	  g_free(missing_styles) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
       else if(missing_styles)
-      {
-            g_free(missing_styles);	   /* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
-      }
+	{
+	  g_free(missing_styles);	   /* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
+	}
 
       /* Find out if the styles will need to have their mode set from the features.
-      * I'm feeling like this is a bit hacky because it's really an acedb issue. */
+       * I'm feeling like this is a bit hacky because it's really an acedb issue. */
       /* mh17: these days ACE can be set to use a styles file */
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-            && !(styles->styles_file_in))
-      {
-            if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
+	  && !(styles->styles_file_in))
+	{
+	  if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
 	      != ZMAP_SERVERRESPONSE_OK)
-	      {
+	    {
 	      *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	      }
-      }
-  }
+	    }
+	}
+    }
+
 
   /* return the styles in the styles struct... */
   styles->styles_out = tmp_styles ;
-
 
   return thread_rc ;
 }
 
 
+
+/* Return a thread return code for each type of server response. */
+static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
+{
+  ZMapThreadReturnCode thread_rc ;
+
+  switch(code)
+    {
+    case ZMAP_SERVERRESPONSE_OK:
+      thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+      break ;
+
+    case ZMAP_SERVERRESPONSE_BADREQ:
+      thread_rc = ZMAPTHREAD_RETURNCODE_BADREQ ;
+      break ;
+
+    case ZMAP_SERVERRESPONSE_REQFAIL:
+    case ZMAP_SERVERRESPONSE_UNSUPPORTED:
+      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+      break ;
+
+    case ZMAP_SERVERRESPONSE_TIMEDOUT:
+    case ZMAP_SERVERRESPONSE_SERVERDIED:
+      thread_rc = ZMAPTHREAD_RETURNCODE_SERVERDIED ;
+      break ;
+
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+  return thread_rc ;
+}
 
 
