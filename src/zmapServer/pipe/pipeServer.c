@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 10:19 2011 (edgrif) */
 /*  File: pipeServer.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer.c by Ed Griffiths (edgrif@sanger.ac.uk)
@@ -780,7 +781,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
 
   /* Sometimes the file contains only the gff header and no data, I don't know the reason for this
-   * but in this case there's not point in going further. */
+   * but in this case there's no point in going further. */
   if (status == G_IO_STATUS_EOF && !done_header)
     {
       setErrMsg(server,
