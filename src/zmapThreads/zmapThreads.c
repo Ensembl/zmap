@@ -1,3 +1,4 @@
+/*  Last edited: Jul  8 14:17 2011 (edgrif) */
 /*  File: zmapThreads.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -20,8 +21,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code to implement communcation between a control
  *              thread and a slave thread. This code knows nothing
@@ -33,11 +34,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <stdio.h>
 #include <string.h>
@@ -152,9 +148,7 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
   thread->request.request = NULL ;
 
   zmapVarCreate(&(thread->reply)) ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  thread->reply.state = ZMAPTHREAD_REPLY_INIT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   thread->reply.state = ZMAPTHREAD_REPLY_WAIT ;
   thread->reply.reply = NULL ;
   thread->reply.error_msg = NULL ;
@@ -254,29 +248,16 @@ char *zMapThreadGetThreadID(ZMapThread thread)
 
 
 
-/* Must be kept in step with declaration of ZMapThreadRequest enums in zmapThread_P.h */
-char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state)
-{
-  char *str_states[] = {"ZMAPTHREAD_REQUEST_INIT", "ZMAPTHREAD_REQUEST_WAIT", "ZMAPTHREAD_REQUEST_TIMED_OUT",
-			"ZMAPTHREAD_REQUEST_GETDATA"} ;
-
-  return str_states[signalled_state] ;
-}
-
-/* Must be kept in step with declaration of ZMapThreadReply enums in zmapThread_P.h */
-char *zMapThreadGetReplyString(ZMapThreadReply signalled_state)
-{
-  char *str_states[] = {"ZMAPTHREAD_REPLY_INIT", "ZMAPTHREAD_REPLY_WAIT",
-			"ZMAPTHREAD_REPLY_GOTDATA",  "ZMAPTHREAD_REPLY_REQERROR",
-			"ZMAPTHREAD_REPLY_DIED", "ZMAPTHREAD_REPLY_CANCELLED"} ;
-
-  return str_states[signalled_state] ;
-}
+/* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadRequest2ExactStr, ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReply2ExactStr, ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
 
 
-/* Kill the thread by cancelling it, as this will asynchronously we cannot release the threads
+
+/* Kill the thread by cancelling it, as this will happen asynchronously we cannot release the threads
  * resources in this call. */
 void zMapThreadKill(ZMapThread thread)
 {
