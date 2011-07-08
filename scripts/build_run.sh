@@ -51,6 +51,7 @@ TAG_CVS=''
 INC_REL_VERSION=''
 INC_UPDATE_VERSION=''
 RT_TO_CVS=''
+ERASE_SUBDIRS=''
 INPUT_DIR=''
 OUTPUT_DIR=''
 BRANCH=''
@@ -63,7 +64,8 @@ ZMAP_MASTER_FORCE_RELEASE_NOTES=''
 
 # try to load useful shared shell functions...after this we will have access to
 # common message funcs.
-. $FUNCTIONS_SCRIPT || { echo "Failed to load common functions file: $FUNCTIONS_SCRIPT"; exit 1; }
+. $FUNCTIONS_SCRIPT || { echo "Aborted $PROGNAME - Failed to load common functions file: $FUNCTIONS_SCRIPT"; exit 1; }
+
 
 
 # This script needs to explicitly send stuff to the log file whereas
@@ -94,19 +96,25 @@ function message_exit
 }
 
 
+# Ok...off we go....
+#
+message_out "ZMap Build Started: $*"
+
+
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -f <zmap feature directory> -g -m -n -t -r -u ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -t -r -u ]   <build prefix>"
 
-while getopts ":a:b:cdf:gi:mno:rtu" opt ; do
+while getopts ":a:b:cdegi:mno:rtu" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BRANCH=$OPTARG ;;
 	c  ) CRON='yes' ;;
 	d  ) ZMAP_MASTER_BUILD_DIST='yes'   ;;
-	i  ) INPUT_DIR=$OPTARG ;;
+	e  ) ERASE_SUBDIRS='yes' ;;
 	g  ) GIT_FEATURE_INFO='-g' ;;
+	i  ) INPUT_DIR=$OPTARG ;;
 	m  ) RT_TO_CVS='no' ;;
 	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes' ;;
 	o  ) OUTPUT_DIR=$OPTARG ;;
@@ -143,9 +151,12 @@ if [ ! -d $PARENT_BUILD_DIR ] || [ ! -r $PARENT_BUILD_DIR ] ; then
 fi
 
 
+
 # We do not know the directory for the logfile until here so cannot start logging
 # until this point, from this point this script prints any messages to stdout
 # _and_ to the logfile.
+#
+# Actually when run from cron output is already redirected to correct file.
 #
 # NOTE, if you change the name of the log file then you should edit the crontab
 # for the overnight build to update the name there too.
@@ -157,11 +168,15 @@ GLOBAL_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_BUILD.LOG
 rm -f $GLOBAL_LOG || message_exit "Cannot remove log from previous build: $GLOBAL_LOG"
 
 
-message_out "ZMap $BUILD_PREFIX Build Started"
+message_out "ZMap Build is $BUILD_PREFIX"
 
 
-# do some set up and basic checks.......
-#
+if [ -n "$ERASE_SUBDIRS" ] ; then
+    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.develop-RELEASE_*"
+    message_out "Removing previous builds with name: $sub_dirs_pattern"
+    rm -rf $sub_dirs_pattern || message_exit "Failed to remove previous builds: $sub_dirs_pattern."
+fi
+
 
 if [ -n "$INPUT_DIR" ] ; then
     if [ ! -d $INPUT_DIR ] || [ ! -r $INPUT_DIR ] ; then
