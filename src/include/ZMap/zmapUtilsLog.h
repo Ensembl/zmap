@@ -1,3 +1,4 @@
+/*  Last edited: Jul  8 14:23 2011 (edgrif) */
 /*  File: zmapUtilsLog.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -124,13 +125,16 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
  * 
  */
 #define zMapLogFatalSysErr(ERRNO, FORMAT, ...)            \
-  zMapLogMsg(ZMAPLOG_DOMAIN,				  \
-	     G_LOG_LEVEL_ERROR,				  \
-	     ZMAP_LOG_CODE_PARAMS,			  \
-	     FORMAT " (errno = \"%s\")",			   \
-	     __VA_ARGS__,					   \
-	     g_strerror(ERRNO))
-
+  do {							  \
+    char *errno_str = (char *)g_strerror(ERRNO) ;	  \
+                                                          \
+    zMapLogMsg(ZMAPLOG_DOMAIN,				  \
+	       G_LOG_LEVEL_ERROR,			  \
+	       ZMAP_LOG_CODE_PARAMS,		          \
+	       FORMAT " (errno = \"%s\")",		  \
+	       __VA_ARGS__,			          \
+	       errno_str) ;                               \
+  } while (0)
 
 /* Use this macro like this:
  * 
