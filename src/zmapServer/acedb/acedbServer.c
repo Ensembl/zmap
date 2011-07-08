@@ -1,4 +1,4 @@
-/*  Last edited: Jul  6 10:46 2011 (edgrif) */
+/*  Last edited: Jul  7 14:47 2011 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1412,7 +1412,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
-	  parser = zMapGFFCreateParser(g_quark_to_string(feature_block->original_id),
+	  parser = zMapGFFCreateParser((char *)g_quark_to_string(feature_block->original_id),
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
