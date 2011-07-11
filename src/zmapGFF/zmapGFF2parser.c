@@ -1,3 +1,4 @@
+/*  Last edited: Jul  8 16:59 2011 (edgrif) */
 /*  File: zmapGFF2parser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1555,8 +1556,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
 	   * out of sync with how homols with gaps are given.... */
-	  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0
-	      || g_ascii_strcasecmp(ontology, "exon") == 0)
+	  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0 || g_ascii_strcasecmp(ontology, "exon") == 0)
 	    {
 	      exon.x1 = start ;
 	      exon.x2 = end ;
