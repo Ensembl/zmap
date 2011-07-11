@@ -24,7 +24,7 @@ BUILD_PREFIX='OVERNIGHT'
 OUTPUT=$BUILD_PREFIX
 
 
-./build_run.sh -e -g $BUILD_PREFIX || RC=1
+./build_run.sh -c -e -g $BUILD_PREFIX || RC=1
 
 
 exit $RC
