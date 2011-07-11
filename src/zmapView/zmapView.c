@@ -1,4 +1,4 @@
-/*  Last edited: Jul  8 13:51 2011 (edgrif) */
+/*  Last edited: Jul 11 13:05 2011 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -2508,13 +2508,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
   gboolean call_again = TRUE ;				    /* Normally we want to be called continuously. */
   gboolean state_change = TRUE ;			    /* Has view state changed ?. */
   gboolean reqs_finished = FALSE;			    // at least one thread just finished
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  int thread_status = 0;				    // current thread: -ve for fail   0 for
-							    // pending    +ve for ok
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ThreadStatus thread_status = THREAD_STATUS_PENDING ;
-
   int has_step_list = 0;				    // any requests still active?
 
 
@@ -2704,21 +2698,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			if (err_msg && !zmap_view->thread_fail_silent)
 			  zMapWarning("%s", err_msg) ;
 
-
-
-			/* LET'S DISABLE THIS FOR NOW....WE SHOULD BE KILLING THE THREAD... */
-
-                        /* NOTE this is a misnomer, the external server died */
 			thread_has_died = TRUE ;
 
 			threadDebugMsg(thread, "GUI: thread %s has died so cleaning up....\n", NULL) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			/* Try this instead.... */
-			zMapThreadKill(thread) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 		      }
 		    else
 		      {
@@ -2729,7 +2711,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                         /* Reset the reply from the slave. */
 			zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
-
 		      }
 
 		    break ;
@@ -2848,7 +2829,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    thread_status = THREAD_STATUS_FAILED ;
 
 		  if (thread_status == THREAD_STATUS_FAILED && !err_msg)
-		    err_msg = g_strdup("Failed") ;
+		    {
+		      char *err_msg = "Thread failed but there is no error message to say why !" ;
+
+		      zMapLogCritical("%s", err_msg) ;
+      
+		      err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
+		    }
 
 		  lfd.status = (thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
 		  lfd.err_msg = err_msg ;
@@ -2858,15 +2845,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  lfd.exit_code = cd->exit_code;
 		  lfd.stderr_out = cd->stderr_out;
 
-
-
 		  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, &lfd) ;
 		}
 	    }
 
 	  if (err_msg)
 	    g_free(err_msg) ;
-
 
 	  if (thread_has_died || steps_finished)
 	    {
