@@ -1,3 +1,4 @@
+/*  Last edited: Jul 11 09:23 2011 (edgrif) */
 /*  File: zmapFeatureTranscript.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2011
@@ -82,6 +83,8 @@ typedef struct
 
 
 
+static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span) ;
+
 static void getDetailedExon(gpointer exon_data, gpointer user_data) ;
 static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span,
 			       int *curr_feature_pos, int *curr_spliced_pos,
@@ -91,9 +94,111 @@ static void exonListFree(gpointer data, gpointer user_data_unused) ;
 static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
 
 
+
+
+
 /* 
  *               External functions.
  */
+
+
+/* Adds initial data to a transcript feature, will overwrite any existing settings. */
+gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
+				      gboolean cds, Coord cds_start, Coord cds_end,
+				      GArray *exons, GArray *introns)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
+
+
+  /* There ought to be sanity checking of coords of cds/exons/introns here.... */
+
+  if (cds)
+    {
+      feature->feature.transcript.flags.cds = 1 ;
+      feature->feature.transcript.cds_start = cds_start ;
+      feature->feature.transcript.cds_end = cds_end ;
+    }
+
+  if (exons)
+    feature->feature.transcript.exons = exons ;
+
+  if (introns)
+    feature->feature.transcript.introns = introns ;
+
+  result = TRUE ;
+
+  return result ;
+}
+
+
+/* Add start/end "not found" data to a transcript feature. */
+gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
+					  gboolean start_not_found_flag, int start_not_found,
+					  gboolean end_not_found_flag)
+{
+  gboolean result = TRUE ;
+
+  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+	     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) ;
+
+  if (start_not_found_flag)
+    {
+      feature->feature.transcript.flags.start_not_found = TRUE ;
+      feature->feature.transcript.start_not_found = start_not_found ;
+    }
+
+  if (end_not_found_flag)
+    feature->feature.transcript.flags.end_not_found = 1 ;
+
+  return result ;
+}
+
+
+/* Adds a single exon and/or intron to an existing transcript feature.
+ * 
+ * NOTE: extends the transcripts start/end coords if introns and/or exons
+ * exceed these coords.
+ *  */
+gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
+					    ZMapSpanStruct *exon, ZMapSpanStruct *intron)
+{
+  gboolean result = FALSE ;
+
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && (exon || intron))
+    {
+      if (exon)
+	{
+	  if (!feature->feature.transcript.exons)
+	    feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
+							      sizeof(ZMapSpanStruct), 30) ;
+
+	  g_array_append_val(feature->feature.transcript.exons, *exon) ;
+
+	  extendTranscript(feature, exon) ;
+
+	  result = TRUE ;
+	}
+
+      if (intron)
+	{
+	  if (!feature->feature.transcript.introns)
+	    feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
+								    sizeof(ZMapSpanStruct), 30) ;
+
+	  g_array_append_val(feature->feature.transcript.introns, *intron) ;
+
+	  extendTranscript(feature, intron) ;
+
+	  result = TRUE ;
+	}
+    }
+
+
+  return result ;
+}
+
 
 
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
@@ -544,3 +649,16 @@ static void printDetailedExons(gpointer exon_data, gpointer user_data)
 
   return ;
 }
+
+
+/* Blindly extend transcripts start/end to encompass the given span. */
+static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span)
+{
+  if (span->x1 < transcript->x1)
+    transcript->x1 = span->x1 ;
+  if (span->x2 > transcript->x2)
+    transcript->x2 = span->x2 ;
+
+  return ;
+}
+
