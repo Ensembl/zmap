@@ -1,3 +1,4 @@
+/*  Last edited: Jul 11 08:54 2011 (edgrif) */
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -693,105 +694,6 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
 }
 
 
-
-
-/*!
- * Adds data to a feature which may be empty or may already have partial features,
- * e.g. transcript that does not yet have all its exons.
- *
- * NOTE that really we need this to be a polymorphic function so that the arguments
- * are different for different features.
- *  */
-gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
-				      gboolean cds, Coord cds_start, Coord cds_end,
-				      GArray *exons, GArray *introns)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
-
-  if (cds)
-    {
-      feature->feature.transcript.flags.cds = 1 ;
-      feature->feature.transcript.cds_start = cds_start ;
-      feature->feature.transcript.cds_end = cds_end ;
-    }
-
-  if (exons)
-    feature->feature.transcript.exons = exons ;
-
-  if (introns)
-    feature->feature.transcript.introns = introns ;
-
-  result = TRUE ;
-
-  return result ;
-}
-
-
-/*!
- * Adds data to a feature which may be empty or may already have partial features,
- * e.g. transcript that does not yet have all its exons.
- *
- * NOTE that really we need this to be a polymorphic function so that the arguments
- * are different for different features.
- *  */
-gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
-					  gboolean start_not_found_flag, int start_not_found,
-					  gboolean end_not_found_flag)
-{
-  gboolean result = TRUE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-	     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) ;
-
-  if (start_not_found_flag)
-    {
-      feature->feature.transcript.flags.start_not_found = TRUE ;
-      feature->feature.transcript.start_not_found = start_not_found ;
-    }
-
-  if (end_not_found_flag)
-    feature->feature.transcript.flags.end_not_found = 1 ;
-
-  return result ;
-}
-
-
-/*!
- * Adds a single exon and/or intron to a feature which may be empty or may already have
- * some exons/introns.
- *  */
-gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
-					    ZMapSpanStruct *exon, ZMapSpanStruct *intron)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
-
-  if (exon)
-    {
-      if (!feature->feature.transcript.exons)
-	feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.exons, *exon) ;
-
-      result = TRUE ;
-    }
-  else if (intron)
-    {
-      if (!feature->feature.transcript.introns)
-	feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-								sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.introns, *intron) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
 
 
 
