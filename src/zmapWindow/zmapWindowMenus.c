@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 10:08 2011 (edgrif) */
+/*  Last edited: Jul 12 08:18 2011 (edgrif) */
 /*  File: zmapWindowMenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -76,6 +76,7 @@
 
 enum
   {
+    BLIX_INVALID,
     BLIX_NONE,						    /* Blixem on column with no aligns. */
     BLIX_SELECTED,					    /* Blixem all matches for selected features
 							       in this column. */
@@ -84,6 +85,12 @@ enum
     BLIX_MULTI_SETS					    /* Blixem all matches for all features
 							       in the list of columns in the blixem config file. */
 
+<<<<<<< HEAD
+=======
+    BLIX_SEQ						    /* Blixem short reads data from the marl */
+    /* MH17 NOTE BLIX_SEQ is a range of values, do not add more */
+    /* this is a temporary implementation till we can blixem a short reads column */
+>>>>>>> 563266e054f447e33003d715410ceebc4aaa6ef8
   } ;
 
 #define BLIX_SEQ		10000       /* Blixem short reads data from the mark base menu index */
@@ -1462,7 +1469,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowAlignSetType requested_homol_set ;
+  ZMapWindowAlignSetType requested_homol_set = BLIX_INVALID ;
   char *seq_set = NULL;
 
   switch(menu_item_id)
@@ -1486,30 +1493,34 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 	GList *l;
 	int i;
 
-	for(i = menu_item_id - BLIX_SEQ,
-	      l = menu_data->window->context_map->seq_data_featuresets;
-	    i && l; l = l->next, i--)
-	  continue;
 
-	if(l)
-	  seq_set = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+	if (!zmapWindowMarkIsSet(menu_data->window->mark))
+	  {
+	    zMapMessage("You must set the mark first to select this option","");
+	  }
+	else
+	  {
+	    for (i = menu_item_id - BLIX_SEQ, l = menu_data->window->context_map->seq_data_featuresets ;
+		 i && l ;
+		 l = l->next, i--)
+	      {
+		continue ;
+	      }
+
+	    if (l)
+	      {
+		seq_set = (char *)g_quark_to_string(GPOINTER_TO_UINT(l->data)) ;
+		requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+	      }
+	  }
+
+	break ;
       }
-      break;
-
     }
 
-  /* Called on a column or an item ? */
-  if (menu_item_id >= BLIX_SEQ)
-    {
-      if (zmapWindowMarkIsSet(menu_data->window->mark))
-	zmapWindowCallBlixemOnPos(menu_data->window, ZMAPWINDOW_ALIGNCMD_SEQ, seq_set, menu_data->x, menu_data->y) ;
-      else
-	zMapMessage("You must set the mark first to select this option","");
-    }
-  else if ((FooCanvasGroup *) menu_data->item == menuDataItemToColumn(menu_data->item))
-    zmapWindowCallBlixemOnPos(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
-  else
-    zmapWindowCallBlixem(menu_data->window, requested_homol_set, seq_set) ;
+
+  if (requested_homol_set)
+    zmapWindowCallBlixem(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
 
   g_free(menu_data) ;
 

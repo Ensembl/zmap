@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 11:17 2011 (edgrif) */
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -228,14 +229,17 @@ typedef struct
  * SMap in ZMap we can use SMap structs instead....BUT strand is needed here too !!!!! */
 typedef struct
 {
-      /* NOTE even if reversed coords are as start < end */
-  ZMapSpanStruct parent;          /* start/end in parent span (context) */
-  ZMapSpanStruct block;             /* start,end in align, aka child seq */
-      /* NOTE for a single align parent and block coords will be the same
-       * if another align exists then block is the coords in that align,
-       * parent is the related master_align coords
-       */
+  /* NOTE even if reversed coords are as start < end */
+  ZMapSpanStruct parent;				    /* start/end in parent span (context) */
+
+  ZMapSpanStruct block;					    /* start,end in align, aka child seq */
+
+  /* NOTE for a single align parent and block coords will be the same
+   * if another align exists then block is the coords in that align,
+   * parent is the related master_align coords
+   */
   gboolean reversed;
+
 } ZMapMapBlockStruct, *ZMapMapBlock ;
 
 
@@ -523,14 +527,14 @@ typedef struct
      * alignment with allowance for a style specified slop factor. */
     gboolean perfect;
 
-    gboolean has_sequence;			    /* This homology has sequence in the database. */
+    gboolean has_sequence;				    /* This homology has sequence in the database. */
 
-    gboolean has_clone_id;			    /* This homol feature is matched to this clone. */
+    gboolean has_clone_id;				    /* This homol feature is matched to this clone. */
 
-    gboolean masked;                          /* flagged for no-display
-                                               * for an EST - is it covered completely by an mRNA
-                                               */
-    gboolean displayed;                       /* is it in the foo canvas right now ? */
+    gboolean masked ;					    /* flagged for no-display
+						             * for an EST - is it covered completely by an mRNA
+							     */
+    gboolean displayed;					    /* is it in the foo canvas right now ? */
 
   } flags ;
 
@@ -967,6 +971,7 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
+
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
 				     double percent_id,
@@ -978,6 +983,9 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
+gboolean zMapFeatureAlignmentString2Gaps(ZMapStrand ref_strand, int ref_start, int ref_end,
+					 ZMapStrand match_strand, int match_start, int match_end,
+					 char *align_string, GArray **gaps_out) ;
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;
 gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature) ;

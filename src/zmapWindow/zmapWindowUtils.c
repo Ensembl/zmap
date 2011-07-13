@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:26 2011 (edgrif) */
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -379,7 +380,7 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_ou
   FooCanvasGroup *block_grp ;
   int y1, y2 ;
 
-  zmapWindowItemGetVisibleCanvas(window, &wx1, &wy1, &wx2, &wy2) ;
+  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
 
   if (zmapWindowWorld2SeqCoords(window, wx1, wy1, wx2, wy2,
 				&block_grp, &y1, &y2))

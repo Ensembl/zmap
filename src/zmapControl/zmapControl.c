@@ -1,3 +1,4 @@
+/*  Last edited: Jul  5 10:26 2011 (edgrif) */
 /*  File: zmapControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -623,37 +624,28 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-//  if(!view_data)
-/* need to update per column loaded for exciting feedback to the user */
+  //  if(!view_data)
+  /* need to update per column loaded for exciting feedback to the user */
   {
-      /* Update title etc. */
-      updateControl(zmap, view) ;
+    /* Update title etc. */
+    updateControl(zmap, view) ;
 
-      zmapControlWindowSetGUIState(zmap) ;
+    zmapControlWindowSetGUIState(zmap) ;
   }
-//  else
-  if(view_data)
-  {
-    if(zmap->xremote_client)
+
+  //  else
+  if (view_data)
     {
-    LoadFeaturesData lfd = (LoadFeaturesData ) view_data;
-    char *request ;
-    char *response = NULL;
-    GList *features;
-    char * featurelist = NULL;
-    char *f,*emsg;
+      LoadFeaturesData lfd = (LoadFeaturesData )view_data ;
 
-    for(features = lfd->feature_sets;features;features = features->next)
-      {
-        f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data));
-        if(!featurelist)
-            featurelist = g_strdup(f);
-        else
-            featurelist = g_strjoin(";",featurelist,f,NULL);
-      }
+      if (!(lfd->feature_sets))
+	{
+	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+	}
+      else if (zmap->xremote_client)
+	{
 
-    emsg =  html_quote_string(lfd->err_msg ? lfd->err_msg  : "OK");
-
+<<<<<<< HEAD
     if(lfd->stderr_out)
     {
     	gchar *old = lfd->stderr_out;
@@ -679,13 +671,62 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
         response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
         zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
       }
+=======
+	  char *request ;
+	  char *response = NULL;
+	  GList *features;
+	  char *featurelist = NULL;
+	  char *f,*emsg;
 
-    g_free(request);
-    g_free(featurelist);
+	  for (features = lfd->feature_sets ; features ; features = features->next)
+	    {
+	      char *prev ;
+
+	      f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+
+	      prev = featurelist ;
+
+	      if (!prev)
+		featurelist = g_strdup(f) ;
+	      else
+		featurelist = g_strjoin(";", prev, f, NULL) ;
+
+	      g_free(prev) ;
+	    }
+
+	  emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "OK");
+
+	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
+				    " <client xwid=\"0x%lx\" />"
+				    " <featureset names=\"%s\" />"
+				    " <start value=\"%d\" />"
+				    " <end value=\"%d\" />"
+				    " <status value=\"%d\" message=\"%s\" />"
+				    " <exit_code value=\"%d\" />"
+				    " <stderr value=\"%s\" />"
+				    "</request></zmap>",
+				    lfd->xwid, featurelist,
+				    lfd->start, lfd->end,
+				    (int)lfd->status,
+				    emsg, lfd->exit_code,
+				    lfd->stderr_out ? lfd->stderr_out : "") ;
+
+	  free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
+
+	  if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
+	      != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+	    {
+	      response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
+	      zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
+	    }
+
+	  g_free(request);
+	  g_free(featurelist);
+>>>>>>> 563266e054f447e33003d715410ceebc4aaa6ef8
+
+	}
 
     }
-
-  }
 
 
   return ;

@@ -1,3 +1,4 @@
+/*  Last edited: Jul 11 15:19 2011 (edgrif) */
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -338,7 +339,10 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMa
 				      ZMapFeatureSet feature_set, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    ZMapHomolType homol_type,
-			    int offset, int position, int start, int end,
+			    int offset,
+			    int position,
+			    int window_start, int window_end,
+			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
 			    GList *features, ZMapFeatureSet feature_set,
 			    char *source, GList *local_sequences,
@@ -391,7 +395,8 @@ void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
-			  int features_start, int features_end, gboolean group, gboolean terminate) ;
+			  int features_start, int features_end,
+			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;

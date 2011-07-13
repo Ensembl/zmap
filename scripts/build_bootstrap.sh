@@ -366,18 +366,7 @@ zmap_message_out "All hosts alive."
 
 
 
-# Get current version stuff... Do this before building...
-#
-zmap_message_out "Fetching version using versioner script"
-ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
-    -path $CHECKOUT_BASE/ \
-    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
 
-zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
-
-if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    [ "x$RELEASE_LOCATION" != "x" ] || RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
-fi
 
 
 # For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
@@ -394,6 +383,44 @@ if [ -n "$GIT_VERSION_INFO" ] ; then
     $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
 
 fi
+
+
+
+# Get current version stuff... Do this before building...
+#
+zmap_message_out "Fetching version using versioner script"
+ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
+    -path $CHECKOUT_BASE/ \
+    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
+
+
+zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
+
+
+# LET'S TRY ALWAYS NAMING THE RELEASE DIRECTORY....
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+#    [ "x$RELEASE_LOCATION" == "x" ] && RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+#fi
+RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+
+mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release directory $RELEASE_LOCATION"
+
+
+
+# For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
+#if [ -n "$GIT_VERSION_INFO" ] ; then
+#
+#    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
+#
+#    zmap_message_out "Collecting GIT describe info..."
+#
+#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
+#
+#    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
+#
+#    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
+#
+#fi
 
 
 
@@ -693,10 +720,13 @@ zmap_message_out "About to do: tar -zcf$TAR_FILE $zmap_tmp_dir"
 tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
 #tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
 
-if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    zmap_tar_old_releases $ZMAP_RELEASES_DIR
-    zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
-fi
+
+# Turning this off for now as it makes life difficult for anacode.
+#
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+#    zmap_tar_old_releases $ZMAP_RELEASES_DIR
+#    zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
+#fi
 
 
 if [ "x$RELEASE_LOCATION" == "x" ]; then
@@ -747,12 +777,17 @@ zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
 
 # Looks like success... Checking versions match (non-fatal errors)
 if [ -d $RELEASE_LOCATION ]; then
+
     zmap_uname_location=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin/zmap
+
     if [ -x $zmap_uname_location ]; then
 	zmap_message_out "Checking zmap binary version..."
+
 	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [1] *** "
 	zmap_message_out "Binary reports version=$bin_version"
+
 	bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap - !!')
+
 	if [ "x$bin_version" != "x$ZMAP_RELEASE_VERSION" ]; then
 	    zmap_message_err "*** WARNING: Executable reports _different_ version to Source Code! ***"
 	    zmap_message_err "*** WARNING: Expected $ZMAP_RELEASE_VERSION, got $bin_version. ***"
@@ -760,8 +795,11 @@ if [ -d $RELEASE_LOCATION ]; then
     else
 	zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [2] ***"
     fi
+
 else
+
     zmap_message_err "*** CRITICAL: Cannot find release location '$RELEASE_LOCATION' ***"
+
 fi
 
 

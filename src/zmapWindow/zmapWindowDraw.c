@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 15:13 2011 (edgrif) */
 /*  File: zmapWindowDraw.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -28,8 +29,8 @@
  *              or removed etc.
  *
  * Exported functions: See zmapWindow_P.h
- *-------------------------------------------------------------------
  */
+
 
 #include <math.h>
 #include <glib.h>
@@ -645,10 +646,10 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-if(featureset->original_id == g_quark_to_string("hexExon"))
-printf("visible? %s  %d %d\n",g_quark_to_string(featureset->unique_id),
-	zmapWindowContainerHasFeatures(container),
-	zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
+  if (featureset->original_id == g_quark_from_string("hexExon"))
+    printf("visible? %s  %d %d\n", g_quark_to_string(featureset->unique_id),
+	   zmapWindowContainerHasFeatures(container),
+	   zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
 
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
@@ -744,9 +745,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
       /* If there is no mark or user asked for visible area only then do that. */
       if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
 	{
-	  zmapWindowItemGetVisibleCanvas(window,
-					 &wx1, &wy1,
-					 &wx2, &wy2) ;
+	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
 
 	  /* should really clamp to seq. start/end..... */
 	  coords.start = (int)wy1 ;

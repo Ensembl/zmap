@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:30 2011 (edgrif) */
 /*  File: zmapWindowMark.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -390,7 +391,7 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
         double x1, x2, y1, y2;
         double margin ;
 
-        zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2) ;
+        zmapWindowItemGetVisibleWorld(window, &x1, &y1, &x2, &y2) ;
 
         zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
 

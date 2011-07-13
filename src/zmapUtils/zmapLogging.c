@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 10:18 2011 (edgrif) */
 /*  File: zmapLogging.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -237,7 +238,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
 
   /* All messages have the nodeid and pid as qualifiers to help with logfile analysis. */
-  g_string_append_printf(format_str, "%s:%s:%s:%d",
+  g_string_append_printf(format_str, "%s[%s:%s:%d]",
 			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
 #if 0
@@ -259,8 +260,20 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
   /* If code details are wanted then output them in the log. */
   if (log->show_code_details)
-    g_string_append_printf(format_str, "\t%s:%s:%s:%d",
-			   ZMAPLOG_CODE_TUPLE, file, (function ? function : ""), line) ;
+    {
+      char *file_basename ;
+
+      file_basename = g_path_get_basename(file) ;
+
+      g_string_append_printf(format_str, "\t%s[%s:%s%s:%d]",
+			     ZMAPLOG_CODE_TUPLE,
+			     file_basename,
+			     (function ? function : ""),
+			     (function ? "()" : ""),
+			     line) ;
+
+      g_free(file_basename) ;
+    }
 
 
   switch(log_level)
@@ -281,7 +294,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       zMapAssertNotReached() ;
       break ;
     }
-  g_string_append_printf(format_str, "\t%s:%s:%s\n",
+  g_string_append_printf(format_str, "\t%s[%s:%s]\n",
 			 ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
 
   va_start(args, format) ;

@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 14:47 2011 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1411,7 +1412,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
-	  parser = zMapGFFCreateParser(g_quark_to_string(feature_block->original_id),
+	  parser = zMapGFFCreateParser((char *)g_quark_to_string(feature_block->original_id),
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
@@ -1716,9 +1717,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 {
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
-
   ZMapMapBlockStruct sequence_to_parent = { {0, 0} , {0, 0}, FALSE };
-
   int parent_length = 0 ;
 
 
@@ -1736,13 +1735,13 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 	server->zmap_end = child_length ;
     }
 
-zMapLogWarning("getSequenceMapping %d -> %d",server->zmap_start,server->zmap_end);
+  zMapLogWarning("getSequenceMapping %d -> %d",server->zmap_start,server->zmap_end);
 
   if (getSMapping(server, NULL, (char *)g_quark_to_string(server->req_context->sequence_name),
-              server->zmap_start,server->zmap_end,
+		  server->zmap_start,server->zmap_end,
 		  &parent_class, &parent_name, &sequence_to_parent)
-        && ((server->zmap_end - server->zmap_start + 1) ==
-             (sequence_to_parent.block.x2 - sequence_to_parent.block.x1 + 1))
+      && ((server->zmap_end - server->zmap_start + 1) ==
+	  (sequence_to_parent.block.x2 - sequence_to_parent.block.x1 + 1))
 
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
@@ -1750,39 +1749,39 @@ zMapLogWarning("getSequenceMapping %d -> %d",server->zmap_start,server->zmap_end
       g_free(parent_name) ;
 
       if(!feature_context->parent_span.x2)
-      {
-	      feature_context->parent_span.x1 = 1;
-	      feature_context->parent_span.x2 = parent_length;
-      }
+	{
+	  feature_context->parent_span.x1 = 1;
+	  feature_context->parent_span.x2 = parent_length;
+	}
 
       feature_context->master_align->sequence_span.x1 = sequence_to_parent.parent.x1 ;
       feature_context->master_align->sequence_span.x2 = sequence_to_parent.parent.x2 ;
 
       /* set up block coords as well in case not supplied in context (req = 1,0) */
       {
-          ZMapFeatureAlignment align = feature_context->master_align;
-          GHashTable *blocks = align->blocks ;
-          ZMapFeatureBlock block ;
+	ZMapFeatureAlignment align = feature_context->master_align;
+	GHashTable *blocks = align->blocks ;
+	ZMapFeatureBlock block ;
 
-          zMapAssert(g_hash_table_size(blocks) == 1) ;
+	zMapAssert(g_hash_table_size(blocks) == 1) ;
 
-          block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
+	block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
 
-zMapLogWarning("getSequenceMapping block %d -> %d",
-block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
-          if(!block->block_to_sequence.parent.x2)
+	zMapLogWarning("getSequenceMapping block %d -> %d",
+		       block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
+	if(!block->block_to_sequence.parent.x2)
           {
             block->block_to_sequence.parent.x1 = server->zmap_start;   /* = align->sequence_span.x1 ; */
             block->block_to_sequence.parent.x2 = server->zmap_end;     /* = align->sequence_span.x2 ; */
           }
-          if(!block->block_to_sequence.block.x2)
+	if(!block->block_to_sequence.block.x2)
           {
             block->block_to_sequence.block.x1 = server->zmap_start;   /* = align->sequence_span.x1 ; */
             block->block_to_sequence.block.x2 = server->zmap_end;     /* = align->sequence_span.x2 ; */
-zMapLogWarning("getSequenceMapping set block %d -> %d",
-block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
+	    zMapLogWarning("getSequenceMapping set block %d -> %d",
+			   block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
           }
-          block->block_to_sequence.reversed = FALSE;
+	block->block_to_sequence.reversed = FALSE;
       }
 
       result = TRUE ;

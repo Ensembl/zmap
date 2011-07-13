@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:30 2011 (edgrif) */
 /*  File: zmapWindow_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -999,9 +1000,9 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
 
-void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, char *source) ;
-void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, char *source, double x, double y) ;
-
+void zmapWindowCallBlixem(ZMapWindow window,
+			  ZMapWindowAlignSetType requested_homol_set, char *source,
+			  double x, double y) ;
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
 #define zmapWindowItemGetFeatureAlign(ITEM)   (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_ALIGN)
@@ -1028,9 +1029,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
 gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;
 
-void zmapWindowItemGetVisibleCanvas(ZMapWindow window,
-                                    double *wx1, double *wy1,
-                                    double *wx2, double *wy2);
+void zmapWindowItemGetVisibleWorld(ZMapWindow window, double *wx1, double *wy1, double *wx2, double *wy2);
 
 /* These should be in a separate file...and merged into foocanvas.... */
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;

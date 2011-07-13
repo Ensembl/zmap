@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 15:01 2011 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -171,6 +172,7 @@ typedef struct
 /* Call an alignment display program for the given alignment feature. */
 typedef enum
   {
+    ZMAPWINDOW_ALIGNCMD_INVALID,
     ZMAPWINDOW_ALIGNCMD_NONE,
     ZMAPWINDOW_ALIGNCMD_FEATURES,
     ZMAPWINDOW_ALIGNCMD_SET,
@@ -191,9 +193,13 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
   int offset ;						    /* Offset for displaying coords with
 							       different base. */
 
-  int position ;					    /* Centre position for alignment viewing. */
+  int cursor_position ;					    /* Where the alignment tools "cursor" should be. */
 
-  int start, end ;					    /* Optional range for alignment viewing. */
+  int window_start, window_end ;			    /* Start/end coords that should be initially
+							       visible in alignment tool.  */
+
+  int mark_start, mark_end ;				    /* Optional range for alignment viewing. */
+
 
   ZMapWindowAlignSetType homol_set ;			    /* What features to display. */
 

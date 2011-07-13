@@ -1,3 +1,4 @@
+/*  Last edited: Jul 12 10:55 2011 (edgrif) */
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -150,8 +151,6 @@ static gboolean withdrawFeatureAny(gpointer key, gpointer value, gpointer user_d
 /* datalist debug stuff */
 
 static void printDestroyDebugInfo(ZMapFeatureAny any, char *who) ;
-
-static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
                                                       gpointer data,
@@ -695,105 +694,6 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
 
 
 
-/*!
- * Adds data to a feature which may be empty or may already have partial features,
- * e.g. transcript that does not yet have all its exons.
- *
- * NOTE that really we need this to be a polymorphic function so that the arguments
- * are different for different features.
- *  */
-gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
-				      gboolean cds, Coord cds_start, Coord cds_end,
-				      GArray *exons, GArray *introns)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
-
-  if (cds)
-    {
-      feature->feature.transcript.flags.cds = 1 ;
-      feature->feature.transcript.cds_start = cds_start ;
-      feature->feature.transcript.cds_end = cds_end ;
-    }
-
-  if (exons)
-    feature->feature.transcript.exons = exons ;
-
-  if (introns)
-    feature->feature.transcript.introns = introns ;
-
-  result = TRUE ;
-
-  return result ;
-}
-
-
-/*!
- * Adds data to a feature which may be empty or may already have partial features,
- * e.g. transcript that does not yet have all its exons.
- *
- * NOTE that really we need this to be a polymorphic function so that the arguments
- * are different for different features.
- *  */
-gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
-					  gboolean start_not_found_flag, int start_not_found,
-					  gboolean end_not_found_flag)
-{
-  gboolean result = TRUE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-	     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) ;
-
-  if (start_not_found_flag)
-    {
-      feature->feature.transcript.flags.start_not_found = TRUE ;
-      feature->feature.transcript.start_not_found = start_not_found ;
-    }
-
-  if (end_not_found_flag)
-    feature->feature.transcript.flags.end_not_found = 1 ;
-
-  return result ;
-}
-
-
-/*!
- * Adds a single exon and/or intron to a feature which may be empty or may already have
- * some exons/introns.
- *  */
-gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
-					    ZMapSpanStruct *exon, ZMapSpanStruct *intron)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
-
-  if (exon)
-    {
-      if (!feature->feature.transcript.exons)
-	feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.exons, *exon) ;
-
-      result = TRUE ;
-    }
-  else if (intron)
-    {
-      if (!feature->feature.transcript.introns)
-	feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-								sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.introns, *intron) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-
 
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string)
 {
@@ -834,92 +734,6 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 
   return result ;
 }
-
-/*!
- * Adds homology data to a feature which may be empty or may already have partial features.
- *  */
-gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
-				     GQuark clone_id,
-				     double percent_id,
-				     int query_start, int query_end,
-				     ZMapHomolType homol_type,
-				     int query_length,
-				     ZMapStrand query_strand,
-				     ZMapPhase target_phase,
-				     GArray *gaps, unsigned int align_error,
-				     gboolean has_local_sequence)
-{
-  gboolean result = TRUE ;
-
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
-
-  if (clone_id)
-    {
-      feature->feature.homol.flags.has_clone_id = TRUE ;
-      feature->feature.homol.clone_id = clone_id ;
-    }
-
-  if (percent_id)
-    feature->feature.homol.percent_id = percent_id ;
-
-  feature->feature.homol.type = homol_type ;
-  feature->feature.homol.strand = query_strand ;
-  feature->feature.homol.target_phase = target_phase ;
-
-  if (query_start > query_end)
-    {
-      int tmp;
-
-      tmp = query_start ;
-      query_start = query_end ;
-      query_end = tmp ;
-    }
-
-  feature->feature.homol.y1 = query_start ;
-  feature->feature.homol.y2 = query_end ;
-  feature->feature.homol.length = query_length ;
-  feature->feature.homol.flags.has_sequence = has_local_sequence ;
-
-  if (gaps)
-    {
-      zMapFeatureSortGaps(gaps) ;
-
-      feature->feature.homol.align = gaps ;
-
-      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
-    }
-
-  return result ;
-}
-
-/* Returns TRUE if alignment is gapped, FALSE otherwise. NOTE that sometimes
- * we are passed data for an alignment feature which must represent a gapped
- * alignment but we are not passed the gap data. This test all this. */
-gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
-
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-    {
-      int ref_length, match_length ;
-
-      ref_length = (feature->x2 - feature->x1) + 1 ;
-
-      match_length = (feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
-      if (feature->feature.homol.type != ZMAPHOMOL_N_HOMOL)
-	match_length *= 3 ;
-
-      if (ref_length != match_length)
-	result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-
 
 
 /* Returns TRUE if feature is a sequence feature and is DNA, FALSE otherwise. */
@@ -2104,63 +1918,6 @@ static gboolean withdrawFeatureAny(gpointer key, gpointer value, gpointer user_d
 }
 
 
-
-/* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
- * there are less than two blocks then FALSE is returned.
- *
- * Sometimes, for reasons I don't understand, its possible to have two butting matches, i.e. they
- * should really be one continuous match. It may be that this happens at a clone boundary, I don't
- * try to correct this because really its a data entry problem.
- *
- *  */
-static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
-{
-  gboolean perfect_align = FALSE ;
-  int i ;
-  ZMapAlignBlock align, last_align ;
-
-  if (gaps->len > 1)
-    {
-      perfect_align = TRUE ;
-      last_align = &g_array_index(gaps, ZMapAlignBlockStruct, 0) ;
-
-      for (i = 1 ; i < gaps->len ; i++)
-	{
-	  int prev_end, curr_start ;
-
-	  align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
-
-
-	  /* The gaps array gets sorted by target coords, this can have the effect of reversing
-	     the order of the query coords if the match is to the reverse strand of the target sequence. */
-	  if (align->q2 < last_align->q1)
-	    {
-	      prev_end = align->q2 ;
-	      curr_start = last_align->q1 ;
-	    }
-	  else
-	    {
-	      prev_end = last_align->q2 ;
-	      curr_start = align->q1 ;
-	    }
-
-
-	  /* The "- 1" is because the default align_error is zero, i.e. zero _missing_ bases,
-	     which is true when sub alignment follows on directly from the next. */
-	  if ((curr_start - prev_end - 1) <= align_error)
-	    {
-	      last_align = align ;
-	    }
-	  else
-	    {
-	      perfect_align = FALSE ;
-	      break ;
-	    }
-	}
-    }
-
-  return perfect_align ;
-}
 
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
                                                       gpointer data,

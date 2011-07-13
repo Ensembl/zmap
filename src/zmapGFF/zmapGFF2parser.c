@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 11:50 2011 (edgrif) */
 /*  File: zmapGFF2parser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -86,7 +87,12 @@ static gboolean getVariationString(char *attributes,
 				   GQuark *SO_acc_out, char **name_str_out, char **variation_str_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
+
 static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand) ;
+static gboolean loadAlignString(char *scanf_buf, char *attributes, GArray **gaps_out,
+				ZMapStrand ref_strand, int ref_start, int ref_end,
+				ZMapStrand match_strand, int match_start, int match_end) ;
+
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
@@ -1527,11 +1533,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	}
     }
 
-  if(!feature_name_id)
+  if (!feature_name_id)
     {
       *err_text = g_strdup_printf("feature ignored as it has no name");
     }
-
   else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 					   sequence, ontology,
 					   feature_type, feature_style,
@@ -1555,8 +1560,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
 	   * out of sync with how homols with gaps are given.... */
-	  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0
-	      || g_ascii_strcasecmp(ontology, "exon") == 0)
+	  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0 || g_ascii_strcasecmp(ontology, "exon") == 0)
 	    {
 	      exon.x1 = start ;
 	      exon.x2 = end ;
@@ -1597,34 +1601,45 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	}
       else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-	  static char *gaps_tag = "Gaps " ;
-	  enum {GAP_STR_LEN = 5} ;
+
+
 	  char *local_sequence_str ;
 	  gboolean local_sequence = FALSE ;
 
 	  /* I am not sure if we ever have target_phase from GFF output....check this out... */
-	  if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL))
+	  if (zMapStyleIsParseGaps(feature_style))
 	    {
-	      gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-	      gaps_onwards += GAP_STR_LEN ;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not
-						terminated */
+	      static char *gaps_tag = ZMAPSTYLE_ALIGNMENT_GAPS " " ;
+	      enum {GAP_STR_LEN = 5} ;
 
-	      if (!loadGaps(gaps_onwards, gaps, strand, query_strand))
+	      if ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL)
 		{
-		  g_array_free(gaps, TRUE) ;
-		  gaps = NULL ;
+		  gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+		  gaps_onwards += GAP_STR_LEN ;  /* skip over Gaps tag and parse "1 12 12 122, ..." incl "" not
+						    terminated */
+
+		  if (!loadGaps(gaps_onwards, gaps, strand, query_strand))
+		    {
+		      g_array_free(gaps, TRUE) ;
+		      gaps = NULL ;
+		    }
+		}
+	      else if ((gaps_onwards = strstr(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " ")))
+		{
+		  if (!loadAlignString((char *)(parser->buffers[GFF_BUF_TMP]),
+				       gaps_onwards, &gaps,
+				       strand, start, end,
+				       query_strand, query_start, query_end))
+		    {
+		      zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+		    }
 		}
 	    }
 
 	  if ((local_sequence_str = strstr(attributes, "Own_Sequence TRUE")))
 	    {
-	      printf("Attributes: %s\n", attributes) ;
-
 	      local_sequence = TRUE ;
 	    }
-
-
-
 
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,
 					       percent_id,
@@ -1650,7 +1665,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    {
 	      char *known_name = NULL ;
 
-            result = TRUE;
+	      result = TRUE;
+
 	      if ((getKnownName(attributes, &known_name)))
 		{
 		  if (!(result = zMapFeatureAddKnownName(feature, known_name)))
@@ -1706,8 +1722,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
  */
 GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
 {
-      return (parser->src_feature_sets);
+  return (parser->src_feature_sets);
 }
+
+
+
 
 /* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are
  * presented as space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is
@@ -1767,6 +1786,38 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
 
 	}
       while (*attr_str != '"') ;
+    }
+
+  return valid ;
+}
+
+
+
+/* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are
+ * presented as space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is
+ * wherever we are in the gff and is set to NULL when strstr can't find another comma. fields must
+ * be 4 for a gap so either way we drop out of the loop at the end. i.e. gaps string should be this
+ * format:
+ *
+ *                             "34758 34799 531 544,34734 34751 545 550"
+ *
+ * Gap coords are positive, 1-based, start < end and in the order: ref_start ref_end match_start match_end
+ */
+static gboolean loadAlignString(char *scanf_buf,
+				char *attributes, GArray **gaps_out,
+				ZMapStrand ref_strand, int ref_start, int ref_end,
+				ZMapStrand match_strand, int match_start, int match_end)
+{
+  gboolean valid = FALSE ;
+  int attr_fields ;
+
+  attr_fields = sscanf(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " " VALUE_FORMAT_STR, scanf_buf) ;
+
+  if (attr_fields == 1)
+    {
+      valid = zMapFeatureAlignmentString2Gaps(ref_strand, ref_start, ref_end,
+					      match_strand, match_start, match_end,
+					      scanf_buf, gaps_out) ;
     }
 
   return valid ;
@@ -1860,13 +1911,13 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
       if (attr_fields == 1)
 	{
-        if(name[0])     /* das_WashU_PASA_human_ESTs have Name "" */
-	  {
-            has_name         = TRUE ;
+	  if(name[0])     /* das_WashU_PASA_human_ESTs have Name "" */
+	    {
+	      has_name         = TRUE ;
 	      *feature_name    = g_strdup(name) ;
 	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						   start, end, query_start, query_end) ;
-        }
+						       start, end, query_start, query_end) ;
+	    }
 	}
     }
   else

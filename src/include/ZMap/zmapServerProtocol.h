@@ -1,3 +1,4 @@
+/*  Last edited: Jul  7 15:27 2011 (edgrif) */
 /*  File: zmapServerProtocol.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -275,7 +276,7 @@ typedef union
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
 
 ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...) ;
-void zMapServerCreateRequestDestroy(ZMapServerReqAny request) ;
+void zMapServerRequestDestroy(ZMapServerReqAny request) ;
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 					      void *request_in, void **reply_out,
 					      char **err_msg_out) ;

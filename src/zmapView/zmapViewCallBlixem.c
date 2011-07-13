@@ -1,3 +1,4 @@
+/*  Last edited: Jul 12 08:24 2011 (edgrif) */
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -73,6 +74,8 @@ enum
     BLX_ARGV_START,             /* [start] */
     BLX_ARGV_OFFSET_FLAG,       /* -m */
     BLX_ARGV_OFFSET,            /* [offset] */
+    BLX_ARGV_ZOOM_FLAG,         /* -z */
+    BLX_ARGV_ZOOM,              /* [start:end] */
     BLX_ARGV_SHOW_WHOLE,        /* --zoom-whole */
     BLX_ARGV_NEGATE_COORDS,     /* -n */
     BLX_ARGV_REVERSE_STRAND,    /* -r */
@@ -127,19 +130,19 @@ typedef struct BlixemDataStruct
   /* Blixem can rebase the coords to show them with a different origin, offset is used to do this. */
   int offset ;
 
-  /* The ref. sequence and features are shown in blixem over the range  (position +/- (scope / 2)) */
-
   int position ;					    /* Tells blixem what position to
 							       centre on initially. */
+  int window_start, window_end ;
+  int mark_start, mark_end ;
 
-  int scope ;						    /* defaults to 40000 */
 
+  /* The ref. sequence and features are shown in blixem over the range  (position +/- (scope / 2)) */
   /* These restrict the range over which ref sequence and features are displayed if a mark was
    * set. NOTE that if scope is set to mark then so are features. */
-  gboolean scope_from_mark ;					    /* Use mark start/end for scope ? */
-  gboolean features_from_mark ;
+  int scope ;						    /* defaults to 40000 */
 
-  int mark_start, mark_end ;
+  gboolean scope_from_mark ;				    /* Use mark start/end for scope ? */
+  gboolean features_from_mark ;
 
   int scope_min, scope_max ;				    /* Bounds of displayed sequence. */
   int features_min, features_max ;			    /* Bounds of displayed features. */
@@ -280,7 +283,9 @@ typedef struct BasicFeatureDumpStructName
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       ZMapHomolType align_type,
-			       int offset, int position, int start, int end,
+			       int offset, int position,
+			       int window_start, int window_end,
+			       int mark_start, int mark_end,
 			       GList *features, ZMapFeatureSet feature_set,
 			       ZMapWindowAlignSetType align_set,
 			       blixemData blixem_data, char **err_msg) ;
@@ -409,21 +414,13 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  status = initBlixemData(view, block, align_type, 0, position, 0, 0, NULL, feature_set, ZMAPWINDOW_ALIGNCMD_NONE, &blixem_data, &err_msg) ;
+  status = initBlixemData(view, block, align_type,
+			  0, position,
+			  0, 0, 0, 0, NULL, feature_set, ZMAPWINDOW_ALIGNCMD_NONE, &blixem_data, &err_msg) ;
 
   blixem_data.errorMsg = NULL ;
 
   blixem_data.sequence_map = view->view_sequence;
-
-  /* There is no way to interrupt g_hash_table_foreach(), so instead,
-   * if printLine() encounters a problem, we store the error message
-   * in blixem_data and skip all further processing, displaying the
-   * error when we get back to writeExblxSeqblFile().  */
 
   /* Do requested Homology data first. */
   blixem_data.required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
@@ -450,8 +447,8 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
   /* Make a list of all the sequences held locally in the database. */
   blixem_data.known_sequences = g_hash_table_new(NULL, NULL) ;
 
-  if(feature_set)
-      g_hash_table_foreach(feature_set->features, checkForLocalSequence, &blixem_data) ;
+  if (feature_set)
+    g_hash_table_foreach(feature_set->features, checkForLocalSequence, &blixem_data) ;
 
   g_hash_table_destroy(blixem_data.known_sequences) ;
   blixem_data.known_sequences = NULL ;
@@ -484,12 +481,15 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
  * The function returns TRUE if blixem was successfully launched and also returns the pid of the blixem
  * process so that the blixems can be cleared up when the view exits.
  *
- * Note - position is the centre of the section of reference sequence displayed.
+ * Note - position is where blixems cursor will start, window_start/end tell blixem
+ *        what to display initially, cursor is within this range.
  *      - feature is only used to get the type of alignment to be displayed.
  *  */
 gboolean zmapViewCallBlixem(ZMapView view,
 			    ZMapFeatureBlock block, ZMapHomolType homol_type,
-			    int offset, int position, int start, int end,
+			    int offset, int position,
+			    int window_start, int window_end,
+			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
 			    GList *features, ZMapFeatureSet feature_set,
 			    char *source, GList *local_sequences,
@@ -502,15 +502,13 @@ gboolean zmapViewCallBlixem(ZMapView view,
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
   status = initBlixemData(view, block, homol_type,
-			  offset, position, start, end,
+			  offset, position,
+			  window_start, window_end,
+			  mark_start, mark_end,
 			  features, feature_set, align_set, &blixem_data, &err_msg) ;
 
   if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
     blixem_data.format_data = &gff_data ;
-
-  /* Try showing whole range in blixem when scope is taken from mark, see if annotators like this ? */
-  if (blixem_data.scope_from_mark)
-    blixem_data.show_whole_range = TRUE ;
 
   blixem_data.local_sequences = local_sequences ;
   blixem_data.source = source;
@@ -630,7 +628,9 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       ZMapHomolType align_type,
-			       int offset, int position, int start, int end,
+			       int offset, int position,
+			       int window_start, int window_end,
+			       int mark_start, int mark_end,
 			       GList *features, ZMapFeatureSet feature_set,
 			       ZMapWindowAlignSetType align_set,
 			       blixemData blixem_data, char **err_msg)
@@ -641,8 +641,10 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->offset = offset ;
   blixem_data->position = position ;
-  blixem_data->mark_start = start ;
-  blixem_data->mark_end = end ;
+  blixem_data->window_start = window_start ;
+  blixem_data->window_end = window_end ;
+  blixem_data->mark_start = mark_start ;
+  blixem_data->mark_end = mark_end ;
 
   blixem_data->negate_coords = TRUE ;			    /* default for havana. */
 
@@ -983,29 +985,12 @@ static gboolean addFeatureDetails(blixemData blixem_data)
     blixem_data->features_max = blixem_data->block->block_to_sequence.block.x2 ;
 
 
+  /* Now clamp window start/end to scope start/end. */
+  if (blixem_data->window_start < blixem_data->scope_min)
+    blixem_data->window_start = blixem_data->scope_min ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS SEEMS SO ARCANE...WHY CAN'T WE JUST CALCULATE FRAME FROM THE SEQUENCE COORD ITSELF....
-   * LET'S TRY NOT DOING THIS ANYMORE...IT WAS ALL EXBLX STUFF.... */
-
-  /* Frame is calculated simply from where the start/end of the scope is on the sequence for forward/reverse,
-   * we correct the scope start (blixem_data->min/max) so that it is in the same frame as the
-   * sequence start so that objects always have the same frame no matter where the user clicks on
-   * zmap. */
-  {
-    int start, correction ;
-
-    start = blixem_data->min - blixem_data->block->block_to_sequence.q1 ; /* Block coords may not start at 1. */
-
-    if ((correction = 3 - (start % 3)) < 3)
-      blixem_data->min += correction ;
-
-    start = blixem_data->block->block_to_sequence.q2 - blixem_data->max + 1 ;
-
-    if ((correction = 3 - (start % 3)) < 3)
-      blixem_data->max -= correction ;
-  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (blixem_data->window_end > blixem_data->scope_max)
+    blixem_data->window_end = blixem_data->scope_max ;
 
 
   if (blixem_data->align_type == ZMAPHOMOL_X_HOMOL)	    /* protein */
@@ -1177,7 +1162,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* Rebase coords in blixem by offset. */
   if (blixem_data->position)
     {
-      int offset, tmp1,tmp2 ;
+      int offset, tmp1 ;
 
       offset = tmp1 = blixem_data->offset ;
 
@@ -1195,6 +1180,20 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       missed += 2;
     }
 
+
+  /* Set up initial view start/end.... */
+    {
+      int start, end ;
+
+      start = blixem_data->window_start ;
+      end = blixem_data->window_end ;
+
+      if (blixem_data->view->revcomped_features)
+	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
+      paramString[BLX_ARGV_ZOOM_FLAG - missed] = g_strdup("-z") ;
+      paramString[BLX_ARGV_ZOOM - missed] = g_strdup_printf("%d:%d", start, end) ;
+    }
 
   /* Start with blixem centred here. */
   if (blixem_data->position)

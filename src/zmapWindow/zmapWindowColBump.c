@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:29 2011 (edgrif) */
 /*  File: zmapWindowColBump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -428,10 +429,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	{
 	  double wx1, wy1, wx2, wy2 ;
 
-
-	  zmapWindowItemGetVisibleCanvas(window,
-					 &wx1, &wy1,
-					 &wx2, &wy2);
+	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;

@@ -1,3 +1,4 @@
+/*  Last edited: Jul  8 13:17 2011 (edgrif) */
 /*  File: zmapSlave.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -32,8 +33,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
 
 
 
@@ -74,7 +73,7 @@ void *zmapNewThread(void *thread_args)
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
   ZMapThreadReturnCode slave_response =  ZMAPTHREAD_RETURNCODE_OK;
-  int call_clean = 1;   // call the cleanup function on exit?
+  int call_clean = 1 ;   // call the cleanup function on exit?
 
   ZMAPTHREAD_DEBUG(("%s: main thread routine starting....\n", zMapThreadGetThreadID(thread))) ;
 
@@ -88,9 +87,10 @@ void *zmapNewThread(void *thread_args)
   thread_cb->slave_data = NULL ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   thread_cb->server_request = ZMAPTHREAD_SERVERREQ_INVALID ;
-
   thread_cb->server_reply = NULL ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   pthread_cleanup_push(cleanUpThread, (void *)thread_cb) ;
 
 
@@ -121,7 +121,7 @@ void *zmapNewThread(void *thread_args)
 					     &request) ;
 
       ZMAPTHREAD_DEBUG(("%s: finished condvar wait, state = %s\n", zMapThreadGetThreadID(thread),
-			zMapThreadGetRequestString(signalled_state))) ;
+			zMapThreadRequest2ExactStr(signalled_state))) ;
 
       /* pthread_testcancel fix for MACOSX */
       pthread_testcancel();
@@ -146,8 +146,7 @@ void *zmapNewThread(void *thread_args)
 	  zMapPrintTimer(NULL, "In thread, calling handler function") ;
 
 	  /* Call the registered slave handler function. */
-	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply,
-						     &slave_error) ;
+	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply, &slave_error) ;
 
 	  zMapPrintTimer(NULL, "In thread, returned from handler function") ;
 
@@ -203,8 +202,6 @@ void *zmapNewThread(void *thread_args)
 							       data returned. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
 		ZMAPTHREAD_DEBUG(("%s: server died....\n", zMapThreadGetThreadID(thread))) ;
 
 		error_msg = g_strdup_printf("(c) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
@@ -213,7 +210,7 @@ void *zmapNewThread(void *thread_args)
 		/* not sure we need to do this...happens in the cleanup routine.... */
 
 		/* Signal that we failed. */
-            zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
+		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -222,42 +219,57 @@ void *zmapNewThread(void *thread_args)
 		thread_cb->initial_error = g_strdup(error_msg) ;
 
 		goto clean_up ;
+		break ;
 	      }
 
-          case ZMAPTHREAD_RETURNCODE_SERVERDIED:
-            {
-            char *error_msg ;
+	    case ZMAPTHREAD_RETURNCODE_SERVERDIED:
+	      {
+		char *error_msg ;
 
-            ZMAPTHREAD_DEBUG(("%s: server died....\n", zMapThreadGetThreadID(thread))) ;
+		ZMAPTHREAD_DEBUG(("%s: server died....\n", zMapThreadGetThreadID(thread))) ;
 
-            error_msg = g_strdup_printf("(d) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("(d) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
 
-            thread_cb->thread_died = TRUE ;
+		thread_cb->thread_died = TRUE ;
 
-            thread_cb->initial_error = g_strdup(error_msg) ;
+		thread_cb->initial_error = g_strdup(error_msg) ;
 
-zMapLogWarning("server died","");
-            /* must continue on to getStatus if it's in the step list
-             * zmapServer functions will not run if status is DIED
-             */
-            zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
-//            goto clean_up ;
-            break;
-            }
+		zMapLogWarning("server died","");
 
-          case ZMAPTHREAD_RETURNCODE_QUIT:
-            {
-            char * error_msg;
-            error_msg = g_strdup_printf("(e) %s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
-            zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
-            }
-            // we've already closed the connection and cleaned up data
-            // but we still want to exit
-            // don't call the cleanup fucntion as it's there as an exception handler
-            call_clean = 0;
-            break;
+		/* must continue on to getStatus if it's in the step list
+		 * zmapServer functions will not run if status is DIED
+		 */
+		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
+		//            goto clean_up ;
+
+		/* Try doing this....what used to go wrong ?? */
+		goto clean_up ;
+
+		break;
+	      }
+
+	    case ZMAPTHREAD_RETURNCODE_QUIT:
+	      {
+		char * error_msg;
+		error_msg = g_strdup_printf("(e) %s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
+		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
+
+		// we've already closed the connection and cleaned up data
+		// but we still want to exit
+		// don't call the cleanup fucntion as it's there as an exception handler
+		call_clean = 0;
+		break;
+	      }
+
+	    default:
+	      {
+		zMapAssertNotReached() ;
+		break ;
+	      }
 	    }
 	}
+
+
       /* pthread_testcancel fix for MACOSX */
       // mh17: we could end up doing this after a QUIT, but WTH it's a race condition
       pthread_testcancel();
@@ -289,8 +301,8 @@ zMapLogWarning("server died","");
 
 
   /* something about 64 bit pthread needs this at the end. */
-  /* cleanup_push and pop and basically fancy open and close braces so
-   * there must be something between clean_up: label and this pop*/
+  /* cleanup_push and pop are basically fancy open and close braces so
+   * there must be some code between the "clean_up:" label and this pop or it doesn't compile! */
   pthread_cleanup_pop(call_clean) ;     /* 1 => always call clean up routine */
 
   return thread_args ;
@@ -368,7 +380,7 @@ static void cleanUpThread(void *thread_args)
 
 
   ZMAPTHREAD_DEBUG(("%s: thread clean-up routine exitting because %s....\n",
-		    zMapThreadGetThreadID(thread), zMapThreadGetReplyString(reply))) ;
+		    zMapThreadGetThreadID(thread), zMapThreadReply2ExactStr(reply))) ;
 
   return ;
 }

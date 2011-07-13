@@ -1,4 +1,4 @@
-/*  Last edited: Jun 30 13:16 2011 (edgrif) */
+/*  Last edited: Jul 13 16:06 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -4145,6 +4145,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    zmapWindowFeatureShow(window, focus_item) ;
 	  }
+	else
+	  {
+	    zMapMessage("%s", "No feature selected.") ;
+	  }
+
+	event_handled = TRUE ;
 
 	break ;
       }
@@ -4280,7 +4286,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	zmapWindowCallBlixem(window, requested_homol_set, NULL) ;
+	zmapWindowCallBlixem(window, requested_homol_set, NULL, 0.0, 0.0) ;
 
 	break ;
       }
@@ -5470,7 +5476,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 
       /* Calculate canvas window coords for menu position from part of item which is visible. */
-      zmapWindowItemGetVisibleCanvas(window, &vis_can_x1, &vis_can_y1, &vis_can_x2, &vis_can_y2) ;
+      zmapWindowItemGetVisibleWorld(window, &vis_can_x1, &vis_can_y1, &vis_can_x2, &vis_can_y2) ;
 
       my_foo_canvas_item_get_world_bounds(focus_item, &x1, &y1, &x2, &y2) ;
 

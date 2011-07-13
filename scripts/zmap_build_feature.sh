@@ -27,12 +27,11 @@ else
 fi
 
 
-BUILD_PREFIX="FEATURE_$DEST_DIR"
-OUTPUT=$BUILD_PREFIX
-ERROR_RECIPIENT='edgrif@sanger.ac.uk'
+BUILD_PREFIX='FEATURE'
+ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
 
 
-./build_run.sh -a $ERROR_RECIPIENT -d -f $SRC_DIR -g -l $OUTPUT $BUILD_PREFIX || RC=1
+./build_run.sh -a $ERROR_RECIPIENT -d -i $SRC_DIR -o $DEST_DIR -g $BUILD_PREFIX || RC=1
 
 
 exit $RC

@@ -1,3 +1,4 @@
+/*  Last edited: Jul  8 14:05 2011 (edgrif) */
 /*  File: zmapThreadsUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -62,7 +63,7 @@ void zmapCondVarCreate(ZMapRequest thread_state)
       zMapLogFatalSysErr(status, "%s", "cond init") ;
     }
   
-  thread_state->state = ZMAPTHREAD_REQUEST_INIT ;
+  thread_state->state = ZMAPTHREAD_REQUEST_INVALID ;
   thread_state->request = NULL ;
   
   return ;
@@ -142,7 +143,7 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
 				       TIMESPEC *relative_timeout, gboolean reset_to_waiting,
 				       void **data_out)
 {
-  ZMapThreadRequest signalled_state = ZMAPTHREAD_REQUEST_INIT ;
+  ZMapThreadRequest signalled_state = ZMAPTHREAD_REQUEST_INVALID ;
   int status ;
   TIMESPEC abs_timeout ;
 
@@ -233,7 +234,7 @@ void zmapVarCreate(ZMapReply thread_state)
       zMapLogFatalSysErr(status, "%s", "mutex init") ;
     }
 
-  thread_state->state = ZMAPTHREAD_REPLY_INIT ;
+  thread_state->state = ZMAPTHREAD_REPLY_INVALID ;
   
   return ;
 }

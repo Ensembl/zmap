@@ -1,3 +1,4 @@
+/*  Last edited: Jul  8 14:02 2011 (edgrif) */
 /*  File: zmapThreads.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -44,6 +45,8 @@
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#include <ZMap/zmapEnum.h>
+
 
 /* The calls need changing to handle a more general
  * mechanism of requests etc.....this interface should not need to know the requests it is
@@ -55,24 +58,46 @@
 /* debugging messages, TRUE for on... */
 extern gboolean zmap_thread_debug_G ;
 
-/* If you change these two enumerated types you must update zMapVarGetRequestString() or
- * zMapVarGetReplyString() accordingly. */
 
 /* Requests to a slave thread. */
-typedef enum {ZMAPTHREAD_REQUEST_INIT, ZMAPTHREAD_REQUEST_WAIT, ZMAPTHREAD_REQUEST_TIMED_OUT,
-	      ZMAPTHREAD_REQUEST_EXECUTE} ZMapThreadRequest ;
+#define ZMAP_THREAD_REQUEST_LIST(_)             \
+_(ZMAPTHREAD_REQUEST_INVALID,   , "invalid",    "invalid request. ", "")   \
+_(ZMAPTHREAD_REQUEST_WAIT,      , "wait",       "Wait for next request. ", "")	\
+_(ZMAPTHREAD_REQUEST_TIMED_OUT, , "timed_out",  "You have timed out. ", "")	\
+_(ZMAPTHREAD_REQUEST_EXECUTE,   , "execute",    "Execute request. ", "")
+
+ZMAP_DEFINE_ENUM(ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
 
 
 /* Replies from a slave thread. */
-/* quit is as requested failed is quit unexpectedly */
-typedef enum {ZMAPTHREAD_REPLY_INIT, ZMAPTHREAD_REPLY_WAIT, ZMAPTHREAD_REPLY_GOTDATA, ZMAPTHREAD_REPLY_REQERROR,
-	      ZMAPTHREAD_REPLY_DIED, ZMAPTHREAD_REPLY_CANCELLED, ZMAPTHREAD_REPLY_QUIT } ZMapThreadReply ;
+#define ZMAP_THREAD_REPLY_LIST(_)             \
+_(ZMAPTHREAD_REPLY_INVALID,   , "invalid",          "Invalid reply. ", "") \
+_(ZMAPTHREAD_REPLY_WAIT,      , "waiting",          "Thread waiting. ", "") \
+_(ZMAPTHREAD_REPLY_GOTDATA,   , "got_data",         "Thread returning data. ", "") \
+_(ZMAPTHREAD_REPLY_REQERROR,  , "request_error",    "Thread received bad request. ", "") \
+_(ZMAPTHREAD_REPLY_DIED,      , "have_died",        "Thread has died unexpectedly. ", "") \
+_(ZMAPTHREAD_REPLY_CANCELLED, , "thread_cancelled", "Thread has been cancelled. ", "") \
+_(ZMAPTHREAD_REPLY_QUIT,    ,   "quit",             "Thread has terminated normally. ", "")
+
+ZMAP_DEFINE_ENUM(ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
 
 
-/* Return codes from a handler function. */
-typedef enum {ZMAPTHREAD_RETURNCODE_OK, ZMAPTHREAD_RETURNCODE_TIMEDOUT,
-	      ZMAPTHREAD_RETURNCODE_REQFAIL, ZMAPTHREAD_RETURNCODE_BADREQ,
-	      ZMAPTHREAD_RETURNCODE_SERVERDIED, ZMAPTHREAD_RETURNCODE_QUIT } ZMapThreadReturnCode ;
+/* Return codes from the handler function called by the slave thread to service a request. */
+#define ZMAP_THREAD_RETURNCODE_LIST(_)             \
+_(ZMAPTHREAD_RETURNCODE_INVALID,    , "invalid",        "Invalid return code. ", "") \
+_(ZMAPTHREAD_RETURNCODE_OK,         , "ok",             "OK. ", "") \
+_(ZMAPTHREAD_RETURNCODE_TIMEDOUT,   , "timed_out",      "Timed out. ", "") \
+_(ZMAPTHREAD_RETURNCODE_REQFAIL,    , "request_failed", "Request failed. ", "") \
+_(ZMAPTHREAD_RETURNCODE_BADREQ,     , "bad_request",    "Invalid request. ", "") \
+_(ZMAPTHREAD_RETURNCODE_SERVERDIED, , "server_died",    "Server has died. ", "") \
+_(ZMAPTHREAD_RETURNCODE_QUIT,       , "server_quit",    "Server has quit. ", "")
+
+ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
+
+
+
+
+
 
 
 /* One per connection to a thread, an opaque private type. */
@@ -110,8 +135,18 @@ void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 				    void **data, char **err_msg) ;
 char *zMapThreadGetThreadID(ZMapThread thread) ;
+
+
 char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
 char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;
+
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
+
+
+
+
 void zMapThreadKill(ZMapThread thread) ;
 gboolean zMapThreadExists(ZMapThread thread);
 void zMapThreadDestroy(ZMapThread thread) ;

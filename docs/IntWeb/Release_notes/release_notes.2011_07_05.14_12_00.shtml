@@ -1,0 +1,1986 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 5 July 2011' [non-release build]" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- Summaries of changes... --!>
+
+<h1>Summary Of Changes And Bug Fixes For ZMap 0.1.134  [non-release build]</h1>
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Acedb Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Seqtools Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.134  [non-release build]</h1>
+
+<p>Last Release Date: 01/05/2011</p>
+
+<!-- commented by /var/tmp/zmap.14691/ZMap/scripts/zmap_make_rt_release_notes.sh
+<h3>Current Release Date:  5 July 2011 at 14h.12m.00s</h3>
+ end of commenting by /var/tmp/zmap.14691/ZMap/scripts/zmap_make_rt_release_notes.sh -->
+
+<p>This report covers 2011-05-01 to 2011-07-05</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69060">69060</a>, Resolved (Wed Jun 15 15:48:58 2011)
+<p>Clustering ESTs and mRNAs</p>
+<p>af2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=78097">78097</a>, Resolved (Wed Jun 15 15:45:03 2011)
+<p>Rounding error in ruler code</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=122482">122482</a>, Resolved (Wed Jun 15 16:07:02 2011)
+<p>turn off blue diamonds for consensus splice sites</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=128410">128410</a>, Resolved (Wed Jun 15 15:53:33 2011)
+<p>Incomplete homology markers</p>
+<p>mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156650">156650</a>, Resolved (Wed Jun 15 16:40:49 2011)
+<p>idea - need improved highlighting of evidence already used to build transcript</p>
+<p>mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161914">161914</a>, Resolved (Wed Jun 15 16:14:34 2011)
+<p>red diamonds differ with different bump modes in Zmap</p>
+<p>mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=176415">176415</a>, Resolved (Wed Jun 15 16:41:56 2011)
+<p>Locus column difficult to read</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=183172">183172</a>, Resolved (Wed Jun 15 16:25:12 2011)
+<p>rev comp coordinates in ladder are 1kb off</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196718">196718</a>, Resolved (Wed Jun 15 16:26:24 2011)
+<p>version 0.1.104 orange line through panel label text</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=208178">208178</a>, Resolved (Thu Jun 02 11:39:36 2011)
+<p>DNA highlighting</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209814">209814</a>, Resolved (Thu Jun 02 12:02:13 2011)
+<p>zmap GFF parsing error</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211261">211261</a>, Resolved (Wed Jun 15 16:32:31 2011)
+<p>alignments displayed 1 base out at high zoom</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211274">211274</a>, Resolved (Wed Jun 15 16:30:50 2011)
+<p>DNA fetching code always gets the first bases in the block</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=212173">212173</a>, Resolved (Thu Jun 02 11:35:05 2011)
+<p>zmap not fetching sequence for blixem from acedb</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=214553">214553</a>, Resolved (Thu Jun 02 09:59:54 2011)
+<p>saving error "Merge of new feature into View feature context failed"</p>
+<p>rn4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=214555">214555</a>, Resolved (Thu May 12 13:23:20 2011)
+<p>n/c splice markers broken again</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215229">215229</a>, Resolved (Tue Jun 07 15:21:01 2011)
+<p>percent ID always 0.00000 in feature details view</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215419">215419</a>, Resolved (Thu Jun 09 12:18:28 2011)
+<p>GFF with mixed sequence names not filtered</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215429">215429</a>, Resolved (Thu Jun 09 12:15:26 2011)
+<p>wrong format GFF header crashes server thread</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=216474">216474</a>, Resolved (Thu Jun 02 10:14:57 2011)
+<p>[/software/anacode/otter/otter_rel53.07/ensembl-otter/tk/otterlace] error log /nfs/users/nfs_g/gdr/.otter/otterlace.4053-a.log</p>
+<p>gdr@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=216561">216561</a>, Resolved (Wed Jun 15 15:00:46 2011)
+<p>empty 3F columns</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217099">217099</a>, Resolved (Tue Jun 14 13:24:42 2011)
+<p>scale bar tick marks are chosen oddly: should be order of 10</p>
+<p>jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217170">217170</a>, Resolved (Thu Jun 02 09:52:28 2011)
+<p>Aborted: Unknown FeatureSet "Non_coding":  not found in original_block</p>
+<p>cas@sanger.ac.uk, jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217665">217665</a>, Resolved (Thu Jun 02 11:21:33 2011)
+<p>duplicated CpGs in Zmap</p>
+<p>vb1@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=218678">218678</a>, Resolved (Wed Jun 15 15:36:07 2011)
+<p>EST's w/ red dots should not be masked</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=218683">218683</a>, Resolved (Mon Jun 13 16:39:28 2011)
+<p>Reliable crash in "Feature details" window</p>
+<p>mca@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=219358">219358</a>, Resolved (Thu Jun 23 09:03:27 2011)
+<p>some off by 1 errors in coordinates</p>
+<p>mh17@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=219620">219620</a>, Resolved (Thu Jun 16 13:47:39 2011)
+<p>Coords passed to Blixem are wrong when zmap is revcomp'd</p>
+<p>gb10@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=220949">220949</a>, Resolved (Thu Jun 30 13:27:20 2011)
+<p>Wrong coordinates on clipboard for -ve strand zmap features</p>
+<p>mg13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=221148">221148</a>, Resolved (Mon Jun 27 14:01:36 2011)
+<p>test_otterlace 55.04: Zmap crash on vsplit</p>
+<p>mg13@sanger.ac.uk, mpk@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=221452">221452</a>, Resolved (Tue Jul 05 10:05:19 2011)
+<p>scale off by half a unit</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>seqtools</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217053">217053</a>, Resolved (Thu May 26 16:51:27 2011)
+<p>protein blixem displays matches in wrong frame</p>
+<p>jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from git]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "fix original/unique id bug in looking up featureset names from xml."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "remove path from filename, makes log records far too long."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-30:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-30:</b>   tweaked scale bar to place text between ticks and ticks between bases
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-30:</b>   "fix bug in feature names on clipboard."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-30:</b>   "add missing global zmap header."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "add doc for reverting files."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "fix mail id for bugs."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "fix up mark and other bits broken in blixem launch."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "clarify git-add after rebase."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-28:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-28:</b>   "fix bug in putting feature coords in clipboard."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-28:</b>   fixed xml escape on feature details
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-27:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-27:</b>   removed dbug (item factory) and fixed blixem start coord to be new mouse or selected feature
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-27:</b>   "fix bug in finding block after window split."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-24:</b>   "update for my lost changes...due to not using git correctly ?"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-24:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-24:</b>   "add details of merging develop changes into a feature branch."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-23:</b>   fixed blixem rev strand -m arg again
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-22:</b>   fix to catch format change in XML for highlight evidence &apos change still needs resolving
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-22:</b>   fixed off by 1 errors on seq extent, feature status bar coords and scale bar esp for revcomp
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-22:</b>   made BAM menu always appear, removed spurious debug message from pipeserver.c
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-21:</b>   mod to GFF header checking to allow unspecified seq to be loaded from file
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-20:</b>   "add develop build description."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-17:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-17:</b>   updated all copyrights and removed CVS guff
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-17:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-17:</b>   "fix development build not to tag."
+</li>
+
+<li>
+<b>zmap - 2011-06-17:</b>   "update last release notes to 17/06/2011"
+</li>
+
+<li>
+<b>zmap - 2011-06-17:</b>   "update release notes file to release_notes.2011_06_17.09_47_31.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-06-17:</b>   "new zmap release notes for 17 June 2011"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "update release notes file to release_notes.2011_06_16.13_43_22.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "new zmap release notes for 16 June 2011"
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-16:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-16:</b>   blixem revcomped coords fixed and gff BAN coords fixed??
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "update last release notes to 16/06/2011"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "update release notes file to release_notes.2011_06_16.11_27_12.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "new zmap release notes for 16 June 2011"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   "add force flag for release notes shtml because we have gitignore for shtml files."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   "fix bug in getting hostnames for build machines."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   "comment out my temp. fix for otterlace not passing chromosome coords."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-15:</b>   added perfect option to est_masking via style config
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   "improve X error messages, add correct error handling all over the place, add extra error messages."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   "add X error error code."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   "fix poor error handling/messages."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-15:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-15:</b>   hid empty 3 frame columns
+</li>
+
+<li>
+<b>Jeremy Henty - 2011-06-14:</b>   X11/XRemote.pm: sub new(): do not lower case keys (so that we can set __DEBUG).
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-14:</b>   "fix up debugging and bugs in xremote stuff."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-14:</b>   "fix stupid bug in create parser."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-14:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-14:</b>   scale bar fixed and improved
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-14:</b>   blixem config tweaked
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-10:</b>   "add file to exclude common files not for git."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-10:</b>   "add doc about excludes file."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add sequence/start/end to parser create."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add func. to detect empty strings."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add func. to detect empty strings."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add sequence/start/end to parsercreate, handle no-data in file condition better."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add sequence/start/end to parser create."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add STS SO_term to types we support."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "Remove redundant header line parsing + make more robust, add sequence/start/end to parser create, handle different sequences in same file."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "remove context duplication where not needed. Clean up + make zoom handling work."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "change format of floats to double."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "add % sign to percent id in status bar."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "add function to select feature."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "add function to revcomp coords."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-07:</b>   BAM config updated
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-07:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "try removing display of clone name, not needed ?"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "fix wrong comment."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "percent id needs to be a float not a double...or else convert all code to doubles."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "add highlight feature call, move highlight items calls to be internal to zmapwindow."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "add debug print func with flush() so we see output straight away."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "no change, added code and then took it away."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   tweaked blixem data file (missign tab)
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   adjusted -dataset blixem arg to be --dataset=stuff as requested
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   "fix stupid typo."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   added blixem -dataset arg
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   "remove incorrect assert in getFeatureBlockDNA(), causes zmap to crash when it shouldn't."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   "fix bug in how we look up feature set names."
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Updated blixem config file details in the BAM design notes
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "update for different build scripts."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "add branch descriptor."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "stop incrementing version on develop build, add branch descriptor instead."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "correct bad comment."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "sort out version number/development descriptor string."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix the release and update number incrementing."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "fix up git log format."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-31:</b>   "Fix up release notes to be from correct directory."
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   /var/tmp/zmap.16092/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update last release notes to 27/05/2011"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update release notes file to release_notes.2011_05_27.14_48_22.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "new zmap release notes for 27 May 2011"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "put back last release date for testing."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix parsing of git changes for zmap repository."
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   /var/tmp/zmap.26091/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update last release notes to 27/05/2011"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "update release notes file to release_notes.2011_05_27.12_33_30.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-05-27:</b>   "new zmap release notes for 27 May 2011"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "replace cvs stuff with git stuff."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "script to git commit etc."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix args bug."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "change to use build_run.sh"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix up options handling."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "add some more messages"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "add dist file flag."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix up base dir."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix small buglet."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix up base dir."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix up base dir."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-27:</b>   "fix up base dir."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "try to fix up common function loading."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "try to fix up common function loading."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "try to fix up common function loading."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "try to fix up common function loading."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "try to fix up common function loading."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "fix up output to look better."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "fix bug in version stuff that I introduced."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "fix up faulty logic in dot scripts in build_bootstrap"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "fix dist file flag."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   all docs for build stuff in build_system.shtml
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "trival comment change only."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-26:</b>   "update build documentation for new scripts etc."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "Improve logging."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "Improve logging."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "fix up messaging/logging."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "Improve logging."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "fix errors."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "fix errors."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "fix errors."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "fix errors."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "add debug stuff."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-25:</b>   "fix feature info code."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "fix another stupid bug."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "fix stupid bugs."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "fix silly bad arg flag bug."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "add support for feature branch string."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "add support for feature branch string."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "tidy up."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "add come docs about git flow."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "change to use build_run.sh"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "tidy up params."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "fix up feature branch info param + small tidy up bits."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "parameterise build and add code to insert feature branch info."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "script to put gti feature tag/description into zmap header file."
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-24:</b>   Added note about compile info to git documentation
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-24:</b>   "add script to retrieve git branch/tag/version information."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-23:</b>   "fix stupid typo."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-23:</b>   "fix up better feature dir arg handling."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-23:</b>   "fix up messaging etc for scripts."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-23:</b>   "fix up messaging etc for scripts."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-23:</b>   "scripts/build_run.sh"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-20:</b>   "replace with new script to call build_run.sh"
+</li>
+
+<li>
+<b>zmap - 2011-05-20:</b>   /var/tmp/zmap.28235/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-20:</b>   "fix bug in versioner...not good code."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-20:</b>   "change to use new unified build_run.sh script"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "fix buglet in versioner."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "write up git flow stuff."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "improve error messages and fix but in version file handling."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "add some git flow stuff."
+</li>
+
+<li>
+<b>zmap - 2011-05-19:</b>   /var/tmp/zmap.24722/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "do release update by hand"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "fix push bug with tags."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-19:</b>   "fix push bug with tags."
+</li>
+
+<li>
+<b>zmap - 2011-05-18:</b>   increment version number
+</li>
+
+<li>
+<b>zmap - 2011-05-18:</b>   /var/tmp/zmap.23007/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix typo.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   replace more cvs stuff with git
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   replace cvs references with git.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix branch.
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   added untracked gotchas in cvs-git doc in develop branch this time
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix typo.
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   fixed typos on cvs-git doc
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   doc update
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   Merge branch 'feature/foo' into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   reverted debug, to push docs to master
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   doc update re git flow
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix typo.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix typo.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix typo.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-18:</b>   fix up build to work again.
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   a test
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-18:</b>   turned on foo debug
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-17:</b>   clearing updates to origin
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-17:</b>   more work to do on this file.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-17:</b>   add debug info.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-17:</b>   add debug info.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-17:</b>   add debug info.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-17:</b>   fix typo.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-17:</b>   remoev cvs references.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-16:</b>   fix up directory stuff.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-16:</b>   fix up directory stuff.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-16:</b>   fix up faulty path.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-16:</b>   fix up faulty path.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-16:</b>   fix up scripts to use git.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-05-16:</b>   add script to update directory and optionally run a build command.
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-05-16:</b>   updated git import notes
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   add FEATURE_ prefix to build/dir name.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   /var/tmp/zmap.15446/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   update release notes file to release_notes.2011_05_13.14_53_04.shtml
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   new zmap release notes for 13 May 2011
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   /var/tmp/zmap.26566/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>mh17 - 2011-05-13:</b>   updated obscure docs
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   update release notes file to release_notes.2011_05_13.14_01_47.shtml
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   new zmap release notes for 13 May 2011
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   /var/tmp/zmap.5689/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   update last release notes to 13/05/2011
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   update release notes file to release_notes.2011_05_13.13_44_41.shtml
+</li>
+
+<li>
+<b>zmap - 2011-05-13:</b>   new zmap release notes for 13 May 2011
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   fix up feature dir location.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   add some debugging.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   add some debugging.
+</li>
+
+<li>
+<b>edgrif - 2011-05-13:</b>   remove redundant bin dir stuff.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   trivial change.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   put back build scripts and then try them out.
+</li>
+
+<li>
+<b>zmap - 2011-05-12:</b>   /var/tmp/zmap.16405/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up dirs again.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up dirs again.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up dirs again.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up dev build.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up dev build.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up dev build.
+</li>
+
+<li>
+<b>mh17 - 2011-05-12:</b>   gathering statisics
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   "Renamed from zmap_build_test.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   "Renamed to zmap_build_feature.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up errors in script dirs.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up errors in script dirs.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up errors in script dirs.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up errors in script dirs.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   fix up errors in script args.
+</li>
+
+<li>
+<b>edgrif - 2011-05-12:</b>   try to get some debugging.
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   fix bug in bootstrap and test....
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   fix stupid typo
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   try to fix up a test build script.
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   add script to developer builds of branch code.
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   superceded by zmap_build_test.sh
+</li>
+
+<li>
+<b>zmap - 2011-05-11:</b>   /var/tmp/zmap.17943/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   fix up build dir again.
+</li>
+
+<li>
+<b>zmap - 2011-05-11:</b>   /var/tmp/zmap.30269/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   fix up new build location and error message.
+</li>
+
+<li>
+<b>zmap - 2011-05-11:</b>   /var/tmp/zmap.9882/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>edgrif - 2011-05-11:</b>   add info. messages to build scripts.
+</li>
+
+<li>
+<b>zmap - 2011-05-10:</b>   /var/tmp/zmap.24512/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   Adam asked if we could only show split codons for the inframe peptide column, so I've done that.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   fix to increment release number.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   make build scripts consistent, make default to not produce docs etc, fix up error handling.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   reset date.
+</li>
+
+<li>
+<b>zmap - 2011-05-10:</b>   update release notes file to release_notes.2011_05_10.10_06_34.shtml
+</li>
+
+<li>
+<b>zmap - 2011-05-10:</b>   new zmap release notes for 10 May 2011
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   fix reference to renamed script.
+</li>
+
+<li>
+<b>zmap - 2011-05-10:</b>   update last release notes to 10/05/2011
+</li>
+
+<li>
+<b>zmap - 2011-05-10:</b>   update release notes file to release_notes.2011_05_10.09_58_22.shtml
+</li>
+
+<li>
+<b>zmap - 2011-05-10:</b>   new zmap release notes for 10 May 2011
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   make sure we don't do release notes.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   add release notes to build stuff.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   changed name of release note scripts.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   new blix args just need the start coord to map to 1.
+</li>
+
+<li>
+<b>edgrif - 2011-05-10:</b>   update args code to use new blixem args.
+</li>
+
+<li>
+<b>mh17 - 2011-05-10:</b>   added timing calls
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   "Renamed from zmap_overnight.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   "Renamed to zmap_build_overnight.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   "Renamed from zmap_build_and_tar.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   "Renamed to zmap_compile_and_tar.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   "Renamed from zmap_one_off_build.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   "Renamed to zmap_build_one_off.sh."
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   renamed from zmap_do_build.sh
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   renamed to zmap_build_release.sh
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   create script to do development (as opposed to release) builds.
+</li>
+
+<li>
+<b>mh17 - 2011-05-09:</b>   fixed mc-splice markers
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   renamed from zmap_build_rt_release_notes.sh
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   renamed to zmap_make_rt_release_notes.sh
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   renamed from zmap_build_cvs_release_notes.sh
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   zmap_build_cvs_release_notes.sh renamed to zmap_make_cvs_release_notes.sh
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   specify offset so blixem can rebase coords it displays.
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   add offset to calls to blixem code.
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   add offset to data passed back in align callback.
+</li>
+
+<li>
+<b>edgrif - 2011-05-09:</b>   add offset param to alignment callback.
+</li>
+
+<li>
+<b>mh17 - 2011-05-06:</b>   added config and request login and UI for BAM via Blixem
+</li>
+
+<li>
+<b>mh17 - 2011-05-06:</b>   canvas items simplified stage 1
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix stupid bug in clearing/populating translation arrays.
+</li>
+
+<li>
+<b>zmap - 2011-05-06:</b>   /var/tmp/zmap.8158/ZMap/scripts/versioner run by zmap
+</li>
+
+<li>
+<b>zmap - 2011-05-06:</b>   update last release notes to 06/05/2011
+</li>
+
+<li>
+<b>zmap - 2011-05-06:</b>   update release notes file to release_notes.2011_05_06.13_47_51.shtml
+</li>
+
+<li>
+<b>zmap - 2011-05-06:</b>   new zmap release notes for  6 May 2011
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   remove unused variables, fix debug print routine.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   missed removal of fields in internal struct.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix bug in getting dna, tidy up unused code.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add funcs to test type of sequence.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add funcs to test type of sequence, fix start_not_found name.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add annotated exon struct, fix start_not_found name, add new sequence and transcript funcs.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add some debug code.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   move to single sequence mode.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add code to support colouring exon and translation text to show coding, frame etc.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add code to colour transcript text in separate window.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   dna choose now returns chosen sequence coords.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   remove exon stuff to zmapFeature, fix bugs in 'show translation in zmap' code.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   move to single sequence mode.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add text selection colour.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   remove detailed exon stuff, put in zmapFeature, add calls to test sequence type.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add zmapFeatureTranscript.c to build.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add some transcript feature functions, e.g. annotated exons.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   move to single sequence mode.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   move to single sequence mode. Fix coding/non-coding terms for exons.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   move to single sequence mode, fix start not found name, fix bugs in tranlation code.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add support for colouring text.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add function to map coords to arbitrary offset.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add support to colour displayed text.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   move to single sequence mode, use func to decide if sequence is dna or peptide.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   switch to single sequence mode and fix start not found name.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix bug where we don't unhighlight correctly for reverse stranded for dna/3 frame.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix single sequence mode.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   switch to single sequence mode and fix start nto found name.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix bugs in coords caused by broken handling of sequences not starting at 1.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   use proper call to test is feature is peptide.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   sequence or peptide are now just mode SEQUENCE.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix buglets in start_not_found & end_not_found processing.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix start_not_found nomenclature.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   add func. to map coords to a given base offset.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   fix missing newline in print.
+</li>
+
+<li>
+<b>edgrif - 2011-05-06:</b>   remove i386 flag, no longer needed.
+</li>
+
+<li>
+<b>mh17 - 2011-05-05:</b>   quick notes, needs finishing
+</li>
+
+<li>
+<b>mh17 - 2011-05-05:</b>   _
+</li>
+
+<li>
+<b>mh17 - 2011-05-05:</b>   OK
+</li>
+
+<li>
+<b>mh17 - 2011-05-05:</b>   updated zmap config
+</li>
+
+<li>
+<b>mh17 - 2011-05-05:</b>   minor update
+</li>
+
+<li>
+<b>mh17 - 2011-05-05:</b>   documented a lengthy series of paths
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Acedb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w7/smapconvert.c: fix bug in start_not_found setting, fix various
+	  trivial compile errors.
+
+
+  </li>
+  <li> w3rdparty/: include-config, libs-config: remove setting of
+	  PKG_CONFIG_PATH, produces errors in package finding.
+
+
+  </li>
+  <li> wmake/: LINUX_64_BLXNEW_DEF, LINUX_64_DEF: fix up path to gtk
+	  install in /software.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Ensure that only identical alignments can appear on the same row in 'squash matches' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Do not show score and ID if they are unset
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Fixed a bug where some short reads were not being added to the 'squashed' view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Fixed a bug where dotter fails if pfetch returns 'no match'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   When sorting alignments by position, also do a secondary sort by length
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Fixed an issue where the 'squash matches' option on the settings dialog was not updated after changing the same setting on the toolbar
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Incremented version to 4.2 (start of new versioning system)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Improvements to message handling for region-fetch code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Fixed an issue with squashed matches where the row was not always highlighted correctly for selected/grouped matches
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Small comment addition
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Added toolbar icon for squash-matches option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Improved display name for short reads when 'squash matches' is enabled
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Fixed an issue where a selected short-read could be hidden by its duplicates in 'squashed matches' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Finished work to group short-reads
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   WIP: implement a better way of grouping duplicate short reads
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed an issue with the names of duplicated short reads being lost
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a bug where the region-fetch script args were not being picked up from config
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a compile error on Macs (missing include file)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a compile error on Linux due to missing include file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Fixed a bug where the coverage view labels were sometimes not drawn correctly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added squash-matches command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   By default, set the secondary sort column to be position
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added show-coverage command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Report an error if the region-fetch script fails
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   The range requested by region-fetch is now clipped to the display range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Tidied the regino-fetch code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added the --save-temp-files command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Keep original name for short reads so that we can identify pairs (until we have a better method of doing so)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   GFF parser now ignores features that are outside the reference sequence range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Delete temp files after doing a region-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   region-fetch now gets its script arguments from the config file on a per-source basis
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Merge branch 'feature/buildsys'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Removed --dirty option from git describe because it's not available in older versions of git
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Use abbreviated commit ids in build info
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Removed unused expression in configure.ac
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Fixed a bug in the build system where AM_COND_IF is not recognised in older versions of automake
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Merge branch 'feature/buildsys'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Build system now includes git-describe info in the version number
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-02:</b>   Incremented version to 4.1.20
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-02:</b>   Added --dataset argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Fixed a bug with creating temp files for region-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Merge branch 'shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-31:</b>   Fixed a bug where the parser was not ignoring blank lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-31:</b>   Added the real script arguments for the bam-fetch script
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Added code to distinguish short-read matches from other match types
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Fixed a bug where parsing a secondary input file was not adding the sequences correctly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Blixem region-fetch now calls the script specified in the config file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Convert coords to chromosome (input) coords for bam-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-05:</b>   Region-fetch now parses the results of the created file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-05:</b>   Write some test data to the output file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-05:</b>   Region-fetch function now opens a temporary file for the results
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-05:</b>   Fixed some bugs with parsing by multiple fetch modes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Fixed a bug with fetch-by-mode. Also now specify that regions need data to be fetched.
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Moved source data from the MSP struct to the parent sequence struct
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Data type is now populated in the sequences
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Removed user-fetch mode from the data-type config group
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Allow a differentiation between bulk-fetch mode and interactive/user-fetch mode in the config file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Removed bulk-fetch mode to simplify initial implementation
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-04:</b>   Added data-type struct and populate it in MSPs that have a data-type specified
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-03:</b>   Removed commented out code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-03:</b>   Always initialise pfetch node and port on startup
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-03:</b>   Added new fetch method groups for config file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-03:</b>   Added 'region' to supported GFF types
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-26:</b>   Incremented version to 4.1.19
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-26:</b>   Reading frame is now calculated from the mapped coords rather than the original coords
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Updated user manual with new command-line arguments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Updated usage text in user pages
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Incremented version to 4.1.18
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Fixed a bug with the --invert-sort option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Fixed a bug with the hide-big-picture option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   dotter-first-match now finds the correct sequence to dotter
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Fixes to do with --dotter-first-match option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Fixed a bug with the dotter-first-match argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Fixed bugs with command-line arguments, and implemented --map-coords
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-09:</b>   Changed command-line arguments and added new --map-coords argument
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+

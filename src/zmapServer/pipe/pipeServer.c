@@ -1,3 +1,4 @@
+/*  Last edited: Jul 11 12:08 2011 (edgrif) */
 /*  File: pipeServer.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer.c by Ed Griffiths (edgrif@sanger.ac.uk)
@@ -513,6 +514,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
   int retval = FALSE;
+
   if (server->gff_pipe)
     {
       zMapLogWarning("Feature script \"%s\" already active.", server->script_path) ;
@@ -528,55 +530,65 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
       if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
 	{
-	  if((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
+	  if ((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
             retval = TRUE;
 	}
       else
 	{
-	  if(pipe_server_spawn(server,&gff_pipe_err))
+	  if (pipe_server_spawn(server,&gff_pipe_err))
             retval = TRUE;
 	}
 
-      server->sequence_server = req_open->sequence_server;         /* if not then drop any DNA data */
-      server->parser = zMapGFFCreateParser(server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
-      server->gff_line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
-
-
-      if(retval)
+      if (!retval)
 	{
+	  /* If it was a file error then set up message. */
+	  if (gff_pipe_err)
+	    setLastErrorMsg(server, &gff_pipe_err) ;
 
-	  result = pipeGetHeader(server);
-
-#if 0
-	  {
-	    ZMapGFFHeader header ;
-
-	    if (!(header = zMapGFFGetHeader(server->parser)))
-	      printf("got it\n") ;
-
-	  }
-#endif
-
-	  //zMapLogWarning("pipe query was: %s",server->query);
-
-          if(result == ZMAP_SERVERRESPONSE_OK)
-            {
-              // always read it: have to skip over if not wanted
-              // need a flag here to say if this is a sequence server
-              // ignore error response as we want to report open is OK
-              pipeGetSequence(server);
-            }
-	}
-
-      if(!retval || result != ZMAP_SERVERRESPONSE_OK)
-	{
-	  setLastErrorMsg(server, &gff_pipe_err) ;
 	  /* we don't know if it died or not
 	   * but will find out via the getStatus request
 	   * we need DIED status to make this happen
 	   */
 	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
 	}
+      else
+	{
+	  server->sequence_server = req_open->sequence_server; /* if not then drop any DNA data */
+	  server->parser = zMapGFFCreateParser(server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
+	  server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
+
+
+	  result = pipeGetHeader(server);
+
+          if (result == ZMAP_SERVERRESPONSE_OK)
+            {
+              // always read it: have to skip over if not wanted
+              // need a flag here to say if this is a sequence server
+              // ignore error response as we want to report open is OK
+              pipeGetSequence(server);
+            }
+	  else
+	    {
+	      result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	    }
+	}
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (!retval || result != ZMAP_SERVERRESPONSE_OK)
+	{
+	  /* If it was a file error then set up message. */
+	  if (gff_pipe_err)
+	    setLastErrorMsg(server, &gff_pipe_err) ;
+
+	  /* we don't know if it died or not
+	   * but will find out via the getStatus request
+	   * we need DIED status to make this happen
+	   */
+	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return result ;
@@ -651,7 +663,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
   zMapAssert(server) ;
 
       // can take this warning out as zmapView should now read the styles file globally
-  setErrMsg(server, g_strdup("Reading styles from a GFF stream is not supported.")) ;
+  setErrMsg(server, "Reading styles from a GFF stream is not supported.") ;
   ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->query,
 		 "%s", server->last_err_msg) ;
 
@@ -747,10 +759,13 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
 	      if (!error)
 		{
-		  /* SHOULD ABORT HERE.... */
-		  setErrMsg(server,
-			    g_strdup_printf("zMapGFFParseHeader() failed with no GError for line %d: %s",
-					    zMapGFFGetLineNumber(server->parser), server->gff_line->str)) ;
+		  char *err_msg ;
+
+		  err_msg = g_strdup_printf("zMapGFFParseHeader() failed with no GError for line %d: %s",
+					    zMapGFFGetLineNumber(server->parser), server->gff_line->str) ;
+		  setErrMsg(server, err_msg) ;
+		  g_free(err_msg) ;
+
 		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				     "%s", server->last_err_msg) ;
 		}
@@ -761,14 +776,19 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 		  if (zMapGFFTerminated(server->parser))
 		    {
 		      server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		      setErrMsg(server, g_strdup_printf("%s", error->message)) ;
+
+		      setErrMsg(server, error->message) ;
 		    }
 		  else
 		    {
-		      setErrMsg(server,
-				g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
+		      char *err_msg ;
+
+		      err_msg = g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
 						zMapGFFGetLineNumber(server->parser),
-						server->gff_line->str)) ;
+						server->gff_line->str) ;
+		      setErrMsg(server, err_msg) ;
+		      g_free(err_msg) ;
+
 		      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 					 "%s", server->last_err_msg) ;
 		    }
@@ -782,12 +802,16 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
 
   /* Sometimes the file contains only the gff header and no data, I don't know the reason for this
-   * but in this case there's not point in going further. */
+   * but in this case there's no point in going further. */
   if (status == G_IO_STATUS_EOF && !done_header)
     {
-      setErrMsg(server,
-		g_strdup_printf("EOF reached while trying to read header, at line %d",
-				zMapGFFGetLineNumber(server->parser))) ;
+      char *err_msg ;
+
+      err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
+				zMapGFFGetLineNumber(server->parser)) ;
+      setErrMsg(server, err_msg) ;
+      g_free(err_msg) ;
+
       ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path, server->query,
 			 "%s", server->last_err_msg) ;
 
@@ -828,13 +852,18 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
       if (zMapGFFTerminated(server->parser))
 	{
           server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-          setErrMsg(server, g_strdup_printf("%s", error->message)) ;
+          setErrMsg(server, error->message) ;
 	}
       else
 	{
-          setErrMsg(server,g_strdup_printf("zMapGFFParseSequence() failed for line %d: %s - %s",
-					   zMapGFFGetLineNumber(server->parser),
-					   server->gff_line->str,error->message)) ;
+	  char *err_msg ;
+
+	  err_msg = g_strdup_printf("zMapGFFParseSequence() failed for line %d: %s - %s",
+				    zMapGFFGetLineNumber(server->parser),
+				    server->gff_line->str, error->message) ;
+          setErrMsg(server, err_msg) ;
+	  g_free(err_msg) ;
+
           ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 			     "%s", server->last_err_msg) ;
 	}
@@ -930,15 +959,17 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
       if(!(sequence = zMapGFFGetSequence(server->parser)))
 	{
 	  GError *error;
-        char *estr;
+	  char *estr;
 
 	  error = zMapGFFGetError(server->parser);
-        if(error)
+
+	  if(error)
             estr = error->message;
-        else
+	  else
             estr = "No error reported";
-	  setErrMsg(server,
-		    g_strdup_printf("zMapGFFGetSequence() failed, error=%s",estr));
+
+	  setErrMsg(server, estr) ;
+
 	  ZMAPPIPESERVER_LOG(Warning, server->protocol,
 			 server->script_path,server->query,
 			 "%s", server->last_err_msg);
@@ -1191,34 +1222,6 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header,
 
 
 
-/* Small utility to deal with error messages from the GIOchannel package.
- * Note that we set gff_pipe_err_inout to NULL */
-static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout)
-{
-  GError *gff_pipe_err ;
-  char *msg = "failed";
-
-  zMapAssert(server && gff_pipe_err_inout);
-
-  pipe_server_get_stderr(server);         /* get this regardless */
-  /* normally we get stderr on the getStatus call bu in case of an error we don't get there */
-
-  gff_pipe_err = *gff_pipe_err_inout ;
-  if(gff_pipe_err)
-      msg = gff_pipe_err->message;
-
-  setErrMsg(server, g_strdup_printf("%s %s", server->script_path, msg)) ;
-
-  if(gff_pipe_err)
-      g_error_free(gff_pipe_err) ;
-
-  *gff_pipe_err_inout = NULL ;
-
-  return ;
-}
-
-
-
 /* Process all the alignments in a context. */
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data)
 {
@@ -1310,7 +1313,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 	      if (zMapGFFTerminated(parser))
 		{
 		  result = FALSE ;
-		  setErrMsg(server, g_strdup_printf("%s", error->message)) ;
+		  setErrMsg(server, error->message) ;
 		}
 	      else
 		{
@@ -1365,18 +1368,56 @@ static gboolean getServerInfo(PipeServer server, ZMapServerInfo info)
 }
 
 
+
+/* Small utility to deal with error messages from the GIOchannel package.
+ * Note that we set gff_pipe_err_inout to NULL */
+static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout)
+{
+  GError *gff_pipe_err ;
+  char *msg = "failed";
+
+  zMapAssert(server && gff_pipe_err_inout);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS SEEMS TO BE DONE IN setErrMsg() ANYWAY ?? */
+
+  pipe_server_get_stderr(server);         /* get this regardless */
+  /* normally we get stderr on the getStatus call bu in case of an error we don't get there */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  gff_pipe_err = *gff_pipe_err_inout ;
+  if (gff_pipe_err)
+    msg = gff_pipe_err->message;
+
+  setErrMsg(server, msg) ;
+
+  if (gff_pipe_err)
+    g_error_free(gff_pipe_err) ;
+
+  *gff_pipe_err_inout = NULL ;
+
+  return ;
+}
+
+
 /* It's possible for us to have reported an error and then another error to come along. */
 /* mgh: if we get an error such as pipe broken then let's look at stderr and if there's a message there report it */
 static void setErrMsg(PipeServer server, char *new_msg)
 {
+  char *error_msg ;
 
   pipe_server_get_stderr(server);         /* get this regardless */
-  /* normally we get stderr on the getStatus call bu in case of an error we don't get there */
+  /* normally we get stderr on the getStatus call but in case of an error we don't get there */
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
 
-  server->last_err_msg = new_msg ;
+  error_msg = g_strdup_printf("SERVER: \"%s\",   REQUEST: \"%s\",   ERROR: \"%s\"",
+			      server->script_path, server->query, new_msg) ;
+
+  server->last_err_msg = error_msg ;
 
   return ;
 }

@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:33 2011 (edgrif) */
 /*  File: zmapWindowItem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1306,16 +1307,23 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  *
  * NOTE that although we only return y coords, we need the world x coords as input
- * in order to find the right foocanvas item from which to get the sequence coords. */
+ * in order to find the right foocanvas item from which to get the sequence coords.
+ * 
+ * Not so easy, we are poking around in the dark....
+ *  */
 gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 				   double wx1, double wy1, double wx2, double wy2,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out)
 {
   gboolean result = FALSE ;
   FooCanvasItem *item ;
+  double mid_x, mid_y ;
 
-  /* Try to get the item at wx1, wy1... we have to start somewhere... */
-  if ((item = foo_canvas_get_item_at(window->canvas, wx1, wy1)))
+  /* Try to get an item at the mid point... we have to start somewhere... */
+  mid_x = (wx1 + wx2) / 2 ;
+  mid_y = (wy1 + wy2) / 2 ;
+
+  if ((item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y)))
     {
       FooCanvasGroup *block_container ;
       ZMapFeatureBlock block ;
@@ -1413,7 +1421,6 @@ gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2)
 /**
  * my_foo_canvas_item_get_world_bounds:
  * @item: A canvas item.
- * Last edited: Dec  6 13:10 2006 (edgrif)
  * @rootx1_out: X left coord of item (output value).
  * @rooty1_out: Y top coord of item (output value).
  * @rootx2_out: X right coord of item (output value).
@@ -1634,9 +1641,13 @@ void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y)
 }
 
 
-void zmapWindowItemGetVisibleCanvas(ZMapWindow window,
-                                    double *wx1, double *wy1,
-                                    double *wx2, double *wy2)
+
+/* This function returns the visible _world_ coords. Be careful how you use
+ * the returned coords as there may not be any of our items at the extreme
+ * extents of this range (e.g. x = 0.0 !!). */
+void zmapWindowItemGetVisibleWorld(ZMapWindow window,
+				   double *wx1, double *wy1,
+				   double *wx2, double *wy2)
 {
 
   getVisibleCanvas(window, wx1, wy1, wx2, wy2);
