@@ -39,9 +39,9 @@ legend{ font-weight: bold }
 <p>There are three major tasks for the zmap build system:</p>
 
 <b><ol>
-  <li>Compiling zmap during day to day development.</li>
-  <li>Building a full zmap distribution.</li>
-  <li>Installing zmap from a distribution file.</li>
+  <li> <a href="#day_to_day">Compiling zmap during day to day development.</a></li>
+  <li> <a href="#dist">Building a full zmap distribution.</a></li>
+  <li> <a href="#install">Installing zmap from a distribution file.</a></li>
 </ol></b>
 
 <p>Compiling zmap involves the developer in initially running the autoconf tools to create
@@ -61,7 +61,7 @@ various zmap dependencies, some of which are distributed with zmap.</p>
 
 
 
-
+<a name="day_to_day"></a>
 <h2>1) Day to day Compiling of ZMap</h2>
 
 
@@ -134,9 +134,10 @@ on a different machine:</p>
 
 
 
+<a name="dist"></a>
 <h2>2) How to make a distribution</h2>
 
-<p>Making distributions is done as the zmap userid on the master build machine
+<p>Making distributions is done as the zmap user on the master build machine
 (currently tviewsrv). Usual practice is to ssh into tviewsrv as zmap:</p>
 
 <pre>
@@ -146,8 +147,8 @@ on a different machine:</p>
 <p>This ensures that you are logged in to the right machine with the correct environment.</p>
 
 <p>There are scripts to do several different kinds of distribution build and
-they should all be run from a checkout of the ZMap respository. For convenience
-there is one in ~zmap/BUILD_SCRIPTS:</p>
+they should all be run from a checkout of the ZMap respository. There is one
+for this use in <b>~zmap/BUILD_SCRIPTS</b>:</p>
 
 <pre>
 &gt; cd ~/BUILD_SCRIPTS/ZMap/scripts
@@ -168,12 +169,12 @@ build_config.sh		    process_stack_dump.pl	zmap_functions_web.sh
 the code repository to ensure the latest versions of the scripts are used:</p>
 
 <pre>
-&gt; ./zmap_update_run [build_script args] 
+&gt; ./zmap_update_run
 </pre>
 
-<p> As can be seen the updating script can be run simply to update the directory or can
-take the name of a build script and any arguments and will run that script after doing the
-update:</p>
+<p> This script can also take as an argument the name of the build script to be run
+(and any args that the build script needs) and it will then run the script
+after doing an update:</p>
 
 <pre>
 &gt; ./zmap_update_run ./zmap_build_one_off.sh
@@ -382,6 +383,7 @@ afterwards, they live in ZMap/doc/IntWeb/Release_notes.</p>
 file gets created.</p>
 
 
+<a name="install"></a>
 <h2>3) Installing ZMap</h2>
 
 <p>This section covers the installation of zmap and its dependencies on linux
