@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 11:32 2011 (edgrif) */
 /*  File: zmapStyle.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -636,11 +637,14 @@ typedef struct
 
 
 
-/*! @struct ZMapStyleAlignment zmapStyle_P.h
- *  @brief Alignment feature
+/* ZMapStyleAlignment zmapStyle_P.h
  *
  * Draws an alignment as a series of blocks joined by straight lines. The lines can be coloured
  * to indicate colinearity between adjacent blocks. */
+
+#define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
+#define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
+
 typedef struct
  {
    /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
