@@ -1,4 +1,4 @@
-/*  Last edited: Jul 11 13:05 2011 (edgrif) */
+/*  Last edited: Jul 11 15:42 2011 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -3420,7 +3420,9 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
       /* Got the sequences so launch blixem. */
       if ((status = zmapViewCallBlixem(zmap_view, align->block,
 				       align->homol_type,
-				       align->offset, align->position, align->start, align->end,
+				       align->offset, align->cursor_position,
+				       align->window_start, align->window_end,
+				       align->mark_start, align->mark_end,
 				       align->homol_set,
 				       align->features, align->feature_set, NULL, get_sequence->sequences,
 				       &blixem_pid, &(zmap_view->kill_blixems))))
@@ -4144,7 +4146,7 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 
   if (align_cmd->homol_set == ZMAPWINDOW_ALIGNCMD_NONE
       || !(status = zmapViewBlixemLocalSequences(view, align_cmd->block, align_cmd->homol_type,
-						 align_cmd->offset, align_cmd->position,
+						 align_cmd->offset, align_cmd->cursor_position,
 						 align_cmd->feature_set, &local_sequences)))
     {
       GPid blixem_pid ;
@@ -4152,7 +4154,9 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
       if ((status = zmapViewCallBlixem(view, align_cmd->block,
 				       align_cmd->homol_type,
 				       align_cmd->offset,
-				       align_cmd->position, align_cmd->start, align_cmd->end,
+				       align_cmd->cursor_position,
+				       align_cmd->window_start, align_cmd->window_end,
+				       align_cmd->mark_start, align_cmd->mark_end,
 				       align_cmd->homol_set,
 				       align_cmd->features, align_cmd->feature_set, align_cmd->source, NULL,
 				       &blixem_pid, &(view->kill_blixems))))
@@ -4194,7 +4198,7 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 
 	      /* Add the request to the step list. */
 	      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
-						align_cmd->position, align_cmd->features,
+						align_cmd->cursor_position, align_cmd->features,
 						local_sequences, align_cmd->homol_set, align_cmd) ;
 	      request = zmapViewStepListAddServerReq(view_con->step_list,
 						     view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any, REQUEST_ONFAIL_CANCEL_STEPLIST) ;
