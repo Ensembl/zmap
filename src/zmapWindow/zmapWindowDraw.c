@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:29 2011 (edgrif) */
 /*  File: zmapWindowDraw.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -744,9 +745,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
       /* If there is no mark or user asked for visible area only then do that. */
       if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
 	{
-	  zmapWindowItemGetVisibleCanvas(window,
-					 &wx1, &wy1,
-					 &wx2, &wy2) ;
+	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
 
 	  /* should really clamp to seq. start/end..... */
 	  coords.start = (int)wy1 ;

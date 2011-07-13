@@ -1,4 +1,4 @@
-/*  Last edited: Jul 12 08:37 2011 (edgrif) */
+/*  Last edited: Jul 13 14:28 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -5470,7 +5470,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 
       /* Calculate canvas window coords for menu position from part of item which is visible. */
-      zmapWindowItemGetVisibleCanvas(window, &vis_can_x1, &vis_can_y1, &vis_can_x2, &vis_can_y2) ;
+      zmapWindowItemGetVisibleWorld(window, &vis_can_x1, &vis_can_y1, &vis_can_x2, &vis_can_y2) ;
 
       my_foo_canvas_item_get_world_bounds(focus_item, &x1, &y1, &x2, &y2) ;
 

@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:29 2011 (edgrif) */
 /*  File: zmapWindowDump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -258,7 +259,7 @@ static gboolean dumpWindow(DumpOptions dump_opts)
 	  zMapWindowCurrWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
 
 // this looks equivalent...
-//      void zmapWindowItemGetVisibleCanvas(ZMapWindow window,double *wx1, double *wy1,double *wx2, double *wy2)
+//      void zmapWindowItemGetVisibleWorld(ZMapWindow window,double *wx1, double *wy1,double *wx2, double *wy2)
 
 	}
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
