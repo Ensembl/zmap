@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:28 2011 (edgrif) */
+/*  Last edited: Jul 13 16:06 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -4145,6 +4145,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    zmapWindowFeatureShow(window, focus_item) ;
 	  }
+	else
+	  {
+	    zMapMessage("%s", "No feature selected.") ;
+	  }
+
+	event_handled = TRUE ;
 
 	break ;
       }
