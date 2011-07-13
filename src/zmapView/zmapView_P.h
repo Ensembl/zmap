@@ -1,4 +1,4 @@
-/*  Last edited: Jul  7 08:25 2011 (edgrif) */
+/*  Last edited: Jul 11 15:19 2011 (edgrif) */
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -339,7 +339,10 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMa
 				      ZMapFeatureSet feature_set, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    ZMapHomolType homol_type,
-			    int offset, int position, int start, int end,
+			    int offset,
+			    int position,
+			    int window_start, int window_end,
+			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
 			    GList *features, ZMapFeatureSet feature_set,
 			    char *source, GList *local_sequences,
