@@ -85,12 +85,6 @@ enum
     BLIX_MULTI_SETS					    /* Blixem all matches for all features
 							       in the list of columns in the blixem config file. */
 
-<<<<<<< HEAD
-=======
-    BLIX_SEQ						    /* Blixem short reads data from the marl */
-    /* MH17 NOTE BLIX_SEQ is a range of values, do not add more */
-    /* this is a temporary implementation till we can blixem a short reads column */
->>>>>>> 563266e054f447e33003d715410ceebc4aaa6ef8
   } ;
 
 #define BLIX_SEQ		10000       /* Blixem short reads data from the mark base menu index */
