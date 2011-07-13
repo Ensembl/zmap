@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:29 2011 (edgrif) */
+/*  Last edited: Jul 13 15:13 2011 (edgrif) */
 /*  File: zmapWindowDraw.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -29,8 +29,8 @@
  *              or removed etc.
  *
  * Exported functions: See zmapWindow_P.h
- *-------------------------------------------------------------------
  */
+
 
 #include <math.h>
 #include <glib.h>
@@ -646,10 +646,10 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-if(featureset->original_id == g_quark_to_string("hexExon"))
-printf("visible? %s  %d %d\n",g_quark_to_string(featureset->unique_id),
-	zmapWindowContainerHasFeatures(container),
-	zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
+  if (featureset->original_id == g_quark_from_string("hexExon"))
+    printf("visible? %s  %d %d\n", g_quark_to_string(featureset->unique_id),
+	   zmapWindowContainerHasFeatures(container),
+	   zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
 
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
