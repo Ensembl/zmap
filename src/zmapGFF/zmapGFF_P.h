@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 08:35 2011 (edgrif) */
 /*  File: zmapGFF_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -69,6 +70,7 @@ typedef enum
     GFF_BUF_SEQUENCE, GFF_BUF_SOURCE, GFF_BUF_FEATURE_TYPE,
     GFF_BUF_SCORE, GFF_BUF_STRAND, GFF_BUF_PHASE,
     GFF_BUF_ATTRIBUTES, GFF_BUF_COMMENTS,
+    GFF_BUF_TMP,					    /* working buffer. */
     GFF_BUF_NUM
   } GFFStringFieldsType ;
 
