@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 08:13 2011 (edgrif) */
+/*  Last edited: Jul 13 15:01 2011 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -172,6 +172,7 @@ typedef struct
 /* Call an alignment display program for the given alignment feature. */
 typedef enum
   {
+    ZMAPWINDOW_ALIGNCMD_INVALID,
     ZMAPWINDOW_ALIGNCMD_NONE,
     ZMAPWINDOW_ALIGNCMD_FEATURES,
     ZMAPWINDOW_ALIGNCMD_SET,
