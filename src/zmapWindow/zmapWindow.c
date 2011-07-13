@@ -1,4 +1,4 @@
-/*  Last edited: Jun 30 13:16 2011 (edgrif) */
+/*  Last edited: Jul 12 08:37 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -4280,7 +4280,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	zmapWindowCallBlixem(window, requested_homol_set, NULL) ;
+	zmapWindowCallBlixem(window, requested_homol_set, NULL, 0.0, 0.0) ;
 
 	break ;
       }

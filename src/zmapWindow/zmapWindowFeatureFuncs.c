@@ -1,4 +1,4 @@
-/*  Last edited: Jun 30 12:53 2011 (edgrif) */
+/*  Last edited: Jul 12 08:51 2011 (edgrif) */
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -42,21 +42,16 @@
 #include <zmapWindow_P.h>
 
 
-/* Cover function for the fuller zmapWindowCallBlixemOnPos() function. */
-void zmapWindowCallBlixem(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set, char *source)
-{
-  zmapWindowCallBlixemOnPos(window, requested_homol_set, source, 0.0, 0.0) ;
-
-  return ;
-}
-
-
-
 /* Call blixem for selected features, feature column or columns. Gets
- * called from menus and from keyboard short cut. */
-void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set,
-			       char *source,          /* for short reads data */
-			       double x_pos, double y_pos)
+ * called from menus and from keyboard short cut. If called from keyboard
+ * short cut then  x_pos = ypos = 0.0.
+ * 
+ * source param is for short reads data
+ *  */
+void zmapWindowCallBlixem(ZMapWindow window,
+			  ZMapWindowAlignSetType requested_homol_set,
+			  char *source, 
+			  double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL ;
   ZMapFeatureAny feature_any ;
@@ -76,151 +71,138 @@ void zmapWindowCallBlixemOnPos(ZMapWindow window, ZMapWindowAlignSetType request
     }
   else if ((feature_any = zmapWindowItemGetFeatureAnyType(focus_item, -1)))
     {
-      ZMapWindowCallbackCommandAlign align ;
-      int y1, y2 ;
+      int y1, y2, window_start, window_end ;
+      FooCanvasGroup *block_grp ;
       ZMapFeature feature = NULL ;
-      gboolean found_feature = FALSE ;
+      gboolean found_window = FALSE ;
       gboolean selected_features = FALSE ;
 
-      switch(feature_any->struct_type)
+
+      if ((found_window = zMapWindowGetVisibleSeq(window, &window_start, &window_end)))
 	{
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-	  {
-//	    double wx1, wy1, wx2, wy2 ;
-	    FooCanvasGroup *block_grp ;
-	    gboolean found_position = FALSE ;
+	  /* y_pos not set so set to middle of visible window (don't care about x_pos).  */
+	  if (x_pos == 0.0 && y_pos == 0)
+	    y_pos = (window_start + window_end) / 2 ;
 
-	    if (x_pos != 0.0 && y_pos != 0.0
-		&& zmapWindowWorld2SeqCoords(window, x_pos, y_pos, x_pos, y_pos, &block_grp, &y1, &y2))
-	      {
-		found_position = TRUE ;
-	      }
-	    else if (zMapWindowGetVisibleSeq(window, &y1, &y2))
-	      {
-		found_position = TRUE ;
-	      }
+	  found_window = zmapWindowWorld2SeqCoords(window, x_pos, y_pos, x_pos, y_pos, &block_grp, &y1, &y2) ;
+	}
 
-	    if (found_position)
+      if (!found_window)
+	{
+	  char *msg = "Failed to find mouse and/or window position" ;
+
+	  zMapLogCritical("%s", msg) ;
+
+	  zMapMessage("%s", msg) ;
+	}
+      else
+	{
+	  switch(feature_any->struct_type)
+	    {
+	    case ZMAPFEATURE_STRUCT_FEATURESET:
 	      {
 		/* Use first feature in set to get alignment type etc. */
 		/* MH17: but you can have empty columns ... */
 		feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
 
-		found_feature = TRUE ;
+		break ;
 	      }
-
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_FEATURE:
-	  {
-	    feature = (ZMapFeature)feature_any ;
-
-	    y1 = feature->x1 ;
-	    y2 = feature->x2 ;
-
-	    /* User clicked on an alignment feature. */
-	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    case ZMAPFEATURE_STRUCT_FEATURE:
 	      {
-		selected_features = TRUE ;
+		feature = (ZMapFeature)feature_any ;
+
+		/* User clicked on an alignment feature. */
+		if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+		  {
+		    selected_features = TRUE ;
+		  }
+
+		break ;
 	      }
-
-	    found_feature = TRUE ;
-
-	    break ;
-	  }
-	default:
-	  {
-	    found_feature = FALSE ;
-	    break;
-	  }
-	}
-
-
-      if (found_feature)
-	{
-	  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-
-	  align = g_new0(ZMapWindowCallbackCommandAlignStruct, 1) ;
-
-	  /* Set up general command field for callback. */
-	  align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
-
-	  if (feature)	/* may be null if (temporary) blixem BAM option selected */
-	    align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-								       ZMAPFEATURE_STRUCT_BLOCK) ;
-	  else
-	    align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
-								       ZMAPFEATURE_STRUCT_BLOCK) ;
-	  zMapAssert(align->block) ;
-
-
-	  /* We should have a flag to do the offsetting, I thought we did but it seems to have
-	   * vanished. */
-	  align->offset = window->sequence->start ;
-//	  if(window->revcomped_features)
-//	  	align->offset = window->sequence->end;
-
-	  /* Always set mark position if it's there.... */
-	  if (zmapWindowMarkIsSet(window->mark))
-	    zmapWindowMarkGetSequenceRange(window->mark, &(align->start), &(align->end)) ;
-
-	  if (!found_feature && zmapWindowMarkIsSet(window->mark))
-	    {
-	      align->position = align->start + ((align->end - align->start) / 2) ;
-	    }
-	  else
-	    {
-	      align->position = y1 + ((y2 - y1) / 2) ;
+	    default:
+	      {
+		break;
+	      }
 	    }
 
 
-	  if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+	  if (feature)
 	    {
-	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
+	      ZMapWindowCallbackCommandAlign align ;
+	      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
-	      align->source = source ;
-	      align->homol_set = requested_homol_set ;
-	    }
-	  else if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
-	    {
-	      /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
-	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
+	      align = g_new0(ZMapWindowCallbackCommandAlignStruct, 1) ;
 
-	      align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
-	    }
-	  else
-	    {
-	      align->homol_type = feature->feature.homol.type ;
+	      /* Set up general command field for callback. */
+	      align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
 
-	      align->feature_set = (ZMapFeatureSet)(feature->parent) ;
+	      /* may be null if (temporary) blixem BAM option selected */
+	      if (feature)
+		align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+									   ZMAPFEATURE_STRUCT_BLOCK) ;
+	      else
+		align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
+									   ZMAPFEATURE_STRUCT_BLOCK) ;
+	      zMapAssert(align->block) ;
 
-	      /* If user clicked on features then make a list of them (may only be one), otherwise
-	       * we need to use the feature set. */
-	      if (selected_features == TRUE)
+
+	      /* Set up all the parameters blixem needs to do it's display. */
+	      align->offset = window->sequence->start ;
+
+	      align->cursor_position = y1 ;
+
+	      align->window_start = window_start ;
+	      align->window_end = window_end ;
+
+	      if (zmapWindowMarkIsSet(window->mark))
+		zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
+
+	      if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
 		{
-		  GList *focus_items ;
+		  align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-		  focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
+		  align->source = source ;
+		  align->homol_set = requested_homol_set ;
+		}
+	      else if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+		{
+		  /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
+		  align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-		  align->features = zmapWindowItemListToFeatureList(focus_items) ;
+		  align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
+		}
+	      else
+		{
+		  align->homol_type = feature->feature.homol.type ;
 
-		  g_list_free(focus_items) ;
+		  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
 
+		  /* If user clicked on features then make a list of them (may only be one), otherwise
+		   * we need to use the feature set. */
+		  if (selected_features == TRUE)
+		    {
+		      GList *focus_items ;
 
-		  /* I DON'T LIKE THIS BIT....SEE IF WE CAN NOT DO THIS....LEAVE NULL
-		   * IF NO EXPLICIT FEATURE CLICKED ON.... */
-		  /* If no highlighted features then use the one the user clicked on. */
-		  if (!(align->features))
-		    align->features = g_list_append(align->features, feature) ;
+		      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
+
+		      align->features = zmapWindowItemListToFeatureList(focus_items) ;
+
+		      g_list_free(focus_items) ;
+
+		      /* I DON'T LIKE THIS BIT....SEE IF WE CAN NOT DO THIS....LEAVE NULL
+		       * IF NO EXPLICIT FEATURE CLICKED ON.... */
+		      /* If no highlighted features then use the one the user clicked on. */
+		      if (!(align->features))
+			align->features = g_list_append(align->features, feature) ;
+		    }
+
+		  align->homol_set = requested_homol_set ;
 		}
 
-	      align->homol_set = requested_homol_set ;
+	      (*(window_cbs_G->command))(window, window->app_data, align) ;
 	    }
-
-	  (*(window_cbs_G->command))(window, window->app_data, align) ;
 	}
     }
-
 
 
   return ;
