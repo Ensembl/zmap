@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 16:04 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -200,9 +201,17 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* THIS IS NOT A GOOD IDEA....LATER ON WHEN THE FEATURES ARE SHOWN AND WE DON'T INTERCEPT
+   * THE STOP BUTTON USER CAN ACCIDENTALLY SELECT IT BY PRESSING THE <ENTER> BUTTON !!! */
+
   /* Make Stop button the default, its the only thing the user can initially click ! */
   GTK_WIDGET_SET_FLAGS(stop_button, GTK_CAN_DEFAULT) ;
   gtk_window_set_default(GTK_WINDOW(zmap->toplevel), stop_button) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return hbox ;
 }
