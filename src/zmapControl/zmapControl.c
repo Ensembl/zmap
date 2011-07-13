@@ -654,6 +654,13 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
     emsg =  html_quote_string(lfd->err_msg ? lfd->err_msg  : "OK");
 
+    if(lfd->stderr_out)
+    {
+    	gchar *old = lfd->stderr_out;
+    	lfd->stderr_out =  html_quote_string(old);
+    	g_free(old);
+    }
+
     request = g_strdup_printf(
             "<zmap> <request action=\"features_loaded\">"
             " <client xwid=\"0x%lx\" />"

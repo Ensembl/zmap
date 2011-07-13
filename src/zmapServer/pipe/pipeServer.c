@@ -324,11 +324,25 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   pipeArg pipe_arg;
   char arg_done = 0;
   char *mm = "--";
-  char *minus = mm+2;   /* this gets left as per the last arg */
+  char *minus = mm+2;   /* this gets set as per the first arg */
+  char *p;
 
   q_args = g_strsplit(server->query,"&",0);
   argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + g_strv_length(q_args)));
   argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
+
+  p = q_args[0];
+  minus = mm+2;
+  if(*p == '-')     /* optional -- allow single as well */
+  {
+      p++;
+      minus--;
+  }
+  if(*p == '-')
+  {
+      minus--;
+  }
+
   for(i = 1;q_args[i-1];i++)
   {
       /* if we request from the mark we have to adjust the start/end coordinates
@@ -336,22 +350,10 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
        * ... now they are in [ZMap].  We now work with chromosome coords.
        */
 
-      char *p = q_args[i-1];
       char *q;
 
       for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
       {
-            minus = mm+2;
-            if(*p == '-')     /* optional -- allow single as well */
-            {
-                  p++;
-                  mm--;
-            }
-            if(*p == '-')
-            {
-                  p++;
-                  mm--;
-            }
             if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
             {
                   arg_done |= pipe_arg->flag;
@@ -382,7 +384,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   }
 
   argv[i]= NULL;
-#if MH17_DEBUG_ARGS
+#if 1 //MH17_DEBUG_ARGS
 {
 char *x = "";
 int j;

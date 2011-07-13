@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -73,17 +73,17 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
 
 /* Type must equal something that the code understands. In GFF v1 this is unregulated and
  * could be anything. By default unrecognised terms are not converted.
- * 
- * 
+ *
+ *
  * SO_compliant == TRUE   only recognised SO terms will be accepted for feature types.
  * SO_compliant == FALSE  both SO and the earlier more adhoc names will be accepted (source for
  *                        these terms is wormbase GFF dumps).
- * 
+ *
  * This option is only valid when SO_compliant == FALSE.
  * misc_default == TRUE   unrecognised terms will be returned as "misc_feature" features types.
  * misc_default == FALSE  unrecognised terms will not be converted.
- * 
- * 
+ *
+ *
  *  */
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out)
@@ -105,6 +105,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 
   /* There are usually many more alignments/exons than anything else in a GFF dump so do them first. */
   if (g_ascii_strcasecmp(feature_type, "nucleotide_match") == 0
+      || g_ascii_strcasecmp(feature_type, "read_pair") == 0		/* is this an abuse of SO?? */
       || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
       || g_ascii_strcasecmp(feature_type, "EST_match") == 0
       || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
@@ -221,7 +222,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	  type = ZMAPSTYLE_MODE_BASIC ;
 	}
     }
- 
+
 
   if (type != ZMAPSTYLE_MODE_INVALID)
     {
@@ -305,7 +306,7 @@ gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out)
 
   return result ;
 }
-	
+
 
 
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
@@ -369,7 +370,7 @@ gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out)
 
   return result ;
 }
-	
+
 gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame)
 {
   gboolean status = TRUE;

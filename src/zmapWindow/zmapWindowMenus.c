@@ -81,14 +81,16 @@ enum
 							       in this column. */
     BLIX_SET,						    /* Blixem all matches for all features
 							       in this column. */
-    BLIX_MULTI_SETS,					    /* Blixem all matches for all features
+    BLIX_MULTI_SETS					    /* Blixem all matches for all features
 							       in the list of columns in the blixem config file. */
 
-    BLIX_SEQ                                        /* Blixem short reads data from the marl */
-    /* MH17 NOTE BLIX_SEQ is a range of values, do not add more */
-    /* this is a temporary implementation till we can blixem a short reads column */
   } ;
 
+#define BLIX_SEQ		10000       /* Blixem short reads data from the mark base menu index */
+#define REQUEST_SEQ	20000		/* request SR data from mark */
+    /* MH17 NOTE BLIX_SEQ etc is a range of values */
+    /* this is a temporary implementation till we can blixem a short reads column */
+    /* we assume that we have less than 10k datasets */
 
 
 /* Choose which way a transcripts dna is dumped... */
@@ -162,6 +164,7 @@ static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void developerMenuCB(int menu_item_id, gpointer callback_data) ;
+static void requestShortReadsCB(int menu_item_id, gpointer callback_data);
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) ;
@@ -1325,6 +1328,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 }
 
 
+/* NOTE this fucntion create a Blixem BAM menu _and_ a ZMap request BAM menu
+  it's called from a few places so adjust all calling code if you split this
+ */
 ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data)
@@ -1355,19 +1361,45 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 	    g_free(m->name);
 	  g_free(menu);
 	}
-      menu = g_new0(ZMapGUIMenuItemStruct, n_sets + 1);
+      menu = g_new0(ZMapGUIMenuItemStruct, n_sets * 2 + 3);	/* main menu, sub menu, plus terminator */
     }
+  /* add sub menu */
+  m = menu;
+  m->type = ZMAPGUI_MENU_BRANCH;
+  m->name = g_strdup("Blixem short reads data from mark");
+  m->id = 0;
+  m->callback_func = NULL;
+  m++;
 
-  for(i = 0, m = menu, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
+  for(i = 0, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
     {
       const gchar *fset;
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
       fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
-      m->name = g_strdup_printf("Blixem short reads data from mark - %s", fset);
+      m->name = g_strdup_printf("Blixem short reads data from mark/%s", fset);
       m->id = BLIX_SEQ + i;
       m->callback_func = blixemMenuCB;
+    }
+
+  /* add sub menu */
+  m->type = ZMAPGUI_MENU_BRANCH;
+  m->name = g_strdup("Request short reads data from mark");
+  m->id = 0;
+  m->callback_func = NULL;
+  m++;
+
+  for(i = 0, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
+    {
+      const gchar *fset;
+
+      m->type = ZMAPGUI_MENU_NORMAL;
+
+      fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
+      m->name = g_strdup_printf("Request short reads data from mark/%s", fset);
+      m->id = REQUEST_SEQ + i;
+      m->callback_func = requestShortReadsCB;
     }
 
   m->type = ZMAPGUI_MENU_NONE;
@@ -1378,6 +1410,52 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 
   return menu;
 }
+
+
+/* call blixem either for a single type of homology or for all homologies. */
+static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
+{
+	ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+	char *seq_set = NULL;
+	GList *l;
+	int i;
+
+	for(i = menu_item_id - REQUEST_SEQ,
+	      l = menu_data->window->context_map->seq_data_featuresets;
+	    i && l; l = l->next, i--)
+	  continue;
+
+	if(l)
+	{
+		seq_set = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+
+		if (!zmapWindowMarkIsSet(menu_data->window->mark))
+			zMapMessage("You must set the mark first to select this option","");
+		else
+		{
+			ZMapFeatureBlock block;
+			ZMapWindowContainerGroup container;
+
+			GList list_of_one = { NULL,NULL,NULL };
+
+			/* may not have a feature but mush have clicked on a column
+			 * we need the containing block to fetch the data
+			 */
+			container = zmapWindowContainerUtilsGetParentLevel((ZMapWindowContainerGroup)(menu_data->container_set),
+								       ZMAPCONTAINER_LEVEL_BLOCK);
+			block = zmapWindowItemGetFeatureBlock(container);
+
+			list_of_one.data = l->data;
+		      zmapWindowFetchData(menu_data->window, block, &list_of_one, TRUE);
+		}
+	}
+
+	g_free(menu_data) ;
+
+  	return ;
+}
+
+
 
 
 /* call blixem either for a single type of homology or for all homologies. */
