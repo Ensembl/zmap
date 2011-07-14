@@ -1793,15 +1793,9 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
 
 
 
-/* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are
- * presented as space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is
- * wherever we are in the gff and is set to NULL when strstr can't find another comma. fields must
- * be 4 for a gap so either way we drop out of the loop at the end. i.e. gaps string should be this
- * format:
- *
- *                             "34758 34799 531 544,34734 34751 545 550"
- *
- * Gap coords are positive, 1-based, start < end and in the order: ref_start ref_end match_start match_end
+/* This comment used to be identical to the one above loadGaps() directly above this function
+ * which may be worth referring to
+ * but this function fills in gaps data from a cigar or vulgar string
  */
 static gboolean loadAlignString(char *scanf_buf,
 				char *attributes, GArray **gaps_out,

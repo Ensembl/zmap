@@ -309,9 +309,9 @@ typedef enum
  * form
  *          if (element)
  *            do_something ;
- * 
+ *
  * Many of the enums have an ordering that is relied on by various functions.
- * 
+ *
  *  */
 
 
@@ -642,8 +642,11 @@ typedef struct
  * Draws an alignment as a series of blocks joined by straight lines. The lines can be coloured
  * to indicate colinearity between adjacent blocks. */
 
+
+/* there are misplaced, they are not display style info but instead GFF keywords and are only used in zmapGFF2Parser.c */
 #define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
 #define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
+#define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
 
 typedef struct
  {
