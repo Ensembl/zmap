@@ -1428,7 +1428,6 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 
 	if(l)
 	{
-		seq_set = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
 
 		if (!zmapWindowMarkIsSet(menu_data->window->mark))
 			zMapMessage("You must set the mark first to select this option","");
@@ -1436,8 +1435,23 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 		{
 			ZMapFeatureBlock block;
 			ZMapWindowContainerGroup container;
-
 			GList list_of_one = { NULL,NULL,NULL };
+			char *p;
+			GQuark set_quark;
+
+			seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(l->data)));
+			for(p = seq_set;*p;p++)
+			{
+				if(*p == '/')	/* / is there for menus, we want featuresets without escaping names*/
+					*p = '_';
+
+				/* this name gets looked up in WindowFetchdata() to find the column for the featureset */
+				/* so it has to be canonicalised */
+				*p = g_ascii_tolower(*p);
+			}
+			set_quark = g_quark_from_string(seq_set);
+			list_of_one.data = GUINT_TO_POINTER(set_quark);
+			g_free(seq_set);
 
 			/* may not have a feature but mush have clicked on a column
 			 * we need the containing block to fetch the data
@@ -1446,8 +1460,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 								       ZMAPCONTAINER_LEVEL_BLOCK);
 			block = zmapWindowItemGetFeatureBlock(container);
 
-			list_of_one.data = l->data;
-		      zmapWindowFetchData(menu_data->window, block, &list_of_one, TRUE);
+		      zmapWindowFetchData(menu_data->window, block, &list_of_one, TRUE,FALSE);
 		}
 	}
 
@@ -1503,8 +1516,16 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 	    if (l)
 	      {
-		seq_set = (char *)g_quark_to_string(GPOINTER_TO_UINT(l->data)) ;
-		requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+			char *p;
+
+			seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(l->data)));
+			for(p = seq_set;*p;p++)
+			{
+				if(*p == '/')
+					*p = '_';
+			}
+
+			requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
 	      }
 	  }
 
@@ -1515,6 +1536,9 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
   if (requested_homol_set)
     zmapWindowCallBlixem(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
+
+  if(seq_set)
+	g_free(seq_set);
 
   g_free(menu_data) ;
 

@@ -644,34 +644,6 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	}
       else if (zmap->xremote_client)
 	{
-
-<<<<<<< HEAD
-    if(lfd->stderr_out)
-    {
-    	gchar *old = lfd->stderr_out;
-    	lfd->stderr_out =  html_quote_string(old);
-    	g_free(old);
-    }
-
-    request = g_strdup_printf(
-            "<zmap> <request action=\"features_loaded\">"
-            " <client xwid=\"0x%lx\" />"
-            " <featureset names=\"%s\" />"
-            " <start value=\"%d\" />"
-            " <end value=\"%d\" />"
-            " <status value=\"%d\" message=\"%s\" />"
-            " <exit_code value=\"%d\" />"
-            " <stderr value=\"%s\" />"
-            "</request></zmap>",
-            lfd->xwid, featurelist, lfd->start, lfd->end, (int) lfd->status,emsg, lfd->exit_code,lfd->stderr_out ? lfd->stderr_out : "") ;
-     free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
-
-    if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-      {
-        response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
-        zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
-      }
-=======
 	  char *request ;
 	  char *response = NULL;
 	  GList *features;
@@ -695,6 +667,14 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 	  emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "OK");
+
+        if(lfd->stderr_out)
+        {
+       	gchar *old = lfd->stderr_out;
+      	lfd->stderr_out =  html_quote_string(old);
+    	      g_free(old);
+        }
+
 
 	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
 				    " <client xwid=\"0x%lx\" />"
@@ -722,7 +702,6 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 	  g_free(request);
 	  g_free(featurelist);
->>>>>>> 563266e054f447e33003d715410ceebc4aaa6ef8
 
 	}
 

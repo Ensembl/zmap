@@ -59,7 +59,7 @@ typedef enum
     THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
     THREAD_STATUS_PENDING,				    /* ????? */
     THREAD_STATUS_OK					    /* Thread functioning normally. */
-  } ThreadStatus ; 
+  } ThreadStatus ;
 
 
 typedef struct
@@ -656,6 +656,10 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	    // get style defined by featureset name
             if(fset_styles)
 	      {
+		if(q)		/* default to source name */
+		  gff_source->style_id = q;
+		  		/* but change to explicit config if it's there */
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
 		if(q)
 		  gff_source->style_id = q;
 	      }
@@ -2833,7 +2837,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      char *err_msg = "Thread failed but there is no error message to say why !" ;
 
 		      zMapLogCritical("%s", err_msg) ;
-      
+
 		      err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
 		    }
 
@@ -3576,7 +3580,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       // take out as now not needed and besides didn't work
       if (terminate)
 	on_fail = REQUEST_ONFAIL_CONTINUE;  /* to get pipe server external script status */
-      
+
       view_con->curr_request = ZMAPTHREAD_REQUEST_EXECUTE ;
 
       connect_data = g_new0(ConnectionDataStruct, 1) ;

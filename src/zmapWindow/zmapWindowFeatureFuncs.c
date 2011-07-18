@@ -45,12 +45,12 @@
 /* Call blixem for selected features, feature column or columns. Gets
  * called from menus and from keyboard short cut. If called from keyboard
  * short cut then  x_pos = ypos = 0.0.
- * 
+ *
  * source param is for short reads data
  *  */
 void zmapWindowCallBlixem(ZMapWindow window,
 			  ZMapWindowAlignSetType requested_homol_set,
-			  char *source, 
+			  char *source,
 			  double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL ;
@@ -78,7 +78,7 @@ void zmapWindowCallBlixem(ZMapWindow window,
       gboolean selected_features = FALSE ;
 
 
-      if ((found_window = zMapWindowGetVisibleSeq(window, &window_start, &window_end)))
+      if (!(found_window = zMapWindowGetVisibleSeq(window, &window_start, &window_end)))
 	{
 	  /* y_pos not set so set to middle of visible window (don't care about x_pos).  */
 	  if (x_pos == 0.0 && y_pos == 0)

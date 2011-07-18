@@ -1498,8 +1498,8 @@ static void deferred_page_apply(NotebookPage notebook_page)
       g_list_foreach(deferred_data->load_all, add_name_to_list, &all_list);
 
 //      mark_list = expand_columns_to_featuresets
-      zmapWindowFetchData(configure_data->window, block, mark_list, TRUE);
-      zmapWindowFetchData(configure_data->window, block, all_list, FALSE);
+      zmapWindowFetchData(configure_data->window, block, mark_list, TRUE,TRUE);
+      zmapWindowFetchData(configure_data->window, block, all_list, FALSE,TRUE);
 
   /* dismiss the dialog and let the user see ZMap.
    * if they change the mark then we'd have to refresh the options

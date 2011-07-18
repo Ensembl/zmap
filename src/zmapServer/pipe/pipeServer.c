@@ -224,7 +224,7 @@ static gboolean createConnection(void **server_out,
   {
     char *tmp_path = url->path ;
 
-    if (*(url->path) != '/')
+    if (*(url->path) != '/' && dir && *dir)
       tmp_path = g_strdup_printf("%s/%s", dir,url->path) ;
 
     server->script_path = zMapGetPath(tmp_path) ;
@@ -352,9 +352,11 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
        */
 
       char *q;
+      p = q_args[i-1] + strlen(minus);
 
       for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
       {
+
             if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
             {
                   arg_done |= pipe_arg->flag;
@@ -385,7 +387,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   }
 
   argv[i]= NULL;
-#if 1 //MH17_DEBUG_ARGS
+#if MH17_DEBUG_ARGS
 {
 char *x = "";
 int j;

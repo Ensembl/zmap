@@ -1442,7 +1442,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 
-void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark);
+void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark,gboolean is_column);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 

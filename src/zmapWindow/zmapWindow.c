@@ -4054,7 +4054,7 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
-			 GList *featureset_name_list, gboolean use_mark)
+			 GList *featureset_name_list, gboolean use_mark,gboolean is_column)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
@@ -4110,9 +4110,15 @@ so just request whatever region is requested regardless
       GList * fset_list = NULL;
       GList *col_list;
 
-      for(col_list = featureset_name_list;col_list;col_list = col_list->next)
-            fset_list = g_list_concat(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),FALSE), fset_list);
-
+	if(is_column)
+	{
+      	for(col_list = featureset_name_list;col_list;col_list = col_list->next)
+            	fset_list = g_list_concat(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),FALSE), fset_list);
+	}
+	else
+	{
+		fset_list = featureset_name_list;
+	}
 //zMapLogWarning("fetch %d: %d %d",use_mark,fetch_data->start,fetch_data->end);
 
       fetch_data->feature_set_ids = fset_list;

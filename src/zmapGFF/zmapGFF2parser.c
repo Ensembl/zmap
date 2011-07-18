@@ -43,7 +43,7 @@
 
 
 
-typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN} NameFindType ;
+typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN, NAME_USE_GIVEN_OR_NAME } NameFindType ;
 
 
 
@@ -1463,7 +1463,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    }
 	  else
 	    {
-	      name_find = NAME_USE_GIVEN ;
+	      name_find = NAME_USE_GIVEN_OR_NAME ;
 	    }
 	}
     }
@@ -1887,7 +1887,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
-  else if (name_find == NAME_USE_GIVEN)
+  else if ((name_find == NAME_USE_GIVEN || name_find == NAME_USE_GIVEN_OR_NAME) && given_name && *given_name)
     {
       has_name = TRUE ;
 
@@ -1914,7 +1914,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    }
 	}
     }
-  else
+  else if(name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
     {
       char *tag_pos ;
 
@@ -2236,6 +2236,10 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  zMapLogWarning("Bad homol type: %s", tag_pos) ;
 	}
     }
+#if 0 // BODGE TO TEST BAM READS
+#warning remove this!
+  else { 	    homol_type = ZMAPHOMOL_N_HOMOL ;}
+#endif
 
 
   if (homol_type)

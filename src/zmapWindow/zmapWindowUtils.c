@@ -506,12 +506,18 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
             column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
             if(!column)
             {
+	            ZMapFeatureSource gff_source;
+
                   zMapLogWarning("creating column  %s for featureset %s", g_quark_to_string(gff->column_id), g_quark_to_string(set_id));
 
                   column = g_new0(ZMapFeatureColumnStruct,1);
+
                   column->unique_id =
                   column->column_id =
                   column->style_id = set_id;
+                  gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
+			if(gff_source)
+				column->style_id = gff_source->style_id;
                   column->column_desc = name;
 
                   column->featuresets = g_list_append(column->featuresets,GUINT_TO_POINTER(set_id));
@@ -540,7 +546,7 @@ void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
                   ZMapFeatureTypeStyle s;
 
                   s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
-                  if(column->style && (!s->mode || s->mode == column->style->mode))
+                  if(column->style && s && (!s->mode || s->mode == column->style->mode))
                   {
                         zMapStyleMerge(column->style, s);
                   }

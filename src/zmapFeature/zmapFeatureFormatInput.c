@@ -105,7 +105,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 
   /* There are usually many more alignments/exons than anything else in a GFF dump so do them first. */
   if (g_ascii_strcasecmp(feature_type, "nucleotide_match") == 0
-      || g_ascii_strcasecmp(feature_type, "read_pair") == 0		/* is this an abuse of SO?? */
+//      || g_ascii_strcasecmp(feature_type, "read_pair") == 0		/* is this an abuse of SO?? */
       || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
       || g_ascii_strcasecmp(feature_type, "EST_match") == 0
       || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
@@ -212,7 +212,9 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       || g_ascii_strcasecmp(feature_type, "misc_feature") == 0
 	       || g_ascii_strcasecmp(feature_type, "SNP") == 0
 	       || g_ascii_strcasecmp(feature_type, "complex_change_in_nucleotide_sequence") == 0
-	       || g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0)
+	       || g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0
+	       /* neded to read BAM files formatted as for Blixem */
+	       || g_ascii_strcasecmp(feature_type, "read") == 0)
 	{
 	  type = ZMAPSTYLE_MODE_BASIC ;
 	}
