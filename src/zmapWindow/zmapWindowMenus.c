@@ -1329,6 +1329,23 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 }
 
 
+/* return string with / instead of _ */
+static char * get_menu_string(GQuark set_quark)
+{
+	char *p;
+	char *seq_set;
+
+	seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(set_quark)));
+	for(p = seq_set;*p;p++)
+	{
+		if(*p == '_')	/* / is there for menus, we want featuresets without escaping names*/
+			*p = '/';
+	}
+
+	return(seq_set);
+}
+
+
 /* NOTE this fucntion create a Blixem BAM menu _and_ a ZMap request BAM menu
   it's called from a few places so adjust all calling code if you split this
  */
@@ -1378,7 +1395,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
-      fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
+      fset = get_menu_string(GPOINTER_TO_UINT(fsl->data));
       m->name = g_strdup_printf("Blixem short reads data from mark/%s", fset);
       m->id = BLIX_SEQ + i;
       m->callback_func = blixemMenuCB;
@@ -1397,7 +1414,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
-      fset = g_quark_to_string(GPOINTER_TO_UINT(fsl->data));
+      fset = get_menu_string(GPOINTER_TO_UINT(fsl->data));
       m->name = g_strdup_printf("Request short reads data from mark/%s", fset);
       m->id = REQUEST_SEQ + i;
       m->callback_func = requestShortReadsCB;
@@ -1417,7 +1434,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 {
 	ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-	char *seq_set = NULL;
 	GList *l;
 	int i;
 
@@ -1436,22 +1452,8 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 			ZMapFeatureBlock block;
 			ZMapWindowContainerGroup container;
 			GList list_of_one = { NULL,NULL,NULL };
-			char *p;
-			GQuark set_quark;
 
-			seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(l->data)));
-			for(p = seq_set;*p;p++)
-			{
-				if(*p == '/')	/* / is there for menus, we want featuresets without escaping names*/
-					*p = '_';
-
-				/* this name gets looked up in WindowFetchdata() to find the column for the featureset */
-				/* so it has to be canonicalised */
-				*p = g_ascii_tolower(*p);
-			}
-			set_quark = g_quark_from_string(seq_set);
-			list_of_one.data = GUINT_TO_POINTER(set_quark);
-			g_free(seq_set);
+			list_of_one.data = GUINT_TO_POINTER(l->data);
 
 			/* may not have a feature but mush have clicked on a column
 			 * we need the containing block to fetch the data
@@ -1516,15 +1518,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 	    if (l)
 	      {
-			char *p;
-
 			seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(l->data)));
-			for(p = seq_set;*p;p++)
-			{
-				if(*p == '/')
-					*p = '_';
-			}
-
 			requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
 	      }
 	  }
