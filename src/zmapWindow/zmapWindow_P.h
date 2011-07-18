@@ -1024,7 +1024,7 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 
-gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
+gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 				   double wx1, double wy1, double wx2, double wy2,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
 gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;

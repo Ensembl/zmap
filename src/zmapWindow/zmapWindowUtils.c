@@ -373,7 +373,7 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
 
 
-gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_out)
+gboolean zMapWindowGetVisibleSeq(ZMapWindow window, FooCanvasItem *focus, int *top_out, int *bottom_out)
 {
   gboolean result = FALSE ;
   double wx1, wy1, wx2, wy2 ;
@@ -382,7 +382,7 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_ou
 
   zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
 
-  if (zmapWindowWorld2SeqCoords(window, wx1, wy1, wx2, wy2,
+  if (zmapWindowWorld2SeqCoords(window, focus, wx1, wy1, wx2, wy2,
 				&block_grp, &y1, &y2))
     {
       *top_out = y1 ;

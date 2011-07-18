@@ -1340,7 +1340,7 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 
 	  zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
 
-	  zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block, &wy1, &wy2);
+// iffed out	  zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block, &wy1, &wy2);
 #endif
 	  block = (FooCanvasGroup *)zmapWindowMarkGetCurrentBlockContainer(window->mark);
 	}

@@ -344,7 +344,7 @@ PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
                                                           double *height_out);
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
-gboolean zMapWindowGetVisibleSeq(ZMapWindow window, int *top_out, int *bottom_out) ;
+gboolean zMapWindowGetVisibleSeq(ZMapWindow window, FooCanvasItem *focus, int *top_out, int *bottom_out) ;
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 
 void zMapWindowColumnList(ZMapWindow window) ;

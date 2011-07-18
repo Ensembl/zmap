@@ -77,15 +77,22 @@ void zmapWindowCallBlixem(ZMapWindow window,
       gboolean found_window = FALSE ;
       gboolean selected_features = FALSE ;
 
-
-      if (!(found_window = zMapWindowGetVisibleSeq(window, &window_start, &window_end)))
+#if MH17_FIXING_THE_BODGE_INSTEAD_OF_ADDING_ANOTHER
+      if (!(found_window = zMapWindowGetVisibleSeq(window, focus_item, &window_start, &window_end)))
 	{
+	/* this function already contains a bodge for an unexpected failure */
+	/* sad really, get visible seq fails because world2seq fails, so let's call world2seq again and hope it works */
+
 	  /* y_pos not set so set to middle of visible window (don't care about x_pos).  */
 	  if (x_pos == 0.0 && y_pos == 0)
 	    y_pos = (window_start + window_end) / 2 ;
 
 	  found_window = zmapWindowWorld2SeqCoords(window, x_pos, y_pos, x_pos, y_pos, &block_grp, &y1, &y2) ;
 	}
+#else
+     	/* so we fix it by passing the foo iten we know we have */
+	found_window = zMapWindowGetVisibleSeq(window, focus_item, &window_start, &window_end);
+#endif
 
       if (!found_window)
 	{
@@ -148,6 +155,8 @@ void zmapWindowCallBlixem(ZMapWindow window,
 
 	      /* Set up all the parameters blixem needs to do it's display. */
 	      align->offset = window->sequence->start ;
+
+	 	zmapWindowWorld2SeqCoords(window, focus_item, 0, y_pos, 0,0, NULL, &y1,NULL) ;
 
 	      align->cursor_position = y1 ;
 

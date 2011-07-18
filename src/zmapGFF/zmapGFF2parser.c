@@ -1461,10 +1461,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	      return result ;
 	    }
-	  else
-	    {
+	}
+	else
+      {
 	      name_find = NAME_USE_GIVEN_OR_NAME ;
-	    }
 	}
     }
 

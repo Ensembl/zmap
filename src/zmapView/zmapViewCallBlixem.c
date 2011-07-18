@@ -66,8 +66,12 @@ enum
     BLX_ARGV_NETID_PORT_FLAG,   /* --fetch-server */
     BLX_ARGV_NETID_PORT,        /* [hostname:port] */
 
-    BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
-    BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
+//    BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
+//    BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
+
+// MH17 from my limited perspective this is safer and easier to understand
+#define BLX_ARGV_CONFIGFILE_FLAG BLX_ARGV_NETID_PORT_FLAG   /* -c */
+#define BLX_ARGV_CONFIGFILE  BLX_ARGV_NETID_PORT             /* [filepath] */
 
     BLX_ARGV_RM_TMP_FILES,      /* --remove-input-files */
     BLX_ARGV_START_FLAG,        /* -s */
@@ -1133,6 +1137,11 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   gboolean status = TRUE ;
   int missed = 0;					    /* keep track of options we don't specify */
 
+/* MH17 NOTE
+   this code must operate in the same order as the enums at the top of the file
+   better to recode without the 'missed flag' as this code is VERY error prone
+ */
+
 
   /* we need to do this as blixem has pretty simple argv processing */
 
@@ -1158,6 +1167,23 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   else
     missed += 1;
 
+  /* Start with blixem centred here. */
+  if (blixem_data->position)
+    {
+      int start, end ;
+
+      start = end = blixem_data->position ;
+
+      if (blixem_data->view->revcomped_features)
+	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
+      paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-s") ;
+      paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start) ;
+    }
+  else
+    {
+      missed += 2;
+    }
 
   /* Rebase coords in blixem by offset. */
   if (blixem_data->position)
@@ -1195,23 +1221,6 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       paramString[BLX_ARGV_ZOOM - missed] = g_strdup_printf("%d:%d", start, end) ;
     }
 
-  /* Start with blixem centred here. */
-  if (blixem_data->position)
-    {
-      int start, end ;
-
-      start = end = blixem_data->position ;
-
-      if (blixem_data->view->revcomped_features)
-	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
-
-      paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-s") ;
-      paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start) ;
-    }
-  else
-    {
-      missed += 2;
-    }
 
   /* Show whole blixem range ? */
   if (blixem_data->show_whole_range)

@@ -144,7 +144,7 @@ static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2,
 
 
 
-/* 
+/*
  *                        External functions.
  */
 
@@ -227,7 +227,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature)
 {
   FooCanvasItem *feature_item ;
-  
+
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
     zmapWindowHighlightObject(window, feature_item, TRUE, FALSE) ;
@@ -645,7 +645,7 @@ void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item)
 
 
 
-/* This function highlights the peptide translation columns from region_start to region_end 
+/* This function highlights the peptide translation columns from region_start to region_end
  * (in dna or pep coords). Note any existing highlight is removed. If required_frame
  * is set to ZMAPFRAME_NONE then highlighting is in all 3 cols otherwise only in the
  * frame column given. */
@@ -1308,10 +1308,10 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
  *
  * NOTE that although we only return y coords, we need the world x coords as input
  * in order to find the right foocanvas item from which to get the sequence coords.
- * 
+ *
  * Not so easy, we are poking around in the dark....
  *  */
-gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
+gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 				   double wx1, double wy1, double wx2, double wy2,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out)
 {
@@ -1323,7 +1323,10 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
   mid_x = (wx1 + wx2) / 2 ;
   mid_y = (wy1 + wy2) / 2 ;
 
-  if ((item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y)))
+  item = foo;
+  if(!item)
+  	item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y);
+  if(item)
     {
       FooCanvasGroup *block_container ;
       ZMapFeatureBlock block ;
@@ -1354,6 +1357,8 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
     }
   else
     {
+#if 0
+
       get_item_at_workaround_struct workaround_struct = {NULL};
       double scroll_x2;
 
@@ -1401,8 +1406,11 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 	  if (y2_out)
 	    *y2_out = workaround_struct.seq_y;
 	}
-    }
 
+#else
+	zMapLogWarning("workaround removed, used to get 'could not find cursor' error on Blixem","");
+    }
+#endif
 
   return result ;
 }
@@ -1876,7 +1884,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 					 set_id, tmp_strand, tmp_frame, 0)))
     {
       int frame_num, pep_start, pep_end ;
-      
+
 
 
       for (frame_num = ZMAPFRAME_0 ; frame_num <= ZMAPFRAME_2 ; frame_num++)
