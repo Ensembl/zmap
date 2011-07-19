@@ -1040,7 +1040,14 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  * If there's a Gaps tag, we scanf using a different format string, then copy the attributes
  * manually, then call the loadGaps function to load the alignments.
  *
- *  */
+ * NOTE to handle BAM data that includes # inside attribute strings we take attributes and comments as one section
+ * (comments are not processed anywhere)
+ * Then we scan attributes and split this in an unquoted # and out the reamainder into commments
+ *
+ */
+#define PROCESS_BAM	0
+#define QUOTED_HASH_KILLS_ATTRIBUTES	1	/* set to 1 for previous code */
+
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length)
 {
   gboolean result = TRUE ;
@@ -1076,7 +1083,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   strand_str = (char *)(parser->buffers[GFF_BUF_STRAND]) ;
   phase_str = (char *)(parser->buffers[GFF_BUF_PHASE]) ;
   attributes = (char *)(parser->buffers[GFF_BUF_ATTRIBUTES]) ;
-  comments = (char *)(parser->buffers[GFF_BUF_COMMENTS]) ;
+  comments = (char *)(parser->buffers[GFF_BUF_COMMENTS]) ;	/* this is not used */
 
 
   /* Parse a GFF line. */
@@ -1095,6 +1102,28 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
     }
   else
     {
+#if !QUOTED_HASH_KILLS_ATTRIBUTES
+      {
+      	/* remove data after an unquoted hash
+      	   not sure if this is necessary but lets play safe
+      	   can just throw comments away, they are not used
+      	 */
+      	 char *p;
+      	 int quoted = 0;
+
+      	 for(p = attributes;*p;p++)
+      	 {
+      	 	if(*p == '"')
+      	 		quoted = !quoted;
+      	 	if(!quoted && *p == '#')
+      	 	{
+      	 		*p = 0;
+      	 		comments = ++p;
+      	 		break;
+      	 	}
+      	 }
+      }
+#endif
       /* Do some sanity checking... */
       if (g_ascii_strcasecmp(sequence, ".") == 0)
 	err_text = g_strdup("sequence cannot be '.'") ;
@@ -2203,7 +2232,12 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
  * Name has already been extracted, this routine looks at "Class" to get the
  * type of homol and at "Align" to get the match sequence coords/strand.
  *
- *  */
+ *
+ * BAM data looks like this:
+	chr14-04    encode    read    20781639    20781714    .    -    .    Target "JOHNLENNON_0006:1:61:1280:6420#0 1 76 -";sequence "CAAGAACACCAGACTGTGCAATCATGGATGGTTCAAGGGTGCCTTCATGGTTAGCAATAGTGATGTTTCGTAGCCT";Gap="M76";Name="JOHNLENNON_0006:1:61:1280:6420#0"
+ *
+ *
+ */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out, ZMapStrand *query_strand,
 			      double *percent_ID_out)
@@ -2236,11 +2270,6 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  zMapLogWarning("Bad homol type: %s", tag_pos) ;
 	}
     }
-#if 0 // BODGE TO TEST BAM READS
-#warning remove this!
-  else { 	    homol_type = ZMAPHOMOL_N_HOMOL ;}
-#endif
-
 
   if (homol_type)
     {
@@ -2329,6 +2358,36 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	    }
 	}
     }
+#if PROCESS_BAM
+	/* quick and easy hack to get BAM simple features dispplayed as gapped aligns
+	 * better to have a BAM data type/style flag but that brings in vast amounts of config/ foo canvas/ item factory stuff
+	 */
+  else
+    {
+  		if(strstr(attributes, "Sequence") && (tag_pos = strstr(attributes, "Target")))
+  		{
+#if 0
+  		    /* target is used to get names from other types of feature but the format is different */
+	          /* In acedb output at least, homologies all have the same format. */
+			int attr_fields ;
+			char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+			char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+			attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
+
+			if (attr_fields == 1)
+			{
+			has_name = FALSE ;
+			*feature_name = g_strdup(name) ;
+			*feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+								start, end, query_start, query_end) ;
+			}
+#endif
+		      *homol_type_out = ZMAPHOMOL_N_HOMOL ;
+  		}
+    }
+#endif
+
 
   return result ;
 }
@@ -2788,6 +2847,7 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
  * If it turns out that people do have "#" chars in their attributes we will have do our own
  * parsing of this section of the line.
  *
+ * mh17 NOTE BAM data has # in its attributes
  */
 static gboolean resizeFormatStr(ZMapGFFParser parser)
 {
@@ -2803,12 +2863,20 @@ static gboolean resizeFormatStr(ZMapGFFParser parser)
 
   /* Lot's of "%"s here because "%%" is the way to escape a "%" !! The G_GSSIZE_FORMAT is a
    * portable way to printf a gsize. */
+#if QUOTED_HASH_KILLS_ATTRIBUTES
   g_string_append_printf(format_str,
                          "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
 			 G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"
 			 G_GSSIZE_FORMAT "[^#] %%%" G_GSSIZE_FORMAT "c",
 			 length, length, length, length, length, length, length, length) ;
-
+#else
+	/* get attributes + comments together and split later */
+  g_string_append_printf(format_str,
+                         "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
+			 G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"
+			 G_GSSIZE_FORMAT "c",
+			 length, length, length, length, length, length, length) ;
+#endif
   parser->format_str = g_string_free(format_str, FALSE) ;
 
   return resized ;

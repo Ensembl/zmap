@@ -1830,6 +1830,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	{
 	  GList *req_featuresets = NULL;
 	  int existing = FALSE;
+	  int is_pipe;
 	  ZMapViewConnection view_conn = NULL ;
 
 	  zMapLogMessage("Load features %s from %s, group = %d",
@@ -1963,6 +1964,9 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  // can optionally use an existing one -> pass in second arg
 	  view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
+	  /* force pipe servers to terminate, to fix mis-config erro that causes a crash (RT 223055) */
+	  is_pipe = g_str_has_prefix(server->url,"pipe://");
+
 	  if ((view_con = createConnection(view, make_new_connection ? view_conn : NULL,
 					   context, server->url,
 					   (char *)server->format,
@@ -1973,7 +1977,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 					   req_featuresets,
 					   TRUE,
 					   req_start,req_end,
-					   (!existing && terminate))))
+					   (!existing && terminate) || is_pipe)))
 	    {
 	      requested = TRUE ;
 	      view->sources_loading ++ ;

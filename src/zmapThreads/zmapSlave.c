@@ -243,7 +243,7 @@ void *zmapNewThread(void *thread_args)
 		//            goto clean_up ;
 
 		/* Try doing this....what used to go wrong ?? */
-		goto clean_up ;
+//		goto clean_up ;
 
 		break;
 	      }
