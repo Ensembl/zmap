@@ -646,11 +646,6 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-  if (featureset->original_id == g_quark_from_string("hexExon"))
-    printf("visible? %s  %d %d\n", g_quark_to_string(featureset->unique_id),
-	   zmapWindowContainerHasFeatures(container),
-	   zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
-
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
       double min_mag = 0.0, max_mag = 0.0 ;
