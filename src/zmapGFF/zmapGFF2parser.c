@@ -56,7 +56,6 @@ typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN, NAM
 #define VALUE_FORMAT_STR "%*[\"]%50[^\"]%*[\"]%*s"
 
 
-
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length) ;
 static gboolean parseSequenceLine(ZMapGFFParser parser, char *line) ;
@@ -89,7 +88,7 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 
 static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand) ;
-static gboolean loadAlignString(char *scanf_buf, char *attributes, GArray **gaps_out,
+static gboolean loadAlignString(ZMapGFFParser parser, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
 
@@ -97,7 +96,7 @@ static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
 static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length) ;
-static gboolean resizeFormatStr(ZMapGFFParser parser) ;
+static gboolean resizeFormatStrs(ZMapGFFParser parser) ;
 
 
 
@@ -150,7 +149,7 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
 
       /* Set initial buffer & format string size to something that will probably be big enough. */
       resizeBuffers(parser, BUF_INIT_SIZE) ;
-      resizeFormatStr(parser) ;
+      resizeFormatStrs(parser) ;
     }
 
   return parser ;
@@ -1070,7 +1069,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
     {
       resizeBuffers(parser, line_length) ;
 
-      resizeFormatStr(parser) ;
+      resizeFormatStrs(parser) ;
 
       zMapLogWarning("GFF parser buffers had to be resized to new line length: %d", parser->buffer_length) ;
     }
@@ -1428,6 +1427,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
           return result ;
         }
+
       g_hash_table_insert(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
       /* printf("using feature style %s @%p for %s\n",g_quark_to_string(feature_style->unique_id),feature_style, feature_set_name);*/
 
@@ -1655,7 +1655,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		}
 	      else if ((gaps_onwards = strstr(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " ")))
 		{
-		  if (!loadAlignString((char *)(parser->buffers[GFF_BUF_TMP]),
+		  if (!loadAlignString(parser,
 				       gaps_onwards, &gaps,
 				       strand, start, end,
 				       query_strand, query_start, query_end))
@@ -1826,7 +1826,7 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
  * which may be worth referring to
  * but this function fills in gaps data from a cigar or vulgar string
  */
-static gboolean loadAlignString(char *scanf_buf,
+static gboolean loadAlignString(ZMapGFFParser parser,
 				char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end)
@@ -1834,13 +1834,11 @@ static gboolean loadAlignString(char *scanf_buf,
   gboolean valid = FALSE ;
   int attr_fields ;
 
-  attr_fields = sscanf(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " " VALUE_FORMAT_STR, scanf_buf) ;
-
-  if (attr_fields == 1)
+  if ((attr_fields = sscanf(attributes, parser->cigar_string_format_str, parser->buffers[GFF_BUF_TMP])) == 1)
     {
       valid = zMapFeatureAlignmentString2Gaps(ref_strand, ref_start, ref_end,
 					      match_strand, match_start, match_end,
-					      scanf_buf, gaps_out) ;
+					      (char *)(parser->buffers[GFF_BUF_TMP]), gaps_out) ;
     }
 
   return valid ;
@@ -2824,10 +2822,13 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
 
 
 
-/* Construct a format string that will parse a GFF line, this needs to be dynamically
- * constructed because we may need to change buffer size and hence string format max
- * length.
- *
+/* Construct format strings to parse the main GFF fields and also sub-parts of a GFF line.
+ * This needs to be done dynamically because we may need to change buffer size and hence
+ * string format max length.
+ * 
+ * 
+ * Notes on the format string for the main GFF fields:
+ * 
  * GFF version 2 format for a line is:
  *
  * <sequence> <source> <feature> <start> <end> <score> <strand> <phase> [attributes] [#comments]
@@ -2849,14 +2850,21 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
  *
  * mh17 NOTE BAM data has # in its attributes
  */
-static gboolean resizeFormatStr(ZMapGFFParser parser)
+static gboolean resizeFormatStrs(ZMapGFFParser parser)
 {
   gboolean resized = TRUE ;				    /* Everything will work or abort(). */
   GString *format_str ;
+  char *align_format_str ;
   gsize length ;
 
-  length = parser->buffer_length - 1 ;			    /* "- 1" for usual null terminator reasons. */
 
+  /* Max length of string we can parse using scanf(), the "- 1" allows for the terminating null.  */
+  length = parser->buffer_length - 1 ;
+
+
+  /*
+   * Redo main gff field parsing format string.
+   */
   g_free(parser->format_str) ;
 
   format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
@@ -2878,6 +2886,28 @@ static gboolean resizeFormatStr(ZMapGFFParser parser)
 			 length, length, length, length, length, length, length) ;
 #endif
   parser->format_str = g_string_free(format_str, FALSE) ;
+
+
+  /*
+   * Redo main gff field parsing format string.
+   */
+  g_free(parser->cigar_string_format_str) ;
+
+  format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
+
+  /* this is what I'm trying to get:  "cigar %*[\"]%50[^\"]%*[\"]%*s" which parses a string
+   * like this:
+   * 
+   *          "cigar "M335ID55M"
+   *  */
+  align_format_str = ZMAPSTYLE_ALIGNMENT_CIGAR " "  "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
+  g_string_append_printf(format_str,
+			 align_format_str,
+			 length) ;
+
+
+  parser->cigar_string_format_str = g_string_free(format_str, FALSE) ;
+
 
   return resized ;
 }

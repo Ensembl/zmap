@@ -166,6 +166,7 @@ typedef struct ZMapGFFParserStruct_
   gsize buffer_length ;
   char **buffers[GFF_BUF_NUM] ;
   char *format_str ;
+  char *cigar_string_format_str ;
 
   /* Parsing DNA sequence data, used when DNA sequence is embedded in the file. */
   struct
