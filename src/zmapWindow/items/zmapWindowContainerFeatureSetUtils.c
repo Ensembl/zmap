@@ -222,9 +222,6 @@ int add_nc_splice_markers(ZMapWindowContainerFeatureSet feature_set, int block_o
       prev_reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
       curr_reversed = curr_feature->strand == ZMAPSTRAND_REVERSE;
 
-#if 0
-zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_quark_to_string(curr_feature->unique_id));
-#endif
 
       /* MH17 NOTE
        *
@@ -247,6 +244,10 @@ zMapLogWarning("splice %s -> %s", g_quark_to_string(prev_feature->unique_id), g_
                          curr_feature->x1 - 2,
                          curr_feature->x1,
                          0); //curr_reversed);
+
+#if 0
+zMapLogWarning("splice %s -> %s, %s/%s = %d", g_quark_to_string(prev_feature->unique_id), g_quark_to_string(curr_feature->unique_id),prev,curr,fragments_splice(prev, curr));
+#endif
 
       if ((prev_reversed == curr_reversed) && !fragments_splice(prev, curr))
       {
@@ -568,9 +569,9 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
       if(!g_ascii_strncasecmp(fragment_a+1,"GT",2) || !g_ascii_strncasecmp(fragment_a,"GGC",3))
            splice = TRUE;
     }
-  else if(!g_ascii_strncasecmp(fragment_a+1, "GA",2))
+  else if(!g_ascii_strncasecmp(fragment_a+1, "CT",2))
     {
-      if(!g_ascii_strncasecmp(fragment_b+1,"TG",2) || !g_ascii_strncasecmp(fragment_b,"CGG",3))
+      if(!g_ascii_strncasecmp(fragment_b,"AC",2) || !g_ascii_strncasecmp(fragment_b,"GCC",3))
            splice = TRUE;
     }
 #if 0
