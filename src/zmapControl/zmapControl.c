@@ -666,7 +666,10 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	      g_free(prev) ;
 	    }
 
-	  emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "OK");
+	  if(lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+	  	emsg = html_quote_string("OK");	/* see comment about really free() below */
+	  else
+	  	emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
 
         if(lfd->stderr_out)
         {

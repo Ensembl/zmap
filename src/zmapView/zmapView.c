@@ -1771,6 +1771,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   ZMapViewConnection view_con ;
   gboolean requested = FALSE;
   static gboolean debug_sources = FALSE ;
+  gboolean dna_requested = FALSE;
 
 
   /* mh17: this is tedious to do for each request esp on startup */
@@ -1798,6 +1799,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
       char *unique_name ;
       GQuark unique_id ;
 
+ 	dna_requested = 0;
 
       zMapDebugPrint(debug_sources, "feature set quark (%d) is: %s", featureset, g_quark_to_string(featureset)) ;
 
@@ -1967,6 +1969,16 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  /* force pipe servers to terminate, to fix mis-config erro that causes a crash (RT 223055) */
 	  is_pipe = g_str_has_prefix(server->url,"pipe://");
 
+	  /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+	  // this is an optimisation: the server supports DNA so no point in searching for it
+	  // if we implement multiple sources then we can remove this
+	  if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+        {
+            view->sequence_server  = view_con ;
+            dna_requested = TRUE;
+        }
+
+
 	  if ((view_con = createConnection(view, make_new_connection ? view_conn : NULL,
 					   context, server->url,
 					   (char *)server->format,
@@ -1975,7 +1987,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 					   (char *)server->styles_list,
 					   server->stylesfile,
 					   req_featuresets,
-					   TRUE,
+					   dna_requested,
 					   req_start,req_end,
 					   (!existing && terminate) || is_pipe)))
 	    {
@@ -1984,11 +1996,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	    }
 
 
-	  /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-	  // this is an optimisation: the server supports DNA so no point in searching for it
-	  // if we implement multiple sources then we can remove this
-	  if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-            view->sequence_server  = view_con ;
 
 	  // g_list_free(req_featuresets); no! this list gets used by threads
 	  req_featuresets = NULL ;
@@ -2011,13 +2018,12 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   //    g_free(stylesfile);
 
   /* WHY IS THE FREEING OF HASH DEPENDENT ON SOURCES ????? */
+  /* MH17: should not be... but if no sources the the hash is empty, so a small mistake */
   if (sources)
-    {
       zMapConfigSourcesFreeList(sources);
 
-      if (hash)
+  if (hash)
 	g_hash_table_destroy(hash);
-    }
 
   return ;
 }
@@ -2538,6 +2544,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  char *err_msg = NULL ;
 	  gboolean thread_has_died = FALSE ;
 	  gboolean steps_finished = FALSE ;
+	  gboolean is_continue = FALSE;
 	  ConnectionData cd;
 	  LoadFeaturesDataStruct lfd;
 
@@ -2587,7 +2594,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	      //if(reply != ZMAPTHREAD_REPLY_WAIT)
 	      //      zMapLogWarning("thread reply %d",reply);
-
+#if 0
+if(reply != ZMAPTHREAD_REPLY_WAIT)
+{
+	ZMapViewConnectionStep step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+	zMapLogWarning("thread reply %d = %d, %s",step->request,reply,err_msg);
+}
+#endif
 	      switch (reply)
 		{
 		case ZMAPTHREAD_REPLY_WAIT:
@@ -2772,6 +2785,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  // do this before counting up the number of step lists
 	  if (thread_has_died)
 	    {
+            ZMapViewConnectionStep step;
+
+            step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+		is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
+
 	      /* We are going to remove an item from the list so better move on from
 	       * this item. */
 	      list_item = g_list_next(list_item) ;
@@ -2780,18 +2798,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      if (view_con->step_list)
       		reqs_finished = TRUE;
 
-	      thread_status = THREAD_STATUS_FAILED ;
 
 	      if (reply == ZMAPTHREAD_REPLY_QUIT)
 		{
-                  ZMapViewConnectionStep step;
-
-                  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
-
-                  if (step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
+                if (step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
 		    {
 		      thread_status = THREAD_STATUS_OK ;
-
+#if 0
+(we get the original or last error here)
 		      /* patch out confusing error message about termination */
 		      /* really this ought to just report OK from the server code */
 		      if (err_msg)
@@ -2799,7 +2813,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			  g_free(err_msg) ;
 			  err_msg = NULL ;
 			}
+#endif
 		    }
+		}
+		else
+		{
+	      	thread_status = THREAD_STATUS_FAILED ;
 		}
 
 	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)
@@ -2836,14 +2855,26 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  if (cd->exit_code)
 		    thread_status = THREAD_STATUS_FAILED ;
 
-		  if (thread_status == THREAD_STATUS_FAILED && !err_msg)
+		  if (thread_status == THREAD_STATUS_FAILED)
 		    {
-		      char *err_msg = "Thread failed but there is no error message to say why !" ;
+		      if(!err_msg)
+		      {
+		    	/* NOTE on TERMINATE OK/REPLY_QUIT we get thread_has_died and NULL the error message */
+		    	/* but if we set thread_status for FAILED on successful exit then we get this, so let's not do that: */
+		        err_msg = "Thread failed but there is no error message to say why !" ;
 
-		      zMapLogCritical("%s", err_msg) ;
+		        zMapLogWarning("%s", err_msg) ;
 
-		      err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
+		        err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
+		      }
+
+		      if (!zmap_view->thread_fail_silent && is_continue)
+		        {
+		        	/* we get here at the end of a step list, prev errors not reported till now */
+		        	zMapWarning("Data request failed: %s\nSTDERR = %s\n",err_msg,cd->stderr_out);
+		        }
 		    }
+
 
 		  lfd.status = (thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
 		  lfd.err_msg = err_msg ;

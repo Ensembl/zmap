@@ -38,7 +38,7 @@
 
 
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 /* YOU SHOULD BE AWARE THAT ON SOME PLATFORMS (E.G. ALPHAS) THERE SEEMS TO BE SOME INTERACTION
  * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
@@ -230,11 +230,11 @@ void *zmapNewThread(void *thread_args)
 
 		error_msg = g_strdup_printf("(d) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
 
+		if(!thread_cb->thread_died)		/* a misnomer, it's the server that the thread talks to */
+			zMapLogWarning("server died","");
 		thread_cb->thread_died = TRUE ;
 
 		thread_cb->initial_error = g_strdup(error_msg) ;
-
-		zMapLogWarning("server died","");
 
 		/* must continue on to getStatus if it's in the step list
 		 * zmapServer functions will not run if status is DIED
@@ -250,8 +250,16 @@ void *zmapNewThread(void *thread_args)
 
 	    case ZMAPTHREAD_RETURNCODE_QUIT:
 	      {
-		char * error_msg;
-		error_msg = g_strdup_printf("(e) %s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
+		char * error_msg = "OK";
+
+		/* this message goes to the otterlace features loaded message
+		   and no error gets mangled into a string that says (Server Pipe: - null)
+		   there's no obvious way to get the real exit status here
+		   due to the structure of the code and data
+		   its unfeasably difficult to detect a sucessful server here and we can only report
+		   "(no error: ( no error ( no error)))"
+		 */
+		error_msg = g_strdup_printf("(e) %s - %s (%s)", ZMAPTHREAD_SLAVEREQUEST, "server terminated",slave_error) ;
 		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
 
 		// we've already closed the connection and cleaned up data

@@ -327,24 +327,29 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   char *mm = "--";
   char *minus = mm+2;   /* this gets set as per the first arg */
   char *p;
+  int n_q_args = 0;
 
   q_args = g_strsplit(server->query,"&",0);
-  argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + g_strv_length(q_args)));
+  if(q_args && *q_args)
+  {
+	p = q_args[0];
+	minus = mm+2;
+	if(*p == '-')     /* optional -- allow single as well */
+	{
+		p++;
+		minus--;
+	}
+	if(*p == '-')
+	{
+		minus--;
+	}
+	n_q_args = g_strv_length(q_args);
+  }
+  argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + n_q_args));
   argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
 
-  p = q_args[0];
-  minus = mm+2;
-  if(*p == '-')     /* optional -- allow single as well */
-  {
-      p++;
-      minus--;
-  }
-  if(*p == '-')
-  {
-      minus--;
-  }
 
-  for(i = 1;q_args[i-1];i++)
+  for(i = 1;q_args && q_args[i-1];i++)
   {
       /* if we request from the mark we have to adjust the start/end coordinates
        * these are supplied in the url and really should be configured explicitly
@@ -387,7 +392,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   }
 
   argv[i]= NULL;
-#if MH17_DEBUG_ARGS
+#if  MH17_DEBUG_ARGS
 {
 char *x = "";
 int j;
@@ -414,7 +419,8 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
   zMapThreadForkUnlock();
 
   g_free(argv);   // strings allocated and freed seperately
-  g_strfreev(q_args);
+  if(q_args)
+  	g_strfreev(q_args);
 
 
   if(error)
@@ -450,12 +456,13 @@ void pipe_server_get_stderr(PipeServer server)
 
       /* MH17: NOTE this is a Linux/Mac only function,
        * GLib does not appear to wrap this stuff up in a portable way
-       * which is in fact hte reason for using it
+       * which is in fact the reason for using it
        * if you can find a portable version of waitpid() then feel free to change this code
        */
   if(server->child_pid)
   {
       waitpid(server->child_pid,&status,0);
+      server->child_pid = 0;
       if(WIFEXITED(status))
       {
             server->exit_code =  WEXITSTATUS(status);  /* 8 bits only */
@@ -824,8 +831,21 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 }
 
 // read any DNA data at the head of the stream and quit after error or ##end-dna
+
+/* NOTE this function is rubbish.
+ it gets called after getFeatures() which must have read past the sequence if it's there
+ the GFF parser stores the sequence somewhere and this code must fail if it's run
+ but instead returns unsupported
+ and erase the last error message due to the parser not setting one due to no lines being left to read
+
+ so:  (temporarily) return unsupported and don't wipe the error message
+ */
 static ZMapServerResponseType pipeGetSequence(PipeServer server)
 {
+#if 1
+#warning need to get DNA from parser if its there
+  server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED;   // now we have data default is 'OK'
+#else
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;
@@ -875,7 +895,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
     {
       server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED;
     }
-
+#endif
   return(server->result);
 }
 
@@ -1077,18 +1097,14 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gcha
       *stderr_out = NULL;     /* for file:// or default */
       *exit_code = 0;
 
-      if(server->child_pid)
-      {
             /* in case of a failure this may already have been done */
-            pipe_server_get_stderr(server);
+      pipe_server_get_stderr(server);
 
-            *exit_code = server->exit_code;
-            *stderr_out = server->stderr_output;
+      *exit_code = server->exit_code;
+      *stderr_out = server->stderr_output;
 //can't do this or else it won't be read
 //            if(server->exit_code)
 //                  return ZMAP_SERVERRESPONSE_SERVERDIED;
-
-      }
       return ZMAP_SERVERRESPONSE_OK;
 }
 
@@ -1379,14 +1395,6 @@ static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout)
   char *msg = "failed";
 
   zMapAssert(server && gff_pipe_err_inout);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS SEEMS TO BE DONE IN setErrMsg() ANYWAY ?? */
-
-  pipe_server_get_stderr(server);         /* get this regardless */
-  /* normally we get stderr on the getStatus call bu in case of an error we don't get there */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   gff_pipe_err = *gff_pipe_err_inout ;

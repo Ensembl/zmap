@@ -396,7 +396,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   if (*slave_data)
     server = (ZMapServer)*slave_data ;
 
-#ifdef MH_NEVER_INCLUDE_THIS_CODE
+#if MH_NEVER_INCLUDE_THIS_CODE
   if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url->query,request->type);
 #endif
 
@@ -574,8 +574,9 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     case ZMAP_SERVERREQ_GETSEQUENCE:
       {
         ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)request_in ;
+    	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
-	thread_rc = getSequence(server, get_sequence, err_msg_out) ;
+	  thread_rc = getSequence(server, get_sequence, err_msg_out) ;
 	break ;
       }
 
@@ -583,7 +584,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       {
         ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)request_in ;
 
-	thread_rc = getStatus(server, get_status, err_msg_out) ;
+	  thread_rc = getStatus(server, get_status, err_msg_out) ;
 	break ;
       }
 
@@ -597,6 +598,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         else
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;     // server will likely evaporate and be detected
 
+	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+
         break ;
       }
 
@@ -607,8 +610,12 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
   /* Return server. */
   *slave_data = (void *)server ;
-#ifdef MH_NEVER_INCLUDE_THIS_CODE
-  if(*slave_data) zMapLogMessage("req %s/%s req %d returns %d",server->url->protocol,server->url->query,request->type,thread_rc);
+#if MH_NEVER_INCLUDE_THIS_CODE
+// mysteriously falls over on terminate (request = 11)
+{ char *emsg = "";
+  if (err_msg_out && *err_msg_out) emsg = *err_msg_out;
+  if(*slave_data) zMapLogMessage("req %s/%s req %d/%d returns %d (%s)", server->url->protocol,server->url->query,request->type,request->response,thread_rc,emsg);
+}
 #endif
 
   return thread_rc ;
@@ -649,7 +656,7 @@ ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
 
 
 
-/* 
+/*
  *                     Internal routines
  */
 
@@ -743,6 +750,8 @@ static int findProtocol(gconstpointer list_data, gconstpointer custom_data)
 
 
 /* Get an exit code from the server. */
+/* NOTE we always return OK, not SERVERDIED as the thread return code */
+/* unlike the other requests */
 static ZMapThreadReturnCode getStatus(ZMapServer server, ZMapServerReqGetStatus request, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
