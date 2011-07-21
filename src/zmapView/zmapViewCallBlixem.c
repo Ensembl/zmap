@@ -973,6 +973,12 @@ static gboolean setBlixemScope(blixemData blixem_data)
 
       scope_range = blixem_data->scope / 2 ;
 
+      if (blixem_data->mark_start < blixem_data->block->block_to_sequence.block.x1)
+	blixem_data->mark_start = blixem_data->block->block_to_sequence.block.x1 ;
+      if (blixem_data->mark_end > blixem_data->block->block_to_sequence.block.x2)
+	blixem_data->mark_end = blixem_data->block->block_to_sequence.block.x2 ;
+
+
       /* Use the mark coords to set scope ? */
       is_mark = (blixem_data->mark_start && blixem_data->mark_end) ;
 
