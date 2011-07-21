@@ -186,6 +186,8 @@ typedef struct _ZMapViewConnectionStruct
 
   ZMapViewConnectionStepList step_list ;            /* List of steps required to get data from server. */
 
+  ThreadStatus thread_status;				    /* probably this is badly placed, but not as badly as before */
+  								    /* at least it has some persistance now */
 
 } ZMapViewConnectionStruct;
 

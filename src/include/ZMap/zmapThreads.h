@@ -95,6 +95,16 @@ _(ZMAPTHREAD_RETURNCODE_QUIT,       , "server_quit",    "Server has quit. ", "")
 ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
+/* rather oddly this used to be in zmapView.c */
+typedef enum
+  {
+    THREAD_STATUS_INVALID,
+    THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
+    THREAD_STATUS_PENDING,				    /* ????? */
+    THREAD_STATUS_OK					    /* Thread functioning normally. */
+  } ThreadStatus ;
+
+
 
 
 

@@ -53,14 +53,6 @@
 #include <zmapView_P.h>
 
 
-typedef enum
-  {
-    THREAD_STATUS_INVALID,
-    THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
-    THREAD_STATUS_PENDING,				    /* ????? */
-    THREAD_STATUS_OK					    /* Thread functioning normally. */
-  } ThreadStatus ;
-
 
 typedef struct
 {
@@ -2522,7 +2514,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
   gboolean call_again = TRUE ;				    /* Normally we want to be called continuously. */
   gboolean state_change = TRUE ;			    /* Has view state changed ?. */
   gboolean reqs_finished = FALSE;			    // at least one thread just finished
-  ThreadStatus thread_status = THREAD_STATUS_PENDING ;
   int has_step_list = 0;				    // any requests still active?
 
 
@@ -2559,7 +2550,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  data = NULL ;
 	  err_msg = NULL ;
-	  thread_status = THREAD_STATUS_PENDING ;
 
 	  // need to copy this info in case of thread death which clears it up
 
@@ -2594,11 +2584,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	      //if(reply != ZMAPTHREAD_REPLY_WAIT)
 	      //      zMapLogWarning("thread reply %d",reply);
-#if 0
+#if 1
 if(reply != ZMAPTHREAD_REPLY_WAIT)
 {
 	ZMapViewConnectionStep step = (ZMapViewConnectionStep) view_con->step_list->current->data;
-	zMapLogWarning("thread reply %d = %d, %s",step->request,reply,err_msg);
+	zMapLogWarning("thread reply %d = %d/%d, %s",step->request,reply,view_con->thread_status, err_msg);
 }
 #endif
 	      switch (reply)
@@ -2642,7 +2632,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 			    /* This means the request failed for some reason. */
 			    threadDebugMsg(thread, "GUI: thread %s, request to server failed....\n", NULL) ;
 
-			    if (err_msg)
+			    if (err_msg  && step->on_fail != REQUEST_ONFAIL_CONTINUE)
 			      {
 				char *format_str =
 				  "Source \"%s\" has returned an error, request that failed was: %s" ;
@@ -2683,6 +2673,8 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 			  {
 			    step->state = STEPLIST_FINISHED ;
 			  }
+
+			view_con->thread_status = THREAD_STATUS_FAILED;	/* so that we report an error */
 
 			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
 			  kill_connection = TRUE ;
@@ -2799,11 +2791,11 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
       		reqs_finished = TRUE;
 
 
-	      if (reply == ZMAPTHREAD_REPLY_QUIT)
+	      if (reply == ZMAPTHREAD_REPLY_QUIT && view_con->thread_status != THREAD_STATUS_FAILED)
 		{
                 if (step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
 		    {
-		      thread_status = THREAD_STATUS_OK ;
+		      view_con->thread_status = THREAD_STATUS_OK ;
 #if 0
 (we get the original or last error here)
 		      /* patch out confusing error message about termination */
@@ -2818,14 +2810,15 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		}
 		else
 		{
-	      	thread_status = THREAD_STATUS_FAILED ;
+	      	view_con->thread_status = THREAD_STATUS_FAILED ;
 		}
 
 	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)
+ 	      steps_finished = TRUE ;		/* destroy connection kills the step list */
 	    }
 
 	  /* Check for more connection steps and dispatch them or clear up if finished. */
-	  if ((view_con->step_list))
+ 	    if ((view_con->step_list))
 	    {
 	      /* If there were errors then all connections may have been removed from
 	       * step list or if we have finished then destroy step_list. */
@@ -2841,21 +2834,21 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		{
                   zmapViewStepListDestroy(view_con) ;
                   reqs_finished = TRUE;
-                  thread_status = THREAD_STATUS_OK ;
+                  if (view_con->thread_status != THREAD_STATUS_FAILED)
+                  	view_con->thread_status = THREAD_STATUS_OK ;
 		  //zMapLogMessage("step list %s finished\n",view_con->url);
-
-		  steps_finished = TRUE ;
+		    steps_finished = TRUE ;
 		}
 	    }
 
-	  if (thread_status == THREAD_STATUS_FAILED || thread_status == THREAD_STATUS_OK)     // tell otterlace
+	  if (steps_finished)	// (thread_status == THREAD_STATUS_FAILED || thread_status == THREAD_STATUS_OK)     // tell otterlace
 	    {
 	      if (cd)      // ie was valid at the start of the loop
 		{
 		  if (cd->exit_code)
-		    thread_status = THREAD_STATUS_FAILED ;
+		    view_con->thread_status = THREAD_STATUS_FAILED ;
 
-		  if (thread_status == THREAD_STATUS_FAILED)
+		  if (view_con->thread_status == THREAD_STATUS_FAILED)
 		    {
 		      if(!err_msg)
 		      {
@@ -2871,12 +2864,13 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		      if (!zmap_view->thread_fail_silent && is_continue)
 		        {
 		        	/* we get here at the end of a step list, prev errors not reported till now */
-		        	zMapWarning("Data request failed: %s\nSTDERR = %s\n",err_msg,cd->stderr_out);
+		        	zMapWarning("Data request failed: %s\n%s%s",err_msg,
+		        		cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
 		        }
 		    }
 
 
-		  lfd.status = (thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
+		  lfd.status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
 		  lfd.err_msg = err_msg ;
 		  lfd.start = cd->start;
 		  lfd.end = cd->end;
@@ -2893,10 +2887,6 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 
 	  if (thread_has_died || steps_finished)
 	    {
-	      zMapLogWarning("%s%s",
-			     thread_has_died ? "Thread died " : "",
-			     steps_finished ? "Steps finished " : "") ;
-
 	      zmapViewBusy(zmap_view, FALSE) ;
 	    }
 
@@ -3599,6 +3589,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	  view_con->thread = thread ;
 	  view_con->url = g_strdup(server_url) ;
 	  //printf("create thread for %s\n",view_con->url);
+	  view_con->thread_status = THREAD_STATUS_PENDING;
 
         }
       else

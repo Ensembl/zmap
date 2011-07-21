@@ -199,7 +199,7 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 
   zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
   result = server->last_response
     = (server->funcs->feature_set_names)(server->server_conn,
@@ -223,7 +223,7 @@ ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GHashTable **style
 {
   ZMapServerResponseType result = server->last_response ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
   result = server->last_response = (server->funcs->get_styles)(server->server_conn, styles_out) ;
 
@@ -240,7 +240,7 @@ ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *hav
 {
   ZMapServerResponseType result = server->last_response ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
   result = server->last_response = (server->funcs->have_modes)(server->server_conn, have_mode) ;
 
@@ -274,7 +274,7 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences
 {
   ZMapServerResponseType result = server->last_response ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
 
   result = server->last_response = (server->funcs->get_sequence)(server->server_conn, sequences_inout) ;
@@ -292,7 +292,7 @@ ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo
 {
   ZMapServerResponseType result = server->last_response ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
 
   result = server->last_response = (server->funcs->get_info)(server->server_conn, info) ;
@@ -312,7 +312,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 
   zMapAssert(feature_context) ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
       result = server->last_response
 	= (server->funcs->set_context)(server->server_conn, feature_context) ;
@@ -331,7 +331,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GHashTable *styl
 {
   ZMapServerResponseType result = server->last_response ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED  && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
 
       result = server->last_response
@@ -353,7 +353,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
 {
   ZMapServerResponseType result = server->last_response ;
 
-  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
       result = server->last_response
 	= (server->funcs->get_context_sequences)(server->server_conn, styles, feature_context) ;

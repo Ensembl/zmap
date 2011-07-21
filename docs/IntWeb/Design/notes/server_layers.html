@@ -138,6 +138,9 @@ In zmapView.c when replies are received to requests there is a flag that control
 <p>The root cause of this is attempting to represent more than different kind of information with one value: script status, thread status, request response status all combined into one value used in zmapView.c and during transit through these layers they get mangled.
 </p>
 
+<p>A further example of how this gets tied in impossible knots is that if we have an error in the GFF the server reports ZMAP_SERVERRESPONSE_REQFAIL wheihc gets mapped onto  ZMAPTHREAD_RETURNCODE_REQFAIL which gets mapped onto ZMAPTHREAD_REPLY_REQERROR.  This error does not get reported because the thread has run successfully.
+</p>
+
 <h4>Another obscurity</h4>
 <p>Some of the requests are handled directly by zmapServerProtcolHandler.c eg GET_STYLES if a styles file is given.  This does not go through the server code and a SERVERDIED status cannot be returned from this.
 </p>
@@ -170,6 +173,56 @@ which sets the response code to 1 which is ZMAPSERVER_RESPONSE_BARDREQ, which th
 <p>Working on this code I cannot escape from the feeling that people are laughing at me. It's also immensely frustrating that such a simple task can be so complex.
 </p>
 
+<h4>with code like this is there any hope?</h4>
+<p>
+We ask a server what its's done with:
+<pre>
+	  /* Call the registered slave handler function. */
+	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, <b>&reply</b>, &slave_error) ;
+</pre>
+and never look at reply.
+<br />
+It tell us what it's done with:
+<pre>
+	/* Signal that we failed. */
+	zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, <b>request</b>) ;
+</pre>
+that gets handled with:
+<pre>
+/* Sometimes for Errors we need to return some of the data as it included request
+ * details and so on. */
+void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new_state,
+				     char *err_msg, void *data)
+{
+  thread_state->state = new_state ;
+
+  <b>thread_state->reply = data ;</b>
+}
+</pre>
+that is accessed with:
+<pre>
+gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
+				 void **data_out, char **err_msg_out)
+{
+      *state_out = thread_state->state ;
+
+      if (thread_state->reply)
+	{
+	  *data_out = thread_state->reply ;
+	}
+}
+</pre>
+and in the calling code there is a local variable called thread_state which refers to the thread state as opposed to the ZMapReply 'thread_state' that contains the original request.
+</p>
+<p>So to summarise:
+<ul>
+<li> request is a reply
+<li> we ignore reply
+<li> thread_state is a reply
+<li> thread state is in fact the state of a single step (request/reply combo)
+<ul>
+
+</p>
 
 
 <h3>How many files?</h3>

@@ -161,6 +161,7 @@ static void getConfiguration(PipeServer server)
     {
       char *tmp_string  = NULL;
 
+#if MH17_REMOVED_BY_POPULAR_REQUEST
       /* default script directory to use */
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				       ZMAPSTANZA_APP_SCRIPTS, &tmp_string))
@@ -168,6 +169,7 @@ static void getConfiguration(PipeServer server)
 	  server->script_dir = tmp_string;
 	}
       else
+#endif
       {
         server->script_dir = g_get_current_dir();
       }
@@ -214,6 +216,60 @@ static gboolean createConnection(void **server_out,
   getConfiguration(server);	// get scripts directory
 
   server->scheme = url->scheme;
+
+#if !SCRIPT_DIR
+  server->script_path = zMapGetPath(url->path) ;	/* if absolute */
+
+  if(server->scheme == SCHEME_FILE)
+  {
+      char *tmp_path;
+
+  	getConfiguration(server);	// get data directory for files
+	dir = server->data_dir;
+
+      if (*(url->path) != '/' && dir && *dir)
+	{
+	      tmp_path = g_strdup_printf("%s/%s", dir,url->path) ;		/* NB '//' works as '/' */
+	    	server->script_path = zMapGetPath(tmp_path) ;
+      	g_free(tmp_path) ;
+	}
+  }
+#if !USING_SPAWN_SERACH_PATH_FLAG
+  else if(server->scheme == SCHEME_PIPE && *(url->path) != '/')	/* find the script on our path env */
+  {
+  	extern char ** environ;
+	char **env = environ;	/* C global */
+	while(*env)
+	{
+		char *p = *env++;
+
+		if(!g_ascii_strncasecmp(p,"PATH=",5))	/* there's no case sensitive version ! */
+		{
+			char ** paths = g_strsplit(p+5,":",0);
+			if(paths)
+			{
+				char ** pathp = paths;
+
+				while(*pathp)
+				{
+					dir =  g_strdup_printf("%s/%s",*pathp,url->path);
+					if(g_file_test(dir,G_FILE_TEST_IS_EXECUTABLE))
+					{
+						server->script_path = zMapGetPath(dir) ;
+						g_free(dir);
+
+						break;
+					}
+					pathp++;
+				}
+
+				g_strfreev(paths);
+			}
+		}
+	}
+  }
+#endif
+#else
   dir = (server->scheme == SCHEME_PIPE) ? server->script_dir : server->data_dir;
   /* We could check both format and version here if we wanted to..... */
 
@@ -232,6 +288,8 @@ static gboolean createConnection(void **server_out,
     if (tmp_path != url->path)
       g_free(tmp_path) ;
   }
+
+#endif
 
   if(url->query)
       server->query = g_strdup_printf("%s",url->query);
@@ -407,6 +465,7 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
   zMapThreadForkLock();
 
   result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
+//      G_SPAWN_SEARCH_PATH |	 doesnt work
       G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
       NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
   if(result)
@@ -414,6 +473,11 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
     server->gff_pipe = g_io_channel_unix_new(pipe_fd);
     server->gff_stderr = g_io_channel_unix_new(err_fd);
     g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
+  }
+  else
+  {
+  	/* didn't run so can't have clean exit code; */
+  	server->exit_code = 0x2ff;	/* ref w/ pipe_server_get_stderr() */
   }
 
   zMapThreadForkUnlock();
@@ -446,21 +510,17 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
 void pipe_server_get_stderr(PipeServer server)
 {
   GError *gff_pipe_err = NULL;
+  GError *ignore;
 #if !MH17_SINGLE_LINE
   int status;
   gsize length;
 
-      /* if we are running a file:// then there's no gff_stderr */
-  if(!server->gff_stderr || server->stderr_output)    /* only try once */
-      return;
-
-      /* MH17: NOTE this is a Linux/Mac only function,
-       * GLib does not appear to wrap this stuff up in a portable way
-       * which is in fact the reason for using it
-       * if you can find a portable version of waitpid() then feel free to change this code
-       */
   if(server->child_pid)
   {
+  	g_io_channel_shutdown(server->gff_pipe,FALSE,&ignore);	/* or else it may not exit */
+	/* ttht didn't work ! */
+
+	kill(server->child_pid,9);
       waitpid(server->child_pid,&status,0);
       server->child_pid = 0;
       if(WIFEXITED(status))
@@ -472,10 +532,19 @@ void pipe_server_get_stderr(PipeServer server)
             server->exit_code = 0x1ff;     /* abnormal exit */
       }
   }
+      /* if we are running a file:// then there's no gff_stderr */
+  if(!server->gff_stderr || server->stderr_output)    /* only try once */
+      return;
+
+      /* MH17: NOTE this is a Linux/Mac only function,
+       * GLib does not appear to wrap this stuff up in a portable way
+       * which is in fact the reason for using it
+       * if you can find a portable version of waitpid() then feel free to change this code
+       */
 
   if(g_io_channel_read_to_end (server->gff_stderr, &server->stderr_output, &length, &gff_pipe_err) != G_IO_STATUS_NORMAL)
   {
-      server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
+     	server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
   }
 #else
 
@@ -550,7 +619,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
       if (!retval)
 	{
-	  /* If it was a file error then set up message. */
+	  /* If it was a file error or failure to exec then set up message. */
 	  if (gff_pipe_err)
 	    setLastErrorMsg(server, &gff_pipe_err) ;
 
@@ -576,28 +645,16 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
               // ignore error response as we want to report open is OK
               pipeGetSequence(server);
             }
-	  else
-	    {
-	      result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	    }
+          else
+		{
+			/* we should not do this but if we donlt we get an obscure crash on GFF errors */
+			/* this prevents reporting the error but it's better than crashing */
+			/* the crash is ultimately caused the the hopeless system of status codes
+			   in several layers that drives the server interface */
+			/* i'm trying to fix soemthing else right now */
+//		  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+		}
 	}
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (!retval || result != ZMAP_SERVERRESPONSE_OK)
-	{
-	  /* If it was a file error then set up message. */
-	  if (gff_pipe_err)
-	    setLastErrorMsg(server, &gff_pipe_err) ;
-
-	  /* we don't know if it died or not
-	   * but will find out via the getStatus request
-	   * we need DIED status to make this happen
-	   */
-	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
 
   return result ;
@@ -832,20 +889,9 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
 // read any DNA data at the head of the stream and quit after error or ##end-dna
 
-/* NOTE this function is rubbish.
- it gets called after getFeatures() which must have read past the sequence if it's there
- the GFF parser stores the sequence somewhere and this code must fail if it's run
- but instead returns unsupported
- and erase the last error message due to the parser not setting one due to no lines being left to read
 
- so:  (temporarily) return unsupported and don't wipe the error message
- */
 static ZMapServerResponseType pipeGetSequence(PipeServer server)
 {
-#if 1
-#warning need to get DNA from parser if its there
-  server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED;   // now we have data default is 'OK'
-#else
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;
@@ -895,7 +941,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
     {
       server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED;
     }
-#endif
+
   return(server->result);
 }
 
@@ -1093,9 +1139,6 @@ static char *lastErrorMsg(void *server_in)
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
 {
       PipeServer server = (PipeServer)server_conn ;
-
-      *stderr_out = NULL;     /* for file:// or default */
-      *exit_code = 0;
 
             /* in case of a failure this may already have been done */
       pipe_server_get_stderr(server);
