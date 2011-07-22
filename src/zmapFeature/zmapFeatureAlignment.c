@@ -7,12 +7,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,10 +26,10 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions to manipulate alignment features.
- * 
+ *
  *              (EG: Note that the cigar/align code is taken from the acedb
  *              (www.acedb.org) implementation written by me.)
- * 
+ *
  * Exported functions: See ZMap/zmapFeature.h
  *-------------------------------------------------------------------
  */
@@ -90,7 +90,7 @@ static gboolean gotoLastSpace(char **cp_inout) ;
 
 
 
-/* 
+/*
  *               External functions.
  */
 
@@ -119,7 +119,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
     }
 
   if (percent_id)
-    feature->feature.homol.percent_id = percent_id ;
+    feature->feature.homol.percent_id = (float) percent_id ;
 
   feature->feature.homol.type = homol_type ;
   feature->feature.homol.strand = query_strand ;
@@ -230,7 +230,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapStrand ref_strand, int ref_start, i
 
 
 
-/* 
+/*
  *               Internal functions.
  */
 
@@ -297,18 +297,18 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 
 /* Inspects match_str to find out which format its in. If the format is not known
  * returns ALIGNSTR_INVALID.
- * 
+ *
  * Supported formats are (in regexp ignoring greedy matches):
- * 
+ *
  *  exonerate cigar:       (([DIM]) ([0-9]+))*              e.g. "M 24 D 3 M 1 I 86"
- * 
+ *
  * exonerate vulgar:       (([DIMCGN53SF])  ([0-9]+) ([0-9]+))*  e.g. "M 24 24 D 0 3 M 1 1 I 86 0"
- * 
+ *
  *    ensembl cigar:       (([0-9]+)?([DIM]))*              e.g. "24MD3M86I" or "MD3M86"
- * 
+ *
  * NOTE exonerate labels are dependent on the alignment type, it would appear that "I" could be
  * Intron or Insert....
- * 
+ *
  *  */
 static SMapAlignStrFormat alignStrGetFormat(char *match_str)
 {
@@ -419,11 +419,11 @@ static void alignStrDestroyCanonical(AlignStrCanonical canon)
 
 /* Convert the canonical "string" to an acedb gaps array, note that we do this blindly
  * assuming that everything is ok because we have verified the string....
- * 
+ *
  * Note that this routine does not support vulgar unless the vulgar string only contains
  * M, I and G (instead of D).
- * 
- * 
+ *
+ *
  *  */
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
 				    int p_start, int p_end, int c_start, int c_end,
@@ -532,13 +532,13 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
 
 /* Format of an exonerate vulgar string is:
- * 
+ *
  * "operator number number" repeated as necessary. Operators are D, I or M.
- * 
+ *
  * A regexp (without dealing with greedy matches) would be something like:
  *
  *                           (([MCGN53ISF]) ([0-9]+) ([0-9]+))*
- * 
+ *
  *  */
 static gboolean exonerateVerifyVulgar(char *match_str)
 {
@@ -547,9 +547,9 @@ static gboolean exonerateVerifyVulgar(char *match_str)
 		STATE_NUM1, STATE_SPACE_NUM1, STATE_NUM2, STATE_SPACE_NUM2} VulgarStates ;
   char *cp = match_str ;
   VulgarStates state ;
-  
+
   state = STATE_OP ;
-  do 
+  do
     {
       switch (state)
 	{
@@ -605,13 +605,13 @@ static gboolean exonerateVerifyVulgar(char *match_str)
 
 
 /* Format of an exonerate cigar string is:
- * 
+ *
  * "operator number" repeated as necessary. Operators are D, I or M.
- * 
+ *
  * A regexp (without dealing with greedy matches) would be something like:
  *
  *                           (([DIM]) ([0-9]+))*
- * 
+ *
  *  */
 static gboolean exonerateVerifyCigar(char *match_str)
 {
@@ -619,9 +619,9 @@ static gboolean exonerateVerifyCigar(char *match_str)
   typedef enum {STATE_OP, STATE_SPACE_OP, STATE_NUM, STATE_SPACE_NUM} CigarStates ;
   char *cp = match_str ;
   CigarStates state ;
-  
+
   state = STATE_OP ;
-  do 
+  do
     {
       switch (state)
 	{
@@ -664,13 +664,13 @@ static gboolean exonerateVerifyCigar(char *match_str)
 
 
 /* Format of an ensembl cigar string is:
- * 
+ *
  * "[optional number]operator" repeated as necessary. Operators are D, I or M.
- * 
+ *
  * A regexp (without dealing with greedy matches) would be something like:
  *
  *                           (([0-9]+)?([DIM]))*
- * 
+ *
  *  */
 static gboolean ensemblVerifyCigar(char *match_str)
 {
@@ -678,9 +678,9 @@ static gboolean ensemblVerifyCigar(char *match_str)
   typedef enum {STATE_OP, STATE_NUM} CigarStates ;
   char *cp = match_str ;
   CigarStates state ;
-  
+
   state = STATE_NUM ;
-  do 
+  do
     {
       switch (state)
 	{
@@ -798,10 +798,10 @@ static int cigarGetLength(char **cigar_str)
 
 
 /* Put in utils somewhere ????
- * 
+ *
  * Whether str is on a word or on space, moves to the _next_ word.
  * Returns NULL if there is no next word or at end of string.
- * 
+ *
  *  */
 static char *nextWord(char *str)
 {
@@ -848,7 +848,7 @@ static gboolean gotoLastDigit(char **cp_inout)
 
       while (*cp && g_ascii_isdigit(*cp))
 	cp++ ;
-	      
+
       cp-- ;					    /* position on last digit. */
 
       *cp_inout = cp ;
@@ -870,7 +870,7 @@ static gboolean gotoLastSpace(char **cp_inout)
 
       while (*cp && *cp == ' ')
 	cp++ ;
-	      
+
       cp-- ;					    /* position on last space. */
 
       *cp_inout = cp ;

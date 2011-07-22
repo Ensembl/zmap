@@ -1690,12 +1690,13 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       /* quality measures. */
       if (feature->flags.has_score)
-	select.feature_desc.feature_score = g_strdup_printf("%g", feature->score) ;
+	select.feature_desc.feature_score = g_strdup_printf("%g", (double) feature->score) ;
 
       if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  if (feature->feature.homol.percent_id)
-	    select.feature_desc.feature_percent_id = g_strdup_printf("%g%%", feature->feature.homol.percent_id) ;
+	    select.feature_desc.feature_percent_id = g_strdup_printf("%g%%", (double) (feature->feature.homol.percent_id)) ;
+
 	}
 
 

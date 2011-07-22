@@ -654,7 +654,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       if (has_score)
 	{
 	  feature->flags.has_score = 1 ;
-	  feature->score = score ;
+	  feature->score = (float) score ;
 	}
     }
 
