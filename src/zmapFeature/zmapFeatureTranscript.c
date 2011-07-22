@@ -315,6 +315,13 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 	  /* 3' utr exon */
 	  ex_utr_3 = *exon_span ;			    /* struct copy. */
 	}
+      else if (exon_start == full_data->cds_start && exon_end < full_data->trans_start)
+	{
+	  /* Truly pathological, first exon is less than 3 bases and although cds is
+	   * excluded from translation by start_not_found setting. */
+	  ex_start_not_found = *exon_span ;			    /* struct copy. */
+	  ex_start_not_found.x2 = full_data->trans_start - 1 ;
+	}
       else
 	{
 	  /* mixed exon: may have utrs, split codons or just cds. */
