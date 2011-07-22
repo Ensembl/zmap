@@ -2911,19 +2911,19 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b)
 static gboolean writeFastAFile(blixemData blixem_data)
 {
   gboolean status = TRUE ;
-  gsize    bytes_written ;
-  GError  *channel_error = NULL ;
-  char    *line = NULL ;
+  gsize bytes_written ;
+  GError *channel_error = NULL ;
+  char *line = NULL ;
   enum { FASTA_CHARS = 50 } ;
-  char     buffer[FASTA_CHARS + 2] ;			    /* FASTA CHARS + \n + \0 */
-  int      lines = 0, chars_left = 0 ;
-  char    *cp = NULL ;
-  int      i ;
+  char buffer[FASTA_CHARS + 2] ;			    /* FASTA CHARS + \n + \0 */
+  int lines = 0, chars_left = 0 ;
+  char *cp = NULL ;
+  int i ;
 
 
   if (!zMapFeatureBlockDNA(blixem_data->block, NULL, NULL, &cp))
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error creating FASTA file, failed to get feature's DNA");
 
       status = FALSE ;
     }
@@ -2939,8 +2939,19 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	}
       else
 	{
-	  line = g_strdup_printf(">%s\n",
-				 g_quark_to_string(blixem_data->view->features->parent_name));
+	  int start, end ;
+
+	  start = blixem_data->scope_min ;
+	  end = blixem_data->scope_max ;
+
+	  if (blixem_data->view->revcomped_features)
+	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
+	  /* Write header as:   ">seq_name start end" so file is self describing, note that
+	   * start/end are ref sequence coords (e.g. chromosome), not local zmap display coords. */ 
+	  line = g_strdup_printf(">%s %d %d\n",
+				 g_quark_to_string(blixem_data->view->features->parent_name),
+				 start, end) ;
 
 	  if (g_io_channel_write_chars(blixem_data->fasta_channel,
 				       line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
@@ -2965,12 +2976,6 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 	  start = blixem_data->scope_min ;
 	  end = blixem_data->scope_max ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (blixem_data->view->revcomped_features)
-	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),
 				  start, end, blixem_data->view->revcomped_features) ;
