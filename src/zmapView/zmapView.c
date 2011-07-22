@@ -1827,8 +1827,8 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  int is_pipe;
 	  ZMapViewConnection view_conn = NULL ;
 
-	  zMapLogMessage("Load features %s from %s, group = %d",
-			 g_quark_to_string(featureset),server->url,server->group) ;
+//	  zMapLogMessage("Load features %s from %s, group = %d",
+//			 g_quark_to_string(featureset),server->url,server->group) ;
 
 	  // make a list of one feature only
 	  req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
@@ -2584,7 +2584,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	      //if(reply != ZMAPTHREAD_REPLY_WAIT)
 	      //      zMapLogWarning("thread reply %d",reply);
-#if 1
+#if 0
 if(reply != ZMAPTHREAD_REPLY_WAIT)
 {
 	ZMapViewConnectionStep step = (ZMapViewConnectionStep) view_con->step_list->current->data;
@@ -2677,6 +2677,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 			view_con->thread_status = THREAD_STATUS_FAILED;	/* so that we report an error */
 
 			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
+
 			  kill_connection = TRUE ;
 		      }
 
@@ -2779,8 +2780,12 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 	    {
             ZMapViewConnectionStep step;
 
-            step = (ZMapViewConnectionStep) view_con->step_list->current->data;
-		is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
+		is_continue = FALSE;
+		if(view_con->step_list)
+            {
+            	step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+			is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
+		}
 
 	      /* We are going to remove an item from the list so better move on from
 	       * this item. */
@@ -2865,7 +2870,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		        {
 		        	/* we get here at the end of a step list, prev errors not reported till now */
 		        	zMapWarning("Data request failed: %s\n%s%s",err_msg,
-		        		cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
+		        		cd->stderr_out && *cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
 		        }
 		    }
 

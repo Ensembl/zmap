@@ -396,7 +396,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   if (*slave_data)
     server = (ZMapServer)*slave_data ;
 
-#if 1 //MH_NEVER_INCLUDE_THIS_CODE
+#if MH_NEVER_INCLUDE_THIS_CODE
   if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url->query,request->type);
 #endif
 
@@ -610,7 +610,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
   /* Return server. */
   *slave_data = (void *)server ;
-#if 1 // MH_NEVER_INCLUDE_THIS_CODE
+#if  MH_NEVER_INCLUDE_THIS_CODE
 // mysteriously falls over on terminate (request = 11)
 if(request->type != 11)
 { char *emsg = "";

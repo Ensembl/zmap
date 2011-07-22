@@ -510,17 +510,18 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
 void pipe_server_get_stderr(PipeServer server)
 {
   GError *gff_pipe_err = NULL;
-  GError *ignore;
+//  GError *ignore = NULL;
 #if !MH17_SINGLE_LINE
   int status;
   gsize length;
 
   if(server->child_pid)
   {
-  	g_io_channel_shutdown(server->gff_pipe,FALSE,&ignore);	/* or else it may not exit */
-	/* ttht didn't work ! */
+  	g_io_channel_shutdown(server->gff_pipe,FALSE,NULL);	/* or else it may not exit */
+  	server->gff_pipe = NULL;	/* can't be 0 as we have that for stdin */
+	/* thst didn't work ! */
 
-	kill(server->child_pid,9);
+//	kill(server->child_pid,9);
       waitpid(server->child_pid,&status,0);
       server->child_pid = 0;
       if(WIFEXITED(status))

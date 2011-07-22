@@ -191,7 +191,7 @@
 #define ZMAPSTANZA_APP_COOKIE_JAR        "cookie-jar"
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
 #define ZMAPSTANZA_APP_LOCALE            "locale"
-#define ZMAPSTANZA_APP_SCRIPTS           "script-dir"
+//#define ZMAPSTANZA_APP_SCRIPTS           "script-dir"
 #define ZMAPSTANZA_APP_DATA              "data-dir"
 //#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
