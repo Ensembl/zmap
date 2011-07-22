@@ -51,6 +51,13 @@
 
 
 
+/* some blixem defaults.... */
+enum
+  {
+    BLIX_DEFAULT_SCOPE = 40000				    /* default 'width' of blixem sequence/features. */
+  } ;
+
+
 #define ZMAP_BLIXEM_CONFIG "blixem"
 
 #define BLIX_NB_PAGE_GENERAL  "General"
@@ -293,7 +300,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 			       GList *features, ZMapFeatureSet feature_set,
 			       ZMapWindowAlignSetType align_set,
 			       blixemData blixem_data, char **err_msg) ;
-static gboolean addFeatureDetails(blixemData blixem_data) ;
+static gboolean setBlixemScope(blixemData blixem_data) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
 static void freeBlixemData(blixemData blixem_data);
 
@@ -505,28 +512,26 @@ gboolean zmapViewCallBlixem(ZMapView view,
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
-  status = initBlixemData(view, block, homol_type,
-			  offset, position,
-			  window_start, window_end,
-			  mark_start, mark_end,
-			  features, feature_set, align_set, &blixem_data, &err_msg) ;
+  if ((status = initBlixemData(view, block, homol_type,
+			       offset, position,
+			       window_start, window_end,
+			       mark_start, mark_end,
+			       features, feature_set, align_set, &blixem_data, &err_msg)))
+    {
+      if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
+	blixem_data.format_data = &gff_data ;
 
-  if (blixem_data.file_format == BLX_FILE_FORMAT_GFF)
-    blixem_data.format_data = &gff_data ;
+      blixem_data.local_sequences = local_sequences ;
+      blixem_data.source = source;
 
-  blixem_data.local_sequences = local_sequences ;
-  blixem_data.source = source;
-
-  blixem_data.sequence_map = view->view_sequence;
-
+      blixem_data.sequence_map = view->view_sequence;
+    }
 
   if (status)
     status = makeTmpfiles(&blixem_data) ;
 
   if (status)
-    {
-      status = buildParamString(&blixem_data, &argv[0]);
-    }
+    status = buildParamString(&blixem_data, &argv[0]);
 
   if (status)
     status = writeFeatureFiles(&blixem_data);
@@ -650,6 +655,8 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   blixem_data->mark_start = mark_start ;
   blixem_data->mark_end = mark_end ;
 
+  blixem_data->scope = BLIX_DEFAULT_SCOPE ;
+
   blixem_data->negate_coords = TRUE ;			    /* default for havana. */
 
   blixem_data->align_type = align_type ;
@@ -681,7 +688,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
     }
 
   if (status)
-    status = addFeatureDetails(blixem_data) ;
+    status = setBlixemScope(blixem_data) ;
 
   return status ;
 }
@@ -716,54 +723,8 @@ static void freeBlixemData(blixemData blixem_data)
   return ;
 }
 
-/* Set blixem_data from current user preferences. */
-static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
-{
-  g_free(blixem_data->netid);
-  blixem_data->netid = g_strdup(curr_prefs->netid) ;
 
-  blixem_data->port = curr_prefs->port ;
-
-  g_free(blixem_data->script);
-  blixem_data->script = g_strdup(curr_prefs->script) ;
-
-  g_free(blixem_data->config_file);
-  blixem_data->config_file = g_strdup(curr_prefs->config_file) ;
-
-  if (curr_prefs->scope > 0)
-    blixem_data->scope = curr_prefs->scope ;
-
-  blixem_data->scope_from_mark = curr_prefs->scope_from_mark ;
-  blixem_data->features_from_mark = curr_prefs->features_from_mark ;
-
-  if (curr_prefs->homol_max > 0)
-    blixem_data->homol_max = curr_prefs->homol_max ;
-
-  blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
-
-  blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
-
-  if (curr_prefs->file_format)
-    blixem_data->file_format = curr_prefs->file_format ;
-
-  if (blixem_data->dna_sets)
-    g_list_free(blixem_data->dna_sets) ;
-  if (curr_prefs->dna_sets)
-    blixem_data->dna_sets = zMapFeatureCopyQuarkList(curr_prefs->dna_sets) ;
-
-  if (blixem_data->protein_sets)
-    g_list_free(blixem_data->protein_sets) ;
-  if (curr_prefs->protein_sets)
-    blixem_data->protein_sets = zMapFeatureCopyQuarkList(curr_prefs->protein_sets) ;
-
-  if (blixem_data->transcript_sets)
-    g_list_free(blixem_data->transcript_sets) ;
-  if (curr_prefs->transcript_sets)
-    blixem_data->transcript_sets = zMapFeatureCopyQuarkList(curr_prefs->transcript_sets) ;
-
-  return ;
-}
-
+/* Get any user preferences specified in config file. */
 static gboolean getUserPrefs(BlixemConfigData curr_prefs)
 {
   gboolean status = FALSE ;
@@ -941,96 +902,189 @@ static gboolean getUserPrefs(BlixemConfigData curr_prefs)
   return status ;
 }
 
-static gboolean addFeatureDetails(blixemData blixem_data)
+
+
+/* Set blixem_data from current user preferences. */
+static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
 {
-  gboolean status = TRUE;
-  int scope = 40000 ;					    /* can be set from user prefs */
+  g_free(blixem_data->netid);
+  blixem_data->netid = g_strdup(curr_prefs->netid) ;
 
-  if (blixem_data->scope > 0)
-    scope = blixem_data->scope ;
+  blixem_data->port = curr_prefs->port ;
+
+  g_free(blixem_data->script);
+  blixem_data->script = g_strdup(curr_prefs->script) ;
+
+  g_free(blixem_data->config_file);
+  blixem_data->config_file = g_strdup(curr_prefs->config_file) ;
+
+  if (curr_prefs->scope > 0)
+    blixem_data->scope = curr_prefs->scope ;
+
+  blixem_data->scope_from_mark = curr_prefs->scope_from_mark ;
+  blixem_data->features_from_mark = curr_prefs->features_from_mark ;
+
+  if (curr_prefs->homol_max > 0)
+    blixem_data->homol_max = curr_prefs->homol_max ;
+
+  blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
+
+  blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
+
+  if (curr_prefs->file_format)
+    blixem_data->file_format = curr_prefs->file_format ;
+
+  if (blixem_data->dna_sets)
+    g_list_free(blixem_data->dna_sets) ;
+  if (curr_prefs->dna_sets)
+    blixem_data->dna_sets = zMapFeatureCopyQuarkList(curr_prefs->dna_sets) ;
+
+  if (blixem_data->protein_sets)
+    g_list_free(blixem_data->protein_sets) ;
+  if (curr_prefs->protein_sets)
+    blixem_data->protein_sets = zMapFeatureCopyQuarkList(curr_prefs->protein_sets) ;
+
+  if (blixem_data->transcript_sets)
+    g_list_free(blixem_data->transcript_sets) ;
+  if (curr_prefs->transcript_sets)
+    blixem_data->transcript_sets = zMapFeatureCopyQuarkList(curr_prefs->transcript_sets) ;
+
+  return ;
+}
 
 
-  /* Set min/max range for blixem scope and clamp to our sequence. */
-  if ((blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-  	|| (blixem_data->scope_from_mark && blixem_data->mark_start && blixem_data->mark_end))
+/* Set blixem scope for sequence/features and initial position of blixem window on sequence. */
+static gboolean setBlixemScope(blixemData blixem_data)
+{
+  gboolean status = TRUE ;
+  static gboolean scope_debug = FALSE ;
+
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ && !(blixem_data->mark_start && blixem_data->mark_end))
     {
-      blixem_data->scope_min = blixem_data->mark_start ;
-      blixem_data->scope_max = blixem_data->mark_end ;
+      zMapLogWarning("%s", "Request for short ZMAPWINDOW_ALIGNCMD_SEQ but no mark is set.") ;
+
+      status = FALSE ;
     }
-  else
+
+  if (status)
     {
-      blixem_data->scope_min = blixem_data->position - (scope / 2) ;
-      blixem_data->scope_max = blixem_data->position + (scope / 2) ;
+      gboolean is_mark ;
+      int scope_range ;
+
+      scope_range = blixem_data->scope / 2 ;
+
+      if (blixem_data->mark_start < blixem_data->block->block_to_sequence.block.x1)
+	blixem_data->mark_start = blixem_data->block->block_to_sequence.block.x1 ;
+      if (blixem_data->mark_end > blixem_data->block->block_to_sequence.block.x2)
+	blixem_data->mark_end = blixem_data->block->block_to_sequence.block.x2 ;
+
+
+      /* Use the mark coords to set scope ? */
+      is_mark = (blixem_data->mark_start && blixem_data->mark_end) ;
+
+      /* Set min/max range for blixem scope. */
+      if (is_mark && blixem_data->scope_from_mark)
+	{
+	  blixem_data->scope_min = blixem_data->mark_start ;
+	  blixem_data->scope_max = blixem_data->mark_end ;
+	}
+      else
+	{
+	  blixem_data->scope_min = blixem_data->position - scope_range ;
+	  blixem_data->scope_max = blixem_data->position + scope_range ;
+	}
+
+      /* Clamp to block, needed if user runs blixem near to either end of sequence. */
+      if (blixem_data->scope_min < blixem_data->block->block_to_sequence.block.x1)
+	blixem_data->scope_min = blixem_data->block->block_to_sequence.block.x1 ;
+
+      if (blixem_data->scope_max > blixem_data->block->block_to_sequence.block.x2)
+	blixem_data->scope_max = blixem_data->block->block_to_sequence.block.x2 ;
+
+
+      /* Set min/max range for blixem features. */
+      blixem_data->features_min = blixem_data->scope_min ;
+      blixem_data->features_max = blixem_data->scope_max ;
+
+      if (is_mark && blixem_data->features_from_mark)
+	{
+	  blixem_data->features_min = blixem_data->mark_start ;
+	  blixem_data->features_max = blixem_data->mark_end ;
+	}
+
+
+      /* Clamp to scope. */
+      if (blixem_data->features_min < blixem_data->scope_min)
+	blixem_data->features_min = blixem_data->scope_min ;
+
+      if (blixem_data->features_max > blixem_data->scope_max)
+	blixem_data->features_max = blixem_data->scope_max ;
+
+
+      /* Now clamp window start/end to scope start/end. */
+      if (blixem_data->window_start < blixem_data->scope_min)
+	blixem_data->window_start = blixem_data->scope_min ;
+
+      if (blixem_data->window_end > blixem_data->scope_max)
+	blixem_data->window_end = blixem_data->scope_max ;
     }
 
-  if (blixem_data->scope_min < blixem_data->block->block_to_sequence.block.x1)
-    blixem_data->scope_min = blixem_data->block->block_to_sequence.block.x1 ;
-
-  if (blixem_data->scope_max > blixem_data->block->block_to_sequence.block.x2)
-    blixem_data->scope_max = blixem_data->block->block_to_sequence.block.x2 ;
-
-
-  /* Set min/max range for blixem features and clamp to our sequence. */
-  if (blixem_data->features_from_mark && blixem_data->mark_start && blixem_data->mark_end)
+  if (status)
     {
-      blixem_data->features_min = blixem_data->mark_start ;
-      blixem_data->features_max = blixem_data->mark_end ;
-    }
-  else
-    {
-      blixem_data->features_min = blixem_data->position - (scope / 2) ;
-      blixem_data->features_max = blixem_data->position + (scope / 2) ;
-    }
-
-  if (blixem_data->features_min < blixem_data->block->block_to_sequence.block.x1)
-    blixem_data->features_min = blixem_data->block->block_to_sequence.block.x1 ;
-
-  if (blixem_data->features_max > blixem_data->block->block_to_sequence.block.x2)
-    blixem_data->features_max = blixem_data->block->block_to_sequence.block.x2 ;
-
-
-  /* Now clamp window start/end to scope start/end. */
-  if (blixem_data->window_start < blixem_data->scope_min)
-    blixem_data->window_start = blixem_data->scope_min ;
-
-  if (blixem_data->window_end > blixem_data->scope_max)
-    blixem_data->window_end = blixem_data->scope_max ;
-
-
-  if (blixem_data->align_type == ZMAPHOMOL_X_HOMOL)	    /* protein */
-    {
-      ZMapFeature feature ;
+      if (blixem_data->align_type == ZMAPHOMOL_X_HOMOL)	    /* protein */
+	{
+	  ZMapFeature feature ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* AGH....WHAT TO DO ABOUT THIS.... */
+	  /* AGH....WHAT TO DO ABOUT THIS.... */
 
-      /* tmp...sort out later.... */
-      feature = (ZMapFeature)(blixem_data->features->data) ;
+	  /* tmp...sort out later.... */
+	  feature = (ZMapFeature)(blixem_data->features->data) ;
 
-      if (feature->strand == ZMAPSTRAND_REVERSE)
-	blixem_data->opts = "X-BR";
-      else
-	blixem_data->opts = "X+BR";
+	  if (feature->strand == ZMAPSTRAND_REVERSE)
+	    blixem_data->opts = "X-BR";
+	  else
+	    blixem_data->opts = "X+BR";
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      /* HACKED FOR NOW..... */
-      if (blixem_data->features)
-	feature = (ZMapFeature)(blixem_data->features->data) ;
-      else
-	feature = zMap_g_hash_table_nth(blixem_data->feature_set->features, 0) ;
+	  /* HACKED FOR NOW..... */
+	  if (blixem_data->features)
+	    feature = (ZMapFeature)(blixem_data->features->data) ;
+	  else
+	    feature = zMap_g_hash_table_nth(blixem_data->feature_set->features, 0) ;
 
-      if (feature->strand == ZMAPSTRAND_REVERSE)
-	blixem_data->opts = "X-BR";
+	  if (feature->strand == ZMAPSTRAND_REVERSE)
+	    blixem_data->opts = "X-BR";
+	  else
+	    blixem_data->opts = "X+BR";
+	}
       else
-	blixem_data->opts = "X+BR";
+	{
+	  blixem_data->opts = "N+BR";			    /* dna */
+	}
     }
-  else
-    {
-      blixem_data->opts = "N+BR";			    /* dna */
-    }
+
+
+  zMapDebugPrint(scope_debug,
+		 "\n"
+		 "        block start/end\t  %d <---------------------> %d\n"
+		 "         mark start/end\t  %d <---------------------> %d\n"
+		 "          scope min/max\t  %d <--------------------->, %d\n"
+		 "        feature min/max\t  %d <---------------------> %d\n"
+		 "window min/position/max\t  %d <--- %d ---> %d\n"
+		 "\n",
+		 blixem_data->block->block_to_sequence.block.x1, blixem_data->block->block_to_sequence.block.x2,
+		 blixem_data->mark_start, blixem_data->mark_end,
+		 blixem_data->scope_min, blixem_data->scope_max,
+		 blixem_data->features_min, blixem_data->features_max,
+		 blixem_data->window_start, blixem_data->position, blixem_data->window_end) ;
+
 
   return status ;
 }
+
+
+
 
 
 /* Make the temporary files which are the sole input to the blixem program to get it to
@@ -1251,22 +1305,6 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   else
     paramString[BLX_ARGV_TYPE - missed] = g_strdup_printf("%c", 'P') ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* NOT NEEDED ANY MORE.... */
-
-  if (blixem_data->opts)
-    {
-      paramString[BLX_ARGV_OPTIONS_FLAG - missed] = g_strdup("-o");
-      paramString[BLX_ARGV_OPTIONS - missed]      = g_strdup_printf("%s", blixem_data->opts);
-    }
-  else
-    {
-      missed += 2;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
   if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX
       && blixem_data->seqbl_file)
@@ -1317,11 +1355,11 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 {
   gboolean status = TRUE ;
   GError  *channel_error = NULL ;
-//  gboolean seqbl_file = FALSE ;
+  //  gboolean seqbl_file = FALSE ;
   char *header ;
   int start, end ;
 
-   /* We just use the one gstring as a reusable buffer to format all output. */
+  /* We just use the one gstring as a reusable buffer to format all output. */
   blixem_data->line = g_string_new("") ;
 
 
@@ -1343,7 +1381,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 			       start, end) ;
 
       status = initFeatureFile(blixem_data->exblxFile, header, blixem_data->line,
-				&(blixem_data->exblx_channel), blixem_data) ;
+			       &(blixem_data->exblx_channel), blixem_data) ;
 
       g_free(header) ;
 
@@ -1361,7 +1399,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 				       start, end) ;
 
 	      status = initFeatureFile(blixem_data->seqbl_file, header, blixem_data->line,
-					&(blixem_data->seqbl_channel), blixem_data) ;
+				       &(blixem_data->seqbl_channel), blixem_data) ;
 
 	      g_free(header) ;
 	    }
@@ -1369,23 +1407,19 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
     }
   else
 #endif
+
 #warning legacy blixem file format code iffed out!
     {
-      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-      {
-            if(blixem_data->mark_start < start)
-            	start = blixem_data->mark_start;
-            if(blixem_data->mark_end > end)
-            	end = blixem_data->mark_end;
-      }
+      start = blixem_data->features_min ;
+      end = blixem_data->features_max ;
 
-	if (blixem_data->view->revcomped_features)
-		zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+      if (blixem_data->view->revcomped_features)
+	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
       header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
 			       g_quark_to_string(blixem_data->block->original_id),
 			       start, end) ;
-printf("Blixem file: %s",header);
+      printf("Blixem file: %s",header);
 
       status = initFeatureFile(blixem_data->gff_file, header, blixem_data->line,
 			       &(blixem_data->gff_channel), blixem_data) ;
@@ -1451,25 +1485,25 @@ printf("Blixem file: %s",header);
 	}
 
       if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-      {
-// chr4-04     source1     region      215000      300000      0.000000    .     .     dataType=short-read
+	{
+	  // chr4-04     source1     region      215000      300000      0.000000    .     .     dataType=short-read
 
-            /* MH17: not sure whre eblx and seqbl come in
-             * the feature writing code just goes straight to gff
-             * via code like this:
-             */
-            char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
+	  /* MH17: not sure whre eblx and seqbl come in
+	   * the feature writing code just goes straight to gff
+	   * via code like this:
+	   */
+	  char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
 
-            g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
-                   ref_name, blixem_data->source,
-                   "region",          // zMapSOAcc2Term(feature->SO_accession),
-//                   blixem_data->mark_start, blixem_data->mark_end,
-			 start,end,		/* these have been revcomped and wwere set from the mark */
-                   0.0, "dataType=short-read" ) ;       // is this also SO??
+	  g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
+				 ref_name, blixem_data->source,
+				 "region",          // zMapSOAcc2Term(feature->SO_accession),
+				 //                   blixem_data->mark_start, blixem_data->mark_end,
+				 start,end,		/* these have been revcomped and wwere set from the mark */
+				 0.0, "dataType=short-read" ) ;       // is this also SO??
 
-            printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
-printf("Blixem file: %s",blixem_data->line->str);
-      }
+	  printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
+	  printf("Blixem file: %s",blixem_data->line->str);
+	}
 
       if (blixem_data->homol_max)
 	{
@@ -2877,19 +2911,19 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b)
 static gboolean writeFastAFile(blixemData blixem_data)
 {
   gboolean status = TRUE ;
-  gsize    bytes_written ;
-  GError  *channel_error = NULL ;
-  char    *line = NULL ;
+  gsize bytes_written ;
+  GError *channel_error = NULL ;
+  char *line = NULL ;
   enum { FASTA_CHARS = 50 } ;
-  char     buffer[FASTA_CHARS + 2] ;			    /* FASTA CHARS + \n + \0 */
-  int      lines = 0, chars_left = 0 ;
-  char    *cp = NULL ;
-  int      i ;
+  char buffer[FASTA_CHARS + 2] ;			    /* FASTA CHARS + \n + \0 */
+  int lines = 0, chars_left = 0 ;
+  char *cp = NULL ;
+  int i ;
 
 
   if (!zMapFeatureBlockDNA(blixem_data->block, NULL, NULL, &cp))
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error creating FASTA file, failed to get feature's DNA");
 
       status = FALSE ;
     }
@@ -2905,8 +2939,19 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	}
       else
 	{
-	  line = g_strdup_printf(">%s\n",
-				 g_quark_to_string(blixem_data->view->features->parent_name));
+	  int start, end ;
+
+	  start = blixem_data->scope_min ;
+	  end = blixem_data->scope_max ;
+
+	  if (blixem_data->view->revcomped_features)
+	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
+	  /* Write header as:   ">seq_name start end" so file is self describing, note that
+	   * start/end are ref sequence coords (e.g. chromosome), not local zmap display coords. */ 
+	  line = g_strdup_printf(">%s %d %d\n",
+				 g_quark_to_string(blixem_data->view->features->parent_name),
+				 start, end) ;
 
 	  if (g_io_channel_write_chars(blixem_data->fasta_channel,
 				       line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
@@ -2931,12 +2976,6 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 	  start = blixem_data->scope_min ;
 	  end = blixem_data->scope_max ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (blixem_data->view->revcomped_features)
-	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),
 				  start, end, blixem_data->view->revcomped_features) ;

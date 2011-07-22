@@ -67,7 +67,7 @@ void zmapWindowCallBlixem(ZMapWindow window,
   /* Test there was an item selected otherwise we don't know which aligns to show. */
   if (!focus_item)
     {
-      zMapWarning("%s", "Could not launch blixem, no features selected.") ;
+      zMapWarning("%s", "Could not launch blixem, no column/feature selected.") ;
     }
   else if ((feature_any = zmapWindowItemGetFeatureAnyType(focus_item, -1)))
     {

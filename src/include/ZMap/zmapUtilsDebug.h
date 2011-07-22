@@ -75,14 +75,14 @@ G_STMT_START{                                             \
   G_STMT_START                                                        \
   {								      \
     if ((BOOLEAN_VAR))						      \
-      zMapUtilsDebugPrintf(stderr, "%s: " #FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) ; \
+      zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) ; \
   } G_STMT_END
 #else /* __GNUC__ */
 #define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)		      \
   G_STMT_START                                                        \
   {								      \
     if ((BOOLEAN_VAR))						      \
-      zMapUtilsDebugPrintf(stderr, "%s: " #FORMAT "\n", NULL, __VA_ARGS__) ;  \
+      zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", NULL, __VA_ARGS__) ;  \
   } G_STMT_END
 #endif /* __GNUC__ */
 
