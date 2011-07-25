@@ -34,7 +34,7 @@
  * Exported functions: See ZMap/zmapRemoteControl.h
  *              
  * HISTORY:
- * Last edited: Jun 17 17:14 2011 (edgrif)
+ * Last edited: Jun 28 13:44 2011 (edgrif)
  * Created: Fri Sep 24 14:49:23 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -42,6 +42,7 @@
 
 #include <string.h>
 #include <gdk/gdkx.h>					    /* For X Windows stuff. */
+#include <gtk/gtk.h>
 
 #include <ZMap/zmapUtils.h>
 #include <zmapRemoteControl_.h>
@@ -111,10 +112,14 @@ typedef struct eventTxtStructName
 } eventTxtStruct, *eventTxt ;
 
 
+/* New functions.... */
+static void sendClipboardDataCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
+				guint info, gpointer user_data) ;
+static void clearClipboardAfterDataCB(GtkClipboard *clipboard, gpointer user_data) ;
+static void clearClipboardAfterWaitingCB(GtkClipboard *clipboard, gpointer user_data) ;
 
 
-
-
+/* Old functions */
 static gboolean testNotifyCB(GtkWidget *widget, GdkEventProperty *property_event, gpointer user_data) ;
 
 
@@ -138,8 +143,9 @@ static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 
 static gboolean resetToReady(ZMapRemoteControl remote_control) ;
 
-static AnyRequest createRemoteRequest(RemoteType request_type,
-				      GdkAtom peer_atom, gulong curr_req_time, char *request) ;
+static AnyRequest createRemoteRequest(ZMapRemoteControl remote_control, RemoteType request_type,
+				      GdkAtom peer_atom, GtkClipboard *peer_clipboard,
+				      gulong curr_req_time, char *request) ;
 static void destroyRemoteRequest(AnyRequest remote_request) ;
 static char *getStateAsString(ZMapRemoteControl remote_control) ;
 
@@ -167,6 +173,17 @@ static gboolean remote_debug_G = TRUE ;
 static GdkEventMask msg_exclude_mask_G = (GDK_POINTER_MOTION_MASK | GDK_EXPOSURE_MASK
 					  | GDK_FOCUS_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK
 					  | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK) ;
+
+
+
+
+/* Data types we support for the properties....only text ! */
+#define TARGET_ID = 111111 ;
+#define TARGET_NUM = 1 ;
+static struct GtkTargetEntry clipboard_target_G[TARGET_NUM] = {{ZMAP_ANNOTATION_DATA_TYPE, 0, TARGET_ID}} ;
+
+
+
 
 
 
@@ -206,10 +223,9 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id, char *remote_control_uni
   remote_control->our_atom = gdk_atom_intern(remote_control_unique_str, FALSE) ;
   remote_control->our_atom_string = gdk_atom_name(remote_control->our_atom) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* boolean should be TRUE here to check data format supported. */
-  remote_control->data_format_atom = gdk_atom_intern("XA_STRING", FALSE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  remote_control->data_format_atom = gdk_atom_intern(ZMAP_ANNOTATION_DATA_TYPE, FALSE) ;
+  remote_control->data_format_bits = ZMAP_ANNOTATION_DATA_FORMAT ;
 
   remote_control->show_all_events = TRUE ;
 
@@ -311,16 +327,16 @@ gboolean zMapRemoteControlInit(ZMapRemoteControl remote_control, GtkWidget *remo
 #else
 	if (!(result = GTK_WIDGET_MAPPED(remote_control_widget)))
 #endif
+	  {
 	  REMOTELOGMSG(remote_control, "",
 		       "RemoteControl initialisation failed, widget %p not mapped.", remote_control_widget) ;
+	  }
 	else
 	  {
 	    remote_control->our_widget = remote_control_widget ;
 	    remote_control->our_window = GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget)) ;
 
-	    remote_control->our_clip_board
-	      = gtk_clipboard_get_for_display(gtk_widget_get_display(remote_control->our_widget),
-					      remote_control->our_atom) ;
+	    remote_control->our_clipboard = gtk_clipboard_get(remote_control->our_atom) ;
 
 	    if (remote_control->show_all_events)
 	      remote_control->all_events_id = g_signal_connect(remote_control->our_widget, "event",
@@ -383,91 +399,91 @@ gboolean zMapRemoteControlRequest(ZMapRemoteControl remote_control,
     }
   else
     {
-      /* Disconnect our own selection-clear handler so we can't be called with a request while
-       * issuing one. */
-      disconnectSignalHandler(remote_control->our_widget, &(remote_control->select_clear_id)) ;
+      GdkAtom peer_atom ;
+      GtkClipboard *peer_clipboard ;
+      ClientRequest client_request ;
 
-      /* If caller did not specify a time then use CurrentTime, not ideal but the
-       * best we can do really. */
-      if (!time)
-	time = GDK_CURRENT_TIME ;
+      /* Clear our own property so we don't respond to requests.
+       * 
+       * 
+       * Will this call our "clear" routine...we should check how this works.... */
+      gtk_clipboard_clear(remote_control->our_clipboard) ;
 
 
-      /* If we no longer handle the selection clear this is redundant.... */
-      if (result)
+
+      /* Get clipboard for peer's atom. */
+      peer_atom = gdk_atom_intern(peer_unique_str, FALSE) ;
+
+      peer_clipboard = gtk_clipboard_get(peer_atom) ;
+
+      
+      /* Create the request object that will persist until the request is complete or
+       * an error has occurred. */
+      remote_control->curr_request = createRemoteRequest(remote_control, REMOTE_TYPE_CLIENT,
+							 peer_atom, peer_clipboard,
+							 time, request) ;
+      client_request = (ClientRequest)remote_control->curr_request ;
+
+      client_request->state = CLIENT_STATE_SENDING ;
+
+
+      REMOTELOGMSG(remote_control, "About to set data on atom %s.", peer_unique_str) ;
+
+      if ((result = gtk_clipboard_set_with_data(peer_clipboard,
+						clipboard_target_G,
+						TARGET_NUM,
+						sendClipboardDataCB,
+						clearClipboardAfterDataCB,
+						client_request)))
 	{
-	  /* First relinquish ownership of our own atom so we ignore other
-	     peer requests until we have finished this one. */
-	  if (!(result = gtk_selection_owner_set(NULL,
-						 remote_control->our_atom,
-						 time)))
-	    REMOTELOGMSG(remote_control,
-			 "Call to lose ownership of atom %s failed so cannot process command for \"%s\","
-			 " command was: %s.",
-			 remote_control->our_atom_string,
-			 peer_unique_str, request) ;
-	}
 
-
-
-
-      if (result)
-	{
-	  GdkAtom peer_atom ;
-
-	  peer_atom = gdk_atom_intern(peer_unique_str, FALSE) ;
-
+	  
 	  REMOTELOGMSG(remote_control,
-		       "About to get ownership of atom %s.",
+		       "Got ownership of atom %s to signal we want to send a request.",
 		       peer_unique_str) ;
 
-	  /* Taking ownership signals that we want to make a request.
-	   * To avoid race conditions the time MUST be the time of the
-	   * action/event that originally triggered this action and
-	   * _not_ the current X Server time. */
-	  if ((result = gtk_selection_owner_set(remote_control->our_widget,
-						peer_atom,
-						time)))
-	    {
-	      ClientRequest client_request ;
 
-	      REMOTELOGMSG(remote_control,
-			   "Got ownership of atom %s to signal we want to send a request.",
-			   peer_unique_str) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* Create the request object that will persist until the request is complete or
+	   * an error has occurred. */
+	  remote_control->curr_request = createRemoteRequest(remote_control, REMOTE_TYPE_CLIENT,
+							     peer_atom, time, request) ;
+	  client_request = (ClientRequest)remote_control->curr_request ;
 
-	      /* Create the request object that will persist until the request is complete or
-	       * an error has occurred. */
-	      remote_control->curr_request = createRemoteRequest(REMOTE_TYPE_CLIENT, peer_atom, time, request) ;
-	      client_request = (ClientRequest)remote_control->curr_request ;
+	  client_request->state = CLIENT_STATE_SENDING ;
 
-	      client_request->state = CLIENT_STATE_SENDING ;
+	  remote_control->select_request_id = g_signal_connect(remote_control->our_widget,
+							       "selection-request-event",
+							       (GCallback)clientSelectionRequestCB, remote_control) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	      remote_control->select_request_id = g_signal_connect(remote_control->our_widget,
-								   "selection-request-event",
-								   (GCallback)clientSelectionRequestCB, remote_control) ;
 
-	      if (remote_control->timeout_ms)
-		remote_control->timer_source_id = g_timeout_add(remote_control->timeout_ms, 
-								timeOutCB, remote_control) ;
+	  if (remote_control->timeout_ms)
+	    remote_control->timer_source_id = g_timeout_add(remote_control->timeout_ms, 
+							    timeOutCB, remote_control) ;
 
-	      REMOTELOGMSG(remote_control, "Set selection-received handler on " X_WIN_FORMAT ", waiting for convert",
-			   GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget))) ;
+	  REMOTELOGMSG(remote_control, "Set selection-received handler on " X_WIN_FORMAT ", waiting for convert",
+		       GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget))) ;
 
-	      REMOTELOGMSG(remote_control, "%s", "registered request, waiting for selection-request event.") ;
-	    }
-	  else
-	    {
-	      disconnectSignalHandler(remote_control->our_widget, &(remote_control->select_request_id)) ;
-	      disconnectTimerHandler(&(remote_control->timer_source_id)) ;
+	  REMOTELOGMSG(remote_control, "%s", "registered request, waiting for selection-request event.") ;
+	}
+      else
+	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  disconnectSignalHandler(remote_control->our_widget, &(remote_control->select_request_id)) ;
+	  disconnectTimerHandler(&(remote_control->timer_source_id)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     
-	      REMOTELOGMSG(remote_control,
-			   "Cannot gain ownership of atom %s so cannot process command for \"%s\","
-			   " command was: %s.",
-			   remote_control->our_atom_string,
-			   peer_unique_str, request) ;
-	    }
+	  REMOTELOGMSG(remote_control,
+		       "Cannot gain ownership of atom %s so cannot process command for \"%s\","
+		       " command was: %s.",
+		       remote_control->our_atom_string,
+		       peer_unique_str, request) ;
 	}
     }
+
 
 
   /* If we failed at any stage we need to reset so we are ready for new requests. */
@@ -549,9 +565,10 @@ static gboolean resetToReady(ZMapRemoteControl remote_control)
 {
   gboolean result = FALSE ;
 
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* WE NEED TO SET OURSELVES AS OWNER AGAIN..... */
+
   if (!(result = gdk_selection_owner_set(remote_control->our_widget->window, remote_control->our_atom,
 					 GDK_CURRENT_TIME,  /* Not sure about this, pass time in ? */
 					 FALSE)))
@@ -580,20 +597,133 @@ static gboolean resetToReady(ZMapRemoteControl remote_control)
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (!(result = gtk_clipboard_set_with_data(GtkClipboard *clipboard,
-					     const GtkTargetEntry *targets,
-					     guint n_targets,
-					     GtkClipboardGetFunc get_func,
-					     GtkClipboardClearFunc clear_func,
-					     gpointer user_data);
+  if (!(result = gtk_clipboard_set_with_data(remote_control->our_clipboard,
+					     clipboard_target_G,
+					     target_num_G,
+					     NULL,
+					     clearClipboardAfterWaitingCB,
+					     remote_control)))
+    {
+      REMOTELOGMSG(remote_control, "",
+		   "Failed to become selection owner for atom \"%s\""
+		   " on window of widget %p.",
+		   remote_control->our_atom_string, remote_control->our_widget) ;
+    }
+  else
+    {
+      if (remote_control->curr_request)
+	destroyRemoteRequest(remote_control->curr_request) ;
 
-
+      REMOTELOGMSG(remote_control, "",
+		   "Now selection owner for our property \"%s\""
+		   " on window of widget %p.",
+		   remote_control->our_atom_string, remote_control->our_widget) ;
+    }
 
 
   return result ;
 }
 
 
+
+      
+static void sendClipboardDataCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
+				guint info, gpointer user_data)
+{
+  ClientRequest client_request = (ClientRequest)user_data ;
+  GdkAtom target_atom ;
+  char *target_name ;
+
+  REMOTELOGMSG(client_request->remote_control, "%s", ENTER_TXT) ;
+
+  target_atom = gtk_selection_data_get_target(selection_data) ;
+  target_name = gdk_atom_name(target_atom) ;
+
+  if (info != target_id_G)
+    {
+      REMOTELOGMSG(client_request->remote_control, "Unsupported Data Type requested: %s.", target_name) ;
+    }
+  else
+    {
+      ZMapRemoteControl remote_control = client_request->remote_control ;
+
+      REMOTELOGMSG(client_request->remote_control, "Set our Request on property \"%s\": %s",
+		   target_name, client_request->request) ;
+
+      gtk_selection_data_set(selection_data,
+			     remote_control->data_format_atom,
+			     remote_control->data_format_bits,
+			     client_request->request,
+			     (int)(strlen(client_request->request) + 1)) ;
+
+    }
+
+  REMOTELOGMSG(client_request->remote_control, "%s", EXIT_TXT) ;
+
+  return ;
+}
+
+
+
+static void clearClipboardAfterDataCB(GtkClipboard *clipboard, gpointer user_data)
+{
+  ClientRequest client_request = (ClientRequest)user_data ;
+  GdkAtom target_atom ;
+  char *target_name ;
+
+  REMOTELOGMSG(client_request->remote_control, "%s", ENTER_TXT) ;
+
+  target_atom = client_request->peer_atom ;
+  target_name = gdk_atom_name(target_atom) ;
+
+
+  /* Do we need to free the request here ??? Check our logic flow.....
+   * 
+   * Need to set state here for sure.....
+   * 
+   *  */
+  REMOTELOGMSG(client_request->remote_control,
+	       "Property \"%s\" has been cleared by another application.",
+	       target_name) ;
+
+
+  REMOTELOGMSG(client_request->remote_control, "%s", EXIT_TXT) ;
+
+  return ;
+}
+
+
+static void clearClipboardAfterWaitingCB(GtkClipboard *clipboard, gpointer user_data)
+{
+  ClientRequest client_request = (ClientRequest)user_data ;
+  GdkAtom target_atom ;
+  char *target_name ;
+
+  REMOTELOGMSG(client_request->remote_control, "%s", ENTER_TXT) ;
+
+  target_atom = gtk_selection_data_get_target(selection_data) ;
+  target_name = gdk_atom_name(target_atom) ;
+
+
+  /* Do we need to free the request here ??? Check our logic flow.....
+   * 
+   * Need to set state here for sure.....
+   * 
+   *  */
+  REMOTELOGMSG(client_request->remote_control,
+	       "Property \"%s\" has been cleared by another application.",
+	       target_name) ;
+
+
+  REMOTELOGMSG(client_request->remote_control, "%s", EXIT_TXT) ;
+
+  return ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 /* "selection-clear-event" handler, called when a peer signals that they have a request
  * by taking ownership of the atom.
@@ -1395,6 +1525,12 @@ static gboolean testNotifyCB(GtkWidget *widget, GdkEventProperty *property_event
   return result ;
 }
 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
 
 
 /* A GSourceFunc() for time outs. */
@@ -1418,7 +1554,7 @@ static gboolean timeOutCB(gpointer user_data)
 
 
 /* Make a remote request struct of either client or server type. */
-static AnyRequest createRemoteRequest(RemoteType request_type,
+static AnyRequest createRemoteRequest(ZMapRemoteControl remote_control, RemoteType request_type,
 				      GdkAtom peer_atom, gulong curr_req_time, char *request)
 {
   AnyRequest remote_request = NULL ;

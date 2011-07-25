@@ -27,7 +27,7 @@
  * Description: Private header for remote control package.
  *
  * HISTORY:
- * Last edited: Jun 17 10:12 2011 (edgrif)
+ * Last edited: Jun 28 13:03 2011 (edgrif)
  * Created: Fri Sep 24 14:44:59 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -82,6 +82,8 @@ typedef struct AnyRequestStructName
 {
   RemoteType request_type ;
 
+  ZMapRemoteControl remote_control ;			    /* Parent remote control object. */
+
   /* The _current_ peers atom for receiving requests and responses, will be rewritten for
    * each new request/response, may change or not depending if it's a new client. */
   GdkAtom peer_atom ;
@@ -103,6 +105,8 @@ typedef struct ClientRequestStructName
   /* Section common to all request structs (see AnyRequest). */
 
   RemoteType request_type ;
+
+  ZMapRemoteControl remote_control ;			    /* Parent remote control object. */
 
   /* The current peers atom for receiving requests and responses, will be rewritten for
    * each new request/response, may change or not depending if it's a new client. */
@@ -130,6 +134,8 @@ typedef struct ServerRequestStructName
   /* Section common to all request structs (see AnyRequest). */
 
   RemoteType request_type ;				    /* Must be first to match AnyRequest. */
+
+  ZMapRemoteControl remote_control ;			    /* Parent remote control object. */
 
   /* The _current_ peers atom for receiving requests and responses, will be rewritten for
    * each new request/response, may change or not depending if it's a new client. */
@@ -181,9 +187,9 @@ typedef struct ZMapRemoteControlStructName
   char *our_atom_string ;				    /* Cached because it's a pain to get the string. */
 
   GdkAtom data_format_atom ;				    /* Still needed ???? */
+  gint data_format_bits ;
 
-
-  GtkClipboard *our_clip_board ;
+  GtkClipboard *our_clipboard ;
 
 
 

@@ -27,7 +27,7 @@
  * Description: External interface to remote control package.
  *
  * HISTORY:
- * Last edited: Nov 25 12:24 2010 (edgrif)
+ * Last edited: Jun 27 11:13 2011 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -43,7 +43,13 @@
 #define TEST_REMOTE_ID "TEST_REMOTE_ID"
 
 
+#define ZMAP_ANNOTATION_DATA_TYPE   "ZMAP_ANNOTATION_STR"
+#define ZMAP_ANNOTATION_DATA_FORMAT 8			    /* Bits per unit. */
 
+
+
+
+/* errr...what's this for ??? */
 #define ANNOTATION_ICC "ANNOTATION_DATA"
 
 
