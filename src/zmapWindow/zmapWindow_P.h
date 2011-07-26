@@ -1000,9 +1000,10 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
 
-void zmapWindowCallBlixem(ZMapWindow window,
-			  ZMapWindowAlignSetType requested_homol_set, char *source,
-			  double x, double y) ;
+void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
+			  ZMapWindowAlignSetType requested_homol_set,
+			  ZMapFeatureSet feature_set, char *source,
+			  double x_pos, double y_pos) ;
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
 #define zmapWindowItemGetFeatureAlign(ITEM)   (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_ALIGN)

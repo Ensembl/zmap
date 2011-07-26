@@ -4292,7 +4292,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	zmapWindowCallBlixem(window, requested_homol_set, NULL, 0.0, 0.0) ;
+	zmapWindowCallBlixem(window, NULL, requested_homol_set, NULL, NULL, 0.0, 0.0) ;
 
 	break ;
       }
