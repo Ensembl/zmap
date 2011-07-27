@@ -67,8 +67,10 @@ static void zmap_window_transcript_feature_destroy     (GObject *object);
 
 static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   transcript,
 						      FooCanvasItem         *interval,
+						      ZMapFeature			feature,
 						      ZMapFeatureSubPartSpan sub_feature,
 						      ZMapStyleColourType    colour_type,
+							int colour_flags,
 						      GdkColor              *default_fill,
                                           GdkColor              *border);
 static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanvasItem   transcript,
@@ -237,8 +239,10 @@ static void zmap_window_transcript_feature_destroy(GObject *object)
 
 static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   transcript,
 						      FooCanvasItem         *interval,
+						      ZMapFeature			feature,
 						      ZMapFeatureSubPartSpan sub_feature,
 						      ZMapStyleColourType    colour_type,
+							int colour_flags,
 						      GdkColor              *default_fill,
                                           GdkColor              *border)
 {

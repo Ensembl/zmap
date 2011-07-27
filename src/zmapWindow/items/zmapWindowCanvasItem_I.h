@@ -77,10 +77,14 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
   void (* set_colour)(ZMapWindowCanvasItem   window_canvas_item,
 		      FooCanvasItem         *interval,
+		      ZMapFeature		     feature,
 		      ZMapFeatureSubPartSpan sub_feature,
 		      ZMapStyleColourType    colour_type,
+		      int 			     colour_flags,
 		      GdkColor              *default_fill_gdk,
                   GdkColor              *border_gdk) ;
+
+  gboolean (* set_feature) (FooCanvasItem *item, double x, double y);
 
   /*   ????????????????? is this just a predeclared struct type problem ???? if so we can solve it... */
 #ifdef CATCH_22

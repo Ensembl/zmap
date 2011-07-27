@@ -76,6 +76,10 @@ typedef struct
 {
   FooCanvasItem *item ;					    /* could be group or item. */
   GHashTable *hash_table ;
+
+  ZMapFeatureAny feature;
+  	/* direct link to feature instead if via item */
+  	/* need if we have composite items eg density plots */
 } ID2CanvasStruct, *ID2Canvas ;
 
 
@@ -431,13 +435,14 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
     {
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
         {
-          ID2Canvas feature ;
+          ID2Canvas ID2C ;
 
-          feature = g_new0(ID2CanvasStruct, 1) ;
-          feature->item = feature_item ;
-          feature->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          ID2C = g_new0(ID2CanvasStruct, 1) ;
+          ID2C->item = feature_item ;
+          ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          ID2C->feature = (ZMapFeatureAny) item_feature_obj;
 
-          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature) ;
+          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
         }
 
       result = TRUE ;

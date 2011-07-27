@@ -185,7 +185,7 @@ If necessary we can create display indexes for long and short items to provide a
 - graph items have been made into ZWCI and have foo rects added as intervals
   rather than existing as a variant of basic feature
 - free standing glyphs are added as foo glyph items to basic features
-- for density plots we need to add BasicFeature for the single
+- for density plots we need to add GraphFeature for the single
   density column wide item (a hack) and then add an interval to that which
   will be the foo extension density item
   This is needed as the ZWCI is a foo group extension and does not draw directly
@@ -210,13 +210,62 @@ If necessary we can create display indexes for long and short items to provide a
 *  test using two featuresets with the same data from GFF files and display as old and new style
 * display as lines not boxes -> combine data points into a poly_line
 * display as heatmap: boxes are full width and colour coded; ok with irregular size bins?
-  handle mouse clicks etc, point and bounds
+* handle mouse clicks etc, point and bounds
   handle long items (trivial? -> no: need to clip)
   handle hide and show
 * re-bucket on display and zoom
 * get some timing stats
   add on GC skew
+
+  add print/ screen dump handling
 </pre>
+
+<h6>Operating coverage display and bumping</h6>
+<p>
+<ul>
+<li> heatmaps for related files (eg tissue types) will be displayed in one column and bumping will bump all heatmaps together
+<li> currently bumping to wiggle is preferred over histogram
+<li> users want to be able to hide 'uninteresting' heatmap/ wiggle features (as in feature hide/show)
+</ul>
+</p>
+
+<h6> Handling short reads data</h6>
+<p>To avoid accumulating too many features on the ZMap display data outside the mark will be removed. This data will be displayed on 'request from mark' and remain until the mark is reset and set again.   Adjusting the mark will not remove displayed data.
+</p>
+
+<h6>Handling focus interface</h6>
+
+<p> Given a mouse click that is attached to a single column wide foo item we can find the relevant feature implied by the mouse coordinates and set the foo item's feature to be this and the focus code can be adjusted to cope with his by adding the feature to the focus item data structure.
+</p>
+
+<p>Focus code is called from in <b>zmapWindowItem.c</b>   For a simple mouse click
+this causes no problems as we can find the relevant feature quite easily.  For an alignment (highlight same name items) this requires a feature search and will not work with density items using the current form of feature search (which returns a list of foo items which would all be the same).
+This list of items is then added to the focus list en-masse and if this is derived from density items it will work.
+ <b>However</b> <i>in the short term</i> we know that alignments are not displayed as density items and this need not concern us.
+</p>
+<p>Focus code is also called from <b>zmapWindowState.c</b> and this restores a single 'hot' item.  This (current ZMap) fails to restore the previously highlit data and is relatively simple to emulate.  Window state is stored via some 'serialise' function - it's not clear if this is necessary, as we only restore state eg after a RevComp, and the feature context is still valid.
+</p>
+
+<p>
+There is a further problem to solve of finding a feature from a feature id; previously this has been done by finding the corresponding canvas item which has a pointer back to the feature.  Focus code could be extended to store start, end coordinates of features (via the feature itself) and this can be used to look up the feature in the density items skip list.
+</p>
+
+<p>Focus items a) have to be highlit and b) the highlight must persist until removed.  Taking into account that density items (and normal graphs) do not overlap we can implement this with a simple flag in the graph segment data structure and just display a different colour.
+</p>
+<p>To handle overlapped items (eg alignments) it will be necessary to post-process focus items and display them after the others - perhaps the logical way to of this is to display focus itesm at the end of every expose event, but thta is outside the scope of this module.
+</p>
+<p>Note that focus code highlights features using a given colour not necessarily the features' style's SELECTED colour if a window default has been set.  This default can alternatively be set using the root style.  The interface is via a ZMapWindowCanvasItem function (set_colour) and for density items we will need to patch into this.  Focus code works using a set of flags for different groups of focus items (eg selected, evidence) and  we can store these flags in the graph-density item struct for each feature which will allow us to implement all optional colours, storing these in the global graph density struct.  Note that for density items we only need to handle 'selected' but implementing this interface now will allow other data types with more display options (eg masked alignments) to be implemented easily.
+</p>
+<p>Unfortunately due to scope issues it is not possible to use focus code to get colours, and the canvas item class interface is a bit convoluted, so to keep thing simple we will store a limited number of alternate colours directly int rh grah density item struct and choose these according to a flag.  This will limit density items to being normal colour or selected (as defined by the focus code) only.
+</p>
+
+
+<h6>Handling the FToI search interface</h6>
+
+<p>In the short term we can appply restrictions to this.  Search for coverage data by name is not particularly useful and we can just disallow this or make it fail.  Likewise coverage data is not valid as evidence features (transcript/highlight evidence) and we can assume this will not occur <i>in the short term</i>.  (see <b>zmapWindowFeature.c</b> # 1352 approx).
+</p>
+<p>In the longer term we need to modify the interface to return feature as well as foo item.
+</p>
 
 </fieldset>
 

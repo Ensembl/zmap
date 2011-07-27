@@ -57,7 +57,10 @@ typedef struct _zmapWindowCanvasGraphSegment
 
       double y1, y2;    	/* top, bottom of item (box or line) */
 	double score;		/* determines feature width, gets re-calc'd on zoom */
+//	double log_score;
 	double width;
+	int flags;				/* non standard display option eg selected */
+#define GS_FOCUS_MASK	0xff		/* any focus flag will map to selected, this should really be defined by focus code but we are out of scope */
 
 } ZMapWindowCanvasGraphSegmentStruct, *ZMapWindowCanvasGraphSegment;
 
@@ -115,12 +118,22 @@ typedef struct _zmapWindowGraphDensityItemStruct
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
+  gulong selected_fill_colour;	/* derived from SetIntervalColours */
+  gulong selected_fill_pixel;
+  gulong selected_outline_colour;
+  gulong selected_outline_pixel;
+
+
   double width;                 /* Outline width */
 
       /* Configuration flags */
   gboolean fill_set;    	/* Is fill color set? */
   gboolean outline_set;	 	/* Is outline color set? */
+  gboolean selected_fill_set;    	/* Is fill color set? */
+  gboolean selected_outline_set;	 	/* Is outline color set? */
   gboolean width_pixels;      /* Is outline width specified in pixels or units? */
+
+  ZMapFeature point_feature;	/* set by cursor movement */
 
 } zmapWindowGraphDensityItemStruct;
 

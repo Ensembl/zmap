@@ -2058,10 +2058,9 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 					     double x1, double y1, double x2, double y2,
 					     ZMapFeatureTypeStyle style)
 {
-  ZMapWindowFToIFactory factory = run_data->factory ;
+//  ZMapWindowFToIFactory factory = run_data->factory ;
   FooCanvasGroup *parent = run_data->container ;
   FooCanvasItem *feature_item ;
-  guint line_width ;
   double numerator, denominator, dx ;
   double width, max_score, min_score ;
   ZMapWindowCanvasItem canvas_item;
@@ -2069,42 +2068,55 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
   zMapAssert(style->mode == ZMAPSTYLE_MODE_GRAPH);
 
 
-//  if(style->mode_data.graph.density)
+  //if(style->mode_data.graph.density)
   if(1)
   {
-      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container;
+      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-      /* histogram graph mode */
+      /* density or histogram graph mode */
+      /* NOTE we also have to handle line ploots with -ve values perhaps?? NOT implemnented */
 
-      min_score = zMapStyleGetMinScore(style) ;
-      max_score = zMapStyleGetMaxScore(style) ;
+	min_score = zMapStyleGetMinScore(style) ;
+	max_score = zMapStyleGetMaxScore(style) ;
 
-      line_width = factory->line_width;
+	numerator = feature->score - min_score ;
+	denominator = max_score - min_score ;
 
-      numerator = feature->score - min_score ;
-      denominator = max_score - min_score ;
+	if(numerator < 0)			/* coverage and histgrams do not have -ve values */
+		numerator = 0;
+	if(denominator < 0)		/* dumb but wise, could conceivably be mis-configured and not checked */
+		denominator = 0;
 
-      if (denominator == 0)                         /* catch div by zero */
-      {
-            if (numerator < 0)
-            dx = 0 ;
-            else if (numerator > 1)
-            dx = 1 ;
-      }
-      else
-      {
-            dx = numerator / denominator ;
-            if (dx < 0)
-            dx = 0 ;
-            if (dx > 1)
-            dx = 1 ;
-      }
+	if(style->mode_data.graph.scale == ZMAPSTYLE_GRAPH_SCALE_LOG)
+	{
+		if(numerator > 0)
+			numerator = log(numerator);
+
+		if(denominator > 0)
+			denominator = log(denominator) ;
+	}
+
+	if (denominator == 0)                         /* catch div by zero */
+	{
+		if (numerator < 0)
+			dx = 0 ;
+		else if (numerator > 0)
+			dx = 1 ;
+	}
+	else
+	{
+		dx = numerator / denominator ;
+		if (dx < 0)
+			dx = 0 ;
+		if (dx > 1)
+			dx = 1 ;
+	}
 
       if(!run_data->feature_stack->id)
       {
-            GQuark fset_id = zmapWindowContainerFeatureSetGetColumnId(fset);
-            char *x = g_strdup_printf("%s_%s",g_quark_to_string(fset_id),g_quark_to_string(style->unique_id));
+            GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
+            char *x = g_strdup_printf("%s_%s", g_quark_to_string(col_id), g_quark_to_string(run_data->feature_stack->set->unique_id));
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);
@@ -2144,11 +2156,11 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
   }
   else      // original code preserved unchangesd
   {
+	// NOTE this is for a histogram, -ve values are meaningless
+
       width = zMapStyleGetWidth(style) ;
       min_score = zMapStyleGetMinScore(style) ;
       max_score = zMapStyleGetMaxScore(style) ;
-
-      line_width = factory->line_width;
 
       zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;       /* Make sure we cover the whole last base. */
 
@@ -2159,7 +2171,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
       {
             if (numerator < 0)
             dx = 0 ;
-            else if (numerator > 1)
+            else if (numerator > 0)
             dx = 1 ;
       }
       else

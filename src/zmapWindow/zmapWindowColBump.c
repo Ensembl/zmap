@@ -772,7 +772,7 @@ static void collection_add_colinear_cb(gpointer data, gpointer user_data)
   ZMapWindowContainerBlock container_block;
   int block_offset = 0;
 
-      /* features azre block displayed relative so we have to do the same for gylphs etc
+      /* features are block displayed relative so we have to do the same for gylphs etc
        * really these should be part of the feature not the featureset
        */
             /* get block via strand from container */

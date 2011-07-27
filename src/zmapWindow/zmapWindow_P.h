@@ -490,6 +490,8 @@ typedef enum
 
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
+gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
+
 
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
@@ -1280,9 +1282,9 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 // also used for evidence highlight lists
 
 ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
-void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type);
-#define zmapWindowFocusAddItem(focus, item_list) \
-      zmapWindowFocusAddItemType(focus, item_list,WINDOW_FOCUS_GROUP_FOCUS);
+void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,ZMapFeature feature, ZMapWindowFocusType type);
+#define zmapWindowFocusAddItem(focus, item_list, feature) \
+      zmapWindowFocusAddItemType(focus, item_list, feature, WINDOW_FOCUS_GROUP_FOCUS);
 void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot,ZMapWindowFocusType type);
 #define zmapWindowFocusAddItems(focus, item_list, hot) \
       zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);

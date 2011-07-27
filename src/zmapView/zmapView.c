@@ -579,6 +579,9 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	      continue;
 
             featuresets = zMapConfigString2QuarkList(src->featuresets,FALSE) ;
+// MH17: need to add server name as default featureset -> it doesn't have one due to GLib config file rubbish
+//            if(!featuresets)
+//            	featuresets = g_list_add(featuresets,src->name);
 
             while(featuresets)
               {
@@ -651,6 +654,10 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	    // get style defined by featureset name
             if(fset_styles)
 	      {
+		if(q)		/* default to source name */
+		  gff_source->style_id = q;
+		  		/* but change to explicit config if it's there */
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
 		if(q)
 		  gff_source->style_id = q;
 	      }

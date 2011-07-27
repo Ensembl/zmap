@@ -121,6 +121,7 @@ static FooCanvasItem *zmap_window_assembly_feature_add_interval(ZMapWindowCanvas
 
 static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem   assembly,
 						    FooCanvasItem         *interval,
+						    ZMapFeature			feature,
 						    ZMapFeatureSubPartSpan sub_feature,
 						    ZMapStyleColourType    colour_type,
 						    GdkColor              *default_fill,

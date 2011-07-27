@@ -143,7 +143,7 @@ static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2,
 
 
 
-/* 
+/*
  *                        External functions.
  */
 
@@ -226,7 +226,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature)
 {
   FooCanvasItem *feature_item ;
-  
+
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
     zmapWindowHighlightObject(window, feature_item, TRUE, FALSE) ;
@@ -299,13 +299,14 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	      zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#warning TEMP_BODGE not needed as this is alignments only
 	    zmapWindowFocusAddItems(window->focus, set_items, item) ; // item is the hot one
 
 	    g_list_free(set_items) ;
 	  }
 	else
 	  {
-	    zmapWindowFocusAddItem(window->focus, item) ;
+	    zmapWindowFocusAddItem(window->focus, item , feature) ;
 	  }
 
 	break ;
@@ -313,7 +314,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     default:
       {
 	/* Try highlighting both the item and its column. */
-        zmapWindowFocusAddItem(window->focus, item);
+        zmapWindowFocusAddItem(window->focus, item, feature);
       }
       break ;
     }
@@ -644,7 +645,7 @@ void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item)
 
 
 
-/* This function highlights the peptide translation columns from region_start to region_end 
+/* This function highlights the peptide translation columns from region_start to region_end
  * (in dna or pep coords). Note any existing highlight is removed. If required_frame
  * is set to ZMAPFRAME_NONE then highlighting is in all 3 cols otherwise only in the
  * frame column given. */
@@ -810,13 +811,12 @@ ZMapFeatureTypeStyle zmapWindowItemGetStyle(ZMapWindow window, FooCanvasItem *it
 
 
 
-/* Finds the feature item in a window corresponding to the supplied feature item..which is
+/* Finds the feature item in a window corresponding to the supplied feature item...which is
  * usually one from a different window....
  *
  * This routine can return NULL if the user has two different sequences displayed and hence
  * there will be items in one window that are not present in another.
- *
- *  */
+ */
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
 {
   FooCanvasItem *matching_item = NULL ;
@@ -1865,7 +1865,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 					 set_id, tmp_strand, tmp_frame, 0)))
     {
       int frame_num, pep_start, pep_end ;
-      
+
 
 
       for (frame_num = ZMAPFRAME_0 ; frame_num <= ZMAPFRAME_2 ; frame_num++)

@@ -180,6 +180,9 @@ ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer
 	while(sl->prev && cmp(sl->prev->data,key) >= 0)
 		sl = (ZMapSkipList) sl->prev;
 
+	if(sl->prev && cmp(sl->data,key) > 0)	/* bias to one before if no exact match possible */
+		sl = sl->prev;
+
 	return(sl);
 }
 

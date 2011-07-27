@@ -618,7 +618,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 						  restore.item.feature_id))
 	  && zmapWindowItemIsShown(focus_item))
 	{
-	  zmapWindowFocusAddItem(window->focus, focus_item);
+	  zmapWindowFocusAddItem(window->focus, focus_item, NULL);
 
 	  zmapWindowHighlightFocusItems(window);
 	}
@@ -632,7 +632,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 								     restore.item.feature_id,
 								     NULL, NULL)))
 	{
-	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data);
+	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data,NULL);
 
 	  zmapWindowHighlightFocusItems(window);
 

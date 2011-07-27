@@ -39,6 +39,12 @@
 
 /*
 NOTE: was munged from BasicFeature
+This is a wrapper for graph items (histograms) that used to be basic features
+and also for zmapWindowGraphDensityItems.
+(to avoid creating another canvas item class with the required three extra files
+ and then removing afterwards when canvas items get reduced)
+
+The two types should not be mixed in one column.
 */
 
 
@@ -67,6 +73,19 @@ static FooCanvasItem *zmap_window_graph_item_add_interval(ZMapWindowCanvasItem  
                                                double top,  double bottom,
                                                double left, double right);
 
+
+static void zmap_window_graph_item_set_colour(ZMapWindowCanvasItem   thing,
+						      FooCanvasItem         *interval,
+						      ZMapFeature			feature,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+							int colour_flags,
+						      GdkColor              *default_fill,
+                                          GdkColor              *border);
+
+static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x, double y);
+
+ZMapWindowCanvasItemClass parent_class_G;
 
 GType zMapWindowGraphItemGetType(void)
 {
@@ -104,7 +123,7 @@ static void zmap_window_graph_item_class_init(ZMapWindowGraphItemClass graph_cla
   GObjectClass *gobject_class ;
 
   gobject_class = (GObjectClass *) graph_class;
-  canvas_class  = (ZMapWindowCanvasItemClass)graph_class;
+  canvas_class  = (ZMapWindowCanvasItemClass) graph_class;
 
   gobject_class->set_property = zmap_window_graph_item_set_property;
   gobject_class->get_property = zmap_window_graph_item_get_property;
@@ -112,6 +131,10 @@ static void zmap_window_graph_item_class_init(ZMapWindowGraphItemClass graph_cla
   gobject_class->dispose = zmap_window_graph_item_destroy;
 
   canvas_class->add_interval = zmap_window_graph_item_add_interval;
+  graph_class->canvas_item_set_colour = canvas_class->set_colour;
+  canvas_class->set_colour = zmap_window_graph_item_set_colour;
+  canvas_class->set_feature = zmap_window_graph_item_set_feature;
+
   canvas_class->check_data   = NULL;
 
   zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_GRAPH_ITEM) ;
@@ -127,6 +150,56 @@ static void zmap_window_graph_item_init        (ZMapWindowGraphItem graph)
 
 
 
+/* record the current feature found by cursor movement whcih continues as we run more code using the feature */
+static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x, double y)
+{
+	FooCanvasItem *foo;
+	FooCanvasGroup *group;
+	ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
+
+	group = (FooCanvasGroup *) item;
+	if(!group->item_list)
+		return FALSE;
+
+	foo = group->item_list->data;
+
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_GRAPH_DENSITY))
+	{
+		ZMapWindowGraphDensityItem di = (ZMapWindowGraphDensityItem) foo;
+
+		if(di->point_feature)
+		{
+			canvas_item->feature = di->point_feature;
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+
+static void zmap_window_graph_item_set_colour(ZMapWindowCanvasItem   item,
+						      FooCanvasItem         *interval,
+						      ZMapFeature			feature,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+							int colour_flags,
+						      GdkColor              *fill,
+                                          GdkColor              *border)
+{
+	if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_GRAPH_DENSITY))
+	{
+		zmapWindowGraphDensityItemSetColour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+	}
+	else
+	{
+		/* revert to normal canvas item handling */
+		ZMapWindowGraphItemClass class = ZMAP_WINDOW_GRAPH_ITEM_CLASS(item);
+		class->canvas_item_set_colour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+	}
+}
+
+
+
 static FooCanvasItem *zmap_window_graph_item_add_interval(ZMapWindowCanvasItem   graph,
                                                ZMapFeatureSubPartSpan unused,
                                                double top,  double bottom,
@@ -137,6 +210,7 @@ static FooCanvasItem *zmap_window_graph_item_add_interval(ZMapWindowCanvasItem  
   ZMapFeature feature;
   feature = graph->feature;
 
+	/* NOTE: will only be called for non-density mode graphs */
 
   item = foo_canvas_item_new(FOO_CANVAS_GROUP(graph),
                                FOO_TYPE_CANVAS_RECT,

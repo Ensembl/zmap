@@ -1490,7 +1490,26 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
       feature = zMapWindowCanvasItemGetFeature(sub_item);
-      zMapAssert(feature_arg == feature);
+
+#if 0
+//fixed by adding ZMWCI->set_feature() and zMapWindowCanvasItemSetFeature()
+	/* mh17 NOTE
+	 * GRAPH_DENSITY items set thier feature when point() is called
+	 * if the mouse is moving while we are processing a click then the feature
+	 * pointed at by the canvas item can change causing an assertion
+	 * here we choose to dislay info about the one clicked on
+	 * the assertion is the check that a sub-item (eg exon) is really part of the containing group
+	 * and we break that with composite items
+	 * we have to ensure that the feature_arg data is passed through with any later functions
+	 * that update the canvas item (highlighting the feature in another window maybe?)
+	 * so that implicates zmapView.c/select and likely zmapControl.c too
+	 * note that we cannot simply choose to use featrue instead of feature_arg as the mouse may be still moving
+	 */
+      if(ZMAP_IS_WINDOW_GRAPH_DENSITY_ITEM(sub_item))
+      	feature = feature_arg;
+      else
+#endif
+      	zMapAssert(feature_arg == feature);
 
       top_canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(sub_item);
 
@@ -4358,6 +4377,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 
 #if MH17_DONT_INCLUDE
+// NOTE this code will probably break due to later mods, list will be of FToi hash values not ZMapCanvasItems
     case GDK_e:
 
       if(zmap_development_G)

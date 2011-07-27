@@ -825,7 +825,7 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *styles;                     /* All the styles know to the view or window */
+  GHashTable *styles;                     /* All the styles known to the view or window */
 
   GHashTable *column_2_styles ;           /* Mapping of each column to all the styles
                                            * it requires. using a GHashTable of

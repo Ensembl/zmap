@@ -36,8 +36,8 @@
 
  /* NOTE
   * this module takes a series of bins and draws then in various formats
-  * (line, hiostogram, heatmap) but in each case the soruec data is the same
-  * if 'density' mode is set then the source dat is re-binned according to zoom level
+  * (line, hiostogram, heatmap) but in each case the source data is the same
+  * if 'density' mode is set then the source data is re-binned according to zoom level
   * it adds a single (extended) foo_canvas item to the canvas for each set of data
   * in a column.  It is possible to have several line graphs overlapping, but note that
   * heatmaps and histograms would not look as good.
@@ -74,6 +74,7 @@ static guint32 gdk_color_to_rgba(GdkColor *color);
 
 static ZMapWindowGraphDensityItemClass density_class_G = NULL;
 static FooCanvasItemClass *parent_class_G;
+
 
 
 enum {
@@ -116,8 +117,8 @@ GType zMapWindowGraphDensityItemGetType(void)
 
 /*
  * just in case we wanted to overlay two or more line graphs we need to allow for more than one
- * graph per column, so we specify therse by col_id (which includes strand) and style_id (which specifies colours)
- * (NOTE 2 diff styles could look the same but their id's would be diff)
+ * graph per column, so we specify these by col_id (which includes strand) and featureset_id
+ * we allow for stranded bins, which get fed in via the add function below
  */
 ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame)
 {
@@ -137,7 +138,7 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
       {
             /* need a wrapper to get ZWCI with a foo_density inside it */
 //            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GRAPH_ITEM, NULL);
-            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_BASIC_FEATURE, NULL);
+            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GRAPH_ITEM, NULL);
 
             interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_GRAPH_DENSITY, NULL);
 
@@ -188,11 +189,114 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
 }
 
 
+void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
+						      FooCanvasItem         *interval,
+						      ZMapFeature			feature,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+							int colour_flags,
+						      GdkColor              *default_fill,
+                                          GdkColor              *default_border)
+{
+	ZMapWindowGraphDensityItem di = (ZMapWindowGraphDensityItem) interval;
+	ZMapWindowCanvasGraphSegment gs;
+	ZMapSkipList sl;
+	ZMapWindowCanvasGraphSegmentStruct search;
 
 
+		/* set focus colour once only */
+	if(colour_flags)
+	{
+	      ZMapFrame frame;
+      	ZMapStrand strand;
+		GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
+
+		/* fill and border are defaults set for the whole window but are currently not used
+		   instead we have to get the selected colours from the style
+		   but if someone defined the defaults they'd get used
+		 */
+
+      	frame = zMapFeatureFrame(feature);
+      	strand = feature->strand;
+      	zmapWindowCanvasItemGetColours(di->style, strand, frame, colour_type, &fill, &draw, &outline, default_fill, default_border);
+
+		if(!di->selected_fill_set && fill)
+		{
+			di->selected_fill_colour = gdk_color_to_rgba(fill);
+			di->selected_fill_pixel = foo_canvas_get_color_pixel(interval->canvas, di->selected_fill_colour);
+			di->selected_fill_set = TRUE;
+		}
+		if(!di->selected_outline_set && outline)
+		{
+			di->selected_outline_colour = gdk_color_to_rgba(outline);
+			di->selected_outline_pixel = foo_canvas_get_color_pixel(interval->canvas, di->selected_outline_colour);
+			di->selected_outline_set = TRUE;
+		}
+	}
+
+		/* find the feature's graph segment struct */
+	search.y1 = (int) feature->x1;
+	search.y2 = (int) feature->x2;
+
+	sl =  zMapSkipListFind(di->display_index, zmapGraphSegmentCmp, &search);
+//	if(sl->prev)
+//		sl = sl->prev;	/* in case of not exact match when rebinned */
+
+	while(sl)
+	{
+		gs = sl->data;
+
+		/* if we got rebinned then we need to find the bin surrounding the feature
+		   if the feature is split bewteeen bins just choose one
+		 */
+		if(gs->y1 > feature->x2)
+			break;
+
+#if NEVER_REBINNED
+		if(gs->feature == feature)
+#else
+/*
+ *	if we re-bin variable sized features then we could have features extending beyond bins
+ * 	in which case a simple containment test will fail
+ * 	so we have to test for overlap, which will also handle the simpler case.
+ *	bins have a real feature attached and this is fed in from the cursor code (point function)
+ * 	this argument also applies to fixed size bins: we pro-rate overlaps when we calculate bins
+ * 	according to pixel coordinates.
+ *	so we can have bin contains feature, feature contains bin, bin and feature overlap left or right. Yuk
+ */
+		if(!((gs->y1 > feature->x2) || (gs->y2 < feature->x1)))
+#endif
+		{
+			double i2w_dx,i2w_dy;
+			int cx1,cx2,cy1,cy2;
+			FooCanvasItem *foo = (FooCanvasItem *) interval;
+
+			/* set the focus flags (on or off) */
+			gs->flags = colour_flags;
+
+			/* trigger a repaint */
+			/* get canvas coords */
+			i2w_dx = i2w_dy = 0.0;
+			foo_canvas_item_i2w (foo, &i2w_dx, &i2w_dy);
+
+			/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
+			foo_canvas_w2c (foo->canvas, 0.0 + i2w_dx, gs->y1 - di->start + i2w_dy, &cx1, &cy1);
+      		foo_canvas_w2c (foo->canvas, zMapStyleGetWidth(di->style) + i2w_dx, gs->y2 - di->start + i2w_dy, &cx2, &cy2);
+
+			foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2, cy2);
+			return;
+		}
+
+		sl = sl->next;
+	}
+	printf("Failed to find graph segment feature for focus\n");
+}
+
+
+
+/* NOTE this extends FooCanvasItem not ZMapWindowCanvasItem */
 static void zmap_window_graph_density_item_class_init(ZMapWindowGraphDensityItemClass density_class)
 {
-  ZMapWindowCanvasItemClass canvas_class ;
   GObjectClass *gobject_class ;
   FooCanvasItemClass *item_class;
 
@@ -202,14 +306,10 @@ static void zmap_window_graph_density_item_class_init(ZMapWindowGraphDensityItem
   parent_class_G = gtk_type_class (foo_canvas_item_get_type ());
 
   gobject_class = (GObjectClass *) density_class;
-  canvas_class  = (ZMapWindowCanvasItemClass) density_class;
+
   item_class = (FooCanvasItemClass *) density_class;
 
-
   gobject_class->dispose = zmap_window_graph_density_item_destroy;
-
-//  canvas_class->add_interval = zmap_window_graph_density_item_add_interval;
-  canvas_class->check_data   = NULL;
 
   item_class->update = zmap_window_graph_density_item_update;
   item_class->map = zmap_window_graph_density_item_map;
@@ -220,7 +320,7 @@ static void zmap_window_graph_density_item_class_init(ZMapWindowGraphDensityItem
   item_class->point  = zmap_window_graph_density_item_point;
   item_class->draw   = zmap_window_graph_density_item_draw;
 
-  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_GRAPH_DENSITY) ;
+//  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_GRAPH_DENSITY) ;
 
   return ;
 }
@@ -296,10 +396,10 @@ double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, dou
 	ZMapWindowCanvasGraphSegment gs;
 	ZMapSkipList sl;
 	ZMapWindowCanvasGraphSegmentStruct search;
-      double dist = 0.0;
-      double wx,wy;
+//      double dist = 0.0;
+      double wx; //,wy;
       double dx,dy;
-      int n_test = 2;
+      int n_test = 3,i;
 
       /*
        * need to scan internal list and apply close enough rules
@@ -327,14 +427,16 @@ double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, dou
 	if(!sl)
 		return(0.0);
 
+#if 0
+// skip list find adjusted to get previous if relevant
 	if(sl->prev)
 	{
 		/* as we only need to test 2 non overlapping bins we don't care about doing one another one */
 		sl = sl->prev;
 		n_test++;
 	}
-
-	for(;n_test;n_test--)
+#endif
+	for(i = 0;i < n_test;i++)
 	{
 		gs = (ZMapWindowCanvasGraphSegment) sl->data;
 
@@ -343,14 +445,20 @@ double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, dou
 
 		if(gs->y1 <= y && gs->y2 >= y)	/* overlaps cursor */
 		{
-			printf("found graph segment at y %f-%f (%f)\n",gs->y1,gs->y2,y);
+//			printf("found graph segment %d/%d at y %f-%f (%f)\n",i, n_test, gs->y1, gs->y2, y);
 			wx = item->x1 + gs->width;
 			if(wx >= x && item->x1 <= x)	/* item contains cursor */
 			{
+//			      ZMapWindowCanvasItem parent;	/* containing graph feature */
+
 				best = 0.0;
-//				*actual_item = item;
-//				item->feature = gs->feature;
-				printf("found graph segment at x %f-%f (%f)\n",item->x1,gs->width,y);
+				*actual_item = item;
+
+				di->point_feature = gs->feature;
+//				parent = (ZMapWindowCanvasItem) item->parent;
+//				parent->feature = gs->feature;
+
+//				printf("	found graph segment at x %f-%f (%f)\n",item->x1,gs->width,y);
 			}
 		}
 	}
@@ -585,6 +693,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 
 	foo_canvas_c2w(item->canvas,0,expose->area.y,NULL,&y1);
 	foo_canvas_c2w(item->canvas,0,expose->area.y + expose->area.height - 1,NULL,&y2);
+
 	search.y1 = (int) (y1);
 	search.y2 = (int) (y2);
 //printf("expose %d-%d\n",(int) search.y1,(int) search.y2);
@@ -616,7 +725,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 
 
 	/* NOTE assuming no overlap, maybe can restructure this code when implementing */
-	if(!di->overlap)
+//	if(!di->overlap)
 	{
 		int last_y = -1;	/* last canvas y coord, for joining up lines */
 		double last_gy;	/* edge of prev bin */
@@ -726,6 +835,12 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				{
 					draw_outline = TRUE;
 					outline_pixel = di->outline_pixel;
+				}
+
+				if(gs->flags & GS_FOCUS_MASK)		/* get highlit colour */
+				{
+					fill_pixel = di->selected_fill_pixel;
+					outline_pixel = di->selected_outline_pixel;
 				}
 				break;
 			}

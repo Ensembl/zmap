@@ -1310,7 +1310,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       if (valid_frame && valid_strand)
       {
-#define MH17_PRINT_CREATE_COL	0
+#define MH17_PRINT_CREATE_COL 0
 #if MH17_PRINT_CREATE_COL
       /* now only a sensible number created. */
       printf("create column  %s/%s S-%d F-%d\n",
@@ -1339,7 +1339,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
     if(add_to_hash)
     {
-#if 0 //MH17_PRINT_CREATE_COL
+#if MH17_PRINT_CREATE_COL
 zMapLogWarning("adding hash %s -> %s\n",g_quark_to_string(feature_set_id),g_quark_to_string(column_id));
 #endif
       gboolean status;
@@ -1416,8 +1416,13 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 				     column_strand, column_frame, TRUE) ;
 
   if(new_column)
-      zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup) new_column, (ZMapFeatureAny) feature_set);
+  {    zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup) new_column, (ZMapFeatureAny) feature_set);
 
+#if MH17_PRINT_CREATE_COL
+      printf("produced column  %s\n",
+            g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) new_column)));
+#endif
+  }
   return new_column;
 }
 
@@ -1439,6 +1444,11 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
     {
       *fwd_col_out = set_column;
       found_one    = TRUE;
+#if MH17_PRINT_CREATE_COL
+      printf("picked fwd column  %s\n",
+            g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) set_column)));
+#endif
+
     }
 
   /* reverse */
@@ -1449,6 +1459,10 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
     {
       *rev_col_out = set_column;
       found_one    = TRUE;
+#if MH17_PRINT_CREATE_COL
+      printf("picked rev column  %s\n",
+            g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) set_column)));
+#endif
     }
 
   return found_one;
@@ -2165,9 +2179,9 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* Attach data to the column including what strand the column is on and what frame it
        * represents, and also its style and a table of styles, used to cache column feature styles
        * where there is more than one feature type in a column. */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#if 1 //def ED_G_NEVER_INCLUDE_THIS_CODE
       zMapLogWarning("Adding column: \"%s\" %s %s\n",
-	     g_quark_to_string(original_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
+	     g_quark_to_string(original_id), g_quark_to_string(column_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       /* needs to accept style_list */
 

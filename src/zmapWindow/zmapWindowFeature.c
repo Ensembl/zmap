@@ -180,7 +180,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   FooCanvasItem *feature_item ;
-  
+
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
@@ -850,6 +850,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  return FALSE;
 	}
 
+
+		/* freeze composite feature to current coords
+		 * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
+		 * but that's called by handleButton which doesn't do double click
+		 */
+	zMapWindowCanvasItemSetFeature(item, but_event->x, but_event->y);
+
       /* Get the feature attached to the item, checking that its type is valid */
       feature = zMapWindowCanvasItemGetFeature(item) ;
 
@@ -1328,7 +1335,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
                   zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_EVIDENCE);
 
             /* add the transcript to the evidence group */
-            zmapWindowFocusAddItemType(menu_data->window->focus, menu_data->item, WINDOW_FOCUS_GROUP_EVIDENCE);
+            zmapWindowFocusAddItemType(menu_data->window->focus, menu_data->item, menu_data->feature, WINDOW_FOCUS_GROUP_EVIDENCE);
 
             /* request the list of features from otterlace */
             evidence = zmapWindowFeatureGetEvidence(menu_data->window,menu_data->feature);
@@ -1374,6 +1381,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
              * focus hot item if this was a focus highlight
              * in this call it's irrelevant
              */
+#warning TEMP_BODGE - not needed as this is transcripts/ alignments only
             zmapWindowFocusAddItemsType(menu_data->window->focus, evidence_items,
                   menu_data->item, WINDOW_FOCUS_GROUP_EVIDENCE);
 
