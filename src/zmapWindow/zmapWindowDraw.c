@@ -226,9 +226,6 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
       zmapWindowDrawRemove3FrameFeatures(window);
       zMapStopTimer("3FrameRemove","");
 
-
-
-
       /* Set up the frame state. */
       set3FrameState(window, frame_mode) ;
 
