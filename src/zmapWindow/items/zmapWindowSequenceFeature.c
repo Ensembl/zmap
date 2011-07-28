@@ -196,7 +196,11 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		event = FALSE ;
 
 		/* Get positions/translation etc of all exons. */
-		zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list) ;
+		if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list))
+		  {
+		    zMapLogWarning("Could not find exons/introns in transcript %s", zMapFeatureName(seed_feature)) ;
+		    continue ;
+		  }
 
 		if (sub_part)
 		  {
@@ -368,10 +372,10 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 	      }
 	    }
 	}
-      while ((list = list->next));
+      while ((list = list->next)) ;
     }
 
-  return result;
+  return result ;
 }
 
 
