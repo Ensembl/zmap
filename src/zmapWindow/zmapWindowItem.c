@@ -314,7 +314,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
   /* Highlight DNA and Peptide sequences corresponding to feature (if visible),
    * note we only do this if the feature is forward or non-stranded, makes no sense otherwise. */
-  if (ZMAPFEATURE_REVERSE(feature))
+  if (zMapStyleIsStrandSpecific(feature->style) && ZMAPFEATURE_REVERSE(feature))
     {
       /* Deselect any already selected sequence as focus item is now the reverse strand item. */
       zmapWindowItemUnHighlightDNA(window, item) ;
