@@ -66,6 +66,7 @@ typedef struct
   GString *dna_out ;
 }FeatureSeqFetcherStruct, *FeatureSeqFetcher;
 
+
 typedef struct
 {
   ZMapGDataRecurseFunc  start_callback;
@@ -79,6 +80,17 @@ typedef struct
   unsigned int          catch_hash : 1;
   ZMapFeatureContextExecuteStatus status;
 }ContextExecuteStruct, *ContextExecute;
+
+
+
+typedef struct
+{
+  GHashTable *styles ;
+  int block_start, block_end ;
+  int start;
+  int end ;
+} RevCompDataStruct, *RevCompData ;
+
 
 
 static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord);
@@ -134,7 +146,7 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
   cb_data.start = context->parent_span.x1;
   cb_data.end   = context->parent_span.x2 ;
 
-//zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
+  //zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
 
   /* Because this doesn't allow for execution at context level ;( */
   zMapFeatureContextExecute((ZMapFeatureAny)context,
@@ -854,13 +866,20 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
                            feature_align->sequence_span.x1,
                            feature_align->sequence_span.x2) ;
 //zMapLogWarning("rev comp align 2, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
 
         feature_block  = (ZMapFeatureBlock)feature_any;
+
+	/* Before reversing blocks coords record what they are so we can use them for peptides
+	 * and other special case revcomps. */
+	cb_data->block_start = feature_block->block_to_sequence.block.x1 ;
+	cb_data->block_end = feature_block->block_to_sequence.block.x2 ;
+
 
 	/* Complement the dna. */
         if (feature_block->sequence.sequence)
@@ -874,9 +893,14 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
                            feature_block->block_to_sequence.block.x1,
                            feature_block->block_to_sequence.block.x2) ;
         feature_block->revcomped = !feature_block->revcomped;
+
 //zMapLogWarning("rev comp block 2, block = %d -> %d", //feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
+
+
+
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         ZMapFeatureSet feature_set = NULL;
@@ -886,26 +910,30 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
         feature_set = (ZMapFeatureSet)feature_any;
 
         /* need to rev comp the loaded regions list */
-        for(l = feature_set->loaded;l;l = l->next)
-        {
+        for (l = feature_set->loaded;l;l = l->next)
+	  {
             span = (ZMapSpan) l->data;
 //zMapLogWarning("rev comp set 1, span = %d -> %d",span->x1, span->x2);
             zmapFeatureRevComp(Coord, cb_data->start, cb_data->end, span->x1, span->x2) ;
 //zMapLogWarning("rev comp set 2, span = %d -> %d",span->x1, span->x2);
-        }
+	  }
 
+
+	/* OK...THIS IS CRAZY....SHOULD BE PART OF THE FEATURE REVCOMP....FIX THIS.... */
 	/* Now redo the 3 frame translations from the dna (if they exist). */
-	if(feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
-	  zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data);
+	if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+	  zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
+
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
         ZMapFeature feature_ft = NULL;
 
-        feature_ft = (ZMapFeature)feature_any;
+        feature_ft = (ZMapFeature)feature_any ;
 
-        revCompFeature(feature_ft, cb_data->start, cb_data->end);
+        revCompFeature(feature_ft, cb_data->start, cb_data->end) ;
 
 	break;
       }
@@ -942,7 +970,14 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 {
   zMapAssert(feature);
 
-  zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (!zMapFeatureSequenceIsPeptide(feature))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
+
 
   if (feature->strand == ZMAPSTRAND_FORWARD)
     feature->strand = ZMAPSTRAND_REVERSE ;
@@ -957,15 +992,25 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
       char *feature_name = NULL ;			    /* Remember to free this */
       GQuark feature_id ;
 
+      /* Essentially this does nothing and needs removing... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       curr_frame = zMapFeatureFrame(feature) ;
-
       feature->feature.sequence.frame = curr_frame ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      feature_name = zMapFeature3FrameTranslationFeatureName((ZMapFeatureSet)(feature->parent), curr_frame) ;
+
+      feature_name = zMapFeature3FrameTranslationFeatureName((ZMapFeatureSet)(feature->parent),
+							     feature->feature.sequence.frame) ;
       feature_id = g_quark_from_string(feature_name) ;
       g_free(feature_name) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       feature->original_id = feature->unique_id = feature_id ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
   else if (zMapFeatureSequenceIsDNA(feature))
     {
