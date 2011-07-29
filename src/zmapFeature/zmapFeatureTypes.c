@@ -1171,8 +1171,39 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
 		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_ONLY_3,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 
-		 /* This seems unsupported actually.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		 /* these should be TRUE but seem to screw things up ? */
+		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
+		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,  FALSE,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS, in_frame_colours,
+		 NULL);
+  }
+  g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
+
+
+  /* Show_translation in zmap */
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
+  {
+    char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
+    char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
+    char *coding_colours = "normal fill green ; normal draw black ; selected fill pink" ;
+    char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+
+    g_object_set(G_OBJECT(curr),
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
+		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
+		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1184,7 +1215,6 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
-		 ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS, in_frame_colours,
 		 NULL);
   }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
@@ -1209,12 +1239,12 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		 /* these should be TRUE but seem to screw things up ? */
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,  FALSE,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
-
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
@@ -1272,32 +1302,6 @@ GHashTable *zMapStyleGetAllPredefined(void)
 	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
-  g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
-
-
-  /* NEED TO CHECK THAT THIS ACTUALLY WORKS...DOESN'T SEEM TO JUST NOW...... */
-  /* show translation in zmap */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
-  {
-    char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
-
-    /* MH17: NOTE style mode was _TEXT ans get passed all the way to draw_show_translation
-     * but the style is only used to define text colours and the text drawing and callbacks
-     * for cursor handling are hard coded -> I suspect an incomplete implemntation
-     * there is a #warning to this effect in draw_show_translation()
-     */
-    g_object_set(G_OBJECT(curr),
-		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
-		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
-		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
-		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
-		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
-		 NULL);
-  }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
 
 

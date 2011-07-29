@@ -41,10 +41,11 @@
 
 
 static void destroySequenceData(ZMapFeature feature) ;
-static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
+						 int block_start, int block_end) ;
 static void translation_set_populate(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set,
 				     ZMapFeatureTypeStyle style,
-				     char *seq_name, char *seq) ;
+				     char *seq_name, char *seq, int block_start, int block_end) ;
 
 
 
@@ -114,7 +115,7 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
   /* public version of... */
-  feature3FrameTranslationPopulate(feature_set, style) ;
+  feature3FrameTranslationPopulate(feature_set, style, 0, 0) ;
 
   return ;
 }
@@ -122,9 +123,9 @@ void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set, Z
 
 /* This function relies on the 3 frame translation features already existing....should make
  * sure this is true.......... */
-void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, RevCompData cb_data)
+void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end)
 {
-  feature3FrameTranslationPopulate(feature_set, NULL) ;
+  feature3FrameTranslationPopulate(feature_set, NULL, block_start, block_end) ;
 
   return ;
 }
@@ -193,7 +194,8 @@ static void destroySequenceData(ZMapFeature feature)
  * exist and we just revcomp the feature and hence do not need a style.
  * 
  *  */
-static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
+static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
+						 int block_start, int block_end)
 {
   gboolean result = FALSE ;
   ZMapFeatureBlock feature_block;
@@ -210,7 +212,8 @@ static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMa
 			       feature_set,
 			       style,
 			       sequence_name,
-			       feature_block->sequence.sequence) ;
+			       feature_block->sequence.sequence,
+			       block_start, block_end) ;
 
       result = TRUE ;
     }
@@ -224,11 +227,20 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
 				     ZMapFeatureSet feature_set,
 				     ZMapFeatureTypeStyle style,
 				     char *seq_name,
-				     char *dna)
+				     char *dna,
+				     int block_start, int block_end)
 {
   int i, block_position ;
 
   block_position = feature_block->block_to_sequence.block.x1 ;     // actual loaded DNA not logical sequence start
+
+
+  if (block_start == 0)
+    {
+      block_start = feature_block->block_to_sequence.block.x1 ;
+      block_end = feature_block->block_to_sequence.block.x2 ;
+    }
+
 
   for (i = ZMAPFRAME_0 ; dna && *dna && i <= ZMAPFRAME_2 ; i++, dna++, block_position++)
     {
@@ -249,7 +261,23 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
 
       if ((translation = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
         {
+	  int start, end, x1, x2 ;
+
 	  destroySequenceData(translation) ;
+
+	  /* Arcane....we need features to be shifted so they are revcompd before recomping
+	   * otherwise the recomping puts them in the wrong position for showing the translation. */
+	  start = block_start ;
+	  end = block_end ;
+
+	  x1 = (translation->x1 - start) ;
+	  x1 = end - x1 ;
+
+	  x2 = (translation->x2 - start) ;
+	  x2 = end - x2 ;
+
+	  translation->x1 = x2 ;
+	  translation->x2 = x1 ;
 	}
       else
         {
