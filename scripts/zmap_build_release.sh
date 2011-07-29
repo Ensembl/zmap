@@ -17,12 +17,13 @@ RC=0
 
 
 BUILD_PREFIX='RELEASE'
-SUB_DIR="RELEASE"
+#SUB_DIR="$BUILD_PREFIX"
 ERROR_ID='edgrif@sanger.ac.uk'
 
 
 # For release builds increment the 'release' number.
-./build_run.sh -a $ERROR_ID -d -n -t -r -z $SUB_DIR $BUILD_PREFIX || RC=1
+#./build_run.sh -a $ERROR_ID -d -n -t -r -z $SUB_DIR $BUILD_PREFIX || RC=1
+./build_run.sh -a $ERROR_ID -d -n -t -r $BUILD_PREFIX || RC=1
 
 
 exit $RC
