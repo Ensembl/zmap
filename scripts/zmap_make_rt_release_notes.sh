@@ -57,16 +57,20 @@ function set_zmap_version_release_update_vars
 
 
 
-CMDSTRING='[ -d<date> -f -n -z ] <ZMap directory>'
+CMDSTRING='[ -d <date>  -f  -n  -o <directory>  -z ] <ZMap directory>'
 DESCSTRING=`cat <<DESC
    -d   specify date from which changes/tickets should be extracted,
         date must be in form "dd/mm/yyyy" (defaults to date in $ZMAP_RELEASE_NOTES_TIMESTAMP)
 
    -f   force production of release notes even if it's the same day.
 
-   -n   DO NOT put the release notes in cvs or update the date file there
+   -n   DO NOT put the release notes in cvs or update the date file there.
 
-   -z   do only zmap release notes (default is to include acedb etc. as well)
+   -o   specify an alternative output directory for the release notes.
+
+   -x   do not update the date in LAST_RELEASE_DATE.txt.
+
+   -z   do only zmap release notes (default is to include acedb etc. as well).
 
 ZMap directory must be the base ZMap directory of the build directory so that the docs
 and the code match.
@@ -79,6 +83,7 @@ UPDATE_DEFINE=yes
 ZMAP_ONLY=no
 FORCE_NOTES=no
 ZMAP_BASEDIR=''
+output_file=''
 
 
 # Note that the zmap user must have permissions within RT to see and query these queues
@@ -92,12 +97,15 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
 zmap_message_out "Parsing cmd line options: '$*'"
 
 
-while getopts ":d:fnz" opt ;
+while getopts ":d:fno:xz" opt ;
   do
   case $opt in
       d  ) RT_LAST_RUN=$OPTARG ;;
       f  ) FORCE_NOTES=yes ;;
       n  ) UPDATE_CVS=no ;;
+      o  ) output_file=$OPTARG
+           UPDATE_HTML=no ;;				    # Do not move output file is user specified one.
+      x  ) UPDATE_DATE=no ;;
       z  ) ZMAP_ONLY=yes ;;
       \? ) 
 zmap_message_exit "Bad command line flag
@@ -122,6 +130,16 @@ else
 fi
 
 
+
+if [ -n $output_file ] ; then
+    tmp_file=`readlink -m $output_file`
+
+    output_file=$tmp_file
+
+    echo "output_file = $output_file"
+fi
+
+
 if [ "x$UPDATE_CVS" == "xyes" ]; then
    SLEEP=60
    zmap_message_out "*****************************************"
@@ -139,22 +157,18 @@ fi
 zmap_cd $ZMAP_BASEDIR
 
 
-# shouldn't need to do this..........
-# We can then go to the correct place
-#zmap_goto_cvs_module_root
-#zmap_goto_git_root
-
-
 # Get the path of some files
 ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP=$(find . -name $ZMAP_RELEASE_NOTES_TIMESTAMP | grep -v CVS)
 ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR=$(find . -name 'Release_notes' -type d | grep -v CVS)
 ZMAP_PATH_TO_VERSION_HEADER=$(find . -name $ZMAP_VERSION_HEADER | grep -v CVS)
 ZMAP_PATH_TO_WEBPAGE_HEADER=$(find . -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
 
+
 zmap_message_out '$ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP =' $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP
 zmap_message_out '$ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR =' $ZMAP_PATH_TO_RELEASE_NOTES_HTML_DIR
 zmap_message_out '$ZMAP_PATH_TO_VERSION_HEADER =' $ZMAP_PATH_TO_VERSION_HEADER
 zmap_message_out '$ZMAP_PATH_TO_WEBPAGE_HEADER =' $ZMAP_PATH_TO_WEBPAGE_HEADER
+
 
 # Set all the dates that we need
 # First the previous date! Only pick one
@@ -192,14 +206,18 @@ zmap_message_out '$GIT_START_DATE =' $GIT_START_DATE
 zmap_message_out '$GIT_END_DATE =' $GIT_END_DATE
 
 
-
-RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${FILE_TIME}.${ZMAP_RELEASE_FILE_SUFFIX}"
-
+if  [ -n $output_file ] ; then
+    RELEASE_NOTES_OUTPUT=$output_file
+else
+    RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${FILE_TIME}.${ZMAP_RELEASE_FILE_SUFFIX}"
+fi
 zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
+
 
 rm -f $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot rm $RELEASE_NOTES_OUTPUT file."
 touch $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot touch $RELEASE_NOTES_OUTPUT file."
 chmod u+rw $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot make $RELEASE_NOTES_OUTPUT r/w"
+
 
 if [ "x$ZMAP_ONLY" == "xyes" ]; then
     RT_QUEUES="zmap"
@@ -419,6 +437,14 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 EOF
 
 zmap_message_out "Now processing RT tickets"
+
+# Here are the results...good for debugging....
+#
+#zmap_message_out "Here are RT tickets"
+#cat $RTRESULTS
+#zmap_message_out "End of RT tickets"
+
+
 # This goes directly into the html file
 $BASE_DIR/process_rt_tickets_file.pl $RTRESULTS >> $RELEASE_NOTES_OUTPUT || \
     zmap_message_exit "Failed processing RT tickets"
@@ -692,6 +718,7 @@ if [ "x$UPDATE_DEFINE" == "xyes" ]; then
 
     fi
 fi
+
 
 if [ "x$UPDATE_DATE" == "xyes" ]; then
 
