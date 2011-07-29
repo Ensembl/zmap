@@ -229,9 +229,10 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 	      full_data.start_offset = feature->feature.transcript.start_not_found ;
 	      full_data.trans_start = (full_data.trans_start + full_data.start_offset) - 1 ;
 	    }
-
-	  full_data.full_exons = exon_regions_list_out ;
 	}
+
+      full_data.full_exons = exon_regions_list_out ;
+
 
       /* SHOULD WE ALLOW USER TO TRANSLATE ANY TRANSCRIPT ?? PROBABLY USEFUL....
        * THINK ABOUT THIS.... */
@@ -297,6 +298,13 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
       /* The pathological case is no CDS which we handle here to simplify the CDS code. */
 
       ex_utr_5 = *exon_span ;			    /* struct copy. */
+
+      if (ex_utr_5.x1)
+	full_exon_utr_5 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_5,
+				     &(full_data->feature_coord_counter),
+				     &(full_data->spliced_coord_counter),
+				     &(full_data->cds_coord_counter),
+				     &(full_data->trans_coord_counter)) ;
     }
   else
     {

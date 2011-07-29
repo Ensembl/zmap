@@ -52,13 +52,16 @@ done
 
 #echo "STarting second query of RT..."
 
+#echo "Queues = $OPS_QUEUES"
+
+
 for TICKET in `SingleQueue $OPS_QUEUES` 
 do
 
 #echo $TICKET
 
 # You can add stuff to the -f flag like Created and so on.
-rt show -t ticket -f Queue,Subject,Requestors,Resolved $TICKET
+rt show -t ticket -f Queue,Subject,Requestors,Owner,Resolved $TICKET
 
 echo
 

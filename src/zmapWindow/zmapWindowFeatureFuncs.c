@@ -42,175 +42,162 @@
 #include <zmapWindow_P.h>
 
 
-/* Call blixem for selected features, feature column or columns. Gets
- * called from menus and from keyboard short cut. If called from keyboard
+/* Call blixem for selected features, feature column or columns.
+ *
+ * Gets called from menus and from keyboard short cut. If called from keyboard
  * short cut then  x_pos = ypos = 0.0.
+ * 
+ * Note user can click menu on a column that is not selected in which case
+ * item will be non-NULL but focus item/column may be NULL if no other column
+ * has been selected.
  *
  * source param is for short reads data
  *  */
-void zmapWindowCallBlixem(ZMapWindow window,
+void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
-			  char *source,
+			  ZMapFeatureSet feature_set, char *source,
 			  double x_pos, double y_pos)
 {
-  FooCanvasItem *focus_item = NULL ;
+  FooCanvasItem *focus_item = NULL, *focus_column = NULL ;
+  int window_start, window_end ;
+  gboolean item_in_focus_col = FALSE ;
+  gboolean selected_features = FALSE ;
   ZMapFeatureAny feature_any ;
 
+  zMapAssert((item && (feature_set || source))) ;
 
+  /* Get focus item/column if there is one. */
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     focus_item = zmapWindowItemGetTrueItem(focus_item) ;
 
-  if (!focus_item && requested_homol_set != ZMAPWINDOW_ALIGNCMD_FEATURES)
-    focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
+  focus_column = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
 
 
-  /* Test there was an item selected otherwise we don't know which aligns to show. */
-  if (!focus_item)
+  /* If we are passed an item then see if it's in the focus column and see if there are selected
+   * features in that column. */
+  if (item)
     {
+      ZMapContainerLevelType level ;
+      FooCanvasItem *item_column = item ;
+
+      level = zmapWindowContainerUtilsGetLevel(item) ;
+
+      if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
+	item_column = (FooCanvasItem *)zmapWindowContainerUtilsItemGetParentLevel(item,
+										  ZMAPCONTAINER_LEVEL_FEATURESET) ;
+
+      if (item_column == focus_column)
+	{
+	  item_in_focus_col = TRUE ;
+	  selected_features = TRUE ;
+	}
+    }
+
+
+  if (!item && !focus_column)
+    {
+      /* If there was no selected item and there are no focus items we can't do anything. */
+
       zMapWarning("%s", "Could not launch blixem, no column/feature selected.") ;
     }
-  else if ((feature_any = zmapWindowItemGetFeatureAnyType(focus_item, -1)))
+  else if (!zMapWindowGetVisibleSeq(window, (item ? item : focus_item), &window_start, &window_end))
     {
-      int y1, y2, window_start, window_end ;
-      FooCanvasGroup *block_grp ;
-      ZMapFeature feature = NULL ;
-      gboolean found_window = FALSE ;
-      gboolean selected_features = FALSE ;
+      /* If we can't find where we are in the window we can't do anything. */
+      char *msg = "Failed to find mouse and/or window position" ;
 
-#if MH17_FIXING_THE_BODGE_INSTEAD_OF_ADDING_ANOTHER
-      if (!(found_window = zMapWindowGetVisibleSeq(window, focus_item, &window_start, &window_end)))
+      zMapLogCritical("%s", msg) ;
+
+      zMapMessage("%s", msg) ;
+    }
+  else if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES && !(item_in_focus_col && focus_item))
+    {
+      /* User wants to blixem "selected" features but there aren't any in the item's column. */
+
+      zMapWarning("%s", "Could not launch blixem, no selected features in this column.") ;
+    }
+  else if (!(feature_any = zmapWindowItemGetFeatureAnyType(item, -1))
+	   || (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
+	       && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+	   || (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+	       && !(feature_any = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0))))
+    {
+      /* Cannot find feature from item. */
+
+      zMapCritical("%s", "Could not launch blixem, cannot find any features in this column.") ;
+    }
+  else
+    {
+      int y1 ;
+      ZMapFeature feature ;
+      ZMapWindowCallbackCommandAlign align ;
+      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+
+
+      /* We know this must be a feature by now. */
+      feature = (ZMapFeature)feature_any ;
+
+      align = g_new0(ZMapWindowCallbackCommandAlignStruct, 1) ;
+
+
+      /* Set up general command field for callback. */
+      align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
+
+
+      /* Set up all the parameters blixem needs to do it's display. */
+      /* may be null if (temporary) blixem BAM option selected */
+      if (feature)
+	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
+      zMapAssert(align->block) ;
+
+      align->offset = window->sequence->start ;
+
+      zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
+
+      align->cursor_position = y1 ;
+
+      align->window_start = window_start ;
+      align->window_end = window_end ;
+
+      if (zmapWindowMarkIsSet(window->mark))
+	zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
+
+      if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
 	{
-	/* this function already contains a bodge for an unexpected failure */
-	/* sad really, get visible seq fails because world2seq fails, so let's call world2seq again and hope it works */
+	  align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-	  /* y_pos not set so set to middle of visible window (don't care about x_pos).  */
-	  if (x_pos == 0.0 && y_pos == 0)
-	    y_pos = (window_start + window_end) / 2 ;
-
-	  found_window = zmapWindowWorld2SeqCoords(window, x_pos, y_pos, x_pos, y_pos, &block_grp, &y1, &y2) ;
+	  align->source = source ;
+	  align->homol_set = requested_homol_set ;
 	}
-#else
-     	/* so we fix it by passing the foo iten we know we have */
-	found_window = zMapWindowGetVisibleSeq(window, focus_item, &window_start, &window_end);
-#endif
-
-      if (!found_window)
+      else if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-	  char *msg = "Failed to find mouse and/or window position" ;
+	  /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
+	  align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-	  zMapLogCritical("%s", msg) ;
-
-	  zMapMessage("%s", msg) ;
+	  align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
 	}
       else
 	{
-	  switch(feature_any->struct_type)
+	  align->homol_type = feature->feature.homol.type ;
+
+	  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
+
+	  /* If user clicked on features then make a list of them (may only be one), otherwise
+	   * we need to use the feature set. */
+	  if (selected_features == TRUE)
 	    {
-	    case ZMAPFEATURE_STRUCT_FEATURESET:
-	      {
-		/* Use first feature in set to get alignment type etc. */
-		/* MH17: but you can have empty columns ... */
-		feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
+	      GList *focus_items ;
 
-		break ;
-	      }
-	    case ZMAPFEATURE_STRUCT_FEATURE:
-	      {
-		feature = (ZMapFeature)feature_any ;
+	      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
 
-		/* User clicked on an alignment feature. */
-		if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-		  {
-		    selected_features = TRUE ;
-		  }
+	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
 
-		break ;
-	      }
-	    default:
-	      {
-		break;
-	      }
+	      g_list_free(focus_items) ;
 	    }
 
-
-	  if (feature)
-	    {
-	      ZMapWindowCallbackCommandAlign align ;
-	      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-
-	      align = g_new0(ZMapWindowCallbackCommandAlignStruct, 1) ;
-
-	      /* Set up general command field for callback. */
-	      align->cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
-
-	      /* may be null if (temporary) blixem BAM option selected */
-	      if (feature)
-		align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-									   ZMAPFEATURE_STRUCT_BLOCK) ;
-	      else
-		align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
-									   ZMAPFEATURE_STRUCT_BLOCK) ;
-	      zMapAssert(align->block) ;
-
-
-	      /* Set up all the parameters blixem needs to do it's display. */
-	      align->offset = window->sequence->start ;
-
-	 	zmapWindowWorld2SeqCoords(window, focus_item, 0, y_pos, 0,0, NULL, &y1,NULL) ;
-
-	      align->cursor_position = y1 ;
-
-	      align->window_start = window_start ;
-	      align->window_end = window_end ;
-
-	      if (zmapWindowMarkIsSet(window->mark))
-		zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
-
-	      if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-		{
-		  align->homol_type = ZMAPHOMOL_N_HOMOL ;
-
-		  align->source = source ;
-		  align->homol_set = requested_homol_set ;
-		}
-	      else if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
-		{
-		  /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
-		  align->homol_type = ZMAPHOMOL_N_HOMOL ;
-
-		  align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
-		}
-	      else
-		{
-		  align->homol_type = feature->feature.homol.type ;
-
-		  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
-
-		  /* If user clicked on features then make a list of them (may only be one), otherwise
-		   * we need to use the feature set. */
-		  if (selected_features == TRUE)
-		    {
-		      GList *focus_items ;
-
-		      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
-
-		      align->features = zmapWindowItemListToFeatureList(focus_items) ;
-
-		      g_list_free(focus_items) ;
-
-		      /* I DON'T LIKE THIS BIT....SEE IF WE CAN NOT DO THIS....LEAVE NULL
-		       * IF NO EXPLICIT FEATURE CLICKED ON.... */
-		      /* If no highlighted features then use the one the user clicked on. */
-		      if (!(align->features))
-			align->features = g_list_append(align->features, feature) ;
-		    }
-
-		  align->homol_set = requested_homol_set ;
-		}
-
-	      (*(window_cbs_G->command))(window, window->app_data, align) ;
-	    }
+	  align->homol_set = requested_homol_set ;
 	}
+
+      (*(window_cbs_G->command))(window, window->app_data, align) ;
     }
 
 

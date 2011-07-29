@@ -43,15 +43,6 @@ typedef struct
 } ZMapFeatureStr2EnumStruct, *ZMapFeatureStr2Enum ;
 
 
-// mh17: needed in zmapFeature3Frame.c as well as FeatureContext.c
-typedef struct
-{
-  GHashTable *styles ;
-  int start;
-  int end ;
-} RevCompDataStruct, *RevCompData ;
-
-
 #define zmapFeatureSwop(TYPE, FIRST, SECOND)   \
   { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
 
@@ -77,7 +68,7 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
 
 ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
 
-void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, RevCompData cb_data);
+void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
 
 
 #endif /* !ZMAP_FEATURE_P_H */

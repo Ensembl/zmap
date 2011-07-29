@@ -931,27 +931,27 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
 
 void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 {
-      ZMapCanvasDataStruct canvas_data = {NULL};
-      ZMapFeatureContext full_context;
+  ZMapCanvasDataStruct canvas_data = {NULL};
+  ZMapFeatureContext full_context;
 
-      full_context = window->feature_context;
+  full_context = window->feature_context;
 
-      canvas_data.window        = window;
-      canvas_data.canvas        = window->canvas;
-      canvas_data.curr_x_offset = 0.0;
-//      canvas_data.styles        = window->context_map->styles;
-      canvas_data.full_context  = full_context;
-      canvas_data.frame_mode_change = TRUE ;       // refer to comment in feature_set_matches_frame_drawing_mode()
+  canvas_data.window        = window;
+  canvas_data.canvas        = window->canvas;
+  canvas_data.curr_x_offset = 0.0;
+  canvas_data.full_context  = full_context;
+  canvas_data.frame_mode_change = TRUE ;       // refer to comment in feature_set_matches_frame_drawing_mode()
 
-      canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
+  canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
 
 
-      zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
 				    ZMAPFEATURE_STRUCT_FEATURE,
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
 
-	zmapWindowHideEmpty(window);
+  zmapWindowHideEmpty(window);
+
   return ;
 }
 
@@ -977,6 +977,25 @@ void zmapWindowHideEmpty(ZMapWindow window)
 }
 
 
+void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window)
+{
+  zmapWindowContainerUtilsExecute(window->feature_root_group,
+				  ZMAPCONTAINER_LEVEL_FEATURESET,
+				  purge_hide_frame_specific_columns,
+				  window) ;
+
+  return ;
+}
+
+
+
+
+
+/*
+ *                          internal functions
+ */
+
+
 static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data)
 {
@@ -998,23 +1017,6 @@ static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *poi
   return ;
 }
 
-void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window)
-{
-  zmapWindowContainerUtilsExecute(window->feature_root_group,
-				  ZMAPCONTAINER_LEVEL_FEATURESET,
-				  purge_hide_frame_specific_columns,
-				  window) ;
-
-  return ;
-}
-
-
-
-
-
-/*
- *                          internal functions
- */
 
 
 /* mask features that are displayed */
