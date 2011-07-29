@@ -45,27 +45,35 @@ if ($ARGV[0]){
 }
 
 
-sub make_html{
-    my ($hash) = @_;
-    # We want zmap before acedb
-    foreach my $q(sort { $b cmp $a } keys %$hash){
-	my $a = $hash->{$q};
-	print qq{\n<fieldset><legend>$q</legend>\n\n<ul>\n};
-	for(my $i = 0; $i < scalar(@$a); $i++){
-	    my $block = $a->[$i];
-	    my $id  = $block->{'id'};
-	    my $sbj = $block->{'Subject'};
-	    my $req = $block->{'Requestors'};
-	    my $res = $block->{'Resolved'};
-	    print qq{<li>Ticket No.};
-	    print qq{<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=$id">$id</a>, Resolved ($res)\n};
-	    print qq{<p>$sbj</p>\n};
-	    print qq{<p>$req</p>\n};
-	    print qq{</li>\n};
-	}
-	print qq{</ul>\n};
-	print qq{\n</fieldset><br />\n};
-    }
+sub make_html
+  {
+  my ($hash) = @_;
 
-}
+  # We want zmap before acedb
+  foreach my $q (sort { $b cmp $a } keys %$hash) {
+    my $a = $hash->{$q};
+
+    print qq{\n<fieldset><legend>$q</legend>\n\n<ul>\n};
+
+    for (my $i = 0; $i < scalar(@$a); $i++) {
+      my $block = $a->[$i];
+      my $id  = $block->{'id'};
+      my $queue = $block->{'Queue'};
+      my $sbj = $block->{'Subject'};
+      my $req = $block->{'Requestors'};
+      my $own = $block->{'Owner'};
+      my $res = $block->{'Resolved'};
+
+      print qq{<li>$queue - Ticket No.};
+      print qq{<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=$id">$id</a>, Resolved ($res)\n};
+      print qq{<p>$sbj</p>\n};
+      print qq{<p>Requestor: $req</p>\n};
+      print qq{<p>Owner: $own</p>\n};
+      print qq{</li>\n};
+      }
+
+    print qq{</ul>\n};
+    print qq{\n</fieldset><br />\n};
+    }
+  }
 
