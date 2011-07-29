@@ -43,6 +43,7 @@
 /* WARNING, THIS DOES NOT COPE WITH MULTIPLE ALIGNS/BLOCKS AS IT STANDS, TO DO THAT REQUIRES
  * WORK BOTH ON THE GFF PARSER CODE (TO ACCEPT ALIGN/BLOCK ID/COORDS AND ON THIS CODE TO
  * GENERALISE IT MORE TO DEAL WITH BLOCKS...I'LL DO THAT NEXT....EG */
+/* MH17 - adding a comment to test git status, no need for multiple blocks, better to handle that in the application level */
 
 
 #include <sys/types.h>  /* for waitpid() */
