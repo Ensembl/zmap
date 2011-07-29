@@ -30,8 +30,7 @@ DESCSTRING=`cat <<DESC
 
    -o   specify an alternative output file for the release notes.
 
-ZMap directory must be the base ZMap directory of the build directory so that the docs
-and the code match.
+ZMap directory must be the base ZMap directory of the build directory.
 DESC`
 
 while getopts ":d:o:" opt ;
@@ -56,7 +55,13 @@ shift $(($OPTIND - 1))
 # get ZMap dir
 #
 if [ $# -ne 1 ]; then
-  zmap_message_exit  "bad args: $*"
+  zmap_message_exit  "No ZMap directory specified:
+
+Usage:
+
+$0 $CMDSTRING
+
+$DESCSTRING"
 else
   zmap_basedir=$1
 fi
@@ -71,8 +76,7 @@ if [ "$userid" != "zmap" ] ; then
     echo "Do you wish to continue anyway ? (y/n)"
     read reply
     if [ "$reply" != "y" ] ; then
-	echo 'aborted.'
-	exit 1
+	zmap_message_exit 'aborted.'
     fi
 
 fi
