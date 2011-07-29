@@ -206,7 +206,7 @@ zmap_message_out '$GIT_START_DATE =' $GIT_START_DATE
 zmap_message_out '$GIT_END_DATE =' $GIT_END_DATE
 
 
-if  [ -n $output_file ] ; then
+if  [ -n "$output_file" ] ; then
     RELEASE_NOTES_OUTPUT=$output_file
 else
     RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${FILE_TIME}.${ZMAP_RELEASE_FILE_SUFFIX}"
