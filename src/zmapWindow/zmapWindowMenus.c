@@ -1529,7 +1529,8 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 
   if (requested_homol_set)
-    zmapWindowCallBlixem(menu_data->window, requested_homol_set, seq_set, menu_data->x, menu_data->y) ;
+    zmapWindowCallBlixem(menu_data->window, menu_data->item, requested_homol_set,
+			 menu_data->feature_set, seq_set, menu_data->x, menu_data->y) ;
 
   if (seq_set)
     g_free(seq_set);

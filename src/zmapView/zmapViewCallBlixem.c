@@ -959,6 +959,8 @@ static gboolean setBlixemScope(blixemData blixem_data)
   gboolean status = TRUE ;
   static gboolean scope_debug = FALSE ;
 
+
+  /* We shouldn't need this here...window should take care of it..... */
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ && !(blixem_data->mark_start && blixem_data->mark_end))
     {
       zMapLogWarning("%s", "Request for short ZMAPWINDOW_ALIGNCMD_SEQ but no mark is set.") ;
@@ -1006,7 +1008,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
       blixem_data->features_min = blixem_data->scope_min ;
       blixem_data->features_max = blixem_data->scope_max ;
 
-      if (is_mark && blixem_data->features_from_mark)
+      if (is_mark && (blixem_data->features_from_mark || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ))
 	{
 	  blixem_data->features_min = blixem_data->mark_start ;
 	  blixem_data->features_max = blixem_data->mark_end ;

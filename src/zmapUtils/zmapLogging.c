@@ -35,7 +35,7 @@
 
 #include <ZMap/zmap.h>
 
-
+#include <string.h>
 
 
 #ifdef HAVE_CONFIG_H
@@ -422,7 +422,7 @@ void zMapSignalHandler(int sig_no)
       signal_write(STDERR_FILENO, "=== signal handler - caught signal ", 35, &write_result);
       signal_write(STDERR_FILENO, sig_name, sig_name_len, &write_result);
       signal_write(STDERR_FILENO, " - version = ", 13, &write_result);
-      signal_write(STDERR_FILENO, zMapGetVersionString(), zMapGetVersionStringLength(), &write_result);
+      signal_write(STDERR_FILENO, zMapGetAppVersionString(), strlen(zMapGetAppVersionString()), &write_result);
       signal_write(STDERR_FILENO, " ===\nStack:\n", 12, &write_result);
       /*                           123456789012345678901234567890123456789012345678901234567890 */
       if(!zmap_backtrace_to_fd(0, STDERR_FILENO))
