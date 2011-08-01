@@ -38,11 +38,12 @@ legend{ font-weight: bold }
 
 <p>There are three major tasks for the zmap build system:</p>
 
-<b><ol>
+<ol>
   <li> <a href="#day_to_day">Compiling zmap during day to day development.</a></li>
   <li> <a href="#dist">Building a full zmap distribution.</a></li>
   <li> <a href="#install">Installing zmap from a distribution file.</a></li>
-</ol></b>
+</ol>
+
 
 <p>Compiling zmap involves the developer in initially running the autoconf tools to create
 the right makefiles and thereafter simply running make to rebuild zmap.</p>
@@ -56,9 +57,16 @@ repository tagging and much else.</p>
 the ./configure script with the right parameters to build zmap. It may also involve installing
 various zmap dependencies, some of which are distributed with zmap.</p>
 
-
 <p>This document describes these tasks in detail.</p>
 
+
+<p>In addition there are some appendices giving more details of various aspects of the
+build system:</p>
+
+<ol>
+  <li> <a href="#built_scripts">Build Script Details.</a></li>
+  <li> <a href="#code_version">The Code Version System.</a></li>
+</ol>
 
 
 <a name="day_to_day"></a>
@@ -641,7 +649,7 @@ and that's it.
 
 <h2>Appendix</h2>
 
-
+<a name="built_scripts"></a>
 <h3>1) Details Of The ZMap Build Scripts</h2>
 
 <p>This text was taken from the original README file in <b>ZMap/scripts</b> and
@@ -898,6 +906,39 @@ RELEASE_1-1-3
 Local Version is now RELEASE_1-1-4, previous version in /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/include/ZMap/zmapXRemote.h.backup
 &gt;
 </pre>
+
+
+
+
+<a name="code_version"></a>
+<h2>2) The Code Version System</h2>
+
+<p>The code version built into the zmap executable needs to be updated not only
+every time the offical version number is incremented but also for development
+versions every time the git checksum changes. This checksum will be different
+for developers working on different code branches and at different stages of
+development on the same branch. We employ the following method to avoid having
+these latter changes constantly checked into the zmap repository:</p>
+
+
+<p><b>src/Makefile.am</b> contains a custom 'build-version-file' target that creates a
+source file (src/zmapUtils/zmapVersion.c) and ensures that file is compiled for
+every make, this updates the version string with the git checksum id but also
+stores the new compile date. Thus this file does not need to be in the repository.</p>
+
+
+<p><b>src/zmapUtils/Makefile.am</b> specifies src/zmapUtils/zmapVersion.c as a build target
+to make sure it gets built, is included in the dependency lists etc.</p>
+
+
+<p><b>src/zmapUtils/zmapUtils.c</b> functions have been slightly rewritten to make use
+of the functions in src/zmapUtils/zmapVersion.c to get the version string and compile time.</p>
+
+
+
+
+
+
 
 <!--#include virtual="/perl/footer"-->
 
