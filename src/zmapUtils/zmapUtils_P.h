@@ -40,9 +40,13 @@
 #define ZMAP_UPDATE 134
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* ZMap Feature ID...used for development only, should be NULL in release code.
  * In development code will have a per-code-branch unique ID. */
 #define ZMAP_DEVELOPMENT_ID NULL
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Create a copyright string for dialogs etc. */
@@ -55,15 +59,24 @@
 "http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/"
 
 
+/* compile string. */
+#define ZMAP_COMPILE_STRING()               \
+__DATE__ " " __TIME__
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Create a comments string for dialogs etc. */
 #define ZMAP_COMMENTS_STRING(TITLE, VERSION, RELEASE, UPDATE)                                  \
 "("ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE)", "              \
-"compiled on - "__DATE__" "__TIME__")\n"                                                  \
+"compiled on - " ZMAP_COMPILE_STRING() ")\n"                                                  \
 "\n"                                                  \
 "This application is part of the ZMap genome viewer/annotation package originally written by\n"    \
 "    Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk\n"                            \
 "and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk)\n"\
 "and Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Create a copyright string for dialogs etc. */
@@ -97,6 +110,12 @@
 
 #define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
 							       FOR THIS..... */
+
+
+char *zmapDevelopmentString(void) ;
+char *zmapCompileString(void) ;
+
+
 
 
 #endif /* !ZMAP_UTILS_P_H */
