@@ -300,7 +300,7 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
 
   g_string_append_printf(a_description,
 			 "---\n%s\n%s\n\n%s\n\n%s\n",
-			 ZMAP_COMMENTS_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE),
+			 zMapGetCommentsString(),
 			 ZMAP_WEBSITE_STRING(),
 			 ZMAP_COPYRIGHT_STRING(),
 			 ZMAP_LICENSE_STRING());
