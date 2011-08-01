@@ -1,0 +1,2554 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '29 July 2011' [non-release build]" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- Summaries of changes... --!>
+
+<h1>Summary Of Changes And Bug Fixes For ZMap 0.1.134  [non-release build]</h1>
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes</b></legend>
+
+<p>
+Here's a list of what we've done to ZMap this month. Of course some of it depends on mods to Otterlace, so thanks to the Anacode team.
+</p>
+
+<h3>Bug fixes</h3>
+<table class="wikitable" style="border-collapse: collapse;" border="1" cellpadding="3">
+
+<tbody><tr>
+</th><th> RT
+</th><th> Description
+</th><th> Comment
+
+</th></tr>
+<tr>
+<tr>
+<td> <a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222354" class="extiw" title="sirt:222354">SIRT:222354</a></td><td>OTF results don't all show in Zmap; appear when Zmap restarted</td><td>
+
+</td></tr>
+<tr>
+<tr>
+<td> <a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222457" class="extiw" title="sirt:222457">SIRT:222457</a></td><td>nc splice markers everywhere!</td><td>
+</td></tr>
+
+<tr>
+<td><a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=220415" class="extiw" title="sirt:220415">SIRT:220415</a>, <a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=220779" class="extiw" title="sirt:220779">SIRT:220779</a> </td><td>pipe server error gives no message</td><td>
+</td></tr>
+
+<tr>
+<td><a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222694" class="extiw" title="sirt:222694">SIRT:222694</a>,<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222495" class="extiw" title="sirt:222495">SIRT:222495</a> </td><td>ZMap crash on startup </td><td>
+</td></tr>
+</tbody></table>
+
+<h3>New features</h3>
+<table class="wikitable" style="border-collapse: collapse;" border="1" cellpadding="3">
+
+<tbody><tr>
+</th><th> RT
+</th><th> Description
+</th><th> Comment
+</th></tr>
+
+<tr>
+<td><a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180043" class="extiw" title="sirt:180043">SIRT:180043</a></td><td> Request BAM data via RC menu from mark </td><td> As for Blixem BAM menu, requests short reads as basic features.
+</td></tr>
+<tr>
+<tr>
+<td><a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=180043" class="extiw" title="sirt:180043">SIRT:180043</a> </td><td> Include BAM datasets as required by Havana </td><td>
+<p>Adam has provided a list of datasets from the encode dashboard
+</p>
+</td></tr>
+<tr>
+
+<td></td><td>CIGAR strings in analysis pipeline similarity matches</td><td>(internal change only)
+</td></tr>
+<tr>
+<td> <a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222622" class="extiw" title="sirt:222622">SIRT:222622</a> </td><td>blixem starts coords improved </td><td>Blixem defaults to the same sequence view as in Zmap
+</td></tr>
+<td><a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223543" class="extiw" title="sirt:223543">SIRT:223543</a> </td><td>pipe scripts to use ENV not script_dir </td><td>(internal change only)
+</td></tr>
+
+</tbody></table>
+
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Acedb Changes/Fixes</b></legend>
+
+<p><font color="red">!! SECTION MUST BE FILLED IN BY DEVELOPER !!</font>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend><b>Seqtools Changes/Fixes</b></legend>
+
+<table class="wikitable" style="border-collapse: collapse;" border="1" cellpadding="3">
+<tbody><tr>
+</th><th> RT
+</th><th> Description
+</th><th> Comment
+</th></tr>
+<tr>
+
+<td></td><td>New Belvu</td><td>
+</td></tr>
+</tbody></table>
+
+
+</fieldset>
+<br />
+
+
+
+<!-- The release version, etc... --!>
+
+<h1>RT Tickets Resolved/Code Changes For ZMap 0.1.134  [non-release build]</h1>
+
+<p>Last Release Date: 01/06/2011</p>
+
+<!-- commented by ./zmap_make_rt_release_notes.sh
+<h3>Current Release Date: 29 July 2011 at 11h.34m.25s</h3>
+ end of commenting by ./zmap_make_rt_release_notes.sh -->
+
+<p>This report covers 2011-06-01 to 2011-07-29</p>
+
+
+<h2>Request Tracker Tickets Resolved</h2>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=69060">69060</a>, Resolved (Wed Jun 15 15:48:58 2011)
+<p>Clustering ESTs and mRNAs</p>
+<p>Requestor: af2@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=78097">78097</a>, Resolved (Wed Jun 15 15:45:03 2011)
+<p>Rounding error in ruler code</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=122482">122482</a>, Resolved (Wed Jun 15 16:07:02 2011)
+<p>turn off blue diamonds for consensus splice sites</p>
+<p>Requestor: jgrg@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=128410">128410</a>, Resolved (Wed Jun 15 15:53:33 2011)
+<p>Incomplete homology markers</p>
+<p>Requestor: mt4@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156650">156650</a>, Resolved (Wed Jun 15 16:40:49 2011)
+<p>idea - need improved highlighting of evidence already used to build transcript</p>
+<p>Requestor: mp7@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=161914">161914</a>, Resolved (Wed Jun 15 16:14:34 2011)
+<p>red diamonds differ with different bump modes in Zmap</p>
+<p>Requestor: mms@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=176415">176415</a>, Resolved (Wed Jun 15 16:41:56 2011)
+<p>Locus column difficult to read</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=183172">183172</a>, Resolved (Wed Jun 15 16:25:12 2011)
+<p>rev comp coordinates in ladder are 1kb off</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=196718">196718</a>, Resolved (Wed Jun 15 16:26:24 2011)
+<p>version 0.1.104 orange line through panel label text</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=197077">197077</a>, Resolved (Wed Jul 13 16:19:29 2011)
+<p>missing objects in zmap</p>
+<p>Requestor: mpk@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=206286">206286</a>, Resolved (Wed Jul 13 16:17:06 2011)
+<p>load_features fails on Mac with more than one type of column</p>
+<p>Requestor: jgrg@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=208178">208178</a>, Resolved (Thu Jun 02 11:39:36 2011)
+<p>DNA highlighting</p>
+<p>Requestor: jm12@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=209814">209814</a>, Resolved (Thu Jun 02 12:02:13 2011)
+<p>zmap GFF parsing error</p>
+<p>Requestor: jgrg@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211261">211261</a>, Resolved (Wed Jun 15 16:32:31 2011)
+<p>alignments displayed 1 base out at high zoom</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=211274">211274</a>, Resolved (Wed Jun 15 16:30:50 2011)
+<p>DNA fetching code always gets the first bases in the block</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=212173">212173</a>, Resolved (Thu Jun 02 11:35:05 2011)
+<p>zmap not fetching sequence for blixem from acedb</p>
+<p>Requestor: jgrg@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=214553">214553</a>, Resolved (Thu Jun 02 09:59:54 2011)
+<p>saving error "Merge of new feature into View feature context failed"</p>
+<p>Requestor: rn4@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215229">215229</a>, Resolved (Tue Jun 07 15:21:01 2011)
+<p>percent ID always 0.00000 in feature details view</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215419">215419</a>, Resolved (Thu Jun 09 12:18:28 2011)
+<p>GFF with mixed sequence names not filtered</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=215429">215429</a>, Resolved (Thu Jun 09 12:15:26 2011)
+<p>wrong format GFF header crashes server thread</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=216474">216474</a>, Resolved (Thu Jun 02 10:14:57 2011)
+<p>[/software/anacode/otter/otter_rel53.07/ensembl-otter/tk/otterlace] error log /nfs/users/nfs_g/gdr/.otter/otterlace.4053-a.log</p>
+<p>Requestor: gdr@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=216561">216561</a>, Resolved (Wed Jun 15 15:00:46 2011)
+<p>empty 3F columns</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217099">217099</a>, Resolved (Tue Jun 14 13:24:42 2011)
+<p>scale bar tick marks are chosen oddly: should be order of 10</p>
+<p>Requestor: jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217170">217170</a>, Resolved (Thu Jun 02 09:52:28 2011)
+<p>Aborted: Unknown FeatureSet "Non_coding":  not found in original_block</p>
+<p>Requestor: cas@sanger.ac.uk, jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=217665">217665</a>, Resolved (Thu Jun 02 11:21:33 2011)
+<p>duplicated CpGs in Zmap</p>
+<p>Requestor: vb1@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=218678">218678</a>, Resolved (Wed Jun 15 15:36:07 2011)
+<p>EST's w/ red dots should not be masked</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=218683">218683</a>, Resolved (Mon Jun 13 16:39:28 2011)
+<p>Reliable crash in "Feature details" window</p>
+<p>Requestor: mca@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=219358">219358</a>, Resolved (Thu Jun 23 09:03:27 2011)
+<p>some off by 1 errors in coordinates</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=219553">219553</a>, Resolved (Tue Jul 26 11:37:28 2011)
+<p>Wrong start coord is passed to blixem when mark is set</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=219620">219620</a>, Resolved (Thu Jun 16 13:47:39 2011)
+<p>Coords passed to Blixem are wrong when zmap is revcomp'd</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=220415">220415</a>, Resolved (Wed Jul 13 12:28:32 2011)
+<p>file:// GFFparser reports error which does not get reported then ZMap does a fatal error</p>
+<p>Requestor: mh17@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=220779">220779</a>, Resolved (Fri Jul 08 14:35:19 2011)
+<p>Data loading crash: test_otterlace 55.03, zmap 0.1.134</p>
+<p>Requestor: ds8@sanger.ac.uk, lw2@sanger.ac.uk, mca@sanger.ac.uk,</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=220949">220949</a>, Resolved (Thu Jun 30 13:27:20 2011)
+<p>Wrong coordinates on clipboard for -ve strand zmap features</p>
+<p>Requestor: mg13@sanger.ac.uk</p>
+<p>Owner: jgrg</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=221148">221148</a>, Resolved (Mon Jun 27 14:01:36 2011)
+<p>test_otterlace 55.04: Zmap crash on vsplit</p>
+<p>Requestor: mg13@sanger.ac.uk, mpk@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=221452">221452</a>, Resolved (Tue Jul 05 10:05:19 2011)
+<p>scale off by half a unit</p>
+<p>Requestor: edgrif@sanger.ac.uk</p>
+<p>Owner: gb10</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=221517">221517</a>, Resolved (Fri Jul 08 14:36:13 2011)
+<p>DNA search crashes zmap - but only when revcomped</p>
+<p>Requestor: th2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222455">222455</a>, Resolved (Thu Jul 07 09:06:33 2011)
+<p>OTF alignments only show either mRNA or EST, not both</p>
+<p>Requestor: jgrg@sanger.ac.uk, mms@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222457">222457</a>, Resolved (Wed Jul 20 09:10:13 2011)
+<p>non-consensus splice markers everywhere!</p>
+<p>Requestor: jgrg@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222622">222622</a>, Resolved (Wed Jul 13 12:30:49 2011)
+<p>Specify Blixem's big-picture range on startup</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222700">222700</a>, Resolved (Thu Jul 07 09:33:41 2011)
+<p>hunt in zmap broken</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: jgrg</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=222902">222902</a>, Resolved (Tue Jul 19 14:08:38 2011)
+<p>ZMap does not XML-escape the standard error from pipe servers</p>
+<p>Requestor: jh13@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223007">223007</a>, Resolved (Fri Jul 08 11:51:35 2011)
+<p>"Ghost" object in Zmap, not in otterlace.</p>
+<p>Requestor: mpk@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223055">223055</a>, Resolved (Wed Jul 27 11:06:09 2011)
+<p>Threads problems</p>
+<p>Requestor: edgrif@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223065">223065</a>, Resolved (Fri Jul 08 14:32:29 2011)
+<p>The OTF aligned reads not showing up in Zmap has started up again....</p>
+<p>Requestor: mpk@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223085">223085</a>, Resolved (Wed Jul 13 16:11:27 2011)
+<p>enter on selected feature when columns still loading fails</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223260">223260</a>, Resolved (Wed Jul 13 15:46:52 2011)
+<p>starting blixem sometimes crashes zmap</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223482">223482</a>, Resolved (Thu Jul 28 12:01:28 2011)
+<p>ZMap crash: revcomp, show dna, click exon</p>
+<p>Requestor: jm12@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223543">223543</a>, Resolved (Fri Jul 22 08:38:44 2011)
+<p>Remove the script-dir config parameter</p>
+<p>Requestor: jgrg@sanger.ac.uk, jh13@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223867">223867</a>, Resolved (Wed Jul 27 10:48:35 2011)
+<p>clone (AL954848.9) crashing zmap: abort() with no explanation?</p>
+<p>Requestor: ek1@sanger.ac.uk</p>
+<p>Owner: mca</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223884">223884</a>, Resolved (Fri Jul 22 08:39:24 2011)
+<p>zmap crashes consistently on show translation in zmap on certain model</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=223919">223919</a>, Resolved (Wed Jul 20 14:07:01 2011)
+<p>cigar string crash</p>
+<p>Requestor: jgrg@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=224013">224013</a>, Resolved (Tue Jul 26 11:50:44 2011)
+<p>rev comp crashed zmap</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=224224">224224</a>, Resolved (Thu Jul 21 15:17:02 2011)
+<p>Failed to find mouse and/or window position</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=224232">224232</a>, Resolved (Tue Jul 19 10:15:26 2011)
+<p>Blixem -z argument is wrong</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: mh17</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=224545">224545</a>, Resolved (Thu Jul 21 15:12:53 2011)
+<p>ZMap passes out-of-range features when doing BAM-Blixem</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=225056">225056</a>, Resolved (Tue Jul 26 11:59:58 2011)
+<p>zmap version number</p>
+<p>Requestor: edgrif@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=225089">225089</a>, Resolved (Mon Jul 25 09:07:21 2011)
+<p>Blixem menu optons are wrong when you right-click a different column than the selected one</p>
+<p>Requestor: gb10@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+<li>zmap - Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=225252">225252</a>, Resolved (Tue Jul 26 11:37:16 2011)
+<p>empty blixem-all when invoked without selecting a feature or highlighting column</p>
+<p>Requestor: lw2@sanger.ac.uk</p>
+<p>Owner: edgrif</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+
+<h2>Code Changes From CVS/GIT Repositories</h2>
+<br />
+<!-- Now the cvs changes tickets... --!>
+
+
+<fieldset>
+<legend><b>ZMap Changes/Fixes [from git]</b></legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "fix stupid shell thing."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-29:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "improve error message."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   fix conflict
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "add cover script for one off release notes."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "add options to allow release notes to be in a named file for one off runs."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "remove redundant build prefix and cmd options."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "remove redundant sub_dir var."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "add ticket owner to output."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-29:</b>   "add ticket owner to output."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "fix revcomping of translations, need 'revcomping' twice to make sure frames in correct cols."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "fix revcomp of 3-frame translation cols, caused revcomp cols to be in wrong order !"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "fix bug causing crash on transcripts with no cds."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "fix up show translation predefined style a bit, more work to do."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "remove struct, should not have been here anyway. Add start/end params to zMapFeature3FrameTranslationSetRevComp()."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "add check of return code from zMapFeatureAnnotatedExonsCreate()."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "minor format change."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "udpate authors, format changes."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "update author names."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "fix feature highlighting to highlight reverse strand features drawn if drawn on forward strand."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "this shouldn't be in git..."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-28:</b>   "change of file mode spotted by git !"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-26:</b>   "change call to show development id or version number for zmap."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-26:</b>   "fix blixem invocation to handle column focus vs. mouse click properly."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-26:</b>   "include extra args to zmapWindowCallBlixem() for item and feature set."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-26:</b>   "Make sure for short reads that only those in mark region are requested."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-22:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-22:</b>   type cast double/float for feature score + percent-id
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-22:</b>   removed script-dir from [ZMap] config, removed debugging for thread errors
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-22:</b>   "add start/end to fasta output."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-22:</b>   "fix bug in dealing with exons that are wholly excluded from translation by start_not_found value."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-21:</b>   removed script_dir for pipes and used /software/bin:/software/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11:/usr/games:/nfs/users/nfs_m/mh17/bin:/nfs/users/nfs_m/mh17/zmap/ZMap/docs/IntWeb/scripts:/software/anacode/bin:/software/acedb/bin:/nfs/users/nfs_z/zmap/SeqTools/BUILD.DEVELOPMENT/Linux-i686/bin:/nfs/users/nfs_m/mh17/acedb/acedb/bin.LINUX_4 instead + uprated error reporting esp onscreen, now includes GFF errors and file not found etc
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-21:</b>   "fix mark to lie within block for blixem bound setting."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-21:</b>   "formatting changes only."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-21:</b>   "improve error message to user."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-21:</b>   "fix up scope/feature/window ranges."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-21:</b>   "fix bug in format macro for messages."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-21:</b>   tidied up pipe error reporting show on ZMap warnign when standalone and show stderror; no args pipe server crash fixed
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-20:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-20:</b>   "fix stupid string truncation bug in parsing cigar strings."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-20:</b>   fixed nc splice markers (RT 222457) plus debug removed from windowDraw
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-19:</b>   restored server error messages/ status and made alternate fix for startup crash RT 223055
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-18:</b>   fixed BAM feature names and blixem positioning
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-18:</b>   processed BAM featuresets for menus
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-18:</b>   update for interim build to allow testing
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-14:</b>   fixed comments and new #define
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-13:</b>   fixed merge conflict in window menu, after writing the file
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-13:</b>   fixed merge conflict in window menu
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-07-13:</b>   xl escaped stderr output of pipe server
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "handle enter key press..we were letting this through which kills zmap via stop button."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "remove default stop button because user can accidentally kill zmap."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   try to recover from failed pull.
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "fix bug where we fail to find an item, probably been a problem for ages."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "change of func name to world."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "add missing invalied enum, causes bool test on enum to fail."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "improve build description."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "switch errors to go to zmapdev."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "add calls to parse match strings, e.g. CIGAR."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "move alignment funcs to new zmapFeatureAlignment.c file."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "add zmapFeatureAlignment.c to build."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "add defs to support match string handling."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "add new alignment feature file with match string handling funcs."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "fix bug in debug message."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "return data for blixem callback so blixem shows same window position as zmap."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-13:</b>   "add params/data to specify view that blixem initially shows."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-11:</b>   "redo message/error handling, code was overwriting it's own error messages."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-11:</b>   "remove code from fixing thread bug."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-11:</b>   "trivial reformatting."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-11:</b>   "fix bug when adding exon/intron, need to extend transcript length. Transcript funcs added from src/zmapFeature/zmapFeature.c"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-11:</b>   "move transcript functions to zmapFeatureTranscript.c"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-11:</b>   "put back cron flag, somehow deleted."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "redo thread_rc routine a bit. Fix some routines to be static."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "minor function name change/clarification."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "use enum instead of int for thread status, readd thread died call."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "fix problem in args for syserr log call."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "fix minor compiler warning."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "fix typo in comment."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "remove redundant init state."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "reinstate clean up call for server died condition."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "remove redundant init state, fix states to use our enum macros."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "change enums for request/reply etc. to use our enum/function macros."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "add brackets to make log tuples easier to read."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "add option to erase previous overnight build dir."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-08:</b>   "add option to erase existing build dirs, needed for overnight build."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-07:</b>   "fix bug in xremote coord for loading columns."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-07:</b>   "add param to loadfeatures to say in new connection should be used."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-07:</b>   "fix trivial compiler warning."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-07:</b>   "indentation change only."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-07:</b>   "improve legibility."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "add comments about name/directory for log as it's also in overnight crontab."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "make versioner work for development releases."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   add summary of changes/bug fixes since May
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "fix bug in release naming."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "fix bug in directory name."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "fix up bug in directory names."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "rationalise cmd line args for directories."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "fix directory naming."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-05:</b>   "fix memory leak and add test for null features."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-04:</b>   "fix build directory name."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "put docs date back to make one set of docs."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "add 'origin' to git push calls, use dev. version string if present."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "minor formatting changes."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "fix original/unique id bug in looking up featureset names from xml."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-07-01:</b>   "remove path from filename, makes log records far too long."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-30:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-30:</b>   tweaked scale bar to place text between ticks and ticks between bases
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-30:</b>   "fix bug in feature names on clipboard."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-30:</b>   "add missing global zmap header."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "add doc for reverting files."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "fix mail id for bugs."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "fix up mark and other bits broken in blixem launch."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-29:</b>   "clarify git-add after rebase."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-28:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-28:</b>   "fix bug in putting feature coords in clipboard."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-28:</b>   fixed xml escape on feature details
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-27:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-27:</b>   removed dbug (item factory) and fixed blixem start coord to be new mouse or selected feature
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-27:</b>   "fix bug in finding block after window split."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-24:</b>   "update for my lost changes...due to not using git correctly ?"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-24:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-24:</b>   "add details of merging develop changes into a feature branch."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-23:</b>   fixed blixem rev strand -m arg again
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-22:</b>   fix to catch format change in XML for highlight evidence &apos change still needs resolving
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-22:</b>   fixed off by 1 errors on seq extent, feature status bar coords and scale bar esp for revcomp
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-22:</b>   made BAM menu always appear, removed spurious debug message from pipeserver.c
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-21:</b>   mod to GFF header checking to allow unspecified seq to be loaded from file
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-20:</b>   "add develop build description."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-17:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-17:</b>   updated all copyrights and removed CVS guff
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-17:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-17:</b>   "fix development build not to tag."
+</li>
+
+<li>
+<b>zmap - 2011-06-17:</b>   "update last release notes to 17/06/2011"
+</li>
+
+<li>
+<b>zmap - 2011-06-17:</b>   "update release notes file to release_notes.2011_06_17.09_47_31.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-06-17:</b>   "new zmap release notes for 17 June 2011"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "update release notes file to release_notes.2011_06_16.13_43_22.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "new zmap release notes for 16 June 2011"
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-16:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-16:</b>   blixem revcomped coords fixed and gff BAN coords fixed??
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "update last release notes to 16/06/2011"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "update release notes file to release_notes.2011_06_16.11_27_12.shtml"
+</li>
+
+<li>
+<b>zmap - 2011-06-16:</b>   "new zmap release notes for 16 June 2011"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   "add force flag for release notes shtml because we have gitignore for shtml files."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   "fix bug in getting hostnames for build machines."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-16:</b>   "comment out my temp. fix for otterlace not passing chromosome coords."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-15:</b>   added perfect option to est_masking via style config
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   "improve X error messages, add correct error handling all over the place, add extra error messages."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   "add X error error code."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-15:</b>   "fix poor error handling/messages."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-15:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-15:</b>   hid empty 3 frame columns
+</li>
+
+<li>
+<b>Jeremy Henty - 2011-06-14:</b>   X11/XRemote.pm: sub new(): do not lower case keys (so that we can set __DEBUG).
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-14:</b>   "fix up debugging and bugs in xremote stuff."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-14:</b>   "fix stupid bug in create parser."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-14:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-14:</b>   scale bar fixed and improved
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-14:</b>   blixem config tweaked
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-10:</b>   "add file to exclude common files not for git."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-10:</b>   "add doc about excludes file."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add sequence/start/end to parser create."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add func. to detect empty strings."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add func. to detect empty strings."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add sequence/start/end to parsercreate, handle no-data in file condition better."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add sequence/start/end to parser create."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "add STS SO_term to types we support."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-09:</b>   "Remove redundant header line parsing + make more robust, add sequence/start/end to parser create, handle different sequences in same file."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "remove context duplication where not needed. Clean up + make zoom handling work."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "change format of floats to double."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "add % sign to percent id in status bar."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "add function to select feature."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-07:</b>   "add function to revcomp coords."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-07:</b>   BAM config updated
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-07:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "try removing display of clone name, not needed ?"
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "fix wrong comment."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "percent id needs to be a float not a double...or else convert all code to doubles."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "add highlight feature call, move highlight items calls to be internal to zmapwindow."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "add debug print func with flush() so we see output straight away."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-06:</b>   "no change, added code and then took it away."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   tweaked blixem data file (missign tab)
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   adjusted -dataset blixem arg to be --dataset=stuff as requested
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   "fix stupid typo."
+</li>
+
+<li>
+<b>malcolm hinlsey - 2011-06-02:</b>   added blixem -dataset arg
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   "remove incorrect assert in getFeatureBlockDNA(), causes zmap to crash when it shouldn't."
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   Merge branch 'develop' of git.internal.sanger.ac.uk:/repos/git/annotools/zmap into develop
+</li>
+
+<li>
+<b>Ed Griffiths - 2011-06-02:</b>   "fix bug in how we look up feature set names."
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Updated blixem config file details in the BAM design notes
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Acedb Changes/Fixes [from cvs]</b></legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend><b>Seqtools Changes/Fixes [from git]</b></legend>
+<ul>
+  <li><!-- --- Start editing Seqtools changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-28:</b>   Merge branch 'feature/belvu'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-28:</b>   Fixed a regression with the output-probabilities function
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-28:</b>   Fixed some leaks and memory bugs to do with the tree nodes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-27:</b>   A Tree struct is now used to provide a persistent pointer to the main tree
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-27:</b>   Fixed some bugs with displaying bootstrap trees
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-27:</b>   Fixed a bug with the blosum matrix when calculating the tree
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-27:</b>   Fixed some bugs with bootstrap trees
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-26:</b>   Fixed some bugs with sorting by similarity
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-26:</b>   Fixed an issue where the initial sort mode was not being reflected in the menu options
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-26:</b>   Fixed a bug with sorting by identity
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-25:</b>   Fixed some bugs with disabling colors
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-22:</b>   Alignment pointers are now persistent (fixes lots of bugs to do with invalid pointers)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-22:</b>   Fixed a regression with the --zoom-range argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-22:</b>   Blixem now gets the reference sequence coords from the fasta definition line, rather than the sequence-region header in the GFF file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-22:</b>   Fixed a bug with the --zoom-range argument in protein blixem
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-21:</b>   Merge branch 'feature/belvu'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed a bug with sorting by tree on startup
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed an issue where markup lines are not shown if tree is shown on startup
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Removed obsolete debugging option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed an issue where the markup colors file could overwrite the residue colors file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed a bug where custom colors were being overwritten after loading a color file with the -l argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed a bug where the wrong conservation was being calculated when using the -c argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed a bug with the --zoom-range argument for protein blixem
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Merge branch 'feature/belvu'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Added belvu_.h to autoconf (it was missing from the distribution)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-20:</b>   Fixed some bugs with the -b option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-19:</b>   Fixed a typo that was causing the initial exon view height to be calculated incorrectly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-19:</b>   Fixed a bug where introns that are partially out of range were not always being shown
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-18:</b>   Fixed a bug where short-reads were incorrectly squashed onto the same line when their sources are different
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-18:</b>   Merge branch 'feature/belvu'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-18:</b>   Fixed a crash with the -b argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-18:</b>   Fixed a divide-by-zero error when using the -c argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-18:</b>   Fix a potential crash if the tree size is too big
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-17:</b>   Fixed an issue with the tree scale updating on the tree settings dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-17:</b>   Update tree scale according to current tree method on tree settings dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-17:</b>   Fixed a bug with uninitialised strings in markup lines when strip-coords option is off
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-17:</b>   Fixed an issue where the main window was being shown in tree-only mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-17:</b>   Another bugfix to do with separateMarkupLines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-17:</b>   Fixed bugs with tree selection getting messed up by separateMarkupLines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Removed commented-out code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Removed old compiled-out code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Small cosmetic changes to menus
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Fixed a program error where messages could get directed to the wrong output
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Info messages and warnings/errors are now sent to stderr
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Fixed an issue where the conservation plot line width was not being used
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Code tidying
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Fixed an issue where branch labels where not shown in centre of branch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Fixed highlighting for match segments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Fixed some bugs with reading matching segments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-15:</b>   Fixed an issue where the busy cursor was not being updated
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-14:</b>   Tidying code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-14:</b>   Added busy cursor when outputting identities and calculating tree
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-14:</b>   Replaced color picker buttons with plain color boxes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-13:</b>   Fixed a bug where foreground colors were not being shown
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-13:</b>   Fixed a potential crash where the wrapped-alignment pixmap is too large
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-13:</b>   Made the organisms window scrollable
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-13:</b>   Removed an incorrect shortcut tip
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Fixed a bug with the scoredist calculation being based on invalid values
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Removed debug statement
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Create/show the tree after OK-ing the tree settings dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Fixed another rounding error and tidied tree code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Fixed a rounding error
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Fixed a bug where wrapped-alignment font was not being set
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-11:</b>   Updated help and usage info
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-08:</b>   Fixed some bugs with the font-size environment variable
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-08:</b>   Allow tree and alignment to zoom separately
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-08:</b>   Added zoom buttons and shortcut keys
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-08:</b>   Added an option to change the menu font size
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-07:</b>   Added Find functionality
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-07:</b>   Updated belvu release notes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-07:</b>   Improved functionality to find external commands
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Added new CGPH color scheme to default list
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Fixed an issue where the toggle-color-modes option was not updating the current color-scheme in the menu
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Copy the selected sequence name to the primary buffer
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Fixed an issue with updates following remove-by-conservation
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Show the tree when the sort-by-tree option is selected
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Better handling of tree recalculations
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   Added keyboard shortcut for toggling color mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-06:</b>   The conservation plot is now automatically updated after sequences or columns are deleted
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Improved color-scheme toggle methods
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Separated color sub-menus into separate color schemes menu
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Updated to-do notes for Belvu
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Improved status logging when calling the fetch command
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Added a settings dialog to enable user to change conservation-plot properties
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Fixed a bug with the conservation plot where the average line label was not shown
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-05:</b>   Fixed bugs with conservation plot
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-04:</b>   Added test notes for belvu
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-04:</b>   WIP: conservation plot is now working
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-01:</b>   WIP: implemented conservation plot
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-01:</b>   WIP: moved conservtion plot code to separate file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-01:</b>   WIP: Added conservation plot window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-29:</b>   Fixed some bugs with the wrapped-alignment view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-29:</b>   Fixed issues with quit not prompting to save when called from spawned windows
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-29:</b>   Fixed an issue where the feedback box wasn't being updated when the row selection changes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-28:</b>   Fixed some bugs with removing sequences messing up the array
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-28:</b>   Fixed a bug with markup lines appearing in the tree when the tree is created using 'calculate tree'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-27:</b>   Fixed a bug where the tree was incorrectly showing markup lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-27:</b>   Updated Belvu documentation and release notes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-27:</b>   Added --help command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-27:</b>   Implemented annotations window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-27:</b>   Implemented mouse-wheel scrolling for label areas as well as main alignment area
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-27:</b>   Implemented mouse-wheel scrolling
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-24:</b>   Implemented fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-23:</b>   Implemented 'output score' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-23:</b>   Improved error-handling when reading scores file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-23:</b>   Fixed a bug with the wrapped-alignment view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-23:</b>   Implemented organisms window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Orthologs are now highlighted in the tree after 'find orthologs' option is called
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Implemented 'find orthologs' option, and made some changes to the way action groups are handled
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Small fix to recalculate name column size when sequences are deleted
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Made the 'remove many sequences' option a toggle option, so you can click again to turn it off
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Implemented 'save tree' option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Improvements to the toolbar and menu
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Fixed a bug where the mean score was incorrect when alignment contains markup lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Fixed a bug where scores were being calculated for markup lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-22:</b>   Implemented 'compare all' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-21:</b>   Added --version and --compiled arguments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-21:</b>   Added minor tickmarks to scale
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-21:</b>   Added keyboard shortcuts
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-21:</b>   Improved performance of drawing alignments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-21:</b>   Improved performance of middle-dragging
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-21:</b>   Updated colours to be the same as the old belvu colours
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Fixed an issue where rows were being highlighted incorrectly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Added prompt to save the alignment if it has been edited when the users quits
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Right-align column text
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Added header for alignment display area
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Fixed a bug with incorrect drawing of final blank row
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Fixed an issue where extra rows were being drawn unnecessarily
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Fixed a bug with row selections
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Added summary label at top of headers column
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Fixed issues with the scroll ranges not updated when rows/columns are deleted
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-20:</b>   Finished work to implement a custom vertical scrollbar
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   WIP: Performance improvements: only draw alignments that are in the scroll range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-16:</b>   Fixed an issue where 'show tree' was not presenting the tree if it had to create it first
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-16:</b>   Fixed some merge errors
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Moved some utility functions to utils library
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-09:</b>   Save dialog now remembers the name and directory
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-09:</b>   Added toggle boxes to save-as dialog to allow user to change separator char
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-09:</b>   Added 'save coords' option to save as dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-09:</b>   Implemented save-as dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-09:</b>   Implemented option to save Mul files
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Display score column if scores are enabled
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Don't draw coords for markup rows
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Fixed a bug with the wrapped view for selex data
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Implemented selex file parsing
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Fixed bugs with reading MSF files
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Implemented hide/unhide options
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Added more toolbar items
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-08:</b>   Improvements to remove-columns-by-conservation dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Implemented 'select gap character' option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Implemented 'read labels' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Code tidying (menu action lists)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Postfix menu options with ... if the action has a prompt
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Implemented 'remove gappy columns' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Fixed an issue where the fasta file name was incorrectly including the '>' marker
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-06:</b>   Fixed a bug with the remove-columns-by-conservation dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-06:</b>   Implemented 'auto remove empty columns' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-06:</b>   Implemented option to remove columns by conservation
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-06:</b>   Fixed a crash when clicking on an empty row
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-06:</b>   Updated usage text
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-06:</b>   Fixed a bug with invalid scroll range after deleting columns
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-31:</b>   Implemented functionality to remove columns to the left/right of the selected column
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Highlight all alignments with the same name as the currently-selected alignment
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Implemented middle-click scrolling
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Fixed a bug where clicking outside the sequence area was trying to select a column
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Highlight the selected column when middle-clicking
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Code tidying and renaming
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Code tidying and renaming
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-27:</b>   Feedback box is now updated when the selected row/column changes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-26:</b>   Fixed a compile error
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-26:</b>   Fixed a compile error
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-26:</b>   Added feedback box to toolbar
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-26:</b>   Improvements to column-selection code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Added functionality to identify which row has been left-clicked
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Implemented 'remove columns' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Removed the default-sort menu option because it doesn't work correctly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Fixed a crash where the tree becomes invalidated after deleting sequences
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Implemented 'exclude highlighted' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Implemented greyscale colours for printing
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Implemented 'ignore gaps' option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Fixed a regression where the disable-colours option was broken
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Rearranged colour menus
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-25:</b>   Implemented load/save of colour schemes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-23:</b>   Code tidying
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-23:</b>   Fixed a bug with foreground colors in color-by-conservation mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-23:</b>   Implemented edit-conservation-colors dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-23:</b>   Added custom-color-scheme menu item
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-23:</b>   WIP: Added 'custom' color scheme menu item for edited colors
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-18:</b>   Added edit-residue-colors dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-18:</b>   Fixed a crash when the tree settings are changed when there is no tree window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-18:</b>   Fixed a bug with the tree distance calculations
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-17:</b>   Added 'recalculate tree' menu option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-17:</b>   Fixed a bug where tree-sort was getting messed up after changing tree order
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-16:</b>   Fixed a bug where the tree drawing area size was not recalculated when on re-root
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-16:</b>   Fixed a bug where the tree was not being updated when re-rooting
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-16:</b>   Fixed a bug with sorting
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-16:</b>   Alignment sort order is now updated when tree order has changed
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Only allow one tree
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Implemented tree-swap and tree-reroot
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Alignment display now re-centres when selecting alignments in a tree
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Implemented the 'clean up windows' option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Added notes about a historic Belvu bug
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Trees are now updated dynamically when the selection changes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Selected sequences are now highlighted in trees
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Clicking on a tree node now selects that alignment
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-13:</b>   Fixed a bug when coloring by residue ID
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Fixed a bug where the colors were not correctly updated when changing color scheme with color-by-res-id is enabled
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Added separate menu item to set threshold for color-by-res-id option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented color-by-res-id option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented highlight-lowercase-characters option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented toggle-color-scheme option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented color by residue color schemes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented conservation color schemes
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented toggle-display-colors option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Added ability to sort by conservation order
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Implemented sort-by menu options
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-12:</b>   Tidied the sort-by enums
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   WIP: added ability to select a node from the tree window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Tree window now has a scale
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Tree layout size is now more accurate
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Set the make-tree dialog's focus on a widget that can activate the default response
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Added ability to set the tree building method via the make-tree dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Generalised combo box functions
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Added ability to choose the pick method on the tree settings dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-11:</b>   Fixed some uninitialised-value warnings
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Added ability to change the line width and tree scale
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Tree settings dialog now refreshes the tree
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Added comments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Fixed a memory bug where the tree settings dialog response function was being passed invalid data
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Fixed a bug with branch length text position
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Code tidying
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Added make-tree and tree-settings dialogs
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-10:</b>   Fixed a bug where scores were being displayed incorrectly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-06:</b>   The tree now draws correct sequence names and has thicker lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-06:</b>   Added basic tree drawing capability
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-06:</b>   Windows now have proper titles
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-06:</b>   Added tree-drawing widgets
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-05:</b>   Added remove-by-score and remove-outliers
+</li>
+
+<li>
+<b>Gemma Barson - 2011-05-05:</b>   Implemented remove-partial and make-non-redundant
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Implemented 'remove gappy sequences' option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Removed padding around alignment view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Implemented 'remove sequences' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Added flag and cursor for 'remove sequences' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Added help menu
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Added About dialog
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Update vertical scroll range when deleting rows
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Fixed a bug where the last base was not visible
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Selected row is now highlighted
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Implemented 'remove row' option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-21:</b>   Select a row when it is clicked
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Added toggle and radio menu actions
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Moved long menus to sub-menus
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Added Edit, Color and Sort menu actions
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Fixed a bug where closing the wrap window was quitting the application
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Set initial position of wrap window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Use more sensible window sizes, and bring wrap window to front on creation
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Fixed a bug with printing a non-toplevel widget
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Added title to wrapped-alignment view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Fixed a scaling issue with printing fit-to-width
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Added printing for the wrapped-alignment view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-20:</b>   Fixed some bugs with the wrapped view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-19:</b>   Added wrapped-alignment view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-19:</b>   Improved start up speed
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   Added column separater lines
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   Fixed an issue with aligning the columns
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   Removed unnecessary calls to size-allocate
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   The horizontal scrollbar now only affects the sequence column
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   Cached the drawable for the belvu alignment
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   WIP belvu now uses fixed-width font
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   WIP: belvu now shows colors
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-13:</b>   WIP: create belvu main window
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-11:</b>   WIP: added belvu files
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-08:</b>   Edited comments
+</li>
+
+<li>
+<b>Gemma Barson - 2011-04-08:</b>   Generalised FASTA parser to allow multiple sequences
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-13:</b>   Fixed a regression with the default zoom range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-13:</b>   Added 'read' type
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-12:</b>   Fixed some issues where scrolling messes up the initial big picture range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-11:</b>   Added --zoom-range argument to allow the caller to specify the initial big picture range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-07-04:</b>   Fixed typos where a gboolean was being used instead of an int
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Updated blixem user manual with info about the coverage view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Updated what's new page
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Ensure that only identical alignments can appear on the same row in 'squash matches' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Do not show score and ID if they are unset
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-17:</b>   Fixed a bug where some short reads were not being added to the 'squashed' view
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Fixed a bug where dotter fails if pfetch returns 'no match'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   When sorting alignments by position, also do a secondary sort by length
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-15:</b>   Fixed an issue where the 'squash matches' option on the settings dialog was not updated after changing the same setting on the toolbar
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Incremented version to 4.2 (start of new versioning system)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Improvements to message handling for region-fetch code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Fixed an issue with squashed matches where the row was not always highlighted correctly for selected/grouped matches
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Small comment addition
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Added toolbar icon for squash-matches option
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Improved display name for short reads when 'squash matches' is enabled
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Fixed an issue where a selected short-read could be hidden by its duplicates in 'squashed matches' mode
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-14:</b>   Finished work to group short-reads
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   WIP: implement a better way of grouping duplicate short reads
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed an issue with the names of duplicated short reads being lost
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a bug where the region-fetch script args were not being picked up from config
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a compile error on Macs (missing include file)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Fixed a compile error on Linux due to missing include file
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-13:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Fixed a bug where the coverage view labels were sometimes not drawn correctly
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added squash-matches command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   By default, set the secondary sort column to be position
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added show-coverage command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Report an error if the region-fetch script fails
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   The range requested by region-fetch is now clipped to the display range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Tidied the regino-fetch code
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Added the --save-temp-files command-line argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   Keep original name for short reads so that we can identify pairs (until we have a better method of doing so)
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-10:</b>   GFF parser now ignores features that are outside the reference sequence range
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Merge branch 'feature/shortread'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   Delete temp files after doing a region-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-07:</b>   region-fetch now gets its script arguments from the config file on a per-source basis
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Merge branch 'feature/buildsys'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Removed --dirty option from git describe because it's not available in older versions of git
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Use abbreviated commit ids in build info
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Removed unused expression in configure.ac
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Fixed a bug in the build system where AM_COND_IF is not recognised in older versions of automake
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Merge branch 'feature/buildsys'
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-03:</b>   Build system now includes git-describe info in the version number
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-02:</b>   Incremented version to 4.1.20
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-02:</b>   Added --dataset argument
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Fixed a bug with creating temp files for region-fetch
+</li>
+
+<li>
+<b>Gemma Barson - 2011-06-01:</b>   Merge branch 'shortread'
+    <!-- --- End editing Seqtools changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!-- End of CVS/GIT changes section  --!>
+
+
+<!--#include virtual="/perl/footer" -->
+
