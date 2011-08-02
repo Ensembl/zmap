@@ -186,6 +186,8 @@ while getopts ":b:f:" opt ; do
     esac
 done
 
+_checkout_message_out "Branch is $BRANCH"
+
 
 save_root=$(pwd)
 
@@ -224,7 +226,7 @@ if [ "x$gen_checkout_script" != "x" ]; then
     git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
     _checkout_message_out "switching to git branch $BRANCH"
-    ( cd $MASTER_SRC_DIR ; git checkout $BRANCH )
+    ( cd $MASTER_SRC_DIR ; git branch $BRANCH origin/$BRANCH ; git checkout $BRANCH )
 
   else
 
