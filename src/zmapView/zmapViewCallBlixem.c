@@ -1177,7 +1177,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* Rebase coords in blixem by offset. */
   if (blixem_data->position)
     {
-      int offset, tmp1,tmp2 ;
+      int offset, tmp1; //,tmp2 ;
 
       offset = tmp1 = blixem_data->offset ;
 

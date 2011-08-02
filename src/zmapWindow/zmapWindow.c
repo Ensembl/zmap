@@ -167,9 +167,9 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer d
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data) ;
 
-static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
-static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
-static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+//static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+//static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
+//static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 

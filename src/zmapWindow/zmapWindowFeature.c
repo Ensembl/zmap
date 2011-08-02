@@ -1379,11 +1379,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
             /* menu_data->item is the transcript and would be the
              * focus hot item if this was a focus highlight
-             * in this call it's irrelevant
+             * in this call it's irrelevant so don't set the hot item, pass NULL instead
              */
 
             zmapWindowFocusAddItemsType(menu_data->window->focus, evidence_items,
-                  menu_data->item, WINDOW_FOCUS_GROUP_EVIDENCE);
+                  NULL /* menu_data->item */, WINDOW_FOCUS_GROUP_EVIDENCE);
 
 
             g_list_free(evidence);

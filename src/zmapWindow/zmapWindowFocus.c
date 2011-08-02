@@ -59,6 +59,7 @@ typedef struct _ZMapWindowFocusStruct
 
   ZMapWindowContainerFeatureSet focus_column ;
   FooCanvasItem *hot_item;           // current hot focus item or NULL
+  ZMapFeature hot_feature;		// from the hot item to allow lookup
   /* int hot_item_orig_index ;           Record where hot_item was in its list. */
   /* mh17: this is of limited use as it works only for single items; not used
    * and not comapatble with raising focus item to the top and lowering previous to the bottom
@@ -227,8 +228,7 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
   gboolean first;
   FooCanvasItem *foo;
 
-#warning this is the wrong type but we are testing for non zero... check hot item code as well
-  first = list && list->data;
+  first = list && list->data;	/* ie is there one? */
 
   for (; list ; list = list->next)
     {
@@ -276,6 +276,12 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item)
   FooCanvasGroup *column ;
 
   focus->hot_item = item;
+
+	/* mh17 NOTE this code assumes that composite foo canvas items (eg GraphDensity)
+	 * have called set_feature() before we get here
+	 */
+
+  focus->hot_feature = zMapWindowCanvasItemGetFeature(item);
 
   /* Set the focus items column as the focus column. */
   column = (FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;

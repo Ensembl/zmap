@@ -193,8 +193,9 @@ static void zmap_window_graph_item_set_colour(ZMapWindowCanvasItem   item,
 	else
 	{
 		/* revert to normal canvas item handling */
-		ZMapWindowGraphItemClass class = ZMAP_WINDOW_GRAPH_ITEM_CLASS(item);
-		class->canvas_item_set_colour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+		ZMapWindowGraphItemClass class = ZMAP_WINDOW_GRAPH_ITEM_GET_CLASS(item);
+		if(class->canvas_item_set_colour)
+			(* class->canvas_item_set_colour) (item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
 	}
 }
 

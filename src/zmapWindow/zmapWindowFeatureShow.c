@@ -1665,7 +1665,7 @@ static void getAllMatches(ZMapWindow window,
 static void addTagValue(gpointer data, gpointer user_data)
 {
   ID2Canvas id2c = (ID2Canvas) data;
-  FooCanvasItem *item = (FooCanvasItem *) id2c->item ;
+//  FooCanvasItem *item = (FooCanvasItem *) id2c->item ;
 #warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
 
   AddPara para_data = (AddPara)user_data ;
@@ -1674,7 +1674,8 @@ static void addTagValue(gpointer data, gpointer user_data)
   GList *column_data = NULL ;
   ZMapGuiNotebookTagValue tagvalue ;
   int tmp = 0 ;
-  char *clone_id, *strand ;
+//  char *clone_id,
+  char *strand ;
   int display_start, display_end ;
 
 

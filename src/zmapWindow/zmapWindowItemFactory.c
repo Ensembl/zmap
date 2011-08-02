@@ -2068,8 +2068,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
   zMapAssert(style->mode == ZMAPSTYLE_MODE_GRAPH);
 
 
-  //if(style->mode_data.graph.density)
-  if(1)
+  if(!zMapStyleIsFoo(style))
   {
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;

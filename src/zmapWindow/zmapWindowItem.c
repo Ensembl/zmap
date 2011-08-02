@@ -96,7 +96,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 				   gboolean centre_on_region) ;
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
-static void extract_feature_from_item(gpointer list_data, gpointer user_data);
+//static void extract_feature_from_item(gpointer list_data, gpointer user_data);
 
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,

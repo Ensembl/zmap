@@ -142,6 +142,8 @@ typedef enum
     STYLE_PROP_LOADED,
 #endif
 
+    STYLE_PROP_FOO,
+
     // mode dependant data
 
 
@@ -250,6 +252,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
 #endif
 
+/* developemnt control to allow reconfig to legacy code */
+#define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
 
 /* glyph properties - can be for mode glyph or as sub-features */
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME             "glyph"
@@ -801,6 +805,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
 
+  gboolean foo;
+
 #if MH17_NO_DEFERRED
   gboolean deferred;           /*flag for to say if this style is deferred loaded */
 
@@ -1044,6 +1050,7 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 //gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDirectionalEnd(style)   (style->directional_end)
 
+#define zMapStyleIsFoo(style) (style->foo)
 
 //gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDisplayable(style)   (style->displayable)
