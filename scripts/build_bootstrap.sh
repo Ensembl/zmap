@@ -174,9 +174,13 @@ _checkout_message_out "Start of checkout script (created by build_bootstrap)."
 TODAY=`date +"%a %b %e %Y"`
 _checkout_message_out "Today is $TODAY"
 
-_checkout_message_out "About to parse options: $*"
+
 
 # Get the options the user may have requested
+_checkout_message_out "About to parse options: $*"
+
+OPTIND=1
+
 usage="$0 -b <branch> -f <zmap directory>"
 while getopts ":b:f:" opt ; do
     case $opt in
