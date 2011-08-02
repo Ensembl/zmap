@@ -177,8 +177,14 @@ _checkout_message_out "Today is $TODAY"
 
 
 # Get the options the user may have requested
+#
 _checkout_message_out "About to parse options: $*"
 
+
+# NOTE, this generated script is run as a "dot" script and therefore OPTIND is not
+# reset to 1 which means getopts will carry on from whatever position it reached in the parent script.
+# So we reset it's value to 1 and then it will parse our options from the start.
+#
 OPTIND=1
 
 usage="$0 -b <branch> -f <zmap directory>"
@@ -189,16 +195,6 @@ while getopts ":b:f:" opt ; do
 	\? ) zmap_message_rm_exit "$usage"
     esac
 done
-
-_checkout_message_out "Options after parsing: $*"
-
-
-_checkout_message_out "Branch is set to $BRANCH"
-
-
-_checkout_message_out "forcing exit...for testing." 
-exit 1
-
 
 
 save_root=$(pwd)
@@ -256,6 +252,11 @@ if [ "x$gen_checkout_script" != "x" ]; then
   _checkout_message_out "About to  cp -r $MASTER_SRC_DIR $CVS_MODULE"
   cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $MASTER_SRC_DIR"
 fi
+
+
+_checkout_message_out "Forcing exit for testing...."
+exit 1
+
 
 
 # update this to be absolute
