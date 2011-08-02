@@ -254,11 +254,6 @@ if [ "x$gen_checkout_script" != "x" ]; then
 fi
 
 
-_checkout_message_out "Forcing exit for testing...."
-exit 1
-
-
-
 # update this to be absolute
 gen_checkout_script=$save_root/$gen_checkout_script
 
