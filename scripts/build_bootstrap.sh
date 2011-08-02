@@ -186,6 +186,8 @@ while getopts ":b:f:" opt ; do
     esac
 done
 
+_checkout_message_out "Branch is $BRANCH"
+
 
 save_root=$(pwd)
 

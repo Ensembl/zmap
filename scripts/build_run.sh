@@ -251,9 +251,9 @@ fi
 #
 if [ -z "$CRON" ] ; then
 
-    message_out "Build parameters are:"
-    message_out "==================="
+    message_out "=================== Build parameters:"
     message_out "        Running on: $(hostname)"
+    message_out "      Build branch: $BRANCH"
     message_out "      Build script: $BUILD_SCRIPT"
     message_out "      Build prefix: $BUILD_PREFIX"
     message_out "   Build directory: $BUILDS_DIR/$PARENT_BUILD_DIR"
