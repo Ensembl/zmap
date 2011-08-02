@@ -225,6 +225,10 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
     git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
+
+    _checkout_message_out "Forcing branch to 'production'"
+    BRANCH='production'
+
     _checkout_message_out "switching to git branch $BRANCH"
     ( cd $MASTER_SRC_DIR ; git branch $BRANCH origin/$BRANCH ; git checkout $BRANCH )
 
