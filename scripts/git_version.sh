@@ -21,7 +21,10 @@ RC=0
 SCRIPT_NAME=$(basename $0)
 
 
-git_info=''
+# Are we in a repository, if not then just return "NULL"
+#
+git status >/dev/null 2>&1 || { echo "NULL" ; exit 0 ; }
+
 
 git_version=`git describe` || { message_err 'git describe failed' ; exit 1 ; }
 

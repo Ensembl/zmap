@@ -169,14 +169,18 @@ function _checkout_mk_cd_dir
 
 zmap_message_out "checking that zmap_message_out works in generated script." 
 
-
 _checkout_message_out "Start of checkout script (created by build_bootstrap)."
 
 TODAY=`date +"%a %b %e %Y"`
 _checkout_message_out "Today is $TODAY"
 
 
+
 # Get the options the user may have requested
+_checkout_message_out "About to parse options: $*"
+
+OPTIND=1
+
 usage="$0 -b <branch> -f <zmap directory>"
 while getopts ":b:f:" opt ; do
     case $opt in
@@ -185,6 +189,16 @@ while getopts ":b:f:" opt ; do
 	\? ) zmap_message_rm_exit "$usage"
     esac
 done
+
+_checkout_message_out "Options after parsing: $*"
+
+
+_checkout_message_out "Branch is set to $BRANCH"
+
+
+_checkout_message_out "forcing exit...for testing." 
+exit 1
+
 
 
 save_root=$(pwd)
@@ -223,8 +237,12 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
     git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
+
+#    _checkout_message_out "Forcing branch to 'production'"
+#    BRANCH='production'
+
     _checkout_message_out "switching to git branch $BRANCH"
-    ( cd $MASTER_SRC_DIR ; git checkout $BRANCH )
+    ( cd $MASTER_SRC_DIR ; git branch $BRANCH origin/$BRANCH ; git checkout $BRANCH || _checkout_message_exit "Failed to switch to branch $BRANCH" )
 
   else
 

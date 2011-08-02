@@ -153,7 +153,11 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
  * ID will only be set for development branches. */
 char *zMapGetDevelopmentIDString(void)
 {
-  return ZMAP_DEVELOPMENT_ID ;
+  char *dev_string = NULL ;
+
+  dev_string = zmapDevelopmentString() ;
+
+  return dev_string ;
 }
 
 
@@ -227,7 +231,20 @@ char *zMapGetWebSiteString(void)
  *  */
 char *zMapGetCommentsString(void)
 {
-  return ZMAP_COMMENTS_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
+  static char *comment_string = NULL ;
+
+  if (!comment_string)
+    comment_string = g_strdup_printf("(%s, compiled on %s)\n"
+				     "\n"
+				     "This application is part of the"
+				     " ZMap genome viewer/annotation package originally written by\n"
+				     "    Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,\n"
+				     "    Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk),\n" 
+				     "    Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n",
+				     zMapGetAppTitle(),
+				     zmapCompileString()) ;
+
+  return comment_string ;
 }
 
 /*!
