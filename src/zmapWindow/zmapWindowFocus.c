@@ -224,16 +224,19 @@ void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMap
 /* Same remark applies to this routine as to zmapWindowFocusAddItem() */
 void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot, ZMapWindowFocusType type)
 {
-  FooCanvasItem *first = NULL;
+  gboolean first;
   FooCanvasItem *foo;
 
-  if (list)
-    first = FOO_CANVAS_ITEM (list->data);
+#warning this is the wrong type but we are testing for non zero... check hot item code as well
+  first = list && list->data;
 
   for (; list ; list = list->next)
     {
-      foo = FOO_CANVAS_ITEM(list->data);
-      add_unique(focus,foo,NULL,type);
+    	ID2Canvas id2c;
+
+      id2c = (ID2Canvas) list->data;
+      foo = FOO_CANVAS_ITEM(id2c->item);
+      add_unique(focus,foo,(ZMapFeature) id2c->feature_any,type);
     }
 
   if (hot && !focus->hot_item && first && type == WINDOW_FOCUS_GROUP_FOCUS)
@@ -344,6 +347,7 @@ GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusTy
   GList *lists = NULL, *items = NULL;
   ZMapWindowFocusItem list = NULL;
   int mask = focus_group_mask[type];
+  ID2Canvas id2c;
 
   if (focus->focus_item_set)
     {
@@ -352,7 +356,14 @@ GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusTy
         {
           list = (ZMapWindowFocusItem)(lists->data);
           if((list->flags & mask))
-            items = g_list_append(items, list->item);
+          {
+          	/* for compatability with FToI search functions we must return this struct, NB no hash table set */
+          	id2c = g_new0(ID2CanvasStruct,1);
+          	id2c->item = list->item;
+          	id2c->feature_any = (ZMapFeatureAny) list->feature;
+
+            items = g_list_append(items, id2c);
+          }
           lists = lists->next;
         }
     }

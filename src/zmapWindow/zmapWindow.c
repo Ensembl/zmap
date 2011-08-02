@@ -4711,7 +4711,9 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 /* Checks to see if current item has coords outside of current min/max. */
 static void getMaxBounds(gpointer data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ID2Canvas id2c = (ID2Canvas) data;
+  FooCanvasItem *item = (FooCanvasItem *)id2c->item ;
+#warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
   MaxBounds max_bounds = (MaxBounds)user_data ;
   double rootx1, rootx2, rooty1, rooty2 ;
 
@@ -5005,6 +5007,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)) && (length = g_list_length(selected)))
     {
       GString *text ;
+      ID2Canvas id2c;
       FooCanvasItem *item;
       ZMapWindowCanvasItem canvas_item;
       ZMapFeature item_feature ;
@@ -5014,12 +5017,14 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
       text = g_string_sized_new(512) ;
 
-      item = FOO_CANVAS_ITEM(selected->data) ;
+ 	id2c = (ID2Canvas) selected->data;
+      item = FOO_CANVAS_ITEM(id2c->item) ;
       if (ZMAP_IS_CANVAS_ITEM(item))
 	canvas_item = ZMAP_CANVAS_ITEM( item );
       else
 	canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
-      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+//      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+	item_feature = (ZMapFeature) id2c->feature_any;
 
       /* Processing is different if there is only one item highlighted and it's a transcript. */
       if (ZMAP_IS_CANVAS_ITEM(item) && length == 1
@@ -5058,12 +5063,14 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
 	  while (selected)
 	    {
-	      item = FOO_CANVAS_ITEM(selected->data) ;
+	 	id2c = (ID2Canvas) selected->data;
+      	item = FOO_CANVAS_ITEM(id2c->item) ;
 	      if (ZMAP_IS_CANVAS_ITEM(item))
 		canvas_item = ZMAP_CANVAS_ITEM( item );
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
-	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+//	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+		item_feature = (ZMapFeature) id2c->feature_any;
 
 	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item)))
 		{

@@ -124,6 +124,7 @@ static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem   assem
 						    ZMapFeature			feature,
 						    ZMapFeatureSubPartSpan sub_feature,
 						    ZMapStyleColourType    colour_type,
+						    int	colour_flags,
 						    GdkColor              *default_fill,
                                         GdkColor              *border)
 {

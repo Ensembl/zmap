@@ -1664,7 +1664,10 @@ static void getAllMatches(ZMapWindow window,
 /* GFunc() to create a tagvalue item for the supplied alignment feature. */
 static void addTagValue(gpointer data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ID2Canvas id2c = (ID2Canvas) data;
+  FooCanvasItem *item = (FooCanvasItem *) id2c->item ;
+#warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
+
   AddPara para_data = (AddPara)user_data ;
   ZMapGuiNotebookParagraph paragraph = para_data->paragraph ;
   ZMapFeature feature ;
@@ -1675,7 +1678,7 @@ static void addTagValue(gpointer data, gpointer user_data)
   int display_start, display_end ;
 
 
-  feature = getFeature(item) ;
+  feature = (ZMapFeature)  id2c->feature_any;	// getFeature(item) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

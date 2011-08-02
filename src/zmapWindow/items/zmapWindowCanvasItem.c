@@ -762,9 +762,17 @@ gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, dou
 	gboolean ret = FALSE;
 
 	if(class->set_feature)
-		ret = class->set_feature(item,x,y);
+		ret = class->set_feature((FooCanvasItem *) item,x,y);
 
 	return ret;
+}
+
+
+/* a pointless function created due to scope issues */
+gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature)
+{
+	item->feature = feature;
+	return(TRUE);
 }
 
 

@@ -645,10 +645,6 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-if(featureset->original_id == g_quark_to_string("hexExon"))
-printf("visible? %s  %d %d\n",g_quark_to_string(featureset->unique_id),
-	zmapWindowContainerHasFeatures(container),
-	zmapWindowContainerFeatureSetShowWhenEmpty(featureset));
 
   if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
     {
@@ -1278,10 +1274,12 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
       while (blocks)                 /* I cant bear to create ANOTHER struct! */
 	{
 	  ZMapFeatureBlock feature_block = NULL ;
+	  ID2Canvas id2c;
 
 	  int first, last, i ;
 
-	  feature_block = zmapWindowItemGetFeatureBlock(blocks->data) ;
+	  id2c = (ID2Canvas) blocks->data;
+	  feature_block = (ZMapFeatureBlock) id2c->feature_any;	//zmapWindowItemGetFeatureBlock(blocks->data) ;
 
 	  if (g_ascii_strcasecmp(name, ZMAP_FIXED_STYLE_3FT_NAME) == 0)
 	    {

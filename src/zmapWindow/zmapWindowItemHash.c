@@ -70,19 +70,6 @@ typedef struct
 } ChildSearchStruct, *ChildSearch ;
 
 
-/* We store ids with the group or item that represents them in the canvas.
- * May want to consider more efficient way of storing these than malloc... */
-typedef struct
-{
-  FooCanvasItem *item ;					    /* could be group or item. */
-  GHashTable *hash_table ;
-
-  ZMapFeatureAny feature;
-  	/* direct link to feature instead if via item */
-  	/* need if we have composite items eg density plots */
-} ID2CanvasStruct, *ID2Canvas ;
-
-
 
 /* forward declaration, needed for function prototype. */
 typedef struct ItemSearchStruct_ *ItemSearch ;
@@ -440,7 +427,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
           ID2C = g_new0(ID2CanvasStruct, 1) ;
           ID2C->item = feature_item ;
           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-          ID2C->feature = (ZMapFeatureAny) item_feature_obj;
+          ID2C->feature_any = (ZMapFeatureAny) item_feature_obj;
 
           g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
         }
@@ -1342,9 +1329,9 @@ printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id)
       if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
 						    GUINT_TO_POINTER(curr_search_id))))
 	{
-	  if (!curr_search->pred_func || curr_search->pred_func(item_id->item, curr_search->user_data))
+	  if (!curr_search->pred_func || curr_search->pred_func(item_id->feature_any, curr_search->user_data))
 	  {
-          results = g_list_append(results, item_id->item) ;
+          results = g_list_append(results, item_id); //->item) ;
 #if MH17_SEARCH_DEBUG
       printf("added: exact %s, %p\n",g_quark_to_string(curr_search->search_quark), item_id->item);
 #endif
@@ -1430,9 +1417,9 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
   if (curr_search->is_reg_exp && filterOnRegExp(curr_search, key)
       && (!(curr_search->pred_func)
 	  || (curr_search->pred_func
-	      && curr_search->pred_func(hash_item->item, curr_search->user_data))))
+	      && curr_search->pred_func(hash_item->feature_any, curr_search->user_data))))
   {
-      *results = g_list_append(*results, hash_item->item) ;
+      *results = g_list_append(*results, hash_item); // ->item) ;
 
 #if MH17_SEARCH_DEBUG
       printf("added: %d %s, %s %p\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)),hash_item->item);

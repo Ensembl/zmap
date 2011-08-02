@@ -1,4 +1,7 @@
 <h2>Density plots</h2>
+<p>
+<b>A caveat</b>: this page started of as design ideas and developed into implementation notes which evolved as requirements and technical obscurities became clearer, so be skeptical af what you read here.  It's mostly true but pedantry cannot be acheived.  Later on the density code gets to be used as a basis for the <a href="Design/notes/new_model_canvas.shtml">new-model-canvas</a>.
+</p>
 
 <fieldset><legend>Motivation</legend>
 <h3> Summary data</h3>
@@ -41,21 +44,23 @@ Typically the density scale will be chosen as logarithmic.
 <p>Whether or not to produce a density plot will be determined by a column's style using some new parameters.
 A new mode (density) will be introduced which is automatically a graph mode display but allows bins to be combined.
 Density mode styles will trigger base features being re-processed into display data structures based on pixel boundaries.
-</p>
-<h4>Handling multiple featuresets</h4>
-<p>Each graph is explicitly linked to a column and th etype of graph specified by a style.
-If multiple featuresets appear in a density column and they have the same style they will be combined into the same density display. If they are configured with different styles then a separate density display will be created for each.  Note thta this mainly make sense for wiggle (line) plots as histograms and heatmaps will just overlap and hide each other. Combining boxes an lines may be possible but it will be necessary to force lines to be painted on top - this can be done by ordering the density canvas items in the column.
+Multiple featuresets may be displayed in a single column and each one will produce its own graphical display and the styles should be defined to ensure clarity - heatmaps and histograms do not overlap well but wiggle plots may.
 </p>
 
 <h3>Configuration</h3>
 <p>
+An example:
 <pre>
 [density-plot]
-mode=density
 graph-mode = heatmap | histogram | line  # default = heatmap
 graph-scale = log | linear        # default = log
 colours = normal fill border # default = fill white; border black
 # frame-colours are also possible according to frame mode
+mode=graph
+graph-density=true
+graph-density-min-bin=2
+graph_scale=log
+
 </pre>
 For a heatmap the colours used will be calculated according to the scale and between the fill and border colours, with border being the maximum density.
 </p>
@@ -92,13 +97,13 @@ Note that min-score and max-score define the number of steps in the display and 
 <ul>
 <li>This item will cover the whole extent of the column, ie it will range from start to end coordinate of its parent, and will set the width of the column as the width of the widest bin.
 <li>It will be added transparently from the Item Factory when a source bin item is added to the canvas.
-<li>Each source bin item added will be added to a data structure (a list) held by the density item but not added to the canvas directly.
-<li>The FToIHash will point to the real canvas item, for each source bin added (a many to one relationship)
-<li>On draw or zoom the density item will calculate a list of display bins, which will be based on pixel boundaries and may hold several source bins depending on zoom.  Initially we will use a simple GList for both the source and display bins, and if perfomance is an issue add on one or more layers of skip list to allow efficient lookup.  Note that each list is initially a GList, but the code will be written in such a way as to allow easy modification of this.
+<li>Each source bin item added will be added to a data structure (a skip-list) held by the density item but not added to the canvas directly.
+<li>The FToIHash will point to the real canvas item, for each source bin added (a many to one relationship) and will also have a pointer to the orignal feature (a 1-1 mapping)
+<li>On draw or zoom the density item will calculate a list of display bins, which will be based on pixel boundaries and may hold several source bins depending on zoom.
 <li>It will draw any section of the plot on expose, driving the GDK_Draw function from its internal display list.
-<li> For a wiggle plot a single GDK_PolyLine call will be used - there cannot be more than 1200 lines for this on current monitors.
+<li> For a wiggle plot a single GDK_PolyLine call will be used - there cannot be more than 1200 lines for this on current monitors, but the number of segment will be set to some abritatry limit.
 <li>For histograms and heatmaps rectangles will be drawn for each bin.
-<li>mouse and keyboard events will be handled and the relevant display or source bin used to extract the relevant information and respond as for individual features at present.
+<li>mouse and keyboard events will be handled and the relevant display or source bin used to extract meta information and respond as for individual features at present.
 </ul>
 </p>
 
@@ -118,7 +123,7 @@ What needs to happen:
 <li> on expose draw a series of poly lines OTF or rectangles from the bins data for the exposed region
 <li> catch mouse click on column: show info on status bar: look up bin from canvas item...
 <li> catch double click: show feature dialog ?
-<li> patch feature serach to avoid density columns
+<li> patch feature search to handle density columns
 <li> resolve canvas_item->feature references
 </ul>
 </p>
@@ -173,7 +178,7 @@ Glyphs also get run thro' basic feature, which is odd.
 <p>Using the styles density flag as above we choose whether to call zmapWindowCanvasItemCreate or not.
 Having obtained out singleton data structure we add our graph iten to the source bins list.
 </p>
-<h5>Displaying data - making assumptions<h5>
+<h5>Displaying data - making assumptions</h5>
 <p>A coverage display is implicitly non overlapping,; if we wish to display overlapping data the we wi8ll use two different styles which will cause two different density displays to exist.  This allows an optimisation when looking up display data on expose - we can search on start coordinate and look at the previous item to see if it overlaps the exposed region.
 </p>
 <p>It is intended to replace normal graphs with the density module (which will operate in the same way but without re-calculating bins on zoom), and in this case it is possible we may have to handle overlapping data. This can be done automatically (no configuration needed) by remembering the longest item to display and offset search coordinates by this amount. As features are expected to be small this will be efficient enough - we simply scan a sorted linked list.  Taking a hypothetical worst case this is unlikely to be time consuming.
@@ -211,7 +216,7 @@ If necessary we can create display indexes for long and short items to provide a
 * display as lines not boxes -> combine data points into a poly_line
 * display as heatmap: boxes are full width and colour coded; ok with irregular size bins?
 * handle mouse clicks etc, point and bounds
-  handle long items (trivial? -> no: need to clip)
+  handle long items (trivial?.. ignored without mishap)
   handle hide and show
 * re-bucket on display and zoom
 * get some timing stats
@@ -247,16 +252,16 @@ This list of items is then added to the focus list en-masse and if this is deriv
 </p>
 
 <p>
-There is a further problem to solve of finding a feature from a feature id; previously this has been done by finding the corresponding canvas item which has a pointer back to the feature.  Focus code could be extended to store start, end coordinates of features (via the feature itself) and this can be used to look up the feature in the density items skip list.
+There is a further problem to solve of finding a feature from a feature id; previously this has been done by finding the corresponding canvas item which has a pointer back to the feature.  <i>Next sentence not followed</i>Focus code could be extended to store start, end coordinates of features (via the feature itself) and this can be used to look up the feature in the density items skip list.
 </p>
 
-<p>Focus items a) have to be highlit and b) the highlight must persist until removed.  Taking into account that density items (and normal graphs) do not overlap we can implement this with a simple flag in the graph segment data structure and just display a different colour.
+<p>Focus items a) have to be highlit and b) the highlight must persist until removed.  Taking into account that density items (and normal graphs) do not overlap we can implement this with a simple flag in the graph segment data structure and just display a different colour, which is stroed in the column wide extenced foo canvas (density) item.
 </p>
-<p>To handle overlapped items (eg alignments) it will be necessary to post-process focus items and display them after the others - perhaps the logical way to of this is to display focus itesm at the end of every expose event, but thta is outside the scope of this module.
+<p>To handle overlapped items (eg alignments) it will be necessary to post-process focus items and display them after the others - perhaps the logical way to of this is to display focus itesm at the end of every expose event, but that is outside the scope of this module.
 </p>
 <p>Note that focus code highlights features using a given colour not necessarily the features' style's SELECTED colour if a window default has been set.  This default can alternatively be set using the root style.  The interface is via a ZMapWindowCanvasItem function (set_colour) and for density items we will need to patch into this.  Focus code works using a set of flags for different groups of focus items (eg selected, evidence) and  we can store these flags in the graph-density item struct for each feature which will allow us to implement all optional colours, storing these in the global graph density struct.  Note that for density items we only need to handle 'selected' but implementing this interface now will allow other data types with more display options (eg masked alignments) to be implemented easily.
 </p>
-<p>Unfortunately due to scope issues it is not possible to use focus code to get colours, and the canvas item class interface is a bit convoluted, so to keep thing simple we will store a limited number of alternate colours directly int rh grah density item struct and choose these according to a flag.  This will limit density items to being normal colour or selected (as defined by the focus code) only.
+<p>Unfortunately due to scope issues it is not possible to use focus code to get colours, and the canvas item class interface is a bit convoluted, so to keep thing simple we will store a limited number of alternate colours directly in the graph density item struct and choose these according to a flag.  This will limit density items to being normal colour or selected (as defined by the focus code) only.
 </p>
 
 
@@ -266,11 +271,15 @@ There is a further problem to solve of finding a feature from a feature id; prev
 </p>
 <p>In the longer term we need to modify the interface to return feature as well as foo item.
 </p>
+<p><i>Feature search has been made to work with density items - FToI search returns a list of FToIHash data structures instead of canvas items. These contain a reference to the feature as well as the canvas item.</i>
+</p>
 
 </fieldset>
 
 <fieldset><legend>Implementing low-zoom triggered density plots in ZMap</legend>
 <h4>(under construction)</h4>
+<p><i>These are earlier thoughts now abandoned</i> The idea was to improve perfomance by switching to coverage, but htis looses information (eg alignment score).
+</p>
 <p>
 A separate style will be added for optional density mode displays and each normal feature's style will refer to this (in a later implementation).
 </p>

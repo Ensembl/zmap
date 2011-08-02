@@ -181,6 +181,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   return result ;
 }
 
+#if 0
 GList *zmapWindowItemListToFeatureList(GList *item_list)
 {
   GList *feature_list = NULL;
@@ -191,6 +192,39 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
 }
 
 
+static void extract_feature_from_item(gpointer list_data, gpointer user_data)
+{
+  GList **list = (GList **)user_data;
+  FooCanvasItem *item = (FooCanvasItem *)list_data;
+  ZMapFeature feature;
+
+  if((feature = zmapWindowItemGetFeature(item)))
+    {
+      *list = g_list_append(*list, feature);
+    }
+  else
+    zMapAssertNotReached();
+
+  return ;
+}
+#else
+/* function is called from 2 places only, may be good to make callers use the id2c list directly
+   this is a quick mod to preserve the existing interface */
+
+GList *zmapWindowItemListToFeatureList(GList *item_list)
+{
+  GList *feature_list = NULL;
+  ID2Canvas id2c;
+
+  for(;item_list;item_list = item_list->next)
+  {
+  	id2c = (ID2Canvas) item_list->data;
+  	feature_list = g_list_append(feature_list,(gpointer) id2c->feature_any);
+  }
+
+  return feature_list;
+}
+#endif
 
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item)
 {
@@ -299,7 +333,6 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	      zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#warning TEMP_BODGE not needed as this is alignments only
 	    zmapWindowFocusAddItems(window->focus, set_items, item) ; // item is the hot one
 
 	    g_list_free(set_items) ;
@@ -2132,21 +2165,6 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
 
 
-static void extract_feature_from_item(gpointer list_data, gpointer user_data)
-{
-  GList **list = (GList **)user_data;
-  FooCanvasItem *item = (FooCanvasItem *)list_data;
-  ZMapFeature feature;
-
-  if((feature = zmapWindowItemGetFeature(item)))
-    {
-      *list = g_list_append(*list, feature);
-    }
-  else
-    zMapAssertNotReached();
-
-  return ;
-}
 
 
 /* Get the visible portion of the canvas. */

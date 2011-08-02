@@ -360,7 +360,8 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
 
             if(g_list_length(focus_items) == 1)
             {
-              zmapWindowMarkSetItem(window->mark, focus_items->data);
+              ID2Canvas id2c = (ID2Canvas) focus_items->data;
+              zmapWindowMarkSetItem(window->mark, id2c->item);
             }
             else
             {

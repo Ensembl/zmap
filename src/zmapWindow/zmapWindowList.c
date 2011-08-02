@@ -710,10 +710,13 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 
             for(;items;items = items->next)
             {
-                  FooCanvasItem *feature_item = (FooCanvasItem *) items->data;
+            	ID2Canvas id2c = (ID2Canvas) items->data;
+                  FooCanvasItem *feature_item = (FooCanvasItem *) id2c->item;
 
                  /* they want to see it so remove the mask */
-                  feature = zmapWindowItemGetFeature(feature_item);
+//                  feature = zmapWindowItemGetFeature(feature_item);
+                  feature = (ZMapFeature) id2c->feature_any;
+
                   feature->feature.homol.flags.masked = FALSE;
 
 /* MH17:

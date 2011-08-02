@@ -176,8 +176,24 @@ typedef struct
   (ZMapWindowStatsAlign)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 
 
+
+/* the FtoIHash, search now returns these not the items */
+/* We store ids with the group or item that represents them in the canvas.
+ * May want to consider more efficient way of storing these than malloc... */
+typedef struct
+{
+  FooCanvasItem *item ;					    /* could be group or item. */
+  GHashTable *hash_table ;
+
+  ZMapFeatureAny feature_any;
+  	/* direct link to feature instead if via item */
+  	/* need if we have composite items eg density plots */
+} ID2CanvasStruct, *ID2Canvas ;
+
+
 /* Callback for use in testing item hash objects to see if they fit a particular predicate. */
-typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
+/* mh17: NOTE changed to take featre rather than item, the FToIHash now has both */
+typedef gboolean (*ZMapWindowFToIPredFuncCB) (ZMapFeatureAny feature_any, gpointer user_data) ;
 
 typedef struct
 {
