@@ -4285,6 +4285,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_A:
       {
 	ZMapWindowAlignSetType requested_homol_set ;
+	FooCanvasItem *focus_item  ;
+
+	/* User just pressed a key so pass in focus item if there is one. */
+	focus_item = zmapWindowFocusGetHotItem(window->focus) ;
 
 	if (key_event->state & GDK_CONTROL_MASK)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
@@ -4293,7 +4297,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	zmapWindowCallBlixem(window, NULL, requested_homol_set, NULL, NULL, 0.0, 0.0) ;
+	zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, NULL, 0.0, 0.0) ;
 
 	break ;
       }
