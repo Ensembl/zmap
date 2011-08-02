@@ -174,8 +174,7 @@ _checkout_message_out "Start of checkout script (created by build_bootstrap)."
 TODAY=`date +"%a %b %e %Y"`
 _checkout_message_out "Today is $TODAY"
 
-_checkout_message_out "Args to script are: $*"
-
+_checkout_message_out "About to parse options: $*"
 
 # Get the options the user may have requested
 usage="$0 -b <branch> -f <zmap directory>"
@@ -186,6 +185,9 @@ while getopts ":b:f:" opt ; do
 	\? ) zmap_message_rm_exit "$usage"
     esac
 done
+
+_checkout_message_out "Options after parsing: $*"
+
 
 _checkout_message_out "Branch is set to $BRANCH"
 
