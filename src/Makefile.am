@@ -243,10 +243,17 @@ char *zmapCompileString(void)                       \
 
 #RECURSIVE_TARGETS = build-version-file $(RECURSIVE_TARGETS)
 
-
+#
+# AGH...we hack the makefile produced by automake by overriding it's version of
+# the all and dist targets with our own which include the build-version_file
+# target.
+#
 all: config.h build-version-file
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
+dist dist-all: build-version-file distdir
+	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	$(am__remove_distdir)
 
 
 forcemake:
