@@ -196,6 +196,8 @@ while getopts ":b:f:" opt ; do
     esac
 done
 
+_checkout_message_out "Branch is $BRANCH"
+
 
 save_root=$(pwd)
 
@@ -232,7 +234,6 @@ if [ "x$gen_checkout_script" != "x" ]; then
     # clone the zmap repository and switch to named branch.
     _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
     git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
-
 
 #    _checkout_message_out "Forcing branch to 'production'"
 #    BRANCH='production'
