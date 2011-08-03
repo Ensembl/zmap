@@ -222,13 +222,6 @@ if [ "x$gen_checkout_script" != "x" ]; then
 
   if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" == "x" ]; then
 
-    # Need -P prune flag to ensure we don't get a load of old empty directories.
-#    _checkout_message_out "Running cvs checkout $CVS_MODULE"
-#    cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
-#    MASTER_SRC_DIR=$CVS_MODULE.master
-#
-#    _checkout_message_out "done a cvs checkout"
-
     MASTER_SRC_DIR=$CVS_MODULE.master
 
     # clone the zmap repository and switch to named branch.
@@ -415,7 +408,6 @@ if [ -n "$GIT_VERSION_INFO" ] ; then
 
     GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
 
-    zmap_message_out "Setting zmap version to $ZMAP_RELEASE_VERSION."
     ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
 
 else
@@ -428,6 +420,7 @@ else
 
 fi
 
+zmap_message_out "Set zmap version to $ZMAP_RELEASE_VERSION."
 
 
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
