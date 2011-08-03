@@ -131,11 +131,13 @@ my $PROGNAME = basename($0) ;
 
     if ( $DEVELOP_REL )
       {
+      $VERSION_FILE = 'src/zmapUtils/zmapVersion.c';
       $VERSION_STR  = $DEVELOP_STR ;
       $PREPROC_VARS = $DEV_PREPROC_VARS ;
       }
     else
       {
+      $VERSION_FILE = 'src/zmapUtils/zmapUtils_P.h';
       $VERSION_STR  = $RELEASE_STR ;
       $PREPROC_VARS = $RELEASE_PREPROC_VARS ;
       }
@@ -166,6 +168,11 @@ my $PROGNAME = basename($0) ;
 
 
     print "$cvs_tag\n" ;
+
+
+
+    # Tagging is deliberately disabled until we have worked out our new system
+    # using git flow....
     exit 0 ;
 
 
