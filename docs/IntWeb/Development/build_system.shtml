@@ -915,29 +915,29 @@ Local Version is now RELEASE_1-1-4, previous version in /nfs/team71/acedb/edgrif
 
 <p>The code version built into the zmap executable needs to be updated not only
 every time the offical version number is incremented but also for development
-versions every time the git checksum changes. This checksum will be different
+versions every time the git checksum changes because we use this checksum
+to identify different builds. This checksum will be different
 for developers working on different code branches and at different stages of
 development on the same branch. We employ the following method to avoid having
 these latter changes constantly checked into the zmap repository:</p>
 
 
-<p><b>src/Makefile.am</b> contains a custom 'build-version-file' target that creates a
+<p><b>src/Makefile.am</b> contains our own 'build-version-file' target that creates a
 source file (src/zmapUtils/zmapVersion.c) and ensures that file is compiled for
-every make, this updates the version string with the git checksum id but also
-stores the new compile date. Thus this file does not need to be in the repository.</p>
+every make. During creation the version string is updated with the git checksum id but also
+updates the make compile time. Because make generates this file it does not
+need to be in the repository. (NOTE that making 'build-version-file' a dependency
+of targets like 'all' and 'dist' is not straight forward and is documented in
+src/Makefile.am where 'build-version-file' is specified.)</p>
 
 
-<p><b>src/zmapUtils/Makefile.am</b> specifies src/zmapUtils/zmapVersion.c as a build target
-to make sure it gets built, is included in the dependency lists etc.</p>
+<p><b>src/zmapUtils/Makefile.am</b> specifies src/zmapUtils/zmapVersion.c as a source
+file that should be included in the build, this makes sure it gets compiled and
+linked and is included in the dependency lists etc.</p>
 
 
 <p><b>src/zmapUtils/zmapUtils.c</b> functions have been slightly rewritten to make use
 of the functions in src/zmapUtils/zmapVersion.c to get the version string and compile time.</p>
-
-
-
-
-
 
 
 <!--#include virtual="/perl/footer"-->
