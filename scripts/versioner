@@ -111,6 +111,7 @@ my $PROGNAME = basename($0) ;
 	       'tag'     => \$do_tag,
                'quiet'   => \$QUIET,
                'V'       => \$version_only,
+               'dev'     => \$DEVELOP_REL,
                'help'    => $usage,
                ) or $usage->();
     $usage->() unless $VERSION_FILE;
@@ -121,12 +122,12 @@ my $PROGNAME = basename($0) ;
 
     my $header = find_file(checkout_dir(), $VERSION_FILE);
 
-    my @matching = grep { /#define ZMAP_DEVELOPMENT_ID NULL/ } `cat $header` ;
+    #my @matching = grep { /#define ZMAP_DEVELOPMENT_ID NULL/ } `cat $header` ;
 
-    if ( ! scalar @matching )
-      {
-      $DEVELOP_REL = 1 ;
-      }
+    #if ( ! scalar @matching )
+    #  {
+    #  $DEVELOP_REL = 1 ;
+    #  }
 
 
     if ( $DEVELOP_REL )
