@@ -328,8 +328,14 @@ summarised in the following table:</p>
   </tr>
   <tr>
     <td>zmap_build_release.sh</td>
-    <td>release_NNNN</td>
-    <td>Produce a release build with repository tagging, full docs etc.</td>
+    <td>release</td>
+    <td>Produce a release build for testing/fixing prior to making a production build.</td>
+    <td>Preparation</td>
+  </tr>
+  <tr>
+    <td>zmap_build_production.sh</td>
+    <td>production</td>
+    <td>Produce a production build with repository tagging, full docs etc.</td>
     <td>Yes</td>
   </tr>
 </table>
@@ -347,20 +353,37 @@ the following to make a development build:</p>
 &gt; ./zmap_update_run ./zmap_build_development.sh
 </pre>
 
-<p>Once the build has finished the results will be in ~zmap/BUILDS/DEVELOPMENT</p>
+<p>Once the build has finished the results will be in ~zmap/BUILDS/DEVELOPMENT_BUILDS</p>
 
 
 
 
 <h3>"Release" Builds</h2>
 
-<p>Each time we build a new release of zmap we tag the release so we can
-recreate the code from git at any time. We also update the version number held
-in the code itself so that all the next development session takes place with
-this new code version number for bug reporting etc.</p>
+<p>The release build is branch from develop, it's made when we think are ready
+for a new release of zmap. Release branches must only have bug fixes made in
+them. Once complete they are merged into production and back into develop (to
+ensure bug fixes get into develop !). Once this is done the release branch
+can be deleted.</p>
 
-<p>And we also create a set of release notes which need to be hand editted
-afterwards, they live in ZMap/doc/IntWeb/Release_notes.</p>
+<pre>
+&gt; ./zmap_update_run ./zmap_build_release.sh
+</pre>
+
+<p>Once the build has finished the results will be in ~zmap/BUILDS/RELEASE_BUILDS</p>
+
+
+<h3>"Production" Builds</h2>
+
+<p>Production builds are made after a release branch has been merged into production
+and the production branch has been tagged. The build includes release notes.</p>
+
+<pre>
+&gt; ./zmap_update_run ./zmap_build_production.sh
+</pre>
+
+<p>Once the build has finished the results will be in ~zmap/BUILDS/PRODUCTION_BUILDS</p>
+
 
 
 <h3>Using particular dependency Versions</h2>
