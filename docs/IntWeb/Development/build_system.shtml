@@ -949,9 +949,18 @@ these latter changes constantly checked into the zmap repository:</p>
 source file (src/zmapUtils/zmapVersion.c) and ensures that file is compiled for
 every make. During creation the version string is updated with the git checksum id but also
 updates the make compile time. Because make generates this file it does not
-need to be in the repository. (NOTE that making 'build-version-file' a dependency
+need to be in the repository.</p>
+
+<p>NOTE that making 'build-version-file' a dependency
 of targets like 'all' and 'dist' is not straight forward and is documented in
-src/Makefile.am where 'build-version-file' is specified.)</p>
+src/Makefile.am where 'build-version-file' is specified. You will see warnings like
+these:</p>
+
+<pre>
+make -k 
+Makefile:1292: warning: overriding commands for target `all'
+Makefile:533: warning: ignoring old commands for target `all'
+</pre>
 
 
 <p><b>src/zmapUtils/Makefile.am</b> specifies src/zmapUtils/zmapVersion.c as a source
