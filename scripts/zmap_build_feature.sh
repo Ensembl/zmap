@@ -28,10 +28,10 @@ fi
 
 
 BUILD_PREFIX='FEATURE'
-ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
+#ERROR_ID='edgrif@sanger.ac.uk'
+ERROR_ID=''
 
-
-./build_run.sh -a $ERROR_RECIPIENT -d -i $SRC_DIR -o $DEST_DIR -g $BUILD_PREFIX || RC=1
+./build_run.sh $ERROR_ID -d -i $SRC_DIR -o $DEST_DIR -g $BUILD_PREFIX || RC=1
 
 
 exit $RC
