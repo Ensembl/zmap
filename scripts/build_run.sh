@@ -102,6 +102,7 @@ message_out "ZMap Build Started: $*"
 
 
 
+
 # Do args.
 #
 usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -t -r -u ]   <build prefix>"
@@ -263,6 +264,7 @@ if [ -z "$CRON" ] ; then
     message_out "==================="
 
 fi
+
 
 
 # If not run as cron then give user a chance to cancel, must be before we
