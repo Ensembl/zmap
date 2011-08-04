@@ -170,26 +170,43 @@ typedef struct ZMapRemoteControlStructName
   /* Our callers "name", good for debug messages. */
   char *app_id ;
 
+  gboolean show_all_events ;				    /* If TRUE then print to stderr all
+							       events for our main window. */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* NOT NEEDED NOW I THINK.... */
   /* This is the widget which we attach all properties to. */
   GtkWidget *our_widget ;
   GdkNativeWindow our_window ;				    /* Cache this as it's a pain to derive
 							       from widget. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  gboolean show_all_events ;				    /* If TRUE then print to stderr all
-							       events for our main window. */
 
   /* Atoms for communication. */
 
+  /* Our 'init' atom, this is the atom the client must first take ownership
+   * of to initiate any type of request. */
+  GdkAtom our_init_atom ;
+  char *our_init_atom_string ;				    /* Cached because it's a pain to get the string. */
+  GtkClipboard *our_init_clipboard ;
+
+
   /* Our atom for receiving requests and responses from other peers, stays the same for
    * the life of this control struct. */
-  GdkAtom our_atom ;
-  char *our_atom_string ;				    /* Cached because it's a pain to get the string. */
+  GdkAtom our_request_atom ;
+  char *our_request_atom_string ;			    /* Cached because it's a pain to get the string. */
+  GtkClipboard *our_request_clipboard ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* NOT NEEDED NOW I THINK */
   GdkAtom data_format_atom ;				    /* Still needed ???? */
   gint data_format_bits ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  GtkClipboard *our_clipboard ;
+
+
 
 
 

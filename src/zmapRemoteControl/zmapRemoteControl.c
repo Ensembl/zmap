@@ -178,9 +178,9 @@ static GdkEventMask msg_exclude_mask_G = (GDK_POINTER_MOTION_MASK | GDK_EXPOSURE
 
 
 /* Data types we support for the properties....only text ! */
-#define TARGET_ID = 111111 ;
-#define TARGET_NUM = 1 ;
-static struct GtkTargetEntry clipboard_target_G[TARGET_NUM] = {{ZMAP_ANNOTATION_DATA_TYPE, 0, TARGET_ID}} ;
+#define TARGET_ID 111111
+#define TARGET_NUM 1
+static GtkTargetEntry clipboard_target_G[TARGET_NUM] = {{ZMAP_ANNOTATION_DATA_TYPE, 0, TARGET_ID}} ;
 
 
 
@@ -599,7 +599,7 @@ static gboolean resetToReady(ZMapRemoteControl remote_control)
 
   if (!(result = gtk_clipboard_set_with_data(remote_control->our_clipboard,
 					     clipboard_target_G,
-					     target_num_G,
+					     TARGET_NUM,
 					     NULL,
 					     clearClipboardAfterWaitingCB,
 					     remote_control)))
@@ -639,7 +639,7 @@ static void sendClipboardDataCB(GtkClipboard *clipboard, GtkSelectionData *selec
   target_atom = gtk_selection_data_get_target(selection_data) ;
   target_name = gdk_atom_name(target_atom) ;
 
-  if (info != target_id_G)
+  if (info != TARGET_ID)
     {
       REMOTELOGMSG(client_request->remote_control, "Unsupported Data Type requested: %s.", target_name) ;
     }

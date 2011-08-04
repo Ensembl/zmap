@@ -64,6 +64,7 @@ pkgconfig_DATA = zmap.pc
 # Libraries (These are libtool convenience libraries)
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libzmapfoocanvas.la libPFetch.la
+#noinst_LTLIBRARIES = libZMapThr.la libZMapXML.la libZMapApp.la libZMap.la libzmapfoocanvas.la libPFetch.la
 
 libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la

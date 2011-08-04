@@ -41,6 +41,64 @@
 #endif
 
 
+
+
+/* I'd like to do this but we aren't quite ready.............. */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ZMAP_ASSERT_DISABLE
+
+#define zMapAssert(expr)                do { (void) 0; } while (0)
+
+#else /* !ZMAP_ASSERT_DISABLE */
+
+#define zMapAssert(expr) \
+        do \
+	  { \
+	    if G_LIKELY (expr) \
+	      ;								\
+	    else							\
+	      { \
+		char *file ;			\
+									\
+		file = g_strdup_printf("%s - %s", zMapGetAppVersionString(), __FILE__) ; \
+		g_assertion_message_expr (G_LOG_DOMAIN, file, __LINE__, G_STRFUNC, \
+					  #expr); \
+	      } \
+	  } while (0)
+
+#endif /* !ZMAP_ASSERT_DISABLE */
+
+
+
+#ifdef ZMAP_ASSERT_DISABLE
+
+#define zMapAssertNotReached()          do { (void) 0; } while (0)
+
+#else /* !ZMAP_ASSERT_DISABLE */
+
+#define zMapAssertNotReached() \
+  do \
+    { \
+      char *file ; \
+                   \
+      file = g_strdup_printf("%s - %s", zMapGetAppVersionString(), __FILE__) ; \
+      g_assertion_message (G_LOG_DOMAIN, file, __LINE__, G_STRFUNC, NULL ) ; \
+    } while (0) 
+
+#endif /* !ZMAP_ASSERT_DISABLE */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* SI I'VE REVERTED TO THIS... */
+
+/* Define ZMAP_ASSERT_DISABLE before compiling to disable all asserts. */
+#ifdef ZMAP_ASSERT_DISABLE
+#define G_DISABLE_ASSERT
+#endif
+
+
 /* Usual assert() usage. */
 #define zMapAssert(EXPR)                              \
 g_assert((EXPR))
@@ -49,6 +107,8 @@ g_assert((EXPR))
 /* Put this in sections of code which should never be reached. */
 #define zMapAssertNotReached()                        \
 g_assert_not_reached()
+
+
 
 
 /* If this global is TRUE then debugging messages will be displayed. */

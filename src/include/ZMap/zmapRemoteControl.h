@@ -38,9 +38,17 @@
 #include <gtk/gtk.h>
 
 
-/* temporary while we are testing.... */
-#define ZMAP_REMOTE_ID "ZMAP_REMOTE_ID"
+/* temporary while we are testing....???? This needs to be advertised on a per zmap instance
+ * basis so naming is crucial...in practice one application will tell the other it's id, then
+ * the other can say hello and pass it's id over.... */
+#define ZMAP_REMOTE_ID "ZMAP_REMOTE_INIT_ID"
+
+
+
+
 #define TEST_REMOTE_ID "TEST_REMOTE_ID"
+
+
 
 
 #define ZMAP_ANNOTATION_DATA_TYPE   "ZMAP_ANNOTATION_STR"
