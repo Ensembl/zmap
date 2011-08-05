@@ -604,7 +604,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
           }
 
 
-        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col);
+        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col,view->context_map.columns);
 
         if(g_hash_table_size(fset_col))
 	  view->context_map.featureset_2_column = fset_col;
@@ -3215,7 +3215,8 @@ printf("\nview styles lists after merge:\n");
                         /* construct reverse mapping from column to featureset */
                         if(!g_list_find(column->featuresets,key))
                         {
-                              column->featuresets = g_list_prepend(column->featuresets,key);
+                        	/* NOTE this is an ordered list */
+                              column->featuresets = g_list_append(column->featuresets,key);
 //printf("adding %s to column %s\n", g_quark_to_string(GPOINTER_TO_UINT(key)), g_quark_to_string(column->unique_id));
                         }
                   }

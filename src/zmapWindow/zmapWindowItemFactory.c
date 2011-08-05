@@ -85,7 +85,7 @@ typedef struct _ZMapWindowFToIFactoryStruct
 typedef struct _RunSetStruct
 {
   ZMapWindowFToIFactory factory;
-  ZMapFeatureStack      feature_stack;
+  ZMapWindowFeatureStack      feature_stack;
   ZMapFrame             frame;
   FooCanvasGroup       *container;
   FooCanvasItem        *canvas_item;
@@ -166,7 +166,7 @@ static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBl
 					     gboolean *q_indel_gt_1);
 #endif
 static gboolean null_top_item_created(FooCanvasItem *top_item,
-                                      ZMapFeatureStack feature_stack,
+                                      ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data);
 static gboolean null_feature_size_request(ZMapFeature feature,
                                           double *limits_array,
@@ -263,7 +263,7 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
                                  ZMapFrame frame)
 {
   RunSetStruct run_data = {NULL};
-  ZMapFeatureStackStruct feature_stack;
+  ZMapWindowFeatureStackStruct feature_stack;
 
   run_data.factory = factory;
   /*
@@ -304,7 +304,7 @@ void getFactoriedCoordinates(ZMapWindowFToIFactory factory, int *y1, int *y2)
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 					      FooCanvasItem        *current_item,
                                               FooCanvasGroup       *parent_container,
-                                              ZMapFeatureStack     feature_stack)
+                                              ZMapWindowFeatureStack     feature_stack)
 {
   RunSetStruct run_data = {NULL};
   FooCanvasItem *item = NULL, *return_item = NULL;
@@ -2089,11 +2089,11 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 
 	if(style->mode_data.graph.scale == ZMAPSTYLE_GRAPH_SCALE_LOG)
 	{
-		if(numerator > 0)
-			numerator = log(numerator);
+		numerator++;	/* as log(1) is zero we need to bodge values of 1 to distingish from zero */
+					/* and as log(0) is big -ve number bias zero to come out as zero */
 
-		if(denominator > 0)
-			denominator = log(denominator) ;
+		numerator = log(numerator);
+		denominator = log(denominator) ;
 	}
 
 	if (denominator == 0)                         /* catch div by zero */
@@ -2115,17 +2115,20 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
       if(!run_data->feature_stack->id)
       {
             GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
-            char *x = g_strdup_printf("%s_%s", g_quark_to_string(col_id), g_quark_to_string(run_data->feature_stack->set->unique_id));
+            FooCanvasItem * foo = FOO_CANVAS_ITEM(fset);
+
+		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
+            char *x = g_strdup_printf("%p_%s_%s", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(run_data->feature_stack->set->unique_id));
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);
       }
 
-            /* adds once per column+style, then returns that repeatedly */
+            /* adds once per canvas+column+style, then returns that repeatedly */
             /* also adds an 'interval' foo canvas item which we need to look up */
       canvas_item = zMapWindowGraphDensityItemGetDensityItem(parent, run_data->feature_stack->id,
             block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
-            run_data->feature_stack->strand,run_data->feature_stack->frame);
+            run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
 
       zMapAssert(canvas_item);
       if(!canvas_item->feature)
@@ -2443,7 +2446,7 @@ static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
 }
 
 static gboolean null_top_item_created(FooCanvasItem *top_item,
-                                      ZMapFeatureStack feature_stack,
+                                      ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data)
 {
   return TRUE;

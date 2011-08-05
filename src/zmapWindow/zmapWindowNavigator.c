@@ -139,7 +139,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data);
 
 static gboolean factoryItemHandler(FooCanvasItem       *new_item,
-				   ZMapFeatureStack     feature_stack,
+				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data);
 
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
@@ -1551,7 +1551,7 @@ static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer dat
 }
 
 static gboolean factoryItemHandler(FooCanvasItem       *new_item,
-				   ZMapFeatureStack     feature_stack,
+				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data)
 {
   g_signal_connect(GTK_OBJECT(new_item), "event",

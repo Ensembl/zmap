@@ -111,6 +111,7 @@ typedef enum
     STYLE_PROP_BUMP_MODE,
     STYLE_PROP_BUMP_FIXED,
     STYLE_PROP_BUMP_SPACING,
+//    STYLE_PROP_BUMP_STYLE,		/* do later */
 
     STYLE_PROP_FRAME_MODE,
 
@@ -162,7 +163,9 @@ typedef enum
     STYLE_PROP_GRAPH_BASELINE,
     STYLE_PROP_GRAPH_SCALE,
     STYLE_PROP_GRAPH_DENSITY,
+    STYLE_PROP_GRAPH_DENSITY_FIXED,
     STYLE_PROP_GRAPH_DENSITY_MIN_BIN,
+    STYLE_PROP_GRAPH_DENSITY_STAGGER,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -226,6 +229,9 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE      "default-bump-mode"
 #define ZMAPSTYLE_PROPERTY_BUMP_FIXED             "bump-fixed"
 #define ZMAPSTYLE_PROPERTY_BUMP_SPACING           "bump-spacing"
+//#define ZMAPSTYLE_PROPERTY_BUMP_STYLE             "bump-style"	/* do later */
+
+
 /* ... score by width */
 #define ZMAPSTYLE_PROPERTY_WIDTH                  "width"
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
@@ -272,7 +278,9 @@ typedef enum
 /* graph properties. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY   "graph-density"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED   "graph-density-fixed"
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN   "graph-density-min-bin"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER   "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
@@ -615,7 +623,9 @@ typedef struct
   ZMapStyleGraphScale scale;        // log or linear
 
   int min_bin;				/* min size in pixels */
-  gboolean density;                 // density plot: recalc bins on zoom & use whole column foo
+  int stagger;
+  gboolean density;                 /* density plot: recalc bins on zoom & use whole column foo */
+  gboolean fixed;                   /* bins are at pxel boundraies not feature extents */
 
 
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
@@ -1081,7 +1091,9 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 #define zMapStyleBaseline(style)   (style->mode_data.graph.baseline)
 #define zMapStyleGraphMode(style)   (style->mode_data.graph.mode)
 #define zMapStyleDensity(style)   (style->mode_data.graph.density)
+#define zMapStyleDensityFixed(style)   (style->mode_data.graph.fixed)
 #define zMapStyleDensityMinBin(style)   (style->mode_data.graph.min_bin)
+#define zMapStyleDensityStagger(style)   (style->mode_data.graph.stagger)
 
 gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag) ;
 gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag) ;

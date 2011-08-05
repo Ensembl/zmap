@@ -838,7 +838,7 @@ typedef struct
                                            * Columns treated as fake featuresets so as to have a style
                                            */
 
-  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureDesc
+  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureSetDesc
                                            * NB: this contains data from ZMap config
                                            * sections [columns] [featureset_description] _and_ ACEDB
                                            */
@@ -911,18 +911,6 @@ void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_ino
 
 
 
-/* used by item factory */
-typedef struct _zmapFeatureStack
-{
-      ZMapFeatureContext context;
-      ZMapFeatureAlignment align;
-      ZMapFeatureBlock block;
-      ZMapFeatureSet set;
-      ZMapFeature feature;
-      GQuark id;        /* used for density plots, set to zero */
-      ZMapStrand strand;
-      ZMapFrame frame;
-} ZMapFeatureStackStruct, *ZMapFeatureStack;
 
 
 /* ***************

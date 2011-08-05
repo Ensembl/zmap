@@ -35,7 +35,7 @@
 
 
 typedef gboolean (*ZMapWindowFToIFactoryTopItemCreated)(FooCanvasItem *top_item,
-                                          ZMapFeatureStack feature_stack,
+                                          ZMapWindowFeatureStack feature_stack,
                                           gpointer handler_data);
 
 typedef gboolean (*ZMapWindowFToIFactoryItemFeatureSizeRequest)(ZMapFeature feature,
@@ -63,7 +63,7 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 					      FooCanvasItem        *current_item,
                                               FooCanvasGroup       *parent_container,
-                                              ZMapFeatureStack feature_stack);
+                                              ZMapWindowFeatureStack feature_stack);
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory);
 
 

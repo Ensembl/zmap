@@ -67,7 +67,7 @@ typedef struct _zmapWindowGraphDensityItemClassStruct  zmapWindowGraphDensityIte
 GType zMapWindowGraphDensityItemGetType(void);
 
 
-ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame);
+ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
 void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, double dx, double y1, double y2);
 
 void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,

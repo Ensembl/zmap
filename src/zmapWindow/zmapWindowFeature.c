@@ -151,7 +151,7 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
-                                      ZMapFeatureStack feature_stack,
+                                      ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data);
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
@@ -525,7 +525,7 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 				     ZMapFeatureTypeStyle style,
 				     FooCanvasGroup *set_group,
-				     ZMapFeatureStack     feature_stack)
+				     ZMapWindowFeatureStack     feature_stack)
 {
   FooCanvasItem *new_feature = NULL ;
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) set_group;
@@ -1700,7 +1700,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
 
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
-                                      ZMapFeatureStack feature_stack,
+                                      ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data)
 {
   g_signal_connect(GTK_OBJECT(top_item), "destroy",
@@ -1830,7 +1830,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   FooCanvasGroup *container_features;
   ZMapStyleBumpMode bump_mode;
   ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) feature_group;
-  ZMapFeatureStackStruct feature_stack;
+  ZMapWindowFeatureStackStruct feature_stack;
 
   style = feature->style;
 

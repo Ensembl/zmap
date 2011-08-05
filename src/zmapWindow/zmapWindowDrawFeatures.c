@@ -117,7 +117,7 @@ typedef struct
   ZMapWindow window ;
   GHashTable *styles ;
   int feature_count;
-  ZMapFeatureStackStruct feature_stack;         /* the context of the feature */
+  ZMapWindowFeatureStackStruct feature_stack;         /* the context of the feature */
   ZMapWindowContainerFeatures curr_forward_col ;
   ZMapWindowContainerFeatures curr_reverse_col ;
   ZMapFrame frame ;
@@ -673,7 +673,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 }
 
 
-void zmapGetFeatureStack(ZMapFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
 {
       feature_stack->id = 0;              /* set once per col for graph features in the item factory */
 
@@ -706,6 +706,33 @@ void zmapGetFeatureStack(ZMapFeatureStack feature_stack,ZMapFeatureSet feature_s
                                           (ZMapFeatureAny) feature_stack->align,
                                           ZMAPFEATURE_STRUCT_CONTEXT) ;
 }
+
+
+
+/* each column has a glist of featuresets, find where we appear in this list */
+/* in case of snafu return zero rather than bombing out */
+int get_featureset_column_index(ZMapFeatureContextMap map,GQuark featureset_id)
+{
+	int index = 0;
+	ZMapFeatureColumn column;
+	ZMapFeatureSetDesc set;
+	GList *l;
+
+	set = (ZMapFeatureSetDesc) g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(featureset_id));
+	if(!set)
+		return 0;
+	column = (ZMapFeatureColumn) g_hash_table_lookup(map->columns,GUINT_TO_POINTER(set->column_id));
+	if(!column)
+		return 0;
+	for(l = column->featuresets;l;l = l->next, index++)
+	{
+		if(GPOINTER_TO_UINT(l->data) == featureset_id)
+			return(index);
+	}
+
+	return 0;
+}
+
 
 /* Called for each feature set, it then calls a routine to draw each of its features.  */
 /* The feature set will be filtered on supplied frame by ProcessFeature.
@@ -784,6 +811,19 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.feature_count = 0;
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL);
+
+if(!feature_set->style)
+{
+	int n;
+	char *set = g_quark_to_string(feature_set->unique_id);
+	n = g_hash_table_size(feature_set->features);
+	zMapLogWarning("set %s has no style and %d features",set,n);
+}
+  if(zMapStyleDensity(feature_set->style))
+  {
+  	featureset_data.feature_stack.set_index =
+  		get_featureset_column_index(window->context_map,feature_set->unique_id);
+  }
 
   /* Now draw all the features in the column. */
 //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
@@ -1803,10 +1843,17 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	 * copy of the view context's feature set.  It should also get
 	 * destroyed with the diff context, so be warned. */
 	feature_set = (ZMapFeatureSet)feature_any;
+//if(g_strstr_len(g_quark_to_string(feature_set->unique_id),-1,"trunc"))
+{
+	zMapLogWarning("set %s has style %p",g_quark_to_string(feature_set->unique_id),feature_set->style);
+}
 
 	style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
 	if(!style)
 	  {
+	  /* MH17: there is something very odd going on here, both these functions are identical */
+	  /* they are both very short and appear next to each other in WindowUtils.c */
+
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
 	  }
@@ -1816,6 +1863,14 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             break;
 	  }
 	canvas_data->style = style;
+
+	if(!feature_set->style)		/* eg from a featureset with no features.... how can it exist?  */
+	{
+		/* mh17: it's very odd. this has suddently started crashing using data that used to work */
+		/* maybe we could look up the style in window->context_map->source_to_sourcedata
+		  and then go looking for the style but this should have been done already ?? */
+		feature_set->style = style;
+	}
 
 
 	/* Default is to draw one column... */

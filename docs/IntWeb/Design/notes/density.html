@@ -233,6 +233,24 @@ If necessary we can create display indexes for long and short items to provide a
 <li> users want to be able to hide 'uninteresting' heatmap/ wiggle features (as in feature hide/show)
 </ul>
 </p>
+<p>To implement this new style and bump options will be provided:
+<pre>
+[coverage]
+bump-style=style-name	# disables 'bump-more-options'
+stagger=pixels
+show-zero=true/false
+overlap=true/false	# need to optimise aligments code (not relevant here)
+</pre>
+<i>stagger</i> will offset each featureset item in the column by a set amount and these will be ordered as per column confguration, for example:
+<pre>
+[columns]
+coverage = liver; heart ; brain
+</pre>
+will specify that the featuresets are in that order from left to right.  Note that each set's width is specified separately
+and this may indicate overlap (eg for wiggles) or a gap (eg for a heatmap).  This is necessary to avoid having to define different styles for each featureset with a different offset - it is important that the featuresets appear in the same (predictable) order and position within the column.
+</p>
+<p>The whole column may be shown/ hidden as normal, but the RC menu will be ammended to allow a single featureset to be hidden / displayed with a keyboard shortcut for the selected one.  Note that we will have to show column highlight differently and for heatmaps this may be difficult.  One solution would be by using an outline for select.  The columns dialog popup was intended to allow selection of featuresets in a column at some point... NOTE that this will be deferred until the dialog design is revisited, and in the short term only a menu driven interface will be provided.
+</p>
 
 <h6> Handling short reads data</h6>
 <p>To avoid accumulating too many features on the ZMap display data outside the mark will be removed. This data will be displayed on 'request from mark' and remain until the mark is reset and set again.   Adjusting the mark will not remove displayed data.
@@ -261,7 +279,7 @@ There is a further problem to solve of finding a feature from a feature id; prev
 </p>
 <p>Note that focus code highlights features using a given colour not necessarily the features' style's SELECTED colour if a window default has been set.  This default can alternatively be set using the root style.  The interface is via a ZMapWindowCanvasItem function (set_colour) and for density items we will need to patch into this.  Focus code works using a set of flags for different groups of focus items (eg selected, evidence) and  we can store these flags in the graph-density item struct for each feature which will allow us to implement all optional colours, storing these in the global graph density struct.  Note that for density items we only need to handle 'selected' but implementing this interface now will allow other data types with more display options (eg masked alignments) to be implemented easily.
 </p>
-<p>Unfortunately due to scope issues it is not possible to use focus code to get colours, and the canvas item class interface is a bit convoluted, so to keep thing simple we will store a limited number of alternate colours directly in the graph density item struct and choose these according to a flag.  This will limit density items to being normal colour or selected (as defined by the focus code) only.
+<p>Unfortunately due to scope issues it is not possible to use focus code to get colours, and the canvas item class interface is a bit convoluted, so to keep things simple we will store a limited number of alternate colours directly in the graph density item struct and choose these according to a flag.  This will limit density items to being normal colour or selected (as defined by the focus code) only.
 </p>
 
 
@@ -273,6 +291,8 @@ There is a further problem to solve of finding a feature from a feature id; prev
 </p>
 <p><i>Feature search has been made to work with density items - FToI search returns a list of FToIHash data structures instead of canvas items. These contain a reference to the feature as well as the canvas item.</i>
 </p>
+
+
 
 </fieldset>
 

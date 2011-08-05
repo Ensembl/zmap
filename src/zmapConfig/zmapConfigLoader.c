@@ -803,7 +803,13 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
  * So instead we have to use GLib directly.
  * the strings need to be quarked first
  */
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash)
+/*
+ * NOTE we set up the columns->featureset list here, which is used to order heatmap(coverage) featuresets in a column
+ * ACEDB supplies a fset to column mapping later on which does not affect pipe servers (used for coverage/BAM)
+ * and if this is aditional to that already configured it's added
+ */
+
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash, GHashTable *columns)
 {
       GKeyFile *gkf;
       gchar ** keys,**freethis;
@@ -814,7 +820,8 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
       char *names;
       gsize len;
       char *normalkey;
-
+      ZMapFeatureColumn f_col;
+      int n = g_hash_table_size(columns);
 
       if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_COLUMN_CONFIG,&gkf))
       {
@@ -830,6 +837,18 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); // changes in situ: get names first
                   column = g_quark_from_string(normalkey);
                   column_id = zMapFeatureSetCreateID(normalkey);
+                  f_col = g_hash_table_lookup(columns,GUINT_TO_POINTER(column_id));
+                  if(!f_col)
+                  {
+                        f_col = (ZMapFeatureColumn) g_new0(ZMapFeatureColumnStruct,1);
+
+                  	f_col->column_id = g_quark_from_string(normalkey);
+                  	f_col->unique_id = column_id;
+                  	f_col->column_desc = normalkey;
+                  	f_col->order = ++n;
+
+	                  g_hash_table_insert(columns,GUINT_TO_POINTER(f_col->unique_id),f_col);
+                  }
 
 #if MH17_USE_COLUMNS_HASH
       char *desc;
@@ -866,6 +885,13 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
                         g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
 
+                        /* construct reverse mapping from column to featureset */
+                        if(!g_list_find(f_col->featuresets,GUINT_TO_POINTER(key)))
+                        {
+                              f_col->featuresets = g_list_append(f_col->featuresets,GUINT_TO_POINTER(key));
+                        }
+
+
                         sources = g_list_delete_link(sources,sources);
                   }
             }
@@ -879,8 +905,6 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
-
-
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
       GKeyFile *gkf;
@@ -1216,7 +1240,9 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GRAPH_SCALE,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphScale} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
 
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1351,7 +1377,9 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   G_TYPE_DOUBLE, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GRAPH_SCALE,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   G_TYPE_INT, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,   G_TYPE_INT, style_set_property, FALSE },
 
 
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },

@@ -233,6 +233,20 @@ typedef struct
 } ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
 
 
+/* used by item factory */
+typedef struct _zmapWindowFeatureStack
+{
+      ZMapFeatureContext context;
+      ZMapFeatureAlignment align;
+      ZMapFeatureBlock block;
+      ZMapFeatureSet set;
+      ZMapFeature feature;
+      GQuark id;        /* used for density plots, set to zero */
+      int set_index;	/* used by density plots for stagger */
+      ZMapStrand strand;
+      ZMapFrame frame;
+} ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
+
 
 
 /* Item features are the canvas items that represent sequence features, they can be of various
@@ -1245,14 +1259,14 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
-void zmapGetFeatureStack(ZMapFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group, ZMapFeatureStack feature_stack) ;
+				     FooCanvasGroup *set_group, ZMapWindowFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
