@@ -236,7 +236,6 @@ void *zmapNewThread(void *thread_args)
 
             thread_cb->initial_error = g_strdup(error_msg) ;
 
-zMapLogWarning("server died","");
             /* must continue on to getStatus if it's in the step list
              * zmapServer functions will not run if status is DIED
              */
