@@ -45,6 +45,8 @@ and also for zmapWindowGraphDensityItems.
  and then removing afterwards when canvas items get reduced)
 
 The two types should not be mixed in one column.
+
+Some of the class function field external calls and pass throught to the relevant fucntions for the data tyoe
 */
 
 
@@ -84,6 +86,8 @@ static void zmap_window_graph_item_set_colour(ZMapWindowCanvasItem   thing,
                                           GdkColor              *border);
 
 static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x, double y);
+
+static gboolean zmap_window_graph_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
 
 ZMapWindowCanvasItemClass parent_class_G;
 
@@ -134,6 +138,7 @@ static void zmap_window_graph_item_class_init(ZMapWindowGraphItemClass graph_cla
   graph_class->canvas_item_set_colour = canvas_class->set_colour;
   canvas_class->set_colour = zmap_window_graph_item_set_colour;
   canvas_class->set_feature = zmap_window_graph_item_set_feature;
+  canvas_class->set_style = zmap_window_graph_item_set_style;
 
   canvas_class->check_data   = NULL;
 
@@ -150,7 +155,7 @@ static void zmap_window_graph_item_init        (ZMapWindowGraphItem graph)
 
 
 
-/* record the current feature found by cursor movement whcih continues as we run more code using the feature */
+/* record the current feature found by cursor movement which continues moving as we run more code using the feature */
 static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x, double y)
 {
 	FooCanvasItem *foo;
@@ -172,6 +177,28 @@ static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x
 			canvas_item->feature = di->point_feature;
 			return TRUE;
 		}
+	}
+	return FALSE;
+}
+
+
+/* redisplay the column using an alternate style */
+static gboolean zmap_window_graph_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style)
+{
+	FooCanvasItem *foo;
+	FooCanvasGroup *group;
+
+	group = (FooCanvasGroup *) item;
+	if(!group->item_list)
+		return FALSE;
+
+	foo = group->item_list->data;
+
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_GRAPH_DENSITY))
+	{
+		ZMapWindowGraphDensityItem di = (ZMapWindowGraphDensityItem) foo;
+
+		zMapWindowGraphDensityItemSetStyle(di,style);
 	}
 	return FALSE;
 }

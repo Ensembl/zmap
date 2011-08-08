@@ -128,6 +128,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_BUMP_SPACING, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_BUMP_SPACING,
             "bump-spacing", "space between columns in bumped columns",
             offsetof(zmapFeatureTypeStyleStruct, bump_spacing) ,0},
+    { STYLE_PROP_BUMP_STYLE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_BUMP_STYLE,
+            "bump to different style", "bump to different style",
+            offsetof(zmapFeatureTypeStyleStruct, bump_style),0 },
 
     { STYLE_PROP_FRAME_MODE, STYLE_PARAM_TYPE_3FRAME, ZMAPSTYLE_PROPERTY_FRAME_MODE,
             "3 frame display mode", "Defines frame sensitive display in 3 frame mode.",
@@ -1845,22 +1848,6 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 
 
-#if 0
-static void zmap_feature_type_style_copy_set_property(GObject *gobject,
-                                     guint param_id,
-                                     const GValue *value,
-                                     GParamSpec *pspec)
-{
-  ZMapFeatureTypeStyle style;
-  ZMapStyleParam param;
-
-  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
-  style = ZMAP_FEATURE_STYLE(gobject);
-  param = &zmapStyleParams_G[param_id];
-
-  zmap_feature_type_style_set_property_full(style,param,value,FALSE);
-}
-#endif
 
 
 

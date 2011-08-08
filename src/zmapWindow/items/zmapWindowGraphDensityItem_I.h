@@ -93,6 +93,8 @@ typedef struct _zmapWindowGraphDensityItemStruct
   double zoom;			/* current units per pixel */
 
   double start,end;
+
+  int index;			/* for staggered columns */
   double x_off;
 
   GList *source_bins;

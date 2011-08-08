@@ -775,6 +775,17 @@ gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFe
 	return(TRUE);
 }
 
+gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureTypeStyle style)
+{
+	ZMapWindowCanvasItemClass class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+	gboolean ret = FALSE;
+
+	if(class->set_style)
+		ret = class->set_style((FooCanvasItem *) item, style);
+
+	return ret;
+}
+
 
 /* Get at parent... */
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item)

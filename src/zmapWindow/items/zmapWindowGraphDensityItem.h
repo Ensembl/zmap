@@ -79,5 +79,6 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
 						      GdkColor              *fill,
                                           GdkColor              *border);
 
+gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowGraphDensityItem di, ZMapFeatureTypeStyle style);
 
 #endif /* ZMAP_WINDOW_GRAPH_DENSITY_H */

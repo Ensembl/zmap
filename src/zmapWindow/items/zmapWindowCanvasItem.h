@@ -140,6 +140,9 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeat
 gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, double y);
 gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature);
 
+gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureTypeStyle style);
+
+
 void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
 
 ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);

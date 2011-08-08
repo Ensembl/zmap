@@ -37,6 +37,8 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowFeatures.h>
+#include <zmapWindowContainerFeatureSet_I.h>
+#include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowCanvas.h>
 
 
@@ -236,9 +238,7 @@ static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasP
                            ZMapContainerLevelType level, gpointer user_data);
 
 
-
-
-
+static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet container,gboolean bump);
 
 
 
@@ -353,6 +353,15 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   //  RT 171529
   if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
       return;
+
+  if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
+  {
+     	if(zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
+    	      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+	else
+    		zMapWarning("bump style not configured","");
+	return;
+  }
 
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
@@ -682,6 +691,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   /* bump all the features for all modes except complex ones and then clear up. */
   if (bumped
+      && bump_mode != ZMAPBUMP_STYLE
       && (bump_mode != ZMAPBUMP_NAME_INTERLEAVE && bump_mode != ZMAPBUMP_NAME_NO_INTERLEAVE
 	  && bump_mode != ZMAPBUMP_NAME_BEST_ENDS && bump_mode != ZMAPBUMP_NAME_COLINEAR))
     {
@@ -2531,3 +2541,53 @@ static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasP
 
   return ;
 }
+
+
+/* (expecting column wide features (eg heatmaps) to bump to wiggles but let's not impose this) */
+/* change all features in the column to use the bump style or the normal one */
+/* hmmm.... we have to assume denisty style features as displaying normal foo/ zmap_canvas items
+ * with an alternate style could involve hacking a huge amount of code which assumes the feature
+ * decides what style it should be displayed with. it's that view and model tangle again.
+ *
+ * we use the column bump_style as a default but allow diff features to specify another,
+ * so they could be colour coded for example
+ * col style wiil be set if the feature's style is.
+ */
+static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet container,gboolean bump)
+{
+	ZMapFeatureTypeStyle col_style = container->style;
+	GList *l;
+	FooCanvasGroup *column_features;
+
+	if(col_style->bump_style)
+	{
+		if(bump)
+			col_style = g_hash_table_lookup(container->window->context_map->styles, GUINT_TO_POINTER(col_style->bump_style));
+		if(!col_style)
+			return FALSE;
+
+		/* get all the features and try it using canvas_item->set_style() */
+		column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
+
+      	for(l = column_features->item_list;l;l = l->next)
+      	{
+      		ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) l->data;
+      		ZMapFeatureTypeStyle style = item->feature->style;
+      		ZMapFeatureTypeStyle bump_style;
+
+      		/* NOTE item contains many features but they must all have the same style */
+
+			bump_style = style;
+			if(bump)
+			{
+				bump_style = g_hash_table_lookup(container->window->context_map->styles, GUINT_TO_POINTER(style->bump_style));
+				if(!bump_style)
+					bump_style = col_style;
+			}
+
+      		zMapWindowCanvasItemSetStyle(item,bump_style);
+      	}
+	}
+	return TRUE;
+}
+

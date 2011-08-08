@@ -111,7 +111,7 @@ typedef enum
     STYLE_PROP_BUMP_MODE,
     STYLE_PROP_BUMP_FIXED,
     STYLE_PROP_BUMP_SPACING,
-//    STYLE_PROP_BUMP_STYLE,		/* do later */
+    STYLE_PROP_BUMP_STYLE,
 
     STYLE_PROP_FRAME_MODE,
 
@@ -229,7 +229,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE      "default-bump-mode"
 #define ZMAPSTYLE_PROPERTY_BUMP_FIXED             "bump-fixed"
 #define ZMAPSTYLE_PROPERTY_BUMP_SPACING           "bump-spacing"
-//#define ZMAPSTYLE_PROPERTY_BUMP_STYLE             "bump-style"	/* do later */
+#define ZMAPSTYLE_PROPERTY_BUMP_STYLE             "bump-style"	/* not a bump mode on the menu */
 
 
 /* ... score by width */
@@ -378,14 +378,13 @@ _(ZMAPBUMP_NAME,                  , "name",                  "Name",            
 _(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
 _(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
 _(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name & Colinear", "As for Name but colinear alignments shown.") \
-_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")
-
-//_(ZMAPBUMP_NAME_INTERLEAVE_COLINEAR,         , "name-colinear-interleave",         "Name Interleave & Colinear", "As for Name & Colinear but interleaved, the most compact display.")
+_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")\
+_(ZMAPBUMP_STYLE,               , "style",               "Style",                       "Show features using an alternate style.") \
 
 
 /* We should do this automatically or not at all..... */
 #define ZMAPBUMP_START ZMAPBUMP_UNBUMP
-#define ZMAPBUMP_END ZMAPBUMP_NAME_BEST_ENDS
+#define ZMAPBUMP_END ZMAPBUMP_STYLE
 
 ZMAP_DEFINE_ENUM(ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 
@@ -793,6 +792,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   GQuark gff_source ;
   GQuark gff_feature ;
 
+  GQuark bump_style;				/* bump to style, do not use bump_options */
 
   /*! State information for the style. */
   gboolean displayable;                 /* FALSE means never, ever display,

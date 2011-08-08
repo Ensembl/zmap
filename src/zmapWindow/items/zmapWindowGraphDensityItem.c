@@ -166,7 +166,8 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
   		di->end = end;
 
             stagger = zMapStyleDensityStagger(style);
-            di->x_off = stagger * index;
+            di->index = index;
+            di->x_off = stagger * di->index;
 
 		/* set our bounding box in canvas coordinates to be the whole column */
 		foo_canvas_item_request_update (interval);
@@ -208,8 +209,6 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
 		/* set focus colour once only */
 	if(colour_flags)
 	{
-	      ZMapFrame frame;
-      	ZMapStrand strand;
 		GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
 
 		/* fill and border are defaults set for the whole window but are currently not used
@@ -217,10 +216,9 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
 		   but if someone defined the defaults they'd get used
 		 */
 
-      	frame = zMapFeatureFrame(feature);
-      	strand = feature->strand;
-      	zmapWindowCanvasItemGetColours(di->style, strand, frame, colour_type, &fill, &draw, &outline, default_fill, default_border);
+      	zmapWindowCanvasItemGetColours(di->style, di->strand, di->frame, colour_type, &fill, &draw, &outline, default_fill, default_border);
 
+#warning ideally we could set these colours on item init but the code driving this assumes differently
 		if(!di->selected_fill_set && fill)
 		{
 			di->selected_fill_colour = gdk_color_to_rgba(fill);
@@ -291,6 +289,35 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
 		sl = sl->next;
 	}
 	printf("Failed to find graph segment feature for focus\n");
+}
+
+
+gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowGraphDensityItem di, ZMapFeatureTypeStyle style)
+{
+	GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
+	FooCanvasItem *foo = (FooCanvasItem *) di;
+
+	di->style = style;		/* includes col width */
+	di->x_off = zMapStyleDensityStagger(style) * di->index;
+
+		/* need to set colours */
+	zmapWindowCanvasItemGetColours(style, di->strand, di->frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
+
+	if(fill)
+	{
+		di->fill_set = TRUE;
+		di->fill_colour = gdk_color_to_rgba(fill);
+		di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
+	}
+	if(outline)
+	{
+		di->outline_set = TRUE;
+		di->outline_colour = gdk_color_to_rgba(outline);
+		di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
+	}
+
+	foo_canvas_item_request_update ((FooCanvasItem *) di);
+	return TRUE;
 }
 
 
@@ -559,15 +586,13 @@ GList *density_calc_bins(ZMapWindowGraphDensityItem di)
 	seq_range = (int) (end - start + 1);
 	n_bins = (int) (seq_range * di->zoom / min_bin) ;
 	bases_per_bin = seq_range / n_bins;
-	if(bases_per_bin < 1)	/* at high zoom we get meny pixels per base */
+	if(bases_per_bin < 1)	/* at high zoom we get many pixels per base */
 		bases_per_bin = 1;
 
-
-// always impose the minimum pixel size, sometimes bin size can vary
-//	if(di->n_source_bins <= n_bins)
-//		return(di->source_bins);
-
 	di->source_used = FALSE;
+
+
+//printf("bases per bin = %d,fixed = %d\n",bases_per_bin,fixed);
 
 	for(bin_start = start,src = di->source_bins,dest = NULL; bin_start < end && src; bin_start = bin_end + 1)
 	{
@@ -578,29 +603,44 @@ GList *density_calc_bins(ZMapWindowGraphDensityItem di)
 		bin_gs->y1 = bin_start;
   		bin_gs->y2 = bin_end;
   		bin_gs->score = 0.0;
-
+//printf("bin: %d,%d\n",bin_start,bin_end);
   		for(;src; src = src->next)
   		{
 			src_gs = (ZMapWindowCanvasGraphSegment) src->data;
+//printf("src: %f,%f\n",src_gs->y1,src_gs->y2);
 			if(src_gs->y2 < bin_start)
 				continue;
 			if(src_gs->y1 > bin_end)
 			{
 				/* jump fwds to next data at high zoom */
-				if(src_gs->y1 >= bin_end + bases_per_bin)
+				if(src_gs->y1 > bin_end + bases_per_bin)
 				{
 					bin_end = src_gs->y1;
-					/* bias to even bopundaries */
+					/* bias to even boundaries */
 					bin_end -= (bin_end - bin_start + 1) % bases_per_bin;
-					bin_end--;
+					bin_end--; 	/* as it gets ioncremented by the loop */
+//printf("jump fwds to %d\n",bin_end);
 				}
+				break;
+			}
+
+			if(fixed && bin_gs->feature && src_gs->y2 > bin_end + bases_per_bin)
+			{
+				/* short bin(s) ahead of big bin: ouput bin less than min size
+				 * to avoid swallowing up details in even bigger bin.
+				 * worst case is 2x no of bins
+				 */
+				bin_gs->y2 = bin_end = src_gs->y1 - 1;
 				break;
 			}
 
 			if(!bin_gs->feature)
 			{
 				if(!fixed)
+				{
 					bin_gs->y1 = src_gs->y1;		/* limit dest bin to extent of src */
+//printf("set src back to %f\n",bin_gs->y1);
+				}
 		  		bin_gs->feature = src_gs->feature;
 		  	}
 			score = src_gs->score;
@@ -616,22 +656,30 @@ GList *density_calc_bins(ZMapWindowGraphDensityItem di)
 			{
 				/* src bin is bigger than dest bin: make dest bigger */
 				if(!fixed)
-					bin_gs->y2 = bin_end = src_gs->y2;
-				else if(src_gs->y2 >= bin_end + bases_per_bin)
 				{
+					bin_gs->y2 = bin_end = src_gs->y2;
+//printf("loose jump to %d\n",bin_end);
+				}
+				else if(src_gs->y2 > bin_end + bases_per_bin)
+				{
+//printf("fixed jump: %d, %d\n",(bin_end - bin_start + 1),(bin_end - bin_start + 1) % bases_per_bin);
 					bin_end = src_gs->y2;	/* bias to the next one before the end */
 									/* else we start overlapping the next src bin */
-					bin_end -= (bin_end - bin_start + 1) % bases_per_bin;
+//					bin_end -= (bin_end - bin_start + 1) % bases_per_bin;
+//					bin_end--;		/* as it gets incremented by the loop */
 					bin_gs->y2 = bin_end;
+//printf("fixed jump to %d\n",bin_end);
 				}
-				bin_end--;			/* as we get incremented by the loop */
 				break;
 			}
   		}
 		if(bin_gs->score > 0)
 		{
 			if(!fixed && src_gs->y2 < bin_gs->y2)	/* limit dest bin to extent of src */
+			{
 				bin_gs->y2 = src_gs->y2;
+			}
+//printf("add: %f,%f\n", bin_gs->y1,bin_gs->y2);
   			dest = g_list_prepend(dest,(gpointer) bin_gs);
   		}
 
@@ -641,6 +689,8 @@ GList *density_calc_bins(ZMapWindowGraphDensityItem di)
 	dest = g_list_reverse(dest);
 	return(dest);
 }
+
+
 
 
 void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose)
@@ -720,11 +770,11 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 	i2w_dx = i2w_dy = 0.0;		/* this gets the offset of the parent of this item */
       foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
 
-	foo_canvas_c2w(item->canvas,0,expose->area.y,NULL,&y1);
-	foo_canvas_c2w(item->canvas,0,expose->area.y + expose->area.height - 1,NULL,&y2);
+	foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
+	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
 
-	search.y1 = (int) (y1);
-	search.y2 = (int) (y2);
+	search.y1 = (int) y1;
+	search.y2 = (int) y2;
 //printf("expose %d-%d\n",(int) search.y1,(int) search.y2);
 
 	if(di->overlap)
@@ -756,8 +806,10 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 	/* NOTE assuming no overlap, maybe can restructure this code when implementing */
 //	if(!di->overlap)
 	{
-		int last_y = -1;	/* last canvas y coord, for joining up lines */
-		double last_gy;	/* edge of prev bin */
+		double last_gy = -1.0;	/* edge of prev bin */
+		double bases_per_pixel;
+
+		bases_per_pixel = 1.0 / item->canvas->pixels_per_unit_y;
 
 		/* we have already found the first matching or previous item */
 
@@ -794,22 +846,28 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				 * so this caters for dangling lines above the start
 				 * and we stop after the end so this caters for dangling lines below the end
 				 */
+
 		      	gs->width = x2 = di->x_off + di->style->mode_data.graph.baseline + (width * gs->score) ;
-				y2 = (gs->y2 + gs->y1) / 2;
+				y2 = (gs->y2 + gs->y1 + 1) / 2;
 	      		foo_canvas_w2c (item->canvas, x2 + i2w_dx, y2 - di->start + i2w_dy, &cx2, &cy2);
 
-	      		if(last_y < cy2 - 1)	/* && fill_gaps_between_bins) */
+	      		if(gs->y1 - last_gy > bases_per_pixel * 2)	/* && fill_gaps_between_bins) */
 				{
 					int cx,cy;
 
-					if(last_y < 0)	/* this is the first point */
-						last_gy = di->start;
-		      		foo_canvas_w2c (item->canvas, di->style->mode_data.graph.baseline + i2w_dx, last_gy - di->start + i2w_dy, &cx, &cy);
-					points[n_points].x = cx;
-					points[n_points].y = cy;
-					n_points++;
+					if(last_gy < 0)	/* this is the first point */
+					{
+						last_gy = search.y1;
+					}
+					else
+					{
+			      		foo_canvas_w2c (item->canvas, di->x_off + di->style->mode_data.graph.baseline + i2w_dx, last_gy - di->start + i2w_dy, &cx, &cy);
+						points[n_points].x = cx;
+						points[n_points].y = cy;
+						n_points++;
+					}
 
-		      		foo_canvas_w2c (item->canvas, di->style->mode_data.graph.baseline  + i2w_dx, gs->y1 - di->start + i2w_dy, &cx, &cy);
+		      		foo_canvas_w2c (item->canvas, di->x_off + di->style->mode_data.graph.baseline  + i2w_dx, gs->y1 - di->start + i2w_dy, &cx, &cy);
 					points[n_points].x = cx;
 					points[n_points].y = cy;
 					n_points++;
@@ -817,7 +875,6 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 
 				points[n_points].x = cx2;
 				points[n_points].y = cy2;
-				last_y = cy2;
 				last_gy = gs->y2;
 
 				if(++n_points >= N_POINTS)
@@ -881,7 +938,8 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 
 				/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
 				foo_canvas_w2c (item->canvas, x1 + i2w_dx, gs->y1 - di->start + i2w_dy, &cx1, &cy1);
-      			foo_canvas_w2c (item->canvas, x2 + i2w_dx, gs->y2 - di->start + i2w_dy, &cx2, &cy2);
+      			foo_canvas_w2c (item->canvas, x2 + i2w_dx, gs->y2 - di->start + i2w_dy + 1, &cx2, &cy2);
+      						/* + 1 to draw to the end of the last base */
 //if(gs->flags & GS_FOCUS_MASK)
 //	printf("gdk   at %d,%d - %d,%d (from %f,%f) (%f,%f, %f)\n",cy1,cx1,cy2,cx2,x1,x2,i2w_dx,i2w_dy,di->x_off);
 
@@ -895,8 +953,8 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 						di->gc,
 						TRUE,
 						cx1, cy1,
-						cx2 - cx1 + 1,
-						cy2 - cy1 + 1);
+						cx2 - cx1,
+						cy2 - cy1);
 				}
 				if (draw_outline)
 				{
@@ -1015,7 +1073,7 @@ void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, doub
   density_item = (ZMapWindowGraphDensityItem) foo;
 
   gs->y1 = y1;
-  gs->y2 = y2 + 1;		/* so that we draw to the end of the base, y1,y2 are inclusive */
+  gs->y2 = y2;
   gs->score = dx;			/* is between (-1.0) 0.0 and 1.0 */
 
 
