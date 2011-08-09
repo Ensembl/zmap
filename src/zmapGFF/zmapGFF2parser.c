@@ -230,7 +230,7 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
  * zMapGFFDestroyParser() should be called to free it.
  *
  */
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished)
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, gboolean *header_ok)
 {
   gboolean result = FALSE ;
 
@@ -251,6 +251,8 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
 	  if ((result = parseHeaderLine(parser, line)))
 	    {
 	      /* Signal that last line was a header line so header not finished. */
+	      if(parser->header_flags.got_sequence_region && parser->header_flags.got_gff_version)
+	      	*header_ok = TRUE;
 	      *header_finished = FALSE ;
 	    }
 	  else
@@ -266,6 +268,9 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
 		{
 		  /*  */
 		  parser->header_flags.done_header = *header_finished = TRUE ;
+	        if(parser->header_flags.got_sequence_region && parser->header_flags.got_gff_version)
+	      	*header_ok = TRUE;
+
 		  parser->state = ZMAPGFF_PARSE_BODY ;
 		  result = TRUE ;
 		}
@@ -462,7 +467,10 @@ ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
 {
   ZMapGFFHeader header = NULL ;
 
-  if (parser->header_flags.done_header)
+	/* MH17: if we have a GFF file with header only we never get to set done header */
+	/* on account of the structure of the code in use */
+//if (parser->header_flags.done_header)
+  if(parser->header_flags.got_gff_version && parser->header_flags.got_sequence_region)
     {
       header = g_new0(ZMapGFFHeaderStruct, 1) ;
 
@@ -716,6 +724,12 @@ int zMapGFFGetLineNumber(ZMapGFFParser parser)
 GError *zMapGFFGetError(ZMapGFFParser parser)
 {
   return parser->error ;
+}
+
+
+int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
+{
+	return(parser->num_features);
 }
 
 /* Returns TRUE if the parser has encountered an error from which it cannot recover and hence will
@@ -1533,6 +1547,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   if (parser->parse_only || !feature)
     {
       new_feature = zMapFeatureCreateEmpty() ;
+      parser->num_features++;
     }
 
 
@@ -2825,10 +2840,10 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
 /* Construct format strings to parse the main GFF fields and also sub-parts of a GFF line.
  * This needs to be done dynamically because we may need to change buffer size and hence
  * string format max length.
- * 
- * 
+ *
+ *
  * Notes on the format string for the main GFF fields:
- * 
+ *
  * GFF version 2 format for a line is:
  *
  * <sequence> <source> <feature> <start> <end> <score> <strand> <phase> [attributes] [#comments]
@@ -2897,7 +2912,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser)
 
   /* this is what I'm trying to get:  "cigar %*[\"]%50[^\"]%*[\"]%*s" which parses a string
    * like this:
-   * 
+   *
    *          "cigar "M335ID55M"
    *  */
   align_format_str = ZMAPSTYLE_ALIGNMENT_CIGAR " "  "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;

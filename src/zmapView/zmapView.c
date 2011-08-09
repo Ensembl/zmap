@@ -76,6 +76,8 @@ typedef struct
   gchar *stderr_out;
   gint exit_code;
 
+  int num_features;
+
   GList *feature_sets ;
 
   GList *required_styles ;
@@ -2880,6 +2882,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		  lfd.start = cd->start;
 		  lfd.end = cd->end;
 
+		  lfd.num_features = cd->num_features;
 		  lfd.exit_code = cd->exit_code;
 		  lfd.stderr_out = cd->stderr_out;
 
@@ -3907,6 +3910,7 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
       new_features = feature_req->context ;
       zMapAssert(!new_features->no_parent);
 
+      connect_data->num_features = feature_req->context->num_features;
 
       if ((merge_results = justMergeContext(zmap_view, &new_features, connect_data->curr_styles, &masked, connect_data->request_as_columns)))   // && !view->serial_load)
         {
@@ -4006,7 +4010,7 @@ for(l = new_features->req_feature_set_names;l;l = l->next)
 zMapLogWarning(x,"");
 }
 
-  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context,featureset_names ) ;
+  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context,featureset_names) ;
 
 //  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
 //  printf("just Merge diff = %s\n",zMapFeatureContextGetDNAStatus(diff_context) ? "yes" : "non");

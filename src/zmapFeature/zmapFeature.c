@@ -106,7 +106,10 @@ typedef struct
   /* the list of real featuresets (not columns) actually requested */
   GList *req_featuresets;
 
-  gboolean new_features ;
+  gboolean new_features ;	/* this is a flag that includes featruesets and features */
+  					/* don't know if it matters if we flag featuresets */
+  int feature_count;		/* this is a count of the new features */
+
 } MergeContextDataStruct, *MergeContextData;
 
 
@@ -1505,6 +1508,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
   current_context = *merged_context_inout ;
   new_context = *new_context_inout ;
 
+
   /* If there are no current features we just return the new one as the merged and the diff,
    * otherwise we need to do a merge of the new and current feature sets. */
   if (!current_context)
@@ -1545,6 +1549,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       merge_data.diff_context      = diff_context ;
       merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK ;
       merge_data.new_features = FALSE ;
+      merge_data.feature_count = 0;
       merge_data.req_featuresets   = new_context->req_feature_set_names;
 
 
@@ -2559,7 +2564,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		/* If its new we can simply copy a pointer over to the diff context
 		 * and stop recursing.... */
 
+
 		merge_data->new_features = new = TRUE;	/* This is a NEW feature. */
+
 		/* We would use featureAnyAddFeature, but it does another
 		 * g_hash_table_lookup... */
 		g_hash_table_insert((*view_path_parent_ptr)->children,
@@ -2689,6 +2696,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	if (!(zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
 	  {
 	    merge_data->new_features = new = TRUE;
+	    merge_data->feature_count++;
 
 	    featureAnyAddFeature(*diff_path_parent_ptr, feature_any);
 

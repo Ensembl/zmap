@@ -112,6 +112,7 @@ typedef struct
   char *err_msg;        // from the server mainly
   gchar *stderr_out;
   gint exit_code;
+  int num_features;
 
   GList *feature_sets ;
   int start,end;        // requested coords

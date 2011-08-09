@@ -67,7 +67,7 @@ typedef struct
 
 ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished) ;
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, gboolean *header_ok) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length) ;
 gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
@@ -86,6 +86,7 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 GList *zMapGFFGetFeaturesets(ZMapGFFParser parser);
 int zMapGFFGetVersion(ZMapGFFParser parser) ;
 int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
+int zMapGFFParserGetNumFeatures(ZMapGFFParser parser);
 GError *zMapGFFGetError(ZMapGFFParser parser) ;
 gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;

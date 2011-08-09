@@ -104,6 +104,7 @@ typedef struct
   GHashTable *styles ;
   GList *src_feature_set_names;
   GHFunc eachBlock ;
+  int num_features;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
 
@@ -787,6 +788,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   get_features.styles = styles ;
   get_features.src_feature_set_names = NULL;
   get_features.eachBlock = eachBlockSequenceRequest;
+  get_features.num_features = 0;
 
 
 
@@ -837,6 +839,9 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	// see comment in zmapFeature,h/ ref: num_features
+  feature_context->num_features = get_features.num_features;
 
 
   return get_features.result ;
@@ -1501,6 +1506,8 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 		  get_features->src_feature_set_names =
 		    zMap_g_list_merge(get_features->src_feature_set_names, src_names) ;
+
+		  get_features->num_features += zMapGFFParserGetNumFeatures(parser);
 		}
 	      else
 		{

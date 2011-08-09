@@ -794,7 +794,8 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;
   GError *error = NULL ;
-  gboolean done_header = FALSE ;
+  gboolean done_header = FALSE ;	/* read all the header lines */
+  gboolean header_ok = FALSE ;	/* got al the ones we need */
 
 
   server->result = ZMAP_SERVERRESPONSE_REQFAIL ;  // to catch empty file
@@ -812,7 +813,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
       *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
-      if (zMapGFFParseHeader(server->parser, server->gff_line->str, &done_header))
+      if (zMapGFFParseHeader(server->parser, server->gff_line->str, &done_header, &header_ok))
 	{
 	  if (done_header)
 	    break ;
@@ -871,12 +872,20 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
   /* Sometimes the file contains only the gff header and no data, I don't know the reason for this
    * but in this case there's no point in going further. */
-  if (status == G_IO_STATUS_EOF && !done_header)
+  /* MH17: see RT 227185 -> good header plus no data means no data not a failure
+   * so return o
+   */
+  if (!header_ok)
     {
       char *err_msg ;
 
-      err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
+	if(status == G_IO_STATUS_EOF)
+      	err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
 				zMapGFFGetLineNumber(server->parser)) ;
+	else
+      	err_msg = g_strdup_printf("Error in GFF header, at line %d",
+				zMapGFFGetLineNumber(server->parser)) ;
+
       setErrMsg(server, err_msg) ;
       g_free(err_msg) ;
 
@@ -1005,6 +1014,8 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
     }
 
+	// see comment in zmapFeature,h/ ref: num_features
+  feature_context->num_features = zMapGFFParserGetNumFeatures(server->parser);
 
   /* Clear up. -> in destroyConnection() */
 //  zMapGFFDestroyParser(server->parser) ;

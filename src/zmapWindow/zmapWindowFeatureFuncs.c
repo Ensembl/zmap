@@ -46,7 +46,7 @@
  *
  * Gets called from menus and from keyboard short cut. If called from keyboard
  * short cut then  x_pos = ypos = 0.0.
- * 
+ *
  * Note user can click menu on a column that is not selected in which case
  * item will be non-NULL but focus item/column may be NULL if no other column
  * has been selected.

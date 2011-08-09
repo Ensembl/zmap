@@ -649,6 +649,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  GList *features;
 	  char *featurelist = NULL;
 	  char *f,*emsg;
+	  char *ok_mess = NULL;
 
 	  for (features = lfd->feature_sets ; features ; features = features->next)
 	    {
@@ -667,7 +668,11 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 	  if(lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
-	  	emsg = html_quote_string("OK");	/* see comment about really free() below */
+	  {
+	  	ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
+	  	emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
+	  	g_free(ok_mess);
+	  }
 	  else
 	  	emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
 

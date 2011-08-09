@@ -110,6 +110,8 @@ typedef struct ZMapGFFParserStruct_
   GQuark error_domain ;
   int line_count ;					    /* Contains number of lines
 							       processed. */
+  int num_features;
+
   GHashTable *source_2_feature_set ;			    /* Optionally maps source to a feature set. */
   GHashTable *source_2_sourcedata ;			    /* Optionally maps source to extra
 							       source data. */

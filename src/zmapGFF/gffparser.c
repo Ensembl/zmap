@@ -142,11 +142,13 @@ static int readHeader(parserFile data)
 						 &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
       gboolean done_header = FALSE ;
+      gboolean header_ok = FALSE ;
 
       *(data->gff_line->str + terminator_pos) = '\0';
-      if(!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header))
+// MH17 -> there seems to be a stutter in this source code!
+      if(!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header,&header_ok))
         {
-          if (!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header))
+          if (!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header,&header_ok))
             {
               GError *error = zMapGFFGetError(data->parser) ;
 
