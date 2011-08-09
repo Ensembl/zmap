@@ -235,11 +235,8 @@ static void unhideItemsCB(gpointer data, gpointer user_data) ;
 static gboolean possiblyPopulateWithChildData(ZMapWindow window,
                                               FooCanvasItem *feature_item,
                                               FooCanvasItem *highlight_item,
-                                              int *sub_feature_start, int *sub_feature_end,
-                                              int *sub_feature_length, ZMapFeatureSubpartType *sub_type,
-                                              int *query_start, int *query_end,
-                                              int *selected_start, int *selected_end,
-                                              int *selected_length);
+                                              ZMapFeatureSubpartType *sub_type,
+                                              int *selected_start, int *selected_end, int *selected_length) ;
 static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              ZMapFeature feature,
                                              FooCanvasItem *feature_item,
@@ -4285,6 +4282,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_A:
       {
 	ZMapWindowAlignSetType requested_homol_set ;
+	FooCanvasItem *focus_item  ;
+
+	/* User just pressed a key so pass in focus item if there is one. */
+	focus_item = zmapWindowFocusGetHotItem(window->focus) ;
 
 	if (key_event->state & GDK_CONTROL_MASK)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
@@ -4293,7 +4294,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-	zmapWindowCallBlixem(window, NULL, requested_homol_set, NULL, NULL, 0.0, 0.0) ;
+	zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, NULL, 0.0, 0.0) ;
 
 	break ;
       }
@@ -5086,9 +5087,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item)))
 		{
 		  possiblyPopulateWithChildData(window, item, highlight_item,
-						&dummy, &dummy, &dummy, &item_type_int,
-						&dummy, &dummy, &selected_start,
-						&selected_end, &selected_length) ;
+						&item_type_int, &selected_start, &selected_end, &selected_length) ;
 		}
 	      else
 		{
@@ -5128,55 +5127,19 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 static gboolean possiblyPopulateWithChildData(ZMapWindow window,
                                               FooCanvasItem *feature_item,
                                               FooCanvasItem *highlight_item,
-                                              int *sub_feature_start, int *sub_feature_end,
-                                              int *sub_feature_length, ZMapFeatureSubpartType *sub_type,
-                                              int *query_start, int *query_end,
-                                              int *selected_start, int *selected_end,
-                                              int *selected_length)
+                                              ZMapFeatureSubpartType *sub_type,
+                                              int *selected_start, int *selected_end, int *selected_length)
 {
-  gboolean populated = FALSE;
-  ZMapFeatureSubPartSpan item_data;
-  int fstart, fend, flength;
-  int sstart, send, slength;
-  gboolean ignore_this_restriction = TRUE;
-
-  zMapAssert(sub_feature_start && sub_feature_end &&
-             query_start       && query_end       &&
-             selected_start    && selected_end    &&
-             selected_length   && sub_feature_length && sub_type);
+  gboolean populated = FALSE ;
+  ZMapFeatureSubPartSpan item_data ;
 
   item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
   zMapAssert(item_data) ;
 
-  flength = (item_data->end - item_data->start + 1) ;
-
-  /* ignore_this_restriction added as the makePrimarySelectionText was
-   * getting uninitialised values for selected_* when selecting multiple
-   * exons.  I'm not sure the reason for the equality check so I've left
-   * it incase we want to parameterise ignore_this_restriction ;) */
-
-  /* If the canvas item's match... */
-  if (feature_item == highlight_item || ignore_this_restriction)
-    {
-      sstart  = fstart ;
-      send    = fend ;
-      slength = flength ;
-    }
-
-  *sub_feature_start  = fstart;
-  *sub_feature_end    = fend;
-  *sub_feature_length = flength;
-
-  if (item_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
-    {
-      *query_start = item_data->start ;
-      *query_end = item_data->end ;
-    }
-
-  *selected_start     = sstart;
-  *selected_end       = send;
-  *selected_length    = slength;
-  *sub_type           = item_data->subpart;
+  *selected_start = item_data->start ;
+  *selected_end = item_data->end ;
+  *selected_length = (item_data->end - item_data->start + 1) ;
+  *sub_type = item_data->subpart ;
 
   populated = TRUE ;
 

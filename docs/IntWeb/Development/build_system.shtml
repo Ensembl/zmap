@@ -64,7 +64,7 @@ various zmap dependencies, some of which are distributed with zmap.</p>
 build system:</p>
 
 <ol>
-  <li> <a href="#built_scripts">Build Script Details.</a></li>
+  <li> <a href="#build_scripts">Build Script Details.</a></li>
   <li> <a href="#code_version">The Code Version System.</a></li>
 </ol>
 
@@ -328,8 +328,14 @@ summarised in the following table:</p>
   </tr>
   <tr>
     <td>zmap_build_release.sh</td>
-    <td>release_NNNN</td>
-    <td>Produce a release build with repository tagging, full docs etc.</td>
+    <td>release</td>
+    <td>Produce a release build for testing/fixing prior to making a production build.</td>
+    <td>Preparation</td>
+  </tr>
+  <tr>
+    <td>zmap_build_production.sh</td>
+    <td>production</td>
+    <td>Produce a production build with repository tagging, full docs etc.</td>
     <td>Yes</td>
   </tr>
 </table>
@@ -347,20 +353,37 @@ the following to make a development build:</p>
 &gt; ./zmap_update_run ./zmap_build_development.sh
 </pre>
 
-<p>Once the build has finished the results will be in ~zmap/BUILDS/DEVELOPMENT</p>
+<p>Once the build has finished the results will be in ~zmap/BUILDS/DEVELOPMENT_BUILDS</p>
 
 
 
 
 <h3>"Release" Builds</h2>
 
-<p>Each time we build a new release of zmap we tag the release so we can
-recreate the code from git at any time. We also update the version number held
-in the code itself so that all the next development session takes place with
-this new code version number for bug reporting etc.</p>
+<p>The release build is branch from develop, it's made when we think are ready
+for a new release of zmap. Release branches must only have bug fixes made in
+them. Once complete they are merged into production and back into develop (to
+ensure bug fixes get into develop !). Once this is done the release branch
+can be deleted.</p>
 
-<p>And we also create a set of release notes which need to be hand editted
-afterwards, they live in ZMap/doc/IntWeb/Release_notes.</p>
+<pre>
+&gt; ./zmap_update_run ./zmap_build_release.sh
+</pre>
+
+<p>Once the build has finished the results will be in ~zmap/BUILDS/RELEASE_BUILDS</p>
+
+
+<h3>"Production" Builds</h2>
+
+<p>Production builds are made after a release branch has been merged into production
+and the production branch has been tagged. The build includes release notes.</p>
+
+<pre>
+&gt; ./zmap_update_run ./zmap_build_production.sh
+</pre>
+
+<p>Once the build has finished the results will be in ~zmap/BUILDS/PRODUCTION_BUILDS</p>
+
 
 
 <h3>Using particular dependency Versions</h2>
@@ -448,8 +471,8 @@ then
 
 For Sanger linux machines:
 
-setenv PKG_CONFIG_PATH /software/acedb/gtk/lib/pkgconfig/
-./configure --prefix=/software/acedb CFLAGS="-I/software/acedb/gtk/include" CPPFLAGS="-I/software/acedb/gtk/include" LDFLAGS="-L/software/acedb/gtk/lib"
+setenv PKG_CONFIG_PATH /software/acedb/lib/pkgconfig/
+./configure --prefix=/software/acedb CFLAGS="-I/software/acedb/include" CPPFLAGS="-I/software/acedb/include" LDFLAGS="-L/software/acedb/lib"
 
 
 For Macport Mac machines:
@@ -649,7 +672,7 @@ and that's it.
 
 <h2>Appendix</h2>
 
-<a name="built_scripts"></a>
+<a name="build_scripts"></a>
 <h3>1) Details Of The ZMap Build Scripts</h2>
 
 <p>This text was taken from the original README file in <b>ZMap/scripts</b> and
@@ -915,29 +938,38 @@ Local Version is now RELEASE_1-1-4, previous version in /nfs/team71/acedb/edgrif
 
 <p>The code version built into the zmap executable needs to be updated not only
 every time the offical version number is incremented but also for development
-versions every time the git checksum changes. This checksum will be different
+versions every time the git checksum changes because we use this checksum
+to identify different builds. This checksum will be different
 for developers working on different code branches and at different stages of
 development on the same branch. We employ the following method to avoid having
 these latter changes constantly checked into the zmap repository:</p>
 
 
-<p><b>src/Makefile.am</b> contains a custom 'build-version-file' target that creates a
+<p><b>src/Makefile.am</b> contains our own 'build-version-file' target that creates a
 source file (src/zmapUtils/zmapVersion.c) and ensures that file is compiled for
-every make, this updates the version string with the git checksum id but also
-stores the new compile date. Thus this file does not need to be in the repository.</p>
+every make. During creation the version string is updated with the git checksum id but also
+updates the make compile time. Because make generates this file it does not
+need to be in the repository.</p>
+
+<p>NOTE that making 'build-version-file' a dependency
+of targets like 'all' and 'dist' is not straight forward and is documented in
+src/Makefile.am where 'build-version-file' is specified. You will see warnings like
+these:</p>
+
+<pre>
+make -k 
+Makefile:1292: warning: overriding commands for target `all'
+Makefile:533: warning: ignoring old commands for target `all'
+</pre>
 
 
-<p><b>src/zmapUtils/Makefile.am</b> specifies src/zmapUtils/zmapVersion.c as a build target
-to make sure it gets built, is included in the dependency lists etc.</p>
+<p><b>src/zmapUtils/Makefile.am</b> specifies src/zmapUtils/zmapVersion.c as a source
+file that should be included in the build, this makes sure it gets compiled and
+linked and is included in the dependency lists etc.</p>
 
 
 <p><b>src/zmapUtils/zmapUtils.c</b> functions have been slightly rewritten to make use
 of the functions in src/zmapUtils/zmapVersion.c to get the version string and compile time.</p>
-
-
-
-
-
 
 
 <!--#include virtual="/perl/footer"-->

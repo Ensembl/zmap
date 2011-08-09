@@ -54,7 +54,7 @@ RT_TO_CVS=''
 ERASE_SUBDIRS=''
 INPUT_DIR=''
 OUTPUT_DIR=''
-BRANCH=''
+BRANCH='develop'
 CRON=''
 GIT_FEATURE_INFO=''
 ZMAP_MASTER_BUILD_DIST=''
@@ -99,6 +99,7 @@ function message_exit
 # Ok...off we go....
 #
 message_out "ZMap Build Started: $*"
+
 
 
 
@@ -263,6 +264,7 @@ if [ -z "$CRON" ] ; then
     message_out "==================="
 
 fi
+
 
 
 # If not run as cron then give user a chance to cancel, must be before we

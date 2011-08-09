@@ -64,7 +64,11 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
   gboolean selected_features = FALSE ;
   ZMapFeatureAny feature_any ;
 
-  zMapAssert((item && (feature_set || source))) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapAssert(!item || (item && (feature_set || source))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Get focus item/column if there is one. */
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
@@ -94,11 +98,11 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
     }
 
 
-  if (!item && !focus_column)
+  if (!item && (!focus_item || !focus_column))
     {
       /* If there was no selected item and there are no focus items we can't do anything. */
 
-      zMapWarning("%s", "Could not launch blixem, no column/feature selected.") ;
+      zMapWarning("Could not launch blixem, %s is selected !", (!focus_column ? "nothing" : "no feature")) ;
     }
   else if (!zMapWindowGetVisibleSeq(window, (item ? item : focus_item), &window_start, &window_end))
     {
@@ -151,9 +155,12 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       align->offset = window->sequence->start ;
 
+      /* Work out where we are.... */
+      if (feature && y_pos == 0.0)
+	y_pos = (double)((feature->x1 + feature->x2) / 2) ;
       zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
-
       align->cursor_position = y1 ;
+
 
       align->window_start = window_start ;
       align->window_end = window_end ;

@@ -168,7 +168,7 @@ char *zMapGetAppVersionString(void)
 {
   char *version_string = NULL ;
 
-  if (!(version_string = zMapGetDevelopmentIDString()))
+  if (!(version_string = zMapGetDevelopmentIDString()) || !(*version_string))
     version_string = zMapGetVersionString() ;
 
   return version_string ;

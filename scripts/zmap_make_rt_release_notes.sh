@@ -131,7 +131,7 @@ fi
 
 
 
-if [ -n $output_file ] ; then
+if [ -n "$output_file" ] ; then
     tmp_file=`readlink -m $output_file`
 
     output_file=$tmp_file

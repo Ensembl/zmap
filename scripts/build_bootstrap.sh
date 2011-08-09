@@ -196,6 +196,8 @@ while getopts ":b:f:" opt ; do
     esac
 done
 
+_checkout_message_out "Branch is $BRANCH"
+
 
 save_root=$(pwd)
 
@@ -220,19 +222,11 @@ if [ "x$gen_checkout_script" != "x" ]; then
 
   if [ "x$ZMAP_MASTER_BUILD_COPY_DIR" == "x" ]; then
 
-    # Need -P prune flag to ensure we don't get a load of old empty directories.
-#    _checkout_message_out "Running cvs checkout $CVS_MODULE"
-#    cvs -d$CVS_ROOT checkout -P -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
-#    MASTER_SRC_DIR=$CVS_MODULE.master
-#
-#    _checkout_message_out "done a cvs checkout"
-
     MASTER_SRC_DIR=$CVS_MODULE.master
 
     # clone the zmap repository and switch to named branch.
     _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
     git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
-
 
 #    _checkout_message_out "Forcing branch to 'production'"
 #    BRANCH='production'
@@ -252,11 +246,6 @@ if [ "x$gen_checkout_script" != "x" ]; then
   _checkout_message_out "About to  cp -r $MASTER_SRC_DIR $CVS_MODULE"
   cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $MASTER_SRC_DIR"
 fi
-
-
-_checkout_message_out "Forcing exit for testing...."
-exit 1
-
 
 
 # update this to be absolute
@@ -387,45 +376,8 @@ zmap_message_out "All hosts alive."
 
 
 
-
-# For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
-if [ -n "$GIT_VERSION_INFO" ] ; then
-
-    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
-
-    zmap_message_out "Collecting GIT describe info..."
-
-    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
-
-    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
-
-    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
-
-fi
-
-
-
-# Get current version stuff... Do this before building...
+# CAN'T DO THIS BECAUSE WE HAVEN'T DONE A MAKE YET !!!
 #
-zmap_message_out "Fetching version using versioner script"
-ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
-    -path $CHECKOUT_BASE/ \
-    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
-
-
-zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
-
-
-# LET'S TRY ALWAYS NAMING THE RELEASE DIRECTORY....
-#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-#    [ "x$RELEASE_LOCATION" == "x" ] && RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
-#fi
-RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
-
-mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release directory $RELEASE_LOCATION"
-
-
-
 # For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
 #if [ -n "$GIT_VERSION_INFO" ] ; then
 #
@@ -440,6 +392,47 @@ mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release direct
 #    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
 #
 #fi
+#
+#
+# Get current version stuff... Do this before building...
+#
+#zmap_message_out "Fetching version using versioner script"
+#ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
+#    -path $CHECKOUT_BASE/ \
+#    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
+
+# so try this.....
+if [ -n "$GIT_VERSION_INFO" ] ; then
+
+    zmap_message_out "Collecting GIT describe info....for zmap version string"
+
+    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
+
+    ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
+
+else
+
+    zmap_message_out "Fetching ZMap Version using versioner script....for zmap version string"
+
+    ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
+	-path $CHECKOUT_BASE/ \
+	-show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
+
+fi
+
+zmap_message_out "Set zmap version to $ZMAP_RELEASE_VERSION."
+
+
+zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
+
+
+# LET'S TRY ALWAYS NAMING THE RELEASE DIRECTORY....
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+#    [ "x$RELEASE_LOCATION" == "x" ] && RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+#fi
+RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+
+mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release directory $RELEASE_LOCATION"
 
 
 
