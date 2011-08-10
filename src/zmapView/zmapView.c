@@ -978,8 +978,11 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
       zMapAssert(zmap_view);
       zMapAssert(parent_widget);
       zMapAssert(zmap_view->window_list);
+#if 0
+RT 227342
+now that we can use Zmap while data is loading this is a bit silly
       zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
-
+#endif
       copy_styles = zmap_view->context_map.styles ;
 
       view_window = createWindow(zmap_view, NULL) ;

@@ -1081,7 +1081,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
    * from the canvas item. */
 
       /* MH17:
-       * if we get here thay clicked on a feature not the column
+       * if we get here they clicked on a feature not the column
        * if the click on the column background the it gets handled in
        * zmapWindowDrawFeatures.c/columnMenuCB()
        */
@@ -1135,9 +1135,15 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     {
+#if REMOVED_RT_226682
+/* none of these features can be fetched, so blixem is pointless
+   theory is, someone requested this option....
+   See also DrawFeatures.c/zmapMakeColumnMenu()
+*/
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
+#endif
     }
-  else
+  else if (zMapStyleIsPfetchable(feature->style))
     {
       menu_sets = g_list_append(menu_sets, makeMenuPfetchOps(NULL, NULL, menu_data)) ;
 

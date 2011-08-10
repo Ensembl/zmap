@@ -2471,9 +2471,15 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
     {
       if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
 	{
+#if REMOVED_RT_226682
+/* none of these features can be fetched, so blixem is pointless
+   theory is, someone requested this option....
+   see also Windowfeature.c/zmapMakeItemMenu()
+*/
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
+#endif
 	}
-      else
+      else if (zMapStyleIsPfetchable(feature->style))
 	{
 	  menu_sets = g_list_append(menu_sets, separator) ;
 

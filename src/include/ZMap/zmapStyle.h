@@ -958,6 +958,8 @@ void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 //ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDisplay(style)   (style->col_display_state)
 
+#define zMapStyleIsPfetchable(style) (style->mode_data.alignment.pfetchable)
+
 //ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
 #define zMapStyleGlyphShape(style)   (&style->mode_data.glyph.glyph)
 ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style);
