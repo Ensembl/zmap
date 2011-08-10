@@ -406,8 +406,14 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
       web_page = g_strdup_printf("%s/%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES_DIR, ZMAPWEB_RELEASE_NOTES) ;
       break ;
 
+    case ZMAPGUI_HELP_WHATS_NEW:
+      web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);	/* a temporary fix via the internal wiki */
+	break;
+
     default:
-      zMapAssertNotReached() ;
+	zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
+	/* this used to assert: why crash? */
+	/* NOTE gcc flags up switches with enums not handled, so doubly useless */
 
     }
 
@@ -1144,8 +1150,8 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
 
 
 /* Return a GdkCursor which can be used to set the mouse pointer
- * for a window. 
- * 
+ * for a window.
+ *
  * If cursor name begins with "zmap_" then look in list of custom cursors
  * otherwise look in list of standard X Windows cursors.
  */
@@ -1566,15 +1572,15 @@ static void radioButtonCBDataDestroy(gpointer data)
 /* Constructs custom shaped cursors, just add more as required but
  * make sure their text names begin with "zmap_" to distinguish
  * them from standard X cursors.
- * 
+ *
  * The sample X windows utility program "bitmap" was used to construct
  * files containing definitions for the shape, mask, size and hotspots
  * in a format suitable for the GDK calls that create cursors (i.e. X bitmaps).
- * 
+ *
  * If you ever need to edit any of the below cursors simply cut/paste the
  * the bitmap data into a normal text file with format as follows and then
  * use the bitmap program to edit them:
- * 
+ *
  * #define zmap_cursor_shape_width 16
  * #define zmap_cursor_shape_height 16
  * #define zmap_cursor_shape_x_hot 7
@@ -1583,10 +1589,10 @@ static void radioButtonCBDataDestroy(gpointer data)
  *    0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0x04, 0x10, 0x02, 0x20,
  *    0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x02, 0x20, 0x04, 0x10, 0x08, 0x08,
  *    0x10, 0x04, 0xe0, 0x03, 0x00, 0x00, 0x00, 0x00};
- * 
+ *
  * Once you've done that you can just extract the hot spot and bits data and
  * insert it below as for the other cursors.
- * 
+ *
  *  */
 static GdkCursor *makeCustomCursor(char *cursor_name)
 {
@@ -1710,7 +1716,7 @@ static unsigned char zmap_noentry_mask_bits[] = {
 
      g_object_unref (source);
      g_object_unref (mask);
-   } 
+   }
 
 
   return cursor ;
@@ -1830,7 +1836,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
   GtkTextIter start, end ;
   GtkTextTag *tag ;
   char *first_attr, *second_attr ;
-  gpointer first_value, second_value ; 
+  gpointer first_value, second_value ;
   int iter_start, iter_end ;
   int line_start, line_end, line_diff ;
   char *curr_char ;
@@ -1839,7 +1845,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
 
 
 
-  /* 
+  /*
    * Create a tag to colour the text.
    */
 
@@ -1877,7 +1883,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
 
 
 
-  /* 
+  /*
    * Now calculate the correct range in the text over which to apply the tag.
    */
 
@@ -1999,7 +2005,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
 
 
 
-  /* 
+  /*
    * Phew...now apply the tag to the text.
    */
 

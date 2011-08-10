@@ -115,10 +115,11 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Raise ticket/Blixem, Dotter or Belvu ticket",      NULL, rtTicket, RT_SEQTOOLS, NULL },
  { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
- { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
- { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
- { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+// { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+// { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
+// { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
+// { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+ { "/Help/What's New", NULL,    allHelpCB, ZMAPGUI_HELP_WHATS_NEW, NULL },
  { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
 
