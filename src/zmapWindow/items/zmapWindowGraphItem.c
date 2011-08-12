@@ -129,14 +129,18 @@ static void zmap_window_graph_item_class_init(ZMapWindowGraphItemClass graph_cla
   gobject_class = (GObjectClass *) graph_class;
   canvas_class  = (ZMapWindowCanvasItemClass) graph_class;
 
+  parent_class_G = gtk_type_class (zMapWindowCanvasItemGetType());
+
   gobject_class->set_property = zmap_window_graph_item_set_property;
   gobject_class->get_property = zmap_window_graph_item_get_property;
 
   gobject_class->dispose = zmap_window_graph_item_destroy;
 
   canvas_class->add_interval = zmap_window_graph_item_add_interval;
+
   graph_class->canvas_item_set_colour = canvas_class->set_colour;
   canvas_class->set_colour = zmap_window_graph_item_set_colour;
+
   canvas_class->set_feature = zmap_window_graph_item_set_feature;
   canvas_class->set_style = zmap_window_graph_item_set_style;
 
@@ -284,9 +288,21 @@ static void zmap_window_graph_item_get_property(GObject               *object,
 
 static void zmap_window_graph_item_destroy     (GObject *object)
 {
+//	ZMapWindowGraphItem item = (ZMapWindowGraphItem) object;
+	ZMapWindowCanvasItem canvas_item;
+	ZMapWindowCanvasItemClass canvas_item_class ;
+
+  	canvas_item = ZMAP_CANVAS_ITEM(object);
+  	canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
+
+	/* canvasitem destroy that calls foo group destroy that calls foo item destroy */
+	/* how efficent! */
+  	if(GTK_OBJECT_CLASS (parent_class_G)->destroy)
+    		(GTK_OBJECT_CLASS (parent_class_G)->destroy)(GTK_OBJECT(object));
+
+
 
   return ;
 }
-
 
 

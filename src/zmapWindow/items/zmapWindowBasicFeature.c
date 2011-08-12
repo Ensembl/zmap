@@ -248,6 +248,9 @@ static void zmap_window_basic_feature_get_property(GObject               *object
 
 
 /* I DON'T WHY THIS IS COMMENTED OUT.... */
+
+/* MH17: it default to canvasitem ->destroy */
+
 #ifdef BASIC_REQUIRES_DESTROY
 static void zmap_window_basic_feature_destroy     (GObject *object)
 {

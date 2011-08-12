@@ -818,6 +818,8 @@ typedef struct
 
   GQuark style_id ;     /* The style for processing the source. */
 
+  GQuark related_featureset;	/* eg real data from coverage */
+
 } ZMapFeatureSourceStruct, *ZMapFeatureSource ;
 
 

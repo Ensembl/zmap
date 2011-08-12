@@ -129,7 +129,7 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
 	GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
 
 
-            /* class not intialised till we make an item */
+            /* class not intialised till we make an item in foo_canvas_item_new() below */
       if(density_class_G && density_class_G->density_items)
             foo = (FooCanvasItem *) g_hash_table_lookup( density_class_G->density_items, GUINT_TO_POINTER(id));
       if(foo)
@@ -148,7 +148,7 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
             di = (ZMapWindowGraphDensityItem) interval;
             di->id = id;
             g_hash_table_insert(density_class_G->density_items,GUINT_TO_POINTER(id),(gpointer) foo);
-
+//printf("make density item %s\n",g_quark_to_string(di->id));
 		di->re_bin = style->mode_data.graph.density;
 
 		/* we record strand and frame for display colours
@@ -1106,15 +1106,22 @@ static void zmap_window_graph_density_item_destroy     (GObject *object)
 {
 
   ZMapWindowGraphDensityItem density;
+  /* mh17 NOTE: this fucntion gets called twice for every object via a very very tall stack */
+  /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
+  /* what's more interesting is why an object has to be killed twice */
 
+//  printf("zmap_window_graph_density_item_destroy %p\n",object);
   g_return_if_fail(ZMAP_IS_WINDOW_GRAPH_DENSITY_ITEM(object));
 
   density = ZMAP_WINDOW_GRAPH_DENSITY_ITEM(object);
+  	/* removing it the second time will fail gracefully */
   g_hash_table_remove(density_class_G->density_items,GUINT_TO_POINTER(density->id));
 
-// does not compile
-//  if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
-//	(* GTK_OBJECT_CLASS (parent_class_G)->destroy) (object);
+//  printf("removing %s\n",g_quark_to_string(density->id));
+
+
+  if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
+	(* GTK_OBJECT_CLASS (parent_class_G)->destroy) (GTK_OBJECT(object));
 
   return ;
 }

@@ -488,6 +488,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
   GHashTable *gff_src;
   GHashTable *col_styles;
   GHashTable *gff_desc;
+  GHashTable *gff_related;
   GHashTable *src2src;
   ZMapFeatureSource gff_source;
   ZMapFeatureSetDesc gffset;
@@ -623,6 +624,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         gff_src   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_SOURCE_CONFIG,QQ_QUARK);
         fset_styles = zMapConfigIniGetQQHash(context,ZMAPSTANZA_FEATURESET_STYLE_CONFIG,QQ_STYLE);
         gff_desc  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_DESCRIPTION_CONFIG,QQ_QUARK);
+        gff_related   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_RELATED_CONFIG,QQ_QUARK);
+
         gff_source = NULL;
 
         // it's an input and output for servers, must provide for pipes
@@ -667,6 +670,13 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_desc,key));
 		if(q)
 		  gff_source->source_text = q;
+	      }
+
+	      if(gff_related)
+	      {
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_related,key));
+		if(q)
+		  gff_source->related_featureset = q;
 	      }
 
             /* source_2_source data defaults are hard coded in GFF2parser
