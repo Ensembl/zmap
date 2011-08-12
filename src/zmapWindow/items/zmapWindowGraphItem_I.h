@@ -1,6 +1,6 @@
-/*  File: zmapWindowBasicFeature_I.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+/*  File: zmapWindowGraphItem_I.h
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,36 +27,57 @@
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_WINDOW_BASIC_FEATURE_I_H
-#define ZMAP_WINDOW_BASIC_FEATURE_I_H
 
+#ifndef ZMAP_WINDOW_GRAPH_ITEM_I_H
+#define ZMAP_WINDOW_GARPH_ITEM_I_H
+
+#include <glib.h>
+#include <glib-object.h>
+#include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowCanvasItem_I.h>
-#include <zmapWindowBasicFeature.h>
+#include <zmapWindowGraphDensityItem_I.h>
+#include <zmapWindowGraphItem.h>
+#include <ZMap/zmapStyle.h>
 
 
 
-typedef struct _zmapWindowBasicFeatureClassStruct
+
+
+typedef struct _zmapWindowGraphItemClassStruct
 {
-
   zmapWindowCanvasItemClass __parent__;
 
-  ZMapWindowItemStatsStruct RE_stats ;
-  ZMapWindowItemStatsStruct glyph_stats ;
+	/* to save parent's original function */
+  void (* canvas_item_set_colour)(ZMapWindowCanvasItem   window_canvas_item,
+		      FooCanvasItem         *interval,
+		      ZMapFeature		     feature,
+		      ZMapFeatureSubPartSpan sub_feature,
+		      ZMapStyleColourType    colour_type,
+		      int 			     colour_flags,
+		      GdkColor              *default_fill_gdk,
+                  GdkColor              *border_gdk) ;
 
-} zmapWindowBasicFeatureClassStruct;
+
+} zmapWindowGraphItemClassStruct;
 
 
+/*
+ * this is a container for graph data masquerading as a ZMapWindowCanvasItem
+ * and the prior canvas handling of item is subverted to move most of the compute into ZMap from the foo canvas
+ */
 
-typedef struct _zmapWindowBasicFeatureStruct
+typedef struct _zmapWindowGraphItemStruct
 {
   zmapWindowCanvasItem __parent__;
 
-// vestigal?
-//  FooCanvasItem *item;
-
-} zmapWindowBasicFeatureStruct;
+  ZMapStyleGraphMode mode;          /* type of graph */
 
 
-#endif /* ZMAP_WINDOW_BASIC_FEATURE_I_H */
+} zmapWindowGraphItemStruct;
+
+
+
+#endif /* ZMAP_WINDOW_GRAPH_ITEM_I_H */

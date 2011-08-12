@@ -97,7 +97,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 				   gboolean centre_on_region) ;
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
-static void extract_feature_from_item(gpointer list_data, gpointer user_data);
+//static void extract_feature_from_item(gpointer list_data, gpointer user_data);
 
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
@@ -182,6 +182,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   return result ;
 }
 
+#if 0
 GList *zmapWindowItemListToFeatureList(GList *item_list)
 {
   GList *feature_list = NULL;
@@ -192,6 +193,39 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
 }
 
 
+static void extract_feature_from_item(gpointer list_data, gpointer user_data)
+{
+  GList **list = (GList **)user_data;
+  FooCanvasItem *item = (FooCanvasItem *)list_data;
+  ZMapFeature feature;
+
+  if((feature = zmapWindowItemGetFeature(item)))
+    {
+      *list = g_list_append(*list, feature);
+    }
+  else
+    zMapAssertNotReached();
+
+  return ;
+}
+#else
+/* function is called from 2 places only, may be good to make callers use the id2c list directly
+   this is a quick mod to preserve the existing interface */
+
+GList *zmapWindowItemListToFeatureList(GList *item_list)
+{
+  GList *feature_list = NULL;
+  ID2Canvas id2c;
+
+  for(;item_list;item_list = item_list->next)
+  {
+  	id2c = (ID2Canvas) item_list->data;
+  	feature_list = g_list_append(feature_list,(gpointer) id2c->feature_any);
+  }
+
+  return feature_list;
+}
+#endif
 
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item)
 {
@@ -306,7 +340,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	  }
 	else
 	  {
-	    zmapWindowFocusAddItem(window->focus, item) ;
+	    zmapWindowFocusAddItem(window->focus, item , feature) ;
 	  }
 
 	break ;
@@ -314,7 +348,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     default:
       {
 	/* Try highlighting both the item and its column. */
-        zmapWindowFocusAddItem(window->focus, item);
+        zmapWindowFocusAddItem(window->focus, item, feature);
       }
       break ;
     }
@@ -811,13 +845,12 @@ ZMapFeatureTypeStyle zmapWindowItemGetStyle(ZMapWindow window, FooCanvasItem *it
 
 
 
-/* Finds the feature item in a window corresponding to the supplied feature item..which is
+/* Finds the feature item in a window corresponding to the supplied feature item...which is
  * usually one from a different window....
  *
  * This routine can return NULL if the user has two different sequences displayed and hence
  * there will be items in one window that are not present in another.
- *
- *  */
+ */
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
 {
   FooCanvasItem *matching_item = NULL ;
@@ -2151,21 +2184,6 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
 
 
-static void extract_feature_from_item(gpointer list_data, gpointer user_data)
-{
-  GList **list = (GList **)user_data;
-  FooCanvasItem *item = (FooCanvasItem *)list_data;
-  ZMapFeature feature;
-
-  if((feature = zmapWindowItemGetFeature(item)))
-    {
-      *list = g_list_append(*list, feature);
-    }
-  else
-    zMapAssertNotReached();
-
-  return ;
-}
 
 
 /* Get the visible portion of the canvas. */

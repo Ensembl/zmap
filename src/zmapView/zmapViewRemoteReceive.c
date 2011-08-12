@@ -180,7 +180,7 @@ static void loadFeatures(ZMapView view, RequestData input_data, ResponseData out
 
 static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
 static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
-static void populate_data_from_view(ZMapView view, RequestData xml_data);
+//static void populate_data_from_view(ZMapView view, RequestData xml_data);
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
@@ -202,7 +202,7 @@ static void setWindowXremote(ZMapView view) ;
 static void setXremoteCB(gpointer list_data, gpointer user_data) ;
 
 
-static void printHashEntry(gpointer key, gpointer value, gpointer user_data) ;
+
 
 
 
@@ -1180,7 +1180,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	  request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
 	  unique_set_name = (char *)g_quark_to_string(unique_set_id);
-	  
+
 	  /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
 	  request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;
 	  if (!(request_data->orig_feature_set) && action_table_G[xml_data->common.action].must_exist)
@@ -1476,6 +1476,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 	    if (result && !zMapXMLParserLastErrorMsg(parser))
 	      {
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		ZMapView view = request_data->view ;
 
@@ -1484,7 +1486,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		 * THAT IT ALL WORKS. */
 
 
-		/* 
+		/*
 		 * N.B. ALL THIS zMapBlock2FeatureCoords() WILL GO WHEN OTTERLACE
 		 * PASSES US THE CHROMOSOME COORDS....
 		 */
@@ -1500,7 +1502,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		    zMapFeatureRevComp(view->features->parent_span.x1, view->features->parent_span.x2,
 				       &(request_data->orig_block->block_to_sequence.block.x1),
 				       &(request_data->orig_block->block_to_sequence.block.x2)) ;
-		    
+
 		    zMapBlock2FeatureCoords(request_data->orig_block, &start, &end) ;
 
 		    zMapFeatureRevComp(view->features->parent_span.x1, view->features->parent_span.x2,
@@ -1551,7 +1553,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		  case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
 		  case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
 		    {
-		  
+
 		      zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
 							  parser,
 							  "feature tag not contained within featureset tag");
@@ -1718,7 +1720,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		      break ;
 		    }
 		  }
-	  
+
 		break;
 	      }
 	  }
@@ -1736,6 +1738,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
   return result ;
 }
+
 
 
 
@@ -2110,13 +2113,3 @@ static void setXremoteCB(gpointer list_data, gpointer user_data)
 }
 
 
-static void printHashEntry(gpointer key, gpointer value, gpointer user_data)
-{
-  GQuark set_id = GPOINTER_TO_INT(key) ;
-  ZMapFeatureSet set = (ZMapFeatureSet)value ;
-
-  printf("Key: %s      Feature set: %s, %s\n", g_quark_to_string(set_id), 
-	 g_quark_to_string(set->unique_id), g_quark_to_string(set->original_id)) ;
-
-  return ;
-}

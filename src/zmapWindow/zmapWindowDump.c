@@ -864,7 +864,6 @@ static void itemCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
   DumpOptions dump_options = (DumpOptions)user_data ;
-  FooCanvasItem *foo;
 
     if(FOO_IS_CANVAS_GROUP(item))         // complex object
       {

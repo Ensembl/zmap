@@ -904,6 +904,7 @@
 #define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"
 #define ZMAPSTANZA_GFF_SOURCE_CONFIG          "featureset-source"
 #define ZMAPSTANZA_GFF_DESCRIPTION_CONFIG     "featureset-description"
+#define ZMAPSTANZA_GFF_RELATED_CONFIG         "featureset-related"
 
 
 

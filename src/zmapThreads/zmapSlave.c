@@ -274,6 +274,7 @@ void *zmapNewThread(void *thread_args)
 		zMapAssertNotReached() ;
 		break ;
 	      }
+
 	    }
 	}
 

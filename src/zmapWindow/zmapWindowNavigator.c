@@ -139,11 +139,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data);
 
 static gboolean factoryItemHandler(FooCanvasItem       *new_item,
-				   ZMapFeatureContext   context,
-				   ZMapFeatureAlignment alignment,
-				   ZMapFeatureBlock     block,
-				   ZMapFeatureSet       feature_set,
-				   ZMapFeature          feature,
+				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data);
 
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
@@ -866,7 +862,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapWindowContainerFeatures features = NULL;
-        int block_start, block_end;
+//        int block_start, block_end;
 
         draw_data->current_block = feature_block = (ZMapFeatureBlock)feature_any;
 
@@ -1555,11 +1551,7 @@ static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer dat
 }
 
 static gboolean factoryItemHandler(FooCanvasItem       *new_item,
-				   ZMapFeatureContext   context,
-				   ZMapFeatureAlignment alignment,
-				   ZMapFeatureBlock     block,
-				   ZMapFeatureSet       feature_set,
-				   ZMapFeature          feature,
+				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data)
 {
   g_signal_connect(GTK_OBJECT(new_item), "event",

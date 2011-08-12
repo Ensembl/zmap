@@ -1135,10 +1135,11 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   this_container->reposition_y = current_y;
 
 #if MH17_DEBUG_NAV_FOOBAR
+{
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update (%s)\n",name);
-print_foo("");
+printf("container_group_update 1 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
 #endif
 
   /* This was in the previous version of the code, copying across... */
@@ -1166,9 +1167,6 @@ print_foo("");
   doing_reposition = ((flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION) == ZMAP_CANVAS_UPDATE_NEED_REPOSITION);
   need_cropping    = ((flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)   == ZMAP_CANVAS_UPDATE_CROP_REQUIRED);
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 2");
-#endif
   if(doing_reposition)
     {
       GList *list, *list_end, tmp_features = {NULL}, tmp_background = {NULL};
@@ -1209,9 +1207,6 @@ print_foo("container_group_update 2");
 	  while((item_list = item_list->next));
 	}
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 3");
-#endif
       if(print_debug_G)
 	{
 	  switch(this_container->level)
@@ -1238,9 +1233,19 @@ print_foo("container_group_update 3");
 	  real_group->xpos = current_x;
 	  /* We don't do y at the moment. no real idea what should happen here. */
 	  /* real_group->ypos = current_y; */
+#if MH17_DEBUG_NAV_FOOBAR
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 3 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
+#endif
+
 	}
 
       /* We _only_ update the background and features at this time. Underlays and overlays will get done later */
+
+
       tmp_background.next = &tmp_features;
       tmp_background.data = zmapWindowContainerGetBackground(this_container);
       tmp_background.prev = NULL;
@@ -1255,25 +1260,31 @@ print_foo("container_group_update 3");
       canvas_group->item_list     = &tmp_background;
       canvas_group->item_list_end = &tmp_features;
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 3a");
-#endif
       (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
       canvas_group->item_list     = list;
       canvas_group->item_list_end = list_end;
+#if MH17_DEBUG_NAV_FOOBAR
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 4 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
+#endif
 
     }
   else
     {
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 3b");
-#endif
       (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
-    }
 #if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 4");
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 5 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
 #endif
+    }
+
   if(rect && item_visible)
     {
       gboolean need_2nd_update = TRUE;
@@ -1286,18 +1297,13 @@ print_foo("container_group_update 4");
 	  if(parent_container)
 	    {
 	      double dx, dy;
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 5");
-#endif
+
 	      if(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)
 		(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)(this_container,
 										   rect->x1, rect->y1,
 										   rect->x2, rect->y2,
 										   &dx, &dy);
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("container_group_update 6");
-#endif
 	      parent_container->reposition_x += dx;
 	      parent_container->reposition_y += dy;
 	    }
@@ -1305,6 +1311,14 @@ print_foo("container_group_update 6");
 	  zmap_window_container_invoke_post_update_hooks(this_container,
 							 rect->x1, rect->y1,
 							 rect->x2, rect->y2);
+#if MH17_DEBUG_NAV_FOOBAR
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 6 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
+#endif
+
 	}
 
       /* The background needs updating now so that the canvas knows
@@ -1342,14 +1356,35 @@ print_foo("container_group_update 6");
 	    zmapWindowContainerUnderlayMaximiseItems(underlay,
 						     rect->x1, rect->y1,
 						     rect->x2, rect->y2);
+#if MH17_DEBUG_NAV_FOOBAR
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 7 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
+#endif
 
 	  for(i = 0; i < 3; i++)
 	    {
 	      zmap_window_container_update_with_crop(update_items[i], i2w_dx, i2w_dy, &scroll_region, update_flags);
+#if MH17_DEBUG_NAV_FOOBAR
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 8/%d (%s): %f %f\n",i,name,canvas_group->xpos,canvas_group->ypos);
+}
+#endif
 	    }
 	}
     }
 
+#if MH17_DEBUG_NAV_FOOBAR
+{
+char *name = "none";
+if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
+printf("container_group_update 9 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+}
+#endif
 
   /* Always do these, whatever else went on. No question! */
   this_container->reposition_x          = 0.0;

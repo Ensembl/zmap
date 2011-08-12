@@ -35,6 +35,7 @@
 
 #include <glib-object.h>
 #include <libzmapfoocanvas/libfoocanvas.h>
+#include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowGlyphItem.h>
 
 
@@ -50,7 +51,11 @@ typedef struct _zmapWindowGlyphItemClassStruct
 
 typedef struct _zmapWindowGlyphItemStruct
 {
-  FooCanvasItem __parent__;
+  zmapWindowCanvasItem __parent__;
+
+  FooCanvasItem *item;
+
+//  FooCanvasItem __parent__;
 
   /* origin (anchor point at 0,0 - should be the centre of the column) */
   double cx, wx;		/* canvas and world */

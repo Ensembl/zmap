@@ -833,6 +833,8 @@ typedef struct
 
   GQuark style_id ;     /* The style for processing the source. */
 
+  GQuark related_featureset;	/* eg real data from coverage */
+
 } ZMapFeatureSourceStruct, *ZMapFeatureSource ;
 
 
@@ -840,7 +842,7 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *styles;                     /* All the styles know to the view or window */
+  GHashTable *styles;                     /* All the styles known to the view or window */
 
   GHashTable *column_2_styles ;           /* Mapping of each column to all the styles
                                            * it requires. using a GHashTable of
@@ -853,7 +855,7 @@ typedef struct
                                            * Columns treated as fake featuresets so as to have a style
                                            */
 
-  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureDesc
+  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureSetDesc
                                            * NB: this contains data from ZMap config
                                            * sections [columns] [featureset_description] _and_ ACEDB
                                            */
@@ -923,6 +925,9 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
+
+
+
 
 
 /* ***************

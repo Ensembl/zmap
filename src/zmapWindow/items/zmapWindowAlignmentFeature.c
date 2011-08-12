@@ -81,8 +81,10 @@ static void zmap_window_alignment_feature_destroy     (GObject *object);
 
 static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alignment,
 						     FooCanvasItem         *interval,
+						     ZMapFeature			feature,
 						     ZMapFeatureSubPartSpan sub_feature_in,
 						     ZMapStyleColourType    colour_type,
+						     int colour_flags,
 						     GdkColor              *default_fill,
                                          GdkColor              *border);
 static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanvasItem   alignment,
@@ -248,8 +250,10 @@ static ZMapWindowContainerFeatureSet zmap_window_canvas_item_get_featureset(ZMap
 
 static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alignment,
 						     FooCanvasItem         *interval,
+						     ZMapFeature            feature,
 						     ZMapFeatureSubPartSpan sub_feature,
 						     ZMapStyleColourType    colour_type,
+						     int colour_flags,
 						     GdkColor              *default_fill,
                                          GdkColor              *border)
 {

@@ -177,8 +177,24 @@ typedef struct
   (ZMapWindowStatsAlign)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 
 
+
+/* the FtoIHash, search now returns these not the items */
+/* We store ids with the group or item that represents them in the canvas.
+ * May want to consider more efficient way of storing these than malloc... */
+typedef struct
+{
+  FooCanvasItem *item ;					    /* could be group or item. */
+  GHashTable *hash_table ;
+
+  ZMapFeatureAny feature_any;
+  	/* direct link to feature instead if via item */
+  	/* need if we have composite items eg density plots */
+} ID2CanvasStruct, *ID2Canvas ;
+
+
 /* Callback for use in testing item hash objects to see if they fit a particular predicate. */
-typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
+/* mh17: NOTE changed to take featre rather than item, the FToIHash now has both */
+typedef gboolean (*ZMapWindowFToIPredFuncCB) (ZMapFeatureAny feature_any, gpointer user_data) ;
 
 typedef struct
 {
@@ -217,6 +233,20 @@ typedef struct
   ZMapFeatureTypeStyle style ;
 } ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
 
+
+/* used by item factory */
+typedef struct _zmapWindowFeatureStack
+{
+      ZMapFeatureContext context;
+      ZMapFeatureAlignment align;
+      ZMapFeatureBlock block;
+      ZMapFeatureSet set;
+      ZMapFeature feature;
+      GQuark id;        /* used for density plots, set to zero */
+      int set_index;	/* used by density plots for stagger */
+      ZMapStrand strand;
+      ZMapFrame frame;
+} ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 
 
@@ -491,6 +521,8 @@ typedef enum
 
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
+gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
+
 
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
@@ -1227,13 +1259,14 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group, ZMapFeature feature) ;
+				     FooCanvasGroup *set_group, ZMapWindowFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
@@ -1279,9 +1312,9 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 // also used for evidence highlight lists
 
 ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
-void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type);
-#define zmapWindowFocusAddItem(focus, item_list) \
-      zmapWindowFocusAddItemType(focus, item_list,WINDOW_FOCUS_GROUP_FOCUS);
+void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,ZMapFeature feature, ZMapWindowFocusType type);
+#define zmapWindowFocusAddItem(focus, item_list, feature) \
+      zmapWindowFocusAddItemType(focus, item_list, feature, WINDOW_FOCUS_GROUP_FOCUS);
 void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot,ZMapWindowFocusType type);
 #define zmapWindowFocusAddItems(focus, item_list, hot) \
       zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);
@@ -1444,6 +1477,8 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark,gboolean is_column);
+
+void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 

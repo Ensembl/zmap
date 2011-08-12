@@ -119,6 +119,12 @@ items/zmapWindowFeatures_I.h \
 items/zmapWindowGlyphItem.c \
 items/zmapWindowGlyphItem.h \
 items/zmapWindowGlyphItem_I.h \
+items/zmapWindowGraphItem.c \
+items/zmapWindowGraphItem.h \
+items/zmapWindowGraphDensityItem_I.h \
+items/zmapWindowGraphDensityItem.c \
+items/zmapWindowGraphDensityItem.h \
+items/zmapWindowGraphItem_I.h \
 items/zmapWindowLongItem.c \
 items/zmapWindowLongItem.h \
 items/zmapWindowLongItem_I.h \

@@ -425,9 +425,11 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
+
   status = initBlixemData(view, block, align_type,
 			  0, position,
 			  0, 0, 0, 0, NULL, feature_set, ZMAPWINDOW_ALIGNCMD_NONE, &blixem_data, &err_msg) ;
+
 
   blixem_data.errorMsg = NULL ;
 
@@ -526,6 +528,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
       blixem_data.sequence_map = view->view_sequence;
     }
+
 
   if (status)
     status = makeTmpfiles(&blixem_data) ;
@@ -921,6 +924,7 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
   if (curr_prefs->scope > 0)
     blixem_data->scope = curr_prefs->scope ;
 
+
   blixem_data->scope_from_mark = curr_prefs->scope_from_mark ;
   blixem_data->features_from_mark = curr_prefs->features_from_mark ;
 
@@ -1246,6 +1250,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     {
       int offset, tmp1 ;
 
+
       offset = tmp1 = blixem_data->offset ;
 
       paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
@@ -1254,6 +1259,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       if (blixem_data->view->revcomped_features)
 		zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
 #endif
+
 
       paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
     }
@@ -1337,6 +1343,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   else
   {
       missed += 1;
+
   }
 
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
@@ -1349,6 +1356,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   	missed += 2;
   }
 
+
   return status ;
 }
 
@@ -1358,6 +1366,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
   gboolean status = TRUE ;
   GError  *channel_error = NULL ;
   //  gboolean seqbl_file = FALSE ;
+
   char *header ;
   int start, end ;
 
@@ -1418,10 +1427,12 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
       if (blixem_data->view->revcomped_features)
 	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
+
       header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
 			       g_quark_to_string(blixem_data->block->original_id),
 			       start, end) ;
       printf("Blixem file: %s",header);
+
 
       status = initFeatureFile(blixem_data->gff_file, header, blixem_data->line,
 			       &(blixem_data->gff_channel), blixem_data) ;
@@ -1487,6 +1498,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	}
 
       if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+
 	{
 	  // chr4-04     source1     region      215000      300000      0.000000    .     .     dataType=short-read
 
@@ -1506,6 +1518,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	  printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
 	  printf("Blixem file: %s",blixem_data->line->str);
 	}
+
 
       if (blixem_data->homol_max)
 	{
@@ -2950,7 +2963,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
 	  /* Write header as:   ">seq_name start end" so file is self describing, note that
-	   * start/end are ref sequence coords (e.g. chromosome), not local zmap display coords. */ 
+	   * start/end are ref sequence coords (e.g. chromosome), not local zmap display coords. */
 	  line = g_strdup_printf(">%s %d %d\n",
 				 g_quark_to_string(blixem_data->view->features->parent_name),
 				 start, end) ;

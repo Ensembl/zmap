@@ -514,7 +514,12 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 								    restore.item.feature_id,
 								    NULL, NULL)))
 	{
-	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
+	  ID2Canvas id2c = (ID2Canvas) possible_mark_items->data;
+	  ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) id2c->item;
+	  	/* in case of composite item (eg GraphDensity) */
+	  	/* make sure item has the required feature set */
+	  zMapWindowCanvasItemSetFeaturePointer(item, (ZMapFeature) id2c->feature_any);
+	  zmapWindowMarkSetItem(mark, id2c->item);
 	}
       else
 	{
@@ -622,7 +627,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 						  restore.item.feature_id))
 	  && zmapWindowItemIsShown(focus_item))
 	{
-	  zmapWindowFocusAddItem(window->focus, focus_item);
+	  zmapWindowFocusAddItem(window->focus, focus_item, NULL);
 
 	  zmapWindowHighlightFocusItems(window);
 	}
@@ -636,7 +641,8 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 								     restore.item.feature_id,
 								     NULL, NULL)))
 	{
-	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data);
+//	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data,NULL);
+	  zmapWindowFocusAddItems(window->focus, possible_focus_items,NULL);
 
 	  zmapWindowHighlightFocusItems(window);
 

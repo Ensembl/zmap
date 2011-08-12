@@ -1273,13 +1273,14 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
                             gpointer user_data)
 {
   ZMapWindowFeatureItemList zmap_tv_feature;
-  FooCanvasItem *item = FOO_CANVAS_ITEM(user_data);
-  ZMapFeature feature = NULL;
+  ID2Canvas id2c = (ID2Canvas) user_data;
+  FooCanvasItem *item = FOO_CANVAS_ITEM(id2c->item);
+  ZMapFeature feature = (ZMapFeature) id2c->feature_any;
   AddSimpleDataFeatureItemStruct add_simple = {NULL};
 
   zmap_tv_feature = ZMAP_WINDOWFEATUREITEMLIST(zmap_tv);
 
-  if((feature = zmapWindowItemGetFeature(item)))
+  if((feature))	// = zmapWindowItemGetFeature(item)))
     {
       if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
        feature->type != ZMAPSTYLE_MODE_INVALID)

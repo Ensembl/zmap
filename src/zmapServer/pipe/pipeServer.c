@@ -610,7 +610,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
       if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
 	{
-	  if ((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
+	  if((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
+
             retval = TRUE;
 	}
       else
@@ -641,6 +642,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	  result = pipeGetHeader(server);
 
           if (result == ZMAP_SERVERRESPONSE_OK)
+
             {
               // always read it: have to skip over if not wanted
               // need a flag here to say if this is a sequence server
@@ -656,6 +658,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 			/* i'm trying to fix soemthing else right now */
 //		  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
 		}
+
 	}
     }
 
@@ -798,6 +801,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   gboolean header_ok = FALSE ;	/* got al the ones we need */
 
 
+
   server->result = ZMAP_SERVERRESPONSE_REQFAIL ;  // to catch empty file
 
   if(server->sequence_server)
@@ -814,6 +818,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
       *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
       if (zMapGFFParseHeader(server->parser, server->gff_line->str, &done_header, &header_ok))
+
 	{
 	  if (done_header)
 	    break ;
@@ -873,7 +878,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   /* Sometimes the file contains only the gff header and no data, I don't know the reason for this
    * but in this case there's no point in going further. */
   /* MH17: see RT 227185 -> good header plus no data means no data not a failure
-   * so return o
+   * so return ok
    */
   if (!header_ok)
     {
@@ -888,6 +893,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 
       setErrMsg(server, err_msg) ;
       g_free(err_msg) ;
+
 
       ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path, server->query,
 			 "%s", server->last_err_msg) ;

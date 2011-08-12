@@ -178,9 +178,9 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer d
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data) ;
 
-static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
-static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
-static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+//static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+//static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
+//static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 
@@ -1501,7 +1501,26 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
       feature = zMapWindowCanvasItemGetFeature(sub_item);
-      zMapAssert(feature_arg == feature);
+
+#if 0
+//fixed by adding ZMWCI->set_feature() and zMapWindowCanvasItemSetFeature()
+	/* mh17 NOTE
+	 * GRAPH_DENSITY items set thier feature when point() is called
+	 * if the mouse is moving while we are processing a click then the feature
+	 * pointed at by the canvas item can change causing an assertion
+	 * here we choose to dislay info about the one clicked on
+	 * the assertion is the check that a sub-item (eg exon) is really part of the containing group
+	 * and we break that with composite items
+	 * we have to ensure that the feature_arg data is passed through with any later functions
+	 * that update the canvas item (highlighting the feature in another window maybe?)
+	 * so that implicates zmapView.c/select and likely zmapControl.c too
+	 * note that we cannot simply choose to use featrue instead of feature_arg as the mouse may be still moving
+	 */
+      if(ZMAP_IS_WINDOW_GRAPH_DENSITY_ITEM(sub_item))
+      	feature = feature_arg;
+      else
+#endif
+      	zMapAssert(feature_arg == feature);
 
       top_canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(sub_item);
 
@@ -4386,6 +4405,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 
 #if MH17_DONT_INCLUDE
+// NOTE this code will probably break due to later mods, list will be of FToi hash values not ZMapCanvasItems
     case GDK_e:
 
       if(zmap_development_G)
@@ -4719,7 +4739,9 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 /* Checks to see if current item has coords outside of current min/max. */
 static void getMaxBounds(gpointer data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ID2Canvas id2c = (ID2Canvas) data;
+  FooCanvasItem *item = (FooCanvasItem *)id2c->item ;
+#warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
   MaxBounds max_bounds = (MaxBounds)user_data ;
   double rootx1, rootx2, rooty1, rooty2 ;
 
@@ -5013,7 +5035,9 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)) && (length = g_list_length(selected)))
     {
       GString *text ;
+
       GArray *feature_coords ;
+      ID2Canvas id2c;
       FooCanvasItem *item;
       ZMapWindowCanvasItem canvas_item;
       ZMapFeature item_feature ;
@@ -5024,15 +5048,14 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
       text = g_string_sized_new(512) ;
 
       feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-
-      item = FOO_CANVAS_ITEM(selected->data) ;
-
+ 	id2c = (ID2Canvas) selected->data;
+      item = FOO_CANVAS_ITEM(id2c->item) ;
       if (ZMAP_IS_CANVAS_ITEM(item))
 	canvas_item = ZMAP_CANVAS_ITEM( item );
       else
 	canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
-
-      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+//      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+	item_feature = (ZMapFeature) id2c->feature_any;
 
       /* Processing is different if there is only one item highlighted and it's a transcript. */
       if (ZMAP_IS_CANVAS_ITEM(item) && length == 1
@@ -5074,15 +5097,16 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 	  while (selected)
 	    {
 	      FeatureCoordStruct feature_coord ;
-
-	      item = FOO_CANVAS_ITEM(selected->data) ;
+		id2c = (ID2Canvas) selected->data;
+      	item = FOO_CANVAS_ITEM(id2c->item) ;
 
 	      if (ZMAP_IS_CANVAS_ITEM(item))
 		canvas_item = ZMAP_CANVAS_ITEM( item );
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
 
-	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+//	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
+		item_feature = (ZMapFeature) id2c->feature_any;
 
 	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item)))
 		{

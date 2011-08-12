@@ -104,6 +104,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser) ;
 
 
 
+
 /* Parser must be created with the reference sequence for which features are to be
  * parsed because files may contain features for several reference sequences and
  * we need to parse only those for our reference sequence.
@@ -149,6 +150,7 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
 
       /* Set initial buffer & format string size to something that will probably be big enough. */
       resizeBuffers(parser, BUF_INIT_SIZE) ;
+
       resizeFormatStrs(parser) ;
     }
 
@@ -907,6 +909,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		      parser->features_start = start ;
 		      parser->features_end = end ;
 		    }
+
 		  if (g_ascii_strcasecmp(&sequence_name[0], parser->sequence_name) != 0
 		      || start > parser->features_end
 		      || end < parser->features_start)
@@ -938,6 +941,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 						  start, end,
 						  parser->line_count, line) ;
 		    }
+
 		}
 
 	    }

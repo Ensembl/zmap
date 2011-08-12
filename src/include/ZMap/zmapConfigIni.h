@@ -146,7 +146,7 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list_in);
 
 gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out);
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash);
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
 GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);

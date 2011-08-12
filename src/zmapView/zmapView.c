@@ -487,6 +487,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
   GHashTable *gff_src;
   GHashTable *col_styles;
   GHashTable *gff_desc;
+  GHashTable *gff_related;
   GHashTable *src2src;
   ZMapFeatureSource gff_source;
   ZMapFeatureSetDesc gffset;
@@ -578,6 +579,9 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	      continue;
 
             featuresets = zMapConfigString2QuarkList(src->featuresets,FALSE) ;
+// MH17: need to add server name as default featureset -> it doesn't have one due to GLib config file rubbish
+//            if(!featuresets)
+//            	featuresets = g_list_add(featuresets,src->name);
 
             while(featuresets)
               {
@@ -600,7 +604,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
           }
 
 
-        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col);
+        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col,view->context_map.columns);
 
         if(g_hash_table_size(fset_col))
 	  view->context_map.featureset_2_column = fset_col;
@@ -619,6 +623,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         gff_src   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_SOURCE_CONFIG,QQ_QUARK);
         fset_styles = zMapConfigIniGetQQHash(context,ZMAPSTANZA_FEATURESET_STYLE_CONFIG,QQ_STYLE);
         gff_desc  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_DESCRIPTION_CONFIG,QQ_QUARK);
+        gff_related   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_RELATED_CONFIG,QQ_QUARK);
+
         gff_source = NULL;
 
         // it's an input and output for servers, must provide for pipes
@@ -663,6 +669,13 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_desc,key));
 		if(q)
 		  gff_source->source_text = q;
+	      }
+
+	      if(gff_related)
+	      {
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_related,key));
+		if(q)
+		  gff_source->related_featureset = q;
 	      }
 
             /* source_2_source data defaults are hard coded in GFF2parser
@@ -3288,7 +3301,8 @@ printf("\nview styles lists after merge:\n");
                         /* construct reverse mapping from column to featureset */
                         if(!g_list_find(column->featuresets,key))
                         {
-                              column->featuresets = g_list_prepend(column->featuresets,key);
+                        	/* NOTE this is an ordered list */
+                              column->featuresets = g_list_append(column->featuresets,key);
 //printf("adding %s to column %s\n", g_quark_to_string(GPOINTER_TO_UINT(key)), g_quark_to_string(column->unique_id));
                         }
                   }
@@ -3728,7 +3742,7 @@ static void destroyConnection(ZMapView view, ZMapViewConnection view_conn)
   if (view->sequence_server == view_conn)
     view->sequence_server = NULL;
 
-  zMapThreadDestroy(view_conn->thread) ;
+//  zMapThreadDestroy(view_conn->thread) ;
 
   g_free(view_conn->url) ;
 

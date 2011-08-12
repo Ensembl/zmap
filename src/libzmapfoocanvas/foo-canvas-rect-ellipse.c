@@ -471,7 +471,7 @@ foo_canvas_re_set_property (GObject              *object,
 
 		set_gc_foreground (re->fill_gc, re->fill_pixel);
 
-		foo_canvas_item_request_redraw (item);		
+		foo_canvas_item_request_redraw (item);
 		break;
 
 	case PROP_OUTLINE_COLOR:
@@ -527,7 +527,7 @@ foo_canvas_re_set_property (GObject              *object,
 
 		set_gc_foreground (re->outline_gc, re->outline_pixel);
 
-		foo_canvas_item_request_redraw (item);		
+		foo_canvas_item_request_redraw (item);
 		break;
 
 	case PROP_FILL_STIPPLE:
@@ -809,7 +809,7 @@ foo_canvas_rect_class_init (FooCanvasRectClass *klass)
 	item_class->realize = foo_canvas_rect_realize;
 
 	G_OBJECT_CLASS (klass)->finalize = foo_canvas_rect_finalize;
-	
+
 }
 
 static void
@@ -853,7 +853,7 @@ foo_canvas_rect_realize  (FooCanvasItem *item)
 		priv->format = XRenderFindVisualFormat (dpy, visual);
 	}
 #endif
-	
+
 	if (FOO_CANVAS_ITEM_CLASS (rect_parent_class)->realize) {
 		(* FOO_CANVAS_ITEM_CLASS (rect_parent_class)->realize) (item);
 	}
@@ -876,7 +876,7 @@ render_rect_alpha (FooCanvasRect *rect,
 	if (width <= 0 || height <= 0 ) {
 		return;
 	}
-	
+
 	priv = rect->priv;
 
 	r = (rgba >> 24) & 0xff;
@@ -914,19 +914,19 @@ render_rect_alpha (FooCanvasRect *rect,
 		r = r * a / 255;
 		g = g * a / 255;
 		b = b * a / 255;
-		
+
 		color.red = (r << 8) + r;
 		color.green = (g << 8) + g;
 		color.blue = (b << 8) + b;
 		color.alpha = (a << 8) + a;
-		
+
 		XRenderFillRectangle (dpy,
 				      PictOpOver,
 				      pict,
 				      &color,
 				      x - x_offset, y - y_offset,
 				      width, height);
-		
+
 		XRenderFreePicture (dpy, pict);
 
 		return;
@@ -935,23 +935,23 @@ render_rect_alpha (FooCanvasRect *rect,
 	pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, width, height);
 	data = gdk_pixbuf_get_pixels (pixbuf);
 	rowstride = gdk_pixbuf_get_rowstride (pixbuf);
-	
+
 	r = (rgba >> 24) & 0xff;
 	g = (rgba >> 16) & 0xff;
 	b = (rgba >> 8) & 0xff;
 	a = (rgba >> 0) & 0xff;
-	
+
 	for (i = 0; i < width*4; ) {
 		data[i++] = r;
 		data[i++] = g;
 		data[i++] = b;
 		data[i++] = a;
 	}
-	
+
 	for (i = 1; i < height; i++) {
 		memcpy (data + i*rowstride, data, width*4);
 	}
-	
+
 	gdk_draw_pixbuf (drawable, NULL, pixbuf,
 			 0, 0, x, y, width, height,
 			 GDK_RGB_DITHER_NONE, 0, 0);
@@ -973,7 +973,7 @@ foo_canvas_rect_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose
 	i2w_dx = 0.0;
 	i2w_dy = 0.0;
 	foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
-	
+
 	x1 = re->x1 + i2w_dx;
 	y1 = re->y1 + i2w_dy;
 	x2 = re->x2 + i2w_dx;
@@ -981,7 +981,7 @@ foo_canvas_rect_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose
 
 	foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
 	foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
-	
+
 	if (re->fill_set) {
 		if ((re->fill_color & 0xff) != 255) {
 			GdkRectangle *rectangles;
@@ -993,7 +993,7 @@ foo_canvas_rect_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose
 			draw_rect.y = cy1;
 			draw_rect.width = cx2 - cx1 + 1;
 			draw_rect.height = cy2 - cy1 + 1;
-			
+
 			/* For alpha mode, only render the parts of the region
 			   that are actually exposed */
 			gdk_region_get_rectangles (expose->region,
@@ -1011,7 +1011,7 @@ foo_canvas_rect_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose
 							   re->fill_color);
 				}
 			}
-			
+
 			g_free (rectangles);
 		} else {
 			if (re->fill_stipple)
@@ -1158,7 +1158,7 @@ foo_canvas_rect_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, gint 
 
 	re = FOO_CANVAS_RE (item);
 	priv = FOO_CANVAS_RECT (item)->priv;
-	
+
 	x1 = re->x1 + i2w_dx;
 	y1 = re->y1 + i2w_dy;
 	x2 = re->x2 + i2w_dx;
@@ -1195,7 +1195,7 @@ foo_canvas_rect_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, gint 
 
 		width_lt = width_pixels / 2;
 		width_rb = (width_pixels + 1) / 2;
-		
+
 		cx1 -= width_lt;
 		cy1 -= width_lt;
 		cx2 += width_rb;
@@ -1208,7 +1208,7 @@ foo_canvas_rect_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, gint 
 					priv->last_outline_update_width);
 		priv->last_outline_update_rect = update_rect;
 		priv->last_outline_update_width = width_lt + width_rb;
-		
+
 		item->x1 = cx1;
 		item->y1 = cy1;
 		item->x2 = cx2+1;
@@ -1285,7 +1285,7 @@ foo_canvas_ellipse_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExp
 	i2w_dx = 0.0;
 	i2w_dy = 0.0;
 	foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
-	
+
 	foo_canvas_w2c (item->canvas,
 			  re->x1 + i2w_dx,
 			  re->y1 + i2w_dy,
