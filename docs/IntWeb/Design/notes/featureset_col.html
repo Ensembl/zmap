@@ -170,6 +170,14 @@ vertebrate_mRNA = Vertebrate messenger RNA
 </pre>
 </p>
 
+<p>Some featuresets may be related to others.  The first case we need is to link a coverage featrueset to the data it represents, and in this case we expect to request the data featureset via a right-click on the coverage.
+<pre>
+[featureset-related]
+coverage=data
+</pre>
+<b>NOTE</b>: many other relationshops are possible and this is an interim solution. Due to the increasing complexity of ZMap configuration we expect to replace the existing flat file with an SQLite database.
+</p>
+
 </fieldset>
 
 <fieldset><legend>A Note about GLib Key Files</legend>
