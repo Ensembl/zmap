@@ -402,7 +402,7 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
     }
   else
     {
-      zMapGUIShowMsgFull(NULL, "Please wait, ticket page wil be shown in your browser in a few seconds.",
+      zMapGUIShowMsgFull(NULL, "Please wait, ticket page will be shown in your browser in a few seconds.",
 			 ZMAP_MSG_INFORMATION,
 			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
     }

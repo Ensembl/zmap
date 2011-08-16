@@ -1094,6 +1094,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_data->window = window ;
   menu_data->item = item ;
   menu_data->feature = feature;
+  menu_data->context_map = window->context_map;		/* window has it but when we make the menu it's out of scope */
 
   /* get the featureset and container for the feature, needed for Show Masked Features */
   menu_data->feature_set = feature_set;

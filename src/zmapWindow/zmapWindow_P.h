@@ -476,15 +476,18 @@ typedef struct
   ZMapWindow window ;
 
   /* this is sometimes a containerfeatureset
-   * eg in zmapWindowDarwFeatures.c/columnMenuCB()
+   * eg in zmapWindowDrawFeatures.c/columnMenuCB()
    */
   FooCanvasItem *item ;
 
   ZMapFeature feature;                    /* only used in item callbacks */
   ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
+  GQuark req_id;					/* set to request if any */
   ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
                                                 /* be good to loose the featureset member */
-  ZMapFeatureContextMap context_map ;			    /* column to featureset mapping and other data. */
+                                                /* is this true: column contains mixed features */
+  ZMapFeatureContextMap context_map ;	/* column to featureset mapping and other data. */
+
 
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 

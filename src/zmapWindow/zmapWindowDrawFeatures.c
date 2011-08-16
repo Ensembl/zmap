@@ -812,13 +812,15 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL);
 
+#warning  MH17: looks like old debugging, lets remove after the August 2011 release
 if(!feature_set->style)
 {
 	int n;
-	char *set = g_quark_to_string(feature_set->unique_id);
+	char *set = (char *) g_quark_to_string(feature_set->unique_id);
 	n = g_hash_table_size(feature_set->features);
 	zMapLogWarning("set %s has no style and %d features",set,n);
 }
+
   if(zMapStyleDensity(feature_set->style))
   {
   	featureset_data.feature_stack.set_index =

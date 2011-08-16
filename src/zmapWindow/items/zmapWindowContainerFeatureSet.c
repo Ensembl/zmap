@@ -361,6 +361,11 @@ GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet co
 }
 
 
+GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet container_set)
+{
+  return container_set->featuresets;
+}
+
 /*!
  * \brief Access the strand of a column.
  *

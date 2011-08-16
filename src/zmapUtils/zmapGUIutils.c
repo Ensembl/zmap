@@ -419,7 +419,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
 
   if (zMapLaunchWebBrowser(web_page, &error))
     {
-      zMapGUIShowMsgFull(NULL, "Please wait, help page wil be shown in your browser in a few seconds.",
+      zMapGUIShowMsgFull(NULL, "Please wait, help page will be shown in your browser in a few seconds.",
 			 ZMAP_MSG_INFORMATION,
 			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
     }

@@ -194,7 +194,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		/* Get positions/translation etc of all exons. */
 		if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list))
 		  {
-		    zMapLogWarning("Could not find exons/introns in transcript %s", zMapFeatureName(seed_feature)) ;
+		    zMapLogWarning("Could not find exons/introns in transcript %s", zMapFeatureName((ZMapFeatureAny) seed_feature)) ;
 		    continue ;
 		  }
 
@@ -276,7 +276,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 			    g_object_set(G_OBJECT(text_item),
 					 "select-color-gdk", non_coding_background,
 					 NULL) ;
-			    break ; 
+			    break ;
 
 			  case EXON_CODING:
 			    {
@@ -311,7 +311,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 			      if (is_pep)
 				{
 				  int start_from_pep = start, end_from_pep = end ;
-				  
+
 				  zMapSequencePep2DNA(&start_from_pep, &end_from_pep,
 						      feature->feature.sequence.frame) ;
 
