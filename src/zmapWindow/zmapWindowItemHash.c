@@ -228,10 +228,15 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
   if (!(g_hash_table_lookup(feature_context_to_item, GUINT_TO_POINTER(align_id))))
     {
       ID2Canvas align ;
+      ZMapFeatureAny item_feature ;
+
+      item_feature = zmapWindowItemGetFeatureAny(align_group) ;
+      zMapAssert(item_feature) ;
 
       align = g_new0(ID2CanvasStruct, 1) ;
       align->item = FOO_CANVAS_ITEM(align_group) ;
       align->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+      align->feature_any = item_feature ;
 
       g_hash_table_insert(feature_context_to_item, GUINT_TO_POINTER(align_id), align) ;
     }
@@ -273,10 +278,15 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
       if (!(g_hash_table_lookup(align->hash_table, GUINT_TO_POINTER(block_id))))
 	{
 	  ID2Canvas block ;
+	  ZMapFeatureAny item_feature ;
+
+	  item_feature = zmapWindowItemGetFeatureAny(block_group) ;
+	  zMapAssert(item_feature) ;
 
 	  block = g_new0(ID2CanvasStruct, 1) ;
 	  block->item = FOO_CANVAS_ITEM(block_group) ;
 	  block->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+	  block->feature_any = item_feature ;
 
 	  g_hash_table_insert(align->hash_table, GUINT_TO_POINTER(block_id), block) ;
 	}
@@ -333,10 +343,15 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
       if (!(g_hash_table_lookup(block->hash_table, GUINT_TO_POINTER(set_id))))
 	{
 	  ID2Canvas set ;
+	  ZMapFeatureAny item_feature ;
+
+	  item_feature = zmapWindowItemGetFeatureAny(set_group) ;
+	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
 	  set->item = FOO_CANVAS_ITEM(set_group) ;
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+	  set->feature_any = item_feature ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
 	}
@@ -398,13 +413,9 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
   ID2Canvas align = NULL ;
   ID2Canvas block = NULL ;
   ID2Canvas set = NULL ;
-  ZMapFeature item_feature_obj = NULL;
 
   /* We need special quarks that incorporate strand indication as there are separate column
    * hashes are per strand. */
-  item_feature_obj = zmapWindowItemGetFeature(feature_item);
-  zMapAssert(item_feature_obj) ;
-
   set_id = makeSetID(set_id, set_strand, set_frame) ;
 
   if(window_ftoi_debug_G)
@@ -423,11 +434,15 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
         {
           ID2Canvas ID2C ;
+	  ZMapFeatureAny item_feature ;
+
+	  item_feature = zmapWindowItemGetFeatureAny(feature_item) ;
+	  zMapAssert(item_feature) ;
 
           ID2C = g_new0(ID2CanvasStruct, 1) ;
           ID2C->item = feature_item ;
           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-          ID2C->feature_any = (ZMapFeatureAny) item_feature_obj;
+          ID2C->feature_any = item_feature ;
 
           g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
         }
