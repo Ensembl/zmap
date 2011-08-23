@@ -1348,6 +1348,25 @@ static char * get_menu_string(GQuark set_quark)
 }
 
 
+/* does a featureset have a related one?
+ * FTM this mean fset is coverage and the related is the real data (a one way relation)
+ * is so donlt include in menus
+ */
+GQuark related_featureset(ZMapFeatureContextMap map,GQuark fset_id)
+{
+	GQuark q = 0;
+	ZMapFeatureSource src;
+
+	src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+	if(src)
+		q = src->related_featureset;
+	else
+		zMapLogWarning("Can't find src data for %s\n",g_quark_to_string(fset_id));
+
+	return q;
+}
+
+
 /* NOTE this function creates a Blixem BAM menu _and_ a ZMap request BAM menu
   it's called from a few places so adjust all calling code if you split this
  */
@@ -1393,36 +1412,31 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
   m->callback_func = NULL;
   m++;
 
-  for(i = 0, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
+  for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
     {
       const gchar *fset;
+      GQuark req_id;
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
       fset = get_menu_string(GPOINTER_TO_UINT(fsl->data));
-printf("blixem %s\n",fset);
-      m->name = g_strdup_printf("Blixem short reads data from mark/%s", fset);
-      m->id = BLIX_SEQ + i;
-      m->callback_func = blixemMenuCB;
+      req_id = related_featureset(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
+      if(!req_id)		/* don't include coverage data */
+	{
+      	m->name = g_strdup_printf("Blixem short reads data from mark/%s", fset);
+      	m->id = BLIX_SEQ + i;
+      	m->callback_func = blixemMenuCB;
+      	m++;
+      }
     }
 
   /* add request from coverage items */
   if(cbdata->feature)
   {
 	GQuark fset_id,req_id = 0;
-	ZMapFeatureSource src;
 
 	fset_id = ((ZMapFeatureSet) (cbdata->feature->parent))->original_id;
-	src = g_hash_table_lookup(cbdata->window->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-	if(src)
-	{
-		req_id = src->related_featureset;
-		cbdata->req_id = req_id;
-	}
-	else
-	{
-		printf("Can't find src data for %s\n",g_quark_to_string(fset_id));
-	}
+	cbdata->req_id = req_id = related_featureset(cbdata->window->context_map,fset_id);
 
 	if(req_id)
 	{	char *p;
@@ -1444,7 +1458,6 @@ printf("blixem %s\n",fset);
   {
 	m->type = ZMAPGUI_MENU_NORMAL;
 	m->name = g_strdup_printf("Request %s paired reads from mark", related);
-printf("request %s\n",related);
 	m->id = REQUEST_SELECTED;
 	m->callback_func = requestShortReadsCB;
 	m++;
@@ -1454,16 +1467,14 @@ printf("request %s\n",related);
   /* can't trigger off selected feature as we don't always have one */
   {
 	GQuark fset_id,req_id;
-	ZMapFeatureSource src;
 	GList *l;
 
 	l = zmapWindowContainerFeatureSetGetFeatureSets(cbdata->container_set);
 	for(;l; l = l->next)
 	{
 		fset_id = GPOINTER_TO_UINT(l->data);
-		src = g_hash_table_lookup(cbdata->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-		if(src)
-			req_id = src->related_featureset;
+
+		req_id = related_featureset(cbdata->window->context_map,fset_id);
 
 		if(req_id)
 		{
@@ -1484,17 +1495,22 @@ printf("request %s\n",related);
   m->callback_func = NULL;
   m++;
 
-  for(i = 0, fsl = fs_list;i < n_sets; i++, m++, fsl = fsl->next)
+  for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
     {
       const gchar *fset;
+      GQuark req_id;
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
       fset = get_menu_string(GPOINTER_TO_UINT(fsl->data));
-printf("menu request %s\n",fset);
-      m->name = g_strdup_printf("Request paired reads data from mark/%s", fset);
-      m->id = REQUEST_SEQ + i;
-      m->callback_func = requestShortReadsCB;
+      req_id = related_featureset(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
+      if(!req_id)		/* don't include coverage data */
+      {
+	      m->name = g_strdup_printf("Request paired reads data from mark/%s", fset);
+      	m->id = REQUEST_SEQ + i;
+      	m->callback_func = requestShortReadsCB;
+      	m++;
+      }
     }
 
   m->type = ZMAPGUI_MENU_NONE;

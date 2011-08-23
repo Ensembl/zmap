@@ -692,7 +692,7 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
       zMapAssert(feature_set || feature);
 
       if(!feature_set)
-            feature_stack->set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+            feature_set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
                                           ZMAPFEATURE_STRUCT_FEATURESET) ;
 
       feature_stack->set       = feature_set;

@@ -799,7 +799,7 @@ typedef struct
 
   char *column_desc;                /* description */
 
-  int order;                        // column ordering
+  int order;                        /* column ordering */
 
   ZMapFeatureTypeStyle style;       /* column specific style data
                                      * may be config'd explicitly or derived from contained featuresets
@@ -813,9 +813,10 @@ typedef struct
                                      * for pipe servers we could do this during server config
                                      * but for ACE (and possibly DAS) we have to wait till they provide data
                                      */
-/* performance betterment
-   generate with zMapFeatureGetColumnFeatureSets() after config and update if a server provides mapping */
-/* change all code around that function */
+  GList * featuresets_unique_ids;	/* we need both user style and unique id's */
+  						/* both are filled in by lazy evaluation
+						 * servers that privide a mapping must delete these lists
+  						 */
 
 } ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
 
@@ -834,6 +835,7 @@ typedef struct
   GQuark style_id ;     /* The style for processing the source. */
 
   GQuark related_featureset;	/* eg real data from coverage */
+  gboolean is_seq;		/* true for coverage and real seq-data */
 
 } ZMapFeatureSourceStruct, *ZMapFeatureSource ;
 

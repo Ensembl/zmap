@@ -686,6 +686,14 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 				 gff_source);
           }
 
+		/* add a flag for each seq_data featureset */
+        for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
+        {
+        	gff_source = g_hash_table_lookup(src2src,iter->data);
+        	if(gff_source)
+        		gff_source->is_seq = TRUE;
+        }
+
 
         if(gff_src)
 	  g_hash_table_destroy(gff_src);

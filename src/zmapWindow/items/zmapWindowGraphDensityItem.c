@@ -297,6 +297,13 @@ gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowGraphDensityItem di, ZMapF
 	GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
 	FooCanvasItem *foo = (FooCanvasItem *) di;
 
+	if(di->display_index && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
+	{
+		zMapSkipListDestroy(di->display_index,
+			di->source_used ? NULL : zmapWindowCanvasGraphSegmentFree);
+		di->display_index = NULL;
+	}
+
 	di->style = style;		/* includes col width */
 	di->x_off = zMapStyleDensityStagger(style) * di->index;
 
@@ -1067,6 +1074,9 @@ void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, doub
 
   zMapAssert(style);
 
+  if(!dx)		/* we handle zeroes as we can't see them, for coverage data we should not even have them */
+  	return;
+
   gs = zmapWindowCanvasGraphSegmentAlloc();
   gs->feature = feature;
 
@@ -1106,7 +1116,7 @@ static void zmap_window_graph_density_item_destroy     (GObject *object)
 {
 
   ZMapWindowGraphDensityItem density;
-  /* mh17 NOTE: this fucntion gets called twice for every object via a very very tall stack */
+  /* mh17 NOTE: this function gets called twice for every object via a very very tall stack */
   /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
   /* what's more interesting is why an object has to be killed twice */
 
