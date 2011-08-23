@@ -695,33 +695,46 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {
       GList *list = NULL;
-#if 0
-these get corrupted somewhere and only cater for unique id-s (doh!)
-refer to zmapWindowColConfig/column_is_loaded_in_range()
-
-      ZMapFeatureColumn column;
-
-      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
-      if(column)
-            list = column->featuresets;
-#else
-/*
-This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
-Could re-instate the column->featuresets list and allocate and uppercase it if !unique_id
-*/
       ZMapFeatureSetDesc fset;
+      ZMapFeatureColumn column;
       gpointer key;
       GList *iter;
 
-      zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
-      while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
-      {
-            if(fset->column_id == column_id)
-            {
-                  list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
-            }
+	/*
+	This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
+	so we cache the list whe we first create it.
+	can't always do it on startup as acedb provides the mapping later on
+	*/
+
+      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
+      zMapAssert(column);
+
+	if(unique_id)
+     	{
+     		if(column->featuresets_unique_ids)
+           	 	list = column->featuresets_unique_ids;
       }
-#endif
+      else
+     	{
+     		if(column->featuresets_unique_ids)
+           	 	list = column->featuresets;
+      }
+
+	if(!list)
+	{
+		zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
+		while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
+		{
+			if(fset->column_id == column_id)
+			{
+				list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
+			}
+		}
+		if(unique_id)
+			column->featuresets_unique_ids = list;
+		else
+			column->featuresets = list;
+	}
       return list;
 }
 

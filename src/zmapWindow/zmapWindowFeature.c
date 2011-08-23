@@ -561,6 +561,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 #if MH17_REVCOMP_DEBUG
       zMapLogWarning("masked","");
 #endif
+
+
         return NULL;
       }
     }
@@ -570,6 +572,13 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
                                                set_group,
                                                feature_stack);
 
+  if(!new_feature)
+  {
+#if MH17_REVCOMP_DEBUG
+	zMapLogWarning("run_single = NULL\n","");
+#endif
+  	int x = masked; /* debug hook */
+  }
   if(masked && container->masked && new_feature)
       foo_canvas_item_hide(new_feature);
 

@@ -211,9 +211,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 
   if(state->bump_state_set)
     {
-#warning state_bumped_columns_restore() commented out due to mysterious crsah
-// this crashes when sorting the features, data is corrupt
-//     state_bumped_columns_restore(window, &(state->bump));
+     state_bumped_columns_restore(window, &(state->bump));
     }
 
   mark_queue_updating(window->history, FALSE);
@@ -377,9 +375,6 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 
 gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow window)
 {
-#warning save bumped commented out temproarily while tweaking CFS code
-#if MH17_NO_BUMP_STATE
-
 /* the restore was commented out so this function is not needed right now
  * both need to handle columns not featuresets
  * if bump applies to featuresets not columns (bump on feature)
@@ -401,12 +396,12 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow wind
       else
 	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
-4      state->bump.compress  = compress_mode;
+      state->bump.compress  = compress_mode;
       state->rev_comp_state = state->bump.rev_comp_state = window->revcomped_features;
 
       state->bump_state_set = TRUE;
     }
-#endif
+
   return state->bump_state_set;
 }
 
@@ -736,14 +731,16 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 		   * bump. Users get a message box, rather than just
 		   * a LogWarning that'll never get seen.... */
 
-		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK &&
-		     (!zmapWindowMarkIsSet(window->mark)))
+		  if(!(serialized->compress == ZMAPWINDOW_COMPRESS_MARK &&
+		     (!zmapWindowMarkIsSet(window->mark))))
+#if 0
               {
 //                zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.",
 //                        "https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
 		    zMapWarning("Failed checking MarkIsSet. We have a ticket for this and will release a fix some-time soon.","");
 		  }
               else
+#endif
 		    {
 		      zmapWindowColumnBumpRange(container,
 						column_state->bump_mode,

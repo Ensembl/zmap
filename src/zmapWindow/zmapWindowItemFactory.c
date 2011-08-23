@@ -333,7 +333,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
   if (!(feature->style))
     {
-      zMapLogWarning("Feature %s cannot be drawn because it has no style.", (char *)g_quark_to_string(feature->original_id)) ;
+      zMapLogWarning("Feature %s cannot be drawn because it has no style.", (char *) g_quark_to_string(feature->original_id)) ;
     }
   else if (!zMapStyleHasDrawableMode(feature->style))
     {
@@ -643,7 +643,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             zMapLogWarning("FToIAddFeature %s %f,%f - %f,%f to %s",
             g_quark_to_string(feature->unique_id),
             points[1],points[0],points[3],points[2],
-            g_quark_to_string(set->unique_id));
+            g_quark_to_string(feature_stack->set->unique_id));
 #endif
 	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
 						feature_stack->align->unique_id,
