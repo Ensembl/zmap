@@ -692,6 +692,55 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
   return ;
 }
 
+
+/* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
+gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id)
+{
+	ZMapFeatureSource src;
+      GList *fsets;
+
+      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+
+	for (; fsets ; fsets = fsets->next)
+	{
+		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+		if(src && src->related_column)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/* from column_id return whether it is configured from seq-data= featuresets (data side) */
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
+{
+	ZMapFeatureSource src;
+      GList *fsets;
+
+      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+
+	for (; fsets ; fsets = fsets->next)
+	{
+		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+		if(src && src->is_seq)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
+{
+	ZMapFeatureSource src = g_hash_table_lookup(map->source_2_sourcedata,fset_id);
+
+	if(src && src->is_seq)
+		return TRUE;
+	return FALSE;
+
+}
+
+
+
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {
       GList *list = NULL;

@@ -834,7 +834,7 @@ typedef struct
 
   GQuark style_id ;     /* The style for processing the source. */
 
-  GQuark related_featureset;	/* eg real data from coverage */
+  GQuark related_column;	/* eg real data from coverage */
   gboolean is_seq;		/* true for coverage and real seq-data */
 
 } ZMapFeatureSourceStruct, *ZMapFeatureSource ;
@@ -1189,6 +1189,10 @@ char *zMapFeatureCanonName(char *feature_name) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
+
+gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id);
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
 

@@ -129,10 +129,6 @@ static void handleHighlightTranslation(gboolean highlight,  gboolean item_highli
 				       ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame,
 				       ZMapSequenceType coords_type, int region_start, int region_end) ;
 
-static void fill_workaround_struct(ZMapWindowContainerGroup container,
-				   FooCanvasPoints         *points,
-				   ZMapContainerLevelType   level,
-				   gpointer                 user_data);
 
 static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect);
 static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold);
@@ -2157,6 +2153,8 @@ static void getVisibleCanvas(ZMapWindow window,
   return ;
 }
 
+#if 0
+/* was called by fill workaround struct: remove */
 
 static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect)
 {
@@ -2220,7 +2218,7 @@ static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *are
 }
 
 
-
+#endif
 
 
 

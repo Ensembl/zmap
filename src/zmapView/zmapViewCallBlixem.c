@@ -190,7 +190,7 @@ typedef struct BlixemDataStruct
   GList *features ;
 
   ZMapFeatureSet feature_set ;
-  char *source;
+  GList *source;
 
   ZMapFeatureBlock block ;
 
@@ -1498,7 +1498,9 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	}
 
       if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-
+	/* NOTE the request data is a column which contains multiple featuresets
+	 * we have to include a line for each one. Theese are given in the course GList
+	 */
 	{
 	  // chr4-04     source1     region      215000      300000      0.000000    .     .     dataType=short-read
 
@@ -1506,17 +1508,23 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	   * the feature writing code just goes straight to gff
 	   * via code like this:
 	   */
-	  char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
 
-	  g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
-				 ref_name, blixem_data->source,
-				 "region",          // zMapSOAcc2Term(feature->SO_accession),
-				 //                   blixem_data->mark_start, blixem_data->mark_end,
-				 start,end,		/* these have been revcomped and wwere set from the mark */
-				 0.0, "dataType=short-read" ) ;       // is this also SO??
+	  GList *l;
 
-	  printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
-	  printf("Blixem file: %s",blixem_data->line->str);
+	  for(l = blixem_data->source; l ; l = l->next)
+	  {
+		char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
+
+		g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
+					ref_name, g_quark_to_string(GPOINTER_TO_UINT(l->data)),
+					"region",          // zMapSOAcc2Term(feature->SO_accession),
+					//                   blixem_data->mark_start, blixem_data->mark_end,
+					start,end,		/* these have been revcomped and wwere set from the mark */
+					0.0, "dataType=short-read" ) ;       // is this also SO??
+
+		printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
+		printf("Blixem file: %s",blixem_data->line->str);
+	  }
 	}
 
 

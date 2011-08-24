@@ -623,7 +623,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         gff_src   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_SOURCE_CONFIG,QQ_QUARK);
         fset_styles = zMapConfigIniGetQQHash(context,ZMAPSTANZA_FEATURESET_STYLE_CONFIG,QQ_STYLE);
         gff_desc  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_DESCRIPTION_CONFIG,QQ_QUARK);
-        gff_related   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_RELATED_CONFIG,QQ_QUARK);
+        	/* column related to featureset: get unique ids */
+        gff_related   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_RELATED_CONFIG,QQ_STYLE);
 
         gff_source = NULL;
 
@@ -675,7 +676,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	      {
 		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_related,key));
 		if(q)
-		  gff_source->related_featureset = q;
+		  gff_source->related_column = q;
 	      }
 
             /* source_2_source data defaults are hard coded in GFF2parser
@@ -3654,6 +3655,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       // we need to save this to tell otterlace when we've finished
       // it also gets given to threads: when can we free it?
       connect_data->feature_sets = req_featuresets;
+printf("request %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
       /* the bad news is that these two little numbers have to tunnel through three distinct data structures and layers of s/w to get to the pipe scripts.  Originally the request coordinates were buried in blocks in the context supplied incidentally when requesting features after extracting other data from the server.  Obviously done to handle multiple blocks but it's another iso 7 violation */
 

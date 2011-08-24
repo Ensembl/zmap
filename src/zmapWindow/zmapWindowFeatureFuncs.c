@@ -55,7 +55,7 @@
  *  */
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
-			  ZMapFeatureSet feature_set, char *source,
+			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL, *focus_column = NULL ;

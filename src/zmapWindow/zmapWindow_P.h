@@ -1037,7 +1037,7 @@ void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *ite
 
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
-			  ZMapFeatureSet feature_set, char *source,
+			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos) ;
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
