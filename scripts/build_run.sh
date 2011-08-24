@@ -230,6 +230,8 @@ fi
 
 CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$PARENT_BUILD_DIR"
 
+CMD_OPTIONS="$CMD_OPTIONS ZMAP_LINK_NAME=$LINK_NAME"
+
 
 if [ -n "$RT_TO_CVS" ] ; then
 
@@ -348,10 +350,6 @@ if [ $? != 0 ]; then
 
     RC=1
 else
-    # Here's where we need to do the symbolic linking.....
-
-
-
     MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Succeeded"
 
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
