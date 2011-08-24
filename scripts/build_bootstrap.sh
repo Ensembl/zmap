@@ -754,11 +754,14 @@ $SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
 #    zmap_message_err "Failed to release what we've built here today."
 
 
-
-if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_RELEASE_LEVEL || \
+#
+# Set up the symlink from zmap home dir to project directory holding the builds.
+#
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+    $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_LINK_NAME || \
 	zmap_message_rm_exit "Failed to update symlink"
-fi
+#fi
+
 
 
 if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
