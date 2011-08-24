@@ -1,9 +1,14 @@
 #!/bin/bash
+#
+# Does all the necessary to make a symlink including deleting
+# any existing link (not all ln commands allow overwriting an
+# existing symlink).
+#
 
-
+# overkill ????
 SCRIPT_NAME=$(basename $0)
-INITIAL_DIR=$(pwd)
 SCRIPT_DIR=$(dirname $0)
+INITIAL_DIR=$(pwd)
 if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
    BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
 else
@@ -16,11 +21,6 @@ fi
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
-#function zmap_get_release_symlink()
-#{
-#    eval ZMAP_RELEASE_SYMLINK=$ZMAP_RELEASE_SYMLINK
-#}
-
 
 usage="$0 -l <link_name> -r <release_location>"
 while getopts ":l:r:" opt ; do
@@ -32,21 +32,12 @@ while getopts ":l:r:" opt ; do
 done
 
 
-#shift $(($OPTIND - 1))
-
-# including VARIABLE=VALUE settings from command line
-#if [ $# -gt 0 ]; then
-#    eval "$*"
-#fi
-
-
 [ "x$ZMAP_RELEASE_SYMLINK" != "x" ] || zmap_message_exit "No release symlink specified: Usage = $usage"
 
 [ "x$RELEASE_LOCATION" != "x" ] || zmap_message_exit "No release location specified: Usage = $usage"
 
 
 zmap_cd $RELEASE_LOCATION
-
 
 zmap_message_out "Linking to $ZMAP_RELEASE_SYMLINK"
 
