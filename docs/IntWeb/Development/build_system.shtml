@@ -156,10 +156,10 @@ on a different machine:</p>
 
 <p>There are scripts to do several different kinds of distribution build and
 they should all be run from a checkout of the ZMap respository. There is one
-for this use in <b>~zmap/BUILD_SCRIPTS</b>:</p>
+for this use in <b>~zmap/BUILD_CHECKOUT</b>:</p>
 
 <pre>
-&gt; cd ~/BUILD_SCRIPTS/ZMap/scripts
+&gt; cd ~/BUILD_CHECKOUT/ZMap/scripts
 &gt; ls
 Author			    build_config.tviewsrv.sh	set_dev_description.pl	      zmap_handle_release_tar.sh
 CopyRight		    build_run.sh		setup_libs_otter.sh	      zmap_machine_perf.sh
@@ -205,7 +205,7 @@ Fast-forward
 [build_run.sh (16:29:58)] Build parameters are
 
         Running on: 'tviewsrv'
-      Build script: '/nfs/users/nfs_z/zmap/BUILD_SCRIPTS/ZMap/scripts/build_bootstrap.sh'
+      Build script: '/nfs/users/nfs_z/zmap/BUILD_CHECKOUT/ZMap/scripts/build_bootstrap.sh'
       Build_prefix: 'ONE_OFF_BUILD'
    Command options: '    RELEASE_LOCATION=/nfs/users/nfs_z/zmap/BUILDS/ONE_OFF_BUILD'
         Global log: '/nfs/users/nfs_z/zmap/BUILDS/ONE_OFF_BUILD.LOG'
