@@ -505,7 +505,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
 			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
 			    GList *features, ZMapFeatureSet feature_set,
-			    char *source, GList *local_sequences,
+			    GList *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;

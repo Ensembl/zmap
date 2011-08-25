@@ -1431,7 +1431,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
   	/* if we click on a data column we blixem that not the featureset */
   	/* can get the column from the menu_data->container_set or from the featureset_2_column... */
   	/* can't remember how reliable is the container */
-  	ZMapFeatureSetDesc f2c = g_hash_table_lookup(cbdata->window->context_map,GUINT_TO_POINTER(fset_id));
+  	ZMapFeatureSetDesc f2c = g_hash_table_lookup(cbdata->window->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
 
   	if(f2c)
   	{

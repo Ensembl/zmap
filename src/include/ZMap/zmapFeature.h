@@ -1192,7 +1192,7 @@ gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable
 
 gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id);
 gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
+gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id);
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
 

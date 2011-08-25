@@ -130,8 +130,10 @@ static void handleHighlightTranslation(gboolean highlight,  gboolean item_highli
 				       ZMapSequenceType coords_type, int region_start, int region_end) ;
 
 
+#if 0
 static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect);
 static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold);
+#endif
 
 #ifdef INTERSECTION_CODE
 static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out);

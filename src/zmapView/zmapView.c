@@ -691,6 +691,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
         {
         	gff_source = g_hash_table_lookup(src2src,iter->data);
+printf("seq: %s -> %p\n",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
         	if(gff_source)
         		gff_source->is_seq = TRUE;
         }
