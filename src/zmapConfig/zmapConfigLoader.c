@@ -755,11 +755,12 @@ char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
  * however it seems to run
  */
 
-GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
+GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gboolean unique_id)
 {
   GList *list = NULL;
   gchar **str_array,**strv;
   char *name;
+  GQuark val;
 
   str_array = g_strsplit(string_list,";",0);
 
@@ -768,7 +769,14 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
       for (strv = str_array;*strv;strv++)
 	{
 	  if ((name = zMapConfigNormaliseWhitespace(*strv, cannonical)) && *name)
-	    list = g_list_prepend(list,GUINT_TO_POINTER(g_quark_from_string(name))) ;
+	  {
+	    if(unique_id)
+            val = zMapStyleCreateID(name);
+          else
+            val = g_quark_from_string(name);
+
+	    list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
+	  }
 	}
     }
 
@@ -783,6 +791,16 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return list ;
+}
+
+GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
+{
+	return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
+}
+
+GList *zMapConfigString2QuarkIDList(char *string_list)
+{
+	return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
 }
 
 

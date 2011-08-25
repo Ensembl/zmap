@@ -107,7 +107,7 @@ static int get_item_canvas_start(FooCanvasItem *item);
  * in between according to logical text flow.
  *
  * e.g. a polygon like
- * 
+ *
  *       first cell
  *            |
  *           _V_________________
@@ -320,7 +320,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
   if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature)))
     {
       zMapWarning("%s %s",
-		  zMapFeatureName(feature),
+		  zMapFeatureName((ZMapFeatureAny) feature),
 		  (ZMAPFEATURE_IS_TRANSCRIPT(feature)
 		   ? "must be on the forward strand." : "is not a transcript.")) ;
     }
@@ -354,7 +354,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 
 
-/* 
+/*
  *                               INTERNALS
  */
 

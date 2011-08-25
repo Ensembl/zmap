@@ -541,14 +541,6 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	    zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
 	}
 
-      if(zMapConfigIniContextGetString(context,
-                               ZMAPSTANZA_APP_CONFIG,
-                               ZMAPSTANZA_APP_CONFIG,
-                               ZMAPSTANZA_APP_SEQ_DATA,&str))
-      {
-        view->context_map.seq_data_featuresets = zMapConfigString2QuarkList(str,FALSE);
-      }
-
       /*-------------------------------------
        * the display columns in L -> R order
        *-------------------------------------
@@ -687,11 +679,20 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 				 gff_source);
           }
 
+
+      if(zMapConfigIniContextGetString(context,
+                               ZMAPSTANZA_APP_CONFIG,
+                               ZMAPSTANZA_APP_CONFIG,
+                               ZMAPSTANZA_APP_SEQ_DATA,&str))
+      {
+        view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDList(str);
+      }
+
 		/* add a flag for each seq_data featureset */
         for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
         {
         	gff_source = g_hash_table_lookup(src2src,iter->data);
-printf("seq: %s -> %p\n",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
+//zMapLogWarning("view is_seq: %s -> %p\n",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
         	if(gff_source)
         		gff_source->is_seq = TRUE;
         }

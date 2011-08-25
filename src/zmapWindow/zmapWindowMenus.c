@@ -1413,7 +1413,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
   /* add request from coverage items and blixem from coverage and real data */
   if(cbdata->feature)
   {
-	fset_id = ((ZMapFeatureSet) (cbdata->feature->parent))->original_id;
+	fset_id = ((ZMapFeatureSet) (cbdata->feature->parent))->unique_id;
 	req_id = related_column(cbdata->window->context_map,fset_id);
 
 	if(req_id)
@@ -1432,6 +1432,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
   	/* can get the column from the menu_data->container_set or from the featureset_2_column... */
   	/* can't remember how reliable is the container */
   	ZMapFeatureSetDesc f2c = g_hash_table_lookup(cbdata->window->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+//zMapLogWarning("menu is_seq: %s -> %p\n",g_quark_to_string(fset_id),f2c);
 
   	if(f2c)
   	{
@@ -1497,18 +1498,23 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
     {
       const gchar *fset;
       GQuark req_id;
+      ZMapFeatureSetDesc f2c;
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
-      fset = get_menu_string(GPOINTER_TO_UINT(fsl->data),'/');
-      req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
-      if(!req_id)		/* don't include coverage data */
-      {
-	      m->name = g_strdup_printf("Request paired reads data from mark/%s", fset);
-      	m->id = REQUEST_SEQ + i;
-      	m->callback_func = requestShortReadsCB;
-      	m++;
-      }
+  	f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,fsl->data);
+	if(f2c)
+	{
+		fset = get_menu_string(f2c->feature_src_ID,'/');
+		req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
+		if(!req_id)		/* don't include coverage data */
+		{
+			m->name = g_strdup_printf("Request paired reads data from mark/%s", fset);
+			m->id = REQUEST_SEQ + i;
+			m->callback_func = requestShortReadsCB;
+			m++;
+		}
+	}
     }
 
   m->type = ZMAPGUI_MENU_NONE;

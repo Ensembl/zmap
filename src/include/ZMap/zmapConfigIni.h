@@ -151,6 +151,7 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
 GList *zMapConfigString2QuarkList(char *string_list,gboolean cannonical);
+GList *zMapConfigString2QuarkIDList(char *string_list);
 
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int how);
 #define QQ_STRING 0

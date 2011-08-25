@@ -874,7 +874,7 @@ typedef struct
                                            * They are in display order left to right
                                            */
 
-  GList * seq_data_featuresets;           /* sources of BAM data */
+  GList * seq_data_featuresets;           /* sources of BAM data  as unique id's, use source_2_sourcedata  for display name */
 
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;

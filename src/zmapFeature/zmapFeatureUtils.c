@@ -732,6 +732,7 @@ gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
 {
 	ZMapFeatureSource src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+//zMapLogWarning("feature is_seq: %s -> %p\n",g_quark_to_string(fset_id),src);
 
 	if(src && src->is_seq)
 		return TRUE;
