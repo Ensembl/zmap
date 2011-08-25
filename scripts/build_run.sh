@@ -33,15 +33,22 @@ ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
 # default mail subject.
 MAIL_SUBJECT="ZMap Build Failed (control script)"
 
-# where everything is located.
+
+# where build scripts are located.
 BASE_DIR=~zmap
-SCRIPTS_DIR="$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts"
-BUILDS_DIR="$BASE_DIR/BUILDS"
+SCRIPTS_DIR="$BASE_DIR/BUILD_CHECKOUT/ZMap/scripts"
 
-
-# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
 BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
 FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
+
+# Our project space where we store builds.
+PROJECT_DIR='/nfs/zmap'
+BUILDS_DIR="$PROJECT_DIR/BUILDS"
+
+
+# name of symbolic link from ~zmap to build dir in project directories in /nfs/zmap
+LINK_PREFIX='BUILD'
+
 
 
 # Various build params.
@@ -152,6 +159,12 @@ if [ ! -d $PARENT_BUILD_DIR ] || [ ! -r $PARENT_BUILD_DIR ] ; then
 fi
 
 
+# We link from zmap home dir to our projects directory to make it easy for
+# users to pick up the latest development/production/etc builds.
+#
+LINK_NAME="$BASE_DIR/$LINK_PREFIX.$BUILD_PREFIX"
+
+
 
 # We do not know the directory for the logfile until here so cannot start logging
 # until this point, from this point this script prints any messages to stdout
@@ -172,8 +185,10 @@ rm -f $GLOBAL_LOG || message_exit "Cannot remove log from previous build: $GLOBA
 message_out "ZMap Build is $BUILD_PREFIX"
 
 
+# For some types of builds we do not want to keep the old builds. e.g. overnight builds.
+#
 if [ -n "$ERASE_SUBDIRS" ] ; then
-    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.develop-RELEASE_*"
+    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.develop-Release_*"
     message_out "Removing previous builds with name: $sub_dirs_pattern"
     rm -rf $sub_dirs_pattern || message_exit "Failed to remove previous builds: $sub_dirs_pattern."
 fi
@@ -217,6 +232,8 @@ fi
 
 CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$PARENT_BUILD_DIR"
 
+CMD_OPTIONS="$CMD_OPTIONS ZMAP_LINK_NAME=$LINK_NAME"
+
 
 if [ -n "$RT_TO_CVS" ] ; then
 
@@ -257,7 +274,8 @@ if [ -z "$CRON" ] ; then
     message_out "      Build branch: $BRANCH"
     message_out "      Build script: $BUILD_SCRIPT"
     message_out "      Build prefix: $BUILD_PREFIX"
-    message_out "   Build directory: $BUILDS_DIR/$PARENT_BUILD_DIR"
+    message_out "   Build directory: $PARENT_BUILD_DIR"
+    message_out "    Link directory: $LINK_NAME"
     message_out "   Command options: $CMD_OPTIONS"
     message_out "        Global log: $GLOBAL_LOG"
     message_out "Errors reported to: $ERROR_RECIPIENT"

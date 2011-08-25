@@ -1315,16 +1315,16 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
     case ITEM_MENU_SHOW_TRANSLATION:
       {
-	zmapWindowItemShowTranslation(menu_data->window,
-				      menu_data->item);
+	zmapWindowItemShowTranslation(menu_data->window, menu_data->item) ;
+
+	break;
       }
-      break;
     case ITEM_MENU_TOGGLE_MARK:
       {
 	zmapWindowToggleMark(menu_data->window, 0);
-      }
-      break;
 
+	break;
+      }
     case ITEM_MENU_SHOW_EVIDENCE:
     case ITEM_MENU_ADD_EVIDENCE:
     case ITEM_MENU_SHOW_TRANSCRIPT:       /* XML formats are different for evidence and transcripts */
@@ -1403,18 +1403,21 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
             g_list_free(evidence);
             g_list_free(evidence_items);
           }
-      }
-      break;
 
+	break;
+      }
 
 #ifdef RDS_DONT_INCLUDE
     case 101:
       zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
       break;
 #endif
+
     default:
-      zMapAssertNotReached() ;				    /* exits... */
-      break ;
+      {
+	zMapAssertNotReached() ;				    /* exits... */
+	break ;
+      }
     }
 
   g_free(menu_data) ;

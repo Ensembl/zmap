@@ -317,10 +317,17 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
   feature = zMapWindowCanvasItemGetFeature(feature_to_translate);
 
-  if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
+  if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature)))
     {
-      /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
-      if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_to_translate)))
+      zMapWarning("%s %s",
+		  zMapFeatureName(feature),
+		  (ZMAPFEATURE_IS_TRANSCRIPT(feature)
+		   ? "must be on the forward strand." : "is not a transcript.")) ;
+    }
+  else
+    {
+      /* Get the column, may need to create it if this is first time. */
+      if ((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_to_translate)))
 	{
 	  ShowTranslationDataStruct show_translation = {window,
 							feature_to_translate,
@@ -332,7 +339,6 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  show_translation.style
             = zMapWindowContainerFeatureSetGetStyle((ZMapWindowContainerFeatureSet)(translation_column));
-
 
 
 	  /* I'm not sure which is the best way to go here.  Do a
