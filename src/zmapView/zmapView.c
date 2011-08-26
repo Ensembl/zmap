@@ -3657,7 +3657,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       // we need to save this to tell otterlace when we've finished
       // it also gets given to threads: when can we free it?
       connect_data->feature_sets = req_featuresets;
-printf("request %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
+//printf("request %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
       /* the bad news is that these two little numbers have to tunnel through three distinct data structures and layers of s/w to get to the pipe scripts.  Originally the request coordinates were buried in blocks in the context supplied incidentally when requesting features after extracting other data from the server.  Obviously done to handle multiple blocks but it's another iso 7 violation */
 

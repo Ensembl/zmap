@@ -439,7 +439,9 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
           ID2C->item = feature_item ;
           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
           ID2C->feature_any = (ZMapFeatureAny) feature ;
-        }
+
+          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+	  }
 
       result = TRUE ;
 
