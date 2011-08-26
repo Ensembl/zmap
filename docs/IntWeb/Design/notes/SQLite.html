@@ -1,0 +1,127 @@
+<h2>SQLite based configuration for ZMap</h2>
+
+
+<p>As user requreiments have grown to include 600+ BAM files (and 400+?? bigWig) and no doubt more in the near future the current flat .ini configuration system has become unworkable.
+</p>
+
+<p>There is a case for continuing to use the 'ZMap' config file for existing basic config but several part of this system need to be handled differently and the obvious solution is an SQLite database.
+</p>
+
+<p>This will be an opportunity to tidy up some configuration options that have been added hurriedly over that past few years.
+It is also an opportunity to address the complications caused by using GQuarks as unique id's for data items - with SQL we can generate unique id's in the database and have names simply as names.
+</p>
+
+<p>There is an issue of presenting configuration data to standalone users of ZMap who would like a simple interaface with relatively small amounts of data (eg to look at EnsEMBL with only a few tracks).  This can be addressed by using and open source SQL browser or by providing a short Perl script to act as a very basic local webserver that handles HTML form submission.
+</p>
+
+<p>For generating such a database by otterlace no doubt a script could extract information from otterlace configuration, write SQL to create a database and feed it into SQLite.
+</p>
+
+
+<h3>What data do we need to handle?</h3>
+
+<h4>Styles</h4>
+
+<p>387 defined in a recent-ish but out of date file
+These work in a hierarchy and inherit attributes, if stored in SQL ths would be as a two simple tables that get processed by ZMap as at present from the ini stanza data.
+</p>
+<pre>
+style table
+	style-id	unique key indexed
+	name
+
+attibute table
+	style-id	ref to style indexed
+	name		generic attribute: completely future proof
+	value
+</pre>
+</p>
+
+
+<h4>Source data (featuresets)</h4>
+
+<p>These map into columns on display and each one contains data of the same type.  Tradtionally the type of data was identified by the display style but this confuses presentation with the data model.  The type of data (eg transcript, alignement) implies the type and amount of information that can be attached to each feature and the relationships between parts, but also there is a need to differentiate between some datasets operationally - BAM data is such high volume that we requre to restrict access to small sequences only and do that on demand rather than on startup.
+</p>
+<p>With BAM data we expect approx 1000 of these to start with.</p>
+
+
+<p>Currently there are a lot of config options invented OTF to handle historical and more recent situtations and these could benefit from a review.  The tables are preented as containing mandatory field only and optional fields are stored in another table.  To keep the data base as simple as possible values are stored as strings and are converted to numeric as required by applciation code.
+<pre>
+featureset table
+	set-id	unique-key indexed
+	set-type	what kind of data
+	name		indexed	(we can have 1000's of these)
+	description
+	source-id	where to get it from
+	column-id	where to display it
+	style-id	how to display it
+
+featureset-attribute table
+	featureset-id	indexed
+	attribute-id
+	value
+</pre>
+NOTE: attributes can be: pfetchable, load sub-seq only (marked region) etc.<br />
+NOTE: this table can be used to specify which featuresets to request relative to coverage data.
+
+<pre>
+attribute table
+	attribute-id	unique key indexed
+	name
+</pre>
+NOTE: this is used by several tables.
+</p>
+
+<h4>Column config: where to display columns</h4>
+
+<p>
+<pre>
+column table
+	column-id	unique key indexed
+	name
+	description
+	source-id	(for ACEDB - requests are via column not featureset)
+	style-id	optional column wide options
+	loadable	appears in load columns dialog?
+	group-id	ref to attribute, group columns together in load columns dialog
+</pre>
+NOTE: if we change the server protocol such that we get the featursets supported by ACEDB separately from requesting the data we may not need the source-id field here.  It may also be possible just to configure supported featuesets in SQL rather than burying then in ACEDB.
+</p>
+<p>
+To order columns from left to right we can use a simple table:
+<pre>
+column-order
+	column-id	unique-id but not sequential indexed
+	next		indexed, id of the column to the right
+</pre>
+Insert and delete only affect two SQL records; this is not an ideal manual process but can be scripted quite easily.
+The LH side of the list must start with a column-id of zero.  In case os editing errors it will be simple to find the last column on the right and correct them.
+</p>
+
+<h4>Data sources</h4>
+<p>
+With BAM data we expect approx 1000 of these to start with.
+<pre>
+source table
+	source-id	unique-id indexed
+	type		of server
+	sub-type	of server
+	name
+	description
+	url		base - no options included
+</pre>
+NB: no need for the current 'delayed' option as that was introduced due a race condition.
+
+<pre>
+source-option table	query arguments for the url
+	source-id	indexed
+	type		of server
+	sub-type	of server
+	featureset-id	optional
+	attribute-id
+	value		(string) may be overridden by code
+</pre>
+NOTE: type can obviously be ACEDB, Pipe, File, DAS but we can also invent sub types eg to have groups of pipe server that take different arguments<br />
+NOTE: if feature-set-if is not specified then the source-option is global eg sequence name, start, end
+</p>
+

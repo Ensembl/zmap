@@ -1,5 +1,20 @@
-<!-- $Id: zmapWindowColConfig.html,v 1.1 2011-01-10 13:44:22 edgrif Exp $ -->
-<h2>Column Config Window - interface to pipe servers</h2>
+<h2>Columns Config Window</h2>
+
+<p>We need to update this significantly to handle BAM data as requested by users and also we need to improve the existing interface. Specifically:
+<ul>
+<li> list columns that are already loaded and show status information (eg as Otterlace: red/green/yellow/black for loaded status).  Note that in ZMap we have the extra complication of the marked region.
+<li> group columns rather than display alphabetically - groups appear in a left hand pane and when selected thier columns appear in a right hand pane.  It is thought we could sensibly have about a dozen groups for current configurations.
+<li> select all etc apply to groups not the whole dataset.
+<li> alternatively we could create buttons across the top to select groups, this is something that GTK actually does well.
+</ul>
+</p>
+<p>The separate panes for reverse strand will be removed, and an option to show/ hide the whole strand given instead.
+</p>
+
+
+<h2>Some old notes</h2>
+<p>I think this was partly abandoned due to to intricacies of GTK.  SeqBitmap was removed but display options are as before.</p>
+
 <fieldset><legend>Background</legend>
 <h3>Deferred loading of columns</h3>
 <p>Historically ACEDB could define some columns for deferred loading (via a style) and these would not be requested in the initial data load.  The columns dialog could be used to request these, and also to specify an address range via the mark.  This implies the possibility of patchwork coverage of any column but it is not clear how much information would have been stored regarding the ranges requested.
@@ -165,3 +180,15 @@ RC on column gives a choice of 'configure this column' or 'configure all columns
 </p>
 <p>
 </fieldset>
+
+<a name="dialog"></a>
+<h2>ZMap Load Columns dialog</h2>
+
+<p>We need to update this significantly to handle BAM data as requested by users and also we need to improve the existing interface. Specifically:
+<ul>
+<li> list columns that are already loaded and show status information (eg as Otterlace: red/green/yellow/black for loaded status).  Note that in ZMap we have the extra complication of the marked region.
+<li> group columns rather than display alphabetically - groups appear in a left hand pane and when selected thier columns appear in a right hand pane.  It is thought we could sensibly have about a dozen groups for current configurations.
+<li> select all etc apply to groups not the whole dataset.
+<li> alternatively we could create buttons accross the top to select groups, this is something that GTK actually does well.
+</ul>
+</p>
