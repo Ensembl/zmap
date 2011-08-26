@@ -944,7 +944,7 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
-				  GQuark feature_id, FooCanvasItem *feature_item) ;
+				  GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature) ;
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
 				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_to_context_hash,

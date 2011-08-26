@@ -1424,7 +1424,7 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data, Z
             (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)) &&
             (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME)) &&
             !column_is_loaded_in_range(window->context_map,block,column->unique_id,window->sequence->start,window->sequence->end)
-            && !zMapFeatureIsSeqColumn(window->context_map,column->column_id)
+            && !zMapFeatureIsSeqColumn(window->context_map,column->unique_id)
             )
       {
             columns = g_list_prepend(columns,GUINT_TO_POINTER(column->column_id));

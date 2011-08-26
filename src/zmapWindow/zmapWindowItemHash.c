@@ -407,7 +407,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
 				  GQuark feature_id,
-				  FooCanvasItem *feature_item)
+				  FooCanvasItem *feature_item, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   ID2Canvas align = NULL ;
@@ -434,17 +434,11 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
         {
           ID2Canvas ID2C ;
-	  ZMapFeatureAny item_feature ;
-
-	  item_feature = zmapWindowItemGetFeatureAny(feature_item) ;
-	  zMapAssert(item_feature) ;
 
           ID2C = g_new0(ID2CanvasStruct, 1) ;
           ID2C->item = feature_item ;
           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-          ID2C->feature_any = item_feature ;
-
-          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+          ID2C->feature_any = (ZMapFeatureAny) feature ;
         }
 
       result = TRUE ;

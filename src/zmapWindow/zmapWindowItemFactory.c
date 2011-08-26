@@ -645,13 +645,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             points[1],points[0],points[3],points[2],
             g_quark_to_string(feature_stack->set->unique_id));
 #endif
+
 	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
 						feature_stack->align->unique_id,
 						feature_stack->block->unique_id,
 						//zMapWindowGetFeaturesetContainerID(window,set->unique_id),
                                     feature_stack->set->unique_id,
 						strand, frame,
-						feature->unique_id, item) ;
+						feature->unique_id, item, feature) ;
 	    }
           else
           {
@@ -2127,7 +2128,12 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
             run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
 
       zMapAssert(canvas_item);
-      if(!canvas_item->feature)
+
+/* NOTE the iten hash used canvas _item->feature to set up a pointer to the feature
+ * so I changed FToIAddfeature to take the feature explicitly
+ * setting the feature here every time also fixes the problem but by fluke
+ */
+//      if(!canvas_item->feature)
       	canvas_item->feature = feature;     /* must have one */
 
 

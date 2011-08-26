@@ -365,6 +365,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
 	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
 	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
+printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
 
 	  bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
 	}
@@ -701,7 +702,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
 		column_state->column.strand = ZMAPSTRAND_FORWARD;
 	    }
-
+printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
 	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
@@ -713,6 +714,8 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      ZMapWindowContainerFeatureSet container_set;
 
 	      container_set = (ZMapWindowContainerFeatureSet)(container);
+
+printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
 
 	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
 
@@ -726,21 +729,9 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 #warning WRONG_NEED_INITIAL_BUMP_MODE
 	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
 		{
-		  /* I'm unsure on the cause of this, so this "fixes"
-		   * the crash at the expense on _not_ restoring the
-		   * bump. Users get a message box, rather than just
-		   * a LogWarning that'll never get seen.... */
-
-		  if(!(serialized->compress == ZMAPWINDOW_COMPRESS_MARK &&
-		     (!zmapWindowMarkIsSet(window->mark))))
-#if 0
-              {
-//                zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.",
-//                        "https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
-		    zMapWarning("Failed checking MarkIsSet. We have a ticket for this and will release a fix some-time soon.","");
-		  }
-              else
-#endif
+printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
+		  if((serialized->compress != ZMAPWINDOW_COMPRESS_MARK ||
+		     (zmapWindowMarkIsSet(window->mark))))
 		    {
 		      zmapWindowColumnBumpRange(container,
 						column_state->bump_mode,

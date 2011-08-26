@@ -1251,7 +1251,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
       zMapStopTimer("RevComp","Context");
-
+#warning reversing the canvas before clearing it in zMapWindowFeatureRedraw() causes errors as coordinates have changes and (focus) features cannot be found
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
