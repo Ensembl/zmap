@@ -54,6 +54,7 @@ zmapWindowPrint.c \
 zmapWindowRemoteReceive.c \
 zmapWindowRuler.c \
 zmapWindowSearch.c \
+zmapWindowSeqDisp.c \
 zmapWindowState.c \
 zmapWindowState.h \
 zmapWindowStats.c \
