@@ -1,4 +1,3 @@
-/*  Last edited: Jul  7 14:47 2011 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -22,7 +21,7 @@
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements the method functions for a zmap server
  *              by making the appropriate calls to the acedb server.
@@ -32,11 +31,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <stdio.h>
@@ -245,6 +239,10 @@ static gint quarkCaseCmp(gconstpointer a, gconstpointer b) ;
 static void setErrMsg(AcedbServer server, char *new_msg) ;
 static void resetErr(AcedbServer server) ;
 
+static void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column) ;
+static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data) ;
+
+
 static char *get_url_query_value(char *full_query, char *key) ;
 static gboolean get_url_query_boolean(char *full_query, char *key) ;
 
@@ -410,62 +408,6 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 }
 
 
-
-// if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
-void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column)
-{
-  GList *iter;
-  gpointer key,value;
-  ZMapFeatureSetDesc method_set,featureset;
-
-  if(!featureset_2_column)
-      return;
-  zMap_g_hash_table_iter_init(&iter,method_2_feature_set);
-  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
-  {
-      featureset = (ZMapFeatureSetDesc) g_hash_table_lookup(featureset_2_column,key);
-      method_set = (ZMapFeatureSetDesc) value;
-
-      if(featureset)
-      {
-            method_set->column_id = featureset->column_id;
-            if(featureset->feature_set_text)
-                  method_set->feature_set_text = g_strdup(featureset->feature_set_text);
-      }
-      if(!method_set->column_ID)
-            method_set->column_ID = method_set->column_id;
-      if(!method_set->feature_src_ID)
-            method_set->column_ID = method_set->column_ID;
-  }
-}
-
-// if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
-void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
-{
-  GList *iter;
-  gpointer key,value;
-  ZMapFeatureSource method_src,source_data;
-
-  if(!source_2_data)
-      return;
-
-  zMap_g_hash_table_iter_init(&iter,method_2_data);
-  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
-  {
-      source_data = (ZMapFeatureSource) g_hash_table_lookup(source_2_data,key);
-      method_src  = (ZMapFeatureSource) value;
-
-      if(source_data)
-      {
-            if(source_data->style_id)
-                  method_src->style_id = source_data->style_id;
-            if(source_data->source_id)
-                  method_src->source_id = source_data->source_id;
-            if(source_data->source_text)
-                  method_src->source_text = source_data->source_text;
-      }
-  }
-}
 
 /* Feature Set names passed to the acedb server _MUST_ be the names of Method objects in the
  * database.
@@ -1596,12 +1538,8 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
-
   block_start = feature_block->block_to_sequence.block.x1 ;
   block_end   = feature_block->block_to_sequence.block.x2 ;
-  /* These block numbers appear correct, but I may have the wrong
-   * end of the block_to_sequence stick! */
-
 
   /* Because the acedb "dna" command works on the current keyset, we have to find the sequence
    * first before we can get its dna. A bit poor really but otherwise
@@ -1615,6 +1553,9 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
       ZMapFeatureSet feature_set = NULL;
       ZMapFeatureTypeStyle dna_style = NULL;
 
+
+      /* dna, 3-frame and feature translation are all created up front. (BUT I don't know why
+       * it was done this way - Ed) */
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
 	  ZMapFeatureTypeStyle temp_style = NULL;
@@ -1633,7 +1574,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	    zMapStyleDestroy(temp_style);
 	}
 
-      /* I'm going to create the three frame translation up front! */
+
       if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	{
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
@@ -1643,6 +1584,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 
 	      frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME));
 
+	      /* What is this all about...?????? */
 	      if(style_absolutely_required && !frame_style)
 		zMapLogWarning("Cowardly refusing to create features '%s' without style",
 			       ZMAP_FIXED_STYLE_3FT_NAME);
@@ -1650,6 +1592,22 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 		zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 	    }
 	}
+
+
+      /* I'm going to create the show translation up front! */
+      if (zMap_g_list_find_quark(context->req_feature_set_names,
+				 zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+	{
+	  if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
+	    {
+	      ZMapFeatureTypeStyle frame_style = NULL;
+
+	      if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+		zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
+	    }
+	}
+
+
 
       /* everything should now be done, result is true */
       result = TRUE ;
@@ -4396,6 +4354,70 @@ static int equaliseLists(AcedbServer server, GList **query_names_inout, GList *r
 
   return num_found ;
 }
+
+
+
+// if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
+static void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column)
+{
+  GList *iter;
+  gpointer key,value;
+  ZMapFeatureSetDesc method_set,featureset;
+
+  if(!featureset_2_column)
+      return;
+
+  zMap_g_hash_table_iter_init(&iter,method_2_feature_set);
+  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+  {
+      featureset = (ZMapFeatureSetDesc) g_hash_table_lookup(featureset_2_column,key);
+      method_set = (ZMapFeatureSetDesc) value;
+
+      if(featureset)
+      {
+            method_set->column_id = featureset->column_id;
+            if(featureset->feature_set_text)
+                  method_set->feature_set_text = g_strdup(featureset->feature_set_text);
+      }
+      if(!method_set->column_ID)
+            method_set->column_ID = method_set->column_id;
+      if(!method_set->feature_src_ID)
+            method_set->column_ID = method_set->column_ID;
+  }
+
+  return ;
+}
+
+// if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
+static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
+{
+  GList *iter;
+  gpointer key,value;
+  ZMapFeatureSource method_src,source_data;
+
+  if(!source_2_data)
+      return;
+
+  zMap_g_hash_table_iter_init(&iter,method_2_data);
+  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+  {
+      source_data = (ZMapFeatureSource) g_hash_table_lookup(source_2_data,key);
+      method_src  = (ZMapFeatureSource) value;
+
+      if(source_data)
+      {
+            if(source_data->style_id)
+                  method_src->style_id = source_data->style_id;
+            if(source_data->source_id)
+                  method_src->source_id = source_data->source_id;
+            if(source_data->source_text)
+                  method_src->source_text = source_data->source_text;
+      }
+  }
+
+  return ;
+}
+
 
 
 /* A GCompareFunc() to compare names in a case independent way in two lists of GQuarks. */
