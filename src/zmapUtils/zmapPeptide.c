@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Routines to translate DNA to peptide, optionally with
  *              an alternative genetic code.
@@ -30,20 +30,15 @@
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
-
-
-
-
-
-
-
 /*
  *
  * We hereby acknowledge that this code was adapted directly from
  * the dna and peptide functions in acedb (see www.acedb.org).
  *
  */
+
+
+#include <ZMap/zmap.h>
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
@@ -65,7 +60,7 @@ typedef struct _ZMapPeptideStruct
   GQuark gene_name ;					    /* If peptide is a gene translation. */
   int start, end ;					    /* e.g. coords of gene in sequence. */
   gboolean stop_codon ;					    /* TRUE means there is a final stop codon. */
-  gboolean incomplete_final_codon; /* TRUE means the end phase of the translation != 0 */
+  gboolean incomplete_final_codon ;			    /* TRUE means the end phase of the translation != 0 */
   GArray *peptide ;					    /* The peptide string. */
 } ZMapPeptideStruct ;
 
@@ -280,6 +275,7 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 
   if (sequence_name && *sequence_name)
     pep->sequence_name = g_quark_from_string(sequence_name) ;
+
   if (gene_name && *gene_name)
     pep->gene_name = g_quark_from_string(gene_name) ;
 
@@ -292,6 +288,41 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 }
 
 
+/* Create a peptide large enough to hold the supplied dna but do not
+ * translate the dna, contents of the peptide are undefined.
+ * If include_stop is TRUE then the peptide will include an "*" to show
+ * the terminating stop codon (assuming the dna ends with a stop codon).
+ */
+ZMapPeptide zMapPeptideCreateEmpty(char *sequence_name, char *gene_name, char *dna, gboolean include_stop)
+{
+  ZMapPeptide pep = NULL ;
+  int bases, len ;
+
+  pep = g_new0(ZMapPeptideStruct, 1) ;
+
+  if (sequence_name && *sequence_name)
+    pep->sequence_name = g_quark_from_string(sequence_name) ;
+
+  if (gene_name && *gene_name)
+    pep->gene_name = g_quark_from_string(gene_name) ;
+
+  /* Get length of  */
+  bases = strlen(dna) ;
+  len = bases / 3 ;
+
+  if (bases % 3)					    /* + 1 for 'X' if an incomplete codon. */
+    len++ ;
+
+  /* Create the array, TRUE param adds a null byte to the end. */
+  pep->peptide = g_array_sized_new(TRUE, FALSE, sizeof(char), len) ;
+  pep->peptide->len = len ;
+
+
+  return pep ;
+}
+
+
+/* THIS NEEDS REMOVING AS IT DOESN'T DO ANYTHING MORE THAN zMapPeptideCreate() */
 /* The same as zMapPeptideCreate, but decodes dna string, which makes
  * it slower. It could be done with a copy, but then that uses
  * memory... */
@@ -313,6 +344,8 @@ ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
 
   return pep;
 }
+
+
 
 /* The length of the amino acid sequence */
 int zMapPeptideLength(ZMapPeptide peptide)
@@ -337,12 +370,15 @@ int zMapPeptideFullCodonAALength(ZMapPeptide peptide)
 
   return length;
 }
+
 /* The length of the amino acid sequence than came from _full_ codons of the dna */
 int zMapPeptideFullSourceCodonLength(ZMapPeptide peptide)
 {
-  int length;
-  length = (zMapPeptideFullCodonAALength(peptide) * 3);
-  return length;
+  int length ;
+
+  length = (zMapPeptideFullCodonAALength(peptide) * 3) ;
+
+  return length ;
 }
 
 gboolean zMapPeptideHasStopCodon(ZMapPeptide peptide)
@@ -586,9 +622,15 @@ void zMapPeptideDestroy(ZMapPeptide peptide)
 
 
 
+
+
+
 /*
  *                       Internal functions.
  */
+
+
+
 
 
 /* COMMENTS NEED UPDATING FOR ZMAP.... */
@@ -812,11 +854,7 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
 
   dna_len = strlen(dna_in) ;
 
-  zMapAssert((from >= 0 && from <= (dna_len - 1))
-	     && (length == -1 || (length > 0 && length <= (dna_len - from)))) ;
-
-  if (length == -1)
-    length = dna_len - from ;
+  length = dna_len ;
 
   /* agh...I have to copy the dna now...sigh... */
   if((dna = g_strndup((dna_in + from), length)))

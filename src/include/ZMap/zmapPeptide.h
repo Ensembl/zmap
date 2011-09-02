@@ -32,23 +32,14 @@
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
 
-/*! @addtogroup zmaputils
- * @{
- *  */
 
-
-/*!
- * A peptide object, contains the sequence, peptide name, length etc. */
+/* A peptide object, contains the sequence, peptide name, length etc. */
 typedef struct _ZMapPeptideStruct *ZMapPeptide ;
 
 
-/*!
- * A genetic code object, contains the sequence, peptide name, length etc. */
+/* A genetic code object, contains the sequence, peptide name, length etc. */
 typedef struct _ZMapGeneticCodeStruct *ZMapGeneticCode ;
 
-
-
-/*! @} end of zmaputils docs section. */
 
 
 char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolean include_stop) ;
@@ -58,6 +49,7 @@ gboolean zMapPeptideCanonical(char *peptide) ;
 gboolean zMapPeptideValidate(char *peptide) ;
 ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 			      char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
+ZMapPeptide zMapPeptideCreateEmpty(char *sequence_name, char *gene_name, char *dna, gboolean include_stop) ;
 ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
                                     char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
 int zMapPeptideLength(ZMapPeptide peptide) ;
