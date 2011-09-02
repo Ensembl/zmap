@@ -1435,4 +1435,3 @@ static void getVisibleCanvas(ZMapWindow window,
   return ;
 }
 
-

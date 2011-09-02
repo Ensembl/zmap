@@ -1129,42 +1129,6 @@ zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data
 }
 
 
-/* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
-static gboolean is_coverage_column(ZMapFeatureContextMap map,GQuark column_id)
-{
-	ZMapFeatureSource src;
-      GList *fsets;
-
-      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
-
-	for (; fsets ; fsets = fsets->next)
-	{
-		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
-		if(src && src->related_featureset)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-/* from column_id return whether it is configured from seq-data= featuresets (data side) */
-static gboolean is_seq_column(ZMapFeatureContextMap map,GQuark column_id)
-{
-	ZMapFeatureSource src;
-      GList *fsets;
-
-      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
-
-	for (; fsets ; fsets = fsets->next)
-	{
-		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
-		if(src && src->is_seq)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 
 
 static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
@@ -1254,7 +1218,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
 		col_id = zMapFeatureSetCreateID(column_name);
 
-		force_mark = is_coverage_column(window->context_map,col_id);
+		force_mark = zMapFeatureIsCoverageColumn(window->context_map,col_id);
 
             deferred_radio_buttons(button_box, col_id, loaded_in_mark,
 				     &all, &mark, &none);
@@ -1460,7 +1424,7 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data, Z
             (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)) &&
             (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME)) &&
             !column_is_loaded_in_range(window->context_map,block,column->unique_id,window->sequence->start,window->sequence->end)
-            && !is_seq_column(window->context_map,column->column_id)
+            && !zMapFeatureIsSeqColumn(window->context_map,column->unique_id)
             )
       {
             columns = g_list_prepend(columns,GUINT_TO_POINTER(column->column_id));

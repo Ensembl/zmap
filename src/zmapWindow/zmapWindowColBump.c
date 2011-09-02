@@ -342,6 +342,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 //  historic_bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container) ;
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
+//printf("bump_mode: %d %d\n",bump_mode,historic_bump_mode);
 
   // if bumping from one mode to another just clear up with am unbump first, it's tidier this way
   // mh17: ideally i'd prefer to have a separate unbump function, can hack it out later?
@@ -357,6 +358,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
   {
+//printf("style bump_mode: %d %d\n",bump_mode,historic_bump_mode);
      	if(zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
     	      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
 	else

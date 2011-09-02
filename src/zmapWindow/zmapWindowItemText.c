@@ -63,7 +63,7 @@
  * in between according to logical text flow.
  *
  * e.g. a polygon like
- * 
+ *
  *       first cell
  *            |
  *           _V_________________

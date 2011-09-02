@@ -149,6 +149,7 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
             di->id = id;
             g_hash_table_insert(density_class_G->density_items,GUINT_TO_POINTER(id),(gpointer) foo);
 //printf("make density item %s\n",g_quark_to_string(di->id));
+
 		di->re_bin = style->mode_data.graph.density;
 
 		/* we record strand and frame for display colours
@@ -244,6 +245,7 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
 	while(sl)
 	{
 		gs = sl->data;
+//printf("focus find %s sl = %f,%f\n",g_quark_to_string(di->id),gs->y1,gs->y2);
 
 		/* if we got rebinned then we need to find the bin surrounding the feature
 		   if the feature is split bewteeen bins just choose one
@@ -283,12 +285,15 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
       		foo_canvas_w2c (foo->canvas, zMapStyleGetWidth(di->style) + i2w_dx, gs->y2 - di->start + i2w_dy, &cx2, &cy2);
 
 			foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2, cy2);
+//printf("focus found %s sl = %f,%f\n",g_quark_to_string(di->id),gs->y1,gs->y2);
+
 			return;
 		}
 
 		sl = sl->next;
 	}
-	printf("Failed to find graph segment feature for focus\n");
+#warning we get here on revcomp as the context has been flipped before clearing the canvas whcih involves removing the focus, coords have changed
+//	zMapLogWarning("Failed to find graph segment feature for focus. search = %f,%f, feature = %d,%d\n",search.y1,search.y1,(int)feature->x1,(int)feature->x2);
 }
 
 
@@ -598,7 +603,7 @@ GList *density_calc_bins(ZMapWindowGraphDensityItem di)
 
 	di->source_used = FALSE;
 
-
+//printf("calc density item %s = %d\n",g_quark_to_string(di->id),g_list_length(di->source_bins));
 //printf("bases per bin = %d,fixed = %d\n",bases_per_bin,fixed);
 
 	for(bin_start = start,src = di->source_bins,dest = NULL; bin_start < end && src; bin_start = bin_end + 1)
