@@ -1210,6 +1210,142 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
 
 
+
+/* This is in the general menu and needs to be handled separately perhaps as the index is a global
+ * one shared amongst all general menu functions...
+ * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
+ * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
+ */
+static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
+      {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
+    } ;
+
+  ItemMenuCBData md = (ItemMenuCBData) callback_data;
+  int i = 2;
+
+  menu[i].type = ZMAPGUI_MENU_NONE;
+
+            // add in evidence/ transcript items
+            // option to remove existing is in column menu
+      if(md->feature && md->feature->style)
+      {
+            if(md->feature->style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Evidence";
+                  menu[i].id = ITEM_MENU_SHOW_EVIDENCE;
+                  i++;
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Evidence (add more)";
+                  menu[i].id = ITEM_MENU_ADD_EVIDENCE;
+            }
+            else if (md->feature->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Transcript";
+                  menu[i].id = ITEM_MENU_SHOW_TRANSCRIPT;
+                  i++;
+                  menu[i].type = ZMAPGUI_MENU_NORMAL;
+                  menu[i].name = "Highlight Transcript (add more)";
+                  menu[i].id = ITEM_MENU_ADD_TRANSCRIPT;
+            }
+      }
+      else
+      {
+            // style should be attached to the feature, but if not don't fall over
+            // new features should also have styles attached
+            zMapLogWarning("Feature menu item does not have style","");
+      }
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static ZMapGUIMenuItem makeMenuShowTranslation(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Show Translation in ZMap", ITEM_MENU_SHOW_TRANSLATION, itemMenuCB, NULL, "T"},
+      {ZMAPGUI_MENU_NONE, NULL,                         ITEM_MENU_INVALID,          NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+
+static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
+					 ZMapGUIMenuItemCallbackFunc callback_func,
+					 gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature", ITEM_MENU_PFETCH,  itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                    ITEM_MENU_INVALID, NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+
+static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+/* this is identical or very nearly with columnMenuCB in zmapWindowDrawFeatures.c and should be combined */
+
+      {ZMAPGUI_MENU_NORMAL, "List All Column Features",       ITEM_MENU_LIST_ALL_FEATURES,   itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", ITEM_MENU_LIST_NAMED_FEATURES, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          ITEM_MENU_SEARCH,              itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              ITEM_MENU_SEQUENCE_SEARCH_DNA, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Toggle Mark",                    ITEM_MENU_TOGGLE_MARK,             itemMenuCB, NULL, "M"},
+      {ZMAPGUI_MENU_NONE, NULL,                               ITEM_MENU_INVALID,                 NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+
+static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
+				   ZMapGUIMenuItemCallbackFunc callback_func,
+				   gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "URL", ITEM_MENU_SHOW_URL_IN_BROWSER, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,  ITEM_MENU_INVALID,             NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -1434,142 +1570,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 
 
-
-/* This is in the general menu and needs to be handled separately perhaps as the index is a global
- * one shared amongst all general menu functions...
- * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
- * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
- */
-static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
-					  ZMapGUIMenuItemCallbackFunc callback_func,
-					  gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
-      {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
-    } ;
-
-  ItemMenuCBData md = (ItemMenuCBData) callback_data;
-  int i = 2;
-
-  menu[i].type = ZMAPGUI_MENU_NONE;
-
-            // add in evidence/ transcript items
-            // option to remove existing is in column menu
-      if(md->feature && md->feature->style)
-      {
-            if(md->feature->style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            {
-                  menu[i].type = ZMAPGUI_MENU_NORMAL;
-                  menu[i].name = "Highlight Evidence";
-                  menu[i].id = ITEM_MENU_SHOW_EVIDENCE;
-                  i++;
-                  menu[i].type = ZMAPGUI_MENU_NORMAL;
-                  menu[i].name = "Highlight Evidence (add more)";
-                  menu[i].id = ITEM_MENU_ADD_EVIDENCE;
-            }
-            else if (md->feature->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-            {
-                  menu[i].type = ZMAPGUI_MENU_NORMAL;
-                  menu[i].name = "Highlight Transcript";
-                  menu[i].id = ITEM_MENU_SHOW_TRANSCRIPT;
-                  i++;
-                  menu[i].type = ZMAPGUI_MENU_NORMAL;
-                  menu[i].name = "Highlight Transcript (add more)";
-                  menu[i].id = ITEM_MENU_ADD_TRANSCRIPT;
-            }
-      }
-      else
-      {
-            // style should be attached to the feature, but if not don't fall over
-            // new features should also have styles attached
-            zMapLogWarning("Feature menu item does not have style","");
-      }
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-static ZMapGUIMenuItem makeMenuShowTranslation(int *start_index_inout,
-					       ZMapGUIMenuItemCallbackFunc callback_func,
-					       gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "Show Translation in ZMap", ITEM_MENU_SHOW_TRANSLATION, itemMenuCB, NULL, "T"},
-      {ZMAPGUI_MENU_NONE, NULL,                         ITEM_MENU_INVALID,          NULL,       NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-
-
-static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
-					 ZMapGUIMenuItemCallbackFunc callback_func,
-					 gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature", ITEM_MENU_PFETCH,  itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                    ITEM_MENU_INVALID, NULL,       NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-
-
-static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
-					  ZMapGUIMenuItemCallbackFunc callback_func,
-					  gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-/* this is identical or very nearly with columnMenuCB in zmapWindowDrawFeatures.c and should be combined */
-
-      {ZMAPGUI_MENU_NORMAL, "List All Column Features",       ITEM_MENU_LIST_ALL_FEATURES,   itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", ITEM_MENU_LIST_NAMED_FEATURES, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          ITEM_MENU_SEARCH,              itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              ITEM_MENU_SEQUENCE_SEARCH_DNA, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Toggle Mark",                    ITEM_MENU_TOGGLE_MARK,             itemMenuCB, NULL, "M"},
-      {ZMAPGUI_MENU_NONE, NULL,                               ITEM_MENU_INVALID,                 NULL,       NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-
-
-static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
-				   ZMapGUIMenuItemCallbackFunc callback_func,
-				   gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "URL", ITEM_MENU_SHOW_URL_IN_BROWSER, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,   NULL,  ITEM_MENU_INVALID,             NULL,       NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-
-
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle,
 				       char         *text,
 				       guint        *actual_read,
@@ -1767,18 +1767,6 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
-
-  /* the problem with doing this kind of thing is that we also need the canvasItemEventCB to be
-   *  attached as there are general things we need to do as well... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* ummmmm....I don't like this....suggests that all is not fully implemented in the new
-   * feature item stuff..... */
-  if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
-    g_signal_connect(G_OBJECT(top_item), "sequence-selected",
-		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return TRUE ;
 }
