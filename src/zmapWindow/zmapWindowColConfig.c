@@ -1101,31 +1101,33 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
 gboolean column_is_loaded_in_range(ZMapFeatureContextMap map, ZMapFeatureBlock block, GQuark column_id,int start, int end)
 {
 #define MH17_DEBUG      0
-      GList *fsets;
+  GList *fsets;
 
-      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
 #if MH17_DEBUG
-zMapLogWarning("is col loaded %s %d -> %d? ",g_quark_to_string(column_id),start,end);
+  zMapLogWarning("is col loaded %s %d -> %d? ",g_quark_to_string(column_id),start,end);
 #endif
-      while(fsets)
-      {
-            gboolean loaded;
-            loaded = zMapFeatureSetIsLoadedInRange(block,GPOINTER_TO_UINT(fsets->data), start, end);
+  while(fsets)
+    {
+      gboolean loaded;
+      loaded = zMapFeatureSetIsLoadedInRange(block,GPOINTER_TO_UINT(fsets->data), start, end);
 #if MH17_DEBUG
-zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
+      zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
 #endif
 
-            if(!loaded)
-                  return(FALSE);
+      if(!loaded)
+	return(FALSE);
 
-            /* NOTE fsets is an allocated list
-             * if this is changed to a static one held in the column struct
-             * then we should not free it
-             */
-            fsets = g_list_delete_link(fsets,fsets);
-            /*fsets = fsets->next;   if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
-      }
-      return TRUE;
+      /* NOTE fsets is an allocated list
+       * if this is changed to a static one held in the column struct
+       * then we should not free it
+       */
+      /* fsets = g_list_delete_link(fsets,fsets); */
+
+      fsets = fsets->next ;				    /* if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
+    }
+
+  return TRUE;
 }
 
 
