@@ -57,7 +57,8 @@ enum
    PROP_TEXT_CALLBACK_DATA,
    PROP_TEXT_SELECT_COLOR_GDK,
    PROP_TEXT_REQUESTED_WIDTH,
-   PROP_TEXT_REQUESTED_HEIGHT
+   PROP_TEXT_REQUESTED_HEIGHT,
+   PROP_TEXT_CHANGED
  };
 
 enum 
@@ -673,6 +674,13 @@ static void zmap_window_text_item_class_init (ZMapWindowTextItemClass zmap_class
 						    PANGO_TYPE_WRAP_MODE, PANGO_WRAP_WORD,
 						    G_PARAM_READWRITE));
   
+  g_object_class_install_property(gobject_class, 
+				  PROP_TEXT_CHANGED,
+				  g_param_spec_boolean(PROP_TEXT_CHANGED_STR, "text changed",
+						       "Text has changed so do a redisplay.",
+						       FALSE, G_PARAM_READWRITE)) ;
+
+
 
   object_class->destroy = zmap_window_text_item_destroy;
   
@@ -993,18 +1001,18 @@ static void zmap_window_text_item_destroy (GtkObject *object)
 
 /* Set_arg handler for the text item */
 static void zmap_window_text_item_set_property (GObject            *object,
-						 guint               param_id,
-						 const GValue       *value,
-						 GParamSpec         *pspec)
+						guint               param_id,
+						const GValue       *value,
+						GParamSpec         *pspec)
 {
   FooCanvasItem *item;
   ZMapWindowTextItem text;
   FooCanvasText *parent_text;
   
   g_return_if_fail (object != NULL);
-  g_return_if_fail (ZMAP_IS_WINDOW_TEXT_ITEM (object));
+  g_return_if_fail (ZMAP_IS_WINDOW_TEXT_ITEM(object));
   
-  text = ZMAP_WINDOW_TEXT_ITEM (object);
+  text = ZMAP_WINDOW_TEXT_ITEM(object);
   item = FOO_CANVAS_ITEM(object);
   parent_text = FOO_CANVAS_TEXT(object);
 
@@ -1055,8 +1063,14 @@ static void zmap_window_text_item_set_property (GObject            *object,
 	    text->select_colour = *colour ;
 	    text->state.select_colour = TRUE ;
 	  }
+
+	break;
       }
-      break;
+
+    case PROP_TEXT_CHANGED:
+      text->item_event.selected_state |= TEXT_ITEM_SELECT_CANVAS_CHANGED ;
+      break ;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
       break;
