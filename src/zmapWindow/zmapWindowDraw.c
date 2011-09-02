@@ -254,10 +254,9 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
 
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
-                                       gboolean dna,      gboolean protein,
+                                       gboolean dna,      gboolean protein, gboolean trans,
                                        gboolean force_to, gboolean force)
 {
-
   zmapWindowBusy(window, TRUE) ;
 
   if (dna)
@@ -267,6 +266,10 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
   if (protein)
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME,
 				 align_id, block_id, force_to, force);
+
+  if (trans)
+    toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME,
+				 align_id, block_id, force_to, force) ;
 
   zmapWindowFullReposition(window) ;
 
@@ -1230,17 +1233,16 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 					 GQuark align_id, GQuark block_id,
 					 gboolean force_to, gboolean force)
 {
-  GList *blocks = NULL;
-  const char *wildcard = "*";
-  GQuark featureset_unique  = 0;
-  ZMapStyleColumnDisplayState show_hide_state ;
+  GQuark featureset_unique ;
+  const char *wildcard = "*" ;
 
-  featureset_unique = zMapStyleCreateID(name);
+
+  featureset_unique = zMapStyleCreateID(name) ;
 
   if (align_id == 0)
-    align_id = g_quark_from_string(wildcard);
+    align_id = g_quark_from_string(wildcard) ;
   if (block_id == 0)
-    block_id = g_quark_from_string(wildcard);
+    block_id = g_quark_from_string(wildcard) ;
 
 
 
@@ -1249,7 +1251,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
   /* check we have the style... */
   if (!(zmapWindowFToIFindItemFull(window,window->context_to_item,
-                           align_id, block_id,
+				   align_id, block_id,
 				   featureset_unique,   /* this is column really but the name is the same */
 				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
     {
@@ -1261,7 +1263,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     {
-      FooCanvasItem *frame_column ;
+      GList *blocks ;
 
       blocks = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
 					     align_id, block_id, 0, 0,
@@ -1270,13 +1272,12 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
       /* Foreach of the blocks, toggle the display of the DNA */
       while (blocks)                 /* I cant bear to create ANOTHER struct! */
 	{
-	  ZMapFeatureBlock feature_block = NULL ;
 	  ID2Canvas id2c;
-
+	  ZMapFeatureBlock feature_block ;
 	  int first, last, i ;
 
 	  id2c = (ID2Canvas) blocks->data;
-	  feature_block = (ZMapFeatureBlock) id2c->feature_any;	//zmapWindowItemGetFeatureBlock(blocks->data) ;
+	  feature_block = (ZMapFeatureBlock)(id2c->feature_any) ;
 
 	  if (g_ascii_strcasecmp(name, ZMAP_FIXED_STYLE_3FT_NAME) == 0)
 	    {
@@ -1297,10 +1298,11 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
 	  for (i = first ; i <= last ; i++)
 	    {
+	      FooCanvasItem *frame_column ;
 	      ZMapFrame frame = (ZMapFrame)i ;
 
-	      frame_column = zmapWindowFToIFindItemFull(window,window->context_to_item,
-                                          feature_block->parent->unique_id,
+	      frame_column = zmapWindowFToIFindItemFull(window, window->context_to_item,
+							feature_block->parent->unique_id,
 							feature_block->unique_id,
 							featureset_unique,
 							ZMAPSTRAND_FORWARD, frame, 0) ;
@@ -1308,6 +1310,8 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
 		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
 		{
+		  ZMapStyleColumnDisplayState show_hide_state ;
+
 		  if (force && force_to)
 		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
 		  else if (force && !force_to)
