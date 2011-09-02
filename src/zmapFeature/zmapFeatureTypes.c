@@ -1196,6 +1196,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
     char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
     char *coding_colours = "normal fill green ; normal draw black ; selected fill pink" ;
     char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *in_frame_colours = "normal fill green ; normal draw black ; selected fill pink" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
@@ -1215,6 +1216,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS, in_frame_colours,
 		 NULL);
   }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
