@@ -506,7 +506,7 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_context_to_item,
 
 
 
-FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window,GHashTable *feature_context_to_item,
+FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window, GHashTable *feature_context_to_item,
 					     ZMapStrand set_strand, ZMapFrame set_frame,
                                              ZMapFeature feature)
 {
@@ -565,10 +565,10 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_c
  */
 
 
-FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_context_to_item,
+FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature_context_to_item,
 					  GQuark align_id, GQuark block_id,
 					  GQuark set_id,
-                                ZMapStrand set_strand, ZMapFrame set_frame,
+					  ZMapStrand set_strand, ZMapFrame set_frame,
 					  GQuark feature_id)
 {
   FooCanvasItem *item = NULL ;
@@ -667,7 +667,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
- * the supplied ids. Returns a GList of the Foo canvas item/groups or
+ * the supplied ids. Returns a GList of ID2Canvas structs, one per the feature or
  * NULL if the id(s) could not be found.
  *
  * Which hash tables are searched is decided by the ids supplied, "*" acts as the
