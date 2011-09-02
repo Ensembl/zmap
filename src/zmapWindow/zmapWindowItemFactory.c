@@ -130,14 +130,6 @@ static FooCanvasItem *drawSequenceFeature(RunSet run_data, ZMapFeature feature,
 					  double feature_offset,
 					  double x1, double y1, double x2, double y2,
 					  ZMapFeatureTypeStyle style);
-static FooCanvasItem *drawDNAFeature(RunSet run_data, ZMapFeature feature,
-                                     double feature_offset,
-                                     double x1, double y1, double x2, double y2,
-                                     ZMapFeatureTypeStyle style);
-static FooCanvasItem *drawPepFeature(RunSet run_data, ZMapFeature feature,
-                                     double feature_offset,
-                                     double x1, double y1, double x2, double y2,
-                                     ZMapFeatureTypeStyle style);
 static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature feature,
                                               double feature_offset,
                                               double x1, double y1, double x2, double y2,
@@ -146,10 +138,27 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 					     double feature_offset,
 					     double x1, double y1, double x2, double y2,
 					     ZMapFeatureTypeStyle style);
+
 static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature feature,
                                                 double feature_offset,
                                                 double x1, double y1, double x2, double y2,
                                                 ZMapFeatureTypeStyle style);
+static gint canvas_allocate_protein_cb(FooCanvasItem   *item,
+				       ZMapTextDrawData draw_data,
+				       gint             max_width,
+				       gint             max_buffer_size,
+				       gpointer         user_data) ;
+static gint canvas_allocate_dna_cb(FooCanvasItem   *item,
+				   ZMapTextDrawData draw_data,
+				   gint             max_width,
+				   gint             buffer_size,
+				   gpointer         user_data) ;
+static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
+					 ZMapTextDrawData draw_data,
+					 char *buffer_in_out,
+					 gint  buffer_size,
+					 gpointer user_data) ;
+
 
 static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlock block_b,
 					    ZMapAlignBlockStruct *gap_span_out,
@@ -1623,7 +1632,7 @@ static FooCanvasItem *drawSequenceFeature(RunSet run_data,  ZMapFeature feature,
 {
   FooCanvasItem *item = NULL ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (zMapFeatureSequenceIsDNA(feature))
     item = drawDNAFeature(run_data, feature,
 			  feature_offset,
@@ -1634,12 +1643,18 @@ static FooCanvasItem *drawSequenceFeature(RunSet run_data,  ZMapFeature feature,
 			  feature_offset,
 			  x1, y1, x2, y2,
 			  style) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  item = drawFullColumnTextFeature(run_data, feature, feature_offset,
+				   x1, y1, x2, y2, style) ;
 
   return item ;
 }
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static FooCanvasItem *drawDNAFeature(RunSet run_data,  ZMapFeature feature,
                                      double feature_offset,
                                      double x1, double y1, double x2, double y2,
@@ -1669,11 +1684,68 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
 
   return text_item_parent;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+/* item_to_char_cell_coords: This is a ZMapWindowOverlaySizeRequestCB callback
+ * The overlay code calls this function to request whether to draw an overlay
+ * on a region and specifically where to draw it.  returns TRUE to make the
+ * draw and FALSE to not...
+ * Logic:  The text context is used to find the coords for the first and last
+ * characters of the dna corresponding to the start and end of the feature
+ * attached to the subject given.  TRUE is only returned if at least one of
+ * the start and end are not defaulted, i.e. shown.
+ */
+static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature feature,
+                                                double feature_offset,
+                                                double x1, double y1, double x2, double y2,
+                                                ZMapFeatureTypeStyle style)
+{
+  ZMapWindowCanvasItem canvas_item = NULL ;
+  FooCanvasGroup *parent = run_data->container;
+  double text_start, text_end;
+  FooCanvasItem *item;
+  FooCanvasZMapAllocateCB allocate_func_cb = NULL;
+  FooCanvasZMapFetchTextCB fetch_text_func_cb = NULL;
 
 
+  text_start  = feature->x1;
+  text_end    = feature->x2;
+
+  zmapWindowSeq2CanOffset(&text_start, &text_end, feature_offset) ;
+
+  /* Create the "parent" canvas item for the text item itself. */
+  canvas_item = zMapWindowCanvasItemCreate(parent, text_start, feature, style) ;
+
+  if (zMapFeatureSequenceIsDNA(feature))
+    {
+      allocate_func_cb   = canvas_allocate_dna_cb;
+    }
+  else if (zMapFeatureSequenceIsPeptide(feature))
+    {
+      allocate_func_cb   = canvas_allocate_protein_cb;
+    }
+
+  fetch_text_func_cb = canvas_fetch_feature_text_cb ;
+
+
+  /* Create the text item which actually holds the text. */
+  item = zMapWindowCanvasItemAddInterval(canvas_item, NULL,
+					 text_start, text_end,
+					 x1, x2) ;
+
+  foo_canvas_item_set(item,
+		      PROP_REFSEQ_START_STR,    feature->x1,
+		      PROP_REFSEQ_END_STR,      feature->x2,
+		      PROP_TEXT_LENGTH_STR,     feature->feature.sequence.length,
+		      PROP_TEXT_ALLOCATE_FUNC_STR,   allocate_func_cb,
+		      PROP_TEXT_FETCH_TEXT_FUNC_STR, fetch_text_func_cb,
+		      PROP_TEXT_CALLBACK_DATA_STR,   feature,
+		      NULL) ;
+
+  return (FooCanvasItem *)canvas_item ;
+}
 
 
 /* WHY ON EARTH ARE THESE ROUTINES HERE....THEY SHOULD SURELY BE IN zmapWindow/items/ DIRECTORY
@@ -1849,11 +1921,12 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
   else if (zMapFeatureSequenceIsPeptide(feature))
     {
       int protein_start;
+
       /* Get the protein index that the world y corresponds to. */
       protein_start = (int)(draw_data->wy) - feature->x1;
       protein_start = (int)(protein_start / 3);
 
-      seq_ptr  = feature->feature.sequence.sequence;
+      seq_ptr = feature->feature.sequence.sequence;
       seq_ptr += protein_start;
     }
   else
@@ -1877,9 +1950,7 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
 	     (seq_ptr - feature->feature.sequence.sequence) + 1) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
-      if(report_table_size)
+      if (report_table_size)
 	{
 	  if (seq_ptr >= feature->feature.sequence.sequence + feature->feature.sequence.length - 1)
 	    printf("at end of sequence ! \n") ;
@@ -1932,67 +2003,11 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
   if(seq)
     g_free(seq);
 
-  return buffer_ptr - buffer_in_out;
+  return buffer_ptr - buffer_in_out ;
 }
 
 
-/* item_to_char_cell_coords: This is a ZMapWindowOverlaySizeRequestCB callback
- * The overlay code calls this function to request whether to draw an overlay
- * on a region and specifically where to draw it.  returns TRUE to make the
- * draw and FALSE to not...
- * Logic:  The text context is used to find the coords for the first and last
- * characters of the dna corresponding to the start and end of the feature
- * attached to the subject given.  TRUE is only returned if at least one of
- * the start and end are not defaulted, i.e. shown.
- */
-static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature feature,
-                                                double feature_offset,
-                                                double x1, double y1, double x2, double y2,
-                                                ZMapFeatureTypeStyle style)
-{
-  ZMapWindowCanvasItem canvas_item = NULL ;
-  FooCanvasGroup *parent = run_data->container;
-  double text_start, text_end;
-  FooCanvasItem *item;
-  FooCanvasZMapAllocateCB allocate_func_cb = NULL;
-  FooCanvasZMapFetchTextCB fetch_text_func_cb = NULL;
 
-
-  text_start  = feature->x1;
-  text_end    = feature->x2;
-
-  zmapWindowSeq2CanOffset(&text_start, &text_end, feature_offset) ;
-
-  /* Create the "parent" canvas item for the text item itself. */
-  canvas_item = zMapWindowCanvasItemCreate(parent, text_start, feature, style) ;
-
-  if (zMapFeatureSequenceIsDNA(feature))
-    {
-      allocate_func_cb   = canvas_allocate_dna_cb;
-      fetch_text_func_cb = canvas_fetch_feature_text_cb;
-    }
-  else if (zMapFeatureSequenceIsPeptide(feature))
-    {
-      allocate_func_cb   = canvas_allocate_protein_cb;
-      fetch_text_func_cb = canvas_fetch_feature_text_cb;
-    }
-
-  /* Create the text item which actually holds the text. */
-  item = zMapWindowCanvasItemAddInterval(canvas_item, NULL,
-					 text_start, text_end,
-					 x1, x2) ;
-
-  foo_canvas_item_set(item,
-		      PROP_REFSEQ_START_STR,    feature->x1,
-		      PROP_REFSEQ_END_STR,      feature->x2,
-		      PROP_TEXT_LENGTH_STR,     feature->feature.sequence.length,
-		      PROP_TEXT_ALLOCATE_FUNC_STR,   allocate_func_cb,
-		      PROP_TEXT_FETCH_TEXT_FUNC_STR, fetch_text_func_cb,
-		      PROP_TEXT_CALLBACK_DATA_STR,   feature,
-		      NULL) ;
-
-  return (FooCanvasItem *)canvas_item ;
-}
 
 static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature feature,
                                               double feature_offset,
