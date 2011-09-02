@@ -918,10 +918,6 @@ void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
 void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout) ;
 void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapHideUnhideColumns(ZMapWindow window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
 GHashTable *zmapWindowFToICreate(void) ;
@@ -1012,15 +1008,8 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index) ;
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
-FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
-
 
 void zmapWindowHighlightSequenceItems(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
@@ -1035,6 +1024,14 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight,
+						  FooCanvasItem *item,
+						  ZMapFrame required_frame,
+						  ZMapSequenceType coords_type,
+						  int region_start, int region_end) ;
+  void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem *item) ;
+
+
 
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,

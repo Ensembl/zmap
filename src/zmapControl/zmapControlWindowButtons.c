@@ -519,13 +519,14 @@ static void dnaCB(GtkWidget *wigdet, gpointer cb_data)
   gboolean force = FALSE,
     force_to     = TRUE,
     do_dna       = TRUE,
-    do_aa        = FALSE;
+    do_aa        = FALSE,
+    do_trans = FALSE ;
 
   zMapAssert(zmap->focus_viewwindow) ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-  zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force);
+  zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force);
 
   return ;
 }
@@ -873,7 +874,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
   ZMapGUIMenuSubMenuData data = (ZMapGUIMenuSubMenuData)callback_data ;
   ZMapWindow window = NULL ;
   GQuark align_id = 0, block_id = 0 ;
-  gboolean force = TRUE, force_to = FALSE, do_dna = FALSE, do_aa = FALSE ;
+  gboolean force = TRUE, force_to = FALSE, do_dna = FALSE, do_aa = FALSE, do_trans = FALSE ;
 
   /* MH17: I took the force and do_aa flags out of 3FT options as they are not currently relevant
    * there had been experiment with operating DNA and 3FT in tandem
@@ -935,7 +936,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
       else
 	{
 	  /* DNA... */
-	  zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force) ;
+	  zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
 	}
     }
 

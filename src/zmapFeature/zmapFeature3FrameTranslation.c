@@ -33,6 +33,8 @@
 
 #include <ZMap/zmap.h>
 
+#include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapFeature_P.h>
@@ -48,6 +50,22 @@ static void translation_set_populate(ZMapFeatureBlock feature_block, ZMapFeature
 				     char *seq_name, char *seq, int block_start, int block_end) ;
 
 
+
+static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
+					int block_start, int block_end) ;
+static void translationPopulate(ZMapFeatureBlock feature_block,
+				ZMapFeatureSet feature_set,
+				ZMapFeatureTypeStyle style,
+				char *seq_name,
+				char *dna,
+				int block_start, int block_end) ;
+
+
+
+
+/* 
+ *                External functions.
+ */
 
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type)
@@ -170,14 +188,42 @@ void zMapFeature3FrameTranslationAddSequenceData(ZMapFeature feature, char *pept
 
 
 
-static void destroySequenceData(ZMapFeature feature)
+
+/* Following functions are for "show translation", similar to 3-frame but a bit different. */
+
+
+gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
 {
-  if (zMapFeatureSequenceIsPeptide(feature) && (feature->feature.sequence.sequence))
+  gboolean created = FALSE ;
+  ZMapFeatureSet feature_set = NULL;
+
+  /* hmmmm, is this the way to test this...I don't think so....
+   * No sequence, no Translation so _return_ EARLY */
+  if ((block->sequence.length))
     {
-      g_free(feature->feature.sequence.sequence) ;
-      feature->feature.sequence.sequence = NULL ;
-      feature->feature.sequence.length = 0 ;
+      if (!(feature_set = zMapFeatureBlockGetSetByID(block,
+						     zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+	{
+	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL) ;
+
+	  zMapFeatureBlockAddFeatureSet(block, feature_set);
+
+	  created = TRUE ;
+	}
+
+      if (set_out)
+	*set_out = feature_set ;
     }
+
+  return created ;
+}
+
+
+
+void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
+{
+  /* public version of... */
+  showTranslationPopulate(feature_set, style, 0, 0) ;
 
   return ;
 }
@@ -185,9 +231,14 @@ static void destroySequenceData(ZMapFeature feature)
 
 
 
+
+
+
 /*
  *               internal routines
  */
+
+
 
 
 /* Accepts NULL as style but the translation features must already
@@ -317,3 +368,143 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
 
   return ;
 }
+
+
+static void destroySequenceData(ZMapFeature feature)
+{
+  if (zMapFeatureSequenceIsPeptide(feature) && (feature->feature.sequence.sequence))
+    {
+      g_free(feature->feature.sequence.sequence) ;
+      feature->feature.sequence.sequence = NULL ;
+      feature->feature.sequence.length = 0 ;
+    }
+
+  return ;
+}
+
+
+
+
+
+
+/* "Show Translation" functions. */
+
+
+static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
+					int block_start, int block_end)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureBlock feature_block ;
+
+  feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK) ;
+
+  if ((feature_block->sequence.sequence))
+    {
+      char *sequence_name;
+
+      sequence_name = (char *)g_quark_to_string(feature_block->original_id);
+
+      translationPopulate(feature_block,
+			  feature_set,
+			  style,
+			  sequence_name,
+			  feature_block->sequence.sequence,
+			  block_start, block_end) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+static void translationPopulate(ZMapFeatureBlock feature_block,
+				ZMapFeatureSet feature_set,
+				ZMapFeatureTypeStyle style,
+				char *seq_name,
+				char *dna,
+				int block_start, int block_end)
+{
+  int block_position ;
+  ZMapPeptide pep ;
+  ZMapFeature translation ;
+  char *feature_name = NULL ;			    /* Remember to free this */
+  GQuark feature_id ;
+  char *peptide_str ;
+  int peptide_length ;
+  int x1, x2 ;
+
+  block_position = feature_block->block_to_sequence.block.x1 ;     // actual loaded DNA not logical sequence start
+
+
+  if (block_start == 0)
+    {
+      block_start = feature_block->block_to_sequence.block.x1 ;
+      block_end = feature_block->block_to_sequence.block.x2 ;
+    }
+
+  feature_name = ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME ;
+  feature_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+  pep = zMapPeptideCreateEmpty(NULL, NULL, dna, FALSE) ;
+
+  if ((translation = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
+    {
+
+      /* If there is one set we need to get rid of it.... */
+      destroySequenceData(translation) ;
+
+    }
+  else
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      x1 = block_position ;
+      x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      x1 = block_start ;
+      x2 = block_end ;
+
+
+      translation = zMapFeatureCreateEmpty() ;
+
+      zMapFeatureAddStandardData(translation, feature_name, feature_name,
+				 seq_name, "sequence",
+				 ZMAPSTYLE_MODE_SEQUENCE, style,
+				 x1, x2, FALSE, 0.0,
+				 ZMAPSTRAND_NONE) ;
+
+      zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapFeatureAddFrame(translation, curr_frame) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      zMapFeatureSetAddFeature(feature_set, translation) ;
+    }
+
+
+  peptide_str = zMapPeptideSequence(pep) ;
+
+  /* Get the peptide length in complete codons....WHY....CHECK THIS..... */
+  peptide_length = zMapPeptideFullCodonAALength(pep) ;
+
+  peptide_str = g_malloc0(peptide_length + 1) ;
+
+  memset(peptide_str, (int)'=', peptide_length) ;
+
+  zMapFeature3FrameTranslationAddSequenceData(translation, peptide_str, peptide_length) ;
+
+  zMapPeptideDestroy(pep) ;
+
+  return ;
+}
+
+
+
+
+
+
+

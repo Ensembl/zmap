@@ -91,7 +91,9 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-ZMAP_MASTER_HOST=tviewsrv
+#ZMAP_MASTER_HOST=tviewsrv
+ZMAP_MASTER_HOST=deskpro16113
+
 
 # disabling this until I can work out how to selectively include doxygen...
 ZMAP_MASTER_BUILD_DOCS=no
@@ -115,7 +117,8 @@ ZMAP_MASTER_BUILD_DIST=no
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
-ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4"
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
 -oConnectTimeout=3 \
@@ -137,7 +140,7 @@ ZMAP_ACEDB_RELEASE_CONTAINER=~acedb
 if [ -z "$ZMAP_ACEDB_RELEASE_DIR" ] ; then
   ZMAP_ACEDB_RELEASE_DIR='DEVELOPMENT'
 fi
-ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd belvu xremote'
+ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd xremote'
 
 
 # seqtools stuff
@@ -145,7 +148,7 @@ ZMAP_SEQTOOLS_RELEASE_CONTAINER=~zmap/SeqTools
 if [ -z "$ZMAP_SEQTOOLS_RELEASE_DIR" ] ; then
   ZMAP_SEQTOOLS_RELEASE_DIR='BUILD.DEVELOPMENT'
 fi
-ZMAP_SEQTOOLS_BINARIES='blixem blixemh dotter'
+ZMAP_SEQTOOLS_BINARIES='blixem blixemh dotter belvu'
 
 # AceConn stuff
 ZMAP_ACECONN_RELEASE_CONTAINER=$ZMAP_ACEDB_RELEASE_CONTAINER

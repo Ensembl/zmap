@@ -333,8 +333,8 @@ EOF
 
 
 # rt is now installed in /software/acedb/bin for i386
-RTSERVER=tviewsrv
-#RTSERVER=deskpro16113
+#RTSERVER=tviewsrv
+RTSERVER=deskpro16113
 RTHTTPSERVER="https://rt.sanger.ac.uk"
 RTUSER=zmap
 RTRESULTS=rt_tickets.out

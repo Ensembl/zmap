@@ -2536,6 +2536,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  /* Try unhighlighting dna/translations... */
 	  zmapWindowItemUnHighlightDNA(window, item) ;
 	  zmapWindowItemUnHighlightTranslations(window, item) ;
+	  zmapWindowItemUnHighlightShowTranslations(window, item) ;
 
 	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
 
