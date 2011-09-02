@@ -823,6 +823,7 @@ GList *zMapConfigString2QuarkIDList(char *string_list)
  */
 /*
  * NOTE we set up the columns->featureset list here, which is used to order heatmap(coverage) featuresets in a column
+ * as well as for requesting featuresets via columns
  * ACEDB supplies a fset to column mapping later on which does not affect pipe servers (used for coverage/BAM)
  * and if this is aditional to that already configured it's added
  */
@@ -885,6 +886,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   g_hash_table_replace(hash,GUINT_TO_POINTER(column_id),GFFset);
 #endif
                   sources = zMapConfigString2QuarkList(names,FALSE);
+
                   g_free(names);
 
                   while(sources)
@@ -903,10 +905,11 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
                         g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
 
+
                         /* construct reverse mapping from column to featureset */
-                        if(!g_list_find(f_col->featuresets,GUINT_TO_POINTER(key)))
+                        if(!g_list_find(f_col->featuresets_unique_ids,GUINT_TO_POINTER(key)))
                         {
-                              f_col->featuresets = g_list_append(f_col->featuresets,GUINT_TO_POINTER(key));
+                              f_col->featuresets_unique_ids = g_list_append(f_col->featuresets_unique_ids,GUINT_TO_POINTER(key));
                         }
 
 
@@ -918,6 +921,91 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
       }
 
       return(hash);
+}
+
+
+/* to handle composite featuresets we map real ones to a pretend one
+ * [featuresets]
+ * composite = source1 ; source2 ;  etc
+ *
+ * we also have to patch in the featureset to column mapping as config does not do this
+ * which will make display anc column style tables work
+ * NOTE the composite featureset does not exist at all and is just used to name a ZMapWindowgraphDensityItem
+ */
+GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col)
+{
+      GKeyFile *gkf;
+      gchar ** keys,**freethis;
+      GList *sources;
+      gsize len;
+
+	GQuark set_id;
+
+      char *names;
+
+      ZMapFeatureSetDesc virtual_f2c;
+      ZMapFeatureSetDesc real_f2c;
+
+
+      GHashTable *virtual_featuresets = g_hash_table_new(NULL,NULL);
+
+      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_FEATURESETS_CONFIG,&gkf))
+      {
+            freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_FEATURESETS_CONFIG,&len,NULL);
+
+            for(;len--;keys++)
+            {
+                  names = g_key_file_get_string(gkf,ZMAPSTANZA_FEATURESETS_CONFIG,*keys,NULL);
+
+                  if(!names || !*names)
+                        continue;
+
+	                  /* this featureset will not actually exist, it's virtual */
+                  set_id = zMapFeatureSetCreateID(*keys);
+                  virtual_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(set_id));
+                  if(!virtual_f2c)
+                  {
+                  	zMapLogWarning("cannot find virtual featureset %s",*keys);
+                  	continue;
+                  }
+
+                  sources = zMapConfigString2QuarkList(names,FALSE);
+                  g_free(names);
+
+                  g_hash_table_insert(virtual_featuresets,GUINT_TO_POINTER(set_id), sources);
+
+                  while(sources)
+                  {
+                  	ZMapFeatureSource f_src;
+                        // get featureset if present
+                        GQuark key = zMapFeatureSetCreateID((char *)
+                              g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
+                        f_src = g_hash_table_lookup(fset_src,GUINT_TO_POINTER(key));
+
+                        if(!f_src)
+                              continue;
+                        f_src->maps_to = set_id;
+
+				/* now set up featureset to column mapping to allow the column to paint and styles to be found */
+                        real_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(key));
+                        if(!real_f2c)
+                        {
+                        	real_f2c = g_new0(ZMapFeatureSetDescStruct,1);
+                        	g_hash_table_insert(fset2col,GUINT_TO_POINTER(key),real_f2c);
+                        }
+
+                        real_f2c->column_id = virtual_f2c->column_id;
+                        real_f2c->column_ID = virtual_f2c->column_ID;
+//		  		real_f2c->feature_set_text =
+                        real_f2c->feature_src_ID = GPOINTER_TO_UINT(sources->data);
+
+                        sources = sources->next;
+                  }
+            }
+            if(freethis)
+                  g_strfreev(freethis);
+      }
+      return virtual_featuresets;
 }
 
 

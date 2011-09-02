@@ -243,6 +243,7 @@ typedef struct _zmapWindowFeatureStack
       ZMapFeatureSet set;
       ZMapFeature feature;
       GQuark id;        /* used for density plots, set to zero */
+      GQuark maps_to;	/* used by density plots for virtual featuresets */
       int set_index;	/* used by density plots for stagger */
       ZMapStrand strand;
       ZMapFrame frame;

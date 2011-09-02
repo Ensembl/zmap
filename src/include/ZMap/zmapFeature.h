@@ -808,14 +808,16 @@ typedef struct
 
   GList *style_table;               /* all the styles needed by the column */
 
-  GList * featuresets;              /* list of those configured
+  GList * featuresets_names;              /* list of those configured
                                      * these get filled in when servers request featureset-names
                                      * for pipe servers we could do this during server config
                                      * but for ACE (and possibly DAS) we have to wait till they provide data
                                      */
   GList * featuresets_unique_ids;	/* we need both user style and unique id's */
-  						/* both are filled in by lazy evaluation
-						 * servers that privide a mapping must delete these lists
+  						/* both are filled in by lazy evaluation if not configured explicitly
+  						 * (featuresets is set by the [columns] config)
+  						 * NOTE we now have virtual featuresets for BAM coverage that do not exist
+						 * servers that provide a mapping must delete these lists
   						 */
 
 } ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
@@ -835,6 +837,12 @@ typedef struct
   GQuark style_id ;     /* The style for processing the source. */
 
   GQuark related_column;	/* eg real data from coverage */
+  GQuark maps_to;			/* composite featureset many->one
+  					 * composite does not exist but all are displayed as one
+  					 * requires ZMapWindowGraphDensityItem
+  					 * only relevant to coverage data
+  					 */
+
   gboolean is_seq;		/* true for coverage and real seq-data */
 
 } ZMapFeatureSourceStruct, *ZMapFeatureSource ;
@@ -876,6 +884,7 @@ typedef struct
 
   GList * seq_data_featuresets;           /* sources of BAM data  as unique id's, use source_2_sourcedata  for display name */
 
+  GHashTable *virtual_featuresets;		/* place holder for lists of featuresets */
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;
 

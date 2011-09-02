@@ -4127,16 +4127,50 @@ so just request whatever region is requested regardless
       GList * fset_list = NULL;
       GList *col_list;
 
-	if(is_column)
+	if(is_column)	/* user requests a column */
 	{
       	for(col_list = featureset_name_list;col_list;col_list = col_list->next)
-            	fset_list = g_list_concat(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),FALSE), fset_list);
+            	fset_list = g_list_concat(
+            	/* must copy as this is a static list */
+            	g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),TRUE)),
+            	 fset_list);
 	}
-	else
+	else			/* zmap requests data via column menu */
 	{
 		fset_list = featureset_name_list;
 	}
-//zMapLogWarning("fetch %d: %d %d",use_mark,fetch_data->start,fetch_data->end);
+
+	/* expand any virtual featursets into real ones */
+	{
+      	GList *virtual;
+
+      	for(virtual = fset_list;virtual; virtual = virtual->next)
+      	{
+      		GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
+
+      		if(real)
+      		{
+      			GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
+      			GList *l = virtual;
+
+      			copy->prev = virtual->prev;
+      			if(copy->prev)
+      				copy->prev->next = copy;
+      			else
+      				fset_list = copy;
+
+      			copy = g_list_last(copy);
+      			copy->next = virtual->next;
+      			if(copy->next)
+      				copy->next->prev = copy;
+
+      			virtual = copy;
+
+				g_list_free_1(l);
+      		}
+      	}
+	}
+
 
       fetch_data->feature_set_ids = fset_list;
 

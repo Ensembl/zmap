@@ -681,6 +681,11 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 
 void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
 {
+	/* scan for the call to get_featureset_column_index() for 2 more fields
+		feature_stack->set_index =
+		feature_stack->maps_to =
+	*/
+
       feature_stack->id = 0;              /* set once per col for graph features in the item factory */
 
 	feature_stack->strand = ZMAPSTRAND_NONE;
@@ -722,17 +727,24 @@ int get_featureset_column_index(ZMapFeatureContextMap map,GQuark featureset_id)
 	int index = 0;
 	ZMapFeatureColumn column;
 	ZMapFeatureSetDesc set;
+	ZMapFeatureSource src;
 	GList *l;
 
 	set = (ZMapFeatureSetDesc) g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(featureset_id));
 	if(!set)
 		return 0;
+	src = (ZMapFeatureSource) g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(featureset_id));
+	if(!src)
+		return 0;
 	column = (ZMapFeatureColumn) g_hash_table_lookup(map->columns,GUINT_TO_POINTER(set->column_id));
 	if(!column)
 		return 0;
-	for(l = column->featuresets;l;l = l->next, index++)
+	for(l = column->featuresets_unique_ids;l;l = l->next, index++)
 	{
 		if(GPOINTER_TO_UINT(l->data) == featureset_id)
+			return(index);
+
+		if(GPOINTER_TO_UINT(l->data) == src->maps_to)
 			return(index);
 	}
 
@@ -818,19 +830,20 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL);
 
-#warning  MH17: looks like old debugging, lets remove after the August 2011 release
-if(!feature_set->style)
-{
-	int n;
-	char *set = (char *) g_quark_to_string(feature_set->unique_id);
-	n = g_hash_table_size(feature_set->features);
-	zMapLogWarning("set %s has no style and %d features",set,n);
-}
 
   if(zMapStyleDensity(feature_set->style))
   {
+  	ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
+
   	featureset_data.feature_stack.set_index =
   		get_featureset_column_index(window->context_map,feature_set->unique_id);
+
+  	if(f_src)
+  		featureset_data.feature_stack.maps_to = f_src->maps_to;
+printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
+
+//  	if(!featureset_data.feature_stack.maps_to)
+//  		featureset_data.feature_stack.maps_to = feature_set->unique_id;	/* maps to self */
   }
 
   /* Now draw all the features in the column. */
@@ -1348,6 +1361,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
        which should never happen as the view creates a 1-1 mapping regardless */
   }
   /* but then we can't as we need the column style to work out whether to create it */
+
 
   if(!f_col)
     {
@@ -1892,16 +1906,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	 * copy of the view context's feature set.  It should also get
 	 * destroyed with the diff context, so be warned. */
 	feature_set = (ZMapFeatureSet)feature_any;
-//if(g_strstr_len(g_quark_to_string(feature_set->unique_id),-1,"trunc"))
-{
-	zMapLogWarning("set %s has style %p",g_quark_to_string(feature_set->unique_id),feature_set->style);
-}
 
 	style = zMapWindowGetSetColumnStyle(window,feature_set->unique_id);
 	if(!style)
 	  {
 	  /* MH17: there is something very odd going on here, both these functions are identical */
 	  /* they are both very short and appear next to each other in WindowUtils.c */
+	  /* Ashley no: there is one very small difference */
 
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);

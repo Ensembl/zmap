@@ -158,6 +158,8 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int
 #define QQ_QUARK  1
 #define QQ_STYLE  2
 
+GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col);
+
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
