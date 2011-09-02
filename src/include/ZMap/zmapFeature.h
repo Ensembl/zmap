@@ -1289,9 +1289,12 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
 
+
+
 char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
 char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
-
+gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) ;
+void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
                                   /* ZMapFeatureXMLType xml_type */
