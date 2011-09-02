@@ -51,8 +51,9 @@ enum
     PROP_FLOAT_MIN_Y,
     PROP_FLOAT_MAX_Y,
     PROP_FLOAT_AXIS,
+    PROP_TEXT_CHANGED,
 
-    PROP_LAST,
+    PROP_LAST
   };
 
 
@@ -148,11 +149,12 @@ GType zMapWindowSequenceFeatureGetType(void)
 
 /* Highlight sequence in sequence_feature corresponding to seed_feature. */
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
-						  FooCanvasItem *item, ZMapFeature seed_feature)
+						  FooCanvasItem *item, ZMapFeature seed_feature,
+						  gboolean cds_only)
 {
+  gboolean result = TRUE ;
   FooCanvasGroup *sequence_group;
   GList *list;
-  gboolean result = TRUE;
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
@@ -329,9 +331,11 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 			    zMapAssertNotReached() ;
 			  }
 
-			zMapWindowTextItemSelect(text_item,
-						 start, end,
-						 deselect, deselect) ;
+			if (current_exon->region_type != EXON_NON_CODING
+			    || (current_exon->region_type == EXON_NON_CODING && !cds_only))
+			  zMapWindowTextItemSelect(text_item,
+						   start, end,
+						   deselect, deselect) ;
 
 			deselect = FALSE ;
 		      }
@@ -745,6 +749,15 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 						     ZMAP_FLOAT_AXIS_Y,
 						     G_PARAM_READWRITE));
 
+  g_object_class_install_property(gobject_class, 
+				  PROP_TEXT_CHANGED,
+				  g_param_spec_boolean(PROP_TEXT_CHANGED_STR, "text changed",
+						       "Text has changed so do a redisplay.",
+						       FALSE, G_PARAM_READWRITE)) ;
+
+
+
+
   /* floating... */
   item_class->draw    = zmap_window_sequence_feature_draw;
   item_class->update  = zmap_window_sequence_feature_update;
@@ -842,6 +855,18 @@ static void zmap_window_sequence_feature_set_property(GObject               *gob
 	seq_feature->float_flags.float_axis = axis;
       }
       break;
+
+    case PROP_TEXT_CHANGED:
+      {
+	FooCanvasGroup *sequence_group = FOO_CANVAS_GROUP(seq_feature) ;
+	ZMapWindowTextItem text_item = (ZMapWindowTextItem)(sequence_group->item_list->data) ;
+
+	g_object_set(G_OBJECT(text_item),
+		     PROP_TEXT_CHANGED_STR, TRUE,
+		     NULL) ;
+	break ;
+      }
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, param_id, pspec);
       break;
