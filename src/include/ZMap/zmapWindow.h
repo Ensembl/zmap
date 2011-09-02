@@ -329,7 +329,7 @@ void zMapWindow3FrameSetMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 /* should become internal to zmapwindow..... */
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
-                                       gboolean dna,      gboolean protein,
+                                       gboolean dna,      gboolean protein, gboolean trans,
                                        gboolean force_to, gboolean force);
 
 void zMapWindowStateRecord(ZMapWindow window);
