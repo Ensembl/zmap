@@ -1118,16 +1118,16 @@ gboolean column_is_loaded_in_range(ZMapFeatureContextMap map, ZMapFeatureBlock b
       if(!loaded)
 	return(FALSE);
 
+
       /* NOTE fsets is an allocated list
        * if this is changed to a static one held in the column struct
        * then we should not free it
        */
       /* fsets = g_list_delete_link(fsets,fsets); */
-
-      fsets = fsets->next ;				    /* if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
-    }
-
-  return TRUE;
+      /* NOTE: now is a cached list */
+      fsets = fsets->next;  /* if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
+   }
+      return TRUE;
 }
 
 
@@ -1148,11 +1148,13 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
   window = notebook_page->configure_data->window;
 
+
   if((mark_set = zmapWindowMarkIsSet(window->mark)))
     {
       zmapWindowMarkGetSequenceRange(window->mark,
 					  &mark1, &mark2);
     }
+
 
   if(column_name)
       frame = gtk_frame_new(g_quark_to_string(column_name));
@@ -1176,7 +1178,6 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
   /* A box for the columns */
   column_box = gtk_vbox_new(FALSE, 0) ;
-
 
 
   if((column = g_list_first(columns_list)))
@@ -1511,7 +1512,6 @@ static void deferred_page_apply(NotebookPage notebook_page)
       /* Go through the load all ones... */
       g_list_foreach(deferred_data->load_all, add_name_to_list, &all_list);
 
-//      mark_list = expand_columns_to_featuresets
       zmapWindowFetchData(configure_data->window, block, mark_list, TRUE,TRUE);
       zmapWindowFetchData(configure_data->window, block, all_list, FALSE,TRUE);
 

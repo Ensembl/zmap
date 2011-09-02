@@ -1,0 +1,124 @@
+<h2>Configuration of complex and related featuresets and the user interface</h2>
+
+<h3>Existing architecture</h3>
+<p>ZMap displays columns of data containing one or more featuresets.  Requesting or showing/hiding a column operates on all the featuresets in it.
+</p>
+<p>This is not flexible enough to cope with the requirements for BAM data and we need to find a way to configure and operate featuresets that are related in several different ways.
+</p>
+
+<h4>Insufficient flexibilty</h4>
+<p>Please refer to the following diagram, which illustrates how the current ZMap architecture cannot implement what is required (but see <a href="Design/notes/data_config.shtml#bingo">Bingo</a> below).<br />
+a) shows the traditional approach derived from ACEDB and now in use with data provided by pipe servers (NOTE: this is not a brilliant example as all the featuresets actually come from one pipe server). <br />
+
+b) shows a simple BAM data column with two reps of the same experiment combined into one column. Each rep is sourced from it's own pipe server and the features can be colour code via styles easily - this fits quite well into existing architecture. <br />
+
+c) shows a coverage column. Coverage is displayed as several featuresets in a column, so for instance for a given grouping of cell lines in ENCODE (eg tier 1) we present all the cytosol experiments for each cell line/ cell compartment combination and each one appears as a heatmap . Each heatmap contains the coverage data for all the reps and therefore has data from several sources. Heatmaps have been implemented as single canvas items that contain many subfeatures and assume that they contain data from one featureset. They are positioned in the column in the order specified in the configuration which says which featuresets are in the column.
+</p>
+
+<p>There are some other issues to consider which all make it more essential to have each coverage heatmap sourced from one featureset and groups of these configured as displayed in the same column:
+<ul>
+<li> we wish to request several cell lines of coverage data in one operation (ie we need to load a column with several featuresets)
+<li> we wish to show/hide all of these in one operatiom
+<li> we wish to bump several heatmaps into wiggle plots or histograms together
+</ul>
+</p>
+
+<p>Ultimately the problem is that we need three levels of grouping (featureset, related featureset, and column) and we only have two.
+</p>
+
+<h4>Configuration</h4>
+<p>Extra configuration options have beed added to relate coverage to data to allow requests via the mouse and this has become unwieldy.
+</p>
+
+<h4>Interim solution</h4>
+<p>This leads to the current interim solution where the pipe script that provides coverage data amalgamates several different data sources into one featureset, which is not an ideal solution as:
+<ul>
+<li> we are handling the problem externally: ZMap should have control over this
+<li> if one of the sources fails it is difficult to recover from the situation
+</ul>
+<img src="Design/notes/data_config.png" class="img" alt="column config">
+</p>
+
+
+<h3>Some approaches</h3>
+
+<h4>Continue adding to styles and configuration options</h4>
+<p>It may be possible to display several coverage featuresets in one heatmap via enhanced styles options but this is mis-using the styles data which should be for how data is displayed (it's appearance) not how it is grouped - to display a heatmap it has to exist as a unique object/ data structure in ZMap.
+</p>
+
+<p>It would also be possible to add configuration data to link a few coverage featuresets together and combine these before display.
+Using current practice as an example we could do something like this:
+<pre>
+[ZMap]
+columns=coverage_Tier1_cytosol; etc
+
+[columns]
+coverage_Tier1_cytosol = coverage_Tier1_cytosol_GM12878 ; coverage_Tier1_cytosol_H1-hESC ; coverage_Tier1_cytosol_K562
+
+[featuresets]
+coverage_Tier1_cytosol_K562 = coverage_Tier1_cytosol_K562_LongPolyA_Rep1 ; coverage_Tier1_cytosol_K562_LongPolyA_Rep2
+</pre>
+with the last stanza being new.  Note that there would be more featuresets to be combined in practice.  The source featuresets would  be configured for servers but not appear in the columns dialog. The composite featureset would appear in the column as configured.
+</p>
+<a name="bingo"></a>
+<h5>Bingo!</h5>
+<p>
+It is possible to implement this as mapping each source featureset to the composite at the display interface, which provides all the required functionality using existing architecture.  Note that it is only relevant to display items like heatmaps and requires the used of a column-wide canvas item such as ZMapWindowGraphDensityItem.
+Currently in a heatmap features are displayed in one canvas item which is named according to column (which includes strand) and featureset.  If configured we can easily replace featureset with the one mapped to - all the features will appear in one place and each feature will still be as in the orignal featureset.
+</p>
+<p>This also means we keep all the processing of coverage data internal to ZMap.
+</p>
+
+<h5>Notes from implementation</h5>
+<p>This is quite instructive in the sense that we can see how complex the configuration is and how it has become tangled.  There are a few places in the code where it has been necessary to invent ACEDB style configuration data as it is needed for various functions, and this at times can overwrite the data read in at startup.  <b>NOTE</b>:What appears here may only be partial documentation.
+</p>
+<h6>what has to happen for virtual featuresets to work</h6>
+<p>
+<ul>
+<li> real featuresets get mapped to virtual ones on display (<b>drawGraphFeature()</b>)
+<li> display index is set for the virtual featureset not the real one
+<li> columns to have a list of featursets some of which may be virtual (<b>zMapConfigIniGetFeatureset2Featureset()</b>)
+<li> virtual featuresets get expaned into real ones on request (<b>zMapWindowFetchData()</b>
+<li> virtual featuresets always re-bin (due to overlap) (they always are re-binned)
+<li> density code must handle overlap (not an issue if always rebinned and bins are in the same place)
+<li> blixem needs to be given real featuresets not virtual ones. NOTE: due to a fluke this is not a problem as we do not blixem coverage data.
+<li>
+</ul>
+
+</p>
+<h6>Confusing configuration and code</h6>
+<p>Featuresets and columns have unique IDs and display names and these can get used interchanagably by mistake.
+</p>
+<p> Due to ACEDB legacy issues during the request protocol we add featuresets to a column's list, for all servers at once, and repeat this for every server, which adds to the configured configuration.  Really this should onyl be done for ACEDB and  this should involve revisiting the server protocol.  In the short term we must avoid adding featuresets that become virtualised.
+</p>
+
+
+<h3>Database driven configuration</h3>
+<p>Existing flat file stanza driven configuration is quite limited and is not a practical solution for large amounts of data and each modification is fairly tedious.
+</p>
+
+<p>Some notes on converting existing configuration file to SQLite can be found <a href="Design.notes/SQLite.shtml">here</a></p>
+
+<p>
+To make future modifications easier it is proposed to define simple data items (eg featuresets, columns, servers, styles) and then define relations between them.  Each relation will consist of a type and two unique id's, but note that each id may belong to different tables.
+The following relations will be handled (and can be added to without changing the structure of the configuration data):
+<ul>
+<li> featureset is displayed with style
+<li> featureset appears in column
+<li> featureset should be combined into featureset
+<li> featureset can request featureset
+<li> featureset can request column
+<li> etc
+</ul>
+</p>
+<p>
+This would replace the existing data in the ZMapFeatureContextMap data structure and a dynamic interface provided to give a list of data related in some way.  The ACEDB interface would be modified either to ignore configuration and styles from ACEDB or to convert into the new format.  (NOTE the ext_curated column contains approx 1000 featuresets which are mostly empty and not configured in current practice).
+</p>
+
+<h4>Caveat</h4>
+<p>This way of working does not perform well with ordered lists - for example column ordering.
+</p>
+
+<h3>Strategy: default configuration</h3>
+<p> ZMap has been programmed to assume some configuration if not present. such as 'featureset appears in column of same name', and conversely has been programmed to ignore features with no style.
+</p>

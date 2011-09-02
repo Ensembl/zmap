@@ -121,6 +121,8 @@ GType zMapWindowGraphDensityItemGetType(void)
  * graph per column, so we specify these by col_id (which includes strand) and featureset_id
  * we allow for stranded bins, which get fed in via the add function below
  * we also have to include the window to allow more than one -> not accessable so we use the canvas instead
+ *
+ * we also allow several featuresets to map into the same canvas item via a vitueal featureset (quark)
  */
 ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
 {

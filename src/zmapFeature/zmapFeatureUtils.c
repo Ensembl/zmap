@@ -752,8 +752,11 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
 
 	/*
 	This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
-	so we cache the list whe we first create it.
+	so we cache the list when we first create it.
 	can't always do it on startup as acedb provides the mapping later on
+
+	NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for acomment about static or dynamic lists
+	also need to scan for all call to this func since caching the data
 	*/
 
       column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
@@ -766,8 +769,8 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
       }
       else
      	{
-     		if(column->featuresets_unique_ids)
-           	 	list = column->featuresets;
+     		if(column->featuresets_names)
+           	 	list = column->featuresets_names;
       }
 
 	if(!list)
@@ -776,14 +779,12 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
 		while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
 		{
 			if(fset->column_id == column_id)
-			{
 				list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
-			}
 		}
 		if(unique_id)
 			column->featuresets_unique_ids = list;
 		else
-			column->featuresets = list;
+			column->featuresets_names = list;
 	}
       return list;
 }

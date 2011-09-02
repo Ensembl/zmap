@@ -463,7 +463,10 @@ void print_col2fset(char * str,GHashTable *data)
   while (zMap_g_hash_table_iter_next (&iter, &key, &value))
     {
       column = (ZMapFeatureColumn) value;
-      zMap_g_list_quark_print(column->featuresets, (char *) g_quark_to_string(column->unique_id), FALSE);
+      if(column->featuresets_unique_ids)
+      	zMap_g_list_quark_print(column->featuresets_unique_ids, (char *) g_quark_to_string(column->unique_id), FALSE);
+      else
+      	printf("%s: no featuresets\n",(char *) g_quark_to_string(column->unique_id));
     }
 }
 
@@ -697,6 +700,11 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         		gff_source->is_seq = TRUE;
         }
 
+        view->context_map.source_2_sourcedata = src2src;
+
+        view->context_map.virtual_featuresets = zMapConfigIniGetFeatureset2Featureset(context,src2src,view->context_map.featureset_2_column);
+
+
 
         if(gff_src)
 	  g_hash_table_destroy(gff_src);
@@ -705,10 +713,10 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
         if(gff_desc)
 	  g_hash_table_destroy(gff_desc);
 
-        view->context_map.source_2_sourcedata = src2src;
 
 	//       print_src2src("view ini",view->context_map.source_2_sourcedata);
-	//       print_fset2col("view ini",view->context_map.featureset_2_column);
+	//      print_fset2col("view ini",view->context_map.featureset_2_column);
+	//      print_col2fset("view ini",view->context_map.columns);
 
 	/*---------------------------------------------
 	 * context_map.column_2_styles: hash of Glist of quarks
@@ -3298,6 +3306,7 @@ printf("\nview styles lists after merge:\n");
             while(zMap_g_hash_table_iter_next(&iter,&key,&value))
             {
                   ZMapFeatureSetDesc fset;
+                  ZMapFeatureSource fsrc;
                   ZMapFeatureColumn column;
 
                   fset = (ZMapFeatureSetDesc) value;
@@ -3310,11 +3319,16 @@ printf("\nview styles lists after merge:\n");
                         fset->column_ID = column->column_id;      /* upper cased display name */
 
                         /* construct reverse mapping from column to featureset */
-                        if(!g_list_find(column->featuresets,key))
+                        /* but don't add featuresets that get virtualised */
+                        if(!g_list_find(column->featuresets_unique_ids,key))
                         {
-                        	/* NOTE this is an ordered list */
-                              column->featuresets = g_list_append(column->featuresets,key);
-//printf("adding %s to column %s\n", g_quark_to_string(GPOINTER_TO_UINT(key)), g_quark_to_string(column->unique_id));
+                        	fsrc = g_hash_table_lookup(zmap_view->context_map.source_2_sourcedata,key);
+                        	if(fsrc && !fsrc->maps_to)
+                        	{
+                        		/* NOTE this is an ordered list */
+                              	column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,key);
+#warning this code gets run for all featuresets for every server which is silly
+					}
                         }
                   }
 
@@ -4007,7 +4021,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
             if(column)
             {                                    /* more effcient this way round? */
-                  featureset_names = g_list_concat(column->featuresets,featureset_names);
+                  featureset_names = g_list_concat(column->featuresets_names,featureset_names);
             }
             else  /* should not happen */
             {
