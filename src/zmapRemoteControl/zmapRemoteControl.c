@@ -197,35 +197,28 @@ static GtkTargetEntry clipboard_target_G[TARGET_NUM] = {{ZMAP_ANNOTATION_DATA_TY
  * remote_control_unique_str 
  *            Must be X window system unique, it is up to the caller to ensure this is so.
  */ 
-ZMapRemoteControl zMapRemoteControlCreate(char *app_id, char *remote_control_unique_str,
+ZMapRemoteControl zMapRemoteControlCreate(char *app_id, char *remote_control_str_prefix,
 					  ZMapRemoteControlRequestHandlerFunc request_func, gpointer request_data,
 					  ZMapRemoteControlReplyHandlerFunc reply_func, gpointer reply_data,
 					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data)
 {
   ZMapRemoteControl remote_control = NULL ;
 
-  zMapAssert((remote_control_unique_str && *remote_control_unique_str)) ;
+  zMapAssert((remote_control_str_prefix && *remote_control_str_prefix)) ;
   zMapAssert(reply_func && timeout_func) ;
 
 
   remote_control = g_new0(ZMapRemoteControlStruct, 1) ;
   remote_control->magic = remote_control_magic_G ;
 
-  /* Set app_id and default error reporting, now we can output error messages. */
+  /* Set app_id and default error reporting and then we can output error messages. */
   remote_control->app_id = g_strdup(app_id) ;
+  remote_control->app_prefix = g_strdup(remote_control_str_prefix) ;
   remote_control->err_func = stderrOutputCB ;
   remote_control->err_data = NULL ;
 
   /* can't be earlier as we need app_id and err_XX stuff. */
   REMOTELOGMSG(remote_control, "%s", ENTER_TXT) ;
-
-
-  remote_control->our_atom = gdk_atom_intern(remote_control_unique_str, FALSE) ;
-  remote_control->our_atom_string = gdk_atom_name(remote_control->our_atom) ;
-
-
-  remote_control->data_format_atom = gdk_atom_intern(ZMAP_ANNOTATION_DATA_TYPE, FALSE) ;
-  remote_control->data_format_bits = ZMAP_ANNOTATION_DATA_FORMAT ;
 
   remote_control->show_all_events = TRUE ;
 
@@ -333,14 +326,53 @@ gboolean zMapRemoteControlInit(ZMapRemoteControl remote_control, GtkWidget *remo
 	  }
 	else
 	  {
-	    remote_control->our_widget = remote_control_widget ;
-	    remote_control->our_window = GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget)) ;
 
-	    remote_control->our_clipboard = gtk_clipboard_get(remote_control->our_atom) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    GtkWidget *our_widget ;
+	    GdkNativeWindow our_window ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    pid_t process_pid ;
+	    char *tmp ;
+
+
+	    /* In setting up unique atom names we use the process pid, thought about
+	     * using callers widget window but what happens if they remove and recreate it for
+	     * any reason. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    our_widget = remote_control_widget ;
+	    our_window = GDK_WINDOW_XWINDOW(gtk_widget_get_window(remote_control->our_widget)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    process_pid = getpid() ;
+
+	    /* Set up the initiate atom. */
+	    tmp = g_strdup_printf("%s-INIT-%zu", remote_control->app_prefix, process_pid) ;
+
+	    remote_control->our_init_atom = gdk_atom_intern(tmp, FALSE) ;
+	    remote_control->our_init_atom_string = gdk_atom_name(remote_control->our_init_atom) ;
+	    remote_control->our_init_clipboard = gtk_clipboard_get(remote_control->our_init_atom) ;
+
+	    g_free(tmp) ;
+
+
+	    /* Set up the request atom. */
+	    tmp = g_strdup_printf("%s-REQUEST-%zu", remote_control->app_prefix, process_pid) ;
+
+	    remote_control->our_request_atom = gdk_atom_intern(tmp, FALSE) ;
+	    remote_control->our_request_atom_string = gdk_atom_name(remote_control->our_request_atom) ;
+	    remote_control->our_request_clipboard = gtk_clipboard_get(remote_control->our_request_atom) ;
+
+	    g_free(tmp) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    /* THIS SEEMS NO LONGER POSSIBLE/NEEDED.....??? */
 
 	    if (remote_control->show_all_events)
 	      remote_control->all_events_id = g_signal_connect(remote_control->our_widget, "event",
 							       (GCallback)windowGeneralEventCB, remote_control) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  }
     }
 
@@ -351,20 +383,14 @@ gboolean zMapRemoteControlInit(ZMapRemoteControl remote_control, GtkWidget *remo
 	{
 	  REMOTELOGMSG(remote_control, "",
 		       "RemoteControl initialisation failed,"
-		       " cannot become selection owner for atom \"%s\""
-		       " on window of widget %p.",
-		       remote_control->our_atom_string,
-		       remote_control->our_widget) ;
+		       " cannot become selection owner for atom \"%s\".",
+		       remote_control->our_init_atom_string) ;
 	}
       else
 	{
 	  REMOTELOGMSG(remote_control, "",
-		       "RemoteControl object initialised:"
-		       "\tgtkwidget: %p,\tgdkwindow: %p\tXwindow: " X_WIN_FORMAT "\tAtom: %s",
-		       remote_control->our_widget,
-		       gtk_widget_get_window(remote_control->our_widget),
-		       remote_control->our_window,
-		       remote_control->our_atom_string) ;
+		       "RemoteControl is initialised, has ownership of Atom %s."
+		       remote_control->our_init_atom_string) ;
 	}
     }
 
@@ -528,7 +554,11 @@ void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
   REMOTELOGMSG(remote_control, "%s", EXIT_TXT) ;	    /* Latest we can make this call as we 
 							       need remote_control. */
 
+  g_free(remote_control->app_prefix) ;
+  g_free(remote_control->app_id) ;
+
   ZMAP_MAGIC_RESET(remote_control->magic) ;		    /* Before free() reset magic to invalidate memory. */
+
   g_free(remote_control) ;
 
   return ;

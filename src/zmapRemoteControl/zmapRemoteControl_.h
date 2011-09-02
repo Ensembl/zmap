@@ -88,11 +88,17 @@ typedef struct AnyRequestStructName
    * each new request/response, may change or not depending if it's a new client. */
   GdkAtom peer_atom ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GdkNativeWindow peer_window ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   gulong curr_req_time ;				    /* Time curr request initiated. */
 
   gboolean has_timed_out ;				    /* Have we timed out ? */
+
+
 
   char *request ;
 
@@ -170,6 +176,9 @@ typedef struct ZMapRemoteControlStructName
   /* Our callers "name", good for debug messages. */
   char *app_id ;
 
+  /* string prefix for atom names for init/requests. */
+  char *app_prefix ;
+
   gboolean show_all_events ;				    /* If TRUE then print to stderr all
 							       events for our main window. */
 
@@ -186,14 +195,14 @@ typedef struct ZMapRemoteControlStructName
 
   /* Atoms for communication. */
 
-  /* Our 'init' atom, this is the atom the client must first take ownership
-   * of to initiate any type of request. */
+  /* Our 'initiate' atom, this is the atom the client must first take ownership
+   * of to initiate any type of request. Stays the same for the life of this control struct. */
   GdkAtom our_init_atom ;
   char *our_init_atom_string ;				    /* Cached because it's a pain to get the string. */
   GtkClipboard *our_init_clipboard ;
 
 
-  /* Our atom for receiving requests and responses from other peers, stays the same for
+  /* Our 'request' atom for receiving requests and responses from other peers, stays the same for
    * the life of this control struct. */
   GdkAtom our_request_atom ;
   char *our_request_atom_string ;			    /* Cached because it's a pain to get the string. */
@@ -207,11 +216,13 @@ typedef struct ZMapRemoteControlStructName
 
 
 
-
-
-
   /* The current request, NULL when there isn't one. Can be client or server. */
   AnyRequest curr_request ;
+
+
+
+
+  /* THESE ARE ALL GOING TO CHANGE.... */
 
 
   /* Callback functions specified by caller to receive requests and subsequent replies/errors. */
