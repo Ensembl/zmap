@@ -37,7 +37,8 @@
 <a href="Design/modules/zmapXML.shtml">zmapXML</a><br>
 </fieldset>
 <fieldset><legend>Build</legend>
-<a href="Development/build.shtml">build</a><br>
+<a href="Development/build.shtml">build_old</a><br>
+<a href="Development/build_system.shtml">git_build</a><br>
 <a href="Development/cvs_git.shtml">cvs_git</a><br>
 <a href="Development/fix_copyright.shtml">CopyRight</a><br>
 <a href="Development/debugging.shtml">Debug-Zmap</a><br>

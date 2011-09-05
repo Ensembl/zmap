@@ -297,6 +297,26 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 }
 
 
+GList *zMap_g_list_append_unique(GList *list, gpointer data)
+{
+	GList *l,*last = list;
+
+	for(l = list; l ; l = l->next)
+	{
+		if(l->data == data)	/* already there, nothing to do */
+			return list;
+		last = l;
+	}
+
+	/* we reached the end or there was no list: add to the end */
+	last = g_list_append(last,data);
+
+	if(!list)
+		list = last;
+
+	return list;
+}
+
 /*!
  * Prints out the contents of a list assuming that each element is a GQuark. We have
  * lots of these in zmap so this is useful.

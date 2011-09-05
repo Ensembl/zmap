@@ -172,7 +172,8 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
   if (status == 0
       && (status = pthread_create(&thread_id, &thread_attr, zmapNewThread, (void *)thread)) != 0)
     {
-      zMapLogFatalSysErr(status, "%s", "Thread creation") ;
+//      zMapLogFatalSysErr(status, "%s", "Thread creation") ;
+	  zMapLogWarning("Failed to create thread: %s",g_strerror(status));	/* likely out of memory */
     }
 
   if (status == 0)

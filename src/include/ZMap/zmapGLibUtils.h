@@ -76,6 +76,8 @@ GList *zMap_g_list_lower(GList *move, int positions);
 GList *zMap_g_list_raise(GList *move, int positions);
 GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
 
+GList *zMap_g_list_append_unique(GList *list, gpointer data);
+
 gchar *zMap_g_list_quark_to_string(GList *l);
 GList *zMap_g_list_merge(GList *a, GList *b);
 

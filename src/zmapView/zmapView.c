@@ -1780,7 +1780,7 @@ ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash, GQuark featur
  * retrieved the features are added via a gtk event.
  *
  * NOTE req_sources is nominally a list of featuresets.
- * Otterlace could request a featureset that beolngs to ACE
+ * Otterlace could request a featureset that belongs to ACE
  * and then we'd have to find the column for that to find it in the ACE config
  *
  *
@@ -1815,7 +1815,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
    * rather than just the view, and data gets revcomped when received if necessary
    * external interfaces (eg otterlace) have no reason to know if we've turned the view
    * upside down and will always request as forward strand
-   * only a rewuest fromn the window can be upside down, and is converted to fwd strand
+   * only a request fromn the window can be upside down, and is converted to fwd strand
    * before calling this function
    */
   req_start = features_start;
@@ -1893,18 +1893,20 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		      if (GFFset)
 			{
 			  fset = GFFset->column_id;
+			  fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
 			  //                      zMapLogWarning("translate to  %s\n",g_quark_to_string(fset));
 			}
 		    }
-		  fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
 
 		  //if (fset_server) zMapLogMessage("Try %s\n",fset_server->url);
 		  if (fset_server == server)
 		    {
 		      GList *del;
 
-		      // prepend faster than append...we don't care about the order
-		      req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
+		      /* prepend faster than append...we don't care about the order */
+//		      req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
+			/* but we need to add unique columns eg for ext_curated (column) = 100's of featuresets */
+			req_featuresets = zMap_g_list_append_unique(req_featuresets, GUINT_TO_POINTER(fset));
 
 		      // avoid getting ->next from deleted item
 		      del = req_src;
@@ -1946,6 +1948,10 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 	      /* AGH...THIS CODE IS USING THE EXISTENCE OF A PARTICULAR SOURCE TO TEST WHETHER
 	       * FEATURE SETS ARE SET UP...UGH.... */
+	       /* why? if the source exists ie is persistent (eg ACEDB) then if we get here
+	        * then we've already set up the ACEDB columns
+	        * so we don't want to do it again
+	        */
 	      // make the windows have the same list of featuresets so that they display
 	      // this function is a deferred load: for existing connections we already have the columns defined
 	      // so don't concat new ones on the end.
@@ -1995,7 +2001,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  // can optionally use an existing one -> pass in second arg
 	  view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
-	  /* force pipe servers to terminate, to fix mis-config erro that causes a crash (RT 223055) */
+	  /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
 	  is_pipe = g_str_has_prefix(server->url,"pipe://");
 
 	  /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
@@ -2046,8 +2052,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   //  if(stylesfile)
   //    g_free(stylesfile);
 
-  /* WHY IS THE FREEING OF HASH DEPENDENT ON SOURCES ????? */
-  /* MH17: should not be... but if no sources the the hash is empty, so a small mistake */
   if (sources)
       zMapConfigSourcesFreeList(sources);
 
@@ -3644,7 +3648,13 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
         }
       else
         {
-	  return(NULL);
+        	/* reporting an error here woudl be good
+        	 * but the thread interafce does not apper to return its error code
+        	 * and was written to exit zmap in case of failure
+        	 * we need to pop up a messgae if (!view->thread_fail_silent)
+        	 * and also reply to otterlace if active
+        	 */
+		return(NULL);
         }
     }
 
@@ -3671,7 +3681,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       // we need to save this to tell otterlace when we've finished
       // it also gets given to threads: when can we free it?
       connect_data->feature_sets = req_featuresets;
-//printf("request %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
+//zMapLogWarning("request %d %s\n",g_list_length(req_featuresets),g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
       /* the bad news is that these two little numbers have to tunnel through three distinct data structures and layers of s/w to get to the pipe scripts.  Originally the request coordinates were buried in blocks in the context supplied incidentally when requesting features after extracting other data from the server.  Obviously done to handle multiple blocks but it's another iso 7 violation */
 

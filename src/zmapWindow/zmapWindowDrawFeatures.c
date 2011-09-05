@@ -840,7 +840,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   	if(f_src)
   		featureset_data.feature_stack.maps_to = f_src->maps_to;
-printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
+//printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
 
 //  	if(!featureset_data.feature_stack.maps_to)
 //  		featureset_data.feature_stack.maps_to = feature_set->unique_id;	/* maps to self */
@@ -2294,7 +2294,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* Attach data to the column including what strand the column is on and what frame it
        * represents, and also its style and a table of styles, used to cache column feature styles
        * where there is more than one feature type in a column. */
-#if 1 //def ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapLogWarning("Adding column: \"%s\" %s %s\n",
 	     g_quark_to_string(original_id), g_quark_to_string(column_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
