@@ -218,7 +218,8 @@ ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
 # NOTE THAT THE FIRST MACHINE IN THE LIST _MUST_ BE ABLE TO BUILD THE DOCS....see loop
 # in zmapbootstrap script. We only build on this machine at the moment because the Mac
 # is not on the network....
-ZBmachines='deskpro16113 mac18480i'
+#ZBmachines='deskpro16113 mac18480i'
+ZBmachines='tviewsrv mac18480i'
 
 # Add new acedb binaries to this list, separate with a blank within the single string.
 ZBAcedbHOME=~acedb

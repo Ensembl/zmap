@@ -91,8 +91,8 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-#ZMAP_MASTER_HOST=tviewsrv
-ZMAP_MASTER_HOST=deskpro16113
+ZMAP_MASTER_HOST=tviewsrv
+#ZMAP_MASTER_HOST=deskpro16113
 
 
 # disabling this until I can work out how to selectively include doxygen...
@@ -117,8 +117,8 @@ ZMAP_MASTER_BUILD_DIST=no
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
-#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
-ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4"
+ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+#ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4"
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
 -oConnectTimeout=3 \
