@@ -1550,7 +1550,7 @@ GList * add_column_featuresets(ZMapFeatureContextMap map, GList *list, GQuark co
 	return list;
 }
 
-/* call blixem either for a single type of paired read of for all in the current column. */
+/* make requests either for a single type of paired read of for all in the current column. */
 /* NOTE that 'a single type of paired read' is several featuresets combined into a column
  * and we have to request all the featuresets
  */
@@ -1567,6 +1567,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 	}
 	else if(menu_item_id == REQUEST_SELECTED)
 	{
+		/* this is for a column related to a coverage featureset so we get several featuresets */
 		req_list = add_column_featuresets(menu_data->context_map,req_list,menu_data->req_id,TRUE);
 	}
 	else if (menu_item_id == REQUEST_ALL_SEQ)
