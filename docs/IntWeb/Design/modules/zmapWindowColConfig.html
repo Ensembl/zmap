@@ -1,19 +1,62 @@
 <h2>Columns Config Window</h2>
 
+<a name="dialog"></a>
+<h2>ZMap Load Columns dialog</h2>
 <p>We need to update this significantly to handle BAM data as requested by users and also we need to improve the existing interface. Specifically:
 <ul>
-<li> list columns that are already loaded and show status information (eg as Otterlace: red/green/yellow/black for loaded status).  Note that in ZMap we have the extra complication of the marked region.
-<li> group columns rather than display alphabetically - groups appear in a left hand pane and when selected thier columns appear in a right hand pane.  It is thought we could sensibly have about a dozen groups for current configurations.
+<li> list columns that are already loaded and show status information (eg as Otterlace: red/green/yellow/black for loaded status).  Note that in ZMap we have the extra complication of the marked region and also it is possible to configure data from several sources into one column.
+<li> group columns rather than display alphabetically - groups appear in a left hand pane and when selected their columns appear in a right hand pane.  It is thought we could sensibly have about a dozen groups for current configurations.
 <li> select all etc apply to groups not the whole dataset.
-<li> alternatively we could create buttons across the top to select groups, this is something that GTK actually does well.
+<li> remove the separate lists of columns for show/hide per strand and operate both together. Allow Reverse to be hidden en masse.
 </ul>
 </p>
-<p>The separate panes for reverse strand will be removed, and an option to show/ hide the whole strand given instead.
+
+<h3>Load and display columns: reformatting the dialog</h3>
+<p>It would seem natural to be able to request and show/hide columns from the same GTK pane although this will give a more cluttered display, however it is possible to handle several options from one widget: Otterlace shows status and allows requests via a single check box.
+</p>
+<p>Here's a sample layout for the normal columns:
+<img src="Design/modules/load_columns.png"  class="img" alt="picture of column config dialog"><br />
+Note that the interface is significantly more complicated than the existing ZMap and Otterlace  and implies some further coding in ZMap beyond just implementing the dialog. An attempt has been made to present useful default single clicks to select any column.
+</p>
+
+<p>
+Loaded status can be one of:
+<ul>
+<li> White - available but not requested
+<li> Yellow - requested
+<li> Orange - requested from mark
+<li> Green - loaded fully
+<li> Blue - loaded from mark
+<li> Red - loading failed
+<li> Pink - loading partially failed (eg one featureset of several in a column)
+<li> Black - loaded but no data
+</ul>
+There will be some combination of the above that are possible but not included (eg req from mark partially failed) and these will be mapped onto the colours defined.  Possibly there are already too many colours??
+</p>
+<p>
+Display status can be:
+<ul>
+<li> Green	- visible
+<li> Cyan - auto (visible depending on zoom)
+<li> Blue - hidden
+</ul>
+To change the display or loaded status of a column the user will click on the corresponding indicator. For display if a column is visible (shown or visible at this zoom) then the first click will select hidden and subsequent clicks will cycle round auto and show, and the converse for not visible.
+For loaded the first click will be load all unless the mark is set in which case it will be load from mark and subsequent clicks will cycle round request all (if allowed) and 'don't request'.
+</p>
+<p>Buttons are provided to operate on all columns in the group.  Note that 'request failed' will have to know about the previous request ie if it was from the mark or not.  Options can be selected for several groups and actioned with the Apply button.  Revert will set the current group back to its current status (cancel any requests in the group) and Revert All will reset all groups.
+</p>
+<h3>Special Columns</h3>
+<p>3FT is not a loadable column and will not appear but instead will be controlled by the 3-Frame menu button.
+</p>
+<p>DNA will be handled as a normal column; it is possible request this (and is normally done on startup).
+</p>
+<p>Show Translation in Zmap is controlled via the column's right click menu.</p>
+<p>It is probably possible to configure these columns into a suitable column group and show them with the loaded status widget disabled, probably triggering this by not finding a server config for the featureset in the column.
 </p>
 
 
 <h2>Some old notes</h2>
-<p>I think this was partly abandoned due to to intricacies of GTK.  SeqBitmap was removed but display options are as before.</p>
+<p>I think this was partly abandoned due to the intricacies of GTK.  SeqBitmap was removed but display options are as before.</p>
 
 <fieldset><legend>Background</legend>
 <h3>Deferred loading of columns</h3>
@@ -41,7 +84,7 @@ For loading, each column will have a tick box to load data which will be selecte
 </p>
 <p>
 Requesting from the mark will always be possible if full sequence data is not present and ZMap will maintain a list of regions loaded and optimise the user's requests.  Whatever regions that have been loaded will not be presented - the users can look at the ZMap display to find out and if necessary columns can have background colours to show 'not loaded' status.
-There will be an option to load all selected colums fully or to load all selected columns from the mark; combinations of this will not be possible in one operation.  This will provide a simpler interface, w=the assumption being that user will load columns en masse on startup and from the mark when they have some specific task in mind.
+There will be an option to load all selected colums fully or to load all selected columns from the mark; combinations of this will not be possible in one operation.  This will provide a simpler interface, the assumption being that user will load columns en masse on startup and from the mark when they have some specific task in mind.
 </p>
 <p>
 Buttons will be provided to:
@@ -181,14 +224,3 @@ RC on column gives a choice of 'configure this column' or 'configure all columns
 <p>
 </fieldset>
 
-<a name="dialog"></a>
-<h2>ZMap Load Columns dialog</h2>
-
-<p>We need to update this significantly to handle BAM data as requested by users and also we need to improve the existing interface. Specifically:
-<ul>
-<li> list columns that are already loaded and show status information (eg as Otterlace: red/green/yellow/black for loaded status).  Note that in ZMap we have the extra complication of the marked region.
-<li> group columns rather than display alphabetically - groups appear in a left hand pane and when selected thier columns appear in a right hand pane.  It is thought we could sensibly have about a dozen groups for current configurations.
-<li> select all etc apply to groups not the whole dataset.
-<li> alternatively we could create buttons accross the top to select groups, this is something that GTK actually does well.
-</ul>
-</p>

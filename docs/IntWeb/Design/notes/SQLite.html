@@ -92,10 +92,18 @@ To order columns from left to right we can use a simple table:
 <pre>
 column-order
 	column-id	unique-id but not sequential indexed
-	next		indexed, id of the column to the right
+	order		postion of the column in the list, indexed
 </pre>
-Insert and delete only affect two SQL records; this is not an ideal manual process but can be scripted quite easily.
-The LH side of the list must start with a column-id of zero.  In case os editing errors it will be simple to find the last column on the right and correct them.
+</p>
+<h5>Using a trigger to maintain column ordering</h5>
+<p>If all else fails we can write fucntuion in SQLlite.
+</p>
+<h5>Using a query to maintain column ordering</h5>
+<p>For example (does this work - need to try it)
+<pre>
+update column-order set order = order+1 where order >  some-value;
+insert into columns-order values(x,some-value);
+</pre>
 </p>
 
 <h4>Data sources</h4>
