@@ -4140,6 +4140,10 @@ so just request whatever region is requested regardless
 		fset_list = featureset_name_list;
 	}
 
+	/* mh17 NOTE
+	 *
+	 * this block copied to zmapWindowMenus.c/add_column_featuresets()
+	 */
 	/* expand any virtual featursets into real ones */
 	{
       	GList *virtual;

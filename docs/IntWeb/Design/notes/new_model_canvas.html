@@ -1,17 +1,37 @@
 <h2>New Model Canvas</h2>
 <p>An attempt to speed things up a bit.
 </p>
+<p>This design follows an initial experiment with coverage displays which involved creating a single ZMapWindowCanvasItem (foo canvas group) conatining a single ZMapWindowGraphDensityItem (foo canvas item) for each featureset.  Features were represented by simple data structure accessed by a skip list from the ZMapWindowGraphDensityItem and were not added directly to the foo canvas.  Expose events were handled by calling GDK fucntions for the relevant feature structures.
+</p>
+<p>This initial experiment relates to handling the foo canvas at a level below the column objetcs and the new model canvas is to be implemented first by replacing data and code at that level and then by revisiting the container design but for clarity here we present a top down discussion from canvas root to indivudual sub-feature.
+</p>
 
 <h4>Problems being addressed</h4>
 <p>Code and data is quite complex and gains little - each feature on display is 10 levels deep in the Foo Canvas and positioning features in the screen is a complex process that is prone to error.
 </p>
 
-<p>Adding features to the canvas is a time consuming process that also involves some complex interactions with X.  The Foo Canvas is not designed to handle the number of features displayed by ZMap.
+<p>There is a lot of ZMapCanvas code that does not take advantage of object oriented or plain old structured programming patterns amd this can be improved significantly.
 </p>
 
-<h3>ZMapWindowContainer</h3>
+<p>Adding features to the canvas is a time consuming process that also involves some complex interactions with X.  The Foo Canvas is not designed to handle the number of features displayed by ZMap.
+</p>
+<h4>Some design aims</h4>
 <p>
-This will be simplified to look like the diagram below.  The feature context will remain as is with potentially many blocks and more than one align, although with present use we are restricted to a single block. If more than one block is implemented in future this will be done via a separate pane on display (a ZMapWindow) for each block, and different alignments can be locked together or otherwise.
+<ul>
+<li> common functions are handled by a base class. these include data structuring (operating the skip list), memory allocation, searching (for items to display), foo canvas interfaces such as point() and bounds().
+<li> a unified interface to allow print/ screen dump will be provided
+<li> consrtuction and handling of composite objects (eg transcripts and alignments) use common code
+<li> compound objects (transcripts, alignments) and thier sub-parts can be acessed bu a uniform interface
+<li> small code size
+<li> view unlinked from model
+<li> much more rapid paint
+</ul>
+</p>
+
+
+<h3>Canvas Block and Column container:foo canvas group</h3>
+<p>
+This will be simplified to look like the diagram below.  The feature context will remain as is with potentially many blocks and more than one align, although with present use we are restricted to a single block. If more than one block is implemented in future this will be done via a separate pane on display (a ZMapWindow with its own canvas) for each block, and different alignments can be locked together or otherwise.
 </p>
 
 <p>Within a block there will be no strand containers but instead we will add ZMapWindowColumn groups directly to the block. Reverse and forward strand columns and the strand separator will be identified by strand explicitly and will be positioned by using the existing columns sorting code, tweaked as necessary.
@@ -24,75 +44,184 @@ Each container will hold data to specify strand and frame and also borders if an
 
 <img src="Design/notes/new_model_canvas.png"  class="img">
 
-<h3>Canvas coordinates</h3>
+<h4>Canvas coordinates</h4>
 <p>The feature context has coordinates specified as forward strand chromosome based from 1 (although the segment viewed is unlikely to be).  In a block these coordinates will map to zero based canvas coordinates, with the first base in the viewed sequence mapping to 0.0.
 </p>
 <p>Note that currently reverse complement operates on the feature context which is then re-displayed.
 </p>
 
-<h3>Featuresets</h3>
+
+<h3>Canvas Featureset container:foo canvas item</h3>
+<p>A canvas column contains a set of features that the user can request and show/hide and this may include data from several sources.  (But note that the user interacts with one or both strands together dependign on circumstances). Examples include Repeats, Uniprot (= Swissprot + TrEMBL) ext_curated (~400 potential sources), BAM paired reads (experimental repeats etc).    The column foo canvas group implements the overall layout and positioning of features in the window and within that we have  foo canvas items that implement the display of features (canvas featuresets).
+</p>
+<p> A canvas featureset is not the same as a context featureset in that is is used to organise the presentation of features to the user wherease a context featureset is simply a collection of features of the same type which can be displayed in several colums eg via strand and frame (the data model).
+</p>
+<p>A canvas featureset may contain data from several sources (context featureset) and may contain a subset of the data from its context featuresets (eg reverse strand only)
+</p>
+<p>A canvas column may contain one or more canvas featuresets.  This is especially relevant to the handling of coverage data comapred with simple features - to display several heatmap featuresets side by side and interact with them distinctly we need to store these as separate data structures.  Converserly, when we combine several sources into one mixed column, to handle display and selection events we need to have these held in the same data structure.
+</p>
+
+<p>This leads to a design as below, where we map source data (context featuresets) into containers (canvas featuresets).
+</p>
+
+<img src="Design/notes/new_model_fset.png"  class="img">
 
 <p>Following experiments with coverage displays and graph features it looks feasable to code each featureset as a single foo canvas item and to have this item handle expose events and display individual features.  This means that what were Foo Canvas Items (and ZMapWindowCanvasItems) become simple data structures, and performance improvements of 5x on add and 3x on paint are achievable.
 </p>
-<p>Each featureset canvas item will cover the whole column and several may be added to a single column.
-</p>
-<p>It is intended to implement the 'featureset summarise' fucntion within a featureset foo canvas item, allowing this to be switched on without breaking assumptions made by other parts of ZMap.  For high volume columns such as TrEmbl there is no problem doing this per featureset, but perhaps it will be just as easy to implement in the column data structure, whcih will be relevant eg for Repeatmasker data which is high volume and has 4 or more featuresets.
+
+<p>It is intended to implement the 'featureset summarise' function within a canvas featureset, allowing this to be switched on without breaking assumptions made by other parts of ZMap. Note that due to structreing options outlined above we can operate this code on single context featuresets or combinations of these.
 </p>
 
-<h3>Complex features</h3>
-<p>Transcript features and gapped alignments consist of series of rectangles joined by lines and each collection of GDK primitives is regarded as a single feature (but note that individual exons may be selected and highlit.)  This extra layer of complexity will be handled by the featureset item code - it already exists in the item factory code and simply needs to be moved and adjusted.
-</p>
-
-<h3>Data Structuring - containers</h3>
-<p><pre>
-ZMapwindowContainer is a FooCanvasGroup
-has:
-	type				(block, column)
-	xpos,ypos (in FooCanvasGroup)
-	strand
-	frame
-	border_x,border_y		(border is outside sequence region)
-	start,end			(canvas coords of sequence region)
-</pre>
-</p>
-
-<h3>Data Structuring - canvas items</h3>
+<h3>Canvas features: data structures internal to canvas featureset foo canvas items</h3>
 <p>
+Each featureset item is a class which handles display etc for indiviudual features. A data structure is used by the class to describe each displayed feature and this refers back to the feature context.  The exsiting FToI hash can be used to find a canvas items from a context feature or key, but has to be modified to return the feature as well as the canvas item as these canvas items are composite structures.
+</p>
+
+<h4>Handling expose events</h4>
+<p>The primary function of the canvas featureset object is to display features and this is to be handled efficienly by the use of a skip list.  features are added to a canvas featureset via the ItemFactory as at present and on display the skip list is created by sorting the list of features and generating extra latyers of pointers via a single pass.  As this data is static we can be assured of a non degenerate structure.  Where several context featuresets are added to a canvas featureset we just re-create the skip list each time - compared with the computation requried in total re-creating the skip list is not an issue.
+</p>
+<p>Other than the initial display where the whole loaded sequence is visible ZMap normally operates zoomed in and expose events are only revelant to small sub-sequences.  The skip list allows access to the start coordinate of an expose region in nominally O(log n) time and the processing the bottom level of the list serially till we reach the end is as efficient as we can get (O(1))
+</p>
+
+
+<h4>Handling compound objects</h4>
+<p>A simple object (eg basic feature, glyph) corresponds to a single GDK item and each one is unrelated to the others.  They are accessed via thier featureset's skip list.
+</p>
+<p>A compound object is a set of simple objects and each of these are accessed via their featureset's skip list in exactly the same way as simple objects.  However these have left and right pointers to other parts of the same compound object which may be some distance away and other compound objects may appear in the gap between.  An alignment and a transcript may be represented by similar structures - alignments may have extra data to handle gaps.  If a user selects a compund object it is a trivial matter to find all  the parts eg for highlighting.
+</p>
+<p>Left and right links between parts of a compound object will be created as features are added to a canvas featureset.  Either this can be done by another sorting phase or via the FtoI hash functions (for alignments) or via an extra function provided by a child class (for transcripts). It may be convenient to set up composited alignments in the feature context while doing this, or to implement VULGAR strings and treat alignments like transcripts.
+</p>
+
+<h4>Handling decorations</h4>
+<p>Compound objects consist of a series of boxes (for example) and these may be joined up by lines and also have glyphs attached.  Depending on the display mode and the type of object the decorations may not always be displayed.
+</p>
+<p>For a transcript we always display a bent line between blocks and for an alignment we display traffic light lines and also glyphs if bumped.  To minimise memory use these decorations will not be represented explicity by thier own data structures but instead drawn on demand depending on the display mode.  However, some  extra data will be stored to assist in this and help rapid display:
+<ul>
+<li> alignments will hold flags for left and right links to specify glyphs and homology lines at each end
+<li> this data will be calculated once only
+</ul>
+</p>
+
+<h4>Handling gapped alignments</h4>
+<p>Alignments are displayed either as simple boxes or as a series of boxes joined by lines (to show gaps). In the existing implementation all of these are distinct foo canvas items, which is quite inefficient.  Instead we will store each feature as is (a simple box) and when bumped or at high zoom draw the appropriate series of boxes and lines.  It will be relatively easy to trigger this according to how visible these decorations will be related to their size in pixels.
+</p>
+
+<p>Thus we have a design for feature data structures that looks like the diagram below, where the green exons form a complete transcript object.  We can select of search for sub-parts of compound objects and are at choice whether or not we wish to access the part of the whole, and the process for each is simple and well defined. Each compound object is a linked list of sub-parts and the start and end correspond to the start and end of the list. Each sub-part refers back to the feature context.  Note that in the canvas there is no data structure corresponding to the whole transcript; it is just a sum of parts.
+</p>
+<img src="Design/notes/new_model_feature.png"  class="img">
+
+
+<h4>Bumping simple and compound objects</h4>
+<p>Other than bump-style all bump modes simply specify how to arrange features in the column and compound objects are simply fed into this code as simple objects covering the whole range.  (NOTE that no extra data structures are created).  Bumping is done a) by adjusting the X coordinate of each feature and b) adding decorations.  Unlike the existing canvas we do not add any new data structures for decorations but simply paint on demand.  Two X coordinates will be stored for each feature: 1) for unbumped) and 2) for the current selected bump mode and the appropriate one used by the GDK code.
+</p>
+<p>There are conflicting requirements regarding columns with multiple featuresets. For graph mode displays (eg coverage heatmaps) it is essential to have each featurset displayed separately and the features for each one aceessed by a different skip list, yet for other types of feature (eg repeats) we have several featuresets that we want to display intermingled and this requires a skip list for the column not each featureset.  This can be handled by providing a virtual featureset for the column and mapping each real featurset to this, triggering  (initially) off style mode, although a separate style attribute can easily be created if necessary.
+</p>
+
+<h5>Handling expose events for bumped columns</h5>
+<p> Initial experiments with coverage displays have worked by adding a single canvas item for each featureset which has a width defined by the style and a height corresponding to the whole sequence. Clipping has not been coded for high zoom as we only paint objects within the scroll region.  X coordinates have been ignored as there has been little benefit.
+</p>
+<p>For a bumped alignment column we have significant X coordinates and need to ensure that expose events are handled efficiently.
+Displayable objects are found using a skip list whcih is sorted by Y corordinate and this provides effective selection of the vertical region of interest.  Features within that region are scanned from the top downwards and we can simply ignore features that lie left or right of the expose area.
+</p>
+<p>If we take as a reasonable worst case a protein alignment column with 200k features that is bumped without setting the mark and also that the bumped display is 200 features wide, and we are at minimun zoom and we expose one column of the bumped data then the overhead of scanning the X coordinates is 199k feature comparisons and list links.  This can be measured quite easily, and for 100k features we have 4ms user time to run a test program, increasing this to 1000k gives 8ms.  4ms is required to run the test program with no data - this implies that 250k comparisons take approx 1ms user time.
+</p>
+<p>Therefore the overhead is minimal and naive code can be used.</p>
+
+<h4>Handling focus highlight</h4>
+<p>In the inial trial we had the luxury of knowing that features do not overlap and focus highlight has been inplemented simply by setting the colour if individiual features.
+</p>
+<p>For the more3 general case we need to display multiple features on top of others and in the existing implementation this has been done by re-ordering the features in a column (eg via foo_canvas_raise_to_top()).  Note that this has resulted in a few anomalies in the past and there ar instances where the focus code is deficient (eg revcomp will restore only a single focus item.
+</p>
+<p>A review of this is needed and different methods used: as we have sorted data for display then we cannot re-order features to highlight them.
+</p>
+<p>One way, using the proposed canvas structure is to flag each focussed item and have display code display thes after displaying all others. This would be a simple process of adding focus items to a list on expoose (but note that wiggle plots are perhaps complicated ... these currently do not show focus highlights as there is no obvious way to do this).
+</p>
+<p>An alternnavtiev would be to post process a focus items list on expose; this doe snot fit so well into the overall canvas structure but could possible be handled by the block objects.  This would be difficult to implement if as proposed we do canvas items first and then containers.
+
+<h3>Feature data structures</h3>
+<p>
+The above implies data structured approximately like this:
 <pre>
-ZMapWindowCanvasItem is a FooCanvasItem
-has:
-	type				(transcript, alignment, graph, glyph etc)
-	featureset			(pointer to feature context)
-	features			(skip list of data structures for displayed items)
-	flags				(visible, bumped etc)
-
-ZMapWindowTranscriptItem is a ZMapWindowCanavsItem
-ZMapWindowAlignmentItem is a ZMapWindowCanavsItem
-etc
+simple feature struct
+	feature type
+	y coord
+	x coord (umbumped)
+	x coord (bumped)
 </pre>
-</p>
-<p>
-Each featureset item is a class which handles display etc for indiviudual features. A data structure is used by the class to describe each displayed feature and refers back to the feature context.
+<pre>
+complex feature struct
+	simple feature struct
+	left link	pointer to sub-feature or NULL
+	right link	pointer to sub-feature or NULL
+</pre>
+<pre>
+transcript feature struct
+	complex feature struct
+</pre>
+<pre>
+alignment feature struct
+	simple feature struct
+	gaps data
+	homology data
+</pre>
+
+NOTE that we will pre-calculate same-name alignment groups from existing GFF data, or use VULGAR strings to retrieve this, and do this when features are first displayed: this is not something computed on bump or select as at present.
 </p>
 
-<h4>Design aims</h4>
-<p>
+<h4>Feature class functions</h4>
+<p>We wish to implement a base level of code and data that interfaces to featureset ie whole column functions and then provide feature specific functions per type of feature.  We also wish to avoid the use of GObjects whcih implement OO style features in real time rather than at compile time.
+</p>
+<p>There are two obvious ways to approach this:
 <ul>
-<li> common functions are handled by a base class. these include data structuring (operating the skip list), memory allocation, searching (for items to display), foo canvas interafces such as point() and bounds().
-<li> a unified interface to allow print/ screen dump will be provided
-<li> consrtuction and handling of composite objects (eg transcripts and alignments) use commons code
-<li> small code size
-<li> view unlinked from model
-<li> much more rapid paint
+<li> use C++ and implenent a mixed model program
+<li> provide function pointers for each source (context) featureset.  Note that as we can mix several in one canvas featureset we will have to have a pointer to a featuyreset level data structure in each feature struct (as would be implied by using C++).
+eg:
+<pre>
+feature
+	->featureset-interaface
+		->display()
+</pre>
 </ul>
 </p>
 
-<h4>Problems to solve</h4>
-<p>
+
+<h3>Code structure</h3>
+<p>There are a number of clearly defined functional parts:
 <ul>
-<li> Focus code requires highlit items to be painted on top of others - this need to be implemented once rather than once per data type.
-<li> Column bump has to work differently: it has to apply to a data structure inside the canvas items - there is a generic problem here and we need to specify all data types to have a common (base) structure.
+<li> skip list- implement in base class
+<li> expose handler - selection of features to draw by base class
+<li> drawing a given feature -  implement in child class
+<li> operating multiple singleton featureset items (base class)
+<li> bump canvas featureset/ column: independant of feature type (base class)
+<li> focus highlight (base class)
 </ul>
+</p>
+
+<p>The existing GraphDensity module can be used as a basis for this wiht the addition handling overlap and focus.
+</p>
+<p>Subsequently we can add on column summarise functions.</p>
+
+<p>Thus we expect an implementation involving the following files:
+<pre>
+zmapWindowCanvasBlock.c		root/block container
+zmapWindowCanvasColumn.c	column container
+zmapWindowCanvasFeatureSet.c	canvas featureset item
+zmapWindowCanvasColBump.c	column bump
+zmapWindowCanvasFocus.c		handle highlights
+</pre>
+and also a few more to handle feature specific things like display styles:
+<pre>
+zmapWindowCanvasTranscript.c
+zmapWindowCanvasAlignment.c
+zmapWindowCanvasBasic.c
+zmapWindowCanvasGlyph.c
+zmapWindowCanvasGraphDensity.c
+zmapWindowCanvasAssembly.c
+zmapWindowCanvasText.c
+zmapWindowCanvasSequence.c
+etc
+
+</pre>
 </p>
 
 

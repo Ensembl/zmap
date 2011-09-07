@@ -4,14 +4,14 @@
 <p>As user requreiments have grown to include 600+ BAM files (and 400+?? bigWig) and no doubt more in the near future the current flat .ini configuration system has become unworkable.
 </p>
 
-<p>There is a case for continuing to use the 'ZMap' config file for existing basic config but several part of this system need to be handled differently and the obvious solution is an SQLite database.
+<p>There is a case for continuing to use the 'ZMap' config file for existing basic config but several parts of this system need to be handled differently and the obvious solution is an SQLite database.
 </p>
 
 <p>This will be an opportunity to tidy up some configuration options that have been added hurriedly over that past few years.
 It is also an opportunity to address the complications caused by using GQuarks as unique id's for data items - with SQL we can generate unique id's in the database and have names simply as names.
 </p>
 
-<p>There is an issue of presenting configuration data to standalone users of ZMap who would like a simple interaface with relatively small amounts of data (eg to look at EnsEMBL with only a few tracks).  This can be addressed by using and open source SQL browser or by providing a short Perl script to act as a very basic local webserver that handles HTML form submission.
+<p>There is an issue of presenting configuration data to standalone users of ZMap who would like a simple interaface with relatively small amounts of data (eg to look at EnsEMBL with only a few tracks).  This can be addressed by using an open source SQL browser or by providing a short Perl script to act as a very basic local webserver that handles HTML form submission.
 </p>
 
 <p>For generating such a database by otterlace no doubt a script could extract information from otterlace configuration, write SQL to create a database and feed it into SQLite.
@@ -27,12 +27,12 @@ These work in a hierarchy and inherit attributes, if stored in SQL ths would be 
 </p>
 <pre>
 style table
-	style-id	unique key indexed
+	style-id	unique key, indexed
 	name
 
 attibute table
-	style-id	ref to style indexed
-	name		generic attribute: completely future proof
+	style-id	ref to style, indexed
+	attribute-id	generic attribute: completely future proof
 	value
 </pre>
 </p>
@@ -92,16 +92,16 @@ To order columns from left to right we can use a simple table:
 <pre>
 column-order
 	column-id	unique-id but not sequential indexed
-	order		postion of the column in the list, indexed
+	order		position of the column in the list, indexed
 </pre>
 </p>
 <h5>Using a trigger to maintain column ordering</h5>
-<p>If all else fails we can write fucntuion in SQLlite.
+<p>If all else fails we can write functions in SQLlite.
 </p>
 <h5>Using a query to maintain column ordering</h5>
 <p>For example (does this work - need to try it)
 <pre>
-update column-order set order = order+1 where order >  some-value;
+update column-order set order = order+1 where order >= some-value;
 insert into columns-order values(x,some-value);
 </pre>
 </p>
@@ -124,7 +124,7 @@ NB: no need for the current 'delayed' option as that was introduced due a race c
 source-option table	query arguments for the url
 	source-id	indexed
 	type		of server
-	sub-type	of server
+	sub-type	of server -> refers to inherited server definition
 	featureset-id	optional
 	attribute-id
 	value		(string) may be overridden by code
