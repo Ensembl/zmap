@@ -746,29 +746,14 @@ void zMapWindowStats(ZMapWindow window, GString *text)
 
 
 
-/* THIS COMMENT IS STILL NOT CORRECT...WE NEED TO TRANSFORM COORDS AS USER REQUIRES... */
-/* PART 2, ok the 'reversed' parameter is a hack and it would go away if we split this call
- * into the following interface calls:
- *    1) return a struct which is opaque but encapsulates the position information.
- *    2) resets the window
- *    3) redraws the window with the new context
- *    4) repositions the window using the struct from 1)
- *
- * then the hackiness + the bug Roy found will disappear. */
-
-/* Draw the window with new features, the rev_comp_features is required because the users
- * may require the coordinates in the scale and as reported in the status line to be displayed
- * either in reverse strand coords or still in forward strand coords.
- * We also need the information so that we can maintain window position after a revcomp.
- * We really do need to know even though it feels a bit hacky... */
-void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     GHashTable *all_styles, GHashTable *new_styles,
-			     gboolean features_are_revcomped)
+/* only called by zMapViewReverseComplement()
+ * need to save status and reset the canvas before rev comp ing the context as focus items get lost otherwise
+ */
+void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
 {
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   gboolean free_child_windows = FALSE, free_revcomp_safe_windows = FALSE ;
-  ZMapWindowState state = NULL;
 
   gboolean state_saves_position = TRUE;
 
@@ -776,7 +761,13 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   zmapWindowBusy(window, TRUE) ;
 
   zMapStartTimer("WindowFeatureRedraw","");
-  state = zmapWindowStateCreate();
+
+	/* MH17 NOTE this state struct gets freed sometime later after being passsed around via some other data structs
+	 * it's set here so that zMapWindwoFeatureRedraw() (below) can access it
+	 * ref to zmapViewReverseComplement() and RT 229703
+	 * to be tidy after passing the pointer somewhere else we will zero this pointer
+	 */
+  window->state = zmapWindowStateCreate();
 
   /* Note that currently we lose the 3 frame state and other state such as columns */
   window->display_3_frame = DISPLAY_3FRAME_NONE ;
@@ -798,7 +789,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
       if (state_saves_position)
 	{
-	  zmapWindowStateSavePosition(state, window);
+	  zmapWindowStateSavePosition(window->state, window);
 	}
       else
 	{
@@ -825,16 +816,16 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 	  scroll_y2 = tmp ;
 	}
 
-      zmapWindowStateSaveFocusItems(state,window);
+      zmapWindowStateSaveFocusItems(window->state,window);
 
       if (window_rev_comp_save_state_G)
 	{
-	  zmapWindowStateSaveMark(state, window);
+	  zmapWindowStateSaveMark(window->state, window);
 	}
 
       if(window_rev_comp_save_bumped_G)
 	{
-	  zmapWindowStateSaveBumpedColumns(state, window);
+	  zmapWindowStateSaveBumpedColumns(window->state, window);
 	}
 
       window->revcomped_features = !window->revcomped_features ;
@@ -856,27 +847,46 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   window->strand_separator_context = NULL;
   zMapStopTimer("WindowFeatureRedraw","Separator");
 
+  /* stop the expose avoidance */
+  zmapWindowUninterruptExpose(window);
+
+  zMapStopTimer("WindowFeatureRset","");
+
+  zmapWindowBusy(window, FALSE) ;
+
+  return ;
+}
+
+void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
+			     gboolean features_are_revcomped)
+{
+//  int x, y ;
+//  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+//  gboolean free_child_windows = FALSE, free_revcomp_safe_windows = FALSE ;
+
+  zmapWindowBusy(window, TRUE) ;
+
+  zMapStartTimer("WindowFeatureRedraw","");
+
+
+  /* wrap the resetCanvas and set scroll region in a expose free cape */
+
+  zmapWindowInterruptExpose(window);
+
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(window, state, feature_context, feature_context,
+  zMapWindowDisplayData(window, window->state, feature_context, feature_context,
                   window->context_map,
                   NULL) ;
+
+  window->state = NULL;	/* see comment in zmapWindowFeatureReset() above */
 
   zMapStopTimer("WindowFeatureRedraw","Display");
 
   /* stop the expose avoidance */
   zmapWindowUninterruptExpose(window);
 
-  /* if we're un rev comping we end up not doing this next block.  That can't always be good! */
-  if (features_are_revcomped)
-    {
-      /* There was code here to reread the list windows, but it's the wrong time to call...
-       * The zMapWindowDisplayData() draws canvas items and fills the FToI hash asynchronously
-       * now, but the rereading of the lists depends on a full FToI hash...
-       * Code moved to the correct place, dataEventCB()
-       */
-    }
   zMapStopTimer("WindowFeatureRedraw","");
 
   zmapWindowBusy(window, FALSE) ;
@@ -2278,6 +2288,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
     }
 
   /* We need to redo the highlighting in the columns with a zoom handler.  i.e. DNA column... */
+  /* NOTE this function does nothing */
   zmapWindowReFocusHighlights(window);
 
   zMapWindowRedraw(window);

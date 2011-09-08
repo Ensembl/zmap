@@ -755,6 +755,8 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowStateQueue history ;
 
+  ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
+
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons. */
   gboolean revcomped_features ;
@@ -1331,7 +1333,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
   zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS, FALSE)
 
 
-void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
 GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type) ;
 #define zmapWindowFocusGetFocusItems(focus) \

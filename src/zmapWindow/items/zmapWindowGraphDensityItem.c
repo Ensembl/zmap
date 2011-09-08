@@ -294,8 +294,6 @@ void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
 
 		sl = sl->next;
 	}
-#warning we get here on revcomp as the context has been flipped before clearing the canvas whcih involves removing the focus, coords have changed
-//	zMapLogWarning("Failed to find graph segment feature for focus. search = %f,%f, feature = %d,%d\n",search.y1,search.y1,(int)feature->x1,(int)feature->x2);
 }
 
 
