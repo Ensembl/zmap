@@ -358,7 +358,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 	   * already offset by start_not_found by caller routine.
 	   * We only do this if it's the first cds exon and the exon is the
 	   * start of the cds _and_ offset > 1 (otherwise we just treat as a normal cds exon). */
-	  if (exon_start == full_data->cds_start && full_data->start_offset)
+	  if (exon_start == full_data->cds_start && full_data->start_offset > 1)
 	    {
 	      ex_start_not_found = *exon_span ;			    /* struct copy. */
 	      ex_start_not_found.x2 = full_data->trans_start - 1 ;
