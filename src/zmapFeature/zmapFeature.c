@@ -1524,7 +1524,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       merge_data.req_featuresets   = featureset_names;
 
       zMapFeatureContextExecute((ZMapFeatureAny) current_context,
-            ZMAPFEATURE_STRUCT_BLOCK, addEmptySets, &merge_data);
+				ZMAPFEATURE_STRUCT_BLOCK, addEmptySets, &merge_data);
 
       status = ZMAPFEATURE_CONTEXT_OK ;
     }
@@ -1556,7 +1556,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       /* THIS LOOKS SUSPECT...WHY ISN'T THE NAMES LIST COPIED FROM NEW_CONTEXT....*/
       copy_features = g_list_copy(new_context->req_feature_set_names) ;
       current_context->req_feature_set_names = g_list_concat(current_context->req_feature_set_names,
-                                                         copy_features) ;
+							     copy_features) ;
 
       if (merge_debug_G)
         zMapLogWarning("%s", "merging ...");
@@ -1580,6 +1580,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 
 	  if (merge_data.new_features)
 	    {
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      if(merge_erase_dump_context_G)
 		{
@@ -1599,15 +1600,17 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 		  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 		}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-#ifdef MH17_NEVER
-// NB causes crash on 2nd load, first one is ok
-      {
-            GError *err = NULL;
 
-            zMapFeatureDumpToFileName(diff_context,"features.txt","(Merge) diff context:\n", NULL, &err) ;
-            zMapFeatureDumpToFileName(current_context,"features.txt","(Merge) full context:\n", NULL, &err) ;
-      }
+#ifdef MH17_NEVER
+	      // NB causes crash on 2nd load, first one is ok
+	      {
+		GError *err = NULL;
+
+		zMapFeatureDumpToFileName(diff_context,"features.txt","(Merge) diff context:\n", NULL, &err) ;
+		zMapFeatureDumpToFileName(current_context,"features.txt","(Merge) full context:\n", NULL, &err) ;
+	      }
 #endif
+
 	      status = ZMAPFEATURE_CONTEXT_OK ;
 	    }
 	  else
@@ -2528,6 +2531,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
 	gboolean is_master_align = FALSE;
+
 	/* Annoyingly we have a issue with alignments */
 	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN)
 	  {
@@ -2558,8 +2562,8 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	    feature_any->parent = NULL;
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
 
-	    if(!(*view_path_ptr = zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr,
-							       feature_any->unique_id)))
+	    if (!(*view_path_ptr = zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr,
+								feature_any->unique_id)))
 	      {
 		/* If its new we can simply copy a pointer over to the diff context
 		 * and stop recursing.... */
@@ -2695,17 +2699,17 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 	if (!(zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
 	  {
-	    merge_data->new_features = new = TRUE;
-	    merge_data->feature_count++;
+	    merge_data->new_features = new = TRUE ;
+	    merge_data->feature_count++ ;
 
-	    featureAnyAddFeature(*diff_path_parent_ptr, feature_any);
+	    featureAnyAddFeature(*diff_path_parent_ptr, feature_any) ;
 
-	    featureAnyAddFeature(*view_path_parent_ptr, feature_any);
+	    featureAnyAddFeature(*view_path_parent_ptr, feature_any) ;
 
 
 	    if (merge_debug_G)
 	      zMapLogWarning("feature(%p)->parent = %p. current_view_set = %p",
-			     feature_any, feature_any->parent, *view_path_parent_ptr);
+			     feature_any, feature_any->parent, *view_path_parent_ptr) ;
 	  }
 	else
 	  {
