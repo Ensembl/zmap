@@ -128,7 +128,7 @@ Displayable objects are found using a skip list whcih is sorted by Y corordinate
 <p>Therefore the overhead is minimal and naive code can be used.</p>
 
 <h4>Handling focus highlight</h4>
-<p>In the inial trial we had the luxury of knowing that features do not overlap and focus highlight has been inplemented simply by setting the colour if individiual features.
+<p>In the inial trial we had the luxury of knowing that features do not overlap and focus highlight has been implemented simply by setting the colour of individual features.
 </p>
 <p>For the more3 general case we need to display multiple features on top of others and in the existing implementation this has been done by re-ordering the features in a column (eg via foo_canvas_raise_to_top()).  Note that this has resulted in a few anomalies in the past and there ar instances where the focus code is deficient (eg revcomp will restore only a single focus item.
 </p>
@@ -224,6 +224,38 @@ etc
 </pre>
 </p>
 
+<h3>Development plan</h3>
+
+<h4>Implement generic featureset code that initially supports GraphDensityItems and modify GraphDensityItems</h4>
+<p>Currently all displayable items are foo camnvas items which are children of a foo canvas group that is a ZMapWindowCanvasItem, and adding a featureset foo canvas item requires there to be a ZmapWindowCanvasItem around it. This is required by the current interface via the ItemFactory ?? and also some code in the base ZMapWindowCanvasItem ??.  We wish to remove ZMapWindowCanvasItem but cannot do this until all instances can be removed.
+<br />
+<b>WHY?</b>
+</p>
+<p>In the interim this means we have to add dummy ZmapWindowCanvasItems around featureset canvas items, and this has been done for ZmapWindowGraphDensityItems using a GraphItem type.  To avoid extra workd and repetition of code we need to change this to be a generic featureset type of ZMapWindowCanvasItem and to provide an interface to generic functions that will work for multiple types of features.  This will result in the base data structure that can be extended per feature type.
+</p>
+<p> <b>Decide on a technology</b> to use for object inheritcance and modify GraphDensityItems to use the base code and implement only the feature specific code.
+</p>
+<p>This will give the same outward appearance as existing code but can then be extended to other data types.
+</p>
+
+<h4>Implement unbumped alignments as a featureset item</h4>
+<p>Using the interface as above, modify the ItemFactory to create singleotn alignment featuresets and add features as simple data structures.
+</p>
+<p>Add a module to handle display of alignments as umbumped (simple boxes, no decorations).
+</p>
+<p>Implement left and right links for same-name features.
+</p>
+<p><b>Address focus highlight issues</b>
+</p>
+<p><b>NOTE</b>Column summarise code could be added here.
+</p>
+
+
+<h4>Implement generic bumping code</h4>
+<p>This should process data via a canvas featureset's skip list and set feature's x-coordinates.
+</p>
+<p>Modify display code to test for X-coordinates if bumped, and handle decorations and gaps.
+</p>
 
 
 

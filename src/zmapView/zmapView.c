@@ -1253,17 +1253,32 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zmapViewBusy(zmap_view, TRUE) ;
 
+      if((list_item = g_list_first(zmap_view->window_list)))
+	{
+	  do
+	    {
+	      ZMapViewWindow view_window ;
+
+	      view_window = list_item->data ;
+
+            zMapStartTimer("RevComp","Window");
+	      zMapWindowFeatureReset(view_window->window, TRUE) ;
+            zMapStopTimer("RevComp","Window");
+	    }
+	  while ((list_item = g_list_next(list_item))) ;
+	}
+
+      zMapWindowNavigatorReset(zmap_view->navigator_window);
+
       zMapStartTimer("RevComp","Context");
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
       zMapStopTimer("RevComp","Context");
-#warning reversing the canvas before clearing it in zMapWindowFeatureRedraw() causes errors as coordinates have changes and (focus) features cannot be found
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
-      zMapWindowNavigatorReset(zmap_view->navigator_window);
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
       zMapStopTimer("RevComp","Navigator");
@@ -1273,15 +1288,11 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	  do
 	    {
 	      ZMapViewWindow view_window ;
-	      GHashTable *copy_styles = NULL;
 
 	      view_window = list_item->data ;
 
-	      copy_styles = zmap_view->context_map.styles ;
-
             zMapStartTimer("RevComp","Window");
-	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
-				      zmap_view->context_map.styles, copy_styles, TRUE) ;
+	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,TRUE) ;
             zMapStopTimer("RevComp","Window");
 	    }
 	  while ((list_item = g_list_next(list_item))) ;

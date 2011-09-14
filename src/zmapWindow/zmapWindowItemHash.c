@@ -606,7 +606,11 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 		{
 		  if((feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
                                                                GUINT_TO_POINTER(feature_id))))
-                    item = feature->item ;
+                {
+                  item = feature->item ;
+
+ 			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item,(ZMapFeature) feature->feature_any);
+ 	          }
 		}
 	    }
 	}
@@ -622,6 +626,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
                                                 GUINT_TO_POINTER(rootCanvasID()))))
         item = FOO_CANVAS_ITEM(root->item); /* This is actually a group. */
     }
+
 
   return item ;
 }
