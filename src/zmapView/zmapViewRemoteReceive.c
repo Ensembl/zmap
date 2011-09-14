@@ -650,23 +650,23 @@ static void viewDumpContextToFile(ZMapView view, RequestData input_data, Respons
 
 static gboolean sanityCheckContext(ZMapView view, RequestData input_data, ResponseData output_data)
 {
-  gboolean features_are_sane = TRUE;
-  ZMapXRemoteStatus save_code;
+  gboolean features_are_sane = TRUE ;
+  ZMapXRemoteStatus save_code ;
 
-  save_code = output_data->code;
-  output_data->code = 0;
+  save_code = output_data->code ;
+  output_data->code = 0 ;
 
   zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
                             ZMAPFEATURE_STRUCT_FEATURE,
                             sanity_check_context,
-                            output_data);
+                            output_data) ;
 
-  if(output_data->code != 0)
-    features_are_sane = FALSE;
+  if (output_data->code != 0)
+    features_are_sane = FALSE ;
   else
-    output_data->code = save_code;
+    output_data->code = save_code ;
 
-  return features_are_sane;
+  return features_are_sane ;
 }
 
 
@@ -765,6 +765,7 @@ static void delete_failed_make_message(gpointer list_data, gpointer user_data)
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
     {
       response_data->code = ZMAPXREMOTE_CONFLICT; /* possibly the wrong code */
+
       g_string_append_printf(response_data->messages,
                              "Failed to delete feature '%s' [%s].\n",
                              (char *)g_quark_to_string(feature_any->original_id),
@@ -1357,6 +1358,7 @@ static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_ele
 }
 
 
+
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_element, ZMapXMLParser parser)
 {
   gboolean result = FALSE ;
@@ -1375,363 +1377,399 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
   if (xml_data->common.action != ZMAPVIEW_REMOTE_INVALID)
     {
-      switch(xml_data->common.action)
+      ZMapFeature feature ;
+      ZMapStyleMode mode ;
+
+      result = TRUE ;
+
+      /* Must have following attributes for all feature level operations. */
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
 	{
-	case ZMAPVIEW_REMOTE_ZOOM_TO:
-	case ZMAPVIEW_REMOTE_CREATE_FEATURE:
-	case ZMAPVIEW_REMOTE_DELETE_FEATURE:
-	case ZMAPVIEW_REMOTE_FIND_FEATURE:
-	case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
-	case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
-	case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
-	  {
-	    result = TRUE ;
-
-	    if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
-	      {
-		feature_name_id = zMapXMLAttributeGetValue(attr) ;
-		feature_name = (char *)g_quark_to_string(feature_name_id) ;
-	      }
-	    else
-	      {
-		zMapXMLParserRaiseParsingError(parser, "name is a required attribute for feature.");
-		result = FALSE ;
-	      }
+	  feature_name_id = zMapXMLAttributeGetValue(attr) ;
+	  feature_name = (char *)g_quark_to_string(feature_name_id) ;
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for feature.") ;
+	  result = FALSE ;
+	}
 
 
-	    if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
-	      {
-		start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-			       (char **)NULL, 10);
-	      }
-	    else
-	      {
-		zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
-		result = FALSE ;
-	      }
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
+	{
+	  start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+			 (char **)NULL, 10);
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for feature.");
+	  result = FALSE ;
+	}
 
-	    if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
-	      {
-		end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-			     (char **)NULL, 10);
-	      }
-	    else
-	      {
-		zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
-		result = FALSE ;
-	      }
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
+	{
+	  end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+		       (char **)NULL, 10);
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for feature.");
+	  result = FALSE ;
+	}
 
-	    if (result)
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
+	{
+	  zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+				  &(strand));
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"strand\" is a required attribute for feature.");
+	  result = FALSE ;
+	}
+
+
+      /* Check if feature exists, for some commands it must do, for others it must not. */
+      if (result)
+	{
+	  /* Need the style to get hold of the feature mode, better would be for
+	   * xml to contain SO term ?? Maybe not....not sure. */
+	  mode = zMapStyleGetMode(request_data->style) ;
+
+	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
+
+	  feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
+
+	  switch(xml_data->common.action)
+	    {
+	    case ZMAPVIEW_REMOTE_ZOOM_TO:
+	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
+	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
+	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
+	    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
+	    case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
 	      {
-		if ((attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
+		if (!feature)
 		  {
-		    zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-					    &(strand));
+		    /* If we can't find the feature then it's a serious error for these commands. */
+		    char *err_msg ;
+
+		    err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
+					      feature_name, g_quark_to_string(feature_unique_id),
+					      zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
+		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		    g_free(err_msg) ;
+
+		    result = FALSE ;
 		  }
-
-		if((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
+		break ;
+	      }
+	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	      {
+		if (feature)
 		  {
-		    score = zMapXMLAttributeValueToDouble(attr);
-		    has_score = TRUE;
+		    /* If we _do_ find the feature then it's a serious error. */
+		    char *err_msg ;
+
+		    err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" already exists in featureset \"%s\",",
+					      feature_name, g_quark_to_string(feature_unique_id),
+					      zMapFeatureName(request_data->orig_feature_set)) ;
+		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		    g_free(err_msg) ;
+
+		    result = FALSE ;
 		  }
+		break ;
+	      }
+	    default:
+	      {
+		zMapAssertNotReached() ;
+		break ;
+	      }
+	    }
+	}
 
-		if ((attr = zMapXMLElementGetAttributeByName(feature_element, "start_not_found")))
+
+      /* Now do something... */
+      if (result)
+	{
+	  switch(xml_data->common.action)
+	    {
+	    case ZMAPVIEW_REMOTE_ZOOM_TO:
+	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
+	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
+	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
+	    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
+	    case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
+	      {
+		result = TRUE ;
+
+		if (result)
 		  {
-		    start_phase = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-					 (char **)NULL, 10);
-		    start_not_found = TRUE;
-
-		    switch(start_phase)
+		    if((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
 		      {
-		      case 1:
-		      case -1:
-			start_phase = ZMAPPHASE_0;
-			break;
-		      case 2:
-		      case -2:
-			start_phase = ZMAPPHASE_1;
-			break;
-		      case 3:
-		      case -3:
-			start_phase = ZMAPPHASE_2;
-			break;
-		      default:
-			start_not_found = FALSE;
-			start_phase = ZMAPPHASE_NONE;
-			break;
+			score = zMapXMLAttributeValueToDouble(attr);
+			has_score = TRUE;
+		      }
+
+		    if ((attr = zMapXMLElementGetAttributeByName(feature_element, "start_not_found")))
+		      {
+			start_phase = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+					     (char **)NULL, 10);
+			start_not_found = TRUE;
+
+			switch(start_phase)
+			  {
+			  case 1:
+			  case -1:
+			    start_phase = ZMAPPHASE_0;
+			    break;
+			  case 2:
+			  case -2:
+			    start_phase = ZMAPPHASE_1;
+			    break;
+			  case 3:
+			  case -3:
+			    start_phase = ZMAPPHASE_2;
+			    break;
+			  default:
+			    start_not_found = FALSE;
+			    start_phase = ZMAPPHASE_NONE;
+			    break;
+			  }
+		      }
+
+		    if ((attr = zMapXMLElementGetAttributeByName(feature_element, "end_not_found")))
+		      {
+			end_not_found = zMapXMLAttributeValueToBool(attr);
+		      }
+
+		    if ((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
+		      {
+			/* Nothing done here yet. */
+			zMapXMLAttributeGetValue(attr);
 		      }
 		  }
 
-		if ((attr = zMapXMLElementGetAttributeByName(feature_element, "end_not_found")))
+		if (result && !zMapXMLParserLastErrorMsg(parser))
 		  {
-		    end_not_found = zMapXMLAttributeValueToBool(attr);
-		  }
-
-		if ((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
-		  {
-		    /* Nothing done here yet. */
-		    zMapXMLAttributeGetValue(attr);
-		  }
-	      }
-
-	    if (result && !zMapXMLParserLastErrorMsg(parser))
-	      {
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		ZMapView view = request_data->view ;
-
-		/* I BELIEVE THIS IS NO LONGER NECESSARY AS COORDS ARE PASSED TO US AS CHROMOSOME
-		 * COORDS, I'VE LEFT THIS CODE IN UNTIL WE CAN TEST WITH THE NEW OTTERLACE
-		 * THAT IT ALL WORKS. */
-
-
-		/*
-		 * N.B. ALL THIS zMapBlock2FeatureCoords() WILL GO WHEN OTTERLACE
-		 * PASSES US THE CHROMOSOME COORDS....
-		 */
-
-		/* If zmap is revcomp'd we need to correct position and strand.... */
-		if (view->revcomped_features)
-		  {
-		    int tmp ;
-		    ZMapFeatureBlock my_block ;
-
-		    strand = ZMAPFEATURE_SWOP_STRAND(strand) ;
-
-		    zMapFeatureRevComp(view->features->parent_span.x1, view->features->parent_span.x2,
-				       &(request_data->orig_block->block_to_sequence.block.x1),
-				       &(request_data->orig_block->block_to_sequence.block.x2)) ;
-
-		    zMapBlock2FeatureCoords(request_data->orig_block, &start, &end) ;
-
-		    zMapFeatureRevComp(view->features->parent_span.x1, view->features->parent_span.x2,
-				       &(request_data->orig_block->block_to_sequence.block.x1),
-				       &(request_data->orig_block->block_to_sequence.block.x2)) ;
-		  }
-		else
-		  {
-		    zMapBlock2FeatureCoords(request_data->orig_block, &start, &end) ;
-		  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-		switch(xml_data->common.action)
-		  {
-		  case ZMAPVIEW_REMOTE_ZOOM_TO:
-		    {
-		      ZMapFeature feature ;
-		      ZMapStyleMode mode ;
-
-		      /* Need the style to get hold of the feature mode, better would be for
-		       * xml to contain SO term ?? Maybe not....not sure. */
-		      mode = zMapStyleGetMode(request_data->style) ;
-
-		      feature_unique_id = zMapFeatureCreateID(mode,
-							      feature_name,
-							      strand,
-							      start, end, 0, 0) ;
-
-		      if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
+		    switch(xml_data->common.action)
+		      {
+		      case ZMAPVIEW_REMOTE_ZOOM_TO:
 			{
-			  request_data->feature_list = g_list_prepend(request_data->feature_list, feature) ;
-			}
-		      else
-			{
-			  zMapXMLParserRaiseParsingError(parser, "Cannot find feature in zmap.");
-			  result = FALSE ;
-			}
+			  ZMapFeature feature ;
+			  ZMapStyleMode mode ;
 
-		      break ;
-		    }
+			  /* Need the style to get hold of the feature mode, better would be for
+			   * xml to contain SO term ?? Maybe not....not sure. */
+			  mode = zMapStyleGetMode(request_data->style) ;
 
-		  case ZMAPVIEW_REMOTE_CREATE_FEATURE:
-		  case ZMAPVIEW_REMOTE_DELETE_FEATURE:
-		  case ZMAPVIEW_REMOTE_FIND_FEATURE:
-		  case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
-		  case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
-		  case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
-		    {
+			  feature_unique_id = zMapFeatureCreateID(mode,
+								  feature_name,
+								  strand,
+								  start, end, 0, 0) ;
 
-		      zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
-							  parser,
-							  "feature tag not contained within featureset tag");
-
-		      if (result
-			  && (request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
-											ZMAPSTYLE_MODE_BASIC,
-											request_data->style,
-											start, end, has_score,
-											score, strand)))
-			{
-			  request_data->feature->style_id = request_data->style_id ;
-
-			  zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
-
-			  /* We need to get all the source info. in here somehow.... */
-			  zMapFeatureAddText(request_data->feature, request_data->source_id, NULL, NULL) ;
-
-			  if (start_not_found || end_not_found)
+			  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
 			    {
-			      request_data->feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
-			      zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
-							       start_phase, end_not_found);
+			      request_data->feature_list = g_list_prepend(request_data->feature_list, feature) ;
+			    }
+			  else
+			    {
+			      zMapXMLParserRaiseParsingError(parser, "Cannot find feature in zmap.");
+			      result = FALSE ;
 			    }
 
-			  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
+			  break ;
+			}
+
+		      case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+		      case ZMAPVIEW_REMOTE_DELETE_FEATURE:
+		      case ZMAPVIEW_REMOTE_FIND_FEATURE:
+		      case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
+		      case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
+		      case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
+			{
+
+			  zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
+							      parser,
+							      "feature tag not contained within featureset tag");
+
+			  if (result
+			      && (request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
+											    ZMAPSTYLE_MODE_BASIC,
+											    request_data->style,
+											    start, end, has_score,
+											    score, strand)))
 			    {
-			      ZMapFeatureSet locus_feature_set = NULL;
-			      ZMapFeature old_feature;
-			      ZMapFeature locus_feature = NULL;
-			      GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
-			      GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
-			      char *new_locus_name = (char *)g_quark_to_string(new_locus_id);
-			      ZMapFeatureTypeStyle locus_style ;
+			      request_data->feature->style_id = request_data->style_id ;
 
-			      if (!(locus_style
-				    = zMapFindStyle(request_data->view->context_map.styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME))))
+			      zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
+
+			      /* We need to get all the source info. in here somehow.... */
+			      zMapFeatureAddText(request_data->feature, request_data->source_id, NULL, NULL) ;
+
+			      if (start_not_found || end_not_found)
 				{
-				  zMapLogWarning("Feature %s created but Locus %s could not be added"
-						 " because Locus style could not be found.",
-						 feature_name, new_locus_name) ;
+				  request_data->feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
+				  zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
+								   start_phase, end_not_found);
 				}
-			      else
+
+			      if ((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
 				{
-				  /* Find locus feature set first ... */
-				  if (!(locus_feature_set = zMapFeatureBlockGetSetByID(request_data->block, locus_set_id)))
+				  ZMapFeatureSet locus_feature_set = NULL;
+				  ZMapFeature old_feature;
+				  ZMapFeature locus_feature = NULL;
+				  GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
+				  GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
+				  char *new_locus_name = (char *)g_quark_to_string(new_locus_id);
+				  ZMapFeatureTypeStyle locus_style ;
+
+				  if (!(locus_style
+					= zMapFindStyle(request_data->view->context_map.styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME))))
 				    {
-				      /* Can't find one, create one and add it. */
-				      locus_feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, NULL);
-				      zMapFeatureBlockAddFeatureSet(request_data->block, locus_feature_set);
-				    }
-
-				  /* For some reason lace passes over odd xml here...
-				     <zmap action="delete_feature">
-				     <featureset>
-				     <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
-				     </featureset>
-				     </zmap>
-				     <zmap action="create_feature">
-				     <featureset>
-				     <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
-				     ...
-				     i.e. deleting the locus name it's creating!
-				  */
-
-				  old_feature =
-				    (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-											  (ZMapFeatureAny)request_data->feature);
-
-				  if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-				      && (old_feature->feature.transcript.locus_id != 0)
-				      && (old_feature->feature.transcript.locus_id != new_locus_id))
-				    {
-				      /* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
-				      ZMapFeature tmp_locus_feature;
-				      ZMapFeatureAny old_locus_feature;
-				      char *old_locus_name = (char *)g_quark_to_string(old_feature->feature.transcript.locus_id);
-
-				      /* I DON'T REALLY UNDERSTAND THIS BIT CURRENTLY...WHY DO WE ALWAYS LOG THIS... */
-				      /* If we're here, assumptions have been made
-				       * 1 - We are in an action=delete_feature request
-				       * 2 - We are modifying an existing feature.
-				       * 3 - Lace has passed a locus="name" which does not = existing feature locus name.
-				       * 4 - Locus start and end are based on feature start end.
-				       *     If they are the extent of the locus as they should be...
-				       *     The unique_id will be different and therefore the next
-				       *     zMapFeatureContextFindFeatureFromFeature will fail.
-				       *     This means the locus won't be deleted as it should be.
-				       */
-				      zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
-						     old_locus_name, new_locus_name, old_locus_name);
-
-				      tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-											    NULL, "",
-											    ZMAPSTYLE_MODE_BASIC, locus_style,
-											    start, end, FALSE, 0.0,
-											    ZMAPSTRAND_NONE) ;
-
-				      zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
-
-				      if ((old_locus_feature
-					   = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-										      (ZMapFeatureAny)tmp_locus_feature)))
-					{
-					  zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
-					  locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
-					}
-				      else
-					{
-					  zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
-					  /* make the locus feature itself. */
-					  locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-											    NULL, "",
-											    ZMAPSTYLE_MODE_BASIC, locus_style,
-											    start, end, FALSE, 0.0,
-											    ZMAPSTRAND_NONE) ;
-					}
-
-				      zMapFeatureDestroy(tmp_locus_feature);
+				      zMapLogWarning("Feature %s created but Locus %s could not be added"
+						     " because Locus style could not be found.",
+						     feature_name, new_locus_name) ;
 				    }
 				  else
 				    {
-				      /* make the locus feature itself. */
-				      locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
-											NULL, "",
-											ZMAPSTYLE_MODE_BASIC, locus_style,
-											start, end, FALSE, 0.0,
-											ZMAPSTRAND_NONE) ;
+				      /* Find locus feature set first ... */
+				      if (!(locus_feature_set = zMapFeatureBlockGetSetByID(request_data->block, locus_set_id)))
+					{
+					  /* Can't find one, create one and add it. */
+					  locus_feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, NULL);
+					  zMapFeatureBlockAddFeatureSet(request_data->block, locus_feature_set);
+					}
 
+				      /* For some reason lace passes over odd xml here...
+					 <zmap action="delete_feature">
+					 <featureset>
+					 <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
+					 </featureset>
+					 </zmap>
+					 <zmap action="create_feature">
+					 <featureset>
+					 <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
+					 ...
+					 i.e. deleting the locus name it's creating!
+				      */
+
+				      old_feature =
+					(ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
+											      (ZMapFeatureAny)request_data->feature);
+
+				      if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+					  && (old_feature->feature.transcript.locus_id != 0)
+					  && (old_feature->feature.transcript.locus_id != new_locus_id))
+					{
+					  /* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
+					  ZMapFeature tmp_locus_feature;
+					  ZMapFeatureAny old_locus_feature;
+					  char *old_locus_name = (char *)g_quark_to_string(old_feature->feature.transcript.locus_id);
+
+					  /* I DON'T REALLY UNDERSTAND THIS BIT CURRENTLY...WHY DO WE ALWAYS LOG THIS... */
+					  /* If we're here, assumptions have been made
+					   * 1 - We are in an action=delete_feature request
+					   * 2 - We are modifying an existing feature.
+					   * 3 - Lace has passed a locus="name" which does not = existing feature locus name.
+					   * 4 - Locus start and end are based on feature start end.
+					   *     If they are the extent of the locus as they should be...
+					   *     The unique_id will be different and therefore the next
+					   *     zMapFeatureContextFindFeatureFromFeature will fail.
+					   *     This means the locus won't be deleted as it should be.
+					   */
+					  zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
+							 old_locus_name, new_locus_name, old_locus_name);
+
+					  tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
+												NULL, "",
+												ZMAPSTYLE_MODE_BASIC, locus_style,
+												start, end, FALSE, 0.0,
+												ZMAPSTRAND_NONE) ;
+
+					  zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
+
+					  if ((old_locus_feature
+					       = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
+											  (ZMapFeatureAny)tmp_locus_feature)))
+					    {
+					      zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
+					      locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
+					    }
+					  else
+					    {
+					      zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
+					      /* make the locus feature itself. */
+					      locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
+												NULL, "",
+												ZMAPSTYLE_MODE_BASIC, locus_style,
+												start, end, FALSE, 0.0,
+												ZMAPSTRAND_NONE) ;
+					    }
+
+					  zMapFeatureDestroy(tmp_locus_feature);
+					}
+				      else
+					{
+					  /* make the locus feature itself. */
+					  locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
+											    NULL, "",
+											    ZMAPSTYLE_MODE_BASIC, locus_style,
+											    start, end, FALSE, 0.0,
+											    ZMAPSTRAND_NONE) ;
+
+					}
+
+				      /* The feature set and feature need to have their styles set... */
+
+				      /* managed to get the styles set up. Add the feature to
+				       * feature set and finish up the locus. */
+				      zMapFeatureSetAddFeature(locus_feature_set,
+							       locus_feature);
+				      zMapFeatureAddLocus(locus_feature, new_locus_id);
+
+				      /* We'll still add the locus to the transcript
+				       * feature so at least this information is
+				       * preserved whatever went on with the styles */
+				      zMapFeatureAddLocus(request_data->feature, new_locus_id);
 				    }
-
-				  /* The feature set and feature need to have their styles set... */
-
-				  /* managed to get the styles set up. Add the feature to
-				   * feature set and finish up the locus. */
-				  zMapFeatureSetAddFeature(locus_feature_set,
-							   locus_feature);
-				  zMapFeatureAddLocus(locus_feature, new_locus_id);
-
-				  /* We'll still add the locus to the transcript
-				   * feature so at least this information is
-				   * preserved whatever went on with the styles */
-				  zMapFeatureAddLocus(request_data->feature, new_locus_id);
 				}
+
+
+			      /* THIS DOESN'T DO A DEEP ENOUGH COPY, WE FAIL LATER FOR SOME ACTIONS
+			       * BECAUSE STUFF LIKE THE HOMOL DATA IS NOT COPIED SO WE CAN'T FIND
+			       * THE FEATURE IN THE HASH. */
+			      feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->feature) ;
+
+			      request_data->feature_list = g_list_prepend(request_data->feature_list, feature_any);
 			    }
 
-
-			  /* THIS DOESN'T DO A DEEP ENOUGH COPY, WE FAIL LATER FOR SOME ACTIONS
-			   * BECAUSE STUFF LIKE THE HOMOL DATA IS NOT COPIED SO WE CAN'T FIND
-			   * THE FEATURE IN THE HASH. */
-			  feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->feature) ;
-
-			  request_data->feature_list = g_list_prepend(request_data->feature_list, feature_any);
+			  break ;
 			}
 
-		      break ;
-		    }
+		      default:
+			{
+			  zMapXMLParserRaiseParsingError(parser, "Unexpected element for action");
+			  result = FALSE ;
 
-		  default:
-		    {
-		      zMapXMLParserRaiseParsingError(parser, "Unexpected element for action");
-		      result = FALSE ;
+			  break ;
+			}
+		      }
 
-		      break ;
-		    }
+		    break;
 		  }
+	      }
+
+	    default:
+	      {
+		zMapXMLParserRaiseParsingError(parser, "Unexpected element for action");
+		result = FALSE ;
 
 		break;
 	      }
-	  }
-
-	default:
-	  {
-	    zMapXMLParserRaiseParsingError(parser, "Unexpected element for action");
-	    result = FALSE ;
-
-	    break;
-	  }
+	    }
 	}
     }
 
