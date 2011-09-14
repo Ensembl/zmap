@@ -3326,7 +3326,6 @@ printf("\nview styles lists after merge:\n");
 
                   fset = (ZMapFeatureSetDesc) value;
 
-/* somewhere these lists get corrupted */
                   /* construct a reverse col 2 featureset mapping */
                   column = g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
                   if(column)

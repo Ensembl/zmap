@@ -1352,8 +1352,8 @@ static char * get_menu_string(GQuark set_quark,char disguise)
 
 
 /* does a featureset have a related one?
- * FTM this mean fset is coverage and the related is the real data (a one way relation)
- * is so donlt include in menus
+ * FTM this means fset is coverage and the related is the real data (a one way relation)
+ * is so don't include in menus
  */
 GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
 {
@@ -1428,10 +1428,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
   }
   else if(zMapFeatureIsSeqFeatureSet(cbdata->window->context_map,fset_id))
   {
-  	/* if we click on a data column we blixem that not the featureset */
+  	/* if we click on a data column we blixem that not the featureset as we may have several featuresets in the column */
   	/* can get the column from the menu_data->container_set or from the featureset_2_column... */
   	/* can't remember how reliable is the container */
-  	ZMapFeatureSetDesc f2c = g_hash_table_lookup(cbdata->window->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+  	ZMapFeatureSetDesc f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id));
 //zMapLogWarning("menu is_seq: %s -> %p\n",g_quark_to_string(fset_id),f2c);
 
   	if(f2c)
@@ -1453,7 +1453,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 	m->id = BLIX_SEQ_COVERAGE;
 	m->callback_func = blixemMenuCB;
 	m++;
-   }
+  }
 
   if(related)
   {
@@ -1506,6 +1506,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 	if(f2c)
 	{
 		fset = get_menu_string(f2c->feature_src_ID,'/');
+
 		req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
 		if(!req_id)		/* don't include coverage data */
 		{

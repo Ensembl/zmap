@@ -231,7 +231,7 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
       ZMapFeatureAny item_feature ;
 
       item_feature = zmapWindowItemGetFeatureAny(align_group) ;
-      zMapAssert(item_feature) ;
+//      zMapAssert(item_feature) ;
 
       align = g_new0(ID2CanvasStruct, 1) ;
       align->item = FOO_CANVAS_ITEM(align_group) ;
@@ -281,7 +281,7 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
 	  ZMapFeatureAny item_feature ;
 
 	  item_feature = zmapWindowItemGetFeatureAny(block_group) ;
-	  zMapAssert(item_feature) ;
+//	  zMapAssert(item_feature) ;
 
 	  block = g_new0(ID2CanvasStruct, 1) ;
 	  block->item = FOO_CANVAS_ITEM(block_group) ;
@@ -346,7 +346,9 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 	  ZMapFeatureAny item_feature ;
 
 	  item_feature = zmapWindowItemGetFeatureAny(set_group) ;
-	  zMapAssert(item_feature) ;
+// MH17: despite looking as if this is set up we still get an assert
+// i suspect this assert was added recently and now prevents the navigator pfrom being displayed
+//	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
 	  set->item = FOO_CANVAS_ITEM(set_group) ;

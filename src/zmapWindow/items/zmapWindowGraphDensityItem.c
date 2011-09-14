@@ -717,7 +717,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
       gulong fill_pixel, outline_pixel;
       gboolean draw_fill = FALSE, draw_outline = FALSE;
       gboolean draw_box = TRUE; 	/* else line */
-#define N_POINTS	100
+#define N_POINTS	2000	/* will never run out as we only display one screen;s worth */
       GdkPoint points[N_POINTS+2];		/* +2 for gaps between bins, inserting a line */
       int n_points = 0;
 
@@ -893,6 +893,8 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				{
 					GdkColor c;
 
+					/* NOTE there is a bug here in that the trailing segnemt does not always paint */
+					/* kludged away by increasing N_POINTS to 2000 */
 					c.pixel = di->outline_pixel;
 					gdk_gc_set_foreground (di->gc, &c);
 
@@ -1129,6 +1131,13 @@ static void zmap_window_graph_density_item_destroy     (GObject *object)
   g_return_if_fail(ZMAP_IS_WINDOW_GRAPH_DENSITY_ITEM(object));
 
   density = ZMAP_WINDOW_GRAPH_DENSITY_ITEM(object);
+
+  if(density->display_index)
+  {
+  	zMapSkipListDestroy(density->display_index,
+  		density->source_used? NULL : zmapWindowCanvasGraphSegmentFree);
+  	density->display_index = NULL;
+  }
   	/* removing it the second time will fail gracefully */
   g_hash_table_remove(density_class_G->density_items,GUINT_TO_POINTER(density->id));
 

@@ -901,6 +901,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
                         GFFset->column_id = column_id;        // lower cased name
                         GFFset->column_ID = column;           // display name
+zMapLogWarning("get f2c: set col ID %s",g_quark_to_string(GFFset->column_ID));
                         GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
                         g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
@@ -965,6 +966,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,G
                   virtual_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(set_id));
                   if(!virtual_f2c)
                   {
+                  	/* should have been config'd to appear in a column */
                   	zMapLogWarning("cannot find virtual featureset %s",*keys);
                   	continue;
                   }
@@ -996,6 +998,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,G
 
                         real_f2c->column_id = virtual_f2c->column_id;
                         real_f2c->column_ID = virtual_f2c->column_ID;
+zMapLogWarning("get f2f: set col ID %s",g_quark_to_string(real_f2c->column_ID));
 //		  		real_f2c->feature_set_text =
                         real_f2c->feature_src_ID = GPOINTER_TO_UINT(sources->data);
 
@@ -1647,7 +1650,7 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
   ZMapConfigSource config_source = (ZMapConfigSource)parent_data ;
   gboolean *bool_ptr ;
   int *int_ptr ;
-  double *double_ptr ;
+//  double *double_ptr ;
   char **str_ptr ;
 
   if (key && *key)
@@ -1700,8 +1703,9 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	*bool_ptr = g_value_get_boolean(property_value);
       else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
 	*int_ptr = g_value_get_int(property_value);
-      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
-	*double_ptr = g_value_get_double(property_value);
+// there are no doubles
+//      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
+//	*double_ptr = g_value_get_double(property_value);
       else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
 	*str_ptr = (char *)g_value_get_string(property_value);
     }

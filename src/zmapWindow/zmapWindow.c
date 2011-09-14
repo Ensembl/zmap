@@ -3375,7 +3375,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 				       &wx, mark_updater.closest_to);
 	    wy = *(mark_updater.closest_to);
 	    moveRuler(window->mark_guide_line, NULL, NULL, wx, wy);
-zMapLogWarning("update mark %f",wy);
+// //
 	    event_handled = TRUE;
 	  }
 	else if (mark_updater.in_mark_move_region && (!mark_updater.activated)

@@ -2141,7 +2141,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 {
   GList *show_hide_button_list = (GList *)user_data;
   gboolean needs_reposition;
-  ColConfigure configure_data;
+//  ColConfigure configure_data;
   ShowHidePageData show_hide_data;
 
   if(show_hide_button_list)
@@ -2158,8 +2158,9 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 
       g_list_foreach(show_hide_button_list, each_radio_button_activate, NULL);
 
-      if((show_hide_data->reposition = needs_reposition))
-	zmapWindowFullReposition(configure_data->window);
+// unitiialised
+//      if((show_hide_data->reposition = needs_reposition))
+//	zmapWindowFullReposition(configure_data->window);
     }
 
 
