@@ -16,6 +16,11 @@
 RC=0
 
 
+BUILD_PREFIX='FEATURE'
+#ERROR_ID='edgrif@sanger.ac.uk'
+ERROR_ID=''
+
+
 # Script takes 2 args, first is the directory to copy the source
 # code from, second is name to give directory under ~zmap...
 if (( $# != 2 )) ; then
@@ -26,10 +31,6 @@ else
   DEST_DIR=$2
 fi
 
-
-BUILD_PREFIX='FEATURE'
-#ERROR_ID='edgrif@sanger.ac.uk'
-ERROR_ID=''
 
 ./build_run.sh $ERROR_ID -d -i $SRC_DIR -o $DEST_DIR -g $BUILD_PREFIX || RC=1
 

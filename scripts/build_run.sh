@@ -68,7 +68,7 @@ GIT_FEATURE_INFO=''
 ZMAP_MASTER_BUILD_DIST=''
 ZMAP_MASTER_RT_RELEASE_NOTES=''
 ZMAP_MASTER_FORCE_RELEASE_NOTES=''
-
+SEQTOOLS_DIR='DEVELOPMENT'
 
 # try to load useful shared shell functions...after this we will have access to
 # common message funcs.
@@ -113,9 +113,9 @@ message_out "ZMap Build Started: $*"
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -t -r -u ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -s <seqtools directory> -t -r -u ]   <build prefix>"
 
-while getopts ":a:b:cdegi:mno:rtu" opt ; do
+while getopts ":a:b:cdegi:mno:rs:tu" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BRANCH=$OPTARG ;;
@@ -128,6 +128,7 @@ while getopts ":a:b:cdegi:mno:rtu" opt ; do
 	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes' ;;
 	o  ) OUTPUT_DIR=$OPTARG ;;
 	r  ) INC_REL_VERSION='-r'    ;;
+	s  ) SEQTOOLS_DIR=$OPTARG ;;
 	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
 	\? ) message_exit "Bad arg flag: $usage" ;;
@@ -195,6 +196,7 @@ if [ -n "$ERASE_SUBDIRS" ] ; then
 fi
 
 
+
 if [ -n "$INPUT_DIR" ] ; then
     if [ ! -d $INPUT_DIR ] || [ ! -r $INPUT_DIR ] ; then
 	message_exit "$INPUT_DIR is not a directory or is not readable."
@@ -227,6 +229,20 @@ if [ -n "$BRANCH" ] ; then
   CMD_OPTIONS="$CMD_OPTIONS -b $BRANCH"
 
 fi
+
+
+
+# Set the directory for picking up seqtools binaries etc.
+#
+if [ -n "$SEQTOOLS_DIR" ] ; then
+
+    SEQTOOLS_DIR="BUILD.$SEQTOOLS_DIR"
+
+    CMD_OPTIONS="$CMD_OPTIONS -s $SEQTOOLS_DIR"
+
+fi
+
+
 
 
 # now env. variables. I'd like to supplant these with cmd line flags.
@@ -280,6 +296,7 @@ if [ -z "$CRON" ] ; then
     message_out "   Command options: $CMD_OPTIONS"
     message_out "        Global log: $GLOBAL_LOG"
     message_out "Errors reported to: $ERROR_RECIPIENT"
+    message_out "      Seqtools dir: $SEQTOOLS_DIR"
     message_out "==================="
 
 fi
