@@ -85,7 +85,7 @@ enum
 //    BLIX_SEQ_SET		/* Blixem a paried read featureset */
   } ;
 
-//#define BLIX_SEQ		10000       /* Blixem short reads data from the mark base menu index */
+#define BLIX_SEQ		10000       /* Blixem short reads data from the mark base menu index */
 #define REQUEST_SELECTED 20000	/* data related to selected featureset in column */
 #define REQUEST_ALL_SEQ 20001		/* all data related to coverage featuresets in column */
 #define REQUEST_SEQ	20002		/* request SR data from mark from menu */
@@ -1489,6 +1489,37 @@ ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
 
   /* add sub menu */
   m->type = ZMAPGUI_MENU_BRANCH;
+  m->name = g_strdup("Blixem paired reads data from mark");
+  m->id = 0;
+  m->callback_func = NULL;
+  m++;
+
+  for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
+    {
+      const gchar *fset;
+      GQuark req_id;
+      ZMapFeatureSetDesc f2c;
+
+      m->type = ZMAPGUI_MENU_NORMAL;
+
+  	f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,fsl->data);
+	if(f2c)
+	{
+		fset = get_menu_string(f2c->feature_src_ID,'/');
+
+		req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
+		if(!req_id)		/* don't include coverage data */
+		{
+			m->name = g_strdup_printf("Blixem paired reads data from mark/%s", fset);
+			m->id = BLIX_SEQ + i;
+			m->callback_func = blixemMenuCB;
+			m++;
+		}
+	}
+    }
+
+  /* add sub menu */
+  m->type = ZMAPGUI_MENU_BRANCH;
   m->name = g_strdup("Request paired reads data from mark");
   m->id = 0;
   m->callback_func = NULL;
@@ -1662,10 +1693,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 	  }
     	break;
 
+#if 0
     default:
     	break;
-#if 0
-//    case BLIX_SEQ:      /* one or more sets starting from BLIX_SEQ */
+#else
+     default:
+     if(menu_item_id >= BLIX_SEQ)      /* one or more sets starting from BLIX_SEQ */
       {
 	GList *l;
 	int i;
@@ -1686,8 +1719,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 	    if (l)
 	      {
-		seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(l->data)));
-		requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+	      ZMapFeatureSetDesc src = g_hash_table_lookup(menu_data->window->context_map->featureset_2_column,l->data);
+	      	if(src)
+	      	{
+				seq_sets = g_list_prepend (seq_sets,GUINT_TO_POINTER(src->feature_src_ID));
+				requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+			}
 	      }
 	  }
 
