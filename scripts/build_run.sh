@@ -323,6 +323,9 @@ trap '' QUIT
 message_out "Build now running and cannot be cleanly aborted..."
 
 
+message_out "About to run $BUILD_SCRIPT as:  root_checkout.sh $CMD_OPTIONS"
+
+
 # A one step copy, run, cleanup!
 # The /bin/kill -9 -$$; line is there to make sure no processes are left behind if the
 # root_checkout.sh looses one... In testing, but appears kill returns non-zero in $?
