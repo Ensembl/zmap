@@ -168,8 +168,6 @@ function _checkout_mk_cd_dir
     fi
 }
 
-zmap_message_out "checking that zmap_message_out works in generated script." 
-
 _checkout_message_out "Start of checkout script (created by build_bootstrap)."
 
 TODAY=`date +"%a %b %e %Y"`
@@ -568,7 +566,9 @@ _checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$ta
 
 \$SCRIPTS_DIR/zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
-\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
+_checkout_message_out "Running zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR"
+
+\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
 
 # Now we can clean up.
 cd \$ZMAP_BUILD_CONTAINER
