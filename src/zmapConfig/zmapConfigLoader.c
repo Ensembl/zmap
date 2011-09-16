@@ -901,7 +901,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
                         GFFset->column_id = column_id;        // lower cased name
                         GFFset->column_ID = column;           // display name
-zMapLogWarning("get f2c: set col ID %s",g_quark_to_string(GFFset->column_ID));
+//zMapLogWarning("get f2c: set col ID %s",g_quark_to_string(GFFset->column_ID));
                         GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
                         g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
@@ -984,24 +984,23 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,G
                               g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
                         f_src = g_hash_table_lookup(fset_src,GUINT_TO_POINTER(key));
 
-                        if(!f_src)
-                              continue;
-                        f_src->maps_to = set_id;
-
-				/* now set up featureset to column mapping to allow the column to paint and styles to be found */
-                        real_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(key));
-                        if(!real_f2c)
+                        if(f_src)
                         {
-                        	real_f2c = g_new0(ZMapFeatureSetDescStruct,1);
-                        	g_hash_table_insert(fset2col,GUINT_TO_POINTER(key),real_f2c);
-                        }
+					f_src->maps_to = set_id;
 
-                        real_f2c->column_id = virtual_f2c->column_id;
-                        real_f2c->column_ID = virtual_f2c->column_ID;
-zMapLogWarning("get f2f: set col ID %s",g_quark_to_string(real_f2c->column_ID));
-//		  		real_f2c->feature_set_text =
-                        real_f2c->feature_src_ID = GPOINTER_TO_UINT(sources->data);
+					/* now set up featureset to column mapping to allow the column to paint and styles to be found */
+					real_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(key));
+					if(!real_f2c)
+					{
+						real_f2c = g_new0(ZMapFeatureSetDescStruct,1);
+						g_hash_table_insert(fset2col,GUINT_TO_POINTER(key),real_f2c);
+					}
 
+					real_f2c->column_id = virtual_f2c->column_id;
+					real_f2c->column_ID = virtual_f2c->column_ID;
+	//		  		real_f2c->feature_set_text =
+					real_f2c->feature_src_ID = GPOINTER_TO_UINT(sources->data);
+				}
                         sources = sources->next;
                   }
             }

@@ -797,7 +797,8 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 
 	sl =  zMapSkipListFind(di->display_index, zmapGraphSegmentCmp, &search);
 
-	zMapAssert(sl && !sl->down);	/* if the index is not NULL then we nust have a leaf node */
+	if(!sl)
+		return;	/* if the index is not NULL then we nust have a leaf node */
 
 	/* need to get items that overlap the top of the expose */
 	while(sl->prev)

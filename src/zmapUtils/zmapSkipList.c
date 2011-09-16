@@ -171,6 +171,9 @@ ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer
 {
 	ZMapSkipList sl = head;
 
+	if(!head)
+		return NULL;
+
 	while(cmp(sl->data,key) < 0 && sl->next)
 		sl = (ZMapSkipList) sl->next;
 
@@ -260,6 +263,9 @@ ZMapSkipList zMapSkipListRemove(ZMapSkipList head, ZMapSkipListFreeFunc free_fun
 	ZMapSkipList sl = head;
 	gpointer data = sl->data;
 
+	if(!sl)
+		return NULL;
+
 	while(sl->down)
 		sl = sl->down;
 	if(free_func)
@@ -316,6 +322,8 @@ void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func)
 {
 	ZMapSkipList delete;
 
+	if(!skip_list)
+		return;
 	if(skip_list->down)
 		zMapSkipListDestroy(skip_list->down,free_func);
 
