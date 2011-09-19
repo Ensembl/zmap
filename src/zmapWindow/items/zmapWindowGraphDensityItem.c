@@ -77,13 +77,6 @@ static FooCanvasItemClass *parent_class_G;
 
 
 
-enum {
-	PROP_0,
-	PROP_X1,
-	PROP_Y1,
-	PROP_X2,
-	PROP_Y2,
-};
 
 GType zMapWindowGraphDensityItemGetType(void)
 {
@@ -861,7 +854,9 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				 * and we stop after the end so this caters for dangling lines below the end
 				 */
 
+// shome mistake?  (3x : look fwds for width
 		      	gs->width = x2 = di->x_off + di->style->mode_data.graph.baseline + (width * gs->score) ;
+//		      	gs->width = x2 =  di->style->mode_data.graph.baseline + (width * gs->score) ;
 				y2 = (gs->y2 + gs->y1 + 1) / 2;
 	      		foo_canvas_w2c (item->canvas, x2 + i2w_dx, y2 - di->start + i2w_dy, &cx2, &cy2);
 
@@ -907,6 +902,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				/* colour between fill and outline according to score */
 				x1 = di->x_off;
 				gs->width = x2 = x1 + width;
+//				gs->width = x2 = width;
 				draw_fill = TRUE;
 				fill_pixel = foo_canvas_get_color_pixel(item->canvas,
 					get_heat_colour(di->fill_colour,di->outline_colour,gs->score));
@@ -916,6 +912,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 			case ZMAPSTYLE_GRAPH_HISTOGRAM:
 				x1 = di->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
 		      	gs->width = x2 = x1 + (width * gs->score) ;
+//		      	gs->width = x2 = (width * gs->score) ;
 
   			      /* If the baseline is not zero then we can end up with x2 being less than x1 so
   			         swop them for drawing, perhaps the drawing code should take care of this. */

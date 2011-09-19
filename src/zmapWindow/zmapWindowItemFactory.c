@@ -44,6 +44,8 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
 
+#include <zmapWindowCanvasItemFeatureSet.h>
+
 // temp include for timing test
 #include <zmapWindowCanvasItem_I.h>
 
@@ -787,24 +789,87 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 {
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
-  ZMapWindowCanvasItem new_canvas_item;
-
-  /* clip the coords to the block, extending end to canvas drawing coords. */
-  /* Feature span coords are already clipped to block sapce.
-   * We just need to Seq2CanOffset */
- /* MH17 NOTE this makes the coordinate block relative,
-  * which has a greater effect than clipping them
-  * especially if the coordinates are not 1-based */
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
+  ZMapWindowCanvasItem canvas_item;
 
 
-  if ((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
-    {
-      zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+  if(!zMapStyleIsFoo(style))
+  {
+      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
+      ZMapFeatureBlock block = run_data->feature_stack->block;
 
-      feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-    }
+      if(!run_data->feature_stack->id)
+      {
+            GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
+            FooCanvasItem * foo = FOO_CANVAS_ITEM(fset);
+            GQuark fset_id = run_data->feature_stack->set->unique_id;
 
+		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
+		if(run_data->feature_stack->maps_to)
+			fset_id = run_data->feature_stack->maps_to;
+
+            char *x = g_strdup_printf("%p_%s_%s", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id));
+
+            run_data->feature_stack->id = g_quark_from_string(x);
+            g_free(x);
+      }
+
+            /* adds once per canvas+column+style, then returns that repeatedly */
+            /* also adds an 'interval' foo canvas item which we need to look up */
+      canvas_item = zMapWindowFeaturesetItemGetFeaturesetItem(parent, run_data->feature_stack->id,
+            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
+            run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
+
+      zMapAssert(canvas_item);
+
+/* NOTE the iten hash used canvas _item->feature to set up a pointer to the feature
+ * so I changed FToIAddfeature to take the feature explicitly
+ * setting the feature here every time also fixes the problem but by fluke
+ */
+//      if(!canvas_item->feature)
+      	canvas_item->feature = feature;     /* must have one */
+
+
+	/* now we are outisde the normal ZMapWindowCanvasItem dogma */
+	/* NOTE we know that graph items are not processed by another route
+ 	 * unlike alignments that get zMapWindowFeatureReplaced()
+ 	 */
+ 	/* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
+  	 * we add a data struct and add colours to that in situ, as the feature has its style handy
+  	 */
+
+	/* NOTE as density items get re-binned on zoom and also get drawn in different ways
+	 * (line, histogram, heatmap) we only set the item's score/width here
+	 * not the x1,x2 coordinates
+	 */
+  	{
+  		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
+  		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
+
+	      zMapWindowFeaturesetAddItem(foo, feature, 1.0, y1, y2);	/* basic features don;t do score so set to 1.0 */
+	}
+
+      feature_item = (FooCanvasItem *)canvas_item;
+  }
+  else      // original code preserved unchangesd
+  {
+
+	/* clip the coords to the block, extending end to canvas drawing coords. */
+	/* Feature span coords are already clipped to block sapce.
+	* We just need to Seq2CanOffset */
+	/* MH17 NOTE this makes the coordinate block relative,
+	* which has a greater effect than clipping them
+	* especially if the coordinates are not 1-based */
+	zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
+
+
+	if ((canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
+	{
+		zMapWindowCanvasItemAddInterval(canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+
+		feature_item = FOO_CANVAS_ITEM(canvas_item);
+	}
+
+  }
   return feature_item ;
 }
 
