@@ -755,8 +755,8 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
 	so we cache the list when we first create it.
 	can't always do it on startup as acedb provides the mapping later on
 
-	NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for acomment about static or dynamic lists
-	also need to scan for all call to this func since caching the data
+	NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for a comment about static or dynamic lists
+	also need to scan for all calls to this func since caching the data
 	*/
 
       column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));

@@ -853,6 +853,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 						  highlight_locator_area_cb,
 						  navigate);
 
+
+		/* mh17: has to add thsi to avoid an assert in FtoIAddAlign() */
+	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment) navigate->container_align,
+						(ZMapFeatureAlignment) feature_any);
+
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
             zMapAssert(hash_status);
@@ -895,6 +900,10 @@ printf("nav draw block %d %d\n",block_start,block_end);
 
 	g_object_set_data(G_OBJECT(draw_data->container_block), ITEM_FEATURE_STATS,
 			  zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_block)) ;
+
+
+      zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
+					    (ZMapFeatureBlock) feature_any) ;
 
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
@@ -1079,7 +1088,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
   GQuark set_unique_id;
 
   /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
-  /* for the navigator styles are hard coded?? and there's no featureset_2_colum mapping ?
+  /* for the navigator styles are hard coded?? and there's no featureset_2_column mapping ?
      style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
   */
 

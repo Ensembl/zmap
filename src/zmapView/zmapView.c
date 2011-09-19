@@ -1253,17 +1253,32 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zmapViewBusy(zmap_view, TRUE) ;
 
+      if((list_item = g_list_first(zmap_view->window_list)))
+	{
+	  do
+	    {
+	      ZMapViewWindow view_window ;
+
+	      view_window = list_item->data ;
+
+            zMapStartTimer("RevComp","Window");
+	      zMapWindowFeatureReset(view_window->window, TRUE) ;
+            zMapStopTimer("RevComp","Window");
+	    }
+	  while ((list_item = g_list_next(list_item))) ;
+	}
+
+      zMapWindowNavigatorReset(zmap_view->navigator_window);
+
       zMapStartTimer("RevComp","Context");
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
       zMapStopTimer("RevComp","Context");
-#warning reversing the canvas before clearing it in zMapWindowFeatureRedraw() causes errors as coordinates have changes and (focus) features cannot be found
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
-      zMapWindowNavigatorReset(zmap_view->navigator_window);
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
       zMapStopTimer("RevComp","Navigator");
@@ -1273,15 +1288,11 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	  do
 	    {
 	      ZMapViewWindow view_window ;
-	      GHashTable *copy_styles = NULL;
 
 	      view_window = list_item->data ;
 
-	      copy_styles = zmap_view->context_map.styles ;
-
             zMapStartTimer("RevComp","Window");
-	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
-				      zmap_view->context_map.styles, copy_styles, TRUE) ;
+	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,TRUE) ;
             zMapStopTimer("RevComp","Window");
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
@@ -3315,7 +3326,6 @@ printf("\nview styles lists after merge:\n");
 
                   fset = (ZMapFeatureSetDesc) value;
 
-/* somewhere these lists get corrupted */
                   /* construct a reverse col 2 featureset mapping */
                   column = g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
                   if(column)
@@ -3988,15 +3998,15 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
   new_features = *context_inout ;
 
-//  printf("just Merge new = %s\n",zMapFeatureContextGetDNAStatus(new_features) ? "yes" : "non");
+  //  printf("just Merge new = %s\n",zMapFeatureContextGetDNAStatus(new_features) ? "yes" : "non");
 
   zMapStartTimer("Merge Context","") ;
 
   if(!view->view_sequence->end)
-  {
+    {
       view->view_sequence->start = new_features->master_align->sequence_span.x1;
       view->view_sequence->end   = new_features->master_align->sequence_span.x2;
-  }
+    }
 
   if (view->revcomped_features)
     {
@@ -4007,10 +4017,10 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       zMapStopTimer("MergeRevComp","") ;
     }
 
-      /* we need a list of requested featureset names, which is different from those returned
-       * these names are user compatable (not normalised)
-       */
-//printf("justMerge req=%d, %d featuresets\n", request_as_columns,g_list_length(new_features->req_feature_set_names));
+  /* we need a list of requested featureset names, which is different from those returned
+   * these names are user compatable (not normalised)
+   */
+  //printf("justMerge req=%d, %d featuresets\n", request_as_columns,g_list_length(new_features->req_feature_set_names));
 
   if(request_as_columns)      /* ie came from ACEDB */
     {
@@ -4019,31 +4029,32 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
       l = new_features->req_feature_set_names;  /* column names as quarks, not normalised */
       while(l)
-      {
-            GQuark set_id = GPOINTER_TO_UINT(l->data);
-            char *set_name = (char *) g_quark_to_string(set_id);
-            set_id = zMapFeatureSetCreateID(set_name);
+	{
+	  GQuark set_id = GPOINTER_TO_UINT(l->data);
+	  char *set_name = (char *) g_quark_to_string(set_id);
+	  set_id = zMapFeatureSetCreateID(set_name);
 
-            column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id));
+	  column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id));
 
-            /* the column featureset lists have been assmbled by this point,
-                  could not do this at the request stage */
+	  /* the column featureset lists have been assmbled by this point,
+	     could not do this at the request stage */
 
-            if(column)
+	  if(column)
             {                                    /* more effcient this way round? */
-                  featureset_names = g_list_concat(column->featuresets_names,featureset_names);
+	      featureset_names = g_list_concat(column->featuresets_names,featureset_names);
             }
-            else  /* should not happen */
+	  else  /* should not happen */
             {
-                  /* this is a not configured error */
-                  zMapLogWarning("merge: no column for %s",set_name);
+	      /* this is a not configured error */
+	      zMapLogWarning("merge: no column for %s",set_name);
             }
-            l = l->next;
-            /* as this list is to be replaced it would be logical to delete the links
-             * but it is also referred to by connection_data
-             */
 
-      }
+	  l = l->next;
+	  /* as this list is to be replaced it would be logical to delete the links
+	   * but it is also referred to by connection_data
+	   */
+
+	}
       new_features->req_feature_set_names = featureset_names;
 
     }
@@ -4051,52 +4062,56 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     {
       featureset_names = new_features->req_feature_set_names;
     }
-if(0)
-{
-char *x = g_strdup_printf("justMergeContext req=%d, %d featuresets after processing\n", request_as_columns,g_list_length(new_features->req_feature_set_names));
-GList *l;
-for(l = new_features->req_feature_set_names;l;l = l->next)
-{
-      char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
-      x = g_strconcat(x," ",y,NULL);
-}
-zMapLogWarning(x,"");
-}
+
+  if(0)
+    {
+      char *x = g_strdup_printf("justMergeContext req=%d, %d featuresets after processing\n", request_as_columns,g_list_length(new_features->req_feature_set_names));
+      GList *l;
+      for(l = new_features->req_feature_set_names;l;l = l->next)
+	{
+	  char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+	  x = g_strconcat(x," ",y,NULL);
+	}
+      zMapLogWarning(x,"");
+    }
 
   merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context,featureset_names) ;
 
-//  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
-//  printf("just Merge diff = %s\n",zMapFeatureContextGetDNAStatus(diff_context) ? "yes" : "non");
+  //  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
+  //  printf("just Merge diff = %s\n",zMapFeatureContextGetDNAStatus(diff_context) ? "yes" : "non");
 
 #ifdef MH17_NEVER
-      {
-            GError *err = NULL;
+  {
+    GError *err = NULL;
 
-            zMapFeatureDumpToFileName(diff_context,"features.txt","(justMerge) diff context:\n", NULL, &err) ;
-            zMapFeatureDumpToFileName(view->features,"features.txt","(justMerge) view->Features:\n", NULL, &err) ;
+    zMapFeatureDumpToFileName(diff_context,"features.txt","(justMerge) diff context:\n", NULL, &err) ;
+    zMapFeatureDumpToFileName(view->features,"features.txt","(justMerge) view->Features:\n", NULL, &err) ;
 
-      }
+  }
 #endif
 
   if (merge == ZMAPFEATURE_CONTEXT_OK)
     {
-/*      zMapLogMessage("%s", "Context merge succeeded.") ;*/
+      /*      zMapLogMessage("%s", "Context merge succeeded.") ;*/
       merge_result = TRUE ;
-if(0)
-{
-char *x = g_strdup_printf("justMerge req=%d, diff has %d featuresets after merging: ", request_as_columns,g_list_length(diff_context->src_feature_set_names));
-GList *l;
-for(l = diff_context->src_feature_set_names;l;l = l->next)
-{
-      char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
-      x = g_strconcat(x,",",y,NULL);
-}
-zMapLogWarning(x,"");
-}
+
+      if(0)
+	{
+	  char *x = g_strdup_printf("justMerge req=%d, diff has %d featuresets after merging: ", request_as_columns,g_list_length(diff_context->src_feature_set_names));
+	  GList *l;
+	  for(l = diff_context->src_feature_set_names;l;l = l->next)
+	    {
+	      char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+	      x = g_strconcat(x,",",y,NULL);
+	    }
+	  zMapLogWarning(x,"");
+	}
+
       // mask ESTs with mRNAs if configured
       l = zMapViewMaskFeatureSets(view, diff_context->src_feature_set_names);
+
       if(masked)
-            *masked = l;
+	*masked = l;
     }
   else if (merge == ZMAPFEATURE_CONTEXT_NONE)
     zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
@@ -4114,7 +4129,7 @@ zMapLogWarning(x,"");
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *new_styles, GList *masked)
 {
-   /* Signal the ZMap that there is work to be done. */
+  /* Signal the ZMap that there is work to be done. */
   displayDataWindows(view, view->features, diff_context, new_styles, FALSE, masked) ;
 
   /* Not sure about the timing of the next bit. */

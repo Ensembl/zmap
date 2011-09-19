@@ -293,8 +293,8 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
+void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     GHashTable *all_styles, GHashTable *new_styles,
 			     gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;

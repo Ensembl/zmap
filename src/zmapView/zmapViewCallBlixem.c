@@ -1657,11 +1657,15 @@ static void processSetList(gpointer data, gpointer user_data)
 
   if (feature_set)
     {
+printf("do blixem set %s\n",g_quark_to_string(canon_id));
       g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data);
     }
+#if MH17_NOT_NEEDED_NOW
+we add featuresets not columns
   else
     {
       /* assuming a mis-config treat the set id as a column id */
+printf("do blixem column %s\n",g_quark_to_string(canon_id));
       column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
 
       if (!column_2_featureset)
@@ -1698,6 +1702,7 @@ static void processSetList(gpointer data, gpointer user_data)
 #endif
 	}
     }
+#endif
 
   return ;
 }

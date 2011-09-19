@@ -68,6 +68,33 @@ Currently in a heatmap features are displayed in one canvas item which is named 
 </p>
 <p>This also means we keep all the processing of coverage data internal to ZMap.
 </p>
+<p>
+Here is a picture of some sample featuresets and columns as needed for ENCODE data:
+<img src="Design/notes/virtual_fset.png" class="img" alt="column config example">
+<br />
+Configuration:
+<pre>
+[Featuresets]
+# These are virtual featuresets; data from several real featuresets is intermingled into one heatmap
+# Each heatmap is displayed staggered in one column
+Tier1_K562_Cell_coverage = Tier1_K562_Cell_Rep1_Coverage; Tier1_K562_Cell_Rep2_Coverage
+Tier1_GM12345_Cell_coverage  =Tier1_GM12345_Cell_Coverage; Tier1_GM12345_Cell_Rep2_Coverage
+
+[Columns]
+# The data column contains two featuresets: data is intermingled
+Tier1_K562_Cell = Tier1_K562_Cell_Rep1; Tier1_K562_Cell_Rep2
+# The coverage column contains some virtual featuresets
+Tier1_Cell_Coverage = Tier1_K562_Cell_coverage; Tier1_GM12345_Cell_coverage
+
+[Featureset-related]
+# we relate the virtual coverage featureset to the data column
+Tier1_K562_Cell_related = Tier1_K562_Cell
+</pre>
+Result:<br />
+When we right click on a coverage featureset (happens to be virtual)
+we request a related column, that contains some real featuresets
+</p>
+
 
 <h5>Notes from implementation</h5>
 <p>This is quite instructive in the sense that we can see how complex the configuration is and how it has become tangled.  There are a few places in the code where it has been necessary to invent ACEDB style configuration data as it is needed for various functions, and this at times can overwrite the data read in at startup.  <b>NOTE</b>:What appears here may only be partial documentation.
@@ -78,7 +105,7 @@ Currently in a heatmap features are displayed in one canvas item which is named 
 <li> real featuresets get mapped to virtual ones on display (<b>drawGraphFeature()</b>)
 <li> display index is set for the virtual featureset not the real one
 <li> columns to have a list of featursets some of which may be virtual (<b>zMapConfigIniGetFeatureset2Featureset()</b>)
-<li> virtual featuresets get expaned into real ones on request (<b>zMapWindowFetchData()</b>
+<li> virtual featuresets get expanded into real ones on request (<b>zMapWindowFetchData()</b>
 <li> virtual featuresets always re-bin (due to overlap) (they always are re-binned)
 <li> density code must handle overlap (not an issue if always rebinned and bins are in the same place)
 <li> blixem needs to be given real featuresets not virtual ones. NOTE: due to a fluke this is not a problem as we do not blixem coverage data.

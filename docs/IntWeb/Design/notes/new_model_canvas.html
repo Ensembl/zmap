@@ -1,5 +1,5 @@
 <h2>New Model Canvas</h2>
-<p>An attempt to speed things up a bit.
+<p>An attempt to speed things up a bit.  <i>Note</i> that here 'new model' refers more to Oliver Cromwell than MVC, although it is one of the design aims to make the view and window have less model and more view.
 </p>
 <p>This design follows an initial experiment with coverage displays which involved creating a single ZMapWindowCanvasItem (foo canvas group) conatining a single ZMapWindowGraphDensityItem (foo canvas item) for each featureset.  Features were represented by simple data structure accessed by a skip list from the ZMapWindowGraphDensityItem and were not added directly to the foo canvas.  Expose events were handled by calling GDK fucntions for the relevant feature structures.
 </p>
@@ -128,7 +128,7 @@ Displayable objects are found using a skip list whcih is sorted by Y corordinate
 <p>Therefore the overhead is minimal and naive code can be used.</p>
 
 <h4>Handling focus highlight</h4>
-<p>In the inial trial we had the luxury of knowing that features do not overlap and focus highlight has been inplemented simply by setting the colour if individiual features.
+<p>In the inial trial we had the luxury of knowing that features do not overlap and focus highlight has been implemented simply by setting the colour of individual features.
 </p>
 <p>For the more3 general case we need to display multiple features on top of others and in the existing implementation this has been done by re-ordering the features in a column (eg via foo_canvas_raise_to_top()).  Note that this has resulted in a few anomalies in the past and there ar instances where the focus code is deficient (eg revcomp will restore only a single focus item.
 </p>
@@ -224,7 +224,70 @@ etc
 </pre>
 </p>
 
+<h3>Development plan</h3>
 
+<h4>Implement generic featureset code that initially supports simple features</h4>
+<p>Currently all displayable items are foo canvas items which are children of a foo canvas group that is a ZMapWindowCanvasItem, and adding a featureset foo canvas item requires there to be a ZmapWindowCanvasItem around it. This is required by the current interface via the ItemFactory ?? and also some code in the base ZMapWindowCanvasItem ??.  We wish to remove ZMapWindowCanvasItem but cannot do this until all instances can be removed.
+<br />
+<b>WHY?</b>
+</p>
+<p>In the interim this means we have to add dummy ZmapWindowCanvasItems around featureset canvas items, and this has been done for ZmapWindowGraphDensityItems using a GraphItem type.  To avoid extra work and repetition of code we need to change this to be a generic featureset type of ZMapWindowCanvasItem and to provide an interface to generic functions that will work for multiple types of features.  This will result in the base data structure that can be extended per feature type.
+</p>
+<p>Note however that the graph density items code will remain as is, as it performs some quite different processes such as re-binning the source data.  After implementing generic featureset items this may be reviewed and common code integrated in some way if this turns out to be appropriate.  It is likely that the overall canvas interface to GDI will have to be changed slightly.
+</p>
+<p> <b>Decide on a technology</b> to use for object inheritance and modify FeatureItems to use the base code and implement only the feature specific code for basic feature.
+</p>
+<p>Copy the basic feature code for alignments - this will give the same outward appearance as existing code for unbumped data.
+</p>
+
+<h4>Implement unbumped alignments as a featureset item</h4>
+<p>Using the interface as above, modify the ItemFactory to create singleton alignment featuresets and add features as simple data structures.
+</p>
+<p>Add a module to handle display of alignments as umbumped (simple boxes, no decorations).  Note this requires overlap to be handled on paint.
+</p>
+<p>Implement left and right links for same-name features.
+</p>
+<p><b>Address focus highlight issues</b>
+</p>
+<p><b>NOTE</b>Column summarise code could be added here.
+</p>
+
+
+<h4>Implement generic bumping code</h4>
+<p>This should process data via a canvas featureset's skip list and set feature's x-coordinates.
+</p>
+<p>Modify display code to test for X-coordinates if bumped, and handle decorations and gaps.  The featureset struct will hold a 'current bump mode' (if set) and if not will calculate bump coordinates by lazy evaluation. Note that if the mark changes we could have to recalculate these, depending on interpertation of overlap.
+</p>
+
+
+<h3>Object Inheritance and structure </h3>
+<p>It is desired to implement code in such a way as to allow common features to be coded at the featureset level and for different types of features to operate via a similar interface.  Historically this has been done by using GOjects and extending FooCanvasItems but we wish to avoid this as it will run quite slowly.
+</p>
+<p> The main performance gains we expect to achieve are by not polling every feature and by optimiising paint operations, but performance gains of 4x are easily achievable by not using GObjects.
+</p>
+<h4>Inheriting data from a base classs</h4>
+<p>On the assumption that we code in C then we can inherit a base data structure quite easily by including it in out child object.
+
+<pre>
+struct base_feature
+{
+	int y1,y2;
+}
+
+struct alignnment_feature
+{
+	struct base_feature base;
+	etc
+}
+</pre>
+One consequence of this is that memory allocation for features either has to work with the largest child object or operate separate free lists for each type.  As memory use has been dominated by alignments and these are the most complex objects (with gaps) it is tempting to do the former, but with the advent of paired reads this may no longer be valid.
+</p>
+<h4>Inheriting functions</h4>
+<p>In an attempt to keep things simple, a simple array of functions indexed by feature type (an enum) can be used.   This array can be maintained by the featureset class and a wrapper function provided to type check and call safely. Functions can be inherted or replaced quite easily.
+</p>
+<p>
+Functions will be limited to those needed by display, mouse, focus etc. and are defined and maintained by the featureset class, not the feature classes themselves. Note that unlike GObjects this is a global array of blank functions and not a series of function pointers defined in a class struct.
+</p>
 
 
 

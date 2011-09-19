@@ -50,14 +50,15 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 #
 zmap_message_out "About to parse options: $*"
 
-usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -t -u VARIABLE=VALUE"
-while getopts ":b:df:grtu" opt ; do
+usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -s <seqtools directory> -t -u VARIABLE=VALUE"
+while getopts ":b:df:grs:tu" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES="yes"   ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
 	g  ) GIT_VERSION_INFO="yes" ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION="yes"    ;;
+	s  ) ZMAP_SEQTOOLS_RELEASE_DIR=$OPTARG ;;
 	t  ) ZMAP_MASTER_TAG_CVS="yes"            ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION="yes" ;;
 	\? ) zmap_message_rm_exit "$usage"
@@ -166,8 +167,6 @@ function _checkout_mk_cd_dir
       _checkout_message_exit "Usage: _checkout_mk_cd_dir <directory>"
     fi
 }
-
-zmap_message_out "checking that zmap_message_out works in generated script." 
 
 _checkout_message_out "Start of checkout script (created by build_bootstrap)."
 
@@ -567,7 +566,9 @@ _checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$ta
 
 \$SCRIPTS_DIR/zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
-\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
+_checkout_message_out "Running zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR"
+
+\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
 
 # Now we can clean up.
 cd \$ZMAP_BUILD_CONTAINER

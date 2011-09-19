@@ -357,6 +357,8 @@ void zmapWindowUnHighlightFocusItems(ZMapWindow window)
   FooCanvasGroup *hot_column ;
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
+  hot_column = zmapWindowFocusGetHotColumn(window->focus);
+// if (hot_column)
 //  zmapWindowFocusUnHighlightHotColumn(window) ;     // done by reset
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
