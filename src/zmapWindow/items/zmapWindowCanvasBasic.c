@@ -45,16 +45,14 @@
 
 static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
-	static int i = 0;
-	gulong pixel;
+	gulong fill,outline;
+	gboolean fill_set,outline_set;
 	GdkColor c;
 	FooCanvasItem *item = (FooCanvasItem *) featureset;
       int cx1, cy1, cx2, cy2;
 
 	double x1,x2;
 
-	if(i++ < 4)
-		printf("basic paint feature! %s\n",g_quark_to_string(feature->feature->unique_id));
 
 	/* draw a box */
 
@@ -63,28 +61,40 @@ static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featurese
 	 * but they are cached by the calling function
 	 */
 
-#warning  basic features don't do score ?? if they do we need to handle it
+#warning  basic features dont do score ?? if they do we need to handle it
 	feature->width = x2 = featureset->width;
 	x1 = featureset->dx + featureset->width / 2 - x2 / 2;
 	x2 += x1;
 
 		/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-	foo_canvas_w2c (item->canvas, x1 + featureset->dx, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-	foo_canvas_w2c (item->canvas, x2 + featureset->dx, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+	foo_canvas_w2c (item->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+	foo_canvas_w2c (item->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
       						/* + 1 to draw to the end of the last base */
 
 		/* we have pre-calculated pixel colours */
-	if (zMapWindowCanvasFeaturesetGetFill(featureset, feature, &pixel))
+
+	fill_set = zMapWindowCanvasFeaturesetGetFill(featureset, feature, &fill);
+	outline_set =zMapWindowCanvasFeaturesetGetOutline(featureset, feature, &outline);
+
+		/* NOTE that the gdk_draw_rectangle interface is a bit esoteric
+		 * and it doesn't like rectangles that have no depth
+		 */
+
+	if(fill_set && (!outline_set || (cy2 - cy1 > 1)))	/* fill will be visible */
 	{
-		c.pixel = pixel;
+		c.pixel = fill;
 		gdk_gc_set_foreground (featureset->gc, &c);
-		gdk_draw_rectangle (drawable, featureset->gc,TRUE, cx1, cy1, cx2 - cx1, cy2 - cy1);
+		gdk_draw_rectangle (drawable, featureset->gc,TRUE, cx1, cy1, cx2 - cx1 + 1, cy2 - cy1 + 1);
 	}
-	if (zMapWindowCanvasFeaturesetGetOutline(featureset, feature, &pixel))
+
+	if(outline_set)
 	{
-		c.pixel = pixel;
+		c.pixel = outline;
 		gdk_gc_set_foreground (featureset->gc, &c);
-		gdk_draw_rectangle (drawable, featureset->gc,FALSE, cx1, cy1, cx2 - cx1 - 1, cy2 - cy1 - 1);
+		if(cy2 == cy1)
+			gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+		else
+			gdk_draw_rectangle (drawable, featureset->gc,FALSE, cx1, cy1, cx2 - cx1, cy2 - cy1);
 	}
 }
 

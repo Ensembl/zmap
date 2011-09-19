@@ -171,7 +171,7 @@ static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, dou
 
 	foo = group->item_list->data;
 
-	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 	{
 		ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
 

@@ -290,7 +290,6 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 	while(sl)
 	{
 		gs = sl->data;
-//printf("focus find %s sl = %f,%f\n",g_quark_to_string(di->id),gs->y1,gs->y2);
 
 		/* if we got rebinned then we need to find the bin surrounding the feature
 		   if the feature is split bewteeen bins just choose one
@@ -330,7 +329,6 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
       		foo_canvas_w2c (foo->canvas, zMapStyleGetWidth(di->style) + i2w_dx, gs->y2 - di->start + i2w_dy, &cx2, &cy2);
 
 			foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2, cy2);
-//printf("focus found %s sl = %f,%f\n",g_quark_to_string(di->id),gs->y1,gs->y2);
 
 			return;
 		}
@@ -398,17 +396,11 @@ static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItem
   gobject_class->dispose = zmap_window_featureset_item_item_destroy;
 
   item_class->update = zmap_window_featureset_item_item_update;
-#if 0
-  item_class->map = zmap_window_featureset_item_item_map;
-  item_class->realize = zmap_window_featureset_item_item_realize;
-  item_class->unmap = zmap_window_featureset_item_item_unmap;
-  item_class->unrealize = zmap_window_featureset_item_item_unrealize;
-#endif
   item_class->bounds = zmap_window_featureset_item_item_bounds;
   item_class->point  = zmap_window_featureset_item_item_point;
   item_class->draw   = zmap_window_featureset_item_item_draw;
 
-//  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_GRAPH_DENSITY) ;
+//  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_FEATURESET_ITEM) ;
 
   featureset_init_funcs();
 
@@ -449,32 +441,6 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 }
 
 
-#if 0
-/* these should not be needed */
-static void  zmap_window_featureset_item_item_map (FooCanvasItem *item)
-{
-  if (parent_class_G->map)
-    (* parent_class_G->map) (item);
-}
-
-static void  zmap_window_featureset_item_item_realize (FooCanvasItem *item)
-{
-  if (parent_class_G->realize)
-    (* parent_class_G->realize) (item);
-}
-
-static void  zmap_window_featureset_item_item_unmap (FooCanvasItem *item)
-{
-  if (parent_class_G->unmap)
-    (* parent_class_G->unmap) (item);
-}
-
-static void  zmap_window_featureset_item_item_unrealize (FooCanvasItem *item)
-{
-  if (parent_class_G->unrealize)
-    (* parent_class_G->unrealize) (item);
-}
-#endif
 
 /* how far are we from the cursor? */
 /* can't return foo canvas item for the feature as they are not in the canvas,
@@ -484,7 +450,7 @@ static void  zmap_window_featureset_item_item_unrealize (FooCanvasItem *item)
 double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item)
 {
 	double best = 0.0;
-	ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) item;
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 	ZMapWindowCanvasFeature gs;
 	ZMapSkipList sl;
 	zmapWindowCanvasFeatureStruct search;
@@ -515,7 +481,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	search.y1 = (int) y - item->canvas->close_enough;	/* NOTE close_enough is zero */
 	search.y2 = (int) y + item->canvas->close_enough;
 
-	sl =  zMapSkipListFind(di->display_index, zmapFeatureCmp, &search);
+	sl =  zMapSkipListFind(fi->display_index, zmapFeatureCmp, &search);
 	if(!sl)
 		return(0.0);
 
@@ -528,14 +494,14 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 
 		if(gs->y1 <= y && gs->y2 >= y)	/* overlaps cursor */
 		{
-//			printf("found feature %d/%d at y %f-%f (%f)\n",i, n_test, gs->y1, gs->y2, y);
 			wx = item->x1 + gs->width;
 			if(wx >= x && item->x1 <= x)	/* item contains cursor */
 			{
 				best = 0.0;
 				*actual_item = item;
 
-				di->point_feature = gs->feature;
+				fi->point_feature = gs->feature;
+				break;			/* just find any one */
 			}
 		}
 	}
@@ -579,14 +545,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	ZMapSkipList sl;
 	zmapWindowCanvasFeatureStruct search;
 	ZMapWindowCanvasFeature feat;
-//      int cx1, cy1, cx2 = 0, cy2 = 0;		/* initialised for LINE mode */
-//      double i2w_dx, i2w_dy;
-//      double x1,x2;
       double y1,y2;
       double width;
-//      gulong fill_pixel, outline_pixel;
-//      gboolean draw_fill = FALSE, draw_outline = FALSE;
-//      gboolean draw_box = TRUE; 	/* else line */
 
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
@@ -629,7 +589,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 	search.y1 = (int) y1;
 	search.y2 = (int) y2;
-printf("expose %d-%d\n",(int) search.y1,(int) search.y2);
+//printf("expose %d-%d, dx,y = %f,%f\n",(int) search.y1,(int) search.y2,fi->dx,fi->dy);
 
 	if(fi->overlap)
 	{
@@ -663,7 +623,7 @@ printf("expose %d-%d\n",(int) search.y1,(int) search.y2);
 		for(;sl;sl = sl->next)
 		{
 			feat = (ZMapWindowCanvasFeature) sl->data;
-printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
+//printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
 
 			if(feat->y1 > search.y2)
 				break;	/* finished */
@@ -678,26 +638,11 @@ printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
 			*/
 
 			/* clip this one (GDK does that? or is it X?) and paint */
-printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
+//printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 
 
-			if(feat->flags & FEATURE_FOCUS_MASK)		/* get highlit colour */
-			{
-				GdkColor c;
-
-				if(fi->selected_fill_set)
-				{
-					c.pixel = fi->selected_fill_pixel;
-					gdk_gc_set_foreground (fi->gc, &c);
-				}
-
-				if(fi->selected_fill_set)
-				{
-					c.pixel = fi->selected_outline_pixel;
-					gdk_gc_set_foreground (fi->gc, &c);
-				}
-			}
-			else if(fi->featurestyle != feat->feature->style)
+			if(!(feat->flags & FEATURE_FOCUS_MASK) &&			/* use highlit colour ? */
+				(fi->featurestyle != feat->feature->style))	/* set colour from style */
 			{
 				/* cache style for a single featureset
 				* if we have one source featureset in the column then this works fastest (eg good for trembl/ swissprot)
@@ -706,7 +651,6 @@ printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 				*/
 
 				GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
-				GdkColor c;
 
 				fi->featurestyle = feat->feature->style;
 
@@ -718,8 +662,6 @@ printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 					fi->fill_set = TRUE;
 					fi->fill_colour = gdk_color_to_rgba(fill);
 					fi->fill_pixel = foo_canvas_get_color_pixel(item->canvas, fi->fill_colour);
-
-					c.pixel = fi->fill_pixel;
 				}
 
 				fi->outline_set = FALSE;
@@ -729,7 +671,6 @@ printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 					fi->outline_colour = gdk_color_to_rgba(outline);
 					fi->outline_pixel = foo_canvas_get_color_pixel(item->canvas, fi->outline_colour);
 
-					c.pixel = fi->outline_pixel;
 				}
 			}
 
@@ -766,6 +707,7 @@ gboolean zMapWindowCanvasFeaturesetGetOutline(ZMapWindowFeaturesetItem featurese
 
 	if(feature->flags & FEATURE_FOCUS_MASK)		/* get highlit colour, set for the column */
 	{
+printf("sel outline %d\n",featureset->selected_outline_set);
 		if(!featureset->selected_outline_set)
 			return FALSE;
 		*pixel = featureset->selected_outline_pixel;
