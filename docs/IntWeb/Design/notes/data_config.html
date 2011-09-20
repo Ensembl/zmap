@@ -95,7 +95,6 @@ When we right click on a coverage featureset (happens to be virtual)
 we request a related column, that contains some real featuresets
 </p>
 
-
 <h5>Notes from implementation</h5>
 <p>This is quite instructive in the sense that we can see how complex the configuration is and how it has become tangled.  There are a few places in the code where it has been necessary to invent ACEDB style configuration data as it is needed for various functions, and this at times can overwrite the data read in at startup.  <b>NOTE</b>:What appears here may only be partial documentation.
 </p>
@@ -111,6 +110,10 @@ we request a related column, that contains some real featuresets
 <li> blixem needs to be given real featuresets not virtual ones. NOTE: due to a fluke this is not a problem as we do not blixem coverage data.
 <li>
 </ul>
+<p><b>NOTE</b>:there is a slight nuance with the [featureset-related] stanza.  To link a coverage column such that the user can right click to request the related underlying data we need to related each real coverage featureset to the column for the underlying data.  To prevent the coverage column from being requestable without the mark being set we need to relate the virtual featureset also.  This could probably be fixed bu a small tweak to the code.  Likewise there is a report that the virtual featureset requires a style to be set.
+</p>
+
+
 
 </p>
 <h6>Confusing configuration and code</h6>
