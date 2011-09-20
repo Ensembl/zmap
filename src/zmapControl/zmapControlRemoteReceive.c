@@ -244,7 +244,7 @@ static char *control_execute_command(char *command_text, gpointer user_data, int
         }
 
       *statusCode = output_data.code;
-      if(input.common.action != ZMAPCONTROL_REMOTE_NEW_VIEW)
+      if(input.common.action != ZMAPCONTROL_REMOTE_NEW_VIEW || output_data.code != ZMAPXREMOTE_OK)
         {
             /* new view has to delay before responding */
           xml_reply   = g_string_free(output_data.messages, FALSE);
@@ -289,7 +289,14 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
   if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
     {
 #warning we need to get dataset (= species) from otterlace with added XML
-      zMapAssert(zmap->default_sequence);
+//      zMapAssert(zmap->default_sequence);
+	if(!zmap->default_sequence || !zmap->default_sequence->sequence)	/* there has been a major configuration error */
+	{
+          	output_data->code = ZMAPXREMOTE_INTERNAL;
+          	g_string_append_printf(output_data->messages,
+                                 "No sequence specified in ZMap config - cannot create view");
+		return;
+	}
       seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
 
       seq_map->sequence = sequence;
