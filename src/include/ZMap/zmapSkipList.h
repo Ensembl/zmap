@@ -88,6 +88,7 @@ typedef struct _zmapSkipList
 typedef void (*ZMapSkipListFreeFunc) (gpointer data);
 
 ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp);
+ZMapSkipList zMapSkipListFirst(ZMapSkipList head);
 ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer key);
 ZMapSkipList zMapSkipListAdd(ZMapSkipList head, GCompareFunc cmp, gpointer key);
 ZMapSkipList zMapSkipListRemove(ZMapSkipList sl, ZMapSkipListFreeFunc free_func);

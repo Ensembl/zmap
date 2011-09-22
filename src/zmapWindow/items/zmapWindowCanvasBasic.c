@@ -53,7 +53,6 @@ static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featurese
 
 	double x1,x2;
 
-
 	/* draw a box */
 
 	/* colours are not defined for the CanvasFeatureSet
@@ -61,10 +60,16 @@ static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featurese
 	 * but they are cached by the calling function
 	 */
 
-#warning  basic features dont do score ?? if they do we need to handle it
-	feature->width = x2 = featureset->width;
-	x1 = featureset->dx + featureset->width / 2 - x2 / 2;
-	x2 += x1;
+#warning  basic features don t do score ?? if they do we need to handle it
+	feature->width = featureset->width;
+
+	if(featureset->bumped)
+		x1 = feature->bump_offset;
+	else
+		x1 = featureset->width / 2 - feature->width / 2;
+
+	x1 += featureset->dx;
+	x2 = x1 + feature->width;
 
 		/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
 	foo_canvas_w2c (item->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
@@ -72,7 +77,6 @@ static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featurese
       						/* + 1 to draw to the end of the last base */
 
 		/* we have pre-calculated pixel colours */
-
 	fill_set = zMapWindowCanvasFeaturesetGetFill(featureset, feature, &fill);
 	outline_set =zMapWindowCanvasFeaturesetGetOutline(featureset, feature, &outline);
 

@@ -101,4 +101,23 @@ typedef enum { FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_TRANSCRIPT, 
 
 
 
+/* holds all data need to drive exotic bump modes */
+typedef struct
+{
+	double spacing;	/* between sub columns */
+	double offset;	/* current offset */
+	double incr;	/* per sub column */
+	double width;	/* max column width */
+	GList *pos_list;	/* list of features in bumped sub-columns */
+	gboolean complex;
+
+	/* effciency stats */
+	int features;
+	int comps;
+	int n_col;
+
+} BumpFeaturesetStruct, *BumpFeatureset;
+
+gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode, BumpFeatureset bump_data);
+
 #endif /* ZMAP_WINDOW_FEATURESET_H */

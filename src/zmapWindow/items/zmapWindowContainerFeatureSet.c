@@ -45,6 +45,8 @@
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerUtils.h>
+#include <zmapWindowCanvasItemFeatureSet.h>
+
 
 /* The property param ids for the switch statements */
 enum
@@ -1081,6 +1083,25 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
   ZMapStyleBumpMode mode = container_set->bump_mode;
 
   return(mode);
+}
+
+
+
+/* transitonal code: featureset items don't get mixed with simple foo items
+ * just look at the first one, we do not want to scan 200k TrEMBL features
+ */
+gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container)
+{
+	FooCanvasGroup *column_features;
+	column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
+	GList *l;
+
+      l = column_features->item_list;
+
+      if(l && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data))
+		return(TRUE);
+
+	return(FALSE);
 }
 
 

@@ -371,7 +371,6 @@ ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 _(ZMAPBUMP_INVALID,               , "invalid",               "invalid",                       "invalid")					\
 _(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
 _(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
-_(ZMAPBUMP_NAVIGATOR,             , "navigator",             "Navigator Overlap",             "Navigator bump: special for zmap navigator bumping.") \
 _(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
 _(ZMAPBUMP_ALTERNATING,           , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
 _(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \

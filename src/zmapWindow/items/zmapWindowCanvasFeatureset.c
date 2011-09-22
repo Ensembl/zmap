@@ -64,7 +64,7 @@ static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, doubl
 static void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 static void zmap_window_featureset_item_item_destroy     (GObject *object);
 
-static gint zmapFeatureCmp(gconstpointer a, gconstpointer b);
+static gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 static guint32 gdk_color_to_rgba(GdkColor *color);
 
@@ -210,6 +210,10 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 
 		di->style = style;
 
+		di->overlap = TRUE;
+		if(zMapStyleGetMode(style) == ZMAPSTYLE_MODE_GRAPH && zMapStyleDensity(style))
+			di->overlap = FALSE;
+
 		di->width = zMapStyleGetWidth(di->style);
   		di->width_pixels = TRUE;
   		di->start = start;
@@ -283,7 +287,7 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 	search.y1 = (int) feature->x1;
 	search.y2 = (int) feature->x2;
 
-	sl =  zMapSkipListFind(di->display_index, zmapFeatureCmp, &search);
+	sl =  zMapSkipListFind(di->display_index, zMapFeatureCmp, &search);
 //	if(sl->prev)
 //		sl = sl->prev;	/* in case of not exact match when rebinned */
 
@@ -297,16 +301,17 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 		if(gs->y1 > feature->x2)
 			break;
 
+/* don't we know we have a feature and item that both exist? There must have been a reason for this w/ DensityItems */
 #if NEVER_REBINNED
 		if(gs->feature == feature)
 #else
 /*
  *	if we re-bin variable sized features then we could have features extending beyond bins
- * 	in which case a simple containment test will fail
- * 	so we have to test for overlap, which will also handle the simpler case.
+ *	in which case a simple containment test will fail
+ *	so we have to test for overlap, which will also handle the simpler case.
  *	bins have a real feature attached and this is fed in from the cursor code (point function)
- * 	this argument also applies to fixed size bins: we pro-rate overlaps when we calculate bins
- * 	according to pixel coordinates.
+ *	this argument also applies to fixed size bins: we pro-rate overlaps when we calculate bins
+ *	according to pixel coordinates.
  *	so we can have bin contains feature, feature contains bin, bin and feature overlap left or right. Yuk
  */
 		if(!((gs->y1 > feature->x2) || (gs->y2 < feature->x1)))
@@ -426,7 +431,8 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
 	// cribbed from FooCanvasRE; this sets the canvas coords in the foo item
 	x1 = i2w_dx;
-	x2 = x1 + zMapStyleGetWidth(di->style);
+	x2 = x1 + (di->bumped? di->bump_width : di->width);
+
 	y1 = i2w_dy;
 	y2 = y1 + di->end - di->start;
 
@@ -481,7 +487,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	search.y1 = (int) y - item->canvas->close_enough;	/* NOTE close_enough is zero */
 	search.y2 = (int) y + item->canvas->close_enough;
 
-	sl =  zMapSkipListFind(fi->display_index, zmapFeatureCmp, &search);
+	sl =  zMapSkipListFind(fi->display_index, zMapFeatureCmp, &search);
 	if(!sl)
 		return(0.0);
 
@@ -554,14 +560,9 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
       if(!fi->display_index)
       {
-     		fi->features = g_list_sort(fi->features,zmapFeatureCmp);
-     		fi->n_features = g_list_length(fi->features);
-
-      	fi->display_index = zMapSkipListCreate(fi->features, zmapFeatureCmp);
-
-		/* get max overlap if needed */
-#warning overlapped features not implemented, need to offset by max_len
-
+		fi->features = g_list_sort(fi->features,zMapFeatureCmp);
+		fi->n_features = g_list_length(fi->features);
+      	fi->display_index = zMapSkipListCreate(fi->features, zMapFeatureCmp);
       }
       if(!fi->display_index)
       	return; 		/* could be an empty column or a mistake */
@@ -593,31 +594,17 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 	if(fi->overlap)
 	{
-		zMapLogWarning("FeaturesetItem overlap not coded","");
-#warning overlapped features not implemented, need to offset by max_len
+		search.y1 -= fi->longest;
+		if(search.y1 < fi->start)
+			search.y1 = fi->start;
 	}
 
-	sl =  zMapSkipListFind(fi->display_index, zmapFeatureCmp, &search);
+	sl =  zMapSkipListFind(fi->display_index, zMapFeatureCmp, &search);
 
 	zMapAssert(sl && !sl->down);	/* if the index is not NULL then we nust have a leaf node */
 
-	/* need to get items that overlap the top of the expose */
-	while(sl->prev)
-	{
-		feat = (ZMapWindowCanvasFeature) sl->data;
-		if(feat->y2 < search.y1)
-			break;
-		sl = sl->prev;
-	}
-
-	/* NOTE assuming no overlap, maybe can restructure this code when implementing */
 //	if(!fi->overlap)
 	{
-//		double last_gy = -1.0;	/* edge of prev bin */
-		double bases_per_pixel;
-
-		bases_per_pixel = 1.0 / item->canvas->pixels_per_unit_y;
-
 		/* we have already found the first matching or previous item */
 
 		for(;sl;sl = sl->next)
@@ -707,7 +694,6 @@ gboolean zMapWindowCanvasFeaturesetGetOutline(ZMapWindowFeaturesetItem featurese
 
 	if(feature->flags & FEATURE_FOCUS_MASK)		/* get highlit colour, set for the column */
 	{
-printf("sel outline %d\n",featureset->selected_outline_set);
 		if(!featureset->selected_outline_set)
 			return FALSE;
 		*pixel = featureset->selected_outline_pixel;
@@ -774,10 +760,11 @@ static guint32 gdk_color_to_rgba(GdkColor *color)
   return rgba;
 }
 
-static gint zmapFeatureCmp(gconstpointer a, gconstpointer b)
+static gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
 	ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
+
 
 	if(feata->y1 < featb->y1)
 		return(-1);
@@ -813,7 +800,10 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
   feat->y2 = y2;
   feat->score = dx;			/* is between (-1.0) 0.0 and 1.0 */
 
-  /* even if they come in order we still have to sort them to be sure so just add to the front */
+  if(y2 - y1 > featureset_item->longest)
+	featureset_item->longest = y2 - y1;
+
+	  /* even if they come in order we still have to sort them to be sure so just add to the front */
   featureset_item->features = g_list_prepend(featureset_item->features,feat);
   featureset_item->n_features++;
 
@@ -833,7 +823,7 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
   	else
   	{
   		featureset_item->display_index =
-  			zMapSkipListAdd(featureset_item->display_index, zmapFeatureCmp, feat);
+  			zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
   	}
   }
 }

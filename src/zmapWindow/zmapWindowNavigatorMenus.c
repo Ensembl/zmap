@@ -299,7 +299,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_TOGGLE, "Column Bump|UnBump", ZMAPBUMP_NAVIGATOR, navigatorBumpMenuCB, NULL},
+      {ZMAPGUI_MENU_TOGGLE, "Column Bump|UnBump", ZMAPBUMP_ALTERNATING, navigatorBumpMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",        ZMAPWINDOWCOLUMN_HIDE,   NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
@@ -317,7 +317,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
   else
     {
       item->type = ZMAPGUI_MENU_TOGGLE ;
-      item->id   = ZMAPBUMP_NAVIGATOR ;
+      item->id   = ZMAPBUMP_ALTERNATING ;
     }
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -338,10 +338,6 @@ static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
   if(!ZMAP_IS_CONTAINER_GROUP(style_item))
     style_item = (FooCanvasItem *)zmapWindowContainerCanvasItemGetContainer(style_item);
 
-  if(bump_type == ZMAPBUMP_NAVIGATOR)
-    {
-      bump_type = ZMAPBUMP_ALTERNATING;
-    }
 
   zmapWindowColumnBump(style_item, bump_type) ;
 

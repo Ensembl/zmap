@@ -96,6 +96,7 @@ items/zmapWindowCanvasItemFeatureSet_I.h \
 items/zmapWindowCanvasFeatureset.c \
 items/zmapWindowCanvasFeatureset.h \
 items/zmapWindowCanvasFeatureset_I.h \
+items/zmapWindowCanvasFeaturesetBump.c \
 items/zmapWindowContainerAlignment.c \
 items/zmapWindowContainerAlignment.h \
 items/zmapWindowContainerAlignment_I.h \

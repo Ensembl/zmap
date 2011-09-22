@@ -57,10 +57,13 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
       double y1, y2;    	/* top, bottom of item (box or line) */
 	double score;		/* determines feature width, gets re-calc'd on zoom */
-//	double log_score;
+
 	double width;
+	double bump_offset;	/* for X coord */
+
 	int flags;				/* non standard display option eg selected */
 #define FEATURE_FOCUS_MASK	0xff		/* any focus flag will map to selected, this should really be defined by focus code but we are out of scope */
+#define FEATURE_VISIBLE		0x100		/* could be hidden by summarise */
 
 } zmapWindowCanvasFeatureStruct;
 
@@ -92,16 +95,19 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStrand strand;
   ZMapFrame frame;
 
-  gboolean overlap;
+  gboolean overlap;		/* default is to assume features do, some style imply that they do not (eg coverage/ heatmap) */
 
   double zoom;			/* current units per pixel */
 
   double start,end;
-
+  double longest;			/* feature y-coords extent of biggest feature */
 
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
   int n_features;
   ZMapSkipList display_index;
+
+  gboolean bumped;		/* using bumped X or not */
+  ZMapStyleBumpMode bump_mode;	/* if set */
 
       /* graphics context for all contained features
        * each one has its own colours that we set on draw (eg for heatmaps)
@@ -126,6 +132,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
 
   double width;                 /* Outline width */
+  double bump_width;
 
       /* Configuration flags */
   gboolean fill_set;    	/* Is fill color set? */

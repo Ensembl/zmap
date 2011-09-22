@@ -1184,6 +1184,7 @@ int zmapFeatureRevCompCoord(int coord, int start, int end);
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
 
 
+void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;

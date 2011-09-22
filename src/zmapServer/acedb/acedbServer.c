@@ -3522,8 +3522,9 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	    *tmp_bump = ZMAPBUMP_UNBUMP ;
 	  else if (g_ascii_strcasecmp(tmp_next_tag, "Overlap") == 0)
 	    *tmp_bump = ZMAPBUMP_OVERLAP ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Navigator") == 0)
-	    *tmp_bump = ZMAPBUMP_NAVIGATOR ;
+//	  else if (g_ascii_strcasecmp(tmp_next_tag, "Navigator") == 0)
+//	    *tmp_bump = ZMAPBUMP_NAVIGATOR ;
+// we'll get an error if this legcay stuff appears, gets mapped to alternating and doesn't work very well anyway
 	  else if (g_ascii_strcasecmp(tmp_next_tag, "Start_position") == 0)
 	    *tmp_bump = ZMAPBUMP_START_POSITION ;
 	  else if (g_ascii_strcasecmp(tmp_next_tag, "Alternating") == 0)
