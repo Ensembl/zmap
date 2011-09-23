@@ -46,10 +46,10 @@
 static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
 	gulong fill,outline;
-	gboolean fill_set,outline_set;
 	GdkColor c;
 	FooCanvasItem *item = (FooCanvasItem *) featureset;
       int cx1, cy1, cx2, cy2;
+	int colours_set, fill_set, outline_set;
 
 	double x1,x2;
 
@@ -77,8 +77,9 @@ static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featurese
       						/* + 1 to draw to the end of the last base */
 
 		/* we have pre-calculated pixel colours */
-	fill_set = zMapWindowCanvasFeaturesetGetFill(featureset, feature, &fill);
-	outline_set =zMapWindowCanvasFeaturesetGetOutline(featureset, feature, &outline);
+	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
+	outline_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 
 		/* NOTE that the gdk_draw_rectangle interface is a bit esoteric
 		 * and it doesn't like rectangles that have no depth

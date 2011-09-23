@@ -140,3 +140,16 @@ gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas,
 }
 
 
+/* where to put this? the foo canvas has it in-line ijn a few places */
+guint32 zMap_gdk_color_to_rgba(GdkColor *color)
+{
+  guint32 rgba = 0;
+
+  rgba = ((color->red & 0xff00) << 16  |
+        (color->green & 0xff00) << 8 |
+        (color->blue & 0xff00)       |
+        0xff);
+
+  return rgba;
+}
+

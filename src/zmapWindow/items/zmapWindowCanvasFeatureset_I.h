@@ -61,9 +61,13 @@ typedef struct _zmapWindowCanvasFeatureStruct
 	double width;
 	double bump_offset;	/* for X coord */
 
-	int flags;				/* non standard display option eg selected */
+	long flags;				/* non standard display option eg selected */
 #define FEATURE_FOCUS_MASK	0xff		/* any focus flag will map to selected, this should really be defined by focus code but we are out of scope */
-#define FEATURE_VISIBLE		0x100		/* could be hidden by summarise */
+#define FEATURE_VISIBLE		0x100		/* not always true ! */
+#define FEATURE_USER_HIDE	0x200		/* hidden by user request */
+#define FEATURE_SUMMARISED	0x200		/* hidden by summarise */
+
+#define FEATURE_FOCUS_ID	0xffff0000
 
 } zmapWindowCanvasFeatureStruct;
 
@@ -125,20 +129,13 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
-  gulong selected_fill_colour;	/* derived from SetIntervalColours */
-  gulong selected_fill_pixel;
-  gulong selected_outline_colour;
-  gulong selected_outline_pixel;
-
-
   double width;                 /* Outline width */
   double bump_width;
 
       /* Configuration flags */
   gboolean fill_set;    	/* Is fill color set? */
   gboolean outline_set;	 	/* Is outline color set? */
-  gboolean selected_fill_set;    	/* Is fill color set? */
-  gboolean selected_outline_set;	 	/* Is outline color set? */
+
   gboolean width_pixels;      /* Is outline width specified in pixels or units? */
 
   ZMapFeature point_feature;	/* set by cursor movement */

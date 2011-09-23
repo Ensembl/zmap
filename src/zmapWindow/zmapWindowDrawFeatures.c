@@ -300,6 +300,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
     {
       setColours(window) ;
       window->done_colours = TRUE ;
+      zMapWindowFocusCacheSetSelectedColours(window);
     }
 
 

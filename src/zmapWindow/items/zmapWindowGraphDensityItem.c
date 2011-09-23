@@ -49,6 +49,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindowBasicFeature.h>
 #include <zmapWindowGraphDensityItem_I.h>
@@ -173,13 +174,13 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
 		if(fill)
 		{
 			di->fill_set = TRUE;
-			di->fill_colour = gdk_color_to_rgba(fill);
+			di->fill_colour = zMap_gdk_color_to_rgba(fill);
 			di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
 		}
 		if(outline)
 		{
 			di->outline_set = TRUE;
-			di->outline_colour = gdk_color_to_rgba(outline);
+			di->outline_colour = zMap_gdk_color_to_rgba(outline);
 			di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
 		}
       }

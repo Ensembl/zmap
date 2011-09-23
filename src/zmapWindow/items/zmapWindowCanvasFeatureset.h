@@ -89,9 +89,9 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style);
 
 
-gboolean zMapWindowCanvasFeaturesetGetFill(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *pixel);
-gboolean zMapWindowCanvasFeaturesetGetOutline(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *pixel);
+guint32 zMap_gdk_color_to_rgba(GdkColor *color);
 
+int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel);
 
 /* enums for function type */
 typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;

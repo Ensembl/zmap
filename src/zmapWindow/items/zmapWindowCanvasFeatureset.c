@@ -66,10 +66,11 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object);
 
 static gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
-static guint32 gdk_color_to_rgba(GdkColor *color);
 
 static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 static FooCanvasItemClass *parent_class_G;
+
+static void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 
 
 /* define feature specific fucntions here */
@@ -133,6 +134,8 @@ void featureset_init_funcs(void)
 {
 	zMapWindowCanvasBasicInit();
 }
+
+
 
 
 GType zMapWindowFeaturesetItemGetType(void)
@@ -227,13 +230,13 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 		if(fill)
 		{
 			di->fill_set = TRUE;
-			di->fill_colour = gdk_color_to_rgba(fill);
+			di->fill_colour = zMap_gdk_color_to_rgba(fill);
 			di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
 		}
 		if(outline)
 		{
 			di->outline_set = TRUE;
-			di->outline_colour = gdk_color_to_rgba(outline);
+			di->outline_colour = zMap_gdk_color_to_rgba(outline);
 			di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
 		}
       }
@@ -241,6 +244,7 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 }
 
 
+/* interface design driven by exsiting application code */
 void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 						      FooCanvasItem         *interval,
 						      ZMapFeature			feature,
@@ -254,34 +258,6 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 	ZMapWindowCanvasFeature gs;
 	ZMapSkipList sl;
 	zmapWindowCanvasFeatureStruct search;
-
-
-		/* set focus colour once only */
-	if(colour_flags)
-	{
-		GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
-
-		/* fill and border are defaults set for the whole window but are currently not used
-		   instead we have to get the selected colours from the style
-		   but if someone defined the defaults they'd get used
-		 */
-
-      	zmapWindowCanvasItemGetColours(di->style, di->strand, di->frame, colour_type, &fill, &draw, &outline, default_fill, default_border);
-
-#warning ideally we could set these colours on item init but the code driving this assumes differently
-		if(!di->selected_fill_set && fill)
-		{
-			di->selected_fill_colour = gdk_color_to_rgba(fill);
-			di->selected_fill_pixel = foo_canvas_get_color_pixel(interval->canvas, di->selected_fill_colour);
-			di->selected_fill_set = TRUE;
-		}
-		if(!di->selected_outline_set && outline)
-		{
-			di->selected_outline_colour = gdk_color_to_rgba(outline);
-			di->selected_outline_pixel = foo_canvas_get_color_pixel(interval->canvas, di->selected_outline_colour);
-			di->selected_outline_set = TRUE;
-		}
-	}
 
 		/* find the feature's feature struct */
 	search.y1 = (int) feature->x1;
@@ -553,6 +529,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	ZMapWindowCanvasFeature feat;
       double y1,y2;
       double width;
+      GList *highlight = NULL;	/* must paint selected on top ie last */
 
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
@@ -603,109 +580,141 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 	zMapAssert(sl && !sl->down);	/* if the index is not NULL then we nust have a leaf node */
 
-//	if(!fi->overlap)
-	{
 		/* we have already found the first matching or previous item */
 
-		for(;sl;sl = sl->next)
-		{
-			feat = (ZMapWindowCanvasFeature) sl->data;
+	for(fi->featurestyle = NULL;sl;sl = sl->next)
+	{
+		feat = (ZMapWindowCanvasFeature) sl->data;
 //printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
 
-			if(feat->y1 > search.y2)
-				break;	/* finished */
-			if(feat->y2 < search.y1)
-				continue;
+		if(feat->y1 > search.y2)
+			break;	/* finished */
+		if(feat->y2 < search.y1)
+			continue;
 
-			/*
-			   NOTE need to sort out container positioning to make this work
-			   di covers its container exactly, but is it offset??
-			   by analogy w/ old style ZMapWindowCanvasItems we should display
-			   'intervals' as item relative
-			*/
+		/*
+		NOTE need to sort out container positioning to make this work
+		di covers its container exactly, but is it offset??
+		by analogy w/ old style ZMapWindowCanvasItems we should display
+		'intervals' as item relative
+		*/
 
-			/* clip this one (GDK does that? or is it X?) and paint */
+		/* clip this one (GDK does that? or is it X?) and paint */
 //printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 
 
-			if(!(feat->flags & FEATURE_FOCUS_MASK) &&			/* use highlit colour ? */
-				(fi->featurestyle != feat->feature->style))	/* set colour from style */
-			{
-				/* cache style for a single featureset
-				* if we have one source featureset in the column then this works fastest (eg good for trembl/ swissprot)
-				* if we have several (eg BAM rep1, rep2, etc,  Repeatmasker then we get to switch around frequently
-				* but hopefully it's faster than not caching regardless
-				*/
-
-				GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
-
-				fi->featurestyle = feat->feature->style;
-
-				zmapWindowCanvasItemGetColours(fi->featurestyle, fi->strand, fi->frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
-
-				fi->fill_set = FALSE;
-				if(fill)
-				{
-					fi->fill_set = TRUE;
-					fi->fill_colour = gdk_color_to_rgba(fill);
-					fi->fill_pixel = foo_canvas_get_color_pixel(item->canvas, fi->fill_colour);
-				}
-
-				fi->outline_set = FALSE;
-				if(outline)
-				{
-					fi->outline_set = TRUE;
-					fi->outline_colour = gdk_color_to_rgba(outline);
-					fi->outline_pixel = foo_canvas_get_color_pixel(item->canvas, fi->outline_colour);
-
-				}
-			}
-
-			// call the paint function for the feature
-			zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable);
+		if((feat->flags & FEATURE_FOCUS_MASK))
+		{
+			highlight = g_list_prepend(highlight, feat);
+			continue;
 		}
 
-		/* flush out any stored data (eg if we are drawing polylines) */
-		zMapWindowCanvasFeaturesetPaintFlush(fi,feat,drawable);
+		/* set style colours if they changed */
+		zmapWindowCanvasFeaturesetSetColours(fi,feat);
+
+		// call the paint function for the feature
+		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable);
 	}
+
+	/* flush out any stored data (eg if we are drawing polylines) */
+	zMapWindowCanvasFeaturesetPaintFlush(fi,feat,drawable);
+
+
+	/* now paint the focus features on top, clear style to force colours lookup */
+	for(fi->featurestyle = NULL;highlight;highlight = highlight->next)
+	{
+		feat = (ZMapWindowCanvasFeature) highlight->data;
+
+		zmapWindowCanvasFeaturesetSetColours(fi,feat);
+		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable);
+	}
+	zMapWindowCanvasFeaturesetPaintFlush(fi,feat,drawable);
 }
 
 
-gboolean zMapWindowCanvasFeaturesetGetFill(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *pixel)
+void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature feat)
 {
+	FooCanvasItem *item = (FooCanvasItem *) fi;
+	ZMapStyleColourType ct;
 
-	if(feature->flags & FEATURE_FOCUS_MASK)		/* get highlit colour, set for the column */
+	/* NOTE carefully balanced code:
+	 * we do all blurred features then all focussed ones
+	 * if the style changes then we look up the colours
+	 * so we reset the style befoer doing focus
+	 * other kond of focus do not have colours set in the style
+	 * so mixed focus types are not a problem
+	 */
+
+/*	if(!(feat->flags & FEATURE_FOCUS_MASK) &&		 NOTE selected may use normal outline */
+
+	if((fi->featurestyle != feat->feature->style))	/* diff style: set colour from style */
 	{
-		if(!featureset->selected_fill_set)
-			return FALSE;
-		*pixel = featureset->selected_fill_pixel;
+		/* cache style for a single featureset
+		* if we have one source featureset in the column then this works fastest (eg good for trembl/ swissprot)
+		* if we have several (eg BAM rep1, rep2, etc,  Repeatmasker then we get to switch around frequently
+		* but hopefully it's faster than not caching regardless
+		* beware of enum ZMapWindowFocusType not being a bit-mask
+		*/
+
+		GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
+
+		fi->featurestyle = feat->feature->style;
+
+		ct = feat->flags & WINDOW_FOCUS_GROUP_ALL ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
+
+		zmapWindowCanvasItemGetColours(fi->featurestyle, fi->strand, fi->frame, ct , &fill, &draw, &outline, NULL, NULL);
+
+		/* can cache these in the feature? or style?*/
+
+		fi->fill_set = FALSE;
+		if(fill)
+		{
+			fi->fill_set = TRUE;
+			fi->fill_colour = zMap_gdk_color_to_rgba(fill);
+			fi->fill_pixel = foo_canvas_get_color_pixel(item->canvas, fi->fill_colour);
+		}
+
+		fi->outline_set = FALSE;
+		if(outline)
+		{
+			fi->outline_set = TRUE;
+			fi->outline_colour = zMap_gdk_color_to_rgba(outline);
+			fi->outline_pixel = foo_canvas_get_color_pixel(item->canvas, fi->outline_colour);
+		}
 	}
-	else		/* get feature colour set by style, we cache these int he featureset */
-	{
-		if (!featureset->fill_set)
-			return FALSE;
-		*pixel = featureset->fill_pixel;
-	}
-	return TRUE;
 }
 
-gboolean zMapWindowCanvasFeaturesetGetOutline(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *pixel)
+
+/* called by item drawing code, we cache style colours hoping it will run faster */
+int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel)
 {
+	int ret = 0;
 
-	if(feature->flags & FEATURE_FOCUS_MASK)		/* get highlit colour, set for the column */
+
+	ret = zMapWindowFocusCacheGetSelectedColours(feature->flags, fill_pixel, outline_pixel);
+
+	if(!(ret & WINDOW_FOCUS_CACHE_FILL))
 	{
-		if(!featureset->selected_outline_set)
-			return FALSE;
-		*pixel = featureset->selected_outline_pixel;
+		if (featureset->fill_set)
+		{
+			*fill_pixel = featureset->fill_pixel;
+			ret |= WINDOW_FOCUS_CACHE_FILL;
+		}
 	}
-	else		/* get feature colour set by style, we cache these int he featureset */
+
+	if(!(ret & WINDOW_FOCUS_CACHE_OUTLINE))
 	{
-		if (!featureset->outline_set)
-			return FALSE;
-		*pixel = featureset->outline_pixel;
+		if (featureset->outline_set)
+		{
+			*outline_pixel = featureset->outline_pixel;
+			ret |= WINDOW_FOCUS_CACHE_OUTLINE;
+		}
 	}
-	return TRUE;
+
+	return ret;
 }
+
+
 
 
 ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(void)
@@ -747,18 +756,6 @@ void zmapWindowCanvasFeatureFree(gpointer thing)
 
 
 
-
-static guint32 gdk_color_to_rgba(GdkColor *color)
-{
-  guint32 rgba = 0;
-
-  rgba = ((color->red & 0xff00) << 16  |
-        (color->green & 0xff00) << 8 |
-        (color->blue & 0xff00)       |
-        0xff);
-
-  return rgba;
-}
 
 static gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {

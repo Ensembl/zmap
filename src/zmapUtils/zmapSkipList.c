@@ -80,10 +80,13 @@ static ZMapSkipList allocSkipList(void)
       }
 
       sl = skip_list_free_G;
-      skip_list_free_G = sl->next;
+      if(sl)
+      {
+      	skip_list_free_G = sl->next;
 
-      /* these can get re-allocated so must zero */
-      memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
+      	/* these can get re-allocated so must zero */
+      	memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
+      }
       return(sl);
 }
 
