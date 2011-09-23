@@ -962,7 +962,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   for(gl = focus->focus_item_set;gl;gl = gl->next)
     {
       list_item = (ZMapWindowFocusItem) gl->data;
-      if(list_item->item == item) // && list_item->feature == feature)
+      if(list_item->item == item && list_item->feature == feature)
 	break;
     }
   if(!gl)     // didn't find it
@@ -977,7 +977,6 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   list_item->flags |= focus_group_mask[type] | (focus->cache_id << 16);
   list_item->item = item;
   list_item->feature = feature;
-
 
   /* tricky -> a container is a foo canvas group
    * that has a fixed size list of foo canvas groups

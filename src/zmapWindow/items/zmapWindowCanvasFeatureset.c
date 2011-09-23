@@ -439,7 +439,6 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 //      double dist = 0.0;
       double wx; //,wy;
       double dx,dy;
-      int n_test = 3,i;
 
       /*
        * need to scan internal list and apply close enough rules
@@ -463,21 +462,31 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	search.y1 = (int) y - item->canvas->close_enough;	/* NOTE close_enough is zero */
 	search.y2 = (int) y + item->canvas->close_enough;
 
+	if(fi->overlap)
+	{
+		search.y1 -= fi->longest;
+		if(search.y1 < fi->start)
+			search.y1 = fi->start;
+	}
+
 	sl =  zMapSkipListFind(fi->display_index, zMapFeatureCmp, &search);
 	if(!sl)
 		return(0.0);
 
-	for(i = 0;i < n_test;i++)
+	for(; sl ; sl = sl->next)
 	{
 		gs = (ZMapWindowCanvasFeature) sl->data;
 
-
-		/* good for boxes, lines are more tricky */
+		if(gs->y1 > search.y2)
+			break;
 
 		if(gs->y1 <= y && gs->y2 >= y)	/* overlaps cursor */
 		{
-			wx = item->x1 + gs->width;
-			if(wx >= x && item->x1 <= x)	/* item contains cursor */
+			wx = item->x1;
+			if(fi->bumped)
+				wx += gs->bump_offset;
+
+			if(x >= wx && x < wx + gs->width)	/* item contains cursor */
 			{
 				best = 0.0;
 				*actual_item = item;

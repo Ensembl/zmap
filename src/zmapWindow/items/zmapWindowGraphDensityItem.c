@@ -461,7 +461,7 @@ double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, dou
 	if(!sl)
 		return(0.0);
 
-	for(i = 0;i < n_test;i++)
+	for(i = 0;i < n_test && sl;i++, sl = sl->next)
 	{
 		gs = (ZMapWindowCanvasGraphSegment) sl->data;
 
