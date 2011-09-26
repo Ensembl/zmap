@@ -1,0 +1,55 @@
+<h2>Column Bumping</h2>
+<h3>Background</h3>
+<p>
+The ZMap canvas is being converted to have featureset foo canvas items to allow efficient use of the Foo Canvas and GDK and part of this process involves moving the column bumping code into the new modules.
+</p>
+<p>Historically a column contained individual features each of which was a FooCanvasGroup and each part of a complex feature (eg exon, intron line, glyphs) was a distinct FooCanvasItem.  The code to manipulate these was in <b>zmapWindow/zmapWindowColBump.c</b> and <b>zmapWindow/items/zmapWindowContainerFeatureSetUtils.c</b>.  When complete these will be replaced by <b>zmapWindow/items/zmapWindowCanvasfeaturesetBump.c</b> and possibly some other files; in the transitional phase both sets of code will be present.
+</p>
+<p>ZMAPBUMP_NAVIGATOR has been removed:  it was not used and the code to use it  mapped it onto ZMAPBUMP_ALTERNATING, and the navigator bump functions are not workong well anyway. There was coed to implement ZMAPBUMP_NAVIGATOR, but this was a carbon copy of ZMAPBUMP_OVERLAP.
+</p>
+
+<h3>Functional Specification</h3>
+<p>This is an opportunity to document this!
+</p>
+<p>Features are displayed using a Style which specifies a bump mode (default = ZMAPBUMP_UNBUMP), and the bump mode can be fixed in which case it cannot be changed. Otherwise there is the possibility of choosing any other bump mode from a menu.  Note that ZMAPBUMP_STYLE is an exception and only applies if configured fully (ie a style is specified).
+</p>
+<p>
+The table below lists the available modes but from the code it's not immediately obvious what the nuanced differences between the various _NAME_ modes are. ZMAPBUMP_START_POSITION appears to not be used (does not appear in any styles).  It's not clear than ZMAPBUMP_NAME is of any use, unless it was an attempt to display quicker than ZMAP_BUMP_COLINEAR.  ZMAPBUMP_NAME_INTERLEAVE appears to be intended to not overlap any features but some do - possibly this is a bug caused by variable feature width.
+
+<table border="1" caption="Bump Modes">
+<tr> <th>Mode</th> <th>Description</th> <th>Use</tg> </tr>
+<tr> <td>ZMAPBUMP_UNBUMP</td> <td>No bumping (default) </td> <td>Normal overlapped display</td></tr>
+<tr> <td>ZMAPBUMP_OVERLAP</td> <td>Bump any features overlapping each other </td> <td>Simple see everything layout - same-name alignments get jumbled up</td></tr>
+<tr> <td>ZMAPBUMP_START_POSITION</td> <td>Bump if features have same start coord. </td> <td></td></tr>
+<tr> <td>ZMAPBUMP_ALTERNATING</td> <td>Alternate features between two sub_columns </td> <td>Assembly path</td></tr>
+<tr> <td>ZMAPBUMP_ALL</td> <td>A sub-column for every feature. </td> <td>Large complex low volume features eg transcripts</td></tr>
+<tr> <td>ZMAPBUMP_NAME</td> <td>A sub-column for features with the same name. </td><td>Alignments</td> </tr>
+<tr> <td>ZMAPBUMP_NAME_INTERLEAVE</td> <td>All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.</td> <td>alignments</td></tr>
+<tr> <td>ZMAPBUMP_NAME_COLINEAR</td> <td>As for Name but colinear alignments shown. </td> <td>Alignments - shows homology status</td></tr>
+<tr> <td>ZMAPBUMP_NAME_NO_INTERLEAVE</td> <td>Display as for COLINEAR but no interleaving of different names. </td><td>Alignemnts</td> </tr>
+<tr> <td>ZMAPBUMP_NAME_BEST_ENDS</td> <td>As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.</td><td></td> </tr>
+<tr> <td>ZMAPBUMP_STYLE</td> <td>Show features using an alternate style. </td> <td>Coverage (graph) data eg heatmaps to wiggle or histogram</td></tr>
+</table>
+</p>
+
+<h3>Rationalised Specification</h3>
+<p>We intend to link up same-name items into composite features (like transcripts).  (These are derived from exonerate alignment and split into distinct features before being sent to ZMap). The following modes are proposed for a new implementation, and if more variants are needed they can be added later.
+
+<table border="1" caption="Bump Modes">
+<tr> <th>Mode</th> <th>Description</th> <th>Use</tg> </tr>
+<tr> <td>ZMAPBUMP_UNBUMP</td> <td>No bumping (default) </td> <td>Normal overlapped display</td></tr>
+<tr> <td>ZMAPBUMP_OVERLAP</td> <td>Bump any features overlapping each other </td> <td>Simple see everything layout - same-name alignments get jumbled up</td></tr>
+<tr> <td>ZMAPBUMP_ALTERNATING</td> <td>Alternate features between two sub_columns </td> <td>Assembly path</td></tr>
+<tr> <td>ZMAPBUMP_ALL</td> <td>A sub-column for every feature. </td> <td>Large complex low volume features eg transcripts</td></tr>
+<tr> <td>ZMAPBUMP_NAME_COLINEAR</td> <td>A sub-column for features with the same name with colinear alignments shown. </td> <td>Alignments - shows homology status</td></tr>
+<tr> <td>ZMAPBUMP_NAME_NO_INTERLEAVE</td> <td>Display as for COLINEAR but more than one set in a column if space available (does not overlap). </td><td>Alignemnts - more compact than colinear</td> </tr>
+<tr> <td>ZMAPBUMP_NAME_BEST_ENDS</td> <td>As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.</td><td></td> </tr>
+<tr> <td>ZMAPBUMP_STYLE</td> <td>Show features using an alternate style. </td> <td>Coverage (graph) data eg heatmaps to wiggle or histogram</td></tr>
+</table>
+</p>
+
+<p>Historically there is also a compress mode given to the bump code, which hides data outside the marked region.
+Partly this was implemented to provide performance benefit, but for some bump modes (eg ZMAPBUMP_ALL) it prevents excessive horizontal scrolling.  It is thought that there will be little performance benefit in this with the new code and perhaps the use of bump modes can be reviewed.
+</p>
+
+

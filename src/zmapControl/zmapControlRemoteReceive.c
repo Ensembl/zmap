@@ -290,7 +290,7 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
     {
 #warning we need to get dataset (= species) from otterlace with added XML
 //      zMapAssert(zmap->default_sequence);
-	if(!zmap->default_sequence || !zmap->default_sequence->sequence)	/* there has been a major configuration error */
+	if(!zmap->default_sequence || !zmap->default_sequence->dataset)	/* there has been a major configuration error */
 	{
           	output_data->code = ZMAPXREMOTE_INTERNAL;
           	g_string_append_printf(output_data->messages,
