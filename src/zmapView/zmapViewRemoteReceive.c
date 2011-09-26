@@ -1438,7 +1438,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
-	  feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
 
 	  switch(xml_data->common.action)
 	    {
@@ -1449,6 +1448,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
 	    case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
 	      {
+		feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
+
 		if (!feature)
 		  {
 		    /* If we can't find the feature then it's a serious error for these commands. */
@@ -1466,6 +1467,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	      }
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	      {
+		feature = zMapFeatureSetGetFeatureByID(request_data->feature_set, feature_unique_id) ;
+
 		if (feature)
 		  {
 		    /* If we _do_ find the feature then it's a serious error. */
