@@ -181,6 +181,7 @@ typedef struct
 /* the FtoIHash, search now returns these not the items */
 /* We store ids with the group or item that represents them in the canvas.
  * May want to consider more efficient way of storing these than malloc... */
+/* NOTE also used for user hidden items stack */
 typedef struct
 {
   FooCanvasItem *item ;					    /* could be group or item. */

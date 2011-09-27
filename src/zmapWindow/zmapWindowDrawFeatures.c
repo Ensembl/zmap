@@ -773,6 +773,10 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
   zMapAssert(forward_col_wcp || reverse_col_wcp) ;
+#define MODULE_STATS	1
+#if MODULE_STATS
+	double time = zMapElapsedSeconds;
+#endif
 
   featureset_data.window = window ;
 
@@ -875,6 +879,11 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
   zMapStopTimer("DrawFeatureSet",str);
   g_free(str);
+#if MODULE_STATS
+	time = zMapElapsedSeconds - time;
+	printf("Draw featureset %s: %d features in %.3f seconds\n", g_quark_to_string(feature_set->unique_id),featureset_data.feature_count,time);
+#endif
+
   }
 
 

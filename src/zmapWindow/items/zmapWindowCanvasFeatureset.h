@@ -72,9 +72,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs);
 
 
 ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
-void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double dx, double y1, double y2);
 
-void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double dx, double y1, double y2);
+void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2);
 
 
 void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
@@ -87,6 +86,8 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
                                           GdkColor              *border);
 
 gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style);
+
+void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show);
 
 
 guint32 zMap_gdk_color_to_rgba(GdkColor *color);
@@ -104,6 +105,7 @@ typedef enum { FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_TRANSCRIPT, 
 /* holds all data need to drive exotic bump modes */
 typedef struct
 {
+	double start,end;	/* eg mark */
 	double spacing;	/* between sub columns */
 	double offset;	/* current offset */
 	double incr;	/* per sub column */
@@ -118,6 +120,6 @@ typedef struct
 
 } BumpFeaturesetStruct, *BumpFeatureset;
 
-gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode, BumpFeatureset bump_data);
+gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress_mode, BumpFeatureset bump_data);
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */

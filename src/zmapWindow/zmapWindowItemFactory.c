@@ -821,7 +821,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 
       zMapAssert(canvas_item);
 
-/* NOTE the iten hash used canvas _item->feature to set up a pointer to the feature
+/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
  * so I changed FToIAddfeature to take the feature explicitly
  * setting the feature here every time also fixes the problem but by fluke
  */
@@ -845,7 +845,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
   		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
 
-	      zMapWindowFeaturesetAddItem(foo, feature, 1.0, y1, y2);	/* basic features don;t do score so set to 1.0 */
+	      zMapWindowFeaturesetAddItem(foo, feature, y1, y2);
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;

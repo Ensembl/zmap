@@ -786,6 +786,19 @@ gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureType
 	return ret;
 }
 
+/* like foo but for a ZMap thingy */
+gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show)
+{
+	ZMapWindowCanvasItemClass class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+	gboolean ret = FALSE;
+
+	if(class->showhide)
+		ret = class->showhide((FooCanvasItem *) item, show);
+
+	return ret;
+
+}
+
 
 /* Get at parent... */
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item)

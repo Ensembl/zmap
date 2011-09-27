@@ -82,6 +82,8 @@ static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   thing,
 
 static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, double x, double y);
 
+static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show);
+
 #if 0
 static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
 #endif
@@ -142,6 +144,7 @@ static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetIte
 
   canvas_class->set_feature = zmap_window_featureset_item_set_feature;
 //  canvas_class->set_style = zmap_window_featureset_item_set_style;
+  canvas_class->showhide = zmap_window_featureset_item_show_hide;
 
   canvas_class->check_data   = NULL;
 
@@ -206,6 +209,30 @@ static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapF
 	return FALSE;
 }
 #endif
+
+
+static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show)
+{
+	FooCanvasItem *foo;
+	FooCanvasGroup *group;
+
+	group = (FooCanvasGroup *) item;
+	if(!group->item_list)
+		return FALSE;
+
+	foo = group->item_list->data;
+
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
+	{
+		ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
+		/* find the feature struct and set a flag */
+#warning this should be a class function
+		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show);
+
+	}
+	return FALSE;
+}
+
 
 static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 						      FooCanvasItem         *interval,

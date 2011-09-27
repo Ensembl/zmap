@@ -63,13 +63,16 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 	long flags;				/* non standard display option eg selected */
 #define FEATURE_FOCUS_MASK	0xff		/* any focus flag will map to selected, this should really be defined by focus code but we are out of scope */
-#define FEATURE_VISIBLE		0x100		/* not always true ! */
+#define FEATURE_HIDDEN		0x100		/* not always false, set for hidden rateh than visible to make flag twiddling easier */
 #define FEATURE_USER_HIDE	0x200		/* hidden by user request */
-#define FEATURE_SUMMARISED	0x200		/* hidden by summarise */
+#define FEATURE_MARK_HIDE	0x400		/* hidden by bump from mark */
+#define FEATURE_SUMMARISED	0x800		/* hidden by summarise */
+#define FEATURE_HIDE_REASON	0xe00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	0xffff0000
 
 } zmapWindowCanvasFeatureStruct;
+
 
 
 ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(void);

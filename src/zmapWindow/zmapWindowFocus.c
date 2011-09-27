@@ -789,12 +789,26 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)list_item->item ;
   GList **list_ptr = (GList **)user_data ;
   GList *user_hidden_items = *list_ptr ;
+  ID2Canvas id2c;
 
   zMapAssert(FOO_IS_CANVAS_ITEM(item));
 
-  foo_canvas_item_hide(item) ;
+  id2c = g_new0(ID2CanvasStruct,1);
+  id2c->item = list_item->item;
+  id2c->feature_any = (ZMapFeatureAny) list_item->feature;
+  /* hash table is NULL, that is correct */
 
-  user_hidden_items = g_list_append(user_hidden_items, item) ;
+  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  {
+	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) list_item->feature);
+	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) item, FALSE);
+  }
+  else
+  {
+  	foo_canvas_item_hide(item) ;
+  }
+
+  user_hidden_items = g_list_append(user_hidden_items, id2c) ;
 
   *list_ptr = user_hidden_items ;
 

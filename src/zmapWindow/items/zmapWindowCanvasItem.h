@@ -75,6 +75,8 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 #include <zmapWindowGlyphItem.h>
 #include <zmapWindowGraphItem.h>
 #include <zmapWindowGraphDensityItem.h>
+#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasItemFeatureSet.h>
 #include <zmapWindowLongItem.h>
 #include <zmapWindowTextItem.h>
 
@@ -146,6 +148,11 @@ gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureType
 void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
 
 ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
+
+gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature);
+gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show);
+
+
 
 
 #endif /* ZMAP_WINDOW_CANVAS_ITEM_H */

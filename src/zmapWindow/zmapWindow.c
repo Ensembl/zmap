@@ -5207,10 +5207,19 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 /* GFunc() to hide the given item and record it in the user hidden list. */
 static void unhideItemsCB(gpointer data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ID2Canvas id2c = (ID2Canvas) data;
+  FooCanvasItem *item = id2c->item;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-  foo_canvas_item_show(item) ;
+  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  {
+	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, (ZMapFeature) id2c->feature_any);
+	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem)id2c->item, TRUE);
+  }
+  else
+  {
+	foo_canvas_item_show(item) ;
+  }
 
   zmapWindowHighlightObject(window, item, FALSE, TRUE) ;
 

@@ -60,13 +60,9 @@ static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featurese
 	 * but they are cached by the calling function
 	 */
 
-#warning  basic features don t do score ?? if they do we need to handle it
-	feature->width = featureset->width;
-
+	x1 = featureset->width / 2 - feature->width / 2;
 	if(featureset->bumped)
-		x1 = feature->bump_offset;
-	else
-		x1 = featureset->width / 2 - feature->width / 2;
+		x1 += feature->bump_offset;
 
 	x1 += featureset->dx;
 	x2 = x1 + feature->width;

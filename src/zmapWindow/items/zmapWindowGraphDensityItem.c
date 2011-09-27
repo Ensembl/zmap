@@ -1080,7 +1080,7 @@ void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, doub
 
   zMapAssert(style);
 
-  if(!dx)		/* we handle zeroes as we can't see them, for coverage data we should not even have them */
+  if(!dx)		/* we don't handle zeroes as we can't see them, for coverage data we should not even have them */
   	return;
 
   gs = zmapWindowCanvasGraphSegmentAlloc();

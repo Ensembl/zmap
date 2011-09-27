@@ -317,7 +317,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   gboolean mark_set;
   int start, end ;
   double width, bump_spacing = 0.0 ;
-
+double time;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_return_if_fail(bump_mode != ZMAPBUMP_INVALID);
@@ -357,9 +357,58 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
       return;
 
+  /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
+   * or the visible section of the window. */
+  if (compress_mode == ZMAPWINDOW_COMPRESS_INVALID)
+    {
+      if (mark_set)
+	zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
+      else
+	{
+	  start = window->min_coord ;
+	  end   = window->max_coord ;
+	}
+    }
+  else
+    {
+      if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
+	{
+	  double wx1, wy1, wx2, wy2 ;
+
+	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* should really clamp to seq. start/end..... */
+	  start = (int)wy1 ;
+	  end = (int)wy2 ;
+	}
+      else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
+	{
+	  zMapAssert(mark_set) ;
+
+	  /* we know mark is set so no need to check result of range check. But should check
+	   * that col to be bumped and mark are in same block ! */
+	  zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
+	}
+      else
+	{
+	  start = window->min_coord ;
+	  end   = window->max_coord ;
+	}
+    }
+
+  bump_data.start = start ;
+  bump_data.end = end ;
+
+
+time = zMapElapsedSeconds;
+
   if(zmapWindowContainerHasFeaturesetItem(container))
   {
-  	/* transitional code: columns with ZMapWindowFeaturesetItems may not contain simple FooCanvasItems */
+	/* transitional code: columns with ZMapWindowFeaturesetItems may not contain simple FooCanvasItems */
 
 	if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
 	{
@@ -382,14 +431,19 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		if(!column_features)
 			return;
 
+		bump_data.start = start ;	/* NOTE: different struct from previous one */
+		bump_data.end = end ;
 		bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
 
 		for(l = column_features->item_list;l;l = l->next)
       	{
-			zMapWindowCanvasFeaturesetBump(l->data, bump_mode, compress_mode, &bump_data);
+      		/* cast to int because of headers catch22 knottiness */
+			zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data);
       	}
 	      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
 	}
+		time = zMapElapsedSeconds - time;
+		printf("featureset bump in %.3f seconds\n", time);
 	return;
   }
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
@@ -448,51 +502,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
     }
 
-  /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
-   * or the visible section of the window. */
-  if (compress_mode == ZMAPWINDOW_COMPRESS_INVALID)
-    {
-      if (mark_set)
-	zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
-      else
-	{
-	  start = window->min_coord ;
-	  end   = window->max_coord ;
-	}
-    }
-  else
-    {
-      if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
-	{
-	  double wx1, wy1, wx2, wy2 ;
-
-	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  /* should really clamp to seq. start/end..... */
-	  start = (int)wy1 ;
-	  end = (int)wy2 ;
-	}
-      else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
-	{
-	  zMapAssert(mark_set) ;
-
-	  /* we know mark is set so no need to check result of range check. But should check
-	   * that col to be bumped and mark are in same block ! */
-	  zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
-	}
-      else
-	{
-	  start = window->min_coord ;
-	  end   = window->max_coord ;
-	}
-    }
-
-  bump_data.start = start ;
-  bump_data.end = end ;
 
 
   width = zmapWindowContainerFeatureSetGetWidth(container);
@@ -727,6 +736,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	g_list_foreach(bump_data.pos_list, listDataDestroyCB, NULL) ;
     }
 
+		time = zMapElapsedSeconds - time;
+		printf("tradtional bump in %.3f seconds\n", time);
 
   zmapWindowBusy(window, FALSE) ;
 
