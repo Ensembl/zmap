@@ -781,33 +781,49 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 
 
 
-
-static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
-                                        double feature_offset,
+static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
+                              double feature_offset,
 					double x1, double y1, double x2, double y2,
-                                        ZMapFeatureTypeStyle style)
+                              ZMapFeatureTypeStyle style)
 {
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
 
-
-  if(!zMapStyleIsFoo(style))
-  {
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-      if(!run_data->feature_stack->id)
+      if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style))
+      /* NOTE calling code call zmapWindowDrawFeatureSet() for each frame but
+       * expects it to shuffle features into the right stranded container
+       * it's a half solution whcih caused a misunderstanding here.
+       * ideally the calling code would have 6 column groups prepared and we'd do one scan of the featureset
+       * that's a bit fiddly to sort now ut it needs doign when containers get done
+       * We'd like to set up the 6 CanvasFeaturesets once, not recalc every time
+       */
+#warning code needs restructuring around zmapWindowDrawFeatureSet()
       {
+      	/* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
+      	 * all of one type at a time
+      	 * so frame and strand are stable
+      	 * we save the id here to optimise the code
+      	 */
             GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
             FooCanvasItem * foo = FOO_CANVAS_ITEM(fset);
             GQuark fset_id = run_data->feature_stack->set->unique_id;
+            char strand = '+';
+            char frame = '0';
+
+            if(zMapStyleIsStrandSpecific(style) && feature->strand == ZMAPSTRAND_REVERSE)
+            	strand = '-';
+            if(zMapStyleIsFrameSpecific(style))
+            	frame += zmapWindowFeatureFrame(feature);
 
 		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
 		if(run_data->feature_stack->maps_to)
 			fset_id = run_data->feature_stack->maps_to;
 
-            char *x = g_strdup_printf("%p_%s_%s", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id));
+            char *x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);
@@ -849,6 +865,24 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;
+
+      return feature_item;
+}
+
+
+
+static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
+                                        double feature_offset,
+					double x1, double y1, double x2, double y2,
+                                        ZMapFeatureTypeStyle style)
+{
+  FooCanvasGroup        *parent = run_data->container;
+  FooCanvasItem   *feature_item = NULL;
+  ZMapWindowCanvasItem canvas_item;
+
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
   }
   else      // original code preserved unchangesd
   {
@@ -1069,6 +1103,13 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   ZMapFeatureBlock        block = run_data->feature_stack->block;
   guint line_width = 0;
   gboolean rev_comped = ((ZMapWindow)(factory->user_data))->revcomped_features ;
+
+  if(!zMapStyleIsFoo(style))
+  {
+  	/* NOTE we handle gaps in here when inmplemented */
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
 
   if ((!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align)))
     {

@@ -83,6 +83,9 @@ items/zmapWindowBasicFeature.h \
 items/zmapWindowBasicFeature_I.h \
 items/zmapWindowCanvas.c \
 items/zmapWindowCanvas.h \
+items/zmapWindowCanvasAlignment.c \
+items/zmapWindowCanvasAlignment.h \
+items/zmapWindowCanvasAlignment_I.h \
 items/zmapWindowCanvasBasic.c \
 items/zmapWindowCanvasBasic.h \
 items/zmapWindowCanvasBasic_I.h \

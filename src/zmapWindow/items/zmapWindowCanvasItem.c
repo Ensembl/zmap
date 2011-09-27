@@ -1546,7 +1546,8 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
             colour_target = STYLE_PROP_FRAME2_COLOURS ;
             break ;
           default:
-            zMapAssertNotReached() ;
+//            zMapAssertNotReached() ; no longer valid: frame specific style by eg for swissprot we display in one col on startup
+            break ;
           }
 
         zMapStyleGetColours(style, colour_target, colour_type,

@@ -34,5 +34,5 @@
 #include <ZMap/zmap.h>
 
 
-
+void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 void zMapWindowCanvasBasicInit(void);

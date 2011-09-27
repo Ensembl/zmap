@@ -43,7 +43,8 @@
 #include <zmapWindowCanvasBasic_I.h>
 
 
-static void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
+/* not static as we want to use this in alignments */
+void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
 	gulong fill,outline;
 	GdkColor c;

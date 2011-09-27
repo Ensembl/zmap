@@ -706,7 +706,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
 		column_state->column.strand = ZMAPSTRAND_FORWARD;
 	    }
-printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
+//printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
 	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
@@ -719,7 +719,7 @@ printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->colum
 
 	      container_set = (ZMapWindowContainerFeatureSet)(container);
 
-printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
+//printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
 
 	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
 
@@ -733,7 +733,7 @@ printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_i
 #warning WRONG_NEED_INITIAL_BUMP_MODE
 	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
 		{
-printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
+//printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
 		  if((serialized->compress != ZMAPWINDOW_COMPRESS_MARK ||
 		     (zmapWindowMarkIsSet(window->mark))))
 		    {

@@ -69,6 +69,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasItemFeatureSet_I.h>
 #include <zmapWindowCanvasBasic.h>
+#include <zmapWindowCanvasAlignment.h>
 
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
@@ -154,6 +155,7 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs)
 void featureset_init_funcs(void)
 {
 	zMapWindowCanvasBasicInit();
+	zMapWindowCanvasAlignmentInit();
 }
 
 
@@ -231,7 +233,6 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 		 */
 		di->strand = strand;
 		di->frame = frame;
-
 		di->style = style;
 
 		di->overlap = TRUE;
@@ -668,7 +669,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
 	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
 
-//printf("expose %d-%d, dx,y = %f,%f\n",(int) search.y1,(int) search.y2,fi->dx,fi->dy);
+//printf("expose %s %d-%d, dx,y = %f,%f\n",g_quark_to_string(fi->id),(int) search.y1,(int) search.y2,fi->dx,fi->dy);
 
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1, y2);
 	if(!sl)
@@ -740,8 +741,6 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 	 * other kond of focus do not have colours set in the style
 	 * so mixed focus types are not a problem
 	 */
-
-/*	if(!(feat->flags & FEATURE_FOCUS_MASK) &&		 NOTE selected may use normal outline */
 
 	if((fi->featurestyle != feat->feature->style))	/* diff style: set colour from style */
 	{

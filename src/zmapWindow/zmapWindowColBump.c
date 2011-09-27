@@ -404,7 +404,7 @@ double time;
   bump_data.end = end ;
 
 
-time = zMapElapsedSeconds;
+//time = zMapElapsedSeconds;
 
   if(zmapWindowContainerHasFeaturesetItem(container))
   {
@@ -442,8 +442,8 @@ time = zMapElapsedSeconds;
       	}
 	      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
 	}
-		time = zMapElapsedSeconds - time;
-		printf("featureset bump in %.3f seconds\n", time);
+//		time = zMapElapsedSeconds - time;
+//		printf("featureset bump in %.3f seconds\n", time);
 	return;
   }
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
@@ -736,8 +736,8 @@ time = zMapElapsedSeconds;
 	g_list_foreach(bump_data.pos_list, listDataDestroyCB, NULL) ;
     }
 
-		time = zMapElapsedSeconds - time;
-		printf("tradtional bump in %.3f seconds\n", time);
+//		time = zMapElapsedSeconds - time;
+//		printf("tradtional bump in %.3f seconds\n", time);
 
   zmapWindowBusy(window, FALSE) ;
 

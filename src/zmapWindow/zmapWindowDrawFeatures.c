@@ -773,7 +773,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
   zMapAssert(forward_col_wcp || reverse_col_wcp) ;
-#define MODULE_STATS	1
+#define MODULE_STATS	0
 #if MODULE_STATS
 	double time = zMapElapsedSeconds;
 #endif

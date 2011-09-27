@@ -37,5 +37,7 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasBasic.h>
 
+/* NOTE
+ * The basic feature struct is just the zmapWindowCanvasFeatureStruct as defined in zmapWindowCanvasFeatureset_I.h
+ */
 
-void zMapWindowCanvasBasicInit(void);

@@ -56,7 +56,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
       ZMapFeature feature;
 
       double y1, y2;    	/* top, bottom of item (box or line) */
-	double score;		/* determines feature width, gets re-calc'd on zoom */
+	double score;		/* determines feature width */
 
 	double width;
 	double bump_offset;	/* for X coord */
