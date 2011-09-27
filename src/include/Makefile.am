@@ -1,4 +1,4 @@
-NULL = 
+NULL =
 
 nobase_include_HEADERS = ZMap/sysdep.h \
 ZMap/safe-ctype.h \
@@ -32,6 +32,7 @@ ZMap/zmapSeqBitmap.h \
 ZMap/zmapSequence.h \
 ZMap/zmapServerProtocol.h \
 ZMap/zmapSO.h \
+ZMap/zmapSkipList.h\
 ZMap/zmapString.h \
 ZMap/zmapStyle.h \
 ZMap/zmapThreads.h \

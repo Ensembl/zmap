@@ -507,7 +507,7 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
     {
 #warning need dataset defined here as well as start,end
       zMapAssert(zmap->default_sequence);
-      seq_map->sequence = zmap->default_sequence->dataset;
+      seq_map->dataset = zmap->default_sequence->dataset;
       seq_map->sequence = new_sequence;
       seq_map->start = start;
       seq_map->end = end;
