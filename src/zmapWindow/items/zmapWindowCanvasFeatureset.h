@@ -94,12 +94,21 @@ guint32 zMap_gdk_color_to_rgba(GdkColor *color);
 
 int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel);
 
+
+
 /* enums for function type */
 typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
+/* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
+/* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
 
-/* enums for FEATUREtion lookup  (feature types) */
-typedef enum { FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
+/* enums for feature function lookup  (feature types) */
+/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
+/* see  zMapWindowFeaturesetAddItem() */
+typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
 
+void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span);
 
 
 /* holds all data need to drive exotic bump modes */
@@ -111,6 +120,7 @@ typedef struct
 	double incr;	/* per sub column */
 	double width;	/* max column width */
 	GList *pos_list;	/* list of features in bumped sub-columns */
+	ZMapSpanStruct span;	/* of current feature(s) */
 	gboolean complex;
 
 	/* effciency stats */

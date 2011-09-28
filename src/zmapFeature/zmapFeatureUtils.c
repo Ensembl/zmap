@@ -741,15 +741,6 @@ gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
 }
 
 
-/* get x1 and x2 for the feature; if it is complex get the extent of the whole */
-void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span)
-{
-	span->x1 = feature->x1;
-	span->x2 = feature->x2;
-#warning complex extent not implemented
-}
-
-
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {

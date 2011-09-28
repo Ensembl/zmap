@@ -345,9 +345,10 @@ _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "   
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
+/* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
-
+#define N_STYLE_MODE	(ZMAPSTYLE_MODE_META + 1)
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
