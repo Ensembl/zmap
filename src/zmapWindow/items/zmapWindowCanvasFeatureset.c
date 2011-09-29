@@ -81,6 +81,9 @@ static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, doubl
 static void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 static void zmap_window_featureset_item_item_destroy     (GObject *object);
 
+static ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type);
+static void zmapWindowCanvasFeatureFree(gpointer thing);
+
 static gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 static gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
@@ -102,7 +105,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
 void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
-	static void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+	void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 
 	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)	/* chicken */
 		return;
@@ -120,7 +123,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 static gpointer _featureset_flush_G[FEATURE_N_TYPE] = { 0 };
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
-	static void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+	void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 
 	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
 		return;
@@ -138,12 +141,18 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 static gpointer _featureset_extent_G[FEATURE_N_TYPE] = { 0 };
 void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span)
 {
-	static void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapSpan span);
+	void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapSpan span);
 
 	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
 		return;
 
 	func = _featureset_extent_G[feature->type];
+
+	if(!complex)		/* reset any compund feature extents */
+	{
+		feature->y2 = feature->feature->x2;
+	}
+
 	if(!func || !complex)
 	{
 		/* all features have an extent, if it's simple get it here */
@@ -157,14 +166,37 @@ void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem feature
 }
 
 
+#if CANVAS_FEATURESET_LINK_FEATURE
+/* link same name features in a feature type specific way */
+/* must accept NULL as meaning clear local data */
+static gpointer _featureset_link_G[FEATURE_N_TYPE] = { 0 };
+int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
+{
+	int (*func) (ZMapWindowCanvasFeature feature);
+
+	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
+		return FALSE;
+
+	func = _featureset_link_G[feature->type];
+	if(!func)
+		return FALSE;
+
+	return func(feature);
+}
+#endif
+
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs)
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int struct_size)
 {
 	_featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
 	_featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
 	_featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
+#if CANVAS_FEATURESET_LINK_FEATURE
+	_featureset_link_G[featuretype] = funcs[FUNC_LINK];
+#endif
+	featureset_class_G->struct_size[featuretype] = struct_size;
 }
 
 
@@ -174,11 +206,14 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs)
  * we know how many there are due to the zmapWindowCanvasFeatureType enum
  * so we just do them all, once, from the featureset class init
  * rather tediously that means we have to include headers for each type
- * In terms of OO 'classiness' we reagrd CanvasFeatureSet as the big daddy that has a few dependant children
+ * In terms of OO 'classiness' we regard CanvasFeatureSet as the big daddy that has a few dependant children
  * they dont get to evolve unknown to thier parent.
  */
 void featureset_init_funcs(void)
 {
+		/* set size of iunspecifed features structs to just the base */
+	featureset_class_G->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
+
 	zMapWindowCanvasBasicInit();
 	zMapWindowCanvasAlignmentInit();
 }
@@ -229,8 +264,6 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 {
       ZMapWindowFeaturesetItem di = NULL;
       FooCanvasItem *foo  = NULL,*interval;
-	GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
-
 
             /* class not intialised till we make an item in foo_canvas_item_new() below */
       if(featureset_class_G && featureset_class_G->featureset_items)
@@ -271,21 +304,6 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 
 		/* set our bounding box in canvas coordinates to be the whole column */
 		foo_canvas_item_request_update (interval);
-
-		zmapWindowCanvasItemGetColours(style, strand, frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
-
-		if(fill)
-		{
-			di->fill_set = TRUE;
-			di->fill_colour = zMap_gdk_color_to_rgba(fill);
-			di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
-		}
-		if(outline)
-		{
-			di->outline_set = TRUE;
-			di->outline_colour = zMap_gdk_color_to_rgba(outline);
-			di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
-		}
       }
       return ((ZMapWindowCanvasItem) foo);
 }
@@ -304,7 +322,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(ZMapWindow
 
 	if(fi->overlap)
 	{
-		search.y1 -= fi->longest;
+		search.y1 -= fi->longest + fi->bump_extra_overlap;
 		if(search.y1 < fi->start)
 			search.y1 = fi->start;
 	}
@@ -654,62 +672,55 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
 
 
 /* a slightly ad-hoc function
- * really the feature conetxt should specify complex features
+ * really the feature context should specify complex features
  * but for historical reasons alignments come disconnected
  * and we have to join them up by inference (same name)
  * we may have several context featuresets but by convention all these have features with different names
  * do we have to do the same w/ transcripts? watch this space:
+ *
  */
 void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 {
 	GList *l;
-	double start,end;
-	GQuark name = 0;
 	ZMapWindowCanvasFeature left,right;		/* feat -ures */
+#if !CANVAS_FEATURESET_LINK_FEATURE
+	static GQuark name = 0;
+#endif
 
 	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
 	/* sort by name and start coord */
-	/* link same name features with ascending query? target? start coord */
-	/* this is 'better' than existing where repeat sequences get joined up stupidly */
+	/* link same name features with ascending query start coord */
 
+	/* if we ever need to link by something other than same name
+	 * then we can define a featuyre type specific sort function
+	 * and revice the zMapWindowCanvasFeaturesetLinkFeature() fucntion
+	 */
 	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
+
+#if CANVAS_FEATURESET_LINK_FEATURE
+	zMapWindowCanvasFeaturesetLinkFeature(NULL);	/* clear out static data */
+#endif
 
 	for(l = fi->features;l;l = l->next)
 	{
 		right = (ZMapWindowCanvasFeature) l->data;
 		right->left = right->right = NULL;		/* we can re-calculate so must zero */
 
-		if(right->type == FEATURE_ALIGN)
+#if CANVAS_FEATURESET_LINK_FEATURE
+		if(zMapWindowCanvasFeaturesetLinkFeature(right))
+#else
+		if(name == right->feature->original_id)
+#endif
 		{
-			ZMapHomol homol = &right->feature->feature.homol;
-printf("link sideways %s %d,%d %d,%d\n", g_quark_to_string(right->feature->original_id),right->feature->x1,right->feature->x1,homol->y1,homol->y2);
-
-			if(name == right->feature->original_id)
-			{
-				gboolean link = FALSE;
-
-				if(right->feature->strand != ZMAPSTRAND_REVERSE && end < homol->y1)
-					link = TRUE;
-				else if(right->feature->strand == ZMAPSTRAND_REVERSE && start > homol->y2)
-					link = TRUE;
-				if(link)
-				{
-					right->left = left;
-					left->right = right;
-printf("joined\n");
-				}
-			}
-			name = right->feature->original_id;
-			start = homol->y1;
-			end = homol->y2;
+			right->left = left;
+			left->right = right;
 		}
-		else
-		{
-			name = 0;
-		}
-
 		left = right;
+#if !CANVAS_FEATURESET_LINK_FEATURE
+		name = left->feature->original_id;
+#endif
 	}
+
 	fi->linked_sideways = TRUE;
 }
 
@@ -829,7 +840,7 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 	 * we do all blurred features then all focussed ones
 	 * if the style changes then we look up the colours
 	 * so we reset the style befoer doing focus
-	 * other kond of focus do not have colours set in the style
+	 * other kiond of focus do not have colours set in the style
 	 * so mixed focus types are not a problem
 	 */
 
@@ -903,27 +914,42 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
 
 
 
-ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(void)
+/* allocate a free list for an unknown structure */
+static ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type)
 {
       GList *l;
+      gpointer mem;
+      int size;
       ZMapWindowCanvasFeature feat;
 
-      if(!featureset_class_G->feature_free_list)
+	size = featureset_class_G->struct_size[type];
+	if(!size)
+	{
+		type = FEATURE_INVALID;		/* catch all for simple features */
+		size = sizeof(zmapWindowCanvasFeatureStruct);
+	}
+
+      if(!featureset_class_G->feature_free_list[type])
       {
             int i;
-            feat = g_new(zmapWindowCanvasFeatureStruct,N_FEAT_ALLOC);
+            mem = g_malloc(size * N_FEAT_ALLOC);
+            zMapAssert(mem);
 
-            for(i = 0;i < N_FEAT_ALLOC;i++)
-                  zmapWindowCanvasFeatureFree((gpointer) feat++);
+            for(i = 0;i < N_FEAT_ALLOC;i++, mem += size)
+      	{
+      		feat = (ZMapWindowCanvasFeature) mem;
+      		feat->type = type;
+                  zmapWindowCanvasFeatureFree((gpointer) mem);
+            }
       }
-      zMapAssert(featureset_class_G->feature_free_list);
+      zMapAssert(featureset_class_G->feature_free_list[type]);
 
-      l = featureset_class_G->feature_free_list;
+      l = featureset_class_G->feature_free_list[type];
       feat = (ZMapWindowCanvasFeature) l->data;
-      featureset_class_G->feature_free_list = g_list_delete_link(featureset_class_G->feature_free_list,l);
+      featureset_class_G->feature_free_list[type] = g_list_delete_link(featureset_class_G->feature_free_list[type],l);
 
       /* these can get re-allocated so must zero */
-      memset((gpointer) feat,0,sizeof(zmapWindowCanvasFeatureStruct));
+      memset((gpointer) feat,0,size);
       return(feat);
 }
 
@@ -932,22 +958,31 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(void)
 void zmapWindowCanvasFeatureFree(gpointer thing)
 {
 	ZMapWindowCanvasFeature feat = (ZMapWindowCanvasFeature) thing;
+	zmapWindowCanvasFeatureType type = feat->type;
 
-      featureset_class_G->feature_free_list =
-            g_list_prepend(featureset_class_G->feature_free_list, (gpointer) feat);
+	if(!featureset_class_G->struct_size[type])
+		type = FEATURE_INVALID;		/* catch all for simple features */
+
+      featureset_class_G->feature_free_list[type] =
+            g_list_prepend(featureset_class_G->feature_free_list[type], (gpointer) feat);
 }
 
 
 
 
-/* sort by name and the start coord */
-/* note that ultimeately we are interested in query coords in a zmapHomol struct
+/* sort by name and the start coord to link same name features */
+/* note that ultimately we are interested in query coords in a zmapHomol struct
  * but only after getting alignments in order on the genomic sequence
  */
 static gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
 {
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
 	ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
+
+	if(feata->feature->strand < featb->feature->strand)
+		return(-1);
+	if(feata->feature->strand > featb->feature->strand)
+		return(1);
 
 	if(feata->feature->original_id < featb->feature->original_id)
 		return(-1);
@@ -958,7 +993,7 @@ static gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
 
 
 
-
+/* sort by genomic coordinate for display purposes */
 static gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
@@ -1054,7 +1089,7 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
 
   featureset_item = (ZMapWindowFeaturesetItem) foo;
 
-  feat = zmapWindowCanvasFeatureAlloc();
+  feat = zmapWindowCanvasFeatureAlloc(type);
   feat->feature = feature;
   feat->type = type;
   if(type == FEATURE_ALIGN)

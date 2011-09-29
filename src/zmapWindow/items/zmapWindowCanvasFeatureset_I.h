@@ -77,17 +77,18 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 
 
-ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(void);
-void zmapWindowCanvasFeatureFree(gpointer thing);	/* is used as a callback, needs to be generic */
 
 typedef struct _zmapWindowFeaturesetItemClassStruct
 {
   zmapWindowCanvasItemClass __parent__;
 
   GHashTable *featureset_items;         /* singleton canvas items per column, indexed by unique id */
-  GList *feature_free_list;
+  GList *feature_free_list[FEATURE_N_TYPE];
 #define N_FEAT_ALLOC      1000
 	/* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
+	/* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */
+
+  int struct_size[FEATURE_N_TYPE];
 
 } zmapWindowFeaturesetItemClassStruct;
 
@@ -109,7 +110,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   double start,end;
   double longest;			/* feature y-coords extent of biggest feature */
-  gboolean overlap;		/* default is to assume features do, some style imply that they do not (eg coverage/ heatmap) */
+  gboolean overlap;		/* default is to assume features do, some styles imply that they do not (eg coverage/ heatmap) */
+  double bump_extra_overlap;	/* calculated according length of compound features */
 
   gboolean link_sideways;	/* has complex features */
   gboolean linked_sideways;	/* that have been constructed */

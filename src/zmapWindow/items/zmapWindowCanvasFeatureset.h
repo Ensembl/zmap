@@ -68,7 +68,7 @@ typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemCla
 GType zMapWindowFeaturesetItemGetType(void);
 
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs);
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int size);
 
 
 ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
@@ -97,7 +97,7 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
 
 
 /* enums for function type */
-typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
+typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
 /* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
 /* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
 
@@ -106,10 +106,15 @@ typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_COLOUR, FUNC_STYLE, FUN
 /* see  zMapWindowFeaturesetAddItem() */
 typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
 
+
+
 void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span);
-
+#define CANVAS_FEATURESET_LINK_FEATURE	0	/* not needed: is OTT */
+#if CANVAS_FEATURESET_LINK_FEATURE
+int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature);
+#endif
 
 /* holds all data need to drive exotic bump modes */
 typedef struct

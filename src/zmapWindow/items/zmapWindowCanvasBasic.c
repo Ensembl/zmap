@@ -69,8 +69,9 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	x2 = x1 + feature->width;
 
 		/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-	foo_canvas_w2c (item->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-	foo_canvas_w2c (item->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+		/* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */
+	foo_canvas_w2c (item->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1);
+	foo_canvas_w2c (item->canvas, x2, feature->feature->x2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
       						/* + 1 to draw to the end of the last base */
 
 		/* we have pre-calculated pixel colours */
@@ -108,6 +109,6 @@ void zMapWindowCanvasBasicInit(void)
 
 	funcs[FUNC_PAINT] = zMapWindowCanvasBasicPaintFeature;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC,funcs);
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0);
 }
 
