@@ -217,6 +217,9 @@ typedef struct
 							       how they are fetched. */
 
   ZMapFeatureContext context ;		    /* Returned feature sets. */
+
+  int num_features;
+
 } ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
 
 

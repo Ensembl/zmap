@@ -181,13 +181,13 @@ typedef struct
 
 /* Assumes x1 <= x2. */
 #define ZMAP_SPAN_LENGTH(SPAN_STRUCT)                 \
-  (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1) 
+  (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1)
 
 
 
 /* This is a kind of "annotated" exon struct as it contains a lot more useful info. than
  * just the span, all derived from the the transcript feature.
- * 
+ *
  * Note that for EXON_NON_CODING none of the cds/peptide stuff is populated. */
 typedef enum {EXON_INVALID, EXON_NON_CODING, EXON_CODING, EXON_SPLIT_CODON, EXON_START_NOT_FOUND} ExonRegionType ;
 
@@ -345,6 +345,17 @@ typedef struct ZMapFeatureContextStruct_
 
   /* Context only data. */
 
+  int num_features;
+  /* MH17: it may be reasonable to have a count of the number of features in a context
+   * but that is not why this is here.
+   * i need to get the number of features returned from a pipe server (or other request)
+   * and this is the only way i can find that does not involve either writing two different ways of counting them
+   * (a) for the first context received b) for subesequent ones .. which will be error prone
+   * or editing many layers of functions and data structures that prevent any information being passed
+   * from a server to the calling code.  The last time I tried to do that it took two entire days and
+   * i've got other things i should be doing.
+   * NOTE this count is not maintained and is only vaild from a server getFeatures() call
+   */
 
   /* Hack...forced on us because GHash has a global destroy function per hash table, not one
    * per element of the hashtable (datalists have one per node but they have their own
@@ -788,7 +799,7 @@ typedef struct
 
   char *column_desc;                /* description */
 
-  int order;                        // column ordering
+  int order;                        /* column ordering */
 
   ZMapFeatureTypeStyle style;       /* column specific style data
                                      * may be config'd explicitly or derived from contained featuresets
@@ -797,14 +808,17 @@ typedef struct
 
   GList *style_table;               /* all the styles needed by the column */
 
-  GList * featuresets;              /* list of those configured
+  GList * featuresets_names;              /* list of those configured
                                      * these get filled in when servers request featureset-names
                                      * for pipe servers we could do this during server config
                                      * but for ACE (and possibly DAS) we have to wait till they provide data
                                      */
-/* performance betterment
-   generate with zMapFeatureGetColumnFeatureSets() after config and update if a server provides mapping */
-/* change all code around that function */
+  GList * featuresets_unique_ids;	/* we need both user style and unique id's */
+  						/* both are filled in by lazy evaluation if not configured explicitly
+  						 * (featuresets is set by the [columns] config)
+  						 * NOTE we now have virtual featuresets for BAM coverage that do not exist
+						 * servers that provide a mapping must delete these lists
+  						 */
 
 } ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
 
@@ -822,6 +836,15 @@ typedef struct
 
   GQuark style_id ;     /* The style for processing the source. */
 
+  GQuark related_column;	/* eg real data from coverage */
+  GQuark maps_to;			/* composite featureset many->one
+  					 * composite does not exist but all are displayed as one
+  					 * requires ZMapWindowGraphDensityItem
+  					 * only relevant to coverage data
+  					 */
+
+  gboolean is_seq;		/* true for coverage and real seq-data */
+
 } ZMapFeatureSourceStruct, *ZMapFeatureSource ;
 
 
@@ -829,7 +852,7 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *styles;                     /* All the styles know to the view or window */
+  GHashTable *styles;                     /* All the styles known to the view or window */
 
   GHashTable *column_2_styles ;           /* Mapping of each column to all the styles
                                            * it requires. using a GHashTable of
@@ -842,7 +865,7 @@ typedef struct
                                            * Columns treated as fake featuresets so as to have a style
                                            */
 
-  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureDesc
+  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureSetDesc
                                            * NB: this contains data from ZMap config
                                            * sections [columns] [featureset_description] _and_ ACEDB
                                            */
@@ -859,8 +882,9 @@ typedef struct
                                            * They are in display order left to right
                                            */
 
-  GList * seq_data_featuresets;           /* sources of BAM data */
+  GList * seq_data_featuresets;           /* sources of BAM data  as unique id's, use source_2_sourcedata  for display name */
 
+  GHashTable *virtual_featuresets;		/* place holder for lists of featuresets */
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;
 
@@ -912,6 +936,9 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
+
+
+
 
 
 /* ***************
@@ -1172,6 +1199,10 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 
+gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id);
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
+gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id);
+
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
 
 /* Probably should be merged at some time.... */
@@ -1271,9 +1302,12 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
 
+
+
 char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
 char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
-
+gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) ;
+void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
                                   /* ZMapFeatureXMLType xml_type */

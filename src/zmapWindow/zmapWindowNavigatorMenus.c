@@ -56,7 +56,7 @@ static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent);
 static void cancel_destroy_cb(GtkWidget *widget, gpointer user_data);
 static void apply_destroy_cb(GtkWidget *widget, gpointer user_data);
 static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navigator);
-static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data) ;
+static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data) ;
 
 void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvasItem *item)
 {
@@ -660,14 +660,10 @@ static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navig
 
 
 
-static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
+static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data)
 {
   gboolean match = FALSE;
   GQuark locus_name = GPOINTER_TO_UINT(user_data);
-  ZMapFeatureAny feature_any = NULL;
-
-  feature_any = zmapWindowItemGetFeatureAny(item);
-  zMapAssert(feature_any);
 
   switch(feature_any->struct_type)
     {

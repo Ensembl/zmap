@@ -82,9 +82,8 @@ GType zMapWindowBasicFeatureGetType(void)
 	NULL,           /* class_data */
 	sizeof (zmapWindowBasicFeature),
 	0,              /* n_preallocs */
-	(GInstanceInitFunc) zmap_window_basic_feature_init
-
-
+	(GInstanceInitFunc) zmap_window_basic_feature_init,
+      NULL
       };
 
       group_type = g_type_register_static(zMapWindowCanvasItemGetType(),
@@ -135,7 +134,6 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 
   if(!(FOO_CANVAS_GROUP(basic)->item_list))
     {
-      ZMapFeatureTypeStyle style;
       ZMapFeature feature;
       gboolean interval_type_from_feature_type = TRUE; /* for now */
       feature = basic->feature;
@@ -145,11 +143,17 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	{
 	  switch(feature->type)
 	    {
+#if 1
 	    case ZMAPSTYLE_MODE_GLYPH:
 	      basic->interval_type = ZMAP_WINDOW_BASIC_GLYPH;
 	      break;
+#endif
+
 	    case ZMAPSTYLE_MODE_GRAPH:
-	    default:
+            zMapAssertNotReached();       /* moved to zmapWindowGraphItem */
+            break;
+
+     	    default:
 	      basic->interval_type = ZMAP_WINDOW_BASIC_BOX;
 	      break;
 	    }
@@ -157,8 +161,10 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 
       switch(basic->interval_type)
 	{
+#if 1
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
+          ZMapFeatureTypeStyle style;
 	    int which = 0;      // 5', 3' or generic
 	    gboolean strand = FALSE;
 
@@ -183,7 +189,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 
 	    break;
 	  }
-
+#endif
 
 	case ZMAP_WINDOW_BASIC_BOX:
 	default:
@@ -242,6 +248,9 @@ static void zmap_window_basic_feature_get_property(GObject               *object
 
 
 /* I DON'T WHY THIS IS COMMENTED OUT.... */
+
+/* MH17: it default to canvasitem ->destroy */
+
 #ifdef BASIC_REQUIRES_DESTROY
 static void zmap_window_basic_feature_destroy     (GObject *object)
 {

@@ -1,4 +1,7 @@
 <h2>Density plots</h2>
+<p>
+<b>A caveat</b>: this page started of as design ideas and developed into implementation notes which evolved as requirements and technical obscurities became clearer, so be skeptical af what you read here.  It's mostly true but pedantry cannot be acheived.  Later on the density code gets to be used as a basis for the <a href="Design/notes/new_model_canvas.shtml">new-model-canvas</a>.
+</p>
 
 <fieldset><legend>Motivation</legend>
 <h3> Summary data</h3>
@@ -7,16 +10,16 @@
 <p>
 </p>Especially at low zoom levels high volume columns are displayed with many features overlapping with the result that most are not visible despite being drawn on the canvas.  Experiments with <a href="Design_notes/notes/canvas_tweaks.shtml#summarise">filtering out invisible features</a> from the display while still presenting the same picture show that improvements in speed by a factor of 20x are realistic.
 </p>
-<p>Features displayed in low resolutions are not very useful to annotators - the display at low zoom levels serves mainly to show where features are and a denisity plot would give more information - as mentioned above overlapping features are not visible and help no-one.  These kind of display have been requested specifically for <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> data.
-</p>
-<h3>GC content</h3>
-<p>A related requirement is th show GC content which is a rolling average calculated from the DNA sequence and this can be displayed as a histogram or wiggle plot.
+<p>Features displayed in low resolutions are not very useful to annotators - the display at low zoom levels serves mainly to show where features are and a density plot would give more information - as mentioned above overlapping features are not visible and help no-one.  These kinds of display have been requested specifically for <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> data.
 </p>
 
+<h3>GC content</h3>
+<p>A related requirement is to show <a href="Design_notes/notes/density.shtml">GC content</a> which is a rolling average calculated from the DNA sequence and this can be displayed as a histogram or wiggle plot.
+</p>
 </fieldset>
 
 <fieldset><legend>Display output</legend>
-<p>Here we consider displaying any kind of feature entirely in terms of how many there are and there a few ways of representing this information.  We expect this process to be useful primarily for alignment features (eg Trembl, RNAseq)
+<p>Here we consider displaying any kind of feature entirely in terms of how many there are and there a few ways of representing this information.  We expect this process to be useful primarily for alignment features (eg RNAseq)
 </p>
 <h3>Heat map</h3>
 <p>Fixed width with each vertical pixel colour coded according to how many features overlap that region.</p>
@@ -29,77 +32,293 @@
 <p>
 Typically the density scale will be chosen as logarithmic.
 </p>
-<p>Other browsers (eg GBrowse - server side web based) implement density plots by using pre-computed bins based on different zoom levels but this imposes a requirement on the data source.  Figures such as "a few minutes for 16k features" have been mentioned for this pre-computation and this is not a good option for Zmap.
+<p>Other browsers (eg GBrowse - server side web based) implement density plots by using pre-computed bins based on different zoom levels but this imposes a requirement on the data source.  Figures such as "a few minutes for 16k features" have been mentioned for this pre-computation and this is not a good option for ZMap - it would increase the data needed to display the initial view, and the intention is to make this as fast as possible.
 </p>
-<p>Previous dicsussions have focussed on producing a summary display in ZMap before loading large datasets and this also implies pre-computation of bins of data but there are some difficulties with this approach:
-<ul>
-<li> unless the bins are computed off-line (and updated whenever the data set is updated) then this would imply a <i>reduction</i> in speed.  Using the pipeServer model of data transport data is requested from an external source, processed into GFF and output directly to ZMap and obviously can be passed through on the fly. To compute bins of data volumes to be sent to ZMap first would require the whole data set to be received by the pipeServer script before sending any of it the ZMap; effectively it would take twice as long to load.
-<li> if bins are pre-computed then that requires the same extra function to be supported by many different data sources, or to be performed by the pipeServer interface scripts.  This introduces the possibility of faulty or non implemented function and also of unpredicatble delays (following database updates).
-<li> any external source or script would have to work in terms of fixed size bins relating either to a fraction of the sequence range or a fixed number of bases, and would have to provide several levels of these.  These would not map onto the ZMap display directly and there woudl be a technical problem to solve in terms of mapping a sequence range onto display pixels.  Supplying the external script with ZMap display paramters is not practical as users are likely to resize the ZMap window and also to zoom to different levels.
-</ul>
+<p>
 </p>
 </fieldset>
 
-<fieldset><legend>Implementing density plots in ZMap</legend>
-<h3>Configuration - styles</h3>
+<fieldset><legend>Implementing fixed style density plots in ZMap</legend>
+<p>Here we define how to display a coverage featureset as a density plot.  The data is supplied via GFF and includes start and end coordinates for the bins and a score which is the number of features in the bin.  Note that even though the display is likely to be log(score) we need the actual number so as to be able to combine bins as zoom level changes.
+</p>
 <p>Whether or not to produce a density plot will be determined by a column's style using some new parameters.
-A seperate style will be added for optional density mode displays and each normal features style will refer to this. It is also valid to define a featureset or column as a density plot regardless of the zoom level.
+A new mode (density) will be introduced which is automatically a graph mode display but allows bins to be combined.
+Density mode styles will trigger base features being re-processed into display data structures based on pixel boundaries.
+Multiple featuresets may be displayed in a single column and each one will produce its own graphical display and the styles should be defined to ensure clarity - heatmaps and histograms do not overlap well but wiggle plots may.
+</p>
+
+<h3>Configuration</h3>
+<p>
+An example:
+<pre>
+[density-plot]
+graph-mode = heatmap | histogram | line  # default = heatmap
+graph-scale = log | linear        # default = log
+colours = normal fill border # default = fill white; border black
+# frame-colours are also possible according to frame mode
+mode=graph
+graph-density=true
+graph-density-min-bin=2
+graph_scale=log
+
+</pre>
+For a heatmap the colours used will be calculated according to the scale and between the fill and border colours, with border being the maximum density.
+</p>
+<p>
+Other existing style parameters will be used in a density mode style:
+<pre>
+width =  pixels
+min-score = 0     # number of features for minimum score
+max-score = 2000  # number of features for max score
+
+min-mag =
+max-mag =
+</pre>
+Note that min-score and max-score define the number of steps in the display and also the behaviour of a heatmap - 0 will mean no features and displays as the fill colour and a single feature will be the next step up.
+</p>
+
+<h3>Bumping density plots</h3>
+<p>It is a requirement to bump a heatmap into a histogram and it is possible that other options could be asked for. We can introduce new bump modes and/or bump styles to achieve this.  Note that a lot of bump modes make little sense for binned data.
+</p>
+
+
+<h3>Implementation - drawing the plots</h3>
+
+<h4>Change of philosophy - virtual features</h4>
+<p>There are some problems with simply drawing bins as received:
+<ul>
+<li> It is easy to imagine in excess of 10k features in a column. if we have several of these then we have performance problems.
+<li> If we overlap bins at low zoom then we still see the maximum level (histograms and line plots) but for heatmaps we may miss data.
+<li> Bins may not map well to pixel boundaries.
+</ul>
+</p>
+
+<p>To avoid performance overheads due to large amount of data a single density plot canvas item (<b>ZMapWindowDensityItem</b>) will be added per column and this will handle the display and selection of all bins. Please note the following:
+<ul>
+<li>This item will cover the whole extent of the column, ie it will range from start to end coordinate of its parent, and will set the width of the column as the width of the widest bin.
+<li>It will be added transparently from the Item Factory when a source bin item is added to the canvas.
+<li>Each source bin item added will be added to a data structure (a skip-list) held by the density item but not added to the canvas directly.
+<li>The FToIHash will point to the real canvas item, for each source bin added (a many to one relationship) and will also have a pointer to the orignal feature (a 1-1 mapping)
+<li>On draw or zoom the density item will calculate a list of display bins, which will be based on pixel boundaries and may hold several source bins depending on zoom.
+<li>It will draw any section of the plot on expose, driving the GDK_Draw function from its internal display list.
+<li> For a wiggle plot a single GDK_PolyLine call will be used - there cannot be more than 1200 lines for this on current monitors, but the number of segment will be set to some abritatry limit.
+<li>For histograms and heatmaps rectangles will be drawn for each bin.
+<li>mouse and keyboard events will be handled and the relevant display or source bin used to extract meta information and respond as for individual features at present.
+</ul>
+</p>
+
+
+
+<h3>Other implementation issues</h3>
+<p> The window status bar, feature details window, and feature search dialog will all need tweaking to work well with density data.  In particular feature search makes no sense for density columns and the assumptions in the feature context FtoIHash such as 'each feature has exactly one corresponding canvas item' will be broken.
+</p>
+
+<h3>Effort needed</h3>
+<p>
+What needs to happen:
+<ul>
+<li> styles to define display parameters
+<li> implemement density canvas item (interface to canvas)... cut and paste
+<li> on display and zoom compute display bins
+<li> on expose draw a series of poly lines OTF or rectangles from the bins data for the exposed region
+<li> catch mouse click on column: show info on status bar: look up bin from canvas item...
+<li> catch double click: show feature dialog ?
+<li> patch feature search to handle density columns
+<li> resolve canvas_item->feature references
+</ul>
+</p>
+
+<p>
+<h4>Further notes (during implementation)</h4>
+<pre>
+Creating canvas items
+
+- we have a feature and decide to display it
+- this goes through stuff like zmapWindowDrawFeatures and ends up in the windowItemFactory.
+- according to the feature's style a different factory method gets called:
+      { ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature }
+- this calls:
+        canvas_item  = zMapWindowCanvasItemCreate(parent, y1, feature, style);
+        zMapWindowCanvasItemAddInterval(canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+- CanvasItemCreate calls feature_is_drawable() which returns a type such as ZMAP_TYPE_WINDOW_GRAPH_FEATURE
+depending on the feature's style
+
+NB in zmapWindowBasicFeature.c this process is repeeated.
+
+What we need to do is to change drawSimpleGraphFeature() so that it makes a singleton graph column item
+and adds the source features to this instead of calling zmapWindowCanvasItemCreate(), which will be clean.
+
+Either the class data needs to include a hash of existing graph column items or we look up existing ones in the parent.
+
+Glyphs also get run thro' basic feature, which is odd.
+</pre>
+</p>
+
+<h4>Patching density items via the item factory</h4>
+<p>This is slightly intricate and not immediately obvious.
+</p>
+<h5>Preserving graph mode=histogram (non density plot graphs)</h5>
+ <p>A small preparatory task was to take simple graph features (the only implementaion so far - graph mode histogram as simple boxes) out of <b>zmapWindowBasicFeature.c</b> and to create a real <b>ZMapWindowGraphItem</b> class.  This involved creating a new file <b>zmapWindowGraphItem.c</b> based on BasicFeature and adjusting code in <b>zmapWindowItemFactory.c/</b> and zmapWindowCanvasItem.c/feature_is_drawable()</b>.
+</p>
+<p>Note that the item factory (<b>zmapWindowFToIFactoryRunSingle()</b> chooses a factory method indexed by a feature's style mode and then each one of these calls <b>zMapWindowCanvasItemCreate()</b> which determines the type of canvas item to create via <b>feature_is_drawable()</b> based on the feature's style mode, so effectively the same decision is being made twice in a row.
+</p>
+<p>As each factory method is tied directly to each style mode by the above we cannot call different methods for different types of graph and the method already defined (<b>drawSimpleGraphFeature()</b> must necessarily be used to draw other types of graph, so to avoid confusion this has been renamed to <b>drawGraphFeature()</b>
+</p>
+
+<p>After creating an empty canvas item of the correct type (previously Basic, now Graph), drawGraphFeature adds the actual data via the <b>class->add_interval()</b> function which resolves to <b>zmapWindowGraphItem.c/zmap_window_graph_item_add_interval()</b>.  This adds a foo canvas rect to the ZMapWindowCanvasItem which is a foo canvas group.
+</p>
+
+<h5>Inserting the ZMapWindowDensityItem item once per column</h5>
+<p>In <b>drawGraphFeature</b> we test the graph mode style's density flag and if set add the <b>ZMapWindowDensityItem</b> once only.  Ths is implemented by the class directly, which contains a GHashTable of these indexed by the column unique id, which is accessable to the factory via ther run_data->container foo canvas group.
+</p>
+<p>Note that we make this more complicated by <i>adding style_id</i> as well and we construct a composite GQuark (once) in the item factory.
+</p>
+
+<h5>Adding data to the ZMapWindowDensityItem instead of the foo canvas</h5>
+<p>Using the styles density flag as above we choose whether to call zmapWindowCanvasItemCreate or not.
+Having obtained out singleton data structure we add our graph iten to the source bins list.
+</p>
+<h5>Displaying data - making assumptions</h5>
+<p>A coverage display is implicitly non overlapping,; if we wish to display overlapping data the we wi8ll use two different styles which will cause two different density displays to exist.  This allows an optimisation when looking up display data on expose - we can search on start coordinate and look at the previous item to see if it overlaps the exposed region.
+</p>
+<p>It is intended to replace normal graphs with the density module (which will operate in the same way but without re-calculating bins on zoom), and in this case it is possible we may have to handle overlapping data. This can be done automatically (no configuration needed) by remembering the longest item to display and offset search coordinates by this amount. As features are expected to be small this will be efficient enough - we simply scan a sorted linked list.  Taking a hypothetical worst case this is unlikely to be time consuming.
+If necessary we can create display indexes for long and short items to provide an effcient solution wothout risking an incorrect display.
+</p>
+
+<h6>Work in progress</h6>
+<pre>
+- graph items have been made into ZWCI and have foo rects added as intervals
+  rather than existing as a variant of basic feature
+- free standing glyphs are added as foo glyph items to basic features
+- for density plots we need to add GraphFeature for the single
+  density column wide item (a hack) and then add an interval to that which
+  will be the foo extension density item
+  This is needed as the ZWCI is a foo group extension and does not draw directly
+  whereas foo items do
+- when canvas items get simplified then we turn the basic/density ZWCI into a simple
+  foo extension as for other types
+
+- zMapWindowGraphDensityItemGetDensityItem() returns the ZWCI if found.
+  If not then the item factory (via drawGraphFeature()) will add it and add the interval
+  Note that we will call foo_canvas_item_new() directly rather than via zMapWindowCanvasItemCreate()
+
+- problems:
+  canvas item->feature gets accessed directly and cannot be NULL (OK: set to first)
+  We can invent a singleton feature that gets assigned data depending on mouse clicks??
+  we need to handle long items??
+  style needs to be set globally -> this looks like the add_interval() call but we need to
+  check compatablilty and/or write the code directly
+
+- to do:
+*  paint the graph in the _draw function
+*  test as for plain graph features: should display the same
+*  test using two featuresets with the same data from GFF files and display as old and new style
+* display as lines not boxes -> combine data points into a poly_line
+* display as heatmap: boxes are full width and colour coded; ok with irregular size bins?
+* handle mouse clicks etc, point and bounds
+  handle long items (trivial?.. ignored without mishap)
+  handle hide and show
+* re-bucket on display and zoom
+* get some timing stats
+  add on GC skew
+
+  add print/ screen dump handling
+</pre>
+
+<h6>Operating coverage display and bumping</h6>
+<p>
+<ul>
+<li> heatmaps for related files (eg tissue types) will be displayed in one column and bumping will bump all heatmaps together
+<li> currently bumping to wiggle is preferred over histogram
+<li> users want to be able to hide 'uninteresting' heatmap/ wiggle features (as in feature hide/show)
+</ul>
+</p>
+<p>To implement this new style and bump options will be provided:
+<pre>
+[coverage]
+bump-style=style-name	# disables 'bump-more-options'
+stagger=pixels
+show-zero=true/false
+overlap=true/false	# need to optimise aligments code (not relevant here)
+</pre>
+<i>stagger</i> will offset each featureset item in the column by a set amount and these will be ordered as per column confguration, for example:
+<pre>
+[columns]
+coverage = liver; heart ; brain
+</pre>
+will specify that the featuresets are in that order from left to right.  Note that each set's width is specified separately
+and this may indicate overlap (eg for wiggles) or a gap (eg for a heatmap).  This is necessary to avoid having to define different styles for each featureset with a different offset - it is important that the featuresets appear in the same (predictable) order and position within the column.
+</p>
+<p>The whole column may be shown/ hidden as normal, but the RC menu will be ammended to allow a single featureset to be hidden / displayed with a keyboard shortcut for the selected one.  Note that we will have to show column highlight differently and for heatmaps this may be difficult.  One solution would be by using an outline for select.  The columns dialog popup was intended to allow selection of featuresets in a column at some point... NOTE that this will be deferred until the dialog design is revisited, and in the short term only a menu driven interface will be provided.
+</p>
+
+<h6> Handling short reads data</h6>
+<p>To avoid accumulating too many features on the ZMap display data outside the mark will be removed. This data will be displayed on 'request from mark' and remain until the mark is reset and set again.   Adjusting the mark will not remove displayed data.
+</p>
+
+<h6>Handling focus interface</h6>
+
+<p> Given a mouse click that is attached to a single column wide foo item we can find the relevant feature implied by the mouse coordinates and set the foo item's feature to be this and the focus code can be adjusted to cope with his by adding the feature to the focus item data structure.
+</p>
+
+<p>Focus code is called from in <b>zmapWindowItem.c</b>   For a simple mouse click
+this causes no problems as we can find the relevant feature quite easily.  For an alignment (highlight same name items) this requires a feature search and will not work with density items using the current form of feature search (which returns a list of foo items which would all be the same).
+This list of items is then added to the focus list en-masse and if this is derived from density items it will work.
+ <b>However</b> <i>in the short term</i> we know that alignments are not displayed as density items and this need not concern us.
+</p>
+<p>Focus code is also called from <b>zmapWindowState.c</b> and this restores a single 'hot' item.  This (current ZMap) fails to restore the previously highlit data and is relatively simple to emulate.  Window state is stored via some 'serialise' function - it's not clear if this is necessary, as we only restore state eg after a RevComp, and the feature context is still valid.
+</p>
+
+<p>
+There is a further problem to solve of finding a feature from a feature id; previously this has been done by finding the corresponding canvas item which has a pointer back to the feature.  <i>Next sentence not followed</i>Focus code could be extended to store start, end coordinates of features (via the feature itself) and this can be used to look up the feature in the density items skip list.
+</p>
+
+<p>Focus items a) have to be highlit and b) the highlight must persist until removed.  Taking into account that density items (and normal graphs) do not overlap we can implement this with a simple flag in the graph segment data structure and just display a different colour, which is stroed in the column wide extenced foo canvas (density) item.
+</p>
+<p>To handle overlapped items (eg alignments) it will be necessary to post-process focus items and display them after the others - perhaps the logical way to of this is to display focus itesm at the end of every expose event, but that is outside the scope of this module.
+</p>
+<p>Note that focus code highlights features using a given colour not necessarily the features' style's SELECTED colour if a window default has been set.  This default can alternatively be set using the root style.  The interface is via a ZMapWindowCanvasItem function (set_colour) and for density items we will need to patch into this.  Focus code works using a set of flags for different groups of focus items (eg selected, evidence) and  we can store these flags in the graph-density item struct for each feature which will allow us to implement all optional colours, storing these in the global graph density struct.  Note that for density items we only need to handle 'selected' but implementing this interface now will allow other data types with more display options (eg masked alignments) to be implemented easily.
+</p>
+<p>Unfortunately due to scope issues it is not possible to use focus code to get colours, and the canvas item class interface is a bit convoluted, so to keep things simple we will store a limited number of alternate colours directly in the graph density item struct and choose these according to a flag.  This will limit density items to being normal colour or selected (as defined by the focus code) only.
+</p>
+
+
+<h6>Handling the FToI search interface</h6>
+
+<p>In the short term we can appply restrictions to this.  Search for coverage data by name is not particularly useful and we can just disallow this or make it fail.  Likewise coverage data is not valid as evidence features (transcript/highlight evidence) and we can assume this will not occur <i>in the short term</i>.  (see <b>zmapWindowFeature.c</b> # 1352 approx).
+</p>
+<p>In the longer term we need to modify the interface to return feature as well as foo item.
+</p>
+<p><i>Feature search has been made to work with density items - FToI search returns a list of FToIHash data structures instead of canvas items. These contain a reference to the feature as well as the canvas item.</i>
+</p>
+
+
+
+</fieldset>
+
+<fieldset><legend>Implementing low-zoom triggered density plots in ZMap</legend>
+<h4>(under construction)</h4>
+<p><i>These are earlier thoughts now abandoned</i> The idea was to improve perfomance by switching to coverage, but htis looses information (eg alignment score).
+</p>
+<p>
+A separate style will be added for optional density mode displays and each normal feature's style will refer to this (in a later implementation).
 </p>
 <p>Bumping the column will revert to using the normal style. The density style bump mode will be used to control whether or not this is allowed.
 </p>
-<p>A density mode style will automatically also be a graph mode style and graph-mode configuration will be used to drive the display. The difference between simple graph mode and density graph mode is that one used features and the other feature-frequencies per pixel.
+<p>A density mode style will automatically also be a graph mode style and graph-mode configuration will be used to drive the display. The difference between simple graph mode and density graph mode is that one uses features and the other feature-frequencies per pixel.
 </p>
-<p>Note that a column style may be set independantly of the included featuresets or can be inferred by merging the  featureset styles.  All featuresets in a column will be treated as one for the purposes of density plots.
+<p>Note that a column style may be set independantly of the included featuresets or can be inferred by merging the featureset styles.  All featuresets in a column will be treated as one for the purposes of density plots.
 (for example if we created a UniProt column then Swissprot and Trembl would be displayed in different colours as at present when displayed at high zoom but would be combined to create a single density plot.
 </p>
 <p>Note that although most of the relevant data consists of alignments some high volume data (eg ensembl_variation) are basic features and therefore these parameters must apply to all style modes.
 </p>
 
 <pre>
-[density-plot-trembl]
-mode=density
-graph-mode = heatmap | histogram | line  # default = heatmap
-graph-scale = log | linear        # default = linear
-colours = normal fill border # default = fill white; border black
-# frame-colours are also possible according to frame mode
-
 [trembl]
 density-style = density-plot-trembl
 </pre>
-For a heatmap the colours used will be calculated according to the scale and between the fill and border colours, with border being the maximum density.
-</p>
-<p>
-Existing style parameters will be used in a density mode style:
-<pre>
-width =  pixels
-min-score = 0     # number of features for minimum score
-max-score = 2000  # number of features for max score
 
-max-mag = num-features
-</pre>
-Note that min-score and max-score define the number of steps in the display and also the behaviour of a heatmap - 0 will mean no features and displays as the fill colour and a single feature will be the next step up.
-</p>
-
-<h4>TDB:</h4>
-<p>
-<ul>
-<li> go over <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> again and pay more attention to bumped and unbumped coverage displays.  What is the source data?
-</ul></p>
-
-<h3>Implementation - drawing the plots</h3>
-<h4>Change of philosophy - virtual features</h4>
-<p>Currently all displayed features are real and exist in the feature context. To preserve this significan design assumption it may be easiest to create a virtual column and create virtual features corresponding to the desity display at the current zoom level, where the bins for counting features correspond to vertical pixels.  Given a sorted list of features these can be calculated quite quickly.</p>
-<p>
-As the zoom level changes and we switch to the real data, we hide the virtual column ad display the real one.
-</p>
-<p> This process will be comapatable with denisty data provided externally that has biological significance eg Cage and DiTag data, where the tags are of necessity 20-40 bases long and cluster together.  Zmap can be provide with external features from a density featureset with a style set to match.
-</p>
-
-<h4>Implementation - drawing bins</h4>
-<p>The simplest way to draw a density plot will be to draw one feature (rectangle, no border) per vertical pixel. For a heatmap these bins will appear to merge if they are the same colour. It may be possible to merge such features for real but it's not clear there would be any benefit.  For minimum zoom we are looking at about 1000 features maximum which is not a great performance overhead.
-</p>
-
-<h4>Implementation - triggering density plot or normal features</h4>
+<h4>Implementation</h4>
 <p>Normally we would wish to display a density plot when the zoom level is such that features are not readily discernable due to overlap.  This is a) to give extra information and b) to implement a faster display.  Using the foo canvas we are limited to nominally 1000 pixels at minumum zoom and 30k pixels at maximum, but note that future developments may change this.  However we expect future technology to allow us to display significantly more features in less time.  We do wish to avoid drawing 30k density features - this would be missing the point of using these.  A solution would be to impose a maximum number of these in the style and increase the vertical size of the bins by whole numbers of pixesl as the xoom level increases.
 </p>
 <p>One way to decide when to switch between display modes would be the existing min and max zoom parameters in styles and this looks like a good place to start.  The disadvantage is that to achieve best results the style has to be set appropriately for the data and this is a trial &amp; error technique and will always be a compromise.
@@ -111,7 +330,11 @@ What is important is that there is a clear switch between one style and the othe
 </p>
 </fieldset>
 
+
+
+<a name="GC_content"></a>
 <fieldset><legend>GC content</legend>
+<h4>(needs to be reviewed, ref to density plots above)</h4>
 <h3>Not a density plot</h3>
 <p>GC content provides an easy way to implement wiggle plots as a graph mode feature whcih can later be used  in a density plot environment subject to configuration.  Note that they are defined as style mode = graph!
 </p>

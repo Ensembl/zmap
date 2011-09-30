@@ -488,7 +488,7 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
             zMapLogWarning("creating featureset_2_column for %s",name);
             /* recover from un-configured error
              * NOTE this occurs for seperator features eg DNA search
-             * the style is predefined but the featureset and column are cretaed
+             * the style is predefined but the featureset and column are created
              * blindly with no reference to config
              * NOTE ideally these should be done along with getAllPredefined() styles
              */
@@ -498,6 +498,7 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
              gff->column_id =
              gff->column_ID =
              gff->feature_src_ID = set_id;
+zMapLogWarning("getsetcol: set col ID %s",g_quark_to_string(gff->column_ID));
              gff->feature_set_text = name;
              g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
       }
@@ -508,7 +509,7 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
             {
 	            ZMapFeatureSource gff_source;
 
-                  zMapLogWarning("creating column  %s for featureset %s", g_quark_to_string(gff->column_id), g_quark_to_string(set_id));
+                  zMapLogWarning("creating column  %s for featureset %s (%s)", g_quark_to_string(gff->column_id), g_quark_to_string(set_id), g_quark_to_string(gff->column_ID));
 
                   column = g_new0(ZMapFeatureColumnStruct,1);
 
@@ -520,7 +521,8 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
 				column->style_id = gff_source->style_id;
                   column->column_desc = name;
 
-                  column->featuresets = g_list_append(column->featuresets,GUINT_TO_POINTER(set_id));
+                  column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
+//printf("window adding %s to column %s\n", g_quark_to_string(GPOINTER_TO_UINT(set_id)), g_quark_to_string(column->unique_id));
 
                   g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
             }

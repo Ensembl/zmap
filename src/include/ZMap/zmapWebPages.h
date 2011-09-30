@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -40,6 +40,7 @@
  * with inertia of the way the last release code works, means that the
  * Release_notes dir is no longer under the DOC_URL dir. */
 
+
 #define ZMAPWEB_RELEASE_NOTES_DIR "../Release_notes"
 
 /* This line is parsed/updated by ZMap/scripts/zmapreleasenotes, do not alter its format without
@@ -51,5 +52,10 @@
 
 #define ZMAPWEB_KEYBOARD_DOC  "keyboard_mouse.shtml"
 
+
+/* an interim solutuion: we really need to set this up on an external web page
+ * due to sanger web re-organinisation none of the original links in the menu work
+ */
+#define ZMAP_INTERNAL_WEB_WHATSNEW "http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Otterlace_zmap_new_features"
 
 #endif /* ZMAP_WEBPAGES_H */

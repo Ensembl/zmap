@@ -77,8 +77,10 @@ static void zmap_window_text_feature_destroy     (GObject *object);
 
 static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text,
 						FooCanvasItem         *interval,
+						ZMapFeature			feature,
 						ZMapFeatureSubPartSpan sub_feature,
 						ZMapStyleColourType    colour_type,
+						int colour_flags,
 						GdkColor              *default_fill,
                                     GdkColor              *border);
 static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem   text,
@@ -239,8 +241,10 @@ static void zmap_window_text_feature_destroy     (GObject *object)
 
 static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 						FooCanvasItem         *interval,
+						ZMapFeature			feature,
 						ZMapFeatureSubPartSpan unused,
 						ZMapStyleColourType    colour_type,
+						int colour_flags,
                                     GdkColor              *default_fill,
                                     GdkColor              *border)
 {
@@ -295,8 +299,10 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_it
 
 static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item,
 						FooCanvasItem         *interval,
+						ZMapFeature			feature,
 						ZMapFeatureSubPartSpan sub_feature,
 						ZMapStyleColourType    colour_type,
+						int colour_flags,
 						GdkColor              *default_fill,
                                     GdkColor              *border)
 {
@@ -388,7 +394,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
     }
   else
     {
-      window_text_feature_item_set_colour(text_item, interval, sub_feature, colour_type, default_fill,border) ;
+      window_text_feature_item_set_colour(text_item, interval, feature, sub_feature, colour_type, colour_flags, default_fill,border) ;
     }
 
   return ;

@@ -60,7 +60,7 @@ static void zmap_window_assembly_feature_get_property(GObject               *obj
 static void zmap_window_assembly_feature_destroy     (GtkObject *gtkobject);
 #endif /* ASSEMBLY_REQUIRES_DESTROY */
 
-static void zmap_window_assembly_feature_post_create(ZMapWindowCanvasItem canvas_item);
+//static void zmap_window_assembly_feature_post_create(ZMapWindowCanvasItem canvas_item);
 
 static ZMapWindowCanvasItemClass canvas_item_parent_class_G = NULL;
 
@@ -80,8 +80,8 @@ GType zMapWindowAssemblyFeatureGetType(void)
 	  NULL,           /* class_data */
 	  sizeof (zmapWindowAssemblyFeature),
 	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) zmap_window_assembly_feature_init
-
+	  (GInstanceInitFunc) zmap_window_assembly_feature_init,
+        NULL
 	};
 
       group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
@@ -121,8 +121,10 @@ static FooCanvasItem *zmap_window_assembly_feature_add_interval(ZMapWindowCanvas
 
 static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem   assembly,
 						    FooCanvasItem         *interval,
+						    ZMapFeature			feature,
 						    ZMapFeatureSubPartSpan sub_feature,
 						    ZMapStyleColourType    colour_type,
+						    int	colour_flags,
 						    GdkColor              *default_fill,
                                         GdkColor              *border)
 {
@@ -186,7 +188,7 @@ static void zmap_window_assembly_feature_class_init  (ZMapWindowAssemblyFeatureC
   canvas_item_parent_class_G = (ZMapWindowCanvasItemClass)g_type_class_peek_parent(assembly_class);
 
   canvas_class->add_interval = zmap_window_assembly_feature_add_interval;
-  canvas_class->post_create  = zmap_window_assembly_feature_post_create;
+//  canvas_class->post_create  = zmap_window_assembly_feature_post_create;
   canvas_class->set_colour   = zmap_window_assembly_feature_set_colour;
   canvas_class->check_data   = NULL;
 
@@ -242,6 +244,8 @@ static void zmap_window_assembly_feature_destroy     (GtkObject *gtkobject)
 #endif /* ASSEMBLY_REQUIRES_DESTROY */
 
 
+#if 0
+// mh17: canvas item post create removed
 
 static void zmap_window_assembly_feature_post_create(ZMapWindowCanvasItem canvas_item)
 {
@@ -251,5 +255,5 @@ static void zmap_window_assembly_feature_post_create(ZMapWindowCanvasItem canvas
 
   return ;
 }
-
+#endif
 

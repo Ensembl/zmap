@@ -170,6 +170,25 @@ vertebrate_mRNA = Vertebrate messenger RNA
 </pre>
 </p>
 
+<p>Some featuresets may be related to others.  The first case we need is to link a coverage featrueset to the data it represents, and in this case we expect to request the data featureset via a right-click on the coverage.
+<pre>
+[featureset-related]
+coverage=data
+</pre>
+<b>NOTE</b>: many other relationships are possible and this is an interim solution. Due to the increasing complexity of ZMap configuration we expect to replace the existing flat file with an SQLite database.
+</p>
+
+<p>
+It is also possible to define  'virtual featuresets' that cause several featuresets to be displayed as one.<b>NOTE</b> this is only revelan tot coverage style displays where each featureset effectivel has its own sub-column. See  <a href="Design/notes/data_config.shtml">here</a> for why.
+<pre>
+[featuresets]
+coverage_Tier1_cytosol_K562 = coverage_Tier1_cytosol_K562_LongPolyA_Rep1 ; coverage_Tier1_cytosol_K562_LongPolyA_Rep2
+</pre>
+</p>
+
+<p>Refer also to <a href="Design/notes/SQLite.shtml">SQLite configuration</a> for some other notes on future directions.
+</p>
+
 </fieldset>
 
 <fieldset><legend>A Note about GLib Key Files</legend>

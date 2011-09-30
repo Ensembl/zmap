@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *-------------------------------------------------------------------
@@ -37,16 +37,7 @@
 #define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
 #define ZMAP_VERSION 0
 #define ZMAP_RELEASE 1
-#define ZMAP_UPDATE 135
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* ZMap Feature ID...used for development only, should be NULL in release code.
- * In development code will have a per-code-branch unique ID. */
-#define ZMAP_DEVELOPMENT_ID NULL
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+#define ZMAP_UPDATE 136
 
 
 /* Create a copyright string for dialogs etc. */
@@ -62,20 +53,6 @@
 /* compile string. */
 #define ZMAP_COMPILE_STRING()               \
 __DATE__ " " __TIME__
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Create a comments string for dialogs etc. */
-#define ZMAP_COMMENTS_STRING(TITLE, VERSION, RELEASE, UPDATE)                                  \
-"("ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE)", "              \
-"compiled on - " ZMAP_COMPILE_STRING() ")\n"                                                  \
-"\n"                                                  \
-"This application is part of the ZMap genome viewer/annotation package originally written by\n"    \
-"    Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk\n"                            \
-"and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk)\n"\
-"and Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 

@@ -115,10 +115,11 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Raise ticket/Blixem, Dotter or Belvu ticket",      NULL, rtTicket, RT_SEQTOOLS, NULL },
  { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
- { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
- { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
- { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+// { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+// { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
+// { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
+// { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+ { "/Help/What's New", NULL,    allHelpCB, ZMAPGUI_HELP_WHATS_NEW, NULL },
  { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
 
@@ -401,7 +402,7 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
     }
   else
     {
-      zMapGUIShowMsgFull(NULL, "Please wait, ticket page wil be shown in your browser in a few seconds.",
+      zMapGUIShowMsgFull(NULL, "Please wait, ticket page will be shown in your browser in a few seconds.",
 			 ZMAP_MSG_INFORMATION,
 			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
     }
@@ -506,7 +507,7 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
     {
 #warning need dataset defined here as well as start,end
       zMapAssert(zmap->default_sequence);
-      seq_map->sequence = zmap->default_sequence->dataset;
+      seq_map->dataset = zmap->default_sequence->dataset;
       seq_map->sequence = new_sequence;
       seq_map->start = start;
       seq_map->end = end;

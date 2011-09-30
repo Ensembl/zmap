@@ -9,7 +9,7 @@
 # Version incremented        no
 #        Docs created        no
 #     Docs checked in        no
-#  
+#
 # Error reporting gets done by the build_run.
 #
 
@@ -17,12 +17,13 @@ RC=0
 
 
 BUILD_PREFIX='DEVELOPMENT'
-#SUB_DIR="$BUILD_PREFIX"
-ERROR_ID='zmapdev@sanger.ac.uk'
+#ERROR_ID='-a edgrif@sanger.ac.uk'
+ERROR_ID=''
 
+./build_run.sh $ERROR_ID -d -g -m -n $BUILD_PREFIX || RC=1
 
 #./build_run.sh -a $ERROR_ID -d -g -m -n -t -z $SUB_DIR $BUILD_PREFIX || RC=1
-./build_run.sh -a $ERROR_ID -d -g -m -n $BUILD_PREFIX || RC=1
+
 
 
 exit $RC

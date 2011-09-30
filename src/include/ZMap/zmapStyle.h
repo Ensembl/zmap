@@ -112,6 +112,7 @@ typedef enum
     STYLE_PROP_BUMP_MODE,
     STYLE_PROP_BUMP_FIXED,
     STYLE_PROP_BUMP_SPACING,
+    STYLE_PROP_BUMP_STYLE,
 
     STYLE_PROP_FRAME_MODE,
 
@@ -143,6 +144,8 @@ typedef enum
     STYLE_PROP_LOADED,
 #endif
 
+    STYLE_PROP_FOO,
+
     // mode dependant data
 
 
@@ -159,6 +162,11 @@ typedef enum
 
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
+    STYLE_PROP_GRAPH_SCALE,
+    STYLE_PROP_GRAPH_DENSITY,
+    STYLE_PROP_GRAPH_DENSITY_FIXED,
+    STYLE_PROP_GRAPH_DENSITY_MIN_BIN,
+    STYLE_PROP_GRAPH_DENSITY_STAGGER,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -222,6 +230,9 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE      "default-bump-mode"
 #define ZMAPSTYLE_PROPERTY_BUMP_FIXED             "bump-fixed"
 #define ZMAPSTYLE_PROPERTY_BUMP_SPACING           "bump-spacing"
+#define ZMAPSTYLE_PROPERTY_BUMP_STYLE             "bump-style"	/* not a bump mode on the menu */
+
+
 /* ... score by width */
 #define ZMAPSTYLE_PROPERTY_WIDTH                  "width"
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
@@ -248,6 +259,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
 #endif
 
+/* developemnt control to allow reconfig to legacy code */
+#define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
 
 /* glyph properties - can be for mode glyph or as sub-features */
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME             "glyph"
@@ -265,7 +278,12 @@ typedef enum
 
 /* graph properties. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY   "graph-density"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED   "graph-density-fixed"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN   "graph-density-min-bin"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER   "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
 
 /* alignment properties */
@@ -315,22 +333,6 @@ typedef enum
  *  */
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZMAP_STYLE_MODE_LIST(_)                                                                          \
-_(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
-_(ZMAPSTYLE_MODE_BASIC,         , "basic"        , "Basic box features "                           , "") \
-_(ZMAPSTYLE_MODE_ALIGNMENT,     , "alignment"    , "Usual homology structure "                     , "") \
-_(ZMAPSTYLE_MODE_TRANSCRIPT,    , "transcript"   , "Usual transcript like structure "              , "") \
-_(ZMAPSTYLE_MODE_RAW_SEQUENCE,  , "raw-sequence" , "DNA Sequence "                                 , "") \
-_(ZMAPSTYLE_MODE_PEP_SEQUENCE,  , "pep-sequence" , "Peptide Sequence "                             , "") \
-_(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "                                , "") \
-_(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
-_(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
-_(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
-_(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #define ZMAP_STYLE_MODE_LIST(_)                                                                          \
 _(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
 _(ZMAPSTYLE_MODE_BASIC,         , "basic"        , "Basic box features "                           , "") \
@@ -377,14 +379,13 @@ _(ZMAPBUMP_NAME,                  , "name",                  "Name",            
 _(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
 _(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
 _(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name & Colinear", "As for Name but colinear alignments shown.") \
-_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")
-
-//_(ZMAPBUMP_NAME_INTERLEAVE_COLINEAR,         , "name-colinear-interleave",         "Name Interleave & Colinear", "As for Name & Colinear but interleaved, the most compact display.")
+_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")\
+_(ZMAPBUMP_STYLE,               , "style",               "Style",                       "Show features using an alternate style.") \
 
 
 /* We should do this automatically or not at all..... */
 #define ZMAPBUMP_START ZMAPBUMP_UNBUMP
-#define ZMAPBUMP_END ZMAPBUMP_NAME_BEST_ENDS
+#define ZMAPBUMP_END ZMAPBUMP_STYLE
 
 ZMAP_DEFINE_ENUM(ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 
@@ -404,9 +405,18 @@ ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
 #define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                           \
 _(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting. "           , "") \
 _(ZMAPSTYLE_GRAPH_LINE,      , "line"     , "Just points joining a line. ", "") \
+_(ZMAPSTYLE_GRAPH_HEATMAP,   , "heatmap"  , "Colour coded score. ", "") \
 _(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph."    , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
+
+/* Specifies the style of graph. */
+#define ZMAP_STYLE_GRAPH_SCALE_LIST(_)                                           \
+_(ZMAPSTYLE_GRAPH_SCALE_INVALID,   , "invalid"  , "Initial setting. "           , "") \
+_(ZMAPSTYLE_GRAPH_SCALE_LINEAR,    , "linear"   , "show data as given. ", "") \
+_(ZMAPSTYLE_GRAPH_SCALE_LOG,       , "log"      , "convert data to log scale. ", "") \
+
+ZMAP_DEFINE_ENUM(ZMapStyleGraphScale, ZMAP_STYLE_GRAPH_SCALE_LIST);
 
 
 
@@ -610,6 +620,13 @@ typedef struct
   ZMapStyleGraphMode mode ;                         /*!< Graph style. */
 
   double baseline ;                                 /*!< zero level for graph.  */
+  ZMapStyleGraphScale scale;        // log or linear
+
+  int min_bin;				/* min size in pixels */
+  int stagger;
+  gboolean density;                 /* density plot: recalc bins on zoom & use whole column foo */
+  gboolean fixed;                   /* bins are at pxel boundraies not feature extents */
+
 
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
 
@@ -782,6 +799,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   GQuark gff_source ;
   GQuark gff_feature ;
 
+  GQuark bump_style;				/* bump to style, do not use bump_options */
 
   /*! State information for the style. */
   gboolean displayable;                 /* FALSE means never, ever display,
@@ -803,6 +821,8 @@ typedef struct _zmapFeatureTypeStyleStruct
   gboolean show_only_in_separator;
 
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
+
+  gboolean foo;
 
 #if MH17_NO_DEFERRED
   gboolean deferred;           /*flag for to say if this style is deferred loaded */
@@ -868,6 +888,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2Mode,            ZMapStyleMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphScale,       ZMapStyleGraphScale) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
 //ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
@@ -883,6 +904,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapStyleMode2ExactStr,            ZMapStyleMode) 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColDisplayState2ExactStr, ZMapStyleColumnDisplayState) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyle3FrameMode2ExactStr, ZMapStyle3FrameMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphScale2ExactStr,       ZMapStyleGraphScale) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColourType) ;
 //ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
@@ -957,6 +979,8 @@ void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 #define zMapStyleGetBumpSpace(style)   (style->bump_spacing)
 //ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDisplay(style)   (style->col_display_state)
+
+#define zMapStyleIsPfetchable(style) (style->mode_data.alignment.pfetchable)
 
 //ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
 #define zMapStyleGlyphShape(style)   (&style->mode_data.glyph.glyph)
@@ -1045,6 +1069,7 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 //gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDirectionalEnd(style)   (style->directional_end)
 
+#define zMapStyleIsFoo(style) (style->foo)
 
 //gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDisplayable(style)   (style->displayable)
@@ -1073,6 +1098,11 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 #define zMapStyleBaseline(style)   (style->mode_data.graph.baseline)
+#define zMapStyleGraphMode(style)   (style->mode_data.graph.mode)
+#define zMapStyleDensity(style)   (style->mode_data.graph.density)
+#define zMapStyleDensityFixed(style)   (style->mode_data.graph.fixed)
+#define zMapStyleDensityMinBin(style)   (style->mode_data.graph.min_bin)
+#define zMapStyleDensityStagger(style)   (style->mode_data.graph.stagger)
 
 gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag) ;
 gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag) ;

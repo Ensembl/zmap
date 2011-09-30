@@ -692,36 +692,100 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
   return ;
 }
 
+
+/* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
+gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id)
+{
+	ZMapFeatureSource src;
+      GList *fsets;
+
+      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+
+	for (; fsets ; fsets = fsets->next)
+	{
+		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+		if(src && src->related_column)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/* from column_id return whether it is configured from seq-data= featuresets (data side) */
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
+{
+	ZMapFeatureSource src;
+      GList *fsets;
+
+      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+
+	for (; fsets ; fsets = fsets->next)
+	{
+		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+		if(src && src->is_seq)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
+{
+	ZMapFeatureSource src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+//zMapLogWarning("feature is_seq: %s -> %p\n",g_quark_to_string(fset_id),src);
+
+	if(src && src->is_seq)
+		return TRUE;
+	return FALSE;
+
+}
+
+
+
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {
       GList *list = NULL;
-#if 0
-these get corrupted somewhere and only cater for unique id-s (doh!)
-refer to zmapWindowColConfig/column_is_loaded_in_range()
-
-      ZMapFeatureColumn column;
-
-      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
-      if(column)
-            list = column->featuresets;
-#else
-/*
-This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
-Could re-instate the column->featuresets list and allocate and uppercase it if !unique_id
-*/
       ZMapFeatureSetDesc fset;
+      ZMapFeatureColumn column;
       gpointer key;
       GList *iter;
 
-      zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
-      while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
-      {
-            if(fset->column_id == column_id)
-            {
-                  list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
-            }
+	/*
+	This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
+	so we cache the list when we first create it.
+	can't always do it on startup as acedb provides the mapping later on
+
+	NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for a comment about static or dynamic lists
+	also need to scan for all calls to this func since caching the data
+	*/
+
+      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
+      zMapAssert(column);
+
+	if(unique_id)
+     	{
+     		if(column->featuresets_unique_ids)
+           	 	list = column->featuresets_unique_ids;
       }
-#endif
+      else
+     	{
+     		if(column->featuresets_names)
+           	 	list = column->featuresets_names;
+      }
+
+	if(!list)
+	{
+		zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
+		while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
+		{
+			if(fset->column_id == column_id)
+				list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
+		}
+		if(unique_id)
+			column->featuresets_unique_ids = list;
+		else
+			column->featuresets_names = list;
+	}
       return list;
 }
 

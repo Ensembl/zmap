@@ -23,6 +23,7 @@ GLOBAL_LOG=''
 
 # SRC_MACHINE= The machine to log into to start everything going
 SRC_MACHINE='tviewsrv'
+#SRC_MACHINE='deskpro16113'
 
 # SSH_ID is userid which we use to ssh in for other machines.
 SSH_ID='zmap'
@@ -33,15 +34,22 @@ ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
 # default mail subject.
 MAIL_SUBJECT="ZMap Build Failed (control script)"
 
-# where everything is located.
+
+# where build scripts are located.
 BASE_DIR=~zmap
-SCRIPTS_DIR="$BASE_DIR/BUILD_SCRIPTS/ZMap/scripts"
-BUILDS_DIR="$BASE_DIR/BUILDS"
+SCRIPTS_DIR="$BASE_DIR/BUILD_CHECKOUT/ZMap/scripts"
 
-
-# CVS_CHECKOUT_SCRIPT= The bootstrapping script that starts everything
 BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
 FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
+
+# Our project space where we store builds.
+PROJECT_DIR='/nfs/zmap'
+BUILDS_DIR="$PROJECT_DIR/BUILDS"
+
+
+# name of symbolic link from ~zmap to build dir in project directories in /nfs/zmap
+LINK_PREFIX='BUILD'
+
 
 
 # Various build params.
@@ -54,13 +62,13 @@ RT_TO_CVS=''
 ERASE_SUBDIRS=''
 INPUT_DIR=''
 OUTPUT_DIR=''
-BRANCH=''
+BRANCH='develop'
 CRON=''
 GIT_FEATURE_INFO=''
 ZMAP_MASTER_BUILD_DIST=''
 ZMAP_MASTER_RT_RELEASE_NOTES=''
 ZMAP_MASTER_FORCE_RELEASE_NOTES=''
-
+SEQTOOLS_DIR='DEVELOPMENT'
 
 # try to load useful shared shell functions...after this we will have access to
 # common message funcs.
@@ -102,11 +110,12 @@ message_out "ZMap Build Started: $*"
 
 
 
+
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -t -r -u ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -s <seqtools directory> -t -r -u ]   <build prefix>"
 
-while getopts ":a:b:cdegi:mno:rtu" opt ; do
+while getopts ":a:b:cdegi:mno:rs:tu" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BRANCH=$OPTARG ;;
@@ -119,6 +128,7 @@ while getopts ":a:b:cdegi:mno:rtu" opt ; do
 	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes' ;;
 	o  ) OUTPUT_DIR=$OPTARG ;;
 	r  ) INC_REL_VERSION='-r'    ;;
+	s  ) SEQTOOLS_DIR=$OPTARG ;;
 	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
 	\? ) message_exit "Bad arg flag: $usage" ;;
@@ -151,6 +161,12 @@ if [ ! -d $PARENT_BUILD_DIR ] || [ ! -r $PARENT_BUILD_DIR ] ; then
 fi
 
 
+# We link from zmap home dir to our projects directory to make it easy for
+# users to pick up the latest development/production/etc builds.
+#
+LINK_NAME="$BASE_DIR/$LINK_PREFIX.$BUILD_PREFIX"
+
+
 
 # We do not know the directory for the logfile until here so cannot start logging
 # until this point, from this point this script prints any messages to stdout
@@ -171,11 +187,14 @@ rm -f $GLOBAL_LOG || message_exit "Cannot remove log from previous build: $GLOBA
 message_out "ZMap Build is $BUILD_PREFIX"
 
 
+# For some types of builds we do not want to keep the old builds. e.g. overnight builds.
+#
 if [ -n "$ERASE_SUBDIRS" ] ; then
-    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.develop-RELEASE_*"
+    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.develop-Release_*"
     message_out "Removing previous builds with name: $sub_dirs_pattern"
     rm -rf $sub_dirs_pattern || message_exit "Failed to remove previous builds: $sub_dirs_pattern."
 fi
+
 
 
 if [ -n "$INPUT_DIR" ] ; then
@@ -212,9 +231,25 @@ if [ -n "$BRANCH" ] ; then
 fi
 
 
+
+# Set the directory for picking up seqtools binaries etc.
+#
+if [ -n "$SEQTOOLS_DIR" ] ; then
+
+    SEQTOOLS_DIR="BUILD.$SEQTOOLS_DIR"
+
+    CMD_OPTIONS="$CMD_OPTIONS -s $SEQTOOLS_DIR"
+
+fi
+
+
+
+
 # now env. variables. I'd like to supplant these with cmd line flags.
 
 CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$PARENT_BUILD_DIR"
+
+CMD_OPTIONS="$CMD_OPTIONS ZMAP_LINK_NAME=$LINK_NAME"
 
 
 if [ -n "$RT_TO_CVS" ] ; then
@@ -256,13 +291,16 @@ if [ -z "$CRON" ] ; then
     message_out "      Build branch: $BRANCH"
     message_out "      Build script: $BUILD_SCRIPT"
     message_out "      Build prefix: $BUILD_PREFIX"
-    message_out "   Build directory: $BUILDS_DIR/$PARENT_BUILD_DIR"
+    message_out "   Build directory: $PARENT_BUILD_DIR"
+    message_out "    Link directory: $LINK_NAME"
     message_out "   Command options: $CMD_OPTIONS"
     message_out "        Global log: $GLOBAL_LOG"
     message_out "Errors reported to: $ERROR_RECIPIENT"
+    message_out "      Seqtools dir: $SEQTOOLS_DIR"
     message_out "==================="
 
 fi
+
 
 
 # If not run as cron then give user a chance to cancel, must be before we
@@ -283,6 +321,9 @@ trap '' TERM
 trap '' QUIT
 
 message_out "Build now running and cannot be cleanly aborted..."
+
+
+message_out "About to run $BUILD_SCRIPT as:  root_checkout.sh $CMD_OPTIONS"
 
 
 # A one step copy, run, cleanup!

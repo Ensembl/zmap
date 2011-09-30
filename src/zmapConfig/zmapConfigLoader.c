@@ -755,11 +755,12 @@ char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
  * however it seems to run
  */
 
-GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
+GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gboolean unique_id)
 {
   GList *list = NULL;
   gchar **str_array,**strv;
   char *name;
+  GQuark val;
 
   str_array = g_strsplit(string_list,";",0);
 
@@ -768,7 +769,14 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
       for (strv = str_array;*strv;strv++)
 	{
 	  if ((name = zMapConfigNormaliseWhitespace(*strv, cannonical)) && *name)
-	    list = g_list_prepend(list,GUINT_TO_POINTER(g_quark_from_string(name))) ;
+	  {
+	    if(unique_id)
+            val = zMapStyleCreateID(name);
+          else
+            val = g_quark_from_string(name);
+
+	    list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
+	  }
 	}
     }
 
@@ -783,6 +791,16 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return list ;
+}
+
+GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
+{
+	return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
+}
+
+GList *zMapConfigString2QuarkIDList(char *string_list)
+{
+	return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
 }
 
 
@@ -803,7 +821,14 @@ GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
  * So instead we have to use GLib directly.
  * the strings need to be quarked first
  */
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash)
+/*
+ * NOTE we set up the columns->featureset list here, which is used to order heatmap(coverage) featuresets in a column
+ * as well as for requesting featuresets via columns
+ * ACEDB supplies a fset to column mapping later on which does not affect pipe servers (used for coverage/BAM)
+ * and if this is aditional to that already configured it's added
+ */
+
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash, GHashTable *columns)
 {
       GKeyFile *gkf;
       gchar ** keys,**freethis;
@@ -814,7 +839,8 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
       char *names;
       gsize len;
       char *normalkey;
-
+      ZMapFeatureColumn f_col;
+      int n = g_hash_table_size(columns);
 
       if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_COLUMN_CONFIG,&gkf))
       {
@@ -830,6 +856,18 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); // changes in situ: get names first
                   column = g_quark_from_string(normalkey);
                   column_id = zMapFeatureSetCreateID(normalkey);
+                  f_col = g_hash_table_lookup(columns,GUINT_TO_POINTER(column_id));
+                  if(!f_col)
+                  {
+                        f_col = (ZMapFeatureColumn) g_new0(ZMapFeatureColumnStruct,1);
+
+                  	f_col->column_id = g_quark_from_string(normalkey);
+                  	f_col->unique_id = column_id;
+                  	f_col->column_desc = normalkey;
+                  	f_col->order = ++n;
+
+	                  g_hash_table_insert(columns,GUINT_TO_POINTER(f_col->unique_id),f_col);
+                  }
 
 #if MH17_USE_COLUMNS_HASH
       char *desc;
@@ -848,6 +886,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   g_hash_table_replace(hash,GUINT_TO_POINTER(column_id),GFFset);
 #endif
                   sources = zMapConfigString2QuarkList(names,FALSE);
+
                   g_free(names);
 
                   while(sources)
@@ -862,9 +901,18 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 
                         GFFset->column_id = column_id;        // lower cased name
                         GFFset->column_ID = column;           // display name
+//zMapLogWarning("get f2c: set col ID %s",g_quark_to_string(GFFset->column_ID));
                         GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
                         g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
+
+
+                        /* construct reverse mapping from column to featureset */
+                        if(!g_list_find(f_col->featuresets_unique_ids,GUINT_TO_POINTER(key)))
+                        {
+                              f_col->featuresets_unique_ids = g_list_append(f_col->featuresets_unique_ids,GUINT_TO_POINTER(key));
+                        }
+
 
                         sources = g_list_delete_link(sources,sources);
                   }
@@ -877,10 +925,94 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 }
 
 
+/* to handle composite featuresets we map real ones to a pretend one
+ * [featuresets]
+ * composite = source1 ; source2 ;  etc
+ *
+ * we also have to patch in the featureset to column mapping as config does not do this
+ * which will make display anc column style tables work
+ * NOTE the composite featureset does not exist at all and is just used to name a ZMapWindowgraphDensityItem
+ */
+GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col)
+{
+      GKeyFile *gkf;
+      gchar ** keys,**freethis;
+      GList *sources;
+      gsize len;
+
+	GQuark set_id;
+
+      char *names;
+
+      ZMapFeatureSetDesc virtual_f2c;
+      ZMapFeatureSetDesc real_f2c;
+
+
+      GHashTable *virtual_featuresets = g_hash_table_new(NULL,NULL);
+
+      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_FEATURESETS_CONFIG,&gkf))
+      {
+            freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_FEATURESETS_CONFIG,&len,NULL);
+
+            for(;len--;keys++)
+            {
+                  names = g_key_file_get_string(gkf,ZMAPSTANZA_FEATURESETS_CONFIG,*keys,NULL);
+
+                  if(!names || !*names)
+                        continue;
+
+	                  /* this featureset will not actually exist, it's virtual */
+                  set_id = zMapFeatureSetCreateID(*keys);
+                  virtual_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(set_id));
+                  if(!virtual_f2c)
+                  {
+                  	/* should have been config'd to appear in a column */
+                  	zMapLogWarning("cannot find virtual featureset %s",*keys);
+                  	continue;
+                  }
+
+                  sources = zMapConfigString2QuarkList(names,FALSE);
+                  g_free(names);
+
+                  g_hash_table_insert(virtual_featuresets,GUINT_TO_POINTER(set_id), sources);
+
+                  while(sources)
+                  {
+                  	ZMapFeatureSource f_src;
+                        // get featureset if present
+                        GQuark key = zMapFeatureSetCreateID((char *)
+                              g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
+                        f_src = g_hash_table_lookup(fset_src,GUINT_TO_POINTER(key));
+
+                        if(f_src)
+                        {
+					f_src->maps_to = set_id;
+
+					/* now set up featureset to column mapping to allow the column to paint and styles to be found */
+					real_f2c = g_hash_table_lookup(fset2col,GUINT_TO_POINTER(key));
+					if(!real_f2c)
+					{
+						real_f2c = g_new0(ZMapFeatureSetDescStruct,1);
+						g_hash_table_insert(fset2col,GUINT_TO_POINTER(key),real_f2c);
+					}
+
+					real_f2c->column_id = virtual_f2c->column_id;
+					real_f2c->column_ID = virtual_f2c->column_ID;
+	//		  		real_f2c->feature_set_text =
+					real_f2c->feature_src_ID = GPOINTER_TO_UINT(sources->data);
+				}
+                        sources = sources->next;
+                  }
+            }
+            if(freethis)
+                  g_strfreev(freethis);
+      }
+      return virtual_featuresets;
+}
+
+
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
-
-
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
       GKeyFile *gkf;
@@ -1171,6 +1303,7 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
       { ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
       { ZMAPSTYLE_PROPERTY_BUMP_SPACING, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_BUMP_STYLE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_MIN_MAG, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_MAX_MAG, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1195,6 +1328,7 @@ static gpointer create_config_style()
 
       { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_FOO,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
 
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
@@ -1213,6 +1347,11 @@ static gpointer create_config_style()
 
       { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphMode} },
       { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_SCALE,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphScale} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
 
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1305,6 +1444,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_BUMP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_BUMP_SPACING, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_BUMP_STYLE, G_TYPE_STRING,  style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_MIN_MAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_MAX_MAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
@@ -1329,6 +1469,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
 
     { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_FOO,   G_TYPE_BOOLEAN, style_set_property, FALSE },
 
 
       // these three names relate to 3 more real parameters
@@ -1344,6 +1485,11 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
 
     { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   G_TYPE_DOUBLE, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_SCALE,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   G_TYPE_INT, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,   G_TYPE_INT, style_set_property, FALSE },
 
 
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
@@ -1503,7 +1649,7 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
   ZMapConfigSource config_source = (ZMapConfigSource)parent_data ;
   gboolean *bool_ptr ;
   int *int_ptr ;
-  double *double_ptr ;
+//  double *double_ptr ;
   char **str_ptr ;
 
   if (key && *key)
@@ -1556,8 +1702,9 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	*bool_ptr = g_value_get_boolean(property_value);
       else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
 	*int_ptr = g_value_get_int(property_value);
-      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
-	*double_ptr = g_value_get_double(property_value);
+// there are no doubles
+//      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
+//	*double_ptr = g_value_get_double(property_value);
       else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
 	*str_ptr = (char *)g_value_get_string(property_value);
     }

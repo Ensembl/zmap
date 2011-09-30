@@ -139,11 +139,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data);
 
 static gboolean factoryItemHandler(FooCanvasItem       *new_item,
-				   ZMapFeatureContext   context,
-				   ZMapFeatureAlignment alignment,
-				   ZMapFeatureBlock     block,
-				   ZMapFeatureSet       feature_set,
-				   ZMapFeature          feature,
+				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data);
 
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
@@ -857,6 +853,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 						  highlight_locator_area_cb,
 						  navigate);
 
+
+		/* mh17: has to add thsi to avoid an assert in FtoIAddAlign() */
+	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment) navigate->container_align,
+						(ZMapFeatureAlignment) feature_any);
+
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
             zMapAssert(hash_status);
@@ -866,7 +867,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapWindowContainerFeatures features = NULL;
-        int block_start, block_end;
+//        int block_start, block_end;
 
         draw_data->current_block = feature_block = (ZMapFeatureBlock)feature_any;
 
@@ -899,6 +900,10 @@ printf("nav draw block %d %d\n",block_start,block_end);
 
 	g_object_set_data(G_OBJECT(draw_data->container_block), ITEM_FEATURE_STATS,
 			  zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_block)) ;
+
+
+      zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
+					    (ZMapFeatureBlock) feature_any) ;
 
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
@@ -1083,7 +1088,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
   GQuark set_unique_id;
 
   /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
-  /* for the navigator styles are hard coded?? and there's no featureset_2_colum mapping ?
+  /* for the navigator styles are hard coded?? and there's no featureset_2_column mapping ?
      style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
   */
 
@@ -1555,11 +1560,7 @@ static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer dat
 }
 
 static gboolean factoryItemHandler(FooCanvasItem       *new_item,
-				   ZMapFeatureContext   context,
-				   ZMapFeatureAlignment alignment,
-				   ZMapFeatureBlock     block,
-				   ZMapFeatureSet       feature_set,
-				   ZMapFeature          feature,
+				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data)
 {
   g_signal_connect(GTK_OBJECT(new_item), "event",

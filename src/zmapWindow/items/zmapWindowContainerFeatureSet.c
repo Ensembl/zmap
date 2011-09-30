@@ -361,6 +361,11 @@ GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet co
 }
 
 
+GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet container_set)
+{
+  return container_set->featuresets;
+}
+
 /*!
  * \brief Access the strand of a column.
  *
@@ -1015,7 +1020,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 
             if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
               {
-                if(set_colour)      /* called on masking by abother featureset */
+                if(set_colour)      /* called on masking by another featureset */
                 {
                       GdkColor *fill,*outline;
 
@@ -1023,8 +1028,9 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 
                       if(!delete)
                         {
-                          zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item),
+                          zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature,
                               ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
+                              0,	// will zap focus
                               fill,outline);
                         }
                 }

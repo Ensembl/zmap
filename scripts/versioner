@@ -111,6 +111,7 @@ my $PROGNAME = basename($0) ;
 	       'tag'     => \$do_tag,
                'quiet'   => \$QUIET,
                'V'       => \$version_only,
+               'dev'     => \$DEVELOP_REL,
                'help'    => $usage,
                ) or $usage->();
     $usage->() unless $VERSION_FILE;
@@ -121,21 +122,23 @@ my $PROGNAME = basename($0) ;
 
     my $header = find_file(checkout_dir(), $VERSION_FILE);
 
-    my @matching = grep { /#define ZMAP_DEVELOPMENT_ID NULL/ } `cat $header` ;
+    #my @matching = grep { /#define ZMAP_DEVELOPMENT_ID NULL/ } `cat $header` ;
 
-    if ( ! scalar @matching )
-      {
-      $DEVELOP_REL = 1 ;
-      }
+    #if ( ! scalar @matching )
+    #  {
+    #  $DEVELOP_REL = 1 ;
+    #  }
 
 
     if ( $DEVELOP_REL )
       {
+      $VERSION_FILE = 'src/zmapUtils/zmapVersion.c';
       $VERSION_STR  = $DEVELOP_STR ;
       $PREPROC_VARS = $DEV_PREPROC_VARS ;
       }
     else
       {
+      $VERSION_FILE = 'src/zmapUtils/zmapUtils_P.h';
       $VERSION_STR  = $RELEASE_STR ;
       $PREPROC_VARS = $RELEASE_PREPROC_VARS ;
       }
@@ -166,6 +169,11 @@ my $PROGNAME = basename($0) ;
 
 
     print "$cvs_tag\n" ;
+
+
+
+    # Tagging is deliberately disabled until we have worked out our new system
+    # using git flow....
     exit 0 ;
 
 

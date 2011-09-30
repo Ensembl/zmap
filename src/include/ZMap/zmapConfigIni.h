@@ -146,16 +146,19 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list_in);
 
 gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out);
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash);
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
 GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
 GList *zMapConfigString2QuarkList(char *string_list,gboolean cannonical);
+GList *zMapConfigString2QuarkIDList(char *string_list);
 
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int how);
 #define QQ_STRING 0
 #define QQ_QUARK  1
 #define QQ_STYLE  2
+
+GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col);
 
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 

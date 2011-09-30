@@ -982,7 +982,6 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
   if (zMapFeatureSequenceIsPeptide(feature))
     {
       /* Original & Unique IDs need redoing as they include the frame which probably change on revcomp. */
-      ZMapFrame curr_frame ;
       char *feature_name = NULL ;			    /* Remember to free this */
       GQuark feature_id ;
 
@@ -990,6 +989,8 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      ZMapFrame curr_frame ;
+
       curr_frame = zMapFeatureFrame(feature) ;
       feature->feature.sequence.frame = curr_frame ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

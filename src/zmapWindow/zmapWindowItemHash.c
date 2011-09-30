@@ -70,15 +70,6 @@ typedef struct
 } ChildSearchStruct, *ChildSearch ;
 
 
-/* We store ids with the group or item that represents them in the canvas.
- * May want to consider more efficient way of storing these than malloc... */
-typedef struct
-{
-  FooCanvasItem *item ;					    /* could be group or item. */
-  GHashTable *hash_table ;
-} ID2CanvasStruct, *ID2Canvas ;
-
-
 
 /* forward declaration, needed for function prototype. */
 typedef struct ItemSearchStruct_ *ItemSearch ;
@@ -237,10 +228,15 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
   if (!(g_hash_table_lookup(feature_context_to_item, GUINT_TO_POINTER(align_id))))
     {
       ID2Canvas align ;
+      ZMapFeatureAny item_feature ;
+
+      item_feature = zmapWindowItemGetFeatureAny(align_group) ;
+//      zMapAssert(item_feature) ;
 
       align = g_new0(ID2CanvasStruct, 1) ;
       align->item = FOO_CANVAS_ITEM(align_group) ;
       align->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+      align->feature_any = item_feature ;
 
       g_hash_table_insert(feature_context_to_item, GUINT_TO_POINTER(align_id), align) ;
     }
@@ -282,10 +278,15 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
       if (!(g_hash_table_lookup(align->hash_table, GUINT_TO_POINTER(block_id))))
 	{
 	  ID2Canvas block ;
+	  ZMapFeatureAny item_feature ;
+
+	  item_feature = zmapWindowItemGetFeatureAny(block_group) ;
+//	  zMapAssert(item_feature) ;
 
 	  block = g_new0(ID2CanvasStruct, 1) ;
 	  block->item = FOO_CANVAS_ITEM(block_group) ;
 	  block->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+	  block->feature_any = item_feature ;
 
 	  g_hash_table_insert(align->hash_table, GUINT_TO_POINTER(block_id), block) ;
 	}
@@ -342,10 +343,17 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
       if (!(g_hash_table_lookup(block->hash_table, GUINT_TO_POINTER(set_id))))
 	{
 	  ID2Canvas set ;
+	  ZMapFeatureAny item_feature ;
+
+	  item_feature = zmapWindowItemGetFeatureAny(set_group) ;
+// MH17: despite looking as if this is set up we still get an assert
+// i suspect this assert was added recently and now prevents the navigator pfrom being displayed
+//	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
 	  set->item = FOO_CANVAS_ITEM(set_group) ;
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+	  set->feature_any = item_feature ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
 	}
@@ -401,19 +409,15 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
 				  GQuark feature_id,
-				  FooCanvasItem *feature_item)
+				  FooCanvasItem *feature_item, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   ID2Canvas align = NULL ;
   ID2Canvas block = NULL ;
   ID2Canvas set = NULL ;
-  ZMapFeature item_feature_obj = NULL;
 
   /* We need special quarks that incorporate strand indication as there are separate column
    * hashes are per strand. */
-  item_feature_obj = zmapWindowItemGetFeature(feature_item);
-  zMapAssert(item_feature_obj) ;
-
   set_id = makeSetID(set_id, set_strand, set_frame) ;
 
   if(window_ftoi_debug_G)
@@ -431,14 +435,15 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
     {
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
         {
-          ID2Canvas feature ;
+          ID2Canvas ID2C ;
 
-          feature = g_new0(ID2CanvasStruct, 1) ;
-          feature->item = feature_item ;
-          feature->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          ID2C = g_new0(ID2CanvasStruct, 1) ;
+          ID2C->item = feature_item ;
+          ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          ID2C->feature_any = (ZMapFeatureAny) feature ;
 
-          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature) ;
-        }
+          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+	  }
 
       result = TRUE ;
 
@@ -499,7 +504,7 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_context_to_item,
 
 
 
-FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window,GHashTable *feature_context_to_item,
+FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window, GHashTable *feature_context_to_item,
 					     ZMapStrand set_strand, ZMapFrame set_frame,
                                              ZMapFeature feature)
 {
@@ -558,10 +563,10 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_c
  */
 
 
-FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_context_to_item,
+FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature_context_to_item,
 					  GQuark align_id, GQuark block_id,
 					  GQuark set_id,
-                                ZMapStrand set_strand, ZMapFrame set_frame,
+					  ZMapStrand set_strand, ZMapFrame set_frame,
 					  GQuark feature_id)
 {
   FooCanvasItem *item = NULL ;
@@ -603,7 +608,11 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_
 		{
 		  if((feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
                                                                GUINT_TO_POINTER(feature_id))))
-                    item = feature->item ;
+                {
+                  item = feature->item ;
+
+ 			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item,(ZMapFeature) feature->feature_any);
+ 	          }
 		}
 	    }
 	}
@@ -619,6 +628,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_
                                                 GUINT_TO_POINTER(rootCanvasID()))))
         item = FOO_CANVAS_ITEM(root->item); /* This is actually a group. */
     }
+
 
   return item ;
 }
@@ -660,7 +670,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
- * the supplied ids. Returns a GList of the Foo canvas item/groups or
+ * the supplied ids. Returns a GList of ID2Canvas structs, one per the feature or
  * NULL if the id(s) could not be found.
  *
  * Which hash tables are searched is decided by the ids supplied, "*" acts as the
@@ -1337,9 +1347,9 @@ printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id)
       if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
 						    GUINT_TO_POINTER(curr_search_id))))
 	{
-	  if (!curr_search->pred_func || curr_search->pred_func(item_id->item, curr_search->user_data))
+	  if (!curr_search->pred_func || curr_search->pred_func(item_id->feature_any, curr_search->user_data))
 	  {
-          results = g_list_append(results, item_id->item) ;
+          results = g_list_append(results, item_id); //->item) ;
 #if MH17_SEARCH_DEBUG
       printf("added: exact %s, %p\n",g_quark_to_string(curr_search->search_quark), item_id->item);
 #endif
@@ -1425,9 +1435,9 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
   if (curr_search->is_reg_exp && filterOnRegExp(curr_search, key)
       && (!(curr_search->pred_func)
 	  || (curr_search->pred_func
-	      && curr_search->pred_func(hash_item->item, curr_search->user_data))))
+	      && curr_search->pred_func(hash_item->feature_any, curr_search->user_data))))
   {
-      *results = g_list_append(*results, hash_item->item) ;
+      *results = g_list_append(*results, hash_item); // ->item) ;
 
 #if MH17_SEARCH_DEBUG
       printf("added: %d %s, %s %p\n",curr_search->is_reg_exp, g_quark_to_string(curr_search->search_quark), g_quark_to_string(GPOINTER_TO_UINT(key)),hash_item->item);

@@ -51,30 +51,4 @@ Foo Canvas
 Group</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>540</x><y>70</y><w>100</w><h>360</h></coordinates><panel_attributes>Column
 Foo Canvas 
 Group</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>200</x><y>130</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>200</x><y>240</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>80</x><y>130</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>430</x><y>130</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset
-</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>430</x><y>240</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>550</x><y>130</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>50</x><y>480</y><w>220</w><h>340</h></coordinates><panel_attributes>Featureset
-Foo Canvas Item</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>70</x><y>520</y><w>180</w><h>80</h></coordinates><panel_attributes>Complex Feature
---
-eg Transcript
-Exonerate  alignment
-</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>70</x><y>610</y><w>180</w><h>70</h></coordinates><panel_attributes>Complex Feature
---
-eg Transcript
-Exonerate  alignment
-</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>70</x><y>690</y><w>180</w><h>80</h></coordinates><panel_attributes>Complex Feature
---
-eg Transcript
-Exonerate  alignment
-</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>300</x><y>480</y><w>220</w><h>340</h></coordinates><panel_attributes>Featureset
-Foo Canvas Item</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>320</x><y>520</y><w>180</w><h>100</h></coordinates><panel_attributes>Simple Feature
---
-eg Simple alignment
-Glyph
-Coverage
-SNP
-</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>320</x><y>630</y><w>180</w><h>100</h></coordinates><panel_attributes>Simple Feature
---
-eg Simple alignment
-Glyph
-Coverage
-SNP
-</panel_attributes><additional_attributes/></element></umlet_diagram>
+</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>430</x><y>240</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element><element><type>com.umlet.element.base.Class</type><coordinates><x>550</x><y>130</y><w>80</w><h>80</h></coordinates><panel_attributes>Featureset</panel_attributes><additional_attributes/></element></umlet_diagram>

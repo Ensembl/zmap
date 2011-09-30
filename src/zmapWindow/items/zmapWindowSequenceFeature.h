@@ -57,6 +57,11 @@
 #define ZMAP_IS_WINDOW_SEQUENCE_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE))
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeatureClass))
 
+/* Property names. */
+#define PROP_TEXT_CHANGED_STR           "text-changed"
+
+
+
 
 typedef enum
   {
@@ -83,7 +88,7 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 						 ZMapSequenceType coord_type, int region_start, int region_end) ;
 
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature, FooCanvasItem *item,
-						  ZMapFeature seed_feature) ;
+						  ZMapFeature seed_feature, gboolean cds_only) ;
 
 gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature) ;
 

@@ -213,7 +213,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       || g_ascii_strcasecmp(feature_type, "SNP") == 0
 	       || g_ascii_strcasecmp(feature_type, "complex_change_in_nucleotide_sequence") == 0
 	       || g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0
-	       /* neded to read BAM files formatted as for Blixem */
+	       /* needed to read BAM files formatted as for Blixem */
 	       || g_ascii_strcasecmp(feature_type, "read") == 0)
 	{
 	  type = ZMAPSTYLE_MODE_BASIC ;

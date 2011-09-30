@@ -128,6 +128,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_BUMP_SPACING, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_BUMP_SPACING,
             "bump-spacing", "space between columns in bumped columns",
             offsetof(zmapFeatureTypeStyleStruct, bump_spacing) ,0},
+    { STYLE_PROP_BUMP_STYLE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_BUMP_STYLE,
+            "bump to different style", "bump to different style",
+            offsetof(zmapFeatureTypeStyleStruct, bump_style),0 },
 
     { STYLE_PROP_FRAME_MODE, STYLE_PARAM_TYPE_3FRAME, ZMAPSTYLE_PROPERTY_FRAME_MODE,
             "3 frame display mode", "Defines frame sensitive display in 3 frame mode.",
@@ -189,6 +192,11 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_DIRECTIONAL_ENDS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,
             "directional-ends", "Display pointy \"short sides\"",
             offsetof(zmapFeatureTypeStyleStruct, directional_end),0 },
+
+    { STYLE_PROP_FOO, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FOO,
+            "as Foo Canvas Items", "use old technology",
+            offsetof(zmapFeatureTypeStyleStruct, foo),0 },
+
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },
@@ -239,6 +247,21 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_GRAPH_BASELINE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,
             "graph baseline", "Sets the baseline for graph values.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.baseline),ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_SCALE, STYLE_PARAM_TYPE_GRAPH_SCALE, ZMAPSTYLE_PROPERTY_GRAPH_SCALE,
+            "graph-scale", "Graph Scale",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.scale) ,ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_DENSITY, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,
+            "graph-density", "Density plot",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.density) ,ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_DENSITY_FIXED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,
+            "graph-density-fixed", "anchor bins to pixel boundaries",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.fixed) ,ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_DENSITY_MIN_BIN, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,
+            "graph-density-min-bin", "min bin size in pixels",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.min_bin) ,ZMAPSTYLE_MODE_GRAPH },
+    { STYLE_PROP_GRAPH_DENSITY_STAGGER, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,
+            "graph-density-stagger", "featureset/ column offset",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.stagger) ,ZMAPSTYLE_MODE_GRAPH },
 
 
     { STYLE_PROP_ALIGNMENT_PARSE_GAPS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,
@@ -1644,6 +1667,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
   case STYLE_PARAM_TYPE_3FRAME:      return(sizeof(ZMapStyle3FrameMode)); break;
   case STYLE_PARAM_TYPE_SCORE:       return(sizeof(ZMapStyleScoreMode));  break;
   case STYLE_PARAM_TYPE_GRAPH_MODE:  return(sizeof(ZMapStyleGraphMode));  break;
+  case STYLE_PARAM_TYPE_GRAPH_SCALE: return(sizeof(ZMapStyleGraphScale));  break;
   case STYLE_PARAM_TYPE_BLIXEM:      return(sizeof(ZMapStyleBlixemType)); break;
   case STYLE_PARAM_TYPE_GLYPH_STRAND:return(sizeof(ZMapStyleGlyphStrand)); break;
   case STYLE_PARAM_TYPE_GLYPH_ALIGN: return(sizeof(ZMapStyleGlyphAlign)); break;
@@ -1721,6 +1745,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
     case STYLE_PARAM_TYPE_3FRAME:              // ZMapStyle3FrameMode
     case STYLE_PARAM_TYPE_SCORE:               // ZMapStyleScoreMode
     case STYLE_PARAM_TYPE_GRAPH_MODE:          // ZMapStyleGraphMode
+    case STYLE_PARAM_TYPE_GRAPH_SCALE:         // ZMapStyleGraphScale
     case STYLE_PARAM_TYPE_BLIXEM:              // ZMapStyleBlixemType
     case STYLE_PARAM_TYPE_GLYPH_STRAND:        // ZMapStyleGlyphStrand
     case STYLE_PARAM_TYPE_GLYPH_ALIGN:         // ZMapStyleGlyphAlign
@@ -1823,22 +1848,6 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 
 
-#if 0
-static void zmap_feature_type_style_copy_set_property(GObject *gobject,
-                                     guint param_id,
-                                     const GValue *value,
-                                     GParamSpec *pspec)
-{
-  ZMapFeatureTypeStyle style;
-  ZMapStyleParam param;
-
-  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
-  style = ZMAP_FEATURE_STYLE(gobject);
-  param = &zmapStyleParams_G[param_id];
-
-  zmap_feature_type_style_set_property_full(style,param,value,FALSE);
-}
-#endif
 
 
 
@@ -1997,6 +2006,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_SCALE,     ZMapStyleGraphScale);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
       STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
@@ -2195,6 +2205,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
     STYLE_GET_PROP (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_SCALE     , ZMapStyleGraphScale);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign);

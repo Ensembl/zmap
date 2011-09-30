@@ -153,7 +153,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
 
 static GHashTable *access_window_context_to_item(gpointer user_data) ;
 
-gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
+gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data) ;
 
 GQuark makeCanonID(char *orig_text) ;
 
@@ -176,7 +176,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
-/* 
+/*
  *                  External routines
  */
 
@@ -1209,15 +1209,10 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
   return ((ZMapWindow)user_data)->context_to_item ;
 }
 
-gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
+gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 {
   gboolean result = FALSE ;
   SearchPredCBData search_pred = (SearchPredCBData)user_data ;
-  ZMapFeatureAny feature_any ;
-
-  feature_any = zmapWindowItemGetFeatureAny(canvas_item);
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
-
 
   switch(feature_any->struct_type)
     {

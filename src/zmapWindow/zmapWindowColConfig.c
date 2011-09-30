@@ -1010,7 +1010,7 @@ static void deferred_page_construct(NotebookPage notebook_page, GtkWidget *page)
   notebook_page->page_container = page;
 }
 
-static void deferred_radio_buttons(GtkWidget *parent, GQuark column_id, gboolean loaded_in_mark,
+static void deferred_radio_buttons(GtkWidget *parent, GQuark column_id,  gboolean loaded_in_mark,
 				   DeferredButton *all_out, DeferredButton *mark_out, DeferredButton *none_out)
 {
   GtkWidget *radio_load_all, *radio_load_mark, *radio_deferred;
@@ -1101,32 +1101,37 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
 gboolean column_is_loaded_in_range(ZMapFeatureContextMap map, ZMapFeatureBlock block, GQuark column_id,int start, int end)
 {
 #define MH17_DEBUG      0
-      GList *fsets;
+  GList *fsets;
 
-      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
 #if MH17_DEBUG
-zMapLogWarning("is col loaded %s %d -> %d? ",g_quark_to_string(column_id),start,end);
+  zMapLogWarning("is col loaded %s %d -> %d? ",g_quark_to_string(column_id),start,end);
 #endif
-      while(fsets)
-      {
-            gboolean loaded;
-            loaded = zMapFeatureSetIsLoadedInRange(block,GPOINTER_TO_UINT(fsets->data), start, end);
+  while(fsets)
+    {
+      gboolean loaded;
+      loaded = zMapFeatureSetIsLoadedInRange(block,GPOINTER_TO_UINT(fsets->data), start, end);
 #if MH17_DEBUG
-zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
+      zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
 #endif
 
-            if(!loaded)
-                  return(FALSE);
+      if(!loaded)
+	return(FALSE);
 
-            /* NOTE fsets is an allocated list
-             * if this is changed to a static one held in the column struct
-             * then we should not free it
-             */
-            fsets = g_list_delete_link(fsets,fsets);
-            /*fsets = fsets->next;   if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
-      }
+
+      /* NOTE fsets is an allocated list
+       * if this is changed to a static one held in the column struct
+       * then we should not free it
+       */
+      /* fsets = g_list_delete_link(fsets,fsets); */
+      /* NOTE: now is a cached list */
+      fsets = fsets->next;  /* if zMapFeatureGetColumnFeatureSets doesn't allocate the list */
+   }
       return TRUE;
 }
+
+
+
 
 static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 				      GList       *columns_list, GQuark column_name)
@@ -1143,11 +1148,13 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
   window = notebook_page->configure_data->window;
 
+
   if((mark_set = zmapWindowMarkIsSet(window->mark)))
     {
       zmapWindowMarkGetSequenceRange(window->mark,
 					  &mark1, &mark2);
     }
+
 
   if(column_name)
       frame = gtk_frame_new(g_quark_to_string(column_name));
@@ -1173,7 +1180,6 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
   column_box = gtk_vbox_new(FALSE, 0) ;
 
 
-
   if((column = g_list_first(columns_list)))
     {
       GList *make_unique = NULL;
@@ -1186,6 +1192,8 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 	  char *column_name;
 	  DeferredButton all, mark, none;
 	  gboolean loaded_in_mark = FALSE;
+	  gboolean force_mark = FALSE;
+	  GQuark col_id;
 
 	  column_name = (char *) g_quark_to_string(GPOINTER_TO_UINT(column->data));     //label_text_from_column(column_group);
 
@@ -1211,12 +1219,17 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
                   loaded_in_mark = column_is_loaded_in_range(window->context_map,page_data->block,col->unique_id,mark1,mark2);
             }
 
-            deferred_radio_buttons(button_box, zMapFeatureSetCreateID(column_name),loaded_in_mark,
+		col_id = zMapFeatureSetCreateID(column_name);
+
+		force_mark = zMapFeatureIsCoverageColumn(window->context_map,col_id);
+
+            deferred_radio_buttons(button_box, col_id, loaded_in_mark,
 				     &all, &mark, &none);
 
 	      all->deferred_page_data = mark->deferred_page_data =
 		none->deferred_page_data = deferred_page_data;
 
+	      gtk_widget_set_sensitive(all->column_button, !force_mark);
 	      gtk_widget_set_sensitive(mark->column_button, mark_set && !loaded_in_mark);
 
 	      deferred_page_data->load_all     = g_list_append(deferred_page_data->load_all, all);
@@ -1413,7 +1426,9 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data, Z
       if((!column_name || column_name == column->unique_id ) &&
             (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)) &&
             (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME)) &&
-            !column_is_loaded_in_range(window->context_map,block,column->unique_id,window->sequence->start,window->sequence->end))
+            !column_is_loaded_in_range(window->context_map,block,column->unique_id,window->sequence->start,window->sequence->end)
+            && !zMapFeatureIsSeqColumn(window->context_map,column->unique_id)
+            )
       {
             columns = g_list_prepend(columns,GUINT_TO_POINTER(column->column_id));
       }
@@ -1497,7 +1512,6 @@ static void deferred_page_apply(NotebookPage notebook_page)
       /* Go through the load all ones... */
       g_list_foreach(deferred_data->load_all, add_name_to_list, &all_list);
 
-//      mark_list = expand_columns_to_featuresets
       zmapWindowFetchData(configure_data->window, block, mark_list, TRUE,TRUE);
       zmapWindowFetchData(configure_data->window, block, all_list, FALSE,TRUE);
 
@@ -2127,7 +2141,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 {
   GList *show_hide_button_list = (GList *)user_data;
   gboolean needs_reposition;
-  ColConfigure configure_data;
+//  ColConfigure configure_data;
   ShowHidePageData show_hide_data;
 
   if(show_hide_button_list)
@@ -2144,8 +2158,9 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 
       g_list_foreach(show_hide_button_list, each_radio_button_activate, NULL);
 
-      if((show_hide_data->reposition = needs_reposition))
-	zmapWindowFullReposition(configure_data->window);
+// unitiialised
+//      if((show_hide_data->reposition = needs_reposition))
+//	zmapWindowFullReposition(configure_data->window);
     }
 
 

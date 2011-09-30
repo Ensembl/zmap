@@ -46,7 +46,7 @@
  *
  * Gets called from menus and from keyboard short cut. If called from keyboard
  * short cut then  x_pos = ypos = 0.0.
- * 
+ *
  * Note user can click menu on a column that is not selected in which case
  * item will be non-NULL but focus item/column may be NULL if no other column
  * has been selected.
@@ -55,7 +55,7 @@
  *  */
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
-			  ZMapFeatureSet feature_set, char *source,
+			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL, *focus_column = NULL ;

@@ -208,7 +208,7 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
 
   ZMapFeatureSet feature_set ;
 
-  char *source;                                     /* a featureset name */
+  GList *source;                                     /* a list of featureset names */
 
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
@@ -293,8 +293,8 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
+void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     GHashTable *all_styles, GHashTable *new_styles,
 			     gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
@@ -329,7 +329,7 @@ void zMapWindow3FrameSetMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 /* should become internal to zmapwindow..... */
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
-                                       gboolean dna,      gboolean protein,
+                                       gboolean dna,      gboolean protein, gboolean trans,
                                        gboolean force_to, gboolean force);
 
 void zMapWindowStateRecord(ZMapWindow window);

@@ -1,0 +1,179 @@
+<h2>Style Configuration for Graph Items</h2>
+
+<p>Refer also to <a href="Design/notes/density.shtml">Density Plots</a> for a implementation details and some sample pictures.
+</p>
+
+<h3>Types of graph supported by ZMap</h3>
+
+<p>Historically ZMap has supported only histogram type graphs and thee have been used eg for Phast_cons data. This consists of widely variable sized features with different scores depending on the level of conservation and the size fo the regions.
+</p>
+
+<p> More recently coverage (density) plots have been implemented and these are available as histograms, heatmaps, and line (wiggle) plots.  The density plot code can also display original style histograms and it is intended to phase out the orginal code.
+</p>
+
+<p>In the short term the orginal code can be used by  using the same style definition as before and adding the option &apos;<b>foo=true</b>&apos;.
+</p>
+
+<h3>New style configuration options</h3>
+<p>
+These should all appear in a graph mode style definition.
+</p>
+
+<p>
+<pre>
+graph-mode=heatmap | line | histogram
+</pre>
+chooses the graph type.  Heatmaps vary between the fill colour (min-score) and the border (max-score) and can change from  blue to red if you like.  White is good as zero as it blends into the column background nicely. Wiggle plots get joined up if there are gaps between features.
+</p>
+
+<p>
+<pre>
+graph-density-show_zero=true
+</pre>
+Not implemented.
+</p>
+<p>
+
+<pre>
+graph-density=true
+</pre>
+enables re-binning of data dependind on zoom level, whcih allows the efficient display of lagre amounts of coverage data.  For exampke if you have 300k or sequens and 40bp bins then that's 7500 features. At min zoom you can see max 1000.  Re-binning combines several bins into one and takes the maximum score of the source bins as the one displayed. Clicking on the bin selects that source feature.  Note that currently it is assumed that all score values are positive.
+</p>
+
+<p>
+<pre>
+graph-density-fixed=true
+</pre>
+selects whether or not to use fixed size bins.  Nominally fixed size bins are all integer numbers of pixels deep and are all the same size (eg by dividing the column's display into fixed size rows, and pro-rating source bins that overlap two display ones), but is certain circumstances this may differ, especially at high zoom.
+If a source bin is bigger than the nominal display bin size then the display bin will expand.  Normally small source bins are combined into one display bin with a minimum size, but if short bins preceed a large bin this may result in a display bin smaller than expected, as illustrated here:
+<br /><b>TBD:</b>
+<img src="tbd.png" alt="a piccy">
+</p>
+
+<p>
+<pre>
+graph-density-min-bin=4
+</pre>
+sets the minimum bin size for display in pixels.  The default (4) is the smallest histogram bin that can be easily clicked on (subjectively, for me).
+Line plots look better with a relatievly wide bin despite the fact that this looses detail. Histograms are usually displayed as coloured boxes with an outline and a size of less than 3 pixels means no fill colour will be visible. Heatmaps work best out of the three type with high resolution but it's not clear that a bin size of less than 2 is any use - the point of coverage displays is to highlight wherethe data is, and users can zoom in quite quickly.
+</p>
+<p>
+<pre>
+graph-scale=log
+</pre>
+If selected then source data (score) is converted to a log value. If the source data is already log scale do not select this!
+</p>
+<p>
+<pre>
+graph-density-stagger=12
+</pre>
+offsets a column of graph data by the specifed number of pixels.  This is intended to allow several graphs to be combined into one column (eg a series of heatmaps showing differential expression - set stagger to be 1 greater the the column width.  It's possible to stagger wiggle plots by less, but at low zoom you will get some overlap, and if you do it may be wise to colour code the graphs.  Each graph column is ordered by ZMap's column configuration eg:
+<pre>
+[columns]
+coverage=liver;heart;brain;kidney
+</pre>
+will stagger the data in that order.  Using the option instead of displaying each graph in its own column allows all the be displayed or hidden in a single operation.
+</p>
+
+
+<p>
+<pre>
+default-bump-mode=style
+</pre>
+(not restricted to graph mode styles).  If selected column bump will redisplay the column using an alternate style.
+</p>
+
+<p>
+<pre>
+bump-style=line
+</pre>
+sets the alternate style to be used for bumping.
+</p>
+
+<h3>An example: (compact) heatmap style bumping to overlapping wiggle</h3>
+Laurens' original request was for histograms but when shown the cubans prefered wiggle, but it's easy to change.
+<pre>
+[heatmap]
+width=8
+colours=normal fill white; normal border black
+#max-mag=1000.000000
+graph-baseline=0.000000
+max-score=1000.000000
+mode=graph
+min-score=0.000000
+graph-mode=heatmap
+graph-density=true
+graph-density-fixed=true
+graph-density-min-bin=2
+graph-density-stagger=9
+graph-scale=log
+bump-style=line
+default-bump-mode=style
+
+[line]
+width=40.000000
+colours=normal border blue
+graph-baseline=0.000000
+max-score=1000.000000
+mode=graph
+min-score=0.000000
+graph-mode=line
+graph-density=true
+graph-density-fixed=true
+graph-density-min-bin=4
+graph-density-stagger=20
+graph-scale=log
+</pre>
+and in ZMap config:
+
+<pre>
+[columns]
+coverage= liver; heart; brain
+
+[featureset-style]
+liver = heatmap
+heart = heatmap
+brain = heatmap
+</pre>
+</p>
+
+<h3>Supporting old graph styles with new code</h3>
+The following two styles are equivalent but the second should display more effciently at low zoom. If the first is used and foo not specified then it displays all the features as overlapping as for traditonal ZMap, but uses new code.
+<pre>
+[histogram]			# old style
+width=60.000000
+colours=normal fill Green1 ; normal border Green3
+graph-baseline=0.000000
+max-score=1000.000000
+mode=graph
+min-score=0.000000
+graph-mode=histogram
+bump-fixed=true
+foo=true			# true for old code; false for new
+</pre>
+
+<pre>
+[histogram]			# new style
+width=60.000000
+colours=normal fill Green1 ; normal border Green3
+graph-baseline=0.000000
+max-score=1000.000000
+mode=graph
+min-score=0.000000
+graph-mode=histogram
+graph-density=true
+graph-density-fixed=false
+graph-density-min-bin=1
+bump-fixed=true
+</pre>
+
+
+</p>
+
+<h3>Select and highlight</h3>
+<p> Traditionally clicking on a feature will display some information in the Zmap status bar and highlight the feature (if it's big enough to see the highlight).  Highlight has been implemented for histograms but not for heatmaps or lines.  Select (and status information) work for all three types but for composite bins the feature with the highest score is chosen.  If graphs (eg wiggle plots) are displayed overlapped then it's not always possible to select the feature you want - select operates on a column wide box not the line segment.
+
+
+
+
+

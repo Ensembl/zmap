@@ -139,6 +139,50 @@ int zmapWindowIsGlyphItem(FooCanvasItem *foo)
 }
 
 
+#if MH17_NOT_YET
+// wanted to move this out of Basicfeature
+// but better to wait till canvas items get sorted
+// there is confusion over parent being foo or ZMap
+static FooCanvasItem *zmap_window_glyph_item_add_interval(ZMapWindowCanvasItem   glyph,
+                                               ZMapFeatureSubPartSpan unused,
+                                               double top,  double bottom,
+                                               double left, double right)
+{
+  FooCanvasItem *item = NULL;
+
+
+  if(!(FOO_CANVAS_GROUP(glyph)->item_list))     /* there can only be one */
+    {
+      ZMapFeatureTypeStyle style;
+      ZMapFeature feature;
+      int which = 0;      // 5', 3' or generic
+      gboolean strand = FALSE;
+
+      feature = glyph->feature;
+
+      if(feature->strand == ZMAPSTRAND_REVERSE)
+           strand = TRUE;
+
+      if (feature->flags.has_boundary)
+      {
+            which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
+      }
+
+      style   = (ZMAP_CANVAS_ITEM_GET_CLASS(glyph)->get_style)(glyph);
+                  // style is as configured or retrofitted in zMapStyleMakeDrawable()
+                  // x and y coords are relative to main feature set up in CanvasItemCreate()
+
+                  // style is as configured or retrofitted in zMapStyleMakeDrawable()
+                  // x and y coords are relative to main feature set up in CanvasItemCreate()
+      item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(glyph),
+            style, which, 0.0, 0.0, feature->score,strand));
+
+                  // colour should be set by caller, esp if style is frame specific
+    }
+  return item;
+}
+#endif
+
 
 // add a glyph to the canvas... most info is in the style, so this function does the work instead of the many callers
 // score can trigger a change in size or colour depending on config
@@ -245,7 +289,7 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
                   origin += offset;
       }
 
-      glyph = ZMAP_WINDOW_GLYPH_ITEM (foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GLYPH_ITEM,
+      glyph = ZMAP_WINDOW_GLYPH_ITEM (foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GLYPH_FEATURE,
                         "x",           x_coord + origin,
                         "y",           y_coord,
                         "glyph-shape", shape,
@@ -422,16 +466,20 @@ zmap_window_glyph_item_class_init (ZMapWindowGlyphItemClass class)
   GObjectClass *gobject_class;
   GtkObjectClass *object_class;
   FooCanvasItemClass *item_class;
+//  ZMapWindowCanvasItemClass canvas_class ;
 
   gobject_class = (GObjectClass *) class;
   object_class = (GtkObjectClass *) class;
   item_class = (FooCanvasItemClass *) class;
+//  canvas_class  = (ZMapWindowCanvasItemClass) class;
 
   parent_class = gtk_type_class (foo_canvas_item_get_type ());
 
   gobject_class->set_property = zmap_window_glyph_item_set_property;
   gobject_class->get_property = zmap_window_glyph_item_get_property;
 
+//  canvas_class->add_interval = zmap_window_glyph_item_add_interval;
+//  canvas_class->check_data   = NULL;
 
   g_object_class_install_property(gobject_class,
 				  PROP_ORIGIN_X_PIXELS,
@@ -527,6 +575,7 @@ zmap_window_glyph_item_class_init (ZMapWindowGlyphItemClass class)
   item_class->point     = zmap_window_glyph_item_point;
   item_class->translate = zmap_window_glyph_item_translate;
   item_class->bounds    = zmap_window_glyph_item_bounds;
+
 
   return ;
 }

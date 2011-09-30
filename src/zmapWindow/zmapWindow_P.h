@@ -177,8 +177,24 @@ typedef struct
   (ZMapWindowStatsAlign)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 
 
+
+/* the FtoIHash, search now returns these not the items */
+/* We store ids with the group or item that represents them in the canvas.
+ * May want to consider more efficient way of storing these than malloc... */
+typedef struct
+{
+  FooCanvasItem *item ;					    /* could be group or item. */
+  GHashTable *hash_table ;
+
+  ZMapFeatureAny feature_any;
+  	/* direct link to feature instead if via item */
+  	/* need if we have composite items eg density plots */
+} ID2CanvasStruct, *ID2Canvas ;
+
+
 /* Callback for use in testing item hash objects to see if they fit a particular predicate. */
-typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
+/* mh17: NOTE changed to take featre rather than item, the FToIHash now has both */
+typedef gboolean (*ZMapWindowFToIPredFuncCB) (ZMapFeatureAny feature_any, gpointer user_data) ;
 
 typedef struct
 {
@@ -217,6 +233,21 @@ typedef struct
   ZMapFeatureTypeStyle style ;
 } ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
 
+
+/* used by item factory */
+typedef struct _zmapWindowFeatureStack
+{
+      ZMapFeatureContext context;
+      ZMapFeatureAlignment align;
+      ZMapFeatureBlock block;
+      ZMapFeatureSet set;
+      ZMapFeature feature;
+      GQuark id;        /* used for density plots, set to zero */
+      GQuark maps_to;	/* used by density plots for virtual featuresets */
+      int set_index;	/* used by density plots for stagger */
+      ZMapStrand strand;
+      ZMapFrame frame;
+} ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 
 
@@ -446,15 +477,18 @@ typedef struct
   ZMapWindow window ;
 
   /* this is sometimes a containerfeatureset
-   * eg in zmapWindowDarwFeatures.c/columnMenuCB()
+   * eg in zmapWindowDrawFeatures.c/columnMenuCB()
    */
   FooCanvasItem *item ;
 
   ZMapFeature feature;                    /* only used in item callbacks */
   ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
+  GQuark req_id;					/* set to request if any */
   ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
                                                 /* be good to loose the featureset member */
-  ZMapFeatureContextMap context_map ;			    /* column to featureset mapping and other data. */
+                                                /* is this true: column contains mixed features */
+  ZMapFeatureContextMap context_map ;	/* column to featureset mapping and other data. */
+
 
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
@@ -491,6 +525,8 @@ typedef enum
 
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
+gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
+
 
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
@@ -719,6 +755,8 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowStateQueue history ;
 
+  ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
+
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons. */
   gboolean revcomped_features ;
@@ -882,10 +920,6 @@ void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
 void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout) ;
 void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapHideUnhideColumns(ZMapWindow window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
 GHashTable *zmapWindowFToICreate(void) ;
@@ -909,7 +943,7 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
-				  GQuark feature_id, FooCanvasItem *feature_item) ;
+				  GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature) ;
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
 				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_to_context_hash,
@@ -976,15 +1010,8 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index) ;
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
-FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
-
 
 void zmapWindowHighlightSequenceItems(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
@@ -999,10 +1026,18 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight,
+						  FooCanvasItem *item,
+						  ZMapFrame required_frame,
+						  ZMapSequenceType coords_type,
+						  int region_start, int region_end) ;
+  void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem *item) ;
+
+
 
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
-			  ZMapFeatureSet feature_set, char *source,
+			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos) ;
 
 #define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
@@ -1227,13 +1262,14 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group, ZMapFeature feature) ;
+				     FooCanvasGroup *set_group, ZMapWindowFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
@@ -1279,9 +1315,9 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 // also used for evidence highlight lists
 
 ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
-void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item, ZMapWindowFocusType type);
-#define zmapWindowFocusAddItem(focus, item_list) \
-      zmapWindowFocusAddItemType(focus, item_list,WINDOW_FOCUS_GROUP_FOCUS);
+void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,ZMapFeature feature, ZMapWindowFocusType type);
+#define zmapWindowFocusAddItem(focus, item_list, feature) \
+      zmapWindowFocusAddItemType(focus, item_list, feature, WINDOW_FOCUS_GROUP_FOCUS);
 void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot,ZMapWindowFocusType type);
 #define zmapWindowFocusAddItems(focus, item_list, hot) \
       zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);
@@ -1297,7 +1333,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
   zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS, FALSE)
 
 
-void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
 GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type) ;
 #define zmapWindowFocusGetFocusItems(focus) \
@@ -1444,6 +1480,8 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark,gboolean is_column);
+
+void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 

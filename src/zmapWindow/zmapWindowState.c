@@ -211,9 +211,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 
   if(state->bump_state_set)
     {
-#warning state_bumped_columns_restore() commented out due to mysterious crsah
-// this crashes when sorting the features, data is corrupt
-//     state_bumped_columns_restore(window, &(state->bump));
+     state_bumped_columns_restore(window, &(state->bump));
     }
 
   mark_queue_updating(window->history, FALSE);
@@ -324,6 +322,7 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 }
 
 
+/* mh17: a misnomer, it only does one item */
 gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
 				       ZMapWindow      window)
 {
@@ -337,6 +336,8 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
 
   return state->focus_items_set ;
 }
+
+
 
 static void get_bumped_columns(ZMapWindowContainerGroup container,
 			       FooCanvasPoints         *unused_points,
@@ -367,6 +368,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
 	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
 	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
+printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
 
 	  bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
 	}
@@ -377,9 +379,6 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 
 gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow window)
 {
-#warning save bumped commented out temproarily while tweaking CFS code
-#if MH17_NO_BUMP_STATE
-
 /* the restore was commented out so this function is not needed right now
  * both need to handle columns not featuresets
  * if bump applies to featuresets not columns (bump on feature)
@@ -401,12 +400,12 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow wind
       else
 	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
-4      state->bump.compress  = compress_mode;
+      state->bump.compress  = compress_mode;
       state->rev_comp_state = state->bump.rev_comp_state = window->revcomped_features;
 
       state->bump_state_set = TRUE;
     }
-#endif
+
   return state->bump_state_set;
 }
 
@@ -514,7 +513,12 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 								    restore.item.feature_id,
 								    NULL, NULL)))
 	{
-	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
+	  ID2Canvas id2c = (ID2Canvas) possible_mark_items->data;
+	  ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) id2c->item;
+	  	/* in case of composite item (eg GraphDensity) */
+	  	/* make sure item has the required feature, set */
+	  zMapWindowCanvasItemSetFeaturePointer(item, (ZMapFeature) id2c->feature_any);
+	  zmapWindowMarkSetItem(mark, id2c->item);
 	}
       else
 	{
@@ -622,7 +626,8 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 						  restore.item.feature_id))
 	  && zmapWindowItemIsShown(focus_item))
 	{
-	  zmapWindowFocusAddItem(window->focus, focus_item);
+
+	  zmapWindowFocusAddItem(window->focus, focus_item, zMapWindowCanvasItemGetFeature(focus_item));
 
 	  zmapWindowHighlightFocusItems(window);
 	}
@@ -636,7 +641,8 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 								     restore.item.feature_id,
 								     NULL, NULL)))
 	{
-	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data);
+//	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data,NULL);
+	  zmapWindowFocusAddItems(window->focus, possible_focus_items,NULL);
 
 	  zmapWindowHighlightFocusItems(window);
 
@@ -700,7 +706,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
 		column_state->column.strand = ZMAPSTRAND_FORWARD;
 	    }
-
+printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
 	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
@@ -712,6 +718,8 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      ZMapWindowContainerFeatureSet container_set;
 
 	      container_set = (ZMapWindowContainerFeatureSet)(container);
+
+printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
 
 	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
 
@@ -725,19 +733,9 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 #warning WRONG_NEED_INITIAL_BUMP_MODE
 	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
 		{
-		  /* I'm unsure on the cause of this, so this "fixes"
-		   * the crash at the expense on _not_ restoring the
-		   * bump. Users get a message box, rather than just
-		   * a LogWarning that'll never get seen.... */
-
-		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK &&
-		     (!zmapWindowMarkIsSet(window->mark)))
-              {
-//                zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.",
-//                        "https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
-		    zMapWarning("Failed checking MarkIsSet. We have a ticket for this and will release a fix some-time soon.","");
-		  }
-              else
+printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
+		  if((serialized->compress != ZMAPWINDOW_COMPRESS_MARK ||
+		     (zmapWindowMarkIsSet(window->mark))))
 		    {
 		      zmapWindowColumnBumpRange(container,
 						column_state->bump_mode,

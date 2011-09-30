@@ -63,6 +63,7 @@
 #define PROP_TEXT_REQUESTED_WIDTH_STR   "full-width"
 #define PROP_TEXT_REQUESTED_HEIGHT_STR  "full-height"
 #define PROP_WRAP_MODE_STR              "wrap-mode"
+#define PROP_TEXT_CHANGED_STR           "text-changed"
 
 
 /* Instance */

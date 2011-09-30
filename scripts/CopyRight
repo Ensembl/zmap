@@ -72,7 +72,8 @@ sub main
 	while(<IFILE>)
 	{
 		$lineno++;
-		if($lineno < 50)
+		if($lineno < 50)lict in scripts/CopyRight
+
 		{
 			if (/HISTORY/i || /Last Edited:/i || /Created:/i || /CVS info/i)
 			{

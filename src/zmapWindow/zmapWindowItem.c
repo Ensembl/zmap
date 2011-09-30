@@ -81,66 +81,14 @@ typedef struct
 
 
 
-#if NOT_USED
-static gboolean simple_highlight_region(FooCanvasPoints **points_out,
-                                        FooCanvasItem    *subject,
-                                        gpointer          user_data);
-#endif
-
-static ZMapFrame itemFeatureFrame(FooCanvasItem *item) ;
-
 static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data,
 							 char **error_out) ;
-static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
-				   FooCanvasItem *focus_item,
-				   ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
-				   gboolean centre_on_region) ;
-
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
-static void extract_feature_from_item(gpointer list_data, gpointer user_data);
 
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
 			     double *screenx2_out, double *screeny2_out) ;
 
-static FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window,
-								    ZMapFeatureBlock block, ZMapFrame frame) ;
-static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char *column_name,
-							gboolean require_visible,
-							ZMapFeatureBlock block, ZMapFrame frame) ;
-
-static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *column_name,
-							gboolean require_visible,
-							ZMapFeatureBlock block, ZMapFrame frame) ;
-
-static void handleHightlightDNA(gboolean on, gboolean item_highlight,
-				ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame,
-				ZMapSequenceType coords_type, int region_start, int region_end) ;
-
-
-
-static void zmapWindowItemHighlightTranslationRegion(ZMapWindow window,
-						     gboolean highlight, gboolean item_highlight,
-						     FooCanvasItem *item,
-						     ZMapFrame required_frame,
-						     ZMapSequenceType coords_type, int region_start, int region_end) ;
-static void zmapWindowItemUnHighlightTranslation(ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame) ;
-static void handleHighlightTranslation(gboolean highlight,  gboolean item_highlight,
-				       ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame,
-				       ZMapSequenceType coords_type, int region_start, int region_end) ;
-
-static void fill_workaround_struct(ZMapWindowContainerGroup container,
-				   FooCanvasPoints         *points,
-				   ZMapContainerLevelType   level,
-				   gpointer                 user_data);
-
-static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect);
-static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold);
-
-#ifdef INTERSECTION_CODE
-static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out);
-static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold);
-#endif
 
 
 
@@ -182,6 +130,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   return result ;
 }
 
+#if 0
 GList *zmapWindowItemListToFeatureList(GList *item_list)
 {
   GList *feature_list = NULL;
@@ -192,28 +141,39 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
 }
 
 
-
-FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item)
+static void extract_feature_from_item(gpointer list_data, gpointer user_data)
 {
-  FooCanvasItem *translation = NULL ;
-  ZMapFeatureBlock block ;
-  ZMapFeature feature ;
+  GList **list = (GList **)user_data;
+  FooCanvasItem *item = (FooCanvasItem *)list_data;
+  ZMapFeature feature;
 
-
-  if ((feature = zmapWindowItemGetFeature(item)))
+  if((feature = zmapWindowItemGetFeature(item)))
     {
-      /* First go up to block... */
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK));
-      zMapAssert(block);
-
-      /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-      translation = translation_item_from_block_frame(window, ZMAP_FIXED_STYLE_3FT_NAME, TRUE,
-						      block, itemFeatureFrame(item));
+      *list = g_list_append(*list, feature);
     }
+  else
+    zMapAssertNotReached();
 
-  return translation ;
+  return ;
 }
+#else
+/* function is called from 2 places only, may be good to make callers use the id2c list directly
+   this is a quick mod to preserve the existing interface */
 
+GList *zmapWindowItemListToFeatureList(GList *item_list)
+{
+  GList *feature_list = NULL;
+  ID2Canvas id2c;
+
+  for(;item_list;item_list = item_list->next)
+  {
+  	id2c = (ID2Canvas) item_list->data;
+  	feature_list = g_list_append(feature_list,(gpointer) id2c->feature_any);
+  }
+
+  return feature_list;
+}
+#endif
 
 
 
@@ -306,7 +266,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	  }
 	else
 	  {
-	    zmapWindowFocusAddItem(window->focus, item) ;
+	    zmapWindowFocusAddItem(window->focus, item , feature) ;
 	  }
 
 	break ;
@@ -314,12 +274,13 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     default:
       {
 	/* Try highlighting both the item and its column. */
-        zmapWindowFocusAddItem(window->focus, item);
+        zmapWindowFocusAddItem(window->focus, item, feature);
       }
       break ;
     }
 
   zmapWindowFocusClearOverlayManagers(window->focus) ;
+
 
 
   /* Highlight DNA and Peptide sequences corresponding to feature (if visible),
@@ -330,6 +291,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       zmapWindowItemUnHighlightDNA(window, item) ;
 
       zmapWindowItemUnHighlightTranslations(window, item) ;
+
+      zmapWindowItemUnHighlightShowTranslations(window, item) ;
     }
   else
     {
@@ -338,7 +301,29 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
       zmapWindowItemHighlightTranslationRegions(window, TRUE, item,
 						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+
+
+      /* PROBABLY NEED TO DISABLE THIS UNTIL I CAN GET IT ALL WORKING...... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Not completely happy with this...seems a bit hacky, try it and if users want to do
+       * translations non-transcripts then I'll change it. */
+      if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
+	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, item,
+						     ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+      else
+	zmapWindowItemUnHighlightShowTranslations(window, item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, item,
+						   ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+
+
+
     }
+
+
+
 
 
   zmapWindowHighlightFocusItems(window);
@@ -372,6 +357,8 @@ void zmapWindowUnHighlightFocusItems(ZMapWindow window)
   FooCanvasGroup *hot_column ;
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
+  hot_column = zmapWindowFocusGetHotColumn(window->focus);
+// if (hot_column)
 //  zmapWindowFocusUnHighlightHotColumn(window) ;     // done by reset
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
@@ -500,324 +487,13 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
 }
 
 
-FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *item)
-{
-  ZMapFeature feature;
-  ZMapFeatureBlock block = NULL;
-  FooCanvasItem *dna_item = NULL;
-  GQuark feature_set_unique = 0, dna_id = 0;
-  char *feature_name = NULL;
 
-  feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
-
-  if ((feature = zmapWindowItemGetFeature(item)))
-    {
-      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) &&
-         (feature_name = zMapFeatureDNAFeatureName(block)))
-        {
-          dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_SEQUENCE,
-                                       feature_name,
-                                       ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
-                                       block->block_to_sequence.block.x1,
-                                       block->block_to_sequence.block.x2,
-                                       0,0);
-          g_free(feature_name);
-        }
-
-      if((dna_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						block->parent->unique_id,
-						block->unique_id,
-						feature_set_unique,
-						ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-						ZMAPFRAME_NONE,/* NO STRAND */
-						dna_id)))
-	{
-	  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    dna_item = NULL;
-	}
-    }
-  else
-    {
-      zMapAssertNotReached();
-    }
-
-  return dna_item;
-}
-
-FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item)
-{
-  FooCanvasItem *dna_item = NULL ;
-  ZMapFeatureAny feature_any = NULL ;
-  ZMapFeatureBlock block = NULL ;
-
-  if ((feature_any = zmapWindowItemGetFeatureAny(item))
-      && (block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_BLOCK)))
-    {
-      GQuark dna_set_id ;
-      GQuark dna_id ;
-
-      dna_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
-
-      dna_id = zMapFeatureDNAFeatureID(block);
-
-
-      if ((dna_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						 block->parent->unique_id,
-						 block->unique_id,
-						 dna_set_id,
-						 ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-						 ZMAPFRAME_NONE, /* NO FRAME */
-						 dna_id)))
-	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* this ought to work but it doesn't, I think this may because the parent (column) gets
-	   * unmapped but not the dna text item, so it's not visible any more but it is mapped ? */
-	  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    dna_item = NULL;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  if (!(dna_item->object.flags & FOO_CANVAS_ITEM_MAPPED))
-	    dna_item = NULL;
-	}
-    }
-
-  return dna_item ;
-}
-
-
-
-
-/*
- * Sequence highlighting functions, these feel like they should be in the
- * sequence item class objects.
- */
-
-void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item)
-{
-  ZMapFeatureAny feature_any ;
-
-  if ((feature_any = zmapWindowItemGetFeatureAny(FOO_CANVAS_ITEM(item))))
-    {
-      ZMapFeatureBlock block ;
-
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature_any), ZMAPFEATURE_STRUCT_BLOCK));
-      zMapAssert(block);
-
-      highlightSequenceItems(window, block, item, ZMAPSEQUENCE_NONE, ZMAPFRAME_NONE, 0, 0, FALSE) ;
-    }
-
-  return ;
-}
-
-
-
-void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
-				       ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
-				       gboolean centre_on_region)
-{
-  highlightSequenceItems(window, block, NULL, seq_type, frame, start, end, centre_on_region) ;
-
-  return ;
-}
-
-
-
-/* highlights the dna given any foocanvasitem (with a feature) and a start and end
- * This _only_ highlights in the current window! */
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight,
-				      FooCanvasItem *item, ZMapFrame required_frame,
-				      ZMapSequenceType coords_type, int region_start, int region_end)
-{
-  handleHightlightDNA(TRUE, item_highlight, window, item, required_frame,
-		      coords_type, region_start, region_end) ;
-
-  return ;
-}
-
-
-void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item)
-{
-  handleHightlightDNA(FALSE, FALSE, window, item, ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, 0, 0) ;
-
-  return ;
-}
-
-
-
-/* This function highlights the peptide translation columns from region_start to region_end
- * (in dna or pep coords). Note any existing highlight is removed. If required_frame
- * is set to ZMAPFRAME_NONE then highlighting is in all 3 cols otherwise only in the
- * frame column given. */
-void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
-					       FooCanvasItem *item,
-					       ZMapFrame required_frame,
-					       ZMapSequenceType coords_type,
-					       int region_start, int region_end)
-{
-  ZMapFrame frame ;
-
-  for (frame = ZMAPFRAME_0 ; frame < ZMAPFRAME_2 + 1 ; frame++)
-    {
-      gboolean highlight ;
-
-      if (required_frame == ZMAPFRAME_NONE || frame == required_frame)
-	highlight = TRUE ;
-      else
-	highlight = FALSE ;
-
-      zmapWindowItemHighlightTranslationRegion(window, highlight, item_highlight,
-					       item, frame,
-					       coords_type, region_start, region_end) ;
-    }
-
-  return ;
-}
-
-
-void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item)
-{
-  ZMapFrame frame ;
-
-  for (frame = ZMAPFRAME_0 ; frame < ZMAPFRAME_2 + 1 ; frame++)
-    {
-      zmapWindowItemUnHighlightTranslation(window, item, frame) ;
-    }
-
-  return ;
-}
-
-
-
-#if MH17_NOT_CALLED
-FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block)
-{
-  ZMapFeatureSet feature_set;
-  FooCanvasItem *translation;
-  GQuark feature_set_id;
-
-  feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
-  /* and look up the translation feature set with ^^^ */
-  feature_set  = zMapFeatureBlockGetSetByID(block, feature_set_id);
-
-  translation  = zmapWindowFToIFindSetItem(window,window->context_to_item,
-                                           feature_set,
-                                           ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-                                           ZMAPFRAME_NONE);
-
-
-  return FOO_CANVAS_GROUP(translation);
-}
-#endif
-
-FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item)
-{
-  FooCanvasItem *translation = NULL;
-  ZMapFeature feature;
-  ZMapFeatureBlock block;
-
-  if ((feature = zmapWindowItemGetFeature(item)))
-    {
-      ZMapFeatureSet feature_set;
-      ZMapFeatureTypeStyle style;
-
-      /* First go up to block... */
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK));
-      zMapAssert(block);
-
-      /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((style = zMapFeatureContextFindStyle((ZMapFeatureContext)(block->parent->parent),
-					       ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))
-	  && !(feature_set = zMapFeatureBlockGetSetByID(block,
-							zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	if ((style = zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
-	    && !(feature_set = zMapFeatureBlockGetSetByID(block,
-							  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-
-	{
-	  /* Feature set doesn't exist, so create. */
-	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL);
-	  //feature_set->style = style;
-	  zMapFeatureBlockAddFeatureSet(block, feature_set);
-	}
-
-      if (feature_set)
-	{
-	  ZMapWindowContainerGroup parent_container;
-	  ZMapWindowContainerStrand forward_container;
-	  ZMapWindowContainerFeatures forward_features;
-	  FooCanvasGroup *tmp_forward, *tmp_reverse;
-
-#ifdef SIMPLIER
-	  FooCanvasGroup *forward_group, *parent_group, *tmp_forward, *tmp_reverse ;
-	  /* Get the FeatureSet Level Container */
-	  parent_group = zmapWindowContainerCanvasItemGetContainer(item);
-	  /* Get the Strand Level Container (Could be Forward OR Reverse) */
-	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
-	  /* Get the Block Level Container... */
-	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
-#endif /* SIMPLIER */
-
-	  parent_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK);
-
-	  /* Get the Forward Group Parent Container... */
-	  forward_container = zmapWindowContainerBlockGetContainerStrand((ZMapWindowContainerBlock)parent_container, ZMAPSTRAND_FORWARD);
-	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
-	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)forward_container);
-
-	  /* make the column... */
-	  if (zmapWindowCreateSetColumns(window,
-					 forward_features,
-					 NULL,
-					 block,
-					 feature_set,
-					 window->context_map->styles,
-					 ZMAPFRAME_NONE,
-					 &tmp_forward, &tmp_reverse, NULL))
-	    {
-	      translation = FOO_CANVAS_ITEM(tmp_forward);
-	    }
-	}
-      else
-	zMapLogWarning("Failed to find Feature Set for '%s'", ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME);
-    }
-  else
-    zMapAssertNotReached();
-
-  return translation;
-}
-
-#ifdef RDS_NEVER
-ZMapFeatureTypeStyle zmapWindowItemGetStyle(ZMapWindow window, FooCanvasItem *item)
-{
-  ZMapWindowCanvasItem canvas_item = NULL;
-  ZMapFeatureTypeStyle style = NULL;
-  ZMapFeature feature = NULL;
-
-  canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item);
-
-  if((canvas_item != NULL) &&
-     (feature = zMapWindowCanvasItemGetFeature(canvas_item)))
-    {
-      style = zMapFindStyle(window->display_styles, feature->style_id);
-    }
-
-  return style;
-}
-#endif
-
-
-
-
-/* Finds the feature item in a window corresponding to the supplied feature item..which is
+/* Finds the feature item in a window corresponding to the supplied feature item...which is
  * usually one from a different window....
  *
  * This routine can return NULL if the user has two different sequences displayed and hence
  * there will be items in one window that are not present in another.
- *
- *  */
+ */
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
 {
   FooCanvasItem *matching_item = NULL ;
@@ -1324,8 +1000,11 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
   mid_y = (wy1 + wy2) / 2 ;
 
   item = foo;
-  if(!item)
+  zMapAssert(item);	/* focus item passed in, we always have focus if we get here */
+#if 0
+  if(!item)		/* should never be called: legacy code */
   	item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y);
+#endif
   if(item)
     {
       FooCanvasGroup *block_container ;
@@ -1355,62 +1034,6 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
       else
 	zMapLogWarning("%s", "No Block Container");
     }
-  else
-    {
-#if 0
-
-      get_item_at_workaround_struct workaround_struct = {NULL};
-      double scroll_x2;
-
-      workaround_struct.wx1 = wx1;
-      workaround_struct.wx2 = wx2;
-      workaround_struct.wy1 = wy1;
-      workaround_struct.wy2 = wy2;
-
-      /* For some reason foo_canvas_get_item_at() fails to find items
-       * a lot of the time even when it shouldn't and so we need a solution. */
-
-      /* Incidentally some of the time, for some users, so does this. (RT # 55131) */
-      /* The cause: if the mark is > 10% out of the scroll region the threshold (90%)
-       * for intersection will not be met.  So I'm going to clamp to the scroll
-       * region and lower the threshold to 55%...
-       */
-      zmapWindowGetScrollRegion(window, NULL, NULL, &scroll_x2, NULL);
-
-      if(workaround_struct.wx2 > scroll_x2)
-	workaround_struct.wx2 = scroll_x2;
-
-      if(workaround_struct.wx2 == 0)
-	workaround_struct.wx2 = workaround_struct.wx1 + 1;
-
-      /* Here's another fix for this workaround code.  It fixes the
-       * problem seen in RT ticket #75034.  The long items code is
-       * causing the issue, as the block background, used to get the
-       * block size, is resized by the long items code.  The
-       * workaround uses the item size of the background in the
-       * calculation of intersection and as this only slightly
-       * intersects with the mark when zoomed in the intersection test
-       * fails. Passing the window in allows for fetching of the long
-       * item's (block container background) original size. */
-      workaround_struct.window = window;
-
-      zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
-				      fill_workaround_struct,     &workaround_struct);
-
-      if((result = workaround_struct.result))
-	{
-	  if (block_grp_out)
-	    *block_grp_out = workaround_struct.block;
-	  if (y1_out)
-	    *y1_out = workaround_struct.seq_x;
-	  if (y2_out)
-	    *y2_out = workaround_struct.seq_y;
-	}
-
-#else
-	zMapLogWarning("workaround removed, used to get 'could not find cursor' error on Blixem","");
-    }
-#endif
 
   return result ;
 }
@@ -1672,248 +1295,8 @@ void zmapWindowItemGetVisibleWorld(ZMapWindow window,
 
 
 
-static ZMapFrame itemFeatureFrame(FooCanvasItem *item)
-{
-  ZMapFeatureSubPartSpan item_subfeature_data ;
-  ZMapFeature feature;
-  ZMapFrame frame = ZMAPFRAME_NONE;
-
-  if ((feature = zmapWindowItemGetFeature(item)))
-    {
-      frame = zmapWindowFeatureFrame(feature);
-
-      if((item_subfeature_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA)))
-        {
-          int diff = item_subfeature_data->start - feature->x1;
-          int sub_frame = diff % 3;
-
-          frame -= ZMAPFRAME_0;
-          frame += sub_frame;
-          frame  = (frame % 3) + ZMAPFRAME_0;
-        }
-    }
-
-  return frame;
-}
 
 
-
-static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *column_name,
-							gboolean require_visible,
-							ZMapFeatureBlock block, ZMapFrame frame)
-{
-  FooCanvasItem *translation = NULL;
-  GQuark feature_set_id, feature_id;
-  ZMapFeatureSet feature_set;
-  ZMapStrand strand = ZMAPSTRAND_FORWARD;
-
-  feature_set_id = zMapStyleCreateID(column_name);
-  /* and look up the translation feature set with ^^^ */
-
-  if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
-    {
-      char *feature_name;
-
-      /* Get the name of the framed feature... */
-      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
-      /* ... and its quark id */
-      feature_id   = g_quark_from_string(feature_name);
-
-      if((translation  = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						    block->parent->unique_id,
-						    block->unique_id,
-						    feature_set_id,
-						    strand, /* STILL ALWAYS FORWARD */
-						    frame,
-						    feature_id)))
-	{
-	  if(require_visible && !(FOO_CANVAS_ITEM(translation)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    translation = NULL;
-
-	}
-
-      g_free(feature_name);
-    }
-
-  return translation;
-}
-
-
-
-
-
-static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char *column_name,
-							gboolean require_visible,
-							ZMapFeatureBlock block, ZMapFrame frame)
-{
-  FooCanvasItem *translation = NULL;
-  GQuark feature_set_id, feature_id;
-  ZMapFeatureSet feature_set;
-  ZMapStrand strand = ZMAPSTRAND_FORWARD;
-
-  feature_set_id = zMapStyleCreateID(column_name);
-  /* and look up the translation feature set with ^^^ */
-
-  if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
-    {
-      char *feature_name;
-
-      /* Get the name of the framed feature... */
-      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
-      /* ... and its quark id */
-      feature_id   = g_quark_from_string(feature_name);
-
-      if((translation  = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						    block->parent->unique_id,
-						    block->unique_id,
-						    feature_set_id,
-						    strand, /* STILL ALWAYS FORWARD */
-						    frame,
-						    feature_id)))
-	{
-	  if(require_visible && !(FOO_CANVAS_ITEM(translation)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    translation = NULL;
-	  else
-	    translation = FOO_CANVAS_GROUP(translation)->item_list->data;
-	}
-
-      g_free(feature_name);
-    }
-
-  return translation;
-}
-
-
-#if NOT_USED
-static gboolean simple_highlight_region(FooCanvasPoints **points_out,
-                                        FooCanvasItem    *subject,
-                                        gpointer          user_data)
-{
-  StartEndTextHighlight high_data = (StartEndTextHighlight)user_data;
-  FooCanvasPoints *points;
-  double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
-  int index1, index2;
-  gboolean first_found, last_found;
-  gboolean redraw = FALSE;
-
-  points = foo_canvas_points_new(8);
-
-  index1 = high_data->start;
-  index2 = high_data->end;
-
-  /* SWAP MACRO? */
-  if(index1 > index2)
-    ZMAP_SWAP_TYPE(int, index1, index2);
-
-  /* From the text indices, get the bounds of that char */
-  first_found = zmapWindowItemTextIndex2Item(high_data->item, index1, &first[0]);
-  last_found  = zmapWindowItemTextIndex2Item(high_data->item, index2, &last[0]);
-
-  if(first_found && last_found)
-    {
-      double minx, maxx;
-      foo_canvas_item_get_bounds(high_data->item, &minx, NULL, &maxx, NULL);
-      zmapWindowItemTextOverlayFromCellBounds(points,
-					      &first[0],
-					      &last[0],
-					      minx, maxx);
-      zmapWindowItemTextOverlayText2Overlay(high_data->item, points);
-
-      /* set the points */
-      if(points_out)
-	{
-	  *points_out = points;
-	  /* record such */
-	  redraw = TRUE;
-	}
-    }
-
-  return redraw;
-}
-#endif
-
-
-
-static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
-				   FooCanvasItem *focus_item,
-				   ZMapSequenceType seq_type, ZMapFrame required_frame, int start, int end,
-				   gboolean centre_on_region)
-{
-  FooCanvasItem *item ;
-  GQuark set_id ;
-  ZMapFrame tmp_frame ;
-  ZMapStrand tmp_strand ;
-  gboolean done_centring = FALSE ;
-
-
-  /* If there is a dna column then highlight match in that. */
-  tmp_strand = ZMAPSTRAND_NONE ;
-  tmp_frame = ZMAPFRAME_NONE ;
-  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
-
-  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-					 block->parent->unique_id, block->unique_id,
-					 set_id, tmp_strand, tmp_frame, 0)))
-    {
-      int dna_start, dna_end ;
-
-      dna_start = start ;
-      dna_end = end ;
-
-      zmapWindowItemHighlightDNARegion(window, FALSE, item, required_frame, seq_type, dna_start, dna_end) ;
-
-      if (centre_on_region)
-	{
-	  /* Need to convert sequence coords to block for this call. */
-	  zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
-
-
-	  zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, dna_start, dna_end) ;
-	  done_centring = TRUE ;
-	}
-    }
-
-
-  /* If there are peptide columns then highlight match in those. */
-  tmp_strand = ZMAPSTRAND_NONE ;
-  tmp_frame = ZMAPFRAME_NONE ;
-  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
-
-  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-					 block->parent->unique_id, block->unique_id,
-					 set_id, tmp_strand, tmp_frame, 0)))
-    {
-      int frame_num, pep_start, pep_end ;
-
-
-
-      for (frame_num = ZMAPFRAME_0 ; frame_num <= ZMAPFRAME_2 ; frame_num++)
-	{
-	  pep_start = start ;
-	  pep_end = end ;
-
-	  if (seq_type == ZMAPSEQUENCE_DNA)
-	    {
-	      zmapWindowItemHighlightTranslationRegion(window, TRUE, FALSE,
-						       item, frame_num, seq_type, pep_start, pep_end) ;
-	    }
-	  else
-	    {
-	      if (frame_num == required_frame)
-		zmapWindowItemHighlightTranslationRegion(window, TRUE, FALSE, item,
-							 frame_num, seq_type, pep_start, pep_end) ;
-	      else
-		zmapWindowItemUnHighlightTranslation(window, item, frame_num) ;
-	    }
-	}
-
-      if (centre_on_region && !done_centring)
-	zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
-    }
-
-
-  return ;
-}
 
 
 
@@ -1999,129 +1382,6 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
 
 
 
-static void handleHightlightDNA(gboolean on, gboolean item_highlight,
-				ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame,
-				ZMapSequenceType coords_type, int region_start, int region_end)
-{
-  FooCanvasItem *dna_item ;
-
-  if ((dna_item = zmapWindowItemGetDNATextItem(window, item))
-      && ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) && item != dna_item)
-    {
-      ZMapWindowSequenceFeature sequence_feature ;
-      ZMapFeature feature ;
-
-      sequence_feature = (ZMapWindowSequenceFeature)dna_item ;
-
-      /* highlight specially for transcripts (i.e. exons). */
-      if (on)
-	{
-	  if (item_highlight && (feature = zmapWindowItemGetFeature(item)))
-	    {
-	      zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, feature) ;
-	    }
-	  else
-	    {
-	      zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
-	    }
-	}
-      else
-	{
-	  zMapWindowSequenceDeSelect(sequence_feature) ;
-	}
-    }
-
-  return ;
-}
-
-
-/* highlights the translation given any foocanvasitem (with a
- * feature), frame and a start and end (protein seq coords) */
-/* This _only_ highlights in the current window! */
-static void zmapWindowItemHighlightTranslationRegion(ZMapWindow window,
-						     gboolean highlight, gboolean item_highlight,
-						     FooCanvasItem *item,
-						     ZMapFrame required_frame,
-						     ZMapSequenceType coords_type, int region_start, int region_end)
-{
-  handleHighlightTranslation(highlight, item_highlight, window, item,
-			     required_frame, coords_type, region_start, region_end) ;
-
-  return ;
-}
-
-
-static void zmapWindowItemUnHighlightTranslation(ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame)
-{
-  handleHighlightTranslation(FALSE, FALSE, window, item, required_frame, ZMAPSEQUENCE_NONE, 0, 0) ;
-
-  return ;
-}
-
-
-
-
-static void handleHighlightTranslation(gboolean highlight, gboolean item_highlight,
-				       ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame,
-				       ZMapSequenceType coords_type, int region_start, int region_end)
-{
-  FooCanvasItem *translation_item = NULL;
-  ZMapFeatureAny feature_any ;
-  ZMapFeatureBlock block ;
-
-  if ((feature_any = zmapWindowItemGetFeatureAny(item)))
-    {
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature_any), ZMAPFEATURE_STRUCT_BLOCK)) ;
-
-      if ((translation_item = zmapWindowItemGetTranslationItemFromItemFrame(window, block, required_frame)))
-	{
-	  ZMapWindowSequenceFeature sequence_feature ;
-	  ZMapFeature feature ;
-
-	  sequence_feature = (ZMapWindowSequenceFeature)translation_item ;
-
-	  if (highlight)
-	    {
-	      if (item_highlight && (feature = zmapWindowItemGetFeature(item)))
-		{
-		  zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, feature) ;
-		}
-	      else
-		{
-		  zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
-		}
-	    }
-	  else
-	    {
-	      zMapWindowSequenceDeSelect(sequence_feature) ;
-	    }
-	}
-    }
-
-  return ;
-}
-
-
-
-static FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window,
-								    ZMapFeatureBlock block, ZMapFrame frame)
-{
-  FooCanvasItem *translation = NULL;
-
-  /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-  translation = translation_from_block_frame(window, ZMAP_FIXED_STYLE_3FT_NAME, TRUE, block, frame);
-
-  return translation;
-}
-
-
-
-
-
-
-
-
-
 
 
 /* GCompareFunc() to compare two features by their coords so they are sorted into ascending order. */
@@ -2151,21 +1411,6 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
 
 
-static void extract_feature_from_item(gpointer list_data, gpointer user_data)
-{
-  GList **list = (GList **)user_data;
-  FooCanvasItem *item = (FooCanvasItem *)list_data;
-  ZMapFeature feature;
-
-  if((feature = zmapWindowItemGetFeature(item)))
-    {
-      *list = g_list_append(*list, feature);
-    }
-  else
-    zMapAssertNotReached();
-
-  return ;
-}
 
 
 /* Get the visible portion of the canvas. */
@@ -2191,209 +1436,4 @@ static void getVisibleCanvas(ZMapWindow window,
 
   return ;
 }
-
-/* workaround for a failing foo_canvas_item_at(). Actually only looks for blocks! */
-static void fill_workaround_struct(ZMapWindowContainerGroup container,
-				   FooCanvasPoints       *points,
-				   ZMapContainerLevelType level,
-				   gpointer               user_data)
-{
-  get_item_at_workaround workaround = (get_item_at_workaround)user_data;
-
-  if(!container) return;
-
-  switch(level)
-    {
-    case ZMAPCONTAINER_LEVEL_BLOCK:
-      {
-	FooCanvasItem *cont_backgrd;
-	ZMapFeatureBlock block;
-
-	if((cont_backgrd = (FooCanvasItem *)zmapWindowContainerGetBackground(container)))
-	  {
-	    double offset;
-	    AreaStruct area_src = {workaround->wx1, workaround->wy1, workaround->wx2, workaround->wy2},
-	      area_block = {};
-	    foo_canvas_item_get_bounds(cont_backgrd,
-				       &(area_block.x1), &(area_block.y1),
-				       &(area_block.x2), &(area_block.y2));
-
-	    /* The original size of the block needs to be used, not the longitem resized size. */
-	    if(workaround->window && workaround->window->long_items)
-	      {
-		double long_y1, long_y2;
-		/* Get the original size of the block's background, see caller & RT #75034 */
-		if(zmapWindowLongItemCoords(workaround->window->long_items, cont_backgrd,
-					    &long_y1, &long_y2))
-		  {
-		    area_block.y1 = long_y1;
-		    area_block.y2 = long_y2;
-		  }
-	      }
-
-	    if((workaround->wx1 >= area_block.x1 && workaround->wx2 <= area_block.x2 &&
-		workaround->wy1 >= area_block.y1 && workaround->wy2 <= area_block.y2) ||
-	       areas_intersect_gt_threshold(&area_src, &area_block, 0.55))
-	      {
-		/* We're inside */
-		workaround->block = (FooCanvasGroup *)container;
-		block = zmapWindowItemGetFeatureBlock(container);
-
-		offset = (double)(block->block_to_sequence.block.x1 - 1) ; /* - 1 for 1 based coord system. */
-
-		my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(cont_backgrd),
-						   &(workaround->wx1), &(workaround->wy1),
-						   &(workaround->wx2), &(workaround->wy2)) ;
-
-		workaround->seq_x  = floor(workaround->wy1 - offset + 0.5) ;
-		workaround->seq_y  = floor(workaround->wy2 - offset + 0.5) ;
-		workaround->result = TRUE;
-	      }
-	    else
-	      {
-                 zMapLogWarning("fill_workaround_struct: Area block (%f, %f), (%f, %f) "
-			     "workaround (%f, %f), (%f, %f) Roy needs to look at this.",
-			     area_block.x1, area_block.y1,
-			     area_block.x2, area_block.y2,
-			     workaround->wx1, workaround->wy1,
-			     workaround->wx2, workaround->wy2);
-            }
-	  }
-
-      }
-      break;
-    default:
-      break;
-    }
-
-  return ;
-}
-
-static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect)
-{
-  double x1, x2, y1, y2;
-  gboolean overlap = FALSE;
-
-  x1 = MAX(area_1->x1, area_2->x1);
-  y1 = MAX(area_1->y1, area_2->y1);
-  x2 = MIN(area_1->x2, area_2->x2);
-  y2 = MIN(area_1->y2, area_2->y2);
-
-  if(y2 - y1 > 0 && x2 - x1 > 0)
-    {
-      intersect->x1 = x1;
-      intersect->y1 = y1;
-      intersect->x2 = x2;
-      intersect->y2 = y2;
-      overlap = TRUE;
-    }
-  else
-    intersect->x1 = intersect->y1 =
-      intersect->x2 = intersect->y2 = 0.0;
-
-  return overlap;
-}
-
-/* threshold = percentage / 100. i.e. has a range of 0.00000001 -> 1.00000000 */
-/* For 100% overlap pass 1.0, For 50% overlap pass 0.5 */
-static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold)
-{
-  AreaStruct inter = {};
-  double a1, aI;
-  gboolean above_threshold = FALSE;
-
-  if(areas_intersection(area_1, area_2, &inter))
-    {
-      aI = (inter.x2 - inter.x1 + 1.0) * (inter.y2 - inter.y1 + 1.0);
-      a1 = (area_1->x2 - area_1->x1 + 1.0) * (area_1->y2 - area_1->y1 + 1.0);
-
-      if(threshold > 0.0 && threshold < 1.0)
-	threshold = 1.0 - threshold;
-      else
-	threshold = 0.0;		/* 100% overlap only */
-
-      if(inter.x1 >= area_1->x1 &&
-	 inter.y1 >= area_1->y1 &&
-	 inter.x2 <= area_1->x2 &&
-	 inter.y2 <= area_1->y2)
-	{
-	  above_threshold = TRUE; /* completely contained */
-	}
-      else if((aI <= (a1 * (1.0 + threshold))) && (aI >= (a1 * (1.0 - threshold))))
-	above_threshold = TRUE;
-      else
-	zMapLogWarning("%s", "intersection below threshold");
-    }
-  else
-    zMapLogWarning("%s", "no intersection");
-
-  return above_threshold;
-}
-
-
-
-
-
-
-
-
-
-
-#ifdef INTERSECTION_CODE
-
-/* I DON'T KNOW WHAT THIS WAS FOR, WHY IT WAS WRITTEN OR ANYTHING...... */
-
-
-
-/* Untested... */
-static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out)
-{
-  gboolean intersect = FALSE;
-
-  if(points_out)
-    {
-      AreaStruct a1 = {};
-      AreaStruct a2 = {};
-      AreaStruct i  = {};
-
-      foo_canvas_item_get_bounds(i1,
-				 &(a1.x1), (&a1.y1),
-				 &(a1.x2), (&a1.y2));
-      foo_canvas_item_get_bounds(i2,
-				 &(a2.x1), (&a2.y1),
-				 &(a2.x2), (&a2.y2));
-
-      if((intersect = areas_intersection(&a1, &a2, &i)))
-	{
-	  FooCanvasPoints *points = foo_canvas_points_new(2);
-	  points->coords[0] = i.x1;
-	  points->coords[1] = i.y1;
-	  points->coords[2] = i.x2;
-	  points->coords[3] = i.y2;
-	  *points_out = points;
-	}
-    }
-
-  return intersect;
-}
-
-/* Untested... */
-static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold)
-{
-  AreaStruct a1 = {};
-  AreaStruct a2 = {};
-  gboolean intersect = FALSE;
-
-  foo_canvas_item_get_bounds(i1,
-			     &(a1.x1), (&a1.y1),
-			     &(a1.x2), (&a1.y2));
-  foo_canvas_item_get_bounds(i2,
-			     &(a2.x1), (&a2.y1),
-			     &(a2.x2), (&a2.y2));
-
-  intersect = areas_intersect_gt_threshold(&a1, &a2, threshold);
-
-  return intersect;
-}
-#endif /* INTERSECTION_CODE */
 
