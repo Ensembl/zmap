@@ -1098,7 +1098,7 @@ gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet cont
 
       l = column_features->item_list;
 
-      if(l && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data))
+      if(l && (ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data) || ZMAP_IS_WINDOW_GRAPH_ITEM(l->data)))
 		return(TRUE);
 
 	return(FALSE);
