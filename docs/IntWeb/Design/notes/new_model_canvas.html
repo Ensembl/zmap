@@ -172,7 +172,7 @@ Note also that if we also try to paint lines upstream of a feature this will not
 </p>
 <p>Glyphs may be slightly tricky to add on as we have to calculate the maximum size of a glyph to define the extra overlap distance.
 </p>
-<p> The root cause of these problems is that we are dealing with feature parts and we ned to display some part in the middle that we can't find on an expose.  If we could deal with alignments as composite objects then these could easily pick up any relevant expose event.
+<p> The root cause of these problems is that we are dealing with feature parts and we need to display some part in the middle that we can't find on an expose.  If we could deal with alignments as composite objects then these could easily pick up any relevant expose event.
 
 <a name="bump_solution"></a>
 <h6>Attempting a solution</h6>
@@ -182,7 +182,7 @@ Note also that if we also try to paint lines upstream of a feature this will not
 Using a sorted index to find features to display for a given expose event is a simple idea and works well and it is worth preserving this for other kinds of feature.
 
 <li> <i>Handle colinear lines in the first alignment in a series</i><br />
-The initial implementation added one line per feature but this has proved tricky.  If we adjust the first feature's extent to cover the whole series and make its paint function draw all colinear lines for the series and it's own feature, then we are guaranteed to pick up all the expose events.  As we bump each series of features together it is easy to calculate the total extent and also to maintain a featureset wide bump overlap limit.  Note that this is stricly a downstream extension of the feature extent and avoids problems with re-ordering the index.  2nd and subsequent features will paint themselves.
+The initial implementation added one line per feature but this has proved tricky.  If we adjust the first feature's extent to cover the whole series and make its paint function draw all colinear lines for the series and it's own feature, then we are guaranteed to pick up all the expose events.  As we bump each series of features together it is easy to calculate the total extent and also to maintain a featureset wide bump overlap limit.  Note that this is stricly a downstream extension of the feature extent and avoids problems with re-ordering the index.  2nd and subsequent features will paint themselves.  We also avoid adding an alignemt wide feature just fo decorations - this distrube the index and added extra complexity at the cost of adjusting one coordinate.
 
 <li> <i>Handle glyphs via a separate bump overlap range.</i><br />
 These can occur between features (nc-splice) in which case they are handled as above. They can also occur at the start and end of a series and extend beyond these bounds. As the exisitng overlap mechanism will pick up expose events for the top end we need no concern ourselfves with that. The bottom end however requires further processing of features beyond the expose region to pick up features just beyond it. As glyphs are defined in pixel coordinates we can calculate maximum value of these and adjust for the current zoom level in the draw function.  Glyphs will be drawn per feature, and this process can be added regardless of bump state, which will keep the code cleaner.
@@ -190,10 +190,32 @@ These can occur between features (nc-splice) in which case they are handled as a
 Here's an pictorial repepresentation:
 <img src="Design/notes/bumped_align.png"  class="img">
 
-
+<h4>Handling alignment glyphs</h4>
+<p>There is a performance gain to be had by caching glyph shapes as these are all the same shape and size (but may be inverted or displayed in a different colour.  Glyphs in general can be sized by score (which can be set in the style) and we have to handle this (effciently) if someone configures it (eg as for GF_Splice glyphs as standalone features), but for bumped alignments we currently have a restricted level of variation.  This means we only need to have four data structures for each glyph style definition, but have to allow for one per feature 'just in case'.
+</p>
+<p>To provide a clean interface the alignment code will use a #define or function call to access a sub-feature glyph and these will be painted on demand.  These may be stored per feature (quiWe prefer to avoid large amounts of memory allocation (which saves memory as not all alignmentsck and easy but uses a lot of memory <i>NOTE: this could require 100MB for 200k alignments if pre-allocated)</i> or in a hash table
+(memory efficient but a little fiddly).  The problem is to find a way to index glyphs in an effcient enough but also general way - note that we need to index an instance of a glyph not its definition.. What we are aiming at is to just have examples of each variation (max 8 per style of which we currently have 2) that works regardless of our knowledge of current use.
+</p>
+<p>To handle arbritary number of glyph instances we must have one glyph per features (at each end) and the only way to do this effeicently in terms of memory is via a pointer or key in the alignment struct (we wish to avoid recalculatingon expose for speed).  If we can use these pointers/ keys to refer to a few glyph instnace that can be mapped to a feature's coordinated then we have an effcient solution.
+</p>
+<h5>A solution</h5>
+<p>
+<ul>
+<li>On display (via lazy evaluation of bumped features) we calculate a signature for each glyph derived from the style definiton and feature data.
+<li> The style defintion reveals whether or not the instance population is limited (eg not sized by score) and if not we allocate a unigue glyph struct - this will use a lot of memory but is required.
+<li> If the style is limited in variablilty then the feature data (strand, farme, score/ style threshold is combined with the style data to create a signature for a cached glyph and that is created and referred to directly using pointer.
+<li> Cached styles are held in a hash table indexed by signature and never freed
+<li> A signature will be implemented as a GQuark derived from a string made up of the style id and various configuratioon options.
+</ul>
+This gives: a) efficient memory use for stable glyph styles, b) once only calculation of the glyph shape. c) rapid acess and display.  It is also relatively future proof: if we add more style otpions it is possible to add these to the glyph signature, and configuration changes will filter through transparently.
+</p>
+<p><b>Note</b> this code is part of the glyph implementation and not restricted to alignment features, although other types of features would have to code the interface if requried.
+</p>
+<p><i>A Nuance</i>: score_mode ALT displays the glyph using a different colour, and this can be implemented by the calling code easily enough, we have the options to use shorter signatures and fewer glyph instances,; however this is not hugely significant in terms of speed or memory use.
+</p>
 
 <h4>Handling focus highlight</h4>
-<p>In the inial trial we had the luxury of knowing that features do not overlap and focus highlight has been implemented simply by setting the colour of individual features.
+<p>In the initial trial we had the luxury of knowing that features do not overlap and focus highlight has been implemented simply by setting the colour of individual features.
 </p>
 <p>For the more general case we need to display multiple features on top of others and in the existing implementation this has been done by re-ordering the features in a column (eg via foo_canvas_raise_to_top()).  Note that this has resulted in a few anomalies in the past and there are instances where the focus code is deficient (eg revcomp will restore only a single focus item.
 </p>
@@ -201,7 +223,7 @@ Here's an pictorial repepresentation:
 </p>
 <p>One way, using the proposed canvas structure is to flag each focussed item and have display code display these after displaying all others. This would be a simple process of adding focus items to a list on expoose (but note that wiggle plots are perhaps complicated ... these currently do not show focus highlights as there is no obvious way to do this).
 </p>
-<p>An alternavtive would be to post process a focus items list on expose; this does not fit so well into the overal canvas structure but could possibly be handled by the block objects.  This would be difficult to implement if as proposed we do canvas items first and then containers.
+<p>An alternative would be to post process a focus items list on expose; this does not fit so well into the overal canvas structure but could possibly be handled by the block objects.  This would be difficult to implement if as proposed we do canvas items first and then containers.
 
 <h3>Feature data structures</h3>
 <p>
