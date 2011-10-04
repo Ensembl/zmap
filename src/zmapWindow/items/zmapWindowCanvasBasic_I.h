@@ -1,6 +1,7 @@
-/*  File: zmapUtilsFoo.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+
+/*  File: zmapWindowCanvasBasic.c
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,29 +21,21 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * implements callback functions for FeaturesetItem basic features
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_UTILS_FOO_H
-#define ZMAP_UTILS_FOO_H
-
-#include <libzmapfoocanvas/libfoocanvas.h>
-
-gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas,
-                                        PangoFontDescription **font_desc_out,
-                                        double *width_out,
-                                        double *height_out);
-void zMap_foo_canvas_sort_items(FooCanvasGroup *group, GCompareFunc compare_func) ;
-int zMap_foo_canvas_find_item(FooCanvasGroup *group, FooCanvasItem *item) ;
-GList *zMap_foo_canvas_find_list_item(FooCanvasGroup *group, FooCanvasItem *item) ;
-
-guint32 zMap_gdk_color_to_rgba(GdkColor *color);
+#include <ZMap/zmap.h>
 
 
-#endif /* ZMAP_UTILS_FOO_H */
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasBasic.h>
+
+
+void zMapWindowCanvasBasicInit(void);

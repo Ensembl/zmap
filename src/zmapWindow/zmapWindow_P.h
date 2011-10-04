@@ -181,6 +181,7 @@ typedef struct
 /* the FtoIHash, search now returns these not the items */
 /* We store ids with the group or item that represents them in the canvas.
  * May want to consider more efficient way of storing these than malloc... */
+/* NOTE also used for user hidden items stack */
 typedef struct
 {
   FooCanvasItem *item ;					    /* could be group or item. */
@@ -515,14 +516,25 @@ typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
 
 typedef enum
 {
-      // types of groups of features, used to index an array
-      WINDOW_FOCUS_GROUP_FOCUS,
+      /* types of groups of features, used to index an array
+       * NOTE: these are in order of priority
+       */
+      WINDOW_FOCUS_GROUP_FOCUS = 0,
       WINDOW_FOCUS_GROUP_EVIDENCE,
       WINDOW_FOCUS_GROUP_TEXT,
       N_FOCUS_GROUPS
 } ZMapWindowFocusType;
 
+#define WINDOW_FOCUS_GROUP_ALL 0xff
+#define WINDOW_FOCUS_ID	0xffff0000
 
+
+
+/* bitmap return values from the following function, _please_ don't enum them! */
+#define WINDOW_FOCUS_CACHE_FILL  1
+#define WINDOW_FOCUS_CACHE_OUTLINE 2
+int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
+void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
@@ -612,7 +624,7 @@ typedef struct _ZMapWindowStruct
 
 
   /* Detailed colours (NOTE...NEED MERGING WITH THE ABOVE.... */
-  gboolean done_colours ;
+  gboolean done_colours;
   GdkColor colour_root ;
   GdkColor colour_alignment ;
   GdkColor colour_block ;

@@ -88,6 +88,8 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
   gboolean (* set_style) (FooCanvasItem *item, ZMapFeatureTypeStyle style);	/* used to bump_style a density column */
 
+  gboolean (* showhide) (FooCanvasItem *item, gboolean show);
+
   /*   ????????????????? is this just a predeclared struct type problem ???? if so we can solve it... */
 #ifdef CATCH_22
   ZMapWindowCanvasItem (*fetch_parent)(FooCanvasItem *any_child);

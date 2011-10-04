@@ -498,7 +498,6 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
              gff->column_id =
              gff->column_ID =
              gff->feature_src_ID = set_id;
-zMapLogWarning("getsetcol: set col ID %s",g_quark_to_string(gff->column_ID));
              gff->feature_set_text = name;
              g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
       }

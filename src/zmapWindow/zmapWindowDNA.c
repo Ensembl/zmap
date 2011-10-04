@@ -326,18 +326,21 @@ gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow            window,
 					ZMapFeatureSet       *feature_set,
 					ZMapFeatureTypeStyle *style_out)
 {
-  ZMapFeatureSet separator_featureset = NULL;
-  ZMapFeatureTypeStyle style = NULL;
-  gboolean made_features = FALSE;
+  gboolean made_features = FALSE ;
+  ZMapFeatureSet separator_featureset = NULL ;
+  ZMapFeatureTypeStyle style = NULL ;
 
-  if(g_list_length(match_list) > 0 &&
-     (style = zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME))))
+
+  if (g_list_length(match_list) > 0
+      && (style = zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME))))
     {
-      zmapWindowFeatureSetStyleStruct fstyle = {NULL};
+      zmapWindowFeatureSetStyleStruct fstyle = {NULL} ;
 
       separator_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, NULL);
 
       style = zMapFeatureStyleCopy(style);
+
+      separator_featureset->style = style ;
 
       fstyle.feature_set   = separator_featureset;
       fstyle.feature_style = style;
@@ -345,15 +348,16 @@ gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow            window,
       g_list_foreach(match_list, matches_to_features, &fstyle);
 
       made_features = TRUE;
+
+      if (feature_set)
+	*feature_set = separator_featureset ;
+
+      if (style_out)
+	*style_out = style ;
     }
 
-  if(feature_set)
-    *feature_set = separator_featureset;
 
-  if(style_out)
-    *style_out = style;
-
-  return made_features;
+  return made_features ;
 }
 
 

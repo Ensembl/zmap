@@ -49,6 +49,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindowBasicFeature.h>
 #include <zmapWindowGraphDensityItem_I.h>
@@ -77,13 +78,6 @@ static FooCanvasItemClass *parent_class_G;
 
 
 
-enum {
-	PROP_0,
-	PROP_X1,
-	PROP_Y1,
-	PROP_X2,
-	PROP_Y2,
-};
 
 GType zMapWindowGraphDensityItemGetType(void)
 {
@@ -180,13 +174,13 @@ ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *pa
 		if(fill)
 		{
 			di->fill_set = TRUE;
-			di->fill_colour = gdk_color_to_rgba(fill);
+			di->fill_colour = zMap_gdk_color_to_rgba(fill);
 			di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
 		}
 		if(outline)
 		{
 			di->outline_set = TRUE;
-			di->outline_colour = gdk_color_to_rgba(outline);
+			di->outline_colour = zMap_gdk_color_to_rgba(outline);
 			di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
 		}
       }
@@ -467,7 +461,7 @@ double  zmap_window_graph_density_item_point (FooCanvasItem *item, double x, dou
 	if(!sl)
 		return(0.0);
 
-	for(i = 0;i < n_test;i++)
+	for(i = 0;i < n_test && sl;i++, sl = sl->next)
 	{
 		gs = (ZMapWindowCanvasGraphSegment) sl->data;
 
@@ -860,7 +854,9 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				 * and we stop after the end so this caters for dangling lines below the end
 				 */
 
+// shome mistake?  (3x : look fwds for width
 		      	gs->width = x2 = di->x_off + di->style->mode_data.graph.baseline + (width * gs->score) ;
+//		      	gs->width = x2 =  di->style->mode_data.graph.baseline + (width * gs->score) ;
 				y2 = (gs->y2 + gs->y1 + 1) / 2;
 	      		foo_canvas_w2c (item->canvas, x2 + i2w_dx, y2 - di->start + i2w_dy, &cx2, &cy2);
 
@@ -908,6 +904,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 				/* colour between fill and outline according to score */
 				x1 = di->x_off;
 				gs->width = x2 = x1 + width;
+//				gs->width = x2 = width;
 				draw_fill = TRUE;
 				fill_pixel = foo_canvas_get_color_pixel(item->canvas,
 					get_heat_colour(di->fill_colour,di->outline_colour,gs->score));
@@ -917,6 +914,7 @@ void  zmap_window_graph_density_item_draw (FooCanvasItem *item, GdkDrawable *dra
 			case ZMAPSTYLE_GRAPH_HISTOGRAM:
 				x1 = di->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
 		      	gs->width = x2 = x1 + (width * gs->score) ;
+//		      	gs->width = x2 = (width * gs->score) ;
 
   			      /* If the baseline is not zero then we can end up with x2 being less than x1 so
   			         swop them for drawing, perhaps the drawing code should take care of this. */
@@ -1082,7 +1080,7 @@ void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, doub
 
   zMapAssert(style);
 
-  if(!dx)		/* we handle zeroes as we can't see them, for coverage data we should not even have them */
+  if(!dx)		/* we don't handle zeroes as we can't see them, for coverage data we should not even have them */
   	return;
 
   gs = zmapWindowCanvasGraphSegmentAlloc();

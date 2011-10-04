@@ -91,6 +91,8 @@ ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFea
 
 GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet container_set);
 
+gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container);
+
 /* Style lookup */
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowContainerFeatureSet container_set,
 								 ZMapFeatureTypeStyle         style2copy);
