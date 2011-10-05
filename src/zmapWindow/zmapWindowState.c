@@ -23,7 +23,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -32,10 +32,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
 
 
 #include <string.h>
@@ -368,7 +364,10 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
 	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
 	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
-printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
 	}
@@ -706,7 +705,13 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
 		column_state->column.strand = ZMAPSTRAND_FORWARD;
 	    }
-printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
@@ -719,7 +724,11 @@ printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->colum
 
 	      container_set = (ZMapWindowContainerFeatureSet)(container);
 
-printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
 
@@ -733,7 +742,11 @@ printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_i
 #warning WRONG_NEED_INITIAL_BUMP_MODE
 	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
 		{
-printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		  if((serialized->compress != ZMAPWINDOW_COMPRESS_MARK ||
 		     (zmapWindowMarkIsSet(window->mark))))
 		    {

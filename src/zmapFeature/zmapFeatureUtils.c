@@ -159,6 +159,8 @@ gboolean zMapFeatureIsDrawable(ZMapFeatureAny any_feature)
   return result;
 }
 #endif /* NOT_YET */
+
+
 /*!
  * Function to do some validity checking on a ZMapFeatureAny struct that in addition
  * checks to see if it is of the requested type.
@@ -192,13 +194,13 @@ gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
 
 gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 {
-  gboolean sane = TRUE;
-  char *insanity = NULL;
+  gboolean sane = TRUE ;
+  char *insanity = NULL ;
 
-  if(sane)
+  if (sane)
     {
-      if(feature->type <= ZMAPSTYLE_MODE_INVALID ||
-         feature->type >  ZMAPSTYLE_MODE_META) /* Keep in step with zmapStyle.h */
+      if (feature->type <= ZMAPSTYLE_MODE_INVALID ||
+	  feature->type >  ZMAPSTYLE_MODE_META) /* Keep in step with zmapStyle.h */
         {
           insanity = g_strdup_printf("Feature '%s' [%s] has invalid type.", /* keep in step with zmapStyle.h */
                                      (char *)g_quark_to_string(feature->original_id),
@@ -207,9 +209,9 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
         }
     }
 
-  if(sane)
+  if (sane)
     {
-      if(feature->x1 > feature->x2)
+      if (feature->x1 > feature->x2)
         {
           insanity = g_strdup_printf("Feature '%s' [%s] has start > end.",
                                      (char *)g_quark_to_string(feature->original_id),
@@ -291,39 +293,39 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
   return sane;
 }
 
+
 /* we might get off with insanity. */
 gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 {
   gboolean sane = TRUE, insanity_alloc = FALSE;
   char *insanity = NULL;
 
-  if(sane && !zMapFeatureIsValid(feature))
+  if (sane && !zMapFeatureIsValid(feature))
     {
-      if(feature->original_id == ZMAPFEATURE_NULLQUARK)
+      if (feature->original_id == ZMAPFEATURE_NULLQUARK)
         insanity = "Feature has bad name.";
-      else if(feature->unique_id == ZMAPFEATURE_NULLQUARK)
+      else if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
         insanity = "Feature has bad identifier.";
       else
-        {
-          insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
-                                     (char *)g_quark_to_string(feature->original_id),
-                                     (char *)g_quark_to_string(feature->unique_id));
-          insanity_alloc = TRUE;
-        }
-      sane = FALSE;
+	insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
+				   (char *)g_quark_to_string(feature->original_id),
+				   (char *)g_quark_to_string(feature->unique_id));
+
+      sane = FALSE ;
     }
 
-  if(sane)
+  if (sane)
     {
       switch(feature->struct_type)
         {
         case ZMAPFEATURE_STRUCT_FEATURE:
           {
             ZMapFeature real_feature = (ZMapFeature)feature;
+
             sane = zMapFeatureIsSane(real_feature, &insanity);
-            insanity_alloc = TRUE;
+
+	    break;
           }
-          break;
         case ZMAPFEATURE_STRUCT_CONTEXT:
           zMapLogWarning("%s", "This part of zMapFeatureAnyIsSane() needs writing!");
           break;
@@ -338,14 +340,18 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
         }
     }
 
-  if(insanity_explained)
-    *insanity_explained = g_strdup(insanity);
+  if (insanity)
+    {
+      if (insanity_explained)
+	*insanity_explained = g_strdup(insanity);
 
-  if(insanity_alloc && insanity)
-    g_free(insanity);
+      g_free(insanity);
+    }
 
   return sane;
 }
+
+
 
 
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
