@@ -682,41 +682,43 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 
 void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
 {
-	/* scan for the call to get_featureset_column_index() for 2 more fields
-		feature_stack->set_index =
-		feature_stack->maps_to =
-	*/
+  /* scan for the call to get_featureset_column_index() for 2 more fields
+     feature_stack->set_index =
+     feature_stack->maps_to =
+  */
 
-      feature_stack->id = 0;              /* set once per col for graph features in the item factory */
+  feature_stack->id = 0;              /* set once per col for graph features in the item factory */
 
-	feature_stack->strand = ZMAPSTRAND_NONE;
-	feature_stack->frame = ZMAPFRAME_NONE;
+  feature_stack->strand = ZMAPSTRAND_NONE;
+  feature_stack->frame = ZMAPFRAME_NONE;
 
-      feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
-	if(feature && feature->style)	/* chicken */
-	{
-		if(zMapStyleIsStrandSpecific(feature->style))
-			feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
-		if(zMapStyleIsFrameSpecific(feature->style))
-			feature_stack->frame = zmapWindowFeatureFrame(feature);
-	}
+  feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
+  if(feature && feature->style)	/* chicken */
+    {
+      if(zMapStyleIsStrandSpecific(feature->style))
+	feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+      if(zMapStyleIsFrameSpecific(feature->style))
+	feature_stack->frame = zmapWindowFeatureFrame(feature);
+    }
 
-      zMapAssert(feature_set || feature);
+  zMapAssert(feature_set || feature);
 
-      if(!feature_set)
-            feature_set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-                                          ZMAPFEATURE_STRUCT_FEATURESET) ;
+  if(!feature_set)
+    feature_set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+							    ZMAPFEATURE_STRUCT_FEATURESET) ;
 
-      feature_stack->set       = feature_set;
-      feature_stack->block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup(
-                                          (ZMapFeatureAny) feature_set,
-                                          ZMAPFEATURE_STRUCT_BLOCK) ;
-      feature_stack->align     = (ZMapFeatureAlignment)zMapFeatureGetParentGroup(
-                                          (ZMapFeatureAny) feature_stack->block,
-                                          ZMAPFEATURE_STRUCT_ALIGN) ;
-      feature_stack->context   = (ZMapFeatureContext)zMapFeatureGetParentGroup(
-                                          (ZMapFeatureAny) feature_stack->align,
-                                          ZMAPFEATURE_STRUCT_CONTEXT) ;
+  feature_stack->set       = feature_set;
+  feature_stack->block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup(
+									 (ZMapFeatureAny) feature_set,
+									 ZMAPFEATURE_STRUCT_BLOCK) ;
+  feature_stack->align     = (ZMapFeatureAlignment)zMapFeatureGetParentGroup(
+									     (ZMapFeatureAny) feature_stack->block,
+									     ZMAPFEATURE_STRUCT_ALIGN) ;
+  feature_stack->context   = (ZMapFeatureContext)zMapFeatureGetParentGroup(
+									   (ZMapFeatureAny) feature_stack->align,
+									   ZMAPFEATURE_STRUCT_CONTEXT) ;
+
+  return ;
 }
 
 

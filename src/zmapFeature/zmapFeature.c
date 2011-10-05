@@ -187,8 +187,10 @@ static ZMapFeatureContextExecuteStatus addEmptySets(GQuark key,
                                                   gpointer user_data,
                                                   char **err_out);
 
-static gboolean merge_debug_G   = FALSE;
-static gboolean destroy_debug_G = FALSE;
+static gboolean merge_debug_G   = FALSE ;
+static gboolean destroy_debug_G = FALSE ;
+
+#define MH17_DEBUG     0
 
 
 /* Currently if we use this we get seg faults so we must not be cleaning up properly somewhere... */
@@ -455,7 +457,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	/* MH17: this is for a copy of the featureset to be added to the diff context on merge
 	 * we could set this to NULL to avoid a double free
 	 * but there are a few calls here from WindowRemoteReceive, viewRemoteReceive, WindowDNA, WindowDraw
-	 * and while it's tedious to copy the list it save a lot of starting at code
+	 * and while it's tedious to copy the list it save a lot of staring at code
 	 */
 
 	GList *l,*copy = NULL;
@@ -1497,7 +1499,7 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
 ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
 						    ZMapFeatureContext *new_context_inout,
 						    ZMapFeatureContext *diff_context_out,
-                                        GList *featureset_names)
+						    GList *featureset_names)
 {
   ZMapFeatureContextMergeCode status = ZMAPFEATURE_CONTEXT_ERROR ;
   ZMapFeatureContext current_context, new_context, diff_context = NULL ;
@@ -1581,25 +1583,27 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 	  if (merge_data.new_features)
 	    {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      if(merge_erase_dump_context_G)
+
+	      if (merge_debug_G)
 		{
 		  /* Debug stuff... */
 		  GError *err = NULL ;
 
 		  printf("(Merge) diff context:\n") ;
-		  zMapFeatureDumpStdOutFeatures(diff_context, current_context->styles, &err) ;
+		  zMapFeatureDumpStdOutFeatures(diff_context, NULL, &err) ;
 		}
 
-	      if(merge_erase_dump_context_G)
+
+	      if (merge_debug_G)
 		{
 		  /* Debug stuff... */
 		  GError *err = NULL ;
 
 		  printf("(Merge) full context:\n") ;
-		  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
+		  zMapFeatureDumpStdOutFeatures(current_context, NULL, &err) ;
 		}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 #ifdef MH17_NEVER
 	      // NB causes crash on 2nd load, first one is ok
@@ -2364,7 +2368,7 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
       return FALSE;
 }
 
-#define MH17_DEBUG     0
+
 
 /* add emtpy sets to block when not present in ref, to record successful requests w/ no data */
 static void zmapFeatureBlockAddEmptySets(ZMapFeatureBlock ref, ZMapFeatureBlock block, GList *feature_set_names)
@@ -2377,7 +2381,7 @@ static void zmapFeatureBlockAddEmptySets(ZMapFeatureBlock ref, ZMapFeatureBlock 
             zMap_g_hash_table_get_keys(&l,feature_any->children);
             for(;l;l = l->next)
             {
-                  zMapLogWarning("block has featureset %s\n",g_quark_to_string(GPOINTER_TO_UINT(l->data)));
+                  zMapLogWarning("block has featureset %s",g_quark_to_string(GPOINTER_TO_UINT(l->data)));
             }
       }
 #endif
@@ -2416,7 +2420,7 @@ static void zmapFeatureBlockAddEmptySets(ZMapFeatureBlock ref, ZMapFeatureBlock 
                         span->x2 = block->block_to_sequence.block.x2;
                         feature_set->loaded = g_list_append(NULL,span);
 #if  MH17_DEBUG
-zMapLogWarning("adding empty featureset %s (%d -> %d) to block, could not find %s\n", g_quark_to_string(feature_set->unique_id),span->x1,span->x2, set_name);
+zMapLogWarning("adding empty featureset %s (%d -> %d) to block, could not find %s", g_quark_to_string(feature_set->unique_id),span->x1,span->x2, set_name);
 #endif
 
                         zMapFeatureBlockAddFeatureSet(block, feature_set);
@@ -2425,7 +2429,7 @@ zMapLogWarning("adding empty featureset %s (%d -> %d) to block, could not find %
 #if MH17_DEBUG
             else
             {
-zMapLogWarning("using populated featureset %s\n",g_quark_to_string(old_set->unique_id));
+zMapLogWarning("using populated featureset %s",g_quark_to_string(old_set->unique_id));
             }
 #endif
       }
@@ -3061,7 +3065,7 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 	    func = "g_free" ;
 	}
 
-      zMapLogWarning("%s: %s at %p\n", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
+      zMapLogWarning("%s: %s at %p", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
     }
 
   return ;
