@@ -174,7 +174,9 @@ static GList *string2StyleQuarks(char *feature_sets) ;
 static gboolean nextIsQuoted(char **text) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GHashTable *styles, GList **masked, gboolean request_as_columns);
+static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+				 GHashTable *styles, GList **masked,
+				 gboolean request_as_columns, gboolean revcomp_if_needed);
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *styles, GList *masked);
 
 static ZMapFeatureContext createContext(ZMapFeatureSequenceMap sequence, GList *feature_set_names) ;
@@ -1141,7 +1143,7 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
   /* we do not expect masked features to be affected and do not process these */
 
   if (view->state != ZMAPVIEW_DYING)
-    justMergeContext(view, &context, NULL, NULL,TRUE);
+    justMergeContext(view, &context, NULL, NULL, TRUE, FALSE) ;
 
   return context;
 }
@@ -3975,7 +3977,9 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
       connect_data->num_features = feature_req->context->num_features;
 
-      if ((merge_results = justMergeContext(zmap_view, &new_features, connect_data->curr_styles, &masked, connect_data->request_as_columns)))   // && !view->serial_load)
+      if ((merge_results = justMergeContext(zmap_view,
+					    &new_features, connect_data->curr_styles,
+					    &masked, connect_data->request_as_columns, TRUE)))   // && !view->serial_load)
         {
             diff_context = new_features;
             justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked);
@@ -3988,7 +3992,9 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 }
 
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GHashTable *styles, GList **masked, gboolean request_as_columns)
+static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+				 GHashTable *styles, GList **masked,
+				 gboolean request_as_columns, gboolean revcomp_if_needed)
 {
   gboolean merge_result = FALSE ;
   ZMapFeatureContext new_features, diff_context = NULL ;
@@ -4008,7 +4014,9 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       view->view_sequence->end   = new_features->master_align->sequence_span.x2;
     }
 
-  if (view->revcomped_features)
+
+  /* When coming from xremote we don't need to do this. */
+  if (revcomp_if_needed && view->revcomped_features)
     {
       zMapStartTimer("MergeRevComp","") ;
 
@@ -4016,6 +4024,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
       zMapStopTimer("MergeRevComp","") ;
     }
+
 
   /* we need a list of requested featureset names, which is different from those returned
    * these names are user compatable (not normalised)
@@ -4034,7 +4043,21 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  char *set_name = (char *) g_quark_to_string(set_id);
 	  set_id = zMapFeatureSetCreateID(set_name);
 
-	  column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id));
+	  if (!(column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id))))
+	    {
+	      ZMapFeatureSetDesc set_desc ;
+
+	      /* AGGGHHHHHHHHH, SOMETIMES WE DON'T FIND IT HERE AS WELL.... */
+
+	      /* If merge request came directly from otterlace then need to look up feature set
+	       * in column/featureset hash. */
+	      if ((set_desc = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
+		column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_desc->column_id)) ;
+	    }
+
+
+
+
 
 	  /* the column featureset lists have been assmbled by this point,
 	     could not do this at the request stage */
@@ -4080,15 +4103,19 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   //  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
   //  printf("just Merge diff = %s\n",zMapFeatureContextGetDNAStatus(diff_context) ? "yes" : "non");
 
-#ifdef MH17_NEVER
+
   {
+    gboolean debug = FALSE ;
     GError *err = NULL;
 
-    zMapFeatureDumpToFileName(diff_context,"features.txt","(justMerge) diff context:\n", NULL, &err) ;
-    zMapFeatureDumpToFileName(view->features,"features.txt","(justMerge) view->Features:\n", NULL, &err) ;
+    if (debug)
+      {
+	zMapFeatureDumpToFileName(diff_context,"features.txt","(justMerge) diff context:\n", NULL, &err) ;
+	zMapFeatureDumpToFileName(view->features,"features.txt","(justMerge) view->Features:\n", NULL, &err) ;
+      }
 
   }
-#endif
+
 
   if (merge == ZMAPFEATURE_CONTEXT_OK)
     {
