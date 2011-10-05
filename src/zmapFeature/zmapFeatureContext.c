@@ -964,20 +964,12 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 {
   zMapAssert(feature);
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!zMapFeatureSequenceIsPeptide(feature))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
-
+  zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
 
   if (feature->strand == ZMAPSTRAND_FORWARD)
     feature->strand = ZMAPSTRAND_REVERSE ;
   else if (feature->strand == ZMAPSTRAND_REVERSE)
     feature->strand = ZMAPSTRAND_FORWARD ;
-
 
   if (zMapFeatureSequenceIsPeptide(feature))
     {
