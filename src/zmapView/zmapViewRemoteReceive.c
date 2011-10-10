@@ -1831,20 +1831,36 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
   RequestData request_data = (RequestData)(xml_data->user_data);
 
-  if(xml_data->common.action == ZMAPVIEW_REMOTE_INVALID)
-    return result ;
-
-  zMapXMLParserCheckIfTrueErrorReturn(request_data->feature == NULL,
-                                      parser,
-                                      "a feature end tag without a created feature.");
-
-  /* It's probably here that we need to revcomp the feature if the
-   * view is revcomp'd.... */
-  if (request_data->view->revcomped_features)
+  if (xml_data->common.action != ZMAPVIEW_REMOTE_INVALID)
     {
-      zMapFeatureReverseComplement(request_data->orig_context, request_data->feature) ;
-    }
+      switch(xml_data->common.action)
+	{
+	  case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    {
+	      if (!(request_data->feature))
+		{
+		  zMapXMLParserCheckIfTrueErrorReturn(request_data->feature == NULL,
+						      parser,
+						      "a feature end tag without a created feature.") ;
+		}
+	      else
+		{
+		  /* It's probably here that we need to revcomp the feature if the
+		   * view is revcomp'd.... */
+		  if (request_data->view->revcomped_features)
+		    {
+		      zMapFeatureReverseComplement(request_data->orig_context, request_data->feature) ;
+		    }
+		}
 
+	      break ;
+	    }
+	default:
+	  break ;
+	}
+
+      result = TRUE ;
+    }
 
   return result ;
 }
