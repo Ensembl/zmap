@@ -89,6 +89,9 @@ items/zmapWindowCanvasAlignment_I.h \
 items/zmapWindowCanvasBasic.c \
 items/zmapWindowCanvasBasic.h \
 items/zmapWindowCanvasBasic_I.h \
+items/zmapWindowCanvasGlyph.c \
+items/zmapWindowCanvasGlyph.h \
+items/zmapWindowCanvasGlyph_I.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
 items/zmapWindowCanvasItem_I.h \

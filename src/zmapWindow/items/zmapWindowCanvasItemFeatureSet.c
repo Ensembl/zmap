@@ -234,6 +234,8 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 }
 
 
+
+
 static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 						      FooCanvasItem         *interval,
 						      ZMapFeature			feature,

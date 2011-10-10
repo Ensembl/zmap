@@ -107,6 +107,53 @@ typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC
 typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
 
 
+/* basic feature draw a box
+ * defined as a macro for efficiency to avoid multple copies ofo cut and paste
+ * otherwise would need 7 args which is silly
+ * used by basc feature, alignments, maybe transcripts... and what else??
+ */
+#define zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable,fill_set,outline_set,fill,outline)\
+{\
+	double x1,x2;\
+	FooCanvasItem *item = (FooCanvasItem *) featureset;\
+	GdkColor c;\
+      int cx1, cy1, cx2, cy2;\
+\
+	x1 = featureset->width / 2 - feature->width / 2;\
+	if(featureset->bumped)\
+		x1 += feature->bump_offset;\
+\
+	x1 += featureset->dx;\
+	x2 = x1 + feature->width;\
+\
+		/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */\
+		/* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */\
+	foo_canvas_w2c (item->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1);\
+	foo_canvas_w2c (item->canvas, x2, feature->feature->x2 - featureset->start + featureset->dy + 1, &cx2, &cy2);\
+      						/* + 1 to draw to the end of the last base */\
+\
+		/* NOTE that the gdk_draw_rectangle interface is a bit esoteric\
+		 * and it doesn't like rectangles that have no depth\
+		 */\
+\
+	if(fill_set && (!outline_set || (cy2 - cy1 > 1)))	/* fill will be visible */\
+	{\
+		c.pixel = fill;\
+		gdk_gc_set_foreground (featureset->gc, &c);\
+		gdk_draw_rectangle (drawable, featureset->gc,TRUE, cx1, cy1, cx2 - cx1 + 1, cy2 - cy1 + 1);\
+	}\
+\
+	if(outline_set)\
+	{\
+		c.pixel = outline;\
+		gdk_gc_set_foreground (featureset->gc, &c);\
+		if(cy2 == cy1)\
+			gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);\
+		else\
+			gdk_draw_rectangle (drawable, featureset->gc,FALSE, cx1, cy1, cx2 - cx1, cy2 - cy1);\
+	}\
+}
+
 
 void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
@@ -136,5 +183,8 @@ typedef struct
 } BumpFeaturesetStruct, *BumpFeatureset;
 
 gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress_mode, BumpFeatureset bump_data);
+
+void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show, gboolean set_colour);
+
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */

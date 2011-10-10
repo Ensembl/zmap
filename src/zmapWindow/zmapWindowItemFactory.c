@@ -1046,16 +1046,24 @@ static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
   FooCanvasItem *feature_item = NULL;
   guint line_width;
 
-  line_width = factory->line_width;
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
 
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
+	line_width = factory->line_width;
 
-  if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
-    {
-      zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+  	zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
-	feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-    }
+  	if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
+      {
+      	zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+
+		feature_item = FOO_CANVAS_ITEM(new_canvas_item);
+    	}
+  }
   return feature_item ;
 }
 

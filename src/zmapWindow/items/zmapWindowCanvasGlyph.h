@@ -1,5 +1,5 @@
 
-/*  File: zmapWindowCanvasAlignment.c
+/*  File: zmapWindowCanvasGlyph.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,41 +27,20 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem alignment features
+ * implements callback functions for FeaturesetItem glyph features
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-#include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic_I.h>
-#include <zmapWindowCanvasGlyph_I.h>
-#include <zmapWindowCanvasAlignment.h>
-
-
-typedef struct _zmapWindowCanvasAlignmentStruct
-{
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
-	/* NOTE that we can have: alignment.feature->feature->feature.homol */
-
-
-	/* stuff for displaying homology status derived from feature data when loading */
-
-	gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
-
-	/* we display one glyph max at each end
-	 * so far these can be 2 kinds of homology incomplete or nc-splice, which cannot overlap
-	 * however these are defined as sub styles and we can have more types in diff featuresets
-	 * so we cache these in global hash table indexed by a glyph signature
-	 * zero means don't display a glyph
-	 */
-
-	ZMapWindowCanvasGlyph glyph5;
-	ZMapWindowCanvasGlyph glyph3;
-
-} zmapWindowCanvasAlignmentStruct, *ZMapWindowCanvasAlignment;
+typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph;
 
 
 
+GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which);
+ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score);
+void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
 
+
+void zMapWindowCanvasGlyphInit(void);

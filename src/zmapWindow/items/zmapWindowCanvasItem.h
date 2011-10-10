@@ -154,5 +154,4 @@ gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show);
 
 
 
-
 #endif /* ZMAP_WINDOW_CANVAS_ITEM_H */

@@ -794,10 +794,19 @@ gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show)
 
 	if(class->showhide)
 		ret = class->showhide((FooCanvasItem *) item, show);
+	else
+	{
+		if(show)
+			foo_canvas_item_show(FOO_CANVAS_ITEM(item));
+		else
+			foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
+	}
 
 	return ret;
 
 }
+
+
 
 
 /* Get at parent... */

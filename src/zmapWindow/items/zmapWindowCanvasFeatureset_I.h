@@ -62,14 +62,18 @@ typedef struct _zmapWindowCanvasFeatureStruct
 	double bump_offset;	/* for X coord */
 
 	long flags;				/* non standard display option eg selected */
-#define FEATURE_FOCUS_MASK	0xff		/* any focus flag will map to selected, this should really be defined by focus code but we are out of scope */
-#define FEATURE_HIDDEN		0x100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
-#define FEATURE_USER_HIDE	0x200		/* hidden by user request */
-#define FEATURE_MARK_HIDE	0x400		/* hidden by bump from mark */
-#define FEATURE_SUMMARISED	0x800		/* hidden by summarise */
-#define FEATURE_HIDE_REASON	0xe00		/* NOTE: update this if you add a reason */
 
-#define FEATURE_FOCUS_ID	0xffff0000
+
+#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
+#define FEATURE_FOCUS_BITMAP	WINDOW_FOCUS_GROUP_BITMASK		/* includes masking (EST) */
+#define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
+#define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
+#define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
+#define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
+#define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
+#define FEATURE_HIDE_REASON	0x1e00		/* NOTE: update this if you add a reason */
+
+#define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
 
 	ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 

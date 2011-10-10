@@ -805,7 +805,7 @@ static void rotate(double x_origin, double y_origin, int rotation,
 
 
 // set the points to draw centred on the glyph's sequence/column coordinates
-// if we scale the glyph it's done here and NB we have to scale +ve and -ve coords for all shaoes
+// if we scale the glyph it's done here and NB we have to scale +ve and -ve coords for all shapes
 //
 static void glyph_fill_points(ZMapWindowGlyphItem glyph)
 {

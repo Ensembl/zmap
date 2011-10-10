@@ -65,6 +65,7 @@ typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config ca
   {
     gint coords[GLYPH_SHAPE_MAX_POINT];        // defined in pairs (x,y)
     gint n_coords;
+    GQuark id;
     /*
      * break between lines flagged by GLYPH_COORD_INVALID
      * for circles/ellipses we have two points and optionally two angles
@@ -938,7 +939,7 @@ gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
-ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape);
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
 
 //unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;

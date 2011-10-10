@@ -1004,57 +1004,70 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
       FooCanvasGroup *group ;
       GList *list,*del;
       gboolean delete = FALSE;
+	ZMapWindowCanvasItem item;
+	ZMapFeature feature;
+	ZMapFeatureTypeStyle style;
 
       group = FOO_CANVAS_GROUP(container_features) ;
 
       for(list = group->item_list;list;)
         {
-            ZMapWindowCanvasItem item;
-            ZMapFeature feature;
-            ZMapFeatureTypeStyle style;
+		item = ZMAP_CANVAS_ITEM(list->data);
+		feature = item->feature;
+		style = feature->style;
 
-            item = ZMAP_CANVAS_ITEM(list->data);
-            feature = item->feature;
-            style = feature->style;
-            del = list;
-            list = list->next;
-            delete = FALSE;
+        	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(list->data))
+        	{
+        		/* each item in the column will be a single CanvasFeatureset wrapped up in a ZMapWindowCanvasItem */
+        		GList *l = ((FooCanvasGroup *) item)->item_list;
+        		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) l->data, show, set_colour);
+			list = list->next;
+        	}
+        	else	/* original foo code */
+        	{
+			item = ZMAP_CANVAS_ITEM(list->data);
+			feature = item->feature;
+			style = feature->style;
+			del = list;
+			list = list->next;
+			delete = FALSE;
 
-            if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
-              {
-                if(set_colour)      /* called on masking by another featureset */
-                {
-                      GdkColor *fill,*outline;
+			if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
+			{
+				if(set_colour)      /* called on masking by another featureset */
+				{
+					GdkColor *fill,*outline;
 
-                      delete = !zMapWindowGetMaskedColour(container->window,&fill,&outline);
+					delete = !zMapWindowGetMaskedColour(container->window,&fill,&outline);
 
-                      if(!delete)
-                        {
-                          zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature,
-                              ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
-                              0,	// will zap focus
-                              fill,outline);
-                        }
-                }
+					if(!delete)
+						{
+						zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature,
+							ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
+							0,	// will zap focus
+							fill,outline);
+						}
+				}
 
-                if(delete)
-                  {
-                    /* if colours are not defined we should remove the item from the canvas here */
-                    group->item_list = g_list_delete_link(group->item_list,del);
-                    gtk_object_destroy(GTK_OBJECT(item)) ;
-                    feature->feature.homol.flags.displayed = FALSE;
-                  }
-                else if(show)
-                  {
-                    foo_canvas_item_show(FOO_CANVAS_ITEM(item));
-                    feature->feature.homol.flags.displayed = TRUE;
-                  }
-                else
-                  {
-                    foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
-                    feature->feature.homol.flags.displayed = FALSE;
-                  }
-              }
+				if(delete)
+					{
+					/* if colours are not defined we should remove the item from the canvas here */
+					group->item_list = g_list_delete_link(group->item_list,del);
+					gtk_object_destroy(GTK_OBJECT(item)) ;
+					feature->feature.homol.flags.displayed = FALSE;
+					}
+				else if(show)
+					{
+					foo_canvas_item_show(FOO_CANVAS_ITEM(item));
+					feature->feature.homol.flags.displayed = TRUE;
+					}
+				else
+					{
+					foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
+					feature->feature.homol.flags.displayed = FALSE;
+					}
+			}
+		}
         }
     }
             /* if we are adding/ removing features we may need to compress and/or rebump */

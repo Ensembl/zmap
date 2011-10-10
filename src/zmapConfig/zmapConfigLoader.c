@@ -1147,8 +1147,9 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 
             for(;len--;keys++)
             {
+                  q = g_quark_from_string(*keys);
                   shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
-                  glyph_shape = zMapStyleGetGlyphShape(shape);
+                  glyph_shape = zMapStyleGetGlyphShape(shape,q);
 
                   if(!glyph_shape)
                     {
@@ -1156,7 +1157,6 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
                     }
                   else
                     {
-                        q = g_quark_from_string(*keys);
                         g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
                     }
             }

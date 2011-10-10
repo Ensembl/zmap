@@ -69,6 +69,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasItemFeatureSet_I.h>
 #include <zmapWindowCanvasBasic.h>
+#include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasAlignment.h>
 
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
@@ -214,8 +215,11 @@ void featureset_init_funcs(void)
 		/* set size of iunspecifed features structs to just the base */
 	featureset_class_G->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
 
-	zMapWindowCanvasBasicInit();
+	zMapWindowCanvasBasicInit();		/* the order of these may be important */
+	zMapWindowCanvasGlyphInit();
 	zMapWindowCanvasAlignmentInit();
+
+	/* if you add a new one then update feature_types[N_STYLE_MODE] below */
 }
 
 
@@ -434,7 +438,12 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 	{
 		/* set the focus flags (on or off) */
 		/* zmapWindowFocus.c maintans these and we set/clear then all at once */
-		gs->flags = (gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK);
+		/* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
+		 * colour flags has a window id set into it
+		 */
+
+		gs->flags = (gs->flags & ~FEATURE_FOCUS_BITMAP) | (colour_flags & FEATURE_FOCUS_BITMAP);
+		gs->flags = (gs->flags & ~FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID);
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
 		return;
 	}
@@ -455,7 +464,7 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 	if(gs)
 	{
 		if(show)
-			gs->flags &= ~FEATURE_HIDDEN & ~FEATURE_USER_HIDE;
+			gs->flags &= ~FEATURE_HIDDEN & ~FEATURE_HIDE_REASON;
 		else
 			gs->flags |= FEATURE_HIDDEN | FEATURE_USER_HIDE;
 
@@ -617,6 +626,9 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	for(; sl ; sl = sl->next)
 	{
 		gs = (ZMapWindowCanvasFeature) sl->data;
+
+		if(gs->flags & FEATURE_HIDDEN)
+			continue;
 
 		if(gs->y1 > y2)
 			break;
@@ -798,15 +810,14 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		'intervals' as item relative
 		*/
 
-		/* clip this one (GDK does that? or is it X?) and paint */
-//printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
-
-
 		if((feat->flags & FEATURE_FOCUS_MASK))
 		{
 			highlight = g_list_prepend(highlight, feat);
 			continue;
 		}
+
+		/* clip this one (GDK does that? or is it X?) and paint */
+//printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 
 		/* set style colours if they changed */
 		zmapWindowCanvasFeaturesetSetColours(fi,feat);
@@ -818,6 +829,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	/* flush out any stored data (eg if we are drawing polylines) */
 	zMapWindowCanvasFeaturesetPaintFlush(fi,feat,drawable);
 
+
+	highlight = g_list_reverse(highlight);	/* preserve normal display ordering */
 
 	/* now paint the focus features on top, clear style to force colours lookup */
 	for(fi->featurestyle = NULL;highlight;highlight = highlight->next)
@@ -839,12 +852,13 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 	/* NOTE carefully balanced code:
 	 * we do all blurred features then all focussed ones
 	 * if the style changes then we look up the colours
-	 * so we reset the style befoer doing focus
-	 * other kiond of focus do not have colours set in the style
+	 * so we reset the style before doing focus
+	 * other kinds of focus eg evidence do not have colours set in the style
 	 * so mixed focus types are not a problem
 	 */
 
-	if((fi->featurestyle != feat->feature->style))	/* diff style: set colour from style */
+	if((fi->featurestyle != feat->feature->style) || !(fi->frame && zMapStyleIsFrameSpecific(feat->feature->style)))
+		/* diff style: set colour from style */
 	{
 		/* cache style for a single featureset
 		* if we have one source featureset in the column then this works fastest (eg good for trembl/ swissprot)
@@ -854,12 +868,18 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 		*/
 
 		GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
+	      ZMapFrame frame;
+	      ZMapStrand strand;
 
 		fi->featurestyle = feat->feature->style;
 
-		ct = feat->flags & WINDOW_FOCUS_GROUP_ALL ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
+		/* eg for glyphs these get mixed up in one column so have to set for the feature not featureset */
+      	frame = zMapFeatureFrame(feat->feature);
+      	strand = feat->feature->strand;
 
-		zmapWindowCanvasItemGetColours(fi->featurestyle, fi->strand, fi->frame, ct , &fill, &draw, &outline, NULL, NULL);
+		ct = feat->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
+
+		zmapWindowCanvasItemGetColours(fi->featurestyle, strand, frame, ct , &fill, &draw, &outline, NULL, NULL);
 
 		/* can cache these in the feature? or style?*/
 
@@ -870,7 +890,6 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 			fi->fill_colour = zMap_gdk_color_to_rgba(fill);
 			fi->fill_pixel = foo_canvas_get_color_pixel(item->canvas, fi->fill_colour);
 		}
-
 		fi->outline_set = FALSE;
 		if(outline)
 		{
@@ -878,15 +897,16 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 			fi->outline_colour = zMap_gdk_color_to_rgba(outline);
 			fi->outline_pixel = foo_canvas_get_color_pixel(item->canvas, fi->outline_colour);
 		}
+
 	}
 }
 
 
 /* called by item drawing code, we cache style colours hoping it will run faster */
+/* see also zmap_window_canvas_alignment_get_colours() */
 int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel)
 {
 	int ret = 0;
-
 
 	ret = zMapWindowFocusCacheGetSelectedColours(feature->flags, fill_pixel, outline_pixel);
 
@@ -911,6 +931,69 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
 	return ret;
 }
 
+
+/* show / hide all masked features in the CanvasFeatureset
+ * this just means setting a flag
+ *
+ * unless of course we are re-masking and have to delete items if no colour is defined
+ * in which case we destroy the index to force a rebuild: slow but not run very often
+ * original foo code actually deleted the features, we will just flag them away.
+ * feature homol flags displayed means 'is in foo'
+ * so we sould have to post process the featureset->features list
+ * to delete then and then rebuild the index (skip list)
+ * if the colour is not defined we should not have the show/hide menu item
+ */
+void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show, gboolean set_colour)
+{
+	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+	ZMapSkipList sl;
+	gboolean delete = FALSE;
+	int has_colours;
+
+	has_colours = zMapWindowFocusCacheGetSelectedColours(WINDOW_FOCUS_GROUP_MASKED, NULL, NULL);
+	delete = !has_colours;
+
+	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+
+		if(feature->type == FEATURE_ALIGN && feature->feature->feature.homol.flags.masked)
+		{
+			if(set_colour)      /* called on masking by another featureset */
+			{
+				feature->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
+			}
+
+			if(set_colour && delete)
+			{
+				feature->feature->feature.homol.flags.displayed = FALSE;
+				feature->flags |= FEATURE_MASK_HIDE | FEATURE_HIDDEN;
+			}
+			else if(show)
+			{
+				feature->flags &= ~FEATURE_MASK_HIDE;
+				/* this could get complicated combined with summarise */
+				if(!(feature->flags & FEATURE_HIDE_REASON))
+				{
+					feature->flags &= ~FEATURE_HIDDEN;
+//					feature->feature.homol.flags.displayed = TRUE;	/* legacy, should net be needed */
+				}
+			}
+			else
+			{
+				feature->flags |= FEATURE_MASK_HIDE | FEATURE_HIDDEN;
+//				feature->feature.homol.flags.displayed = FALSE;	/* legacy, should net be needed */
+			}
+		}
+	}
+#if MH17_NOT_IMPLEMENTED
+	if(delete)
+	{
+		scan featureset->features, delete masked features with homol.flags/displayed == FALSE
+		destroy the index to force a rebuild
+	}
+#endif
+}
 
 
 
@@ -950,6 +1033,9 @@ static ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeat
 
       /* these can get re-allocated so must zero */
       memset((gpointer) feat,0,size);
+
+      feat->type = type;
+
       return(feat);
 }
 
@@ -1070,7 +1156,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TEXT */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_GRAPH */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_GLYPH */
+	FEATURE_GLYPH,		/* ZMAPSTYLE_MODE_GLYPH */
 	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
 };
 
@@ -1093,11 +1179,17 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
   feat->feature = feature;
   feat->type = type;
   if(type == FEATURE_ALIGN)
+  {
   	featureset_item->link_sideways = TRUE;
+
+  	if(feat->feature->feature.homol.flags.masked)
+  		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
+  }
 
   feat->y1 = y1;
   feat->y2 = y2;
 
+	/* NOTE maybe this is not generic enough eg for glyphs, graphs */
   if(feature->flags.has_score)
 	feat->width = zmap_window_featureset_item_set_width_from_score(style, featureset_item->width, feature->score);
   else

@@ -39,8 +39,6 @@
 #include <math.h>
 #include <string.h>
 #include <ZMap/zmapFeature.h>
-#include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic_I.h>
 #include <zmapWindowCanvasAlignment_I.h>
 
 
@@ -48,8 +46,12 @@
 /* we has a flag to set these on the first draw operation which requires map and relaise of the canvas to have occured */
 
 
-gboolean colinear_gdk_set_G = FALSE;
+gboolean decoration_set_G = FALSE;
 GdkColor colinear_gdk_G[COLINEARITY_N_TYPE];
+
+
+GHashTable *align_glyph_G = NULL;
+
 
 
 /* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
@@ -97,21 +99,117 @@ static GdkColor *zmapWindowCanvasAlignmentGetFwdColinearColour(ZMapWindowCanvasA
 
 
 
+
+/*
+James says:
+
+These are the rules I implemented in the ExonCanvas for flagging good splice sites:
+
+1.)  Canonical splice donor sites are:
+
+    Exon|Intron
+        |gt
+       g|gc
+
+2.)  Canonical splice acceptor site is:
+
+    Intron|Exon
+        ag|
+*/
+
+/*
+These can be configured in/out via styles:
+sub-features=non-concensus-splice:nc-splice-glyph
+*/
+
+static gboolean fragments_splice(char *fragment_a, char *fragment_b)
+{
+  gboolean splice = FALSE;
+
+    // NB: DNA always reaches us as lower case, see zmapUtils/zmapDNA.c
+  if(!fragment_a || !fragment_b)
+    return(splice);
+
+      /* we have fwd strand bases (not reverse complemented)
+       * but need to test both directions as splicing is not strand sensitive...
+       * in-line rev comp makes me go cross-eyed 8-(
+       */
+
+  if(!g_ascii_strncasecmp(fragment_b, "AG",2))
+    {
+      if(!g_ascii_strncasecmp(fragment_a+1,"GT",2) || !g_ascii_strncasecmp(fragment_a,"GGC",3))
+           splice = TRUE;
+    }
+  else if(!g_ascii_strncasecmp(fragment_a+1, "CT",2))
+    {
+      if(!g_ascii_strncasecmp(fragment_b,"AC",2) || !g_ascii_strncasecmp(fragment_b,"GCC",3))
+           splice = TRUE;
+    }
+#if 0
+zMapLogWarning("nc splice = %d (%.3s, %.3s)",splice,fragment_a,fragment_b);
+#endif
+  return splice;
+}
+
+
+
+gboolean is_nc_splice(ZMapFeature left,ZMapFeature right)
+{
+      char *ldna, *rdna;
+      gboolean ret = FALSE;
+
+      /* MH17 NOTE
+       *
+       * for reverse strand we need to splice backwards
+       * logically we could have a mixed series
+       * we do get duplicate series and these can be reversed
+       * we assume any reversal is a series break
+       * and do not attempt to splice inverted exons
+       */
+
+          // 3' end of exon: get 1 base  + 2 from intron
+      ldna = zMapFeatureGetDNA((ZMapFeatureAny)left,
+                         left->x2,
+                         left->x2 + 2,
+                         0); //prev_reversed);
+
+            // 5' end of exon: get 2 bases from intron
+            // NB if reversed we need 3 bases
+      rdna = zMapFeatureGetDNA((ZMapFeatureAny)right,
+                         right->x1 - 2,
+                         right->x1,
+                         0); //curr_reversed);
+
+	if(!fragments_splice(ldna,rdna))
+		ret = TRUE;
+
+	if(ldna) g_free(ldna);
+	if(rdna) g_free(rdna);
+
+	return ret;
+}
+
+
+
 static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
 	ZMapWindowCanvasAlignment align = (ZMapWindowCanvasAlignment) feature;
 	int cx1, cy1, cx2, cy2;
-	double mid_x;
 	FooCanvasItem *foo = (FooCanvasItem *) featureset;
+	ZMapFeatureTypeStyle homology = NULL,nc_splice = NULL;
+	gulong fill,outline;
+	int colours_set, fill_set, outline_set;
 
-	/* better to cut and paste this to avoid repeating calculations if bumped*/
-	zMapWindowCanvasBasicPaintFeature(featureset, feature, drawable);
+	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
+	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
+	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable,fill_set,outline_set,fill,outline);
+	/* the above is once again identical to zMapWindowCanvasAlignmentPaintFeature() and we could call that instead */
 
 	if(featureset->bumped)
 	{
-
-		if(!colinear_gdk_set_G)
+		if(!decoration_set_G)
 		{
 			char *colours[] = { "black", "red", "orange", "green" };
 			int i;
@@ -119,50 +217,106 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 			gulong pixel;
 			FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
+			/* cache the colours for colinear lines */
 			for(i = 1; i < COLINEARITY_N_TYPE; i++)
 			{
 				gdk_color_parse(colours[i],&colour);
 				pixel = zMap_gdk_color_to_rgba(&colour);
 				colinear_gdk_G[i].pixel = foo_canvas_get_color_pixel(foo->canvas,pixel);
 			}
-			colinear_gdk_set_G = TRUE;
+
+			decoration_set_G = TRUE;
 		}
 
 		/* add some gaps */
 
 		/* add some decorations */
-		mid_x = featureset->dx + (featureset->width / 2) + feature->bump_offset;
 
-		for(;feature->right; feature = feature->right)
+		if(!align->bump_set)
 		{
-			ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) feature->right;
-			GdkColor *colour;
+			/* NOTE this code assumes the styles have been set up with:
+			 * 	'glyph-strand=flip-y'
+			 * which will handle reverse strand indication */
 
-			align = (ZMapWindowCanvasAlignment) feature;
-			colour = zmapWindowCanvasAlignmentGetFwdColinearColour(align);
+			/* set the glyph pointers if applicable */
+			homology = feature->feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_HOMOLOGY];
+			nc_splice = feature->feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
 
-			/* get item canvas coords */
-			/* note we have to use real feature coords here as we have mangle the first feature's y2 */
-			foo_canvas_w2c (foo->canvas, mid_x, feature->feature->x2 - featureset->start + featureset->dy, &cx1, &cy1);
-			foo_canvas_w2c (foo->canvas, mid_x, next->feature.y1 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+			/* find and/or allocate glyph structs */
+			if(!feature->left && homology)	/* top end homology incomplete ? */
+			{
+				double score = feature->feature->feature.homol.y1 - 1;
 
-			/* draw line between boxes, don't overlap the pixels */
-			gdk_gc_set_foreground (featureset->gc, colour);
-			gdk_draw_line (drawable, featureset->gc, cx1, ++cy1, cx2, --cy2);
+				if(score)
+					align->glyph5 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 5, score);
+			}
+
+			if(feature->right && nc_splice)	/* nc-splice ?? */
+			{
+				if(is_nc_splice(feature->feature,feature->right->feature))
+				{
+					ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) feature->right;
+
+					align->glyph3 = zMapWindowCanvasGetGlyph(featureset, nc_splice, feature->feature, 3, 0.0);
+					next->glyph5 = zMapWindowCanvasGetGlyph(featureset, nc_splice, next->feature.feature, 5, 0.0);
+				}
+			}
+
+			if(!feature->right && homology)	/* bottom end homology incomplete ? */
+			{
+				double score = feature->feature->feature.homol.length - feature->feature->feature.homol.y2;
+
+				if(score)
+					align->glyph3 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 3, score);
+			}
+
+//zMapLogWarning("feature glyph %f,%f %s, %s", feature->y1,feature->y2,g_quark_to_string(align->glyph5->shape->id),g_quark_to_string(align->glyph3->shape->id));
+
+			align->bump_set = TRUE;
 		}
+
+		if(!feature->left)	/* first feature: draw colinear lines */
+		{
+			ZMapWindowCanvasFeature	feat;
+			double mid_x;
+
+			mid_x = featureset->dx + (featureset->width / 2) + feature->bump_offset;
+
+			for(feat = feature;feat->right; feat = feat->right)
+			{
+				ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) feat->right;
+				GdkColor *colour;
+
+				colour = zmapWindowCanvasAlignmentGetFwdColinearColour((ZMapWindowCanvasAlignment) feat);
+
+				/* get item canvas coords */
+				/* note we have to use real feature coords here as we have mangle the first feature's y2 */
+				foo_canvas_w2c (foo->canvas, mid_x, feat->feature->x2 - featureset->start + featureset->dy + 1, &cx1, &cy1);
+				foo_canvas_w2c (foo->canvas, mid_x, next->feature.y1 - featureset->start + featureset->dy, &cx2, &cy2);
+
+				/* draw line between boxes, don't overlap the pixels */
+				gdk_gc_set_foreground (featureset->gc, colour);
+				gdk_draw_line (drawable, featureset->gc, cx1, ++cy1, cx2, --cy2);
+			}
+		}
+
+		zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph5, drawable);
+		zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph3, drawable);
 	}
 }
 
-/* get sequence extent of compound alignment (for bumping)*/
+
+
+
+/* get sequence extent of compound alignment (for bumping) */
 /* NB: canvas coords could overlap due to sub-pixel base pairs
- *which could give incorrect de-overlapping
+ * which could give incorrect de-overlapping
  * that would be revealed on Zoom
  */
 /*
  * we adjust the extent fo the forst CanvasAlignment to cover tham all
  * as the first one draws all the colinear lines
  */
-
 static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapSpan span)
 {
 	ZMapWindowCanvasFeature first = feature;

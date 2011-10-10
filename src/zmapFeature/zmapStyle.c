@@ -1449,7 +1449,7 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 
 
 // store coordinate pairs in the struct and work out type
-ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape)
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 {
   gchar **spec,**segments,**s,**points,**p,*q;
   gboolean syntax = FALSE;
@@ -1469,6 +1469,7 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape)
   else
       syntax = TRUE;
 
+  glyph_shape->id = id;
   glyph_shape->n_coords = 0;
   cp = glyph_shape->coords;
 
@@ -1569,9 +1570,9 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn_tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>",g_quark_from_string("dn-tri")),
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
                         ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
                         ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
@@ -1585,9 +1586,9 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         // these have been swapped from the original
                         // GeneFinder uses 5' and 3' as Intron-centric
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>",g_quark_from_string("up-hook")),
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>",g_quark_from_string("dn_hook")),
 
                         ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,

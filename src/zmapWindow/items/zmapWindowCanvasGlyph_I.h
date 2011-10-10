@@ -1,5 +1,5 @@
 
-/*  File: zmapWindowCanvasAlignment.c
+/*  File: zmapWindowCanvasGlyph.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,7 +27,7 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem alignment features
+ * implements callback functions for FeaturesetItem glyph features
  *-------------------------------------------------------------------
  */
 
@@ -35,33 +35,39 @@
 
 
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic_I.h>
-#include <zmapWindowCanvasGlyph_I.h>
-#include <zmapWindowCanvasAlignment.h>
+#include <zmapWindowCanvasGlyph.h>
+
+/* NOTE
+ * Glyphs are quite complex and we create an array of points for display
+ * that are interpreted according to the glyph type.
+ * As the CanvasFeatureset code is generic we start with a feature pointer
+ * and evaluate the points on demand and cache these. (lazy evaluation)
+ */
 
 
-typedef struct _zmapWindowCanvasAlignmentStruct
+typedef struct _zmapWindowCanvasGlyphStruct
 {
+
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
-	/* NOTE that we can have: alignment.feature->feature->feature.homol */
+
+	double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
+	double origin;		/* relative to the centre of the column */
+
+	int which;			/* generic or 5' or 3' ? */
+	GQuark sig;			/* signature: for debugging */
+
+	ZMapStyleGlyphShape shape;			/* pointer to relevant style shape struct */
+	GdkPoint coords[GLYPH_SHAPE_MAX_COORD]; 	/* derived from style->shape struct but adjusted for scale etc */
+	GdkPoint points[GLYPH_SHAPE_MAX_COORD];	/* offset to the canvas for gdk_draw */
+
+	gulong line_pixel;	/* non selected colours */
+	gulong area_pixel;
+	gboolean line_set;
+	gboolean area_set;
+
+	gboolean coords_set;
+	gboolean use_glyph_colours;		/* only set if threshold ALT colour selected */
+	gboolean sub_feature;			/* or free standing? */
 
 
-	/* stuff for displaying homology status derived from feature data when loading */
-
-	gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
-
-	/* we display one glyph max at each end
-	 * so far these can be 2 kinds of homology incomplete or nc-splice, which cannot overlap
-	 * however these are defined as sub styles and we can have more types in diff featuresets
-	 * so we cache these in global hash table indexed by a glyph signature
-	 * zero means don't display a glyph
-	 */
-
-	ZMapWindowCanvasGlyph glyph5;
-	ZMapWindowCanvasGlyph glyph3;
-
-} zmapWindowCanvasAlignmentStruct, *ZMapWindowCanvasAlignment;
-
-
-
-
+} zmapWindowCanvasGlyphStruct;

@@ -522,18 +522,35 @@ typedef enum
       WINDOW_FOCUS_GROUP_FOCUS = 0,
       WINDOW_FOCUS_GROUP_EVIDENCE,
       WINDOW_FOCUS_GROUP_TEXT,
+
+      /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
+
+	/* window focus has a cache of colours per window
+	 * we can retrieve these by id which does note require out of scope data or headers
+	 */
+      WINDOW_FOCUS_GROUP_MASKED,	/* use to store colours but not set as a focus type */
+/* NOTE this must be the first blurred one */
+#define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
+
       N_FOCUS_GROUPS
 } ZMapWindowFocusType;
 
-#define WINDOW_FOCUS_GROUP_ALL 0xff
+
+extern int focus_group_mask[];	/* indexed by ZMapWindowFocusType */
+
+#define WINDOW_FOCUS_GROUP_FOCUSSED 0x07	/* all the focus types */
+#define WINDOW_FOCUS_GROUP_BITMASK	0xff	/* all the colour types, focussed and blurred */
+#define WINDOW_FOCUS_DONT_USE	0xff00	/* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
+/* x-ref with zmapWindowCanvasFeatureset_I.h */
+
 #define WINDOW_FOCUS_ID	0xffff0000
 
-
-
 /* bitmap return values from the following function, _please_ don't enum them! */
-#define WINDOW_FOCUS_CACHE_FILL  1
-#define WINDOW_FOCUS_CACHE_OUTLINE 2
+#define WINDOW_FOCUS_CACHE_FILL 		1
+#define WINDOW_FOCUS_CACHE_OUTLINE		2
+#define WINDOW_FOCUS_CACHE_SELECTED		4
 int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
+
 void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);

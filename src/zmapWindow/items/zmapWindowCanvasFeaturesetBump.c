@@ -302,6 +302,14 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		bump_data->complex = FALSE;	/* reset compound feature handling */
 		break;
 
+	case ZMAPBUMP_NAME_INTERLEAVE:
+	case ZMAPBUMP_NAME_NO_INTERLEAVE:
+	case ZMAPBUMP_NAME_COLINEAR:
+	case ZMAPBUMP_NAME_BEST_ENDS:
+		/* for alignments these all map to overlap, the alignments code show the decorations regardless */
+		bump_mode = ZMAPBUMP_OVERLAP;
+		/* fall through */
+
 	case ZMAPBUMP_OVERLAP:
 		/* performance stats */
 		bump_data->n_col = 0;
@@ -324,7 +332,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
 			/* just redisplays using normal coords */
-			if(feature->flags &= ~ FEATURE_MARK_HIDE)
+			feature->flags &= ~FEATURE_MARK_HIDE;
 			if(!(feature->flags & FEATURE_HIDE_REASON))
 			{
 				feature->flags &= ~FEATURE_HIDDEN;
@@ -342,14 +350,20 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			continue;
 		}
 
+		if(feature->flags & FEATURE_HIDDEN)
+			continue;
+
+
 		switch(bump_mode)
 		{
 		case ZMAPBUMP_ALL:
 			feature->bump_offset = bump_data->offset;
 			bump_data->offset += bump_data->incr;
 			break ;
+
 		case ZMAPBUMP_START_POSITION:
 			break ;
+
 		case ZMAPBUMP_OVERLAP:
 			pos_list = bump_overlap(feature, bump_data, pos_list);
 			break ;
@@ -360,10 +374,6 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			bump_data->offset = bump_data->incr - bump_data->offset;
 			break;
 
-		case ZMAPBUMP_NAME_INTERLEAVE:
-		case ZMAPBUMP_NAME_NO_INTERLEAVE:
-		case ZMAPBUMP_NAME_COLINEAR:
-		case ZMAPBUMP_NAME_BEST_ENDS:
 			break;
 
 		default:
