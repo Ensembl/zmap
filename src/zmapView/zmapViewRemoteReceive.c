@@ -480,7 +480,6 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
   zMapXMLParserDestroy(parser);
 
 
- HAVE_RESPONSE:
   if (!zMapXRemoteValidateStatusCode(statusCode) && response != NULL)
     {
       zMapLogWarning("%s", response);
@@ -1827,7 +1826,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, ZMapXMLParser parser)
 {
   gboolean result = FALSE ;
-  ZMapXMLAttribute attr = NULL;
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
   RequestData request_data = (RequestData)(xml_data->user_data);
 
