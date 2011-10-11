@@ -1649,7 +1649,7 @@ static void processSetList(gpointer data, gpointer user_data)
   GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
-  GList *column_2_featureset;
+
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
