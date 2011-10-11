@@ -2248,7 +2248,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 		if(run_data->feature_stack->maps_to)
 			fset_id = run_data->feature_stack->maps_to;
 
-            char *x = g_strdup_printf("%p_%s_%s", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id));
+            char *x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),run_data->feature_stack->strand,run_data->feature_stack->frame);
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);

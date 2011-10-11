@@ -184,12 +184,13 @@ static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData ou
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
+static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
-static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
+static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 
@@ -204,7 +205,9 @@ static void setXremoteCB(gpointer list_data, gpointer user_data) ;
 
 
 
-
+/* 
+ *               Globals
+ */
 
 /* Descriptor table of action attributes */
 static ActionDescriptorStruct action_table_G[] =
@@ -256,7 +259,7 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
     { "align",      xml_return_true_cb    },
     { "block",      xml_return_true_cb    },
     { "featureset", xml_featureset_end_cb },
-    { "feature",    xml_return_true_cb    },
+    { "feature",    xml_feature_end_cb    },
     { "subfeature", xml_subfeature_end_cb },
     {NULL, NULL}
   } ;
@@ -278,6 +281,19 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
   "export_context",
   NULL
 };
+
+
+static gboolean xremote_debug = FALSE ;
+
+
+
+
+
+/* 
+ *                         External routines.
+ */
+
+
 
 
 
@@ -323,12 +339,14 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
   ZMapXRemoteParseCommandDataStruct input = { NULL };
   RequestDataStruct input_data = {0};
   ZMapView view = (ZMapView)user_data;
+  gboolean ping ;
+
+  ping = zMapXRemoteIsPingCommand(command_text, statusCode, &response) ;
 
 
-  if (zMapXRemoteIsPingCommand(command_text, statusCode, &response) != 0)
-    {
-      goto HAVE_RESPONSE;
-    }
+  if (!ping)
+    zMapLogMessage("New xremote command received: %s", command_text) ;
+
 
   input_data.view = view ;
   input.user_data = &input_data ;
@@ -462,7 +480,6 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
   zMapXMLParserDestroy(parser);
 
 
-
  HAVE_RESPONSE:
   if (!zMapXRemoteValidateStatusCode(statusCode) && response != NULL)
     {
@@ -476,6 +493,10 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
     {
       response = g_strdup("Broken code.") ;
     }
+
+  if (!ping)
+    zMapLogMessage("New xremote command processed: %s", command_text) ;
+
 
   return response;
 }
@@ -1009,6 +1030,27 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
   return result ;
 }
 
+static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement export_element, ZMapXMLParser parser)
+{
+  ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
+  RequestData request_data = (RequestData)(xml_data->user_data);
+  ZMapXMLAttribute attr = NULL;
+  /* <export filename="" format="" /> */
+
+  if((attr = zMapXMLElementGetAttributeByName(export_element, "filename")))
+    request_data->filename = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
+  else
+    zMapXMLParserRaiseParsingError(parser, "filename is a required attribute for export.");
+
+  if((attr = zMapXMLElementGetAttributeByName(export_element, "format")))
+    request_data->format = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
+  else
+    request_data->format = "gff";
+
+  return FALSE;
+}
+
+
 
 static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_element, ZMapXMLParser parser)
 {
@@ -1452,7 +1494,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 		if (!feature)
 		  {
-		    /* If we can't find the feature then it's a serious error for these commands. */
+		    /* If we _don't_ find the feature then it's a serious error for these commands. */
 		    char *err_msg ;
 
 		    err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
@@ -1476,7 +1518,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 		    err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" already exists in featureset \"%s\",",
 					      feature_name, g_quark_to_string(feature_unique_id),
-					      zMapFeatureName(request_data->orig_feature_set)) ;
+					      zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
 		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
 		    g_free(err_msg) ;
 
@@ -1568,6 +1610,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			   * xml to contain SO term ?? Maybe not....not sure. */
 			  mode = zMapStyleGetMode(request_data->style) ;
 
+			  /* should be removed.... */
 			  feature_unique_id = zMapFeatureCreateID(mode,
 								  feature_name,
 								  strand,
@@ -1781,32 +1824,50 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 }
 
 
-
-
-
-static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement export_element, ZMapXMLParser parser)
+static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, ZMapXMLParser parser)
 {
+  gboolean result = FALSE ;
+  ZMapXMLAttribute attr = NULL;
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
   RequestData request_data = (RequestData)(xml_data->user_data);
-  ZMapXMLAttribute attr = NULL;
-  /* <export filename="" format="" /> */
 
-  if((attr = zMapXMLElementGetAttributeByName(export_element, "filename")))
-    request_data->filename = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-  else
-    zMapXMLParserRaiseParsingError(parser, "filename is a required attribute for export.");
+  if (xml_data->common.action != ZMAPVIEW_REMOTE_INVALID)
+    {
+      switch(xml_data->common.action)
+	{
+	  case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    {
+	      if (!(request_data->feature))
+		{
+		  zMapXMLParserCheckIfTrueErrorReturn(request_data->feature == NULL,
+						      parser,
+						      "a feature end tag without a created feature.") ;
+		}
+	      else
+		{
+		  /* It's probably here that we need to revcomp the feature if the
+		   * view is revcomp'd.... */
+		  if (request_data->view->revcomped_features)
+		    {
+		      zMapFeatureReverseComplement(request_data->orig_context, request_data->feature) ;
+		    }
+		}
 
-  if((attr = zMapXMLElementGetAttributeByName(export_element, "format")))
-    request_data->format = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-  else
-    request_data->format = "gff";
+	      break ;
+	    }
+	default:
+	  break ;
+	}
 
-  return FALSE;
+      result = TRUE ;
+    }
+
+  return result ;
 }
 
 
-static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element,
-                                      ZMapXMLParser parser)
+
+static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, ZMapXMLParser parser)
 {
   ZMapXMLAttribute attr = NULL;
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
@@ -1860,6 +1921,13 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
 
   return TRUE;                  /* tell caller to clean us up. */
 }
+
+
+
+
+
+
+
 
 static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLElement zmap_element,

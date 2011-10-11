@@ -11,7 +11,7 @@
 m4_include([zmap_version.m4])
  
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.65)
 
 
 AC_INIT([ZMap],[ZMAP_VERSION_NUMBER],[zmap@sanger.ac.uk])
