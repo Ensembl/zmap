@@ -126,8 +126,15 @@ Conversely pre-sorting the data and adding in same-name order to allow effcient 
 <h4>Gapped alignments</h4>
 <p>Alignments are displayed either as simple boxes or as a series of boxes joined by lines (to show gaps). In the existing implementation all of these are distinct foo canvas items, which is quite inefficient.  Instead we will store each feature as is (a simple box) and when bumped or at high zoom draw the appropriate series of boxes and lines.  It will be relatively easy to trigger this according to how visible these decorations will be related to their size in pixels.
 </p>
+<h5>Implementing Gapped Alignment display</h5>
+<p>Each alignment will be stored as a single feature and displayed as a simple box if unbumped. NOTE also that gaps are not displayed on the reverse strand.
+</p>
+<p>When bumped we will refer to the feature's gaps array and taking into account base and pixel sizes construct a list of gaps to draw - several may overlap a single pixel at low zoom.  The feature actually stores the bases that are aligned not the gaps and each one corresponds to a box for display; at high zoom these are joined by a black co-linear line but often they overlap a single pixel.  To produce an efficient paint we will join up blocks if they are separated by one pixel, and add horizontal lines afterwards.  If a gap is bigger than one pixel then we add a vertical line after the box. On changing the zoom level we recalculate this data.
+</p>
 
-<h4 Summary</h4>
+</p>
+
+<h4> Summary</h4>
 <p>Thus we have a design for feature data structures that looks like the diagram below, where the green exons form a complete transcript object (a similar structure will be used for alignments).  We can select of search for sub-parts of compound objects and are at choice whether or not we wish to access the part of the whole, and the process for each is simple and well defined. Each compound object is a linked list of sub-parts and the start and end correspond to the start and end of the list. Each sub-part refers back to the feature context.  Note that in the canvas there is no data structure corresponding to the whole transcript; it is just a sum of parts.
 </p>
 <img src="Design/notes/new_model_feature.png"  class="img">
@@ -196,7 +203,7 @@ Here's an pictorial repepresentation:
 <p>To provide a clean interface the alignment code will use a #define or function call to access a sub-feature glyph and these will be painted on demand.  These may be stored per feature (quiWe prefer to avoid large amounts of memory allocation (which saves memory as not all alignmentsck and easy but uses a lot of memory <i>NOTE: this could require 100MB for 200k alignments if pre-allocated)</i> or in a hash table
 (memory efficient but a little fiddly).  The problem is to find a way to index glyphs in an effcient enough but also general way - note that we need to index an instance of a glyph not its definition.. What we are aiming at is to just have examples of each variation (max 8 per style of which we currently have 2) that works regardless of our knowledge of current use.
 </p>
-<p>To handle arbritary number of glyph instances we must have one glyph per features (at each end) and the only way to do this effeicently in terms of memory is via a pointer or key in the alignment struct (we wish to avoid recalculatingon expose for speed).  If we can use these pointers/ keys to refer to a few glyph instnace that can be mapped to a feature's coordinated then we have an effcient solution.
+<p>To handle arbritary number of glyph instances we must have one glyph per features (at each end) and the only way to do this effeicently in terms of memory is via a pointer or key in the alignment struct (we wish to avoid recalculating on expose for speed).  If we can use these pointers/ keys to refer to a few glyph instnace that can be mapped to a feature's coordinated then we have an effcient solution.
 </p>
 <h5>A solution</h5>
 <p>
