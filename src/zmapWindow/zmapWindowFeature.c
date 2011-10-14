@@ -1843,7 +1843,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   column_is_empty = !(container_features->item_list);
 
 #warning this should be moved into zmapWindowColBump.c/addGapsCB() for better effciency
-  zmapGetFeatureStack(&feature_stack,NULL,feature);
+  zmapGetFeatureStack(&feature_stack,NULL,feature, zmapWindowFeatureFrame(feature));
 
   /* This function will add the new feature to the hash. */
   new_feature = zmapWindowFeatureDraw(window, style, FOO_CANVAS_GROUP(feature_group), &feature_stack) ;

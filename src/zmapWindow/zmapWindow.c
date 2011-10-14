@@ -1525,7 +1525,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	 * we have to ensure that the feature_arg data is passed through with any later functions
 	 * that update the canvas item (highlighting the feature in another window maybe?)
 	 * so that implicates zmapView.c/select and likely zmapControl.c too
-	 * note that we cannot simply choose to use featrue instead of feature_arg as the mouse may be still moving
+	 * note that we cannot simply choose to use feature instead of feature_arg as the mouse may be still moving
 	 */
       if(ZMAP_IS_WINDOW_GRAPH_DENSITY_ITEM(sub_item))
       	feature = feature_arg;
@@ -3809,10 +3809,19 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
   double rootx1, rootx2, rooty1, rooty2;
   gboolean border = TRUE ;
 
-  /* Get size of item and convert to world coords. */
-  foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
-  foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
-  foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+
+  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  {
+  	/* feature has been set by caller */
+  	zMapWindowCanvasFeaturesetItemGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
+  }
+  else
+  {
+	  /* Get size of item and convert to world coords. */
+	foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+	foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
+	foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+  }
 
   zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2) ;
 
@@ -4941,10 +4950,19 @@ static void getMaxBounds(gpointer data, gpointer user_data)
   MaxBounds max_bounds = (MaxBounds)user_data ;
   double rootx1, rootx2, rooty1, rooty2 ;
 
-  /* Get size of item and convert to world coords. */
-  foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
-  foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
-  foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  {
+  	/* this is a ZMapWindowCanvasItem ie a foo canvas group  */
+  	zMapWindowCanvasItemSetFeaturePointer(item, (ZMapFeature) id2c->feature_any);
+  	zMapWindowCanvasFeaturesetItemGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
+  }
+  else
+  {
+	/* Get size of item and convert to world coords. */
+	foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+	foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
+	foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+  }
 
   if (max_bounds->rootx1 == 0.0  && max_bounds->rooty1 == 0.0
       && max_bounds->rootx2 == 0.0 && max_bounds->rooty2 == 0.0)

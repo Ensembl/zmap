@@ -103,10 +103,11 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 /* only access via wrapper functions to allow type checking */
 
 /* paint one feature, all context needed is in the FeaturesetItem */
+/* we need the expose regrion to clip at high zoom esp with peptide alignments */
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
-void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
+void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
-	void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+	void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,  GdkEventExpose *expose);
 
 	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)	/* chicken */
 		return;
@@ -115,7 +116,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 	if(!func)
 		return;
 
-	func(featureset, feature, drawable);
+	func(featureset, feature, drawable, expose);
 }
 
 
@@ -186,6 +187,42 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
 }
 #endif
 
+/*
+ * do anything that needs doing on zoom
+ * we have column specific things like are features visible
+ * and feature specific things like recalculate gapped alignment display
+ */
+static gpointer _featureset_zoom_G[FEATURE_N_TYPE] = { 0 };
+void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
+{
+	int (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
+	ZMapSkipList sl;
+
+	if(!featureset)
+		return;
+
+		/* feature specific */
+	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+
+		if(feature->type < 0 || feature->type >= FEATURE_N_TYPE)
+			continue;
+
+		func = _featureset_zoom_G[feature->type];
+		if(!func)
+			continue;
+
+		func(featureset,feature);
+	}
+
+		/* featureset specific */
+	/* TBD */
+
+	return;
+}
+
+
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
@@ -194,6 +231,7 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int str
 	_featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
 	_featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
 	_featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
+	_featureset_zoom_G[featuretype] = funcs[FUNC_ZOOM];
 #if CANVAS_FEATURESET_LINK_FEATURE
 	_featureset_link_G[featuretype] = funcs[FUNC_LINK];
 #endif
@@ -302,7 +340,6 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 			di->overlap = FALSE;
 
 		di->width = zMapStyleGetWidth(di->style);
-  		di->width_pixels = TRUE;
   		di->start = start;
   		di->end = end;
 
@@ -562,10 +599,10 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 		(* parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
 
 	// cribbed from FooCanvasRE; this sets the canvas coords in the foo item
-	x1 = i2w_dx;
+	di->dx = x1 = i2w_dx;
 	x2 = x1 + (di->bumped? di->bump_width : di->width);
 
-	y1 = i2w_dy;
+	di->dy = y1 = i2w_dy;
 	y2 = y1 + di->end - di->start;
 
 	foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
@@ -585,16 +622,27 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
  * so return the featureset foo item adjusted to point at the nearest feature */
 
  /* by a process of guesswork x,y are world coordinates and cx,cy are canvas (i think) */
+ /* No: x,y are parent item local coordinates ie offset within the group
+  * we have a ZMapCanvasItem group with no offset, s we nee to adjust by the x,ypos of that group
+  */
 double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item)
 {
-	double best = 0.0;
 	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 	ZMapWindowCanvasFeature gs;
 	ZMapSkipList sl;
-//      double dist = 0.0;
       double wx; //,wy;
-      double dx,dy;
+//      double dx,dy;
       double y1,y2;
+//      FooCanvasGroup *group;
+
+      /* optimise repeat calls: the foo canvas does 6 calls for a click event (3 down 3 up)
+       * and if we are zoomed into a bumped peptide alignemnt column that means looking at a lot of features
+       * each one goes through about 12 layers of canvas containers first but that's another issue
+       * then if we move the lassoo that gets silly (button down: calls point())
+       */
+      static double save_x,save_y;
+      static ZMapWindowCanvasFeature save_gs = NULL;
+	static double best = 0.0;
 
       /*
        * need to scan internal list and apply close enough rules
@@ -607,14 +655,39 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
         */
       *actual_item = NULL;
 
-	dx = dy = 0.0;
-      foo_canvas_item_i2w (item, &dx, &dy);
+      if(save_gs && x == save_x && y == save_y)
+      {
+      	fi->point_feature = save_gs->feature;
+      	*actual_item = item;
 
-	x += dx;
-	y += dy;
+      	return best;
+      }
 
+	save_x = x;
+	save_y = y;
+      save_gs = NULL;
+
+	x += fi->dx;
+	y += fi->dy;
+#warning this code is in the wrong place, review when containers rationalised
+/*
+ * The foo canvas calls point() with group relative coordinates ad to the
+ * world coordinates ie our feature coordinates we have to add the containign group's x,ypos
+ * this should be accounted for by fi->dx,y as that's derived from a _i2w call
+ * but it doesn't work. So this is a bodge to make the cursor work. There must be another
+ * mistake/ bodge somewhere requiring this.
+ * but we need to get the column containing our ZmapCanvasItem
+ * or is that the container that conatind the features that contains the list of conatiners that contain out ZmapCanvasItem?
+ * regardless this has no effect.
+
+ 	group = FOO_CANVAS_GROUP(item->parent);
+ 	group = FOO_CANVAS_GROUP((FOO_CANVAS_ITEM(group)->parent));
+ 	x += group->xpos;
+ 	y += group->ypos;
+ */
 	y1 = y - item->canvas->close_enough;
 	y2 = y + item->canvas->close_enough;
+
 
 	/* NOTE there is a flake in world coords at low zoom */
 	/* NOTE close_enough is zero */
@@ -633,18 +706,20 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 		if(gs->y1 > y2)
 			break;
 
-		if(gs->y1 <= y && gs->y2 >= y)	/* overlaps cursor */
+		if(gs->feature->x1 <= y && gs->feature->x2 >= y)	/* overlaps cursor */
 		{
-			wx = item->x1;
+			wx = fi->dx;
 			if(fi->bumped)
 				wx += gs->bump_offset;
 
 			if(x >= wx && x < wx + gs->width)	/* item contains cursor */
 			{
 				best = 0.0;
+				fi->point_feature = gs->feature;
 				*actual_item = item;
 
-				fi->point_feature = gs->feature;
+#warning this could concievably cause a memory fault if we freed save_gs but that seems unlikely if we don-t nove the cursor
+      			save_gs = gs;
 				break;			/* just find any one */
 			}
 		}
@@ -678,9 +753,7 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
       *y1 = miny;
       *x2 = maxx;
       *y2 = maxy;
-
 }
-
 
 
 /* a slightly ad-hoc function
@@ -749,6 +822,12 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
 	/* check zoom level and recalculate: was done here for density items */
+	if(fi->zoom != item->canvas->pixels_per_unit_y)
+	{
+		fi->zoom = item->canvas->pixels_per_unit_y;
+		fi->bases_per_pixel = 1.0 / fi->zoom;
+		zMapWindowCanvasFeaturesetZoom(fi);
+	}
 
       if(!fi->display_index)
       {
@@ -803,6 +882,15 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 		if((feat->flags & FEATURE_HIDDEN))
 			continue;
+
+		/* when bumped we can have a sequence wide 'bump_overlap
+		 * which means we could try to paint all the features
+		 * which would be slow
+		 * so ew need to etst again for the expose regionand not call gdk
+		 * for alignment the first feature in a set has the colinear lines and we clip in that paint fucntion too
+		 */
+		/* erm... already did that */
+
 		/*
 		NOTE need to sort out container positioning to make this work
 		di covers its container exactly, but is it offset??
@@ -823,7 +911,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		zmapWindowCanvasFeaturesetSetColours(fi,feat);
 
 		// call the paint function for the feature
-		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable);
+		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable,expose);
 	}
 
 	/* flush out any stored data (eg if we are drawing polylines) */
@@ -838,7 +926,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		feat = (ZMapWindowCanvasFeature) highlight->data;
 
 		zmapWindowCanvasFeaturesetSetColours(fi,feat);
-		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable);
+		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable,expose);
 	}
 	zMapWindowCanvasFeaturesetPaintFlush(fi,feat,drawable);
 }

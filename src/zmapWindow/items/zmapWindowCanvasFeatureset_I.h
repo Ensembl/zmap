@@ -111,6 +111,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
 
   double zoom;			/* current units per pixel */
+  double bases_per_pixel;
 
   double start,end;
   double longest;			/* feature y-coords extent of biggest feature */
@@ -143,13 +144,11 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
-  double width;                 /* Outline width */
+  double width;                 /* column width */
   double bump_width;
 
   gboolean fill_set;    	/* Is fill color set? */
   gboolean outline_set;	 	/* Is outline color set? */
-
-  gboolean width_pixels;      /* Is outline width specified in pixels or units? (a foo remnant)*/
 
   ZMapFeature point_feature;	/* set by cursor movement */
 

@@ -303,11 +303,15 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		break;
 
 	case ZMAPBUMP_NAME_INTERLEAVE:
+		bump_mode = ZMAPBUMP_OVERLAP;
+		/* fall through */
 	case ZMAPBUMP_NAME_NO_INTERLEAVE:
 	case ZMAPBUMP_NAME_COLINEAR:
 	case ZMAPBUMP_NAME_BEST_ENDS:
-		/* for alignments these all map to overlap, the alignments code show the decorations regardless */
-		bump_mode = ZMAPBUMP_OVERLAP;
+		/* for alignments these all map to overlap, the alignments code shows the decorations regardless */
+		/* but for historical accuray we use bump all which display each composite feature in its own column */
+		if(bump_mode != ZMAPBUMP_OVERLAP)
+			bump_mode = ZMAPBUMP_ALL;
 		/* fall through */
 
 	case ZMAPBUMP_OVERLAP:
@@ -488,7 +492,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
             	// got an overlap, try next column
 #if MODULE_STATS
 		if(new_range->column > bump_data->n_col)
-	 		bump_data->n_col = new_range->column;
+			bump_data->n_col = new_range->column;
 #endif
             }
       }

@@ -1291,7 +1291,7 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
-void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature, ZMapFrame frame);
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;

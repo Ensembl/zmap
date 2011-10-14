@@ -680,7 +680,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 }
 
 
-void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature, ZMapFrame frame)
 {
   /* scan for the call to get_featureset_column_index() for 2 more fields
      feature_stack->set_index =
@@ -693,13 +693,15 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
   feature_stack->frame = ZMAPFRAME_NONE;
 
   feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
+
   if(feature && feature->style)	/* chicken */
     {
       if(zMapStyleIsStrandSpecific(feature->style))
-	feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
-      if(zMapStyleIsFrameSpecific(feature->style))
-	feature_stack->frame = zmapWindowFeatureFrame(feature);
+		feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+//      if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME(display_3_frame))
+//		feature_stack->frame = zmapWindowFeatureFrame(feature);
     }
+   feature_stack->frame = frame;
 
   zMapAssert(feature_set || feature);
 
@@ -835,7 +837,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.styles        = styles ;
   featureset_data.feature_count = 0;
 
-  zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL);
+  zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL,frame);
 
 
   if(zMapStyleDensity(feature_set->style))

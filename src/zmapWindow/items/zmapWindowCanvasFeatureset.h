@@ -108,11 +108,11 @@ typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEA
 
 
 /* basic feature draw a box
- * defined as a macro for efficiency to avoid multple copies ofo cut and paste
+ * defined as a macro for efficiency to avoid multple copies of cut and paste
  * otherwise would need 7 args which is silly
  * used by basc feature, alignments, maybe transcripts... and what else??
  */
-#define zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable,fill_set,outline_set,fill,outline)\
+#define zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable,expose,fill_set,outline_set,fill,outline)\
 {\
 	double x1,x2;\
 	FooCanvasItem *item = (FooCanvasItem *) featureset;\
@@ -155,7 +155,7 @@ typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEA
 }
 
 
-void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose);
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
 void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span);
 #define CANVAS_FEATURESET_LINK_FEATURE	0	/* not needed: is OTT */

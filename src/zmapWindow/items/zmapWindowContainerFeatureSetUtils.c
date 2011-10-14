@@ -269,9 +269,14 @@ zMapLogWarning("splice %s -> %s, %s/%s = %d", g_quark_to_string(prev_feature->un
 
                   x_coord = get_glyph_mid_point((FooCanvasItem *) curr_item);
 
+#define STYLE_DOES_FLIP 1
+#if STYLE_DOES_FLIP
+                  glyph = zMapWindowGlyphItemCreate(parent, style,  3,
+                                          x_coord, prev_feature->x2 - block_offset + 1, 0, FALSE) ;
+#else
                   glyph = zMapWindowGlyphItemCreate(parent, style, prev_reversed? 5 : 3,
                                           x_coord, prev_feature->x2 - block_offset + 1, 0, FALSE) ;
-
+#endif
                   /* Record the item so we can delete it later. */
                   if(glyph)
                   {
@@ -279,8 +284,13 @@ zMapLogWarning("splice %s -> %s, %s/%s = %d", g_quark_to_string(prev_feature->un
                         added++;
                   }
 
+#if STYLE_DOES_FLIP
+                  glyph = zMapWindowGlyphItemCreate(parent, style,  5,
+                                          x_coord, curr_feature->x1 - block_offset, 0, FALSE) ;
+#else
                   glyph = zMapWindowGlyphItemCreate(parent, style, prev_reversed? 3 : 5,
                                           x_coord, curr_feature->x1 - block_offset, 0, FALSE) ;
+#endif
 
                   /* Record the item so we can delete it later. */
                   if(glyph)

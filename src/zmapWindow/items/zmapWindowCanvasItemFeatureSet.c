@@ -120,6 +120,28 @@ GType zMapWindowCanvasFeaturesetItemGetType(void)
 
 
 
+/* get the bounds of the current feature which has been set by the caller */
+/* item is a foo canvas group, we have one foo canvas item in the item list */
+void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2)
+{
+	FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
+	ZMapWindowFeaturesetItem fi;
+	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
+
+	zMapAssert(group && group->item_list);
+
+	fi = (ZMapWindowFeaturesetItem) group->item_list->data;
+	if(rootx1)
+		*rootx1 = fi->dx;
+	if(rootx2)
+		*rootx2 = fi->dx + fi->width;
+	if(rooty1)
+		*rooty1 = item->feature->x1;
+	if(rooty2)
+		*rooty2 = item->feature->x2;
+}
+
+
 static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetItemClass featureset_class)
 {
   ZMapWindowCanvasItemClass canvas_class ;

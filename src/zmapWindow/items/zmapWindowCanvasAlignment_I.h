@@ -40,15 +40,30 @@
 #include <zmapWindowCanvasAlignment.h>
 
 
+typedef struct _AlignGapStruct
+{
+	int y1,y2;		/* in pixel coords from feature y1 */
+	int type;
+#define GAP_BOX	1
+#define GAP_HLINE	2
+#define GAP_VLINE	3
+
+	struct _AlignGapStruct *next;
+
+} AlignGapStruct, *AlignGap;
+
+#define N_ALIGN_GAP_ALLOC	1000
+
+
+
 typedef struct _zmapWindowCanvasAlignmentStruct
 {
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 	/* NOTE that we can have: alignment.feature->feature->feature.homol */
 
+	AlignGap gapped;		/* boxes and lines to draw when bumped */
 
 	/* stuff for displaying homology status derived from feature data when loading */
-
-	gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
 
 	/* we display one glyph max at each end
 	 * so far these can be 2 kinds of homology incomplete or nc-splice, which cannot overlap
@@ -59,6 +74,9 @@ typedef struct _zmapWindowCanvasAlignmentStruct
 
 	ZMapWindowCanvasGlyph glyph5;
 	ZMapWindowCanvasGlyph glyph3;
+
+	gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
+
 
 } zmapWindowCanvasAlignmentStruct, *ZMapWindowCanvasAlignment;
 

@@ -44,7 +44,7 @@
 
 
 /* not static as we want to use this in alignments */
-void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
+void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
 	gulong fill,outline;
 	int colours_set, fill_set, outline_set;
@@ -62,7 +62,7 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable,fill_set,outline_set,fill,outline);
+	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable, expose,fill_set,outline_set,fill,outline);
 }
 
 

@@ -280,7 +280,7 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 
   run_data.feature_stack     = &feature_stack;
   feature_stack.feature = NULL;
-  zmapGetFeatureStack(&feature_stack,set,NULL);
+  zmapGetFeatureStack(&feature_stack,set,NULL,frame);
 
   run_data.frame   = frame;
 
@@ -793,19 +793,21 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-      if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style))
-      /* NOTE calling code call zmapWindowDrawFeatureSet() for each frame but
+//       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
+      /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
        * expects it to shuffle features into the right stranded container
-       * it's a half solution whcih caused a misunderstanding here.
+       * it's a half solution which caused a misunderstanding here.
        * ideally the calling code would have 6 column groups prepared and we'd do one scan of the featureset
-       * that's a bit fiddly to sort now ut it needs doign when containers get done
+       * that's a bit fiddly to sort now but it needs doing when containers get done
        * We'd like to set up the 6 CanvasFeaturesets once, not recalc every time
+       * this would need 6 CanvasFeatureset id's to avoid the recalc every time
+       * Perhaps the best way is to run 6 scans for all frame and strand combinations??
        */
 #warning code needs restructuring around zmapWindowDrawFeatureSet()
       {
       	/* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
       	 * all of one type at a time
-      	 * so frame and strand are stable
+      	 * so frame and strand are stable NOTE only frame, strand will wobble
       	 * we save the id here to optimise the code
       	 */
             GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
@@ -816,7 +818,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
             if(zMapStyleIsStrandSpecific(style) && feature->strand == ZMAPSTRAND_REVERSE)
             	strand = '-';
-            if(zMapStyleIsFrameSpecific(style))
+            if(run_data->feature_stack->frame != ZMAPFRAME_NONE)
             	frame += zmapWindowFeatureFrame(feature);
 
 		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
@@ -1114,7 +1116,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 
   if(!zMapStyleIsFoo(style))
   {
-  	/* NOTE we handle gaps in here when inmplemented */
+  	/* NOTE we handle gaps in here when implemented */
 	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
   }
   else      // original code preserved unchangesd
