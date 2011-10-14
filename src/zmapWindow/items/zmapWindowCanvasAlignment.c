@@ -260,7 +260,7 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 
 		if(last_box)
 		{
-			if(last_box->y2 == cy1)
+			if(last_box->y2 == cy1 && cy2 != cy1)
 			{
 				/* extend last box and add a line where last box ended */
 				ag = align_gap_alloc();
@@ -405,7 +405,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 				if(!outline_set)	/* must be or else we are up the creek! */
 					break;
 
-				gx= (cx1 + cx2) / 2;
+				gx = (cx1 + cx2) / 2;
 				c.pixel = outline;
 				gdk_gc_set_foreground (featureset->gc, &c);
 				gdk_draw_line (drawable, featureset->gc, gx, gy1, gx, gy2);
@@ -507,6 +507,12 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 				/* note we have to use real feature coords here as we have mangle the first feature's y2 */
 				foo_canvas_w2c (foo->canvas, mid_x, feat->feature->x2 - featureset->start + featureset->dy + 1, &cx1, &cy1);
 				foo_canvas_w2c (foo->canvas, mid_x, next->feature.y1 - featureset->start + featureset->dy, &cx2, &cy2);
+
+				/* these lines get to be quite long... */
+				if(cy1 < expose->area.y)
+					cy1 = expose->area.y;
+				if(cy2 > expose->area.y + expose->area.height)
+					cy2 = expose->area.y + expose->area.height;
 
 				/* draw line between boxes, don't overlap the pixels */
 				gdk_gc_set_foreground (featureset->gc, colour);

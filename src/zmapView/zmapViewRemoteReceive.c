@@ -1826,10 +1826,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, ZMapXMLParser parser)
 {
   gboolean result = FALSE ;
-<<<<<<< HEAD
-//  ZMapXMLAttribute attr = NULL;
-=======
->>>>>>> 0fce42b880a2441611aa2fb9ca99f3bdb7858df6
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
   RequestData request_data = (RequestData)(xml_data->user_data);
 

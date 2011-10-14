@@ -99,6 +99,13 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs);
 
 
+
+/* clip to expose region */
+/* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
+void zMap_gdk_draw_line(GdkDrawable *drawable,GdkEventExpose *expose,GdkGC *gc, gint cx1, gint cy1, gint cx2, gint cy2)
+{
+}
+
 /* define feature specific functions here */
 /* only access via wrapper functions to allow type checking */
 
