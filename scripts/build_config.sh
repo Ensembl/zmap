@@ -117,8 +117,9 @@ ZMAP_MASTER_BUILD_DIST=no
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
+#ZMAP_BUILD_MACHINES="deskpro17537 mac18480i cbi4"
 ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
-#ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4"
+
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
 -oConnectTimeout=3 \

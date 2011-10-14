@@ -11,7 +11,7 @@
 m4_include([zmap_version.m4])
 
 
-AC_PREREQ(2.65)
+AC_PREREQ(2.61)
 
 
 AC_INIT([ZMap],[ZMAP_VERSION_NUMBER],[zmap@sanger.ac.uk])
@@ -271,12 +271,10 @@ AC_CHECK_LIB(AceConn, [main],
 if test "x$with_macosx_sdk_path" = "x$ZMAP_FALSE" ; then
     AC_CHECK_LIB(g2, [g2_attach],
     [ have_g2='true';
-      AC_CHECK_LIB(g2, [g2_open_gd],
-        [ have_g2_gd='true' ],
-	[ have_g2_gd='false';
-          AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd] )],
+      AC_CHECK_LIB(g2, [g2_open_gd], [ have_g2_gd='true' ], [ have_g2_gd='false';
+          AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd $X_LIBS] )],
 	[ have_g2=have_g2_gd='false';
-	    AC_MSG_ERROR(g2 package is required) ])
+	    AC_MSG_ERROR(g2 package is required) ], [-lgd $X_LIBS])
 fi
 
 #AC_CHECK_LIB(popt, [poptFreeContext], [],AC_MSG_ERROR(where is popt))
@@ -319,8 +317,9 @@ AC_SUBST(DEMO_CANVAS_LIBS)
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
-AC_CHECK_HEADER([AceConn.h g2.h g2_gd.h], [], [], [])
-AC_CHECK_HEADER([popt.h], [], [], [])
+AC_CHECK_HEADER([AceConn.h])
+AC_CHECK_HEADERS([g2.h g2_gd.h])
+AC_CHECK_HEADER([popt.h])
 ################################################################################
 ################################################################################
 # Checks for typedefs, structures, and compiler characteristics.
