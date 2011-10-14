@@ -293,7 +293,6 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
 static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords) ;
 static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
-static void setColours(ZMapWindow window) ;
 
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -2158,151 +2157,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   return window ;
 }
 
-
-/* Read colour information from the configuration file, note that we read _only_ the first
- * colour stanza found in the file, subsequent ones are not read. */
-static void setColours(ZMapWindow window)
-{
-  ZMapConfigIniContext context = NULL;
-
-  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->colour_root)) ;
-  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &window->colour_alignment) ;
-  gdk_color_parse(ZMAP_WINDOW_STRAND_DIVIDE_COLOUR, &window->colour_block) ;
-  gdk_color_parse(ZMAP_WINDOW_STRAND_DIVIDE_COLOUR, &window->colour_separator) ;
-  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &window->colour_mblock_for) ;
-  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &window->colour_mblock_rev) ;
-  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &window->colour_qblock_for) ;
-  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &window->colour_qblock_rev) ;
-  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &(window->colour_mforward_col)) ;
-  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &(window->colour_mreverse_col)) ;
-  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
-  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
-  gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
-  window->highlights_set.column = TRUE ;
-//  gdk_color_parse(ZMAP_WINDOW_ITEM_HIGHLIGHT, &(window->colour_item_highlight)) ;
-//  window->highlights_set.item = TRUE ;
-  gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
-  gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
-  gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
-
-  gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_BORDER, &(window->colour_evidence_border)) ;
-  gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_FILL, &(window->colour_evidence_fill)) ;
-  window->highlights_set.evidence = TRUE ;
-
-  if ((context = zMapConfigIniContextProvide()))
-    {
-      char *colour = NULL;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_ROOT, &colour))
-	gdk_color_parse(colour, &window->colour_root);
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_ALIGNMENT, &colour))
-	gdk_color_parse(colour, &window->colour_alignment) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_BLOCK, &colour))
-	gdk_color_parse(colour, &window->colour_block) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
-	gdk_color_parse(colour, &window->colour_separator) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_M_FORWARD, &colour))
-	gdk_color_parse(colour, &window->colour_mblock_for) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_M_REVERSE, &colour))
-	gdk_color_parse(colour, &window->colour_mblock_rev) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_Q_FORWARD, &colour))
-	gdk_color_parse(colour, &window->colour_qblock_for) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_Q_REVERSE, &colour))
-	gdk_color_parse(colour, &window->colour_qblock_rev) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_M_FORWARDCOL, &colour))
-	gdk_color_parse(colour, &window->colour_mforward_col) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_M_REVERSECOL, &colour))
-	gdk_color_parse(colour, &window->colour_mreverse_col) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_Q_FORWARDCOL, &colour))
-	gdk_color_parse(colour, &window->colour_qforward_col) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_Q_REVERSECOL, &colour))
-	gdk_color_parse(colour, &window->colour_qreverse_col) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
-	{
-	  gdk_color_parse(colour, &window->colour_column_highlight) ;
-	  window->highlights_set.column = TRUE ;
-	}
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_ITEM_MARK, &colour))
-	zmapWindowMarkSetColour(window->mark, colour);
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
-	{
-	  gdk_color_parse(colour, &(window->colour_item_highlight)) ;
-	  window->highlights_set.item = TRUE ;
-	}
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-                               ZMAPSTANZA_WINDOW_MASKED_FEATURE_BORDER, &colour))
-      {
-        gdk_color_parse(colour, &(window->colour_masked_feature_border)) ;
-        window->highlights_set.masked = TRUE ;
-      }
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-                               ZMAPSTANZA_WINDOW_MASKED_FEATURE_FILL, &colour))
-      {
-        gdk_color_parse(colour, &(window->colour_masked_feature_fill)) ;
-        window->highlights_set.masked = TRUE ;
-      }
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_FRAME_0, &colour))
-	gdk_color_parse(colour, &window->colour_frame_0) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_FRAME_1, &colour))
-	gdk_color_parse(colour, &window->colour_frame_1) ;
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				       ZMAPSTANZA_WINDOW_FRAME_2, &colour))
-	gdk_color_parse(colour, &window->colour_frame_2) ;
-
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-                               ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_BORDER, &colour))
-      {
-        gdk_color_parse(colour, &window->colour_evidence_border) ;
-        window->highlights_set.evidence = TRUE ;
-      }
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-                               ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_FILL, &colour))
-      {
-        gdk_color_parse(colour, &window->colour_evidence_fill) ;
-        window->highlights_set.evidence = TRUE ;
-      }
-
-      zMapConfigIniContextDestroy(context);
-    }
-
-  return ;
-}
 
 static void invokeVisibilityChange(ZMapWindow window)
 {
@@ -4946,14 +4800,13 @@ static void getMaxBounds(gpointer data, gpointer user_data)
 {
   ID2Canvas id2c = (ID2Canvas) data;
   FooCanvasItem *item = (FooCanvasItem *)id2c->item ;
-#warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
   MaxBounds max_bounds = (MaxBounds)user_data ;
   double rootx1, rootx2, rooty1, rooty2 ;
 
   if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
   {
   	/* this is a ZMapWindowCanvasItem ie a foo canvas group  */
-  	zMapWindowCanvasItemSetFeaturePointer(item, (ZMapFeature) id2c->feature_any);
+  	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) id2c->feature_any);
   	zMapWindowCanvasFeaturesetItemGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
   }
   else

@@ -297,7 +297,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 /* we might get off with insanity. */
 gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 {
-  gboolean sane = TRUE, insanity_alloc = FALSE;
+  gboolean sane = TRUE; // insanity_alloc = FALSE;
   char *insanity = NULL;
 
   if (sane && !zMapFeatureIsValid(feature))

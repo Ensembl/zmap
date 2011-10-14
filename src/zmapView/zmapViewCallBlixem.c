@@ -1649,7 +1649,6 @@ static void processSetList(gpointer data, gpointer user_data)
   GQuark canon_id ;
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
-  GList *column_2_featureset;
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
@@ -1664,6 +1663,8 @@ printf("do blixem set %s\n",g_quark_to_string(canon_id));
 we add featuresets not columns
   else
     {
+  GList *column_2_featureset;
+
       /* assuming a mis-config treat the set id as a column id */
 printf("do blixem column %s\n",g_quark_to_string(canon_id));
       column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);

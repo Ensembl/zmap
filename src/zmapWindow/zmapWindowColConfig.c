@@ -258,7 +258,7 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 static void notebook_foreach_page(GtkWidget *notebook_widget, gboolean current_page_only,
 				  NotebookFuncType func_type, gpointer foreach_data);
 
-static void apply_state_cb(GtkWidget *widget, gpointer user_data);
+//static void apply_state_cb(GtkWidget *widget, gpointer user_data);
 
 static FooCanvasGroup *configure_get_point_block_container(ColConfigure configure_data,
 							   FooCanvasGroup *column_group);
@@ -1914,7 +1914,7 @@ static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointe
   return FALSE;
 }
 
-
+#if 0
 static void apply_state_cb(GtkWidget *widget, gpointer user_data)
 {
   if(GTK_IS_TOGGLE_BUTTON(widget))
@@ -1933,6 +1933,7 @@ static void apply_state_cb(GtkWidget *widget, gpointer user_data)
 
   return ;
 }
+#endif
 
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 {

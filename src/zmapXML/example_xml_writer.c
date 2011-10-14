@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
       g_array_free(events, TRUE);
       g_string_truncate(buffer, 0);
 
-      
+
 
       /* PARSE AND OUTPUT AN XML DOCUMENT */
       if(0)
@@ -152,8 +152,10 @@ static GArray *complex_xml_document(void)
 
 static GArray *xml_document_from_xml(void)
 {
-  GArray *events;
+
 #ifdef NOT_SURE_THIS_WORTH_IT
+  GArray *events;
+
   static char *xml_frag = "<zmap> <request action=\"delete\"> <set>";
   static ZMapXMLUtilsEventStackStruct document_end[] =
     {
@@ -161,20 +163,22 @@ static GArray *xml_document_from_xml(void)
       {ZMAPXML_END_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
       {0}
     };
-  
+
   events = zMapXMLUtilsEventsFromXMLFragment(xml_frag);
 
   events = multiple_elements(events);
 
   events = zMapXMLUtilsAddStackToEventsArray(&document_end[0], events);
 
-#endif
   return events;
+#else
+  return NULL;
+#endif
 }
 
 static GArray *multiple_elements(GArray *document)
 {
-  static ZMapXMLUtilsEventStackStruct elements[] = 
+  static ZMapXMLUtilsEventStackStruct elements[] =
     {
       {ZMAPXML_START_ELEMENT_EVENT, "feature",  ZMAPXML_EVENT_DATA_NONE,    {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {0}},
@@ -183,7 +187,7 @@ static GArray *multiple_elements(GArray *document)
       {ZMAPXML_END_ELEMENT_EVENT,   "feature",  ZMAPXML_EVENT_DATA_NONE,    {0}},
       {0}
     }, *event;
-  static int features[] = 
+  static int features[] =
     {12345, 12555, 23456, 23666, 34567, 34777, 0, 0}, *tmp;
 
   tmp = &features[0];

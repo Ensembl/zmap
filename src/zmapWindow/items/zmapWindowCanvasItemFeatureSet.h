@@ -66,6 +66,7 @@ typedef struct _zmapWindowCanvasFeaturesetItemClassStruct  zmapWindowCanvasFeatu
 /* Public funcs */
 GType zMapWindowCanvasFeaturesetItemGetType(void);
 
+void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2);
 
 
 

@@ -317,7 +317,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   gboolean mark_set;
   int start, end ;
   double width, bump_spacing = 0.0 ;
-double time;
+//double time;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_return_if_fail(bump_mode != ZMAPBUMP_INVALID);
@@ -356,6 +356,9 @@ double time;
   //  RT 171529
   if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
       return;
+
+  /* Need to know if mark is set for limiting feature display for several modes/feature types. */
+  mark_set = zmapWindowMarkIsSet(window->mark) ;
 
   /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
    * or the visible section of the window. */
@@ -457,8 +460,6 @@ double time;
 
   zmapWindowBusy(window, TRUE) ;
 
-  /* Need to know if mark is set for limiting feature display for several modes/feature types. */
-  mark_set = zmapWindowMarkIsSet(window->mark) ;
 
 
   bump_properties.container = container ;
