@@ -70,6 +70,8 @@ GType zMapWindowFeaturesetItemGetType(void);
 
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int size);
 
+void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
+void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill);
 
 ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
 
@@ -140,17 +142,14 @@ typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEA
 	{\
 		c.pixel = fill;\
 		gdk_gc_set_foreground (featureset->gc, &c);\
-		gdk_draw_rectangle (drawable, featureset->gc,TRUE, cx1, cy1, cx2 - cx1 + 1, cy2 - cy1 + 1);\
+		zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, TRUE);\
 	}\
 \
 	if(outline_set)\
 	{\
 		c.pixel = outline;\
 		gdk_gc_set_foreground (featureset->gc, &c);\
-		if(cy2 == cy1)\
-			gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);\
-		else\
-			gdk_draw_rectangle (drawable, featureset->gc,FALSE, cx1, cy1, cx2 - cx1, cy2 - cy1);\
+		zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, FALSE);\
 	}\
 }
 

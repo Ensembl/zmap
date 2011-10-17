@@ -102,9 +102,82 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 
 /* clip to expose region */
 /* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
-void zMap_gdk_draw_line(GdkDrawable *drawable,GdkEventExpose *expose,GdkGC *gc, gint cx1, gint cy1, gint cx2, gint cy2)
+void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
+	/* for H or V lines we can clip easily */
+#warning when transcripts are implemented we need to intersect the visible region
+
+	if(cy1 > featureset->clip_y2)
+		return;
+	if(cy2 < featureset->clip_y1)
+		return;
+	if(cx1 > featureset->clip_x2)
+		return;
+	if(cx2 < featureset->clip_x1)
+		return;
+
+	if(cx1 < featureset->clip_x1)
+		cx1 = featureset->clip_x1;
+	if(cy1 < featureset->clip_y1)
+		cy1 = featureset->clip_y1;
+	if(cx2 > featureset->clip_x2)
+		cx2 = featureset->clip_x2;
+	if(cy2 > featureset->clip_y2)
+		cy2 = featureset->clip_y2;
+
+	gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
 }
+
+/* clip to expose region */
+/* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
+/* NOTE rectangle may be drawn partially if they overlap the visible region
+ *in which case a false outline will be draw outside the region
+ */
+void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
+{
+	/* as our rectangles are all aligned to H and V we can clip easily */
+
+
+	if(cy1 > featureset->clip_y2)
+		return;
+	if(cy2 < featureset->clip_y1)
+		return;
+	if(cx1 > featureset->clip_x2)
+		return;
+	if(cx2 < featureset->clip_x1)
+		return;
+
+	if(cx1 < featureset->clip_x1)
+		cx1 = featureset->clip_x1;
+	if(cy1 < featureset->clip_y1)
+		cy1 = featureset->clip_y1;
+	if(cx2 > featureset->clip_x2)
+		cx2 = featureset->clip_x2;
+	if(cy2 > featureset->clip_y2)
+		cy2 = featureset->clip_y2;
+
+	/* NOTE that the gdk_draw_rectangle interface is a bit esoteric
+	 * and it doesn't like rectangles that have no depth
+	 * read the docs to understand the coordinate calculations here
+	 */
+
+	if(cy2 == cy1)
+	{
+		gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+	}
+	else
+	{
+		if(fill)
+		{
+			cx2++;
+			cy2++;
+		}
+		gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
+	}
+
+
+}
+
 
 /* define feature specific functions here */
 /* only access via wrapper functions to allow type checking */
@@ -200,7 +273,7 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
  * and feature specific things like recalculate gapped alignment display
  */
 static gpointer _featureset_zoom_G[FEATURE_N_TYPE] = { 0 };
-void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
+void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 	int (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 	ZMapSkipList sl;
@@ -224,7 +297,7 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
 	}
 
 		/* featureset specific */
-	/* TBD */
+
 
 	return;
 }
@@ -833,8 +906,39 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	{
 		fi->zoom = item->canvas->pixels_per_unit_y;
 		fi->bases_per_pixel = 1.0 / fi->zoom;
-		zMapWindowCanvasFeaturesetZoom(fi);
+		zMapWindowCanvasFeaturesetZoom(fi, drawable);
 	}
+
+	/* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
+	 * this avoids artifacts due to wrap round
+	 * NOTE we cannot calc this post zoom as we get scroll afterwards
+	 * except possibly if we combine the zoom and scroll operation
+	 * but this code cannot assume that
+	 */
+	{
+		GdkRegion *region;
+		GdkRectangle rect;
+		double x,y;
+
+		region = gdk_drawable_get_visible_region(drawable);
+		gdk_region_get_clipbox ((const GdkRegion *) region, &rect);
+		gdk_region_destroy(region);
+
+		x = rect.x - 1;
+//		if(x < 0)
+//			x = 0;
+		fi->clip_x1 = x;
+		y = rect.y - 1;
+//		if(y < 0)
+//			y = 0;
+		fi->clip_y1 = y;
+
+		x = rect.x + rect.width + 1;
+		fi->clip_x2 = x;
+		y = rect.y + rect.height + 1;
+		fi->clip_y2 = y;
+	}
+
 
       if(!fi->display_index)
       {

@@ -136,6 +136,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
        */
   GdkGC *gc;             	  /* GC for graphics output */
 
+  gint clip_y1,clip_y2,clip_x1,clip_x2;		/* visble scroll region plus one pixel all round */
+
   double dx,dy;			  /* canvas offsets as calculated for paint */
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
