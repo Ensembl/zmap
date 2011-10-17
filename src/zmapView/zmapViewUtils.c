@@ -300,33 +300,34 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
 	{
 	case STEPLIST_PENDING:
 	  {
-           /* All requests are in STEPLIST_PENDING state and after dispatching will go into STEPLIST_DISPATCHED. */
+	    /* All requests are in STEPLIST_PENDING state and after dispatching will go into STEPLIST_DISPATCHED. */
 
             /* Call users dispatch func. */
-          if ((step_list->dispatch_func))
-            result = step_list->dispatch_func(view_con, curr_step->connection_req->request_data) ;
+	    if ((step_list->dispatch_func))
+	      result = step_list->dispatch_func(view_con, curr_step->connection_req->request_data) ;
 
-          if (result)
-          {
-            zMapThreadRequest(view_con->thread, curr_step->connection_req->request_data) ;
+	    if (result || !(step_list->dispatch_func))
+	      {
+		zMapThreadRequest(view_con->thread, curr_step->connection_req->request_data) ;
 
-            curr_step->connection_req->state = STEPLIST_DISPATCHED ;
-            curr_step->state = STEPLIST_DISPATCHED ;
-          }
-          else
-          {
-            curr_step->connection_req->has_failed = TRUE ;
-         }
+		curr_step->connection_req->state = STEPLIST_DISPATCHED ;
+		curr_step->state = STEPLIST_DISPATCHED ;
+	      }
+	    else
+	      {
+		curr_step->connection_req->has_failed = TRUE ;
+	      }
+
 	    break ;
 	  }
 	case STEPLIST_DISPATCHED:
 	  {
-          if (curr_step->connection_req->state != STEPLIST_DISPATCHED)
-            curr_step->state = STEPLIST_FINISHED ;
-
+	    if (curr_step->connection_req->state != STEPLIST_DISPATCHED)
+	      curr_step->state = STEPLIST_FINISHED ;
+	    
 	    break ;
 	  }
-      case STEPLIST_INVALID:  // if a step is not used then skip over it
+	case STEPLIST_INVALID:  // if a step is not used then skip over it
 	case STEPLIST_FINISHED:
 	  {
 	    /* Move to next step, do not dispatch, that is our callers decision.
