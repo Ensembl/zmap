@@ -105,6 +105,7 @@ typedef struct _BumpColRangeStruct
   ZMapSpanStruct span; 		/* extent of a feature - may be simple or complex */
   					/* must use this as it's defined in zmapFeature,h */
   double offset ;			/* bump offset for sub column */
+  double width;
   int column;			/* which one */
 
 } BumpColRangeStruct;
@@ -362,7 +363,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		{
 		case ZMAPBUMP_ALL:
 			feature->bump_offset = bump_data->offset;
-			bump_data->offset += bump_data->incr;
+			bump_data->offset += feature->width + bump_data->spacing;
 			break ;
 
 		case ZMAPBUMP_START_POSITION:
@@ -412,6 +413,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		break;
 
 	case ZMAPBUMP_OVERLAP:
+#warning really we need to post process the columsn and adjust the width to be that of the widest feature
 		/* free allocated memory left over */
 		for(n = 0,l = pos_list;l;n++)
 		{
@@ -488,7 +490,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
       	if( ! (new_range->span.x1 > curr_range->span.x2 || new_range->span.x2 < curr_range->span.x1))
             {
             	new_range->column++;
-            	new_range->offset += bump_data->incr;
+            	new_range->offset = curr_range->offset + curr_range->width;
             	// got an overlap, try next column
 #if MODULE_STATS
 		if(new_range->column > bump_data->n_col)
@@ -502,7 +504,8 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
     // either we found a space or ran out of features ie no overlap
 
   if(l)
-  {	/* NOTE: {} needed due to macro call */
+  {
+  	/* NOTE: {} needed due to macro call */
   	pos_list = bump_col_range_insert(pos_list, l, new_range);
   }
   else
@@ -511,8 +514,10 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
   }
 
   feature->bump_offset = new_range->offset;
-  if(bump_data->width < new_range->offset)
-     bump_data->width = new_range->offset;
+  if(!new_range->width)
+  	new_range->width = feature->width;
+  if(bump_data->width < new_range->offset + new_range->width)
+     bump_data->width = new_range->offset + new_range->width;;
 
   return pos_list;
 }

@@ -930,7 +930,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
  * composite = source1 ; source2 ;  etc
  *
  * we also have to patch in the featureset to column mapping as config does not do this
- * which will make display anc column style tables work
+ * which will make display and column style tables work
  * NOTE the composite featureset does not exist at all and is just used to name a ZMapWindowgraphDensityItem
  */
 GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col)

@@ -918,25 +918,15 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	{
 		GdkRegion *region;
 		GdkRectangle rect;
-		double x,y;
 
 		region = gdk_drawable_get_visible_region(drawable);
 		gdk_region_get_clipbox ((const GdkRegion *) region, &rect);
 		gdk_region_destroy(region);
 
-		x = rect.x - 1;
-//		if(x < 0)
-//			x = 0;
-		fi->clip_x1 = x;
-		y = rect.y - 1;
-//		if(y < 0)
-//			y = 0;
-		fi->clip_y1 = y;
-
-		x = rect.x + rect.width + 1;
-		fi->clip_x2 = x;
-		y = rect.y + rect.height + 1;
-		fi->clip_y2 = y;
+		fi->clip_x1 = rect.x - 1;
+		fi->clip_y1 = rect.y - 1;
+		fi->clip_x2 =rect.x + rect.width + 1;
+		fi->clip_y2 = rect.y + rect.height + 1;
 	}
 
 

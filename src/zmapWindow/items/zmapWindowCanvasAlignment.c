@@ -503,7 +503,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 				gdk_gc_set_foreground (featureset->gc, colour);
 				zMap_draw_line(drawable, featureset, cx1, ++cy1, cx2, --cy2);
 
-				if(cx2 > expose->area.y + expose->area.height)
+				if(cy2 > expose->area.y + expose->area.height)
 					break;
 			}
 		}
