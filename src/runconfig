@@ -62,7 +62,7 @@ case $opsys in
 		zmap_register_prefix_as_rpath $ACECONN_PREFIX
 	    fi
 	    # We need to find freetype2.pc in here. No idea why.
-	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH:/usr/share/pkgconfig"
 
 
 	    zmap_register_prefix_in_env $GTK_PREFIX

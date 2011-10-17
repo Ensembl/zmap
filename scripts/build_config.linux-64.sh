@@ -9,6 +9,9 @@ GTK_PREFIX=/software/acedb/gtk
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 
 
+#PACKAGE_CFG_PATH="$PACKAGE_CFG_PATH:/usr/share/pkgconfig"
+
+
 # I think I missed a trick installing the autotools
 # aclocal doesn't add the system path as well as
 # its install path to the search dirs
