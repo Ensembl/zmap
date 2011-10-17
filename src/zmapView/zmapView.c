@@ -2017,14 +2017,14 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
 	  is_pipe = g_str_has_prefix(server->url,"pipe://");
 
+
 	  /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
 	  // this is an optimisation: the server supports DNA so no point in searching for it
 	  // if we implement multiple sources then we can remove this
 	  if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-        {
-            view->sequence_server  = view_con ;
-            dna_requested = TRUE;
-        }
+	    {
+	      dna_requested = TRUE ;
+	    }
 
 
 	  if ((view_con = createConnection(view, make_new_connection ? view_conn : NULL,
@@ -2041,8 +2041,15 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	    {
 	      requested = TRUE ;
 	      view->sources_loading ++ ;
-	    }
 
+	      /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+	      // this is an optimisation: the server supports DNA so no point in searching for it
+	      // if we implement multiple sources then we can remove this
+	      if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+		{
+		  view->sequence_server  = view_con ;
+		}
+	    }
 
 
 	  // g_list_free(req_featuresets); no! this list gets used by threads
@@ -4332,8 +4339,8 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 
 	      /* Add the request to the step list. */
 	      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
-						align_cmd->cursor_position, align_cmd->features,
-						local_sequences, align_cmd->homol_set, align_cmd) ;
+						local_sequences, align_cmd) ;
+
 	      request = zmapViewStepListAddServerReq(view_con->step_list,
 						     view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any, REQUEST_ONFAIL_CANCEL_STEPLIST) ;
 
