@@ -155,6 +155,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
   va_list args ;
   int size = 0 ;
 
+
   /* Allocate struct. */
   /* MH17: could just allocate sizeof ReqUnion and have less code */
   switch (request_type)
