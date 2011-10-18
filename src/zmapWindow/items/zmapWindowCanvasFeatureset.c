@@ -662,6 +662,69 @@ static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItem
 }
 
 
+/* replaces a g_object_get_data() call and returns a static data struct */
+/* only used by the status bar if you click on a sub-feature */
+ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
+{
+	static ZMapFeatureSubPartSpanStruct sub_part;
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
+
+	switch(feature->type)
+	{
+	case ZMAPSTYLE_MODE_ALIGNMENT:
+		{
+			ZMapAlignBlock ab;
+			int i;
+
+			/* find the gap or match if we are bumped */
+			if(!fi->bumped)
+				return NULL;
+			if(!feature->feature.homol.align)	/* is un-gapped */
+				return NULL;
+
+			/* get sequence coords for x,y,  well y at least */
+			/* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
+
+
+			/* we refer to the actual feature gaps data not the display data
+			* as that may be compressed and does not contain sequence info
+			* return the type index and target start and end
+			*/
+			for(i = 0; i < feature->feature.homol.align->len;i++)
+			{
+				ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+				/* in the original foo based code
+				 * match n corresponds to the match block indexed from 1
+				 * gap n corresponds to the following match block
+				 */
+
+				sub_part.index = i + 1;
+				sub_part.start = ab->t1;
+				sub_part.end = ab->t2;
+
+				if(y >= ab->t1 && y <= ab->t2)
+				{
+					sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
+					return &sub_part;
+				}
+				if(y < ab->t1)
+				{
+					sub_part.start = sub_part.end + 1;
+					sub_part.end = ab->t1 -1;
+					sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
+					return &sub_part;
+				}
+			}
+		}
+		break;
+
+	default:
+		break;
+	}
+	return NULL;
+}
+
+
 
 static void zmap_window_featureset_item_item_init (ZMapWindowFeaturesetItem featureset)
 {

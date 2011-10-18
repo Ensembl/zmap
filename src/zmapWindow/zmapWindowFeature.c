@@ -184,7 +184,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
-      zmapWindowUpdateInfoPanel(window, feature, feature_item, feature_item, 0, 0,  0, 0,
+       zmapWindowUpdateInfoPanel(window, feature, feature_item, NULL, 0, 0,  0, 0,
 				NULL, TRUE, FALSE) ;
       result = TRUE ;
     }
@@ -1036,7 +1036,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0,  0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, sub_item, sub_feature, 0, 0,  0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 
@@ -1709,7 +1709,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
     }
 
   /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, item, item, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, feature, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
 
   return FALSE ;
 }

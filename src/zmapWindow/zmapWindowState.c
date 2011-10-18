@@ -663,13 +663,13 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
       if (focus_item)
 	{
 	  ZMapFeature feature ;
-	  FooCanvasItem *sub_item = focus_item, *highlight_item = focus_item ;
+	  FooCanvasItem *sub_item = focus_item;
 	  gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
 
 	  feature = zMapWindowCanvasItemGetFeature(focus_item) ;
 
 	  /* Pass information about the object clicked on back to the application. */
-	  zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0, 0, 0,
+	  zmapWindowUpdateInfoPanel(window, feature, sub_item, NULL, 0, 0, 0, 0,
 				    NULL, replace_highlight, highlight_same_names) ;
 	}
     }

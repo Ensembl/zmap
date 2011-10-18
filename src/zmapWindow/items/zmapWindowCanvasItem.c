@@ -742,7 +742,16 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   if(matching_interval == NULL)
     g_warning("No matching interval!");
   else if(sub_feature_out)
-    *sub_feature_out = g_object_get_data(G_OBJECT(matching_interval), ITEM_SUBFEATURE_DATA);
+  {
+  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
+  	{
+  		/* returns a static dara structure */
+  		*sub_feature_out =
+  			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
+  	}
+  	else
+  		*sub_feature_out = g_object_get_data(G_OBJECT(matching_interval), ITEM_SUBFEATURE_DATA);
+  }
 
   return matching_interval;
 }

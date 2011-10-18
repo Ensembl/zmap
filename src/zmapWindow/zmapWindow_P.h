@@ -1137,7 +1137,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       gboolean isExon);
 
 void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       FooCanvasItem *sub_item, FooCanvasItem *full_item,
+			       FooCanvasItem *item, ZMapFeatureSubPartSpan sub_feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
