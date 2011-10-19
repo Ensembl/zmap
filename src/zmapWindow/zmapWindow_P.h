@@ -750,12 +750,6 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowRulerCanvas ruler ;
 
-  /* stuff for column summarise */
-  GList *col_cover;     /* temp. data structs */
-  gint n_col_cover_show;      /* stats for my own curiosity/ to justify the code */
-  gint n_col_cover_hide;
-  gint n_col_cover_list;
-
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
 

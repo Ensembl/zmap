@@ -157,6 +157,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "max-score", "maximum score",
             offsetof(zmapFeatureTypeStyleStruct, max_score),0 },
 
+    { STYLE_PROP_SUMMARISE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_SUMMARISE,
+            "summarise featureset at low zoom", "summarise featureset at low zoom",
+            offsetof(zmapFeatureTypeStyleStruct, summarise), 0 },
+
     { STYLE_PROP_GFF_SOURCE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_SOURCE,
             "gff source", "GFF Source",
             offsetof(zmapFeatureTypeStyleStruct, gff_source) ,0 },
@@ -297,9 +301,6 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_ALIGNMENT_MASK_SETS, STYLE_PARAM_TYPE_QUARK_LIST_ID, ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,
             "mask featureset against others", "mask featureset against others",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT },
-    { STYLE_PROP_ALIGNMENT_SUMMARISE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE,
-            "summarise featureset at low zoom", "summarise featureset at low zoom",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.summarise), ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,

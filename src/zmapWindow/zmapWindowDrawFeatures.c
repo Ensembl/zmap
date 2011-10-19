@@ -861,27 +861,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
-
-  if(zMapWindowContainerSummarise(window,feature_set->style))
-    {
-      GList *feature_list;
-
-#if MH17_DONT_INCLUDE
-      zMapLogWarning("summarise %s zoom: %f,%f\n", g_quark_to_string(feature_set->unique_id),
-		     zMapStyleGetSummarise(feature_set->style),zMapWindowGetZoomFactor(window));
-#endif
-      feature_list = zMapWindowContainerSummariseSortFeatureSet(feature_set);
-
-      g_list_foreach(feature_list, ProcessListFeature, &featureset_data) ;
-      g_list_free(feature_list);
-
-      zMapWindowContainerSummariseClear(window,feature_set);
-    }
-  else
-    {
-
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
-    }
 
   {
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);

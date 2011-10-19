@@ -100,6 +100,9 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 
 
 
+
+
+
 /* clip to expose region */
 /* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
 void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
@@ -267,6 +270,10 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
 }
 #endif
 
+
+
+
+
 /*
  * do anything that needs doing on zoom
  * we have column specific things like are features visible
@@ -277,11 +284,38 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 {
 	int (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 	ZMapSkipList sl;
+	long trigger = (long) zMapStyleGetSummarise(featureset->style);
+	PixRect pix = NULL;
 
 	if(!featureset)
 		return;
 
-		/* feature specific */
+		/* featureset specific */
+	if(!featureset->bumped && trigger && featureset->n_features >= trigger)
+	{
+		/*
+			on min zoom we have nominally 1000 pixels so if we have 1000 features we should get some overlap
+			depends on the sequence length, longer sequence means more overlap (and likely more features
+			but simple no of features is easy to work with.
+			if we used 100 features out of sheer exuberance
+			then the chance of wasted CPU is small as the data is small
+			at high zoom we still do it as overlap is still overlap (eg w/ high coverage BAM regions)
+		*/
+
+		 /* NOTE: for faster code just process features overlapping the visible scroll region */
+		for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+		{
+			ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;
+
+			pix = zmapWindowCanvasFeaturesetSummarise(pix,featureset,feature);
+		}
+
+		/* clear up */
+		zmapWindowCanvasFeaturesetSummariseFree(featureset, pix);
+	}
+
+
+		/* feature specific eg bumped gapped alignments - adjust gaps display */
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
 		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
@@ -295,8 +329,6 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 
 		func(featureset,feature);
 	}
-
-		/* featureset specific */
 
 
 	return;
@@ -964,14 +996,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
-	/* check zoom level and recalculate: was done here for density items */
-	if(fi->zoom != item->canvas->pixels_per_unit_y)
-	{
-		fi->zoom = item->canvas->pixels_per_unit_y;
-		fi->bases_per_pixel = 1.0 / fi->zoom;
-		zMapWindowCanvasFeaturesetZoom(fi, drawable);
-	}
-
 	/* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
 	 * this avoids artifacts due to wrap round
 	 * NOTE we cannot calc this post zoom as we get scroll afterwards
@@ -999,11 +1023,20 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       		zmap_window_featureset_item_link_sideways(fi);
 
 		fi->features = g_list_sort(fi->features,zMapFeatureCmp);
-		fi->n_features = g_list_length(fi->features);
+//		fi->n_features = g_list_length(fi->features);
       	fi->display_index = zMapSkipListCreate(fi->features, zMapFeatureCmp);
       }
       if(!fi->display_index)
       	return; 		/* could be an empty column or a mistake */
+
+	/* check zoom level and recalculate */
+	if(fi->zoom != item->canvas->pixels_per_unit_y)
+	{
+		fi->zoom = item->canvas->pixels_per_unit_y;
+		fi->bases_per_pixel = 1.0 / fi->zoom;
+		zMapWindowCanvasFeaturesetZoom(fi, drawable);
+	}
+
 
       /* paint all the data in the exposed area */
 
@@ -1332,19 +1365,20 @@ static gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
 
 
 /* sort by genomic coordinate for display purposes */
+/* start coord then end coord reversed, mainly for summarise fucntion */
 static gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
 	ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
 
-
 	if(feata->y1 < featb->y1)
 		return(-1);
 	if(feata->y1 > featb->y1)
 		return(1);
-	if(feata->y2 < featb->y2)
-		return(-1);
+
 	if(feata->y2 > featb->y2)
+		return(-1);
+	if(feata->y2 < featb->y2)
 		return(1);
 	return(0);
 }

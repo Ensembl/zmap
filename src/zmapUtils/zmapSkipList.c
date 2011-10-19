@@ -168,7 +168,7 @@ ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
  * NOTE that it's possible to descend to ta leaf frpm the head ans still have previous leaves
  * depending on implementation details - this is due to add/ delete operations
  * but we do know that downward links go direct to a leaf
- * NOTE finding the last item efficiently is a bit harder - romm for more design here?? (function not provided)
+ * NOTE finding the last item efficiently is a bit harder - romm for more design here??
  * an alternative strategy is to know min and max key values and Find them
  */
 ZMapSkipList zMapSkipListFirst(ZMapSkipList head)
@@ -179,6 +179,27 @@ ZMapSkipList zMapSkipListFirst(ZMapSkipList head)
 			head = head->down;
 		while(head->prev)
 			head = head->prev;
+	}
+	return head;
+}
+
+
+
+/* we could had a tail pointer handy, but we'd need to wrap the data in a class thingy
+ * keep it simple: we don't expect to call this fucntion repeatedly
+ */
+ZMapSkipList zMapSkipListLast(ZMapSkipList head)
+{
+	while(head)		/* if true will stay so */
+	{
+		/* there's alwasy a down pointer, not always an up
+		 * so we keep going next, then down, then next...
+		 */
+		while(head->next)
+			head = head->next;
+		if(!head->down)
+			break;
+		head = head->down;
 	}
 	return head;
 }

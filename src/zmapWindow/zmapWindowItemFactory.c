@@ -317,9 +317,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   FooCanvasItem *item = NULL, *return_item = NULL;
   FooCanvasGroup *features_container = NULL;
   gboolean no_points_in_block = TRUE;
-  double summarise = 0.0;     /* 0.0 means don't */
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) parent_container;
-  ZMapWindow window;
   ZMapFeature feature = feature_stack->feature;
 
 #if MH17_REVCOMP_DEBUG > 1
@@ -583,18 +581,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  break;
 	}
 
-      summarise = zMapStyleGetSummarise(style);  /* get zoom level - not coded yet */
 
-      /* NOTE: temporarily accept any non zero zoom level
-       * need to compare style config with window zoom level
-       * but need to find out how first
-       */
-
-     window = zMapWindowContainerFeatureSetGetWindow(container);
-
-     if(!zMapWindowContainerSummarise(window,style) || zmapWindowContainerSummariseIsItemVisible(
-            window, points[0], points[1],points[2], points[3]))
-      {
+     {
             int offset,block_y1,block_y2;
 
             /*

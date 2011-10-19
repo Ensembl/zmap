@@ -103,6 +103,7 @@ items/zmapWindowCanvasFeatureset.c \
 items/zmapWindowCanvasFeatureset.h \
 items/zmapWindowCanvasFeatureset_I.h \
 items/zmapWindowCanvasFeaturesetBump.c \
+items/zmapWindowCanvasFeaturesetSummarise.c \
 items/zmapWindowContainerAlignment.c \
 items/zmapWindowContainerAlignment.h \
 items/zmapWindowContainerAlignment_I.h \
@@ -125,7 +126,6 @@ items/zmapWindowContainerGroup_I.h \
 items/zmapWindowContainerStrand.c \
 items/zmapWindowContainerStrand.h \
 items/zmapWindowContainerStrand_I.h \
-items/zmapWindowContainerSummarise.c \
 items/zmapWindowContainerUtils.c \
 items/zmapWindowContainerUtils.h \
 items/zmapWindowContainerUtils_P.h \

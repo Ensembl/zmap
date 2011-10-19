@@ -81,6 +81,23 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 
 
+/* used for featureset summarise to prevent display of invisible features */
+typedef struct _pixRect
+{
+	struct _pixRect *next,*prev;	/* avoid alloc and free overhead of GList
+						 * we only expect relatively few of these but a high turnover
+						 */
+
+	ZMapWindowCanvasFeature feature;
+	int y1,x2,y2;			/* we only need x2 as features are aligned centrally */
+	int start;				/* we need to remember the real start as we trim the rect from the front */
+} pixRect, *PixRect;    		/* think of a name not used elsewhere */
+
+#define N_PIXRECT_ALLOC		20
+
+PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
+void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
+
 
 typedef struct _zmapWindowFeaturesetItemClassStruct
 {
@@ -103,8 +120,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   FooCanvasItem __parent__;
 
   GQuark id;
-  ZMapFeatureTypeStyle style;			/* column style: not valid if several featuresets mapped into this */
-  ZMapFeatureTypeStyle featurestyle; 	/* current caches style for features */
+  ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */
+  ZMapFeatureTypeStyle featurestyle; 	/* current cached style for features */
 
   ZMapStrand strand;
   ZMapFrame frame;
@@ -112,6 +129,14 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   double zoom;			/* current units per pixel */
   double bases_per_pixel;
+
+  /* stuff for column summarise */
+  PixRect *col_cover;    	/* temp. data structs */
+#if SUMMARISE_STATS
+  gint n_col_cover_show;      /* stats for my own curiosity/ to justify the code */
+  gint n_col_cover_hide;
+  gint n_col_cover_list;
+#endif
 
   double start,end;
   double longest;			/* feature y-coords extent of biggest feature */
@@ -122,7 +147,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean linked_sideways;	/* that have been constructed */
 
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
-  int n_features;
+  long n_features;
   ZMapSkipList display_index;
 
   gboolean bumped;		/* using bumped X or not */

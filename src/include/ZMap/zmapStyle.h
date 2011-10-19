@@ -126,6 +126,8 @@ typedef enum
     STYLE_PROP_MIN_SCORE,
     STYLE_PROP_MAX_SCORE,
 
+    STYLE_PROP_SUMMARISE,
+
     STYLE_PROP_GFF_SOURCE,
     STYLE_PROP_GFF_FEATURE,
 
@@ -180,7 +182,6 @@ typedef enum
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
-    STYLE_PROP_ALIGNMENT_SUMMARISE,
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
@@ -239,6 +240,11 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
 #define ZMAPSTYLE_PROPERTY_MIN_SCORE              "min-score"
 #define ZMAPSTYLE_PROPERTY_MAX_SCORE              "max-score"
+
+/* ... optimese the display */
+#define ZMAPSTYLE_PROPERTY_SUMMARISE              "summarise"
+
+
 /* ... meta */
 #define ZMAPSTYLE_PROPERTY_GFF_SOURCE             "gff-source"
 #define ZMAPSTYLE_PROPERTY_GFF_FEATURE            "gff-feature"
@@ -299,7 +305,6 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE           "alignment-summarise"
 
 
 /* Sequence properties. */
@@ -695,8 +700,6 @@ typedef struct
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
 
-   double summarise;          /* only display visible features up this zoom level */
-
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
@@ -794,6 +797,7 @@ typedef struct _zmapFeatureTypeStyleStruct
                                                  have scores. */
   double min_score, max_score ;                           /*!< Min/max for score width calc. */
 
+   double summarise;         			 /* only display visible features up this zoom level */
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -1122,8 +1126,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)
 
-#define zMapStyleGetSummarise(style) \
-     (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.summarise : 0.0)
+#define zMapStyleGetSummarise(style) (style->summarise)
 
 
 char *zMapStyleCreateName(char *style_name) ;

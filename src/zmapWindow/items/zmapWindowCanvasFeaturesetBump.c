@@ -92,7 +92,7 @@ deskpro17848[mh17]56: zmap --conf_file=ZMap_bins
 100k features: tradtional bump in 329.828 seconds (445x)
 */
 
-#define MODULE_STATS	0
+#define MODULE_STATS	0	/* NOTE this is for BUMP_OVERLAP, colinear is BUMP_ALL */
 #define SLOW_BUT_EASY	0	/* 30% quicker if not */
 
 typedef struct _BumpColRangeStruct
@@ -141,6 +141,8 @@ typedef  BumpColRange BCR;
 
 BumpColRange bump_col_range_free_G = NULL;
 static void bump_col_range_free(BumpColRange bcr);
+
+GHashTable *sub_col_width_G = NULL;	 /* for complex overlap */
 
 
 #define N_BUMP_COL_RANGE_ALLOC	1000	/* we expect to bump 10-200k features, normally 1-20k */
@@ -243,7 +245,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	 * it's a linear scan so we could just flags all regardless of scroll region
 	 * but it might be quicker to process the scroll region only
 	 *
-	 * erm... compress_more is implied by start and end coords
+	 * erm... compress_mode is implied by start and end coords
 	 */
 	/* ZMapWindowCompressMode compress_mode = (ZMapWindowCompressMode) compress; */
 
@@ -251,6 +253,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	BCR pos_list = NULL;
 	BCR l;
 	int n;
+	double width;
 #if MODULE_STATS
 	double time;
 #endif
@@ -282,6 +285,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 #endif
 	/* prepare */
 
+	if(!sub_col_width_G)
+		sub_col_width_G = g_hash_table_new(NULL,NULL);
+	else
+		g_hash_table_remove_all(sub_col_width_G);
+
 	bump_data->offset = 0.0;
 	bump_data->incr = featureset->width + bump_data->spacing;
 
@@ -294,7 +302,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	 * if we want bump modes with unjoined up alignemnts then the mode can clear this flag
 	 */
 
-	featureset->bump_extra_overlap = 0;
+	if(bump_mode != ZMAPBUMP_UNBUMP)
+		featureset->bump_extra_overlap = 0;
 
 	switch(bump_mode)
 	{
@@ -306,6 +315,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	case ZMAPBUMP_NAME_INTERLEAVE:
 		bump_mode = ZMAPBUMP_OVERLAP;
 		/* fall through */
+	case ZMAPBUMP_START_POSITION:
 	case ZMAPBUMP_NAME_NO_INTERLEAVE:
 	case ZMAPBUMP_NAME_COLINEAR:
 	case ZMAPBUMP_NAME_BEST_ENDS:
@@ -316,6 +326,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		/* fall through */
 
 	case ZMAPBUMP_OVERLAP:
+	case ZMAPBUMP_ALL:
 		/* performance stats */
 		bump_data->n_col = 0;
 		bump_data->comps = 0;
@@ -332,11 +343,13 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	{
 		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
 
-		zMapWindowCanvasFeaturesetGetFeatureExtent(featureset, feature, bump_data->complex, &bump_data->span);
-
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
 			/* just redisplays using normal coords */
+
+			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
+				feature->flags |= FEATURE_HIDDEN;
+
 			feature->flags &= ~FEATURE_MARK_HIDE;
 			if(!(feature->flags & FEATURE_HIDE_REASON))
 			{
@@ -344,20 +357,29 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			}
 			continue;
 		}
-		else if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+
+		zMapWindowCanvasFeaturesetGetFeatureExtent(featureset, feature, bump_data->complex, &bump_data->span);
+		if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
 		{
 			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
 			continue;
 		}
-		else if (bump_data->complex && feature->left)
+
+		if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))
 		{
-			/* already processed */
-			continue;
+			/* bump shows all, that's what it's for */
+			/* however we still don't show hiodden amsked features */
+			feature->flags &= ~FEATURE_HIDDEN;
 		}
 
 		if(feature->flags & FEATURE_HIDDEN)
 			continue;
 
+		if (bump_data->complex && feature->left)
+		{
+			/* already processed */
+			continue;
+		}
 
 		switch(bump_mode)
 		{
@@ -366,19 +388,13 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			bump_data->offset += feature->width + bump_data->spacing;
 			break ;
 
-		case ZMAPBUMP_START_POSITION:
-			break ;
-
 		case ZMAPBUMP_OVERLAP:
 			pos_list = bump_overlap(feature, bump_data, pos_list);
 			break ;
-		case ZMAPBUMP_NAME:
-			break ;
+
 		case ZMAPBUMP_ALTERNATING:
 			feature->bump_offset = bump_data->offset;
 			bump_data->offset = bump_data->incr - bump_data->offset;
-			break;
-
 			break;
 
 		default:
@@ -412,15 +428,40 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		featureset->bump_width = bump_data->incr * 2 - bump_data->spacing;
 		break;
 
+	case ZMAPBUMP_ALL:
+		featureset->bump_width = bump_data->offset;
+		break;
+
 	case ZMAPBUMP_OVERLAP:
-#warning really we need to post process the columsn and adjust the width to be that of the widest feature
 		/* free allocated memory left over */
 		for(n = 0,l = pos_list;l;n++)
 		{
 			BumpColRange range = BCR_DATA(l);
 			l = bump_col_range_delete(l,l,range);
 		}
-		featureset->bump_width = bump_data->width + bump_data->incr - bump_data->spacing;
+
+		/*  we need to post process the columns and adjust the width to be that of the widest feature */
+
+			/* get whole column width  and set column offsets */
+		for(n = 0, featureset->bump_width = 0; (width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(n)))) ;n++)
+		{
+			g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
+			featureset->bump_width += width + bump_data->spacing;
+		}
+
+		if(featureset->bumped) for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+		{
+			ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+
+			if(!(feature->flags & FEATURE_HIDDEN))
+			{
+				/* feature->bump offset is really column index till we set it here */
+				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( (int) feature->bump_offset)));
+				feature->bump_offset = width;
+			}
+		}
+
+
 #if MODULE_STATS
 		time = zMapElapsedSeconds - time;
 		printf("bump overlap %s: %d features %d comparisons in %d columns, residual = %d in %.3f seconds (slow = %d)\n", g_quark_to_string(featureset->id),bump_data->features,bump_data->comps,bump_data->n_col,n,time, SLOW_BUT_EASY);
@@ -429,6 +470,16 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 
 	default:
 		break;
+	}
+
+	if(featureset->bump_width + featureset->dx > ZMAP_WINDOW_MAX_WINDOW)
+	{
+		zMapWarning("Cannot bump - too many features to fit into the window.\nTry setting the mark to a smaller region","");
+
+		/* need to hide summarised features again */
+		zMapWindowCanvasFeaturesetBump(item, ZMAPBUMP_UNBUMP, compress, bump_data);
+
+		return FALSE;
 	}
 
 
@@ -455,6 +506,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
   BCR cur;
   BCR last = NULL;
   BumpColRange curr_range,new_range;
+  double width;
 
   new_range = bump_col_range_alloc();
   new_range->span.x1 = bump_data->span.x1;
@@ -513,11 +565,14 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
   	pos_list = bump_col_range_append(pos_list, last, new_range);
   }
 
-  feature->bump_offset = new_range->offset;
-  if(!new_range->width)
-  	new_range->width = feature->width;
-  if(bump_data->width < new_range->offset + new_range->width)
-     bump_data->width = new_range->offset + new_range->width;;
+	/* store the column for later calculation of the offset */
+  feature->bump_offset = (double) new_range->column;
+
+	/* get the max width of a feature in each column */
+	/* totally yuk casting here but bear with me */
+  width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(new_range->column)));
+  if(width < feature->width)
+  	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int) feature->width));
 
   return pos_list;
 }
