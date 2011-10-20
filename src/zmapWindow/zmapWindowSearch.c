@@ -292,7 +292,10 @@ static void onSearchColumnChanged(GtkWidget *col,gpointer user_data)
 
   if ((column_id = entry_get_text_quark(GTK_ENTRY(search_data->column_entry), wild_card_str)) != 0)
     {
-      column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
+	if(column_id == wild_card_id)
+		column_id = 0;
+	else
+      	column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
 					  search_data->column_id, wild_card_id);
     }
 
