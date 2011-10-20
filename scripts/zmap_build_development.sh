@@ -22,6 +22,6 @@ ERROR_ID=''
 
 #./build_run.sh $ERROR_ID -d -g -m -n $BUILD_PREFIX || RC=1
 
-./build_run.sh $ERROR_ID -g -m -n $BUILD_PREFIX || RC=1
+./build_run.sh $ERROR_ID -d -g -m  $BUILD_PREFIX || RC=1
 
 exit $RC
