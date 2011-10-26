@@ -213,10 +213,12 @@ static void zmap_window_transcript_feature_destroy(GObject *object)
 {
   ZMapWindowTranscriptFeature transcript ;
   ZMapWindowTranscriptFeatureClass transcript_class ;
-  GList *list ;
 
   transcript = ZMAP_WINDOW_TRANSCRIPT_FEATURE(object);
   transcript_class = ZMAP_WINDOW_TRANSCRIPT_FEATURE_GET_CLASS(transcript) ;
+
+#if 0 // MH17 only use was here and suddendly it crashes because list == 1
+  GList *list ;
 
   list = transcript->overlay_reparented;
 
@@ -229,6 +231,7 @@ static void zmap_window_transcript_feature_destroy(GObject *object)
 
   g_list_free(transcript->overlay_reparented);
   transcript->overlay_reparented = NULL;
+#endif
 
   if(G_OBJECT_CLASS(canvas_item_class_G)->dispose)
     (*G_OBJECT_CLASS(canvas_item_class_G)->dispose)(object);
