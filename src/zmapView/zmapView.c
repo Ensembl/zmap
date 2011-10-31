@@ -2252,8 +2252,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
 	      view_window = list_item->data ;
 
-	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
-		zMapWindowHighlightObject(view_window->window, item,
+		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+		    zMapWindowHighlightObject(view_window->window, item,
 					  window_select->replace_highlight_item,
 					  window_select->highlight_same_names) ;
 	    }

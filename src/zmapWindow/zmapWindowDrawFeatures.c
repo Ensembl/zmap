@@ -1182,6 +1182,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
       /* unbumped features might be wider */
   zmapWindowFullReposition(canvas_data->window) ;
 
+
   return ;
 }
 
@@ -1243,7 +1244,6 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 	    }
 	}
     }
-
 
   return ;
 }
@@ -2439,6 +2439,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 
   if(feature_item)
       featureset_data->feature_count++;
+
   return ;
 }
 

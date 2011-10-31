@@ -379,6 +379,8 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(transcript)->get_style)(transcript);
 
+//printf("add transcript %s\n",g_quark_to_string(transcript->feature->original_id));
+
   switch(sub_feature->subpart)
     {
     case ZMAPFEATURE_SUBPART_EXON:
@@ -390,6 +392,7 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 				   "x2", width_b, "y2", point_b,
 				   NULL);
 
+//printf("added rect @%p (%f,%f %f,%f)\n",item,width_a,point_a,width_b,point_b);
 	break;
       }
 
@@ -429,6 +432,7 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 				   "cap_style",      GDK_CAP_BUTT,
 				   NULL);
 
+//printf("added line @%p (%f,%f %f,%f)\n",item,mid_short,point_a,mid_long,point_b);
 	break;
       }
     default:

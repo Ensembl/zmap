@@ -141,7 +141,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   double start,end;
   double longest;			/* feature y-coords extent of biggest feature */
   gboolean overlap;		/* default is to assume features do, some styles imply that they do not (eg coverage/ heatmap) */
-  double bump_extra_overlap;	/* calculated according length of compound features */
+  double bump_overlap;	/* calculated according length of compound features */
 
   gboolean link_sideways;	/* has complex features */
   gboolean linked_sideways;	/* that have been constructed */

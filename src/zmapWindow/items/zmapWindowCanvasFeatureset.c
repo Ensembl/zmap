@@ -133,18 +133,18 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 
 /* clip to expose region */
 /* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
-/* NOTE rectangle may be drawn partially if they overlap the visible region
- *in which case a false outline will be draw outside the region
+/* NOTE rectangles may be drawn partially if they overlap the visible region
+ * in which case a false outline will be draw outside the region
  */
 void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
 {
 	/* as our rectangles are all aligned to H and V we can clip easily */
 
-
 	if(cy1 > featureset->clip_y2)
 		return;
 	if(cy2 < featureset->clip_y1)
 		return;
+
 	if(cx1 > featureset->clip_x2)
 		return;
 	if(cx2 < featureset->clip_x1)
@@ -224,12 +224,12 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 /* get the total sequence extent of a simple or complex feature */
 /* used by bumping; we allow force to simple for optional but silly bump modes */
 static gpointer _featureset_extent_G[FEATURE_N_TYPE] = { 0 };
-void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span)
+gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span, double *width)
 {
-	void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapSpan span);
+	void (*func) (ZMapWindowCanvasFeature feature, ZMapSpan span, double *width);
 
 	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
-		return;
+		return FALSE;
 
 	func = _featureset_extent_G[feature->type];
 
@@ -243,11 +243,13 @@ void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem feature
 		/* all features have an extent, if it's simple get it here */
 		span->x1 = feature->feature->x1;	/* use real coord from the feature context */
 		span->x2 = feature->feature->x2;
+		*width = feature->width;
 	}
 	else
 	{
-		func(featureset, feature, span);
+		func(feature, span, width);
 	}
+	return TRUE;
 }
 
 
@@ -475,7 +477,11 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(ZMapWindow
 
 	if(fi->overlap)
 	{
-		search.y1 -= fi->longest + fi->bump_extra_overlap;
+		if(fi->bumped)
+		  	search.y1 -= fi->bump_overlap;
+		else
+			search.y1 -= fi->longest;
+
 		if(search.y1 < fi->start)
 			search.y1 = fi->start;
 	}
@@ -985,6 +991,15 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 }
 
 
+void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
+{
+    if(fi->link_sideways && !fi->linked_sideways)
+    	zmap_window_featureset_item_link_sideways(fi);
+
+    fi->features = g_list_sort(fi->features,zMapFeatureCmp);
+    fi->display_index = zMapSkipListCreate(fi->features, zMapFeatureCmp);
+}
+
 
 void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -1018,15 +1033,9 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 
       if(!fi->display_index)
-      {
-      	if(fi->link_sideways && !fi->linked_sideways)
-      		zmap_window_featureset_item_link_sideways(fi);
+	      zMapWindowCanvasFeaturesetIndex(fi);
 
-		fi->features = g_list_sort(fi->features,zMapFeatureCmp);
-//		fi->n_features = g_list_length(fi->features);
-      	fi->display_index = zMapSkipListCreate(fi->features, zMapFeatureCmp);
-      }
-      if(!fi->display_index)
+	if(!fi->display_index)
       	return; 		/* could be an empty column or a mistake */
 
 	/* check zoom level and recalculate */
@@ -1075,16 +1084,21 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		if(feat->y1 > y2)
 			break;	/* finished */
 		if(feat->y2 < y1)
+		{
+		    /* if bumped and complex then the first feature does the join up lines */
+		    if(!fi->bumped || feat->left)
 			continue;
+		}
 
 		if((feat->flags & FEATURE_HIDDEN))
+		{
 			continue;
-
+		}
 		/* when bumped we can have a sequence wide 'bump_overlap
 		 * which means we could try to paint all the features
 		 * which would be slow
-		 * so ew need to etst again for the expose regionand not call gdk
-		 * for alignment the first feature in a set has the colinear lines and we clip in that paint fucntion too
+		 * so we need to test again for the expose region and not call gdk
+		 * for alignments the first feature in a set has the colinear lines and we clip in that paint fucntion too
 		 */
 		/* erm... already did that */
 

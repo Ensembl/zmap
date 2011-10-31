@@ -227,6 +227,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
 
+
   canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
   zMapAssert(ZMAP_IS_CANVAS_ITEM(canvas_item)) ;
 
@@ -279,7 +280,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       break ;
     }
 
-  zmapWindowFocusClearOverlayManagers(window->focus) ;
+   zmapWindowFocusClearOverlayManagers(window->focus) ;
 
 
 
@@ -325,7 +326,6 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
 
-
   zmapWindowHighlightFocusItems(window);
 
   return ;
@@ -345,6 +345,7 @@ void zmapWindowHighlightFocusItems(ZMapWindow window)
 
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
     zmapWindowFocusHighlightFocusItems(window->focus, window) ;
+
 
   return ;
 }

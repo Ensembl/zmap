@@ -2297,12 +2297,88 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   /* NOTE this function does nothing */
   zmapWindowReFocusHighlights(window);
 
+
   zMapWindowRedraw(window);
 
  uninterrupt:
   zmapWindowUninterruptExpose(window);
 
   return ;
+}
+
+
+
+
+static void itemXCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  FooCanvasGroup *group;
+  GList *list;
+
+    if(ZMAP_IS_CANVAS_ITEM(item))         // complex object
+      {
+	    ZMapWindowCanvasItem zwci = (ZMapWindowCanvasItem) item;
+	    if(zwci->feature->style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+	    {
+		  printf("transcript %s\n", g_quark_to_string(zwci->feature->original_id));
+		  group = (FooCanvasGroup *) item;
+		  list = group->item_list;
+
+		  for(;list;list = list->next)
+		  {
+			FooCanvasItem *foo = (FooCanvasItem *) list->data;
+			char *what = "????";
+			if(FOO_IS_CANVAS_RE(foo))
+			    what = "rect";
+			if(FOO_IS_CANVAS_LINE(foo))
+			    what = "line";
+			printf("%s @ %p (%f,%f %f,%f)\n",what, foo, foo->x1,foo->y1,foo->x2,foo->y2);
+		  }
+	    }
+      }
+
+  return ;
+}
+
+static void dumpXCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points,
+                  ZMapContainerLevelType level,  gpointer user_data)
+{
+      switch(level)
+      {
+        case ZMAPCONTAINER_LEVEL_ROOT:
+        case ZMAPCONTAINER_LEVEL_ALIGN:
+        case ZMAPCONTAINER_LEVEL_BLOCK:
+        case ZMAPCONTAINER_LEVEL_STRAND:
+          break;
+
+        case ZMAPCONTAINER_LEVEL_FEATURESET:
+         {
+            ZMapWindowContainerFeatures features;
+            if ((features = zmapWindowContainerGetFeatures(container_parent)))
+              {
+                FooCanvasGroup *features_group;
+                features_group = (FooCanvasGroup *)features;
+                g_list_foreach(features_group->item_list, itemXCB, user_data) ;
+              }
+            break;
+          }
+
+          default:
+            zMapAssertNotReached();
+            break;
+      }
+//printf("DumpCB ends %s\n",tstamp());
+}
+
+
+
+void zmapWindowDumpFileX(ZMapWindow window,char *file)
+{
+
+	printf("\ndump canvas from %s\n\n",file);
+      zmapWindowContainerUtilsExecute(window->feature_root_group,ZMAPCONTAINER_LEVEL_FEATURESET, dumpXCB,NULL);
+
+
 }
 
 /* Move the window to a new part of the canvas, we need this because when the window is

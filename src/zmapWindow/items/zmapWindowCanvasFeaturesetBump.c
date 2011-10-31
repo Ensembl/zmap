@@ -303,7 +303,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	 */
 
 	if(bump_mode != ZMAPBUMP_UNBUMP)
-		featureset->bump_extra_overlap = 0;
+		featureset->bump_overlap = 0;
 
 	switch(bump_mode)
 	{
@@ -337,11 +337,16 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	}
 
 
+	/* in case we get a bump before a paint eg in initial display */
+      if(!featureset->display_index)
+	  zMapWindowCanvasFeaturesetIndex(featureset);
+
 	/* process all features */
 
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
 		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+		double extra;
 
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
@@ -358,7 +363,9 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			continue;
 		}
 
-		zMapWindowCanvasFeaturesetGetFeatureExtent(featureset, feature, bump_data->complex, &bump_data->span);
+		if(!zMapWindowCanvasFeaturesetGetFeatureExtent(feature, bump_data->complex, &bump_data->span, &bump_data->width))
+			continue;
+
 		if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
 		{
 			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
@@ -368,7 +375,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))
 		{
 			/* bump shows all, that's what it's for */
-			/* however we still don't show hiodden amsked features */
+			/* however we still don't show hidden masked features */
 			feature->flags &= ~FEATURE_HIDDEN;
 		}
 
@@ -377,15 +384,20 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 
 		if (bump_data->complex && feature->left)
 		{
-			/* already processed */
+			/* already processed the series of features  */
 			continue;
 		}
+
+		extra = bump_data->span.x2 - bump_data->span.x1;
+		if(extra > featureset->bump_overlap)
+			featureset->bump_overlap = extra;
 
 		switch(bump_mode)
 		{
 		case ZMAPBUMP_ALL:
+			/* NOTE this is the normal colinear bump, one set of features per column */
 			feature->bump_offset = bump_data->offset;
-			bump_data->offset += feature->width + bump_data->spacing;
+			bump_data->offset += bump_data->width + bump_data->spacing;
 			break ;
 
 		case ZMAPBUMP_OVERLAP:
@@ -449,7 +461,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			featureset->bump_width += width + bump_data->spacing;
 		}
 
-		if(featureset->bumped) for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+// ! crazy !		if(featureset->bumped)
+		for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 		{
 			ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
 
@@ -542,7 +555,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
       	if( ! (new_range->span.x1 > curr_range->span.x2 || new_range->span.x2 < curr_range->span.x1))
             {
             	new_range->column++;
-            	new_range->offset = curr_range->offset + curr_range->width;
+//            	new_range->offset = curr_range->offset + curr_range->width;
             	// got an overlap, try next column
 #if MODULE_STATS
 		if(new_range->column > bump_data->n_col)
@@ -571,8 +584,8 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
 	/* get the max width of a feature in each column */
 	/* totally yuk casting here but bear with me */
   width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(new_range->column)));
-  if(width < feature->width)
-  	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int) feature->width));
+  if(width < bump_data->width)
+  	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int) bump_data->width));
 
   return pos_list;
 }

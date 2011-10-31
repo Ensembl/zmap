@@ -494,6 +494,17 @@ ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters
 
   style = styleCreate(n_parameters, parameters) ;
 
+    if(style->mode ==ZMAPSTYLE_MODE_BASIC || style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+	/* default summarise to 1000 to get round lack of configuration, can aloways set to zero if wanted */
+	  if(!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
+	  {
+		  zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
+		  style->summarise = 1000.0 ;
+	  }
+    }
+
+
   return style ;
 }
 
@@ -811,6 +822,9 @@ gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
  * Function returns FALSE if there style is not valid and the GError says
  * what the problem was.
  *  */
+/* (mh17) NOTE this fucntion is only called from obscure places and is not run for the majority of drawing operations
+ * so attempting to add style defaults here is doomed to failure
+ */
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 {
   gboolean valid = TRUE ;
@@ -978,8 +992,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
       }
     }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#if 0 // see comment at the top of this function
   /* Now do some mode specific stuff.... */
   if (valid)
     {
@@ -990,14 +1003,18 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
           break ;
         }
       case ZMAPSTYLE_MODE_BASIC:
-        {
-          break ;
-        }
-      case ZMAPSTYLE_MODE_TRANSCRIPT:
-        {
-          break ;
-        }
       case ZMAPSTYLE_MODE_ALIGNMENT:
+	  {
+		/* default summarise to 1000 to get round lack of configuration */
+		if(!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
+		{
+		  zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
+		  style->summarise = 1000.0 ;
+		}
+		break;
+	  }
+
+      case ZMAPSTYLE_MODE_TRANSCRIPT:
         {
           break ;
         }
@@ -1015,8 +1032,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
         }
       }
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+#endif
 
   /* Construct the error if there was one. */
   if (!valid)
