@@ -218,7 +218,7 @@ gboolean zmapWindowDumpFile(ZMapWindow window, char *filename)
 
   dump_opts.filename = filename ;
   dump_opts.extent = EXTENT_VISIBLE ;
-  dump_opts.format = DUMP_EPSF ;
+  dump_opts.format = DUMP_PS ;
   dump_opts.customise = CUSTOM_BEST_FIT ;
   dump_opts.orientation = ORIENTATION_PORTRAIT ;
   dump_opts.aspect = ASPECT_AS_IS ;
@@ -309,6 +309,8 @@ printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts-
 
   return result ;
 }
+
+
 
 
 

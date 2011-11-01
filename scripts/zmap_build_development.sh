@@ -20,10 +20,8 @@ BUILD_PREFIX='DEVELOPMENT'
 #ERROR_ID='-a edgrif@sanger.ac.uk'
 ERROR_ID=''
 
-./build_run.sh $ERROR_ID -d -g -m -n $BUILD_PREFIX || RC=1
+#./build_run.sh $ERROR_ID -d -g -m -n $BUILD_PREFIX || RC=1
 
-#./build_run.sh -a $ERROR_ID -d -g -m -n -t -z $SUB_DIR $BUILD_PREFIX || RC=1
-
-
+./build_run.sh $ERROR_ID -d -g -m  $BUILD_PREFIX || RC=1
 
 exit $RC

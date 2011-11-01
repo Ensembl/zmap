@@ -1458,6 +1458,7 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
 
+
 #if MH17_REVCOMP_DEBUG > 1
       zMapLogWarning("canvas item draw %s %p %f,%f - %f,%f",
             g_quark_to_string(canvas_item->feature->unique_id),

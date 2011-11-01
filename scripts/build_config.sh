@@ -21,8 +21,8 @@ fi
 # The above is because the old version of bash doesn't have...
 # ${BASH_SOURCE} should be just what you're asking for.
 # ${BASH_SOURCE%/*} should give you the path you need.
-# ${BASH_SOURCE##*/} would give just the actual name of the file, 
-# just in case you need to know the name it was called by. 
+# ${BASH_SOURCE##*/} would give just the actual name of the file,
+# just in case you need to know the name it was called by.
 
 # Some simple functions to start with. skip over if just changing variables
 # Usage: _config_message_err <message>
@@ -117,7 +117,12 @@ ZMAP_MASTER_BUILD_DIST=no
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
-#ZMAP_BUILD_MACHINES="deskpro17537 mac18480i cbi4"
+
+
+# temp for ubuntu builds...
+#ZMAP_BUILD_MACHINES="deskpro20407 mac18480i lucid-dev64"
+
+# previous lenny builds...
 ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
 
 
@@ -171,7 +176,7 @@ EXPAT_HTML_DOC_LOCATION=/usr/share/doc/libexpat1-dev/expat.html
 
 # These need to be relative (sub dirs) to $ZMAP_BUILD_CONTAINER!
 # The directory itself will not be copied, but _all_ of it's children will
-# 
+#
 ZMAP_WEBSITE_SOURCE_DIRS="docs/ZMap doc web"
 
 # ZMAP_WEBSITE_SINGLE_FILES is a list of files which need to be copied across too.
@@ -201,7 +206,7 @@ NEED_LIBTOOLIZE=yes
 
 
 # runconfig variables
-# 
+#
 
 # CC, CFLAGS & LDFLAGS are passed into configure on the command line as
 # configure CFLAGS=$CFLAGS_args
@@ -214,7 +219,7 @@ LDFLAGS_args=""
 COMMON_CONFIGURE_ARGS="--enable-share --disable-static --enable-debug --enable-shtml-doc"
 SPECIFIC_CONFIGURE_ARGS=""
 
-# 
+#
 FOOCANVAS_DEV=no
 FOOCANVAS_PREFIX=/var/tmp/rds/software
 # For machines that mount /software tree this should automatically be machine specific!

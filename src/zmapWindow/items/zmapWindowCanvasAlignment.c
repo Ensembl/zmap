@@ -528,20 +528,25 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
  * we adjust the extent of the first CanvasAlignment to cover tham all
  * as the first one draws all the colinear lines
  */
-static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapSpan span)
+static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
 {
 	ZMapWindowCanvasFeature first = feature;
-	double extra;
+
+	*width = feature->width;
 
 	while(first->left)
+	{
 		first = first->left;
+		if(first->width > *width)
+		    *width = first->width;
+	}
 
 	while(feature->right)
+	{
 		feature = feature->right;
-
-	extra = feature->y2 - first->y2;
-	if(extra > featureset->bump_extra_overlap)
-		featureset->bump_extra_overlap = extra;
+		if(feature->width > *width)
+		    *width = feature->width;
+	}
 
 	first->y2 = feature->y2;
 

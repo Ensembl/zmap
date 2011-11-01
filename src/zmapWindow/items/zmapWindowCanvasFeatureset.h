@@ -98,6 +98,8 @@ guint32 zMap_gdk_color_to_rgba(GdkColor *color);
 
 int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel);
 
+void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
+
 
 /* enums for function type */
 typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
@@ -157,7 +159,7 @@ typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEA
 
 void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose);
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
-void zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span);
+gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span, double *width);
 #define CANVAS_FEATURESET_LINK_FEATURE	0	/* not needed: is OTT */
 #if CANVAS_FEATURESET_LINK_FEATURE
 int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature);

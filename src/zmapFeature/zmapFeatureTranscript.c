@@ -400,14 +400,18 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 	    }
 
 
-	  /* cds part, simple now, just set to cds_start/end. */
-	  ex_cds = *exon_span ;				    /* struct copy. */
+	  /* cds part, simple now, just set to cds_start/end (only do this if there is
+	   * more, sometimes gene prediction programs produce very short exons....) */
+	  if (ex_cds_start < exon_span->x2)
+	    {
+	      ex_cds = *exon_span ;				    /* struct copy. */
 
-	  if (ex_cds_start)
-	    ex_cds.x1 = ex_cds_start ;
+	      if (ex_cds_start)
+		ex_cds.x1 = ex_cds_start ;
 
-	  if (ex_cds_end)
-	    ex_cds.x2 = ex_cds_end ;
+	      if (ex_cds_end)
+		ex_cds.x2 = ex_cds_end ;
+	    }
 	}
 
 

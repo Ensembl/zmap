@@ -495,8 +495,13 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
   item = focus->hot_item;
 
   /* for composite canvas items */
-  if(item)
-  	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
+  /* NOTE there's a theory that iten may be Foo but not Zmap eg when clicking on a trancript's exon */
+  /* it's quite difficult to tell how true this is, need to trawl thro'
+   * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
+   */
+
+  if(item && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+    zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
 
   return item ;
 }

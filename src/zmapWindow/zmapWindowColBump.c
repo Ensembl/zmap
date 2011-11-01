@@ -424,10 +424,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	else
 	{
 		/* bump features within each featureset item, we normally only expect one */
+		/* except for coverage data where we have a few heatmaps.*/
 
 		GList *l;
 		FooCanvasGroup *column_features;
 		BumpFeaturesetStruct bump_data = { 0 };
+		gboolean ok = TRUE;
 
 		column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
@@ -441,9 +443,15 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		for(l = column_features->item_list;l;l = l->next)
       	{
       		/* cast to int because of headers catch22 knottiness */
-			zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data);
+			if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+			    ok = FALSE;
       	}
-	      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+
+      	/* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
+		 * in practice w/ heatmaps there will always be room and w/ other featrues only 1 CanavsFeatureset
+		 */
+      	if(ok)
+		  zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
 	}
 //		time = zMapElapsedSeconds - time;
 //		printf("featureset bump in %.3f seconds\n", time);
