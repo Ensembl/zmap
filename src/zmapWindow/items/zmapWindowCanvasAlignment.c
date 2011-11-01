@@ -525,7 +525,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
  * that would be revealed on Zoom
  */
 /*
- * we adjust the extent fo the forst CanvasAlignment to cover tham all
+ * we adjust the extent of the first CanvasAlignment to cover tham all
  * as the first one draws all the colinear lines
  */
 static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapSpan span)
