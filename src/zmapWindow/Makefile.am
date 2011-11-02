@@ -92,6 +92,9 @@ items/zmapWindowCanvasBasic_I.h \
 items/zmapWindowCanvasGlyph.c \
 items/zmapWindowCanvasGlyph.h \
 items/zmapWindowCanvasGlyph_I.h \
+items/zmapWindowCanvasGraphItem.c \
+items/zmapWindowCanvasGraphItem.h \
+items/zmapWindowCanvasGraphItem_I.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
 items/zmapWindowCanvasItem_I.h \
@@ -138,9 +141,6 @@ items/zmapWindowGlyphItem.h \
 items/zmapWindowGlyphItem_I.h \
 items/zmapWindowGraphItem.c \
 items/zmapWindowGraphItem.h \
-items/zmapWindowGraphDensityItem_I.h \
-items/zmapWindowGraphDensityItem.c \
-items/zmapWindowGraphDensityItem.h \
 items/zmapWindowGraphItem_I.h \
 items/zmapWindowLongItem.c \
 items/zmapWindowLongItem.h \
