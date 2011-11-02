@@ -200,14 +200,11 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
       state_position_restore(window, &(state->position));
     }
 
-#warning stats focus restore removed due to several crash reports on revcomp
-/* coordinates appear to be wrong sense and cause an assert */
-#if 0
+
   if(state->focus_items_set)
     {
       state_focus_items_restore(window, &(state->focus));
     }
-#endif
 
   if(state->bump_state_set)
     {
