@@ -1036,7 +1036,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, sub_item, sub_feature, 0, 0,  0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, highlight_item, sub_feature, 0, 0,  0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 
