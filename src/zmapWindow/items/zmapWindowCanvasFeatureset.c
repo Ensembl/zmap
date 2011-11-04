@@ -317,7 +317,7 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 	}
 
 
-		/* feature specific eg bumped gapped alignments - adjust gaps display */
+		/* feature specific eg bumped gapped alignments - adjust gaps display or graph /re-bin */
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
 		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
@@ -997,7 +997,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
     	zmap_window_featureset_item_link_sideways(fi);
 
     fi->features = g_list_sort(fi->features,zMapFeatureCmp);
-    fi->display_index = zMapSkipListCreate(fi->features, zMapFeatureCmp);
+    fi->display_index = zMapSkipListCreate(fi->features, NULL);
 }
 
 
@@ -1511,11 +1511,14 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
   	/* whereby this may be more efficient ? */
   	if(1)
   	{
-  		/* need to recalc bins */
-  		/* quick fix FTM, de-calc which requires a re-calc on display */
-  		zMapSkipListDestroy(featureset_item->display_index, zmapWindowCanvasFeatureFree);
-  		featureset_item->display_index = NULL;
-  		featureset_item->linked_sideways = FALSE;
+		if(featureset_item->display_index)
+		{
+			/* need to recalc bins */
+			/* quick fix FTM, de-calc which requires a re-calc on display */
+			zMapSkipListDestroy(featureset_item->display_index, zmapWindowCanvasFeatureFree);
+			featureset_item->display_index = NULL;
+			featureset_item->linked_sideways = FALSE;
+		}
   	}
   	else
   	{
@@ -1543,7 +1546,7 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   if(featureset_item->display_index)
   {
   	zMapSkipListDestroy(featureset_item->display_index, zmapWindowCanvasFeatureFree);
-  	featureset_item->display_index = NULL;
+	featureset_item->display_index = NULL;
   }
 
   	/* removing it the second time will fail gracefully */

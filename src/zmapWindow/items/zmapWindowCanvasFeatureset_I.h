@@ -60,6 +60,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 	double width;
 	double bump_offset;	/* for X coord */
+	int bump_col;		/* for calculating sub-col before working out width */
 
 	long flags;				/* non standard display option eg selected */
 

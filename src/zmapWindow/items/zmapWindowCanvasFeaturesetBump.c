@@ -461,7 +461,6 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			featureset->bump_width += width + bump_data->spacing;
 		}
 
-// ! crazy !		if(featureset->bumped)
 		for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 		{
 			ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
@@ -469,9 +468,12 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			if(!(feature->flags & FEATURE_HIDDEN))
 			{
 				/* feature->bump offset is really column index till we set it here */
-				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( (int) feature->bump_offset)));
+				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( (int) feature->bump_col)));
+printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
 				feature->bump_offset = width;
 			}
+			else
+				printf("bump feature flags = %lx\n",feature->flags);
 		}
 
 
@@ -579,7 +581,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
   }
 
 	/* store the column for later calculation of the offset */
-  feature->bump_offset = (double) new_range->column;
+  feature->bump_col = (double) new_range->column;
 
 	/* get the max width of a feature in each column */
 	/* totally yuk casting here but bear with me */
@@ -587,6 +589,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
   if(width < bump_data->width)
   	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int) bump_data->width));
 
+  printf("feature %s @ %p %f,%f col %d\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,new_range->column);
   return pos_list;
 }
 
