@@ -950,8 +950,12 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	GList *l;
 	ZMapWindowCanvasFeature left,right;		/* feat -ures */
 #if !CANVAS_FEATURESET_LINK_FEATURE
-	static GQuark name = 0;
+	GQuark name = 0 ;
 #endif
+
+
+
+
 
 	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
 	/* sort by name and start coord */
