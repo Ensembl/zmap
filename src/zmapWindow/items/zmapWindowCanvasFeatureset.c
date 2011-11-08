@@ -953,6 +953,10 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	GQuark name = 0;
 #endif
 
+
+
+
+
 	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
 	/* sort by name and start coord */
 	/* link same name features with ascending query start coord */
