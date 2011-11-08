@@ -336,10 +336,10 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		break;
 	}
 
-
 	/* in case we get a bump before a paint eg in initial display */
       if(!featureset->display_index)
 	  zMapWindowCanvasFeaturesetIndex(featureset);
+
 
 	/* process all features */
 
@@ -428,6 +428,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 
 	featureset->bumped = TRUE;
 	featureset->bump_width = bump_data->offset;
+	featureset->bump_mode = bump_mode;
 
 	switch(bump_mode)
 	{
@@ -469,11 +470,9 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			{
 				/* feature->bump offset is really column index till we set it here */
 				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( (int) feature->bump_col)));
-printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
+//printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
 				feature->bump_offset = width;
 			}
-			else
-				printf("bump feature flags = %lx\n",feature->flags);
 		}
 
 
@@ -486,6 +485,7 @@ printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->featu
 	default:
 		break;
 	}
+//	printf("bump 3: %s %d\n",g_quark_to_string(featureset->id),zMapSkipListCount(featureset->display_index));
 
 	if(featureset->bump_width + featureset->dx > ZMAP_WINDOW_MAX_WINDOW)
 	{
@@ -589,7 +589,7 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
   if(width < bump_data->width)
   	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int) bump_data->width));
 
-  printf("feature %s @ %p %f,%f col %d\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,new_range->column);
+//  printf("feature %s @ %p %f,%f col %d\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,new_range->column);
   return pos_list;
 }
 

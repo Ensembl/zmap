@@ -567,7 +567,8 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 
       realiseData->window = window ;
       realiseData->feature_sets = feature_sets ;
-      window->exposeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
+
+	window->exposeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
 						 GTK_SIGNAL_FUNC(exposeHandlerCB),
 						 (gpointer)realiseData) ;
     }
@@ -2800,6 +2801,8 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
    * sequence as the previous one, will trigger another call to this function.  */
   g_signal_handler_disconnect(G_OBJECT(widget), realiseData->window->exposeHandlerCB);
 
+printf("exposeHandlerCB send client event\n");
+
   sendClientEvent(realiseData->window, realiseData->feature_sets) ;
 
   if(realiseData->window->curr_locking == ZMAP_WINLOCK_VERTICAL)
@@ -2882,7 +2885,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       window = window_data->window ;
       feature_sets = window_data->data ;
 
-
       zmapWindowBusy(window, TRUE) ;
 
       /* ****Remember that someone needs to free the data passed over....****  */
@@ -2894,8 +2896,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	diff_context = feature_sets->new_features ;
       else
 	diff_context = feature_sets->current_features ;
-
-
 
       /* Draw the features on the canvas */
 

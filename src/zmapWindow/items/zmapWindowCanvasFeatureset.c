@@ -950,7 +950,7 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	GList *l;
 	ZMapWindowCanvasFeature left,right;		/* feat -ures */
 #if !CANVAS_FEATURESET_LINK_FEATURE
-	static GQuark name = 0;
+	GQuark name = 0;
 #endif
 
 	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
@@ -958,8 +958,8 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	/* link same name features with ascending query start coord */
 
 	/* if we ever need to link by something other than same name
-	 * then we can define a featuyre type specific sort function
-	 * and revice the zMapWindowCanvasFeaturesetLinkFeature() fucntion
+	 * then we can define a feature type specific sort function
+	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
 	 */
 	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
 
@@ -998,6 +998,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 
     fi->features = g_list_sort(fi->features,zMapFeatureCmp);
     fi->display_index = zMapSkipListCreate(fi->features, NULL);
+    zMapLogWarning("CFS index 3: %s %d\n",g_quark_to_string(fi->id),zMapSkipListCount(fi->display_index));
 }
 
 
@@ -1501,6 +1502,8 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
 	  /* even if they come in order we still have to sort them to be sure so just add to the front */
   featureset_item->features = g_list_prepend(featureset_item->features,feat);
   featureset_item->n_features++;
+
+//  printf("add item %s/%s @%p: %ld/%d\n",g_quark_to_string(featureset_item->id),g_quark_to_string(feature->unique_id),feature, featureset_item->n_features, g_list_length(featureset_item->features));
 
   /* add to the display bins if index already created */
   if(featureset_item->display_index)

@@ -95,6 +95,7 @@ ZMapSkipList zMapSkipListAdd(ZMapSkipList head, GCompareFunc cmp, gpointer key);
 ZMapSkipList zMapSkipListRemove(ZMapSkipList sl, ZMapSkipListFreeFunc free_func);
 void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func);
 
+int zMapSkipListCount(ZMapSkipList head);
 
 #define SKIP_LIST_CLASS	0
 

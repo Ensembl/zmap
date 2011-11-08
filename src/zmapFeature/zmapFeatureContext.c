@@ -1052,6 +1052,42 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 }
 
 
+static ZMapFeatureContextExecuteStatus print_featureset_name(GQuark key,
+                                                               gpointer data,
+                                                               gpointer user_data,
+                                                               char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureSet       feature_set   = NULL;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
+
+  feature_type = feature_any->struct_type;
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      feature_set = (ZMapFeatureSet)feature_any;
+      printf("    featureset %s\n",g_quark_to_string(feature_set->unique_id));
+
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+    case ZMAPFEATURE_STRUCT_ALIGN:
+    case ZMAPFEATURE_STRUCT_BLOCK:
+	status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      break;
+    default:
+      break;
+    }
+
+  return status;
+}
+
+void zMapPrintContextFeaturesets(ZMapFeatureContext context)
+{
+	zMapFeatureContextExecute((ZMapFeatureAny) context,
+                               ZMAPFEATURE_STRUCT_FEATURESET,
+                               print_featureset_name, NULL);
+}
 
 #ifdef RDS_TEMPLATE_USER_DATALIST_FOREACH
 /* Use this function while descending through a feature context */
@@ -1067,9 +1103,8 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
   ZMapFeatureSet       feature_set   = NULL;
   ZMapFeature          feature_ft    = NULL;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
-  YourDataType  all_data = (YourDataType)user_data;
 
   feature_type = feature_any->struct_type;
 
