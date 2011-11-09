@@ -953,10 +953,6 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	GQuark name = 0;
 #endif
 
-
-
-
-
 	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
 	/* sort by name and start coord */
 	/* link same name features with ascending query start coord */
@@ -976,6 +972,8 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 		right = (ZMapWindowCanvasFeature) l->data;
 		right->left = right->right = NULL;		/* we can re-calculate so must zero */
 
+zMapAssert(right != left);
+
 #if CANVAS_FEATURESET_LINK_FEATURE
 		if(zMapWindowCanvasFeaturesetLinkFeature(right))
 #else
@@ -989,6 +987,7 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 #if !CANVAS_FEATURESET_LINK_FEATURE
 		name = left->feature->original_id;
 #endif
+
 	}
 
 	fi->linked_sideways = TRUE;
@@ -997,12 +996,11 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 {
-    if(fi->link_sideways && !fi->linked_sideways)
-    	zmap_window_featureset_item_link_sideways(fi);
+	if(fi->link_sideways && !fi->linked_sideways)
+		zmap_window_featureset_item_link_sideways(fi);
 
     fi->features = g_list_sort(fi->features,zMapFeatureCmp);
     fi->display_index = zMapSkipListCreate(fi->features, NULL);
-    zMapLogWarning("CFS index 3: %s %d\n",g_quark_to_string(fi->id),zMapSkipListCount(fi->display_index));
 }
 
 
@@ -1326,6 +1324,7 @@ static ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeat
       	{
       		feat = (ZMapWindowCanvasFeature) mem;
       		feat->type = type;
+			feat->feature = NULL;
                   zmapWindowCanvasFeatureFree((gpointer) mem);
             }
       }
@@ -1354,7 +1353,7 @@ void zmapWindowCanvasFeatureFree(gpointer thing)
 		type = FEATURE_INVALID;		/* catch all for simple features */
 
       featureset_class_G->feature_free_list[type] =
-            g_list_prepend(featureset_class_G->feature_free_list[type], (gpointer) feat);
+            g_list_prepend(featureset_class_G->feature_free_list[type], thing);
 }
 
 
@@ -1491,7 +1490,7 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
   		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
   }
 
-  feat->y1 = y1;
+ feat->y1 = y1;
   feat->y2 = y2;
 
 	/* NOTE maybe this is not generic enough eg for glyphs, graphs */
@@ -1522,7 +1521,7 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
 		{
 			/* need to recalc bins */
 			/* quick fix FTM, de-calc which requires a re-calc on display */
-			zMapSkipListDestroy(featureset_item->display_index, zmapWindowCanvasFeatureFree);
+			zMapSkipListDestroy(featureset_item->display_index, NULL);
 			featureset_item->display_index = NULL;
 			featureset_item->linked_sideways = FALSE;
 		}
