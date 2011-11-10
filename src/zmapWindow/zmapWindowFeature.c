@@ -429,6 +429,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 #ifdef RT_63281
 	  /* I thought this call would be needed, but it turns out that the bump code
 	   * needed to not removeGapsCB and addGapsCB when not changing bump mode. */
+	  /* mh17: NOTE this function does not exist */
 	  zmapWindowItemFeatureSetFeatureRemove(set_data, feature);
 #endif /* RT_63281 */
 
