@@ -572,7 +572,11 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 	foo_canvas_w2c (foo->canvas, x1 + i2w_dx, gs->y1 - fi->start + i2w_dy, &cx1, &cy1);
 	foo_canvas_w2c (foo->canvas, x1 + gs->width + i2w_dx, gs->y2 - fi->start + i2w_dy, &cx2, &cy2);
 
-	foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2, cy2);
+		/* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
+		 * really ought to work out max glyph size or rather have true featrue extent
+		 * NOTE this is only currently used via OTF remove exisitng features
+		 */
+	foo_canvas_request_redraw (foo->canvas, cx1, cy1-8, cx2 + 1, cy2 + 8);
 }
 
 
