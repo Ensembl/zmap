@@ -71,7 +71,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasBasic.h>
 #include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasAlignment.h>
-#include <zmapWindowCanvasGraph.h>
+#include <zmapWindowCanvasGraphItem.h>
 
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
@@ -83,8 +83,6 @@ static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, doubl
 static void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 static void zmap_window_featureset_item_item_destroy     (GObject *object);
 
-static ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type);
-static void zmapWindowCanvasFeatureFree(gpointer thing);
 
 static gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 static gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
@@ -100,6 +98,23 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs);
 
 
+/* this is in parallel with the ZMapStyleMode enum */
+/* beware, traditionally glyphs ended up as basic features */
+/* This is a retro-fit ... i noticed that i'd defien a struct/feature type but not set it
+* as orignally there was only one (blush) -> is that brown bag coding?? */
+static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
+{
+	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
+	FEATURE_BASIC, 		/* ZMAPSTYLE_MODE_BASIC */
+	FEATURE_ALIGN,		/* ZMAPSTYLE_MODE_ALIGNMENT */
+	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TRANSCRIPT */
+	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_SEQUENCE */
+	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
+	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TEXT */
+	FEATURE_GRAPH,		/* ZMAPSTYLE_MODE_GRAPH */
+	FEATURE_GLYPH,		/* ZMAPSTYLE_MODE_GLYPH */
+	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
+};
 
 
 
@@ -296,9 +311,9 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
 	if(!featureset)
 		return;
 
-	if(feature->type > 0 &&| feature->type < FEATURE_N_TYPE)
+	if(featureset>type > 0 &&| featureset->type < FEATURE_N_TYPE)
 	{
-		func = _featureset_zoom_G[feature->type];
+		func = _featureset_zoom_G[featureset->type];
 
 		/* zoom can (re)create the index eg ig graphs density stuff gets re-binned */
 		if(!func)
@@ -425,6 +440,7 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 {
       ZMapWindowFeaturesetItem di = NULL;
       FooCanvasItem *foo  = NULL,*interval;
+	zmapWindowCanvasFeatureType type;
 
             /* class not intialised till we make an item in foo_canvas_item_new() below */
       if(featureset_class_G && featureset_class_G->featureset_items)
@@ -458,7 +474,7 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 
 		    /* column type, style is a combination of all context featureset styles in the column */
 		    /* main use is for graph density items */
-		di->type = feature_types[zMapStyleGetMode(feature->style)];
+		di->type = feature_types[zMapStyleGetMode(featureset->style)];
 		if(type == FEATURE_ALIGN)
 		{
 			di->link_sideways = TRUE;
@@ -1321,7 +1337,7 @@ void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show,
 
 
 /* allocate a free list for an unknown structure */
-void ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type)
+ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type)
 {
       GList *l;
       gpointer mem;
@@ -1466,23 +1482,6 @@ double zmap_window_featureset_item_set_width_from_score(ZMapFeatureTypeStyle sty
 
 
 
-/* this is in parallel with the ZMapStyleMode enum */
-/* beware, traditionally glyphs ended up as basic features */
-/* This is a retro-fit ... i noticed that i'd defien a struct/feature type but not set it
- * as orignally there was only one (blush) -> is that brown bag coding?? */
-static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
-{
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
-	FEATURE_BASIC, 		/* ZMAPSTYLE_MODE_BASIC */
-	FEATURE_ALIGN,		/* ZMAPSTYLE_MODE_ALIGNMENT */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TRANSCRIPT */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_SEQUENCE */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TEXT */
-	FEATURE_GRAPH,		/* ZMAPSTYLE_MODE_GRAPH */
-	FEATURE_GLYPH,		/* ZMAPSTYLE_MODE_GLYPH */
-	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
-};
 
 /* no return, as all this data in internal to the column featureset item */
 void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2)

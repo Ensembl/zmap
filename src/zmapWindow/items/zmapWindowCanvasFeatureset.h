@@ -64,6 +64,17 @@ typedef struct _zmapWindowCanvasFeatureStruct  zmapWindowCanvasFeature, *ZMapWin
 typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemClass, *ZMapWindowFeaturesetItemClass ;
 
 
+/* enums for function type */
+typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
+/* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
+/* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
+
+/* enums for feature function lookup  (feature types) */
+/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
+/* see  zMapWindowFeaturesetAddItem() */
+typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_GRAPH, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
+
+
 /* Public funcs */
 GType zMapWindowFeaturesetItemGetType(void);
 
@@ -79,7 +90,7 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y);
 
-//void ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type);
+ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type);
 void zmapWindowCanvasFeatureFree(gpointer thing);
 
 void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2);
@@ -105,16 +116,6 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
 
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
 
-
-/* enums for function type */
-typedef enum { FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
-/* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
-/* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
-
-/* enums for feature function lookup  (feature types) */
-/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
-/* see  zMapWindowFeaturesetAddItem() */
-typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_GRAPH, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
 
 
 /* basic feature draw a box

@@ -74,7 +74,6 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 
 #include <zmapWindowGlyphItem.h>
 #include <zmapWindowGraphItem.h>
-#include <zmapWindowGraphDensityItem.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindowCanvasItemFeatureSet.h>
 #include <zmapWindowLongItem.h>

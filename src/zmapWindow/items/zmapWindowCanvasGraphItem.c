@@ -44,7 +44,7 @@
   */
 
 /* NOTE
- * originally implemnted as free standing canvas type and lter merged into CanvasFeatureset
+ * originally implemented as free standing canvas type and lter merged into CanvasFeatureset
  */
 
 #include <ZMap/zmap.h>
@@ -55,11 +55,13 @@
 #include <string.h>
 #include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtilsLog.h>
-#include <zmapWindowBasicFeature.h>
-#include <zmapWindowGraphDensityItem_I.h>
+#include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasGraphItem_I.h>
 
 
+static GList *density_calc_bins(ZMapWindowFeaturesetItem di);
 
+gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style);
 
 
 int get_heat_rgb(int a,int b,double score)
@@ -138,16 +140,18 @@ static int n_points = 0;
 /* paint one feature, CanvasFeatureset handles focus highlight */
 /* NOTE wiggle plots are drawn as poly-lines and get cached and painted when complete */
 /* NOTE lines have to be drawn out of the box at the edges */
-static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,  GdkEventExpose *expose)
+static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,  GdkEventExpose *expose)
 
 {
-      int cx1, cy1, cx2 = 0, cy2 = 0;		/* initialised for LINE mode */
-      double i2w_dx, i2w_dy;
-      double x1,y1,x2,y2;
-      double width;
+//      int cx1, cy1, cx2 = 0, cy2 = 0;		/* initialised for LINE mode */
+//      double i2w_dx, i2w_dy;
+//      double x1,y1,x2,y2;
+	double x1,x2;
+//      double width;
       gboolean draw_box = TRUE; 	/* else line */
       gulong fill,outline;
 	int colours_set, fill_set, outline_set;
+	FooCanvasItem *item = (FooCanvasItem *) featureset;
 
 	switch(zMapStyleGraphMode(featureset->style))
 	{
@@ -223,7 +227,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	default:
 	case ZMAPSTYLE_GRAPH_HISTOGRAM:
 		x1 = featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
-		feature->width = (width * gs->score) ;
+		feature->width = (featureset->width * feature->score) ;
 		x2 = x1 + feature->width;
 
 		/* If the baseline is not zero then we can end up with x2 being less than x1
@@ -261,7 +265,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 }
 
 
-void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
+void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
 {
 
 	if(n_points > 1)
@@ -282,7 +286,7 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
  */
 static void zMapWindowCanvasGraphZoomSet(ZMapWindowFeaturesetItem featureset)
 {
-	if(featureset->rebin)		/* if it's a density item we always re-bin */
+	if(featureset->re_bin)		/* if it's a density item we always re-bin */
 	{
 		if(featureset->display_index)
 		{
@@ -306,8 +310,8 @@ void zMapWindowCanvasGraphInit(void)
 {
 	gpointer funcs[FUNC_N_FUNC] = { NULL };
 
-	funcs[FUNC_PAINT]  = zMapWindowCanvasAlignmentPaintFeature;
-	funcs[FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent;
+	funcs[FUNC_PAINT]  = zMapWindowCanvasGraphPaintFeature;
+	funcs[FUNC_FLUSH]  = zMapWindowCanvasGraphPaintFlush;
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasGraphZoomSet;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0);
@@ -323,13 +327,12 @@ gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFea
 
 	if(di->display_index && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
 	{
-		zMapSkipListDestroy(di->display_index,
-			di->source_used ? NULL : zmapWindowCanvasGraphSegmentFree);
+		zMapSkipListDestroy(di->display_index,zmapWindowCanvasFeatureFree);
 		di->display_index = NULL;
 	}
 
 	di->style = style;		/* includes col width */
-	di->x_off = zMapStyleDensityStagger(style) * di->index;
+	di->x_off = zMapStyleDensityStagger(style) * di->set_index;
 
 		/* need to set colours */
 	zmapWindowCanvasItemGetColours(style, di->strand, di->frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
@@ -370,8 +373,8 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
 	int n_bins;
 	int bases_per_bin;
 	int bin_start,bin_end;
-	zmapWindowCanvasFeature src_gs = NULL;	/* source */
-	zmapWindowCanvasFeaturet bin_gs;	/* re-binned */
+	ZMapWindowCanvasFeature src_gs = NULL;	/* source */
+	ZMapWindowCanvasFeature bin_gs;	/* re-binned */
 	GList *src,*dest;
 	double score;
 	int min_bin = zMapStyleDensityMinBin(di->style);	/* min pixels per bin */
