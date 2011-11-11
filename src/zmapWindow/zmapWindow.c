@@ -644,7 +644,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 							  ZMAPFRAME_NONE,
 							  feature)))
 	  {
-	    zMapWindowFeatureRemove(window, feature_item, FALSE);
+	    zMapWindowFeatureRemove(window, feature_item, feature, FALSE);
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 	  }
 	else
