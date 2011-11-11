@@ -68,6 +68,6 @@ GType zMapWindowCanvasFeaturesetItemGetType(void);
 
 void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2);
 
-
+int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo,ZMapFeature feature);
 
 #endif /* ZMAP_WINDOW_CANVAS_FEATURESET_ITEM_H */

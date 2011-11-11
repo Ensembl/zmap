@@ -851,7 +851,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
   		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
   		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
 
-	      zMapWindowFeaturesetAddItem(foo, feature, y1, y2);
+	      zMapWindowFeaturesetAddFeature(foo, feature, y1, y2);
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;

@@ -120,6 +120,21 @@ GType zMapWindowCanvasFeaturesetItemGetType(void)
 
 
 
+/* remove a feature friom the foo canvas item in our zmapcanvasitem */
+/* item is a foo canvas group, we have one foo canvas item in the item list */
+int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo,ZMapFeature feature)
+{
+	FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
+	ZMapWindowFeaturesetItem fi;
+	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
+
+	zMapAssert(group && group->item_list);
+
+	fi = (ZMapWindowFeaturesetItem) group->item_list->data;
+
+	return zMapWindowFeaturesetItemRemoveFeature((FooCanvasItem *) fi, feature);
+}
+
 /* get the bounds of the current feature which has been set by the caller */
 /* item is a foo canvas group, we have one foo canvas item in the item list */
 void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2)

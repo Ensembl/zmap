@@ -77,8 +77,8 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y);
 
-void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2);
-
+void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2);
+int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 
 void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 						      FooCanvasItem         *interval,

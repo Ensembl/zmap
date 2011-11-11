@@ -367,7 +367,7 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
       zMapAssert(set_group) ;
 
       /* Remove it completely. */
-      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item, destroy_orig_feature))
+      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item, curr_feature, destroy_orig_feature))
 	{
 	  replaced_feature = addNewCanvasItem(zmap_window, set_group, new_feature, FALSE) ;
 	}
@@ -387,15 +387,19 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 
 /* Remove an existing feature from the displayed feature context.
  *
+ * NOTE IF YOU EVERY CHANGE THIS FUNCTION OR CALL IT TO REMOVE A WHOLE FEATURESET
+ * refer to the comment above zmapWindowCanvasfeatureset.c/zMapWindowFeaturesetItemGetRemoveFeature()
+ * and write a new function to delete the whole set
+ *
  * Returns FALSE if the feature does not exist. */
-gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, gboolean destroy_feature)
+#warning possible quadratic search time implied here
+gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature)
 {
   ZMapWindowContainerFeatureSet container_set;
   gboolean result = FALSE ;
-  ZMapFeature feature ;
   ZMapFeatureSet feature_set ;
 
-  feature = zmapWindowItemGetFeature(feature_item);
+//  feature = zmapWindowItemGetFeature(feature_item);
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
@@ -426,15 +430,23 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
               zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
             }
 
-#ifdef RT_63281
-	  /* I thought this call would be needed, but it turns out that the bump code
-	   * needed to not removeGapsCB and addGapsCB when not changing bump mode. */
-	  /* mh17: NOTE this function does not exist */
-	  zmapWindowItemFeatureSetFeatureRemove(set_data, feature);
-#endif /* RT_63281 */
 
-          /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
-          gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+zMapLogWarning("OTF: remove %s",g_quark_to_string(feature->unique_id));
+	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(feature_item))
+	  {
+		  if(!zMapWindowCanvasFeaturesetItemRemoveFeature(feature_item,feature))
+		  {
+zMapLogWarning("OTF: destroy feature item","");
+			/* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+// don't destroy it as the process fails obscurely, leave an empty container
+//			gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+		  }
+	  }
+	  else
+	  {
+		  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+		  gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+	  }
 
 	  /* I think we shouldn't need to do this probably....on the other hand showing
 	   * empty cols is configurable.... */

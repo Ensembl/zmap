@@ -438,7 +438,7 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
             di = (ZMapWindowFeaturesetItem) interval;
             di->id = id;
             g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
-//printf("make featureset item %s\n",g_quark_to_string(di->id));
+zMapLogWarning("make featureset item %s",g_quark_to_string(di->id));
 
 
 		/* we record strand and frame for display colours
@@ -462,6 +462,8 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
       }
       return ((ZMapWindowCanvasItem) foo);
 }
+
+
 
 
 /* this is a nest of insxestuous functions that all do the same thing
@@ -526,6 +528,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowF
  *	according to pixel coordinates.
  *	so we can have bin contains feature, feature contains bin, bin and feature overlap left or right. Yuk
  */
+#warning lookup exact feature may fail if rebinned
 		if(!((gs->y1 > feature->x2) || (gs->y2 < feature->x1)))
 #endif
 		{
@@ -1465,7 +1468,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 };
 
 /* no return, as all this data in internal to the column featureset item */
-void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2)
+void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2)
 {
   ZMapWindowCanvasFeature feat;
   ZMapFeatureTypeStyle style = feature->style;
@@ -1515,23 +1518,76 @@ void zMapWindowFeaturesetAddItem(FooCanvasItem *foo, ZMapFeature feature, double
   	/* it's very rare that we add features anyway */
   	/* although we could have several featuresets being loaded into one column */
   	/* whereby this may be more efficient ? */
-  	if(1)
-  	{
-		if(featureset_item->display_index)
-		{
-			/* need to recalc bins */
-			/* quick fix FTM, de-calc which requires a re-calc on display */
-			zMapSkipListDestroy(featureset_item->display_index, NULL);
-			featureset_item->display_index = NULL;
-			featureset_item->linked_sideways = FALSE;
-		}
-  	}
-  	else
+ #if 1
+	{
+		/* need to recalc bins */
+		/* quick fix FTM, de-calc which requires a re-calc on display */
+		zMapSkipListDestroy(featureset_item->display_index, NULL);
+		featureset_item->display_index = NULL;
+		featureset_item->linked_sideways = FALSE;
+	}
+#else
   	{
   		featureset_item->display_index =
   			zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
+#warning need to fix linked_sideways
   	}
+#endif
   }
+}
+
+
+
+/*
+	delete feature from the features list and trash the index
+	returns no of features left
+
+	rather tediously we can't get the feature via the index as that will give us the feature not the list node pointing to it.
+	so to delete a whole featureset we could have a quadratic search time unless we delete in order
+	but from OTF if we delete old ones we do this via a small hash table
+	we don't delete elsewhere, execpt for legacy gapped alignments, so this works ok by fluke
+
+	this function's a bit horrid: when we find the feature to delete we have to look it up in the index to repaint
+	we really need a coplumn refresh
+
+	we really need to rethink this: deleting was not considered
+*/
+int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
+{
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
+	GList *l;
+	ZMapWindowCanvasFeature feat;
+
+	for(l = fi->features;l;l = l->next)
+	{
+		feat = (ZMapWindowCanvasFeature) l->data;
+		if(feat->feature == feature)
+		{
+zMapLogWarning("OTF CFS delete %s of %d",g_quark_to_string(feature->unique_id),fi->n_features);
+			ZMapWindowCanvasFeature gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+			if(gs)
+			{
+zMapLogWarning("OTF CFS expose %s",g_quark_to_string(feature->unique_id));
+				zmap_window_canvas_featureset_expose_feature(fi, gs);
+			}
+
+			zmapWindowCanvasFeatureFree(feat);
+			fi->features = g_list_delete_link(fi->features,l);
+			fi->n_features--;
+			break;
+		}
+	}
+
+	if(fi->display_index)
+	{
+		/* need to recalc bins */
+		/* quick fix FTM, de-calc which requires a re-calc on display */
+		zMapSkipListDestroy(fi->display_index, NULL);
+		fi->display_index = NULL;
+		fi->linked_sideways = FALSE;
+	}
+
+	return fi->n_features;
 }
 
 
@@ -1540,6 +1596,9 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 {
 
   ZMapWindowFeaturesetItem featureset_item;
+  GList *features;
+  ZMapWindowCanvasFeature feat;
+
   /* mh17 NOTE: this function gets called twice for every object via a very very tall stack */
   /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
   /* what's more interesting is why an object has to be killed twice */
@@ -1549,11 +1608,25 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
 
+zMapLogWarning("OTF CFS destroy %s",g_quark_to_string(featureset_item->id));
   if(featureset_item->display_index)
   {
-  	zMapSkipListDestroy(featureset_item->display_index, zmapWindowCanvasFeatureFree);
+  	zMapSkipListDestroy(featureset_item->display_index, NULL);
 	featureset_item->display_index = NULL;
   }
+
+  if(featureset_item->features)
+  {
+	/* free items separately from the index as conceivably we may not have an index */
+	for(features = featureset_item->features; features; features = g_list_delete_link(features,features))
+	{
+		feat = (ZMapWindowCanvasFeature) features->data;
+		zmapWindowCanvasFeatureFree(feat);
+	}
+	featureset_item->features = NULL;
+	featureset_item->n_features = 0;
+}
+
 
   	/* removing it the second time will fail gracefully */
   g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id));
