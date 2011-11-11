@@ -313,10 +313,12 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		break;
 
 	case ZMAPBUMP_NAME_INTERLEAVE:
+	case ZMAPBUMP_NAME_NO_INTERLEAVE:
+		/* patch both these to overlap, should just be no_interleave but I got it wrong last time round */
+		/* temporasry situation till i fix the menu to nbe simple */
 		bump_mode = ZMAPBUMP_OVERLAP;
 		/* fall through */
 	case ZMAPBUMP_START_POSITION:
-	case ZMAPBUMP_NAME_NO_INTERLEAVE:
 	case ZMAPBUMP_NAME_COLINEAR:
 	case ZMAPBUMP_NAME_BEST_ENDS:
 		/* for alignments these all map to overlap, the alignments code shows the decorations regardless */
@@ -416,10 +418,13 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		if(bump_data->complex)
 		{
 			double offset = feature->bump_offset;
+			int col = feature->bump_col;
 
 			for(feature = feature->right ;feature; feature = feature->right)
 			{
 				feature->bump_offset = offset;
+				feature->bump_col = col;
+
 			}
 		}
 	}
