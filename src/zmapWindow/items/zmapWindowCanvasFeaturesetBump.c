@@ -339,7 +339,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	}
 
 	/* in case we get a bump before a paint eg in initial display */
-      if(!featureset->display_index)
+	if(!featureset->display_index || (featureset->link_sideways && !featureset->linked_sideways))
 	  zMapWindowCanvasFeaturesetIndex(featureset);
 
 

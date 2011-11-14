@@ -1403,6 +1403,7 @@ static gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 
 	if(feata->y2 > featb->y2)
 		return(-1);
+
 	if(feata->y2 < featb->y2)
 		return(1);
 	return(0);
@@ -1528,7 +1529,6 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 		/* quick fix FTM, de-calc which requires a re-calc on display */
 		zMapSkipListDestroy(featureset_item->display_index, NULL);
 		featureset_item->display_index = NULL;
-		featureset_item->linked_sideways = FALSE;
 	}
 #else
   	{
@@ -1538,6 +1538,9 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   	}
 #endif
   }
+  /* NOTE we may not have an index so this flag must be unset seperately */
+  /* eg on OTF w/ delete existing selected */
+  featureset_item->linked_sideways = FALSE;
 }
 
 
@@ -1588,8 +1591,9 @@ zMapLogWarning("OTF CFS expose %s",g_quark_to_string(feature->unique_id));
 		/* quick fix FTM, de-calc which requires a re-calc on display */
 		zMapSkipListDestroy(fi->display_index, NULL);
 		fi->display_index = NULL;
-		fi->linked_sideways = FALSE;
 	}
+	/* NOTE we may not have an index so this flag must be unset seperately */
+	fi->linked_sideways = FALSE;
 
 	return fi->n_features;
 }
