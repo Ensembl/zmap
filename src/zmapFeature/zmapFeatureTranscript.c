@@ -368,52 +368,65 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
 	  /* ok, now any utr sections are removed we can work out phases of translation section. */
 	  exon_length = (ex_cds_end - ex_cds_start) + 1 ;
-	  start_phase = (full_data->trans_coord_counter) % 3 ;
-	  end_phase = ((full_data->trans_coord_counter + exon_length) - 1) % 3 ;
 
-	  if (start_phase)
+	  if (ex_cds_start == full_data->cds_start && exon_length < 3)
 	    {
-	      /* 5' split codon ends one base before full codon. */
-	      int correction ;
-
-	      correction = ((start_phase == 1 ? 2 : 1) - 1) ;
+	      /* pathological, start of whole cds is at the end of an exon and there are less than
+	       * 3 bases of cds. */
 
 	      ex_split_5.x1 = ex_cds_start ;
 
-	      ex_split_5.x2 = ex_split_5.x1 + correction ;
-
-	      ex_cds_start = ex_split_5.x2 + 1 ;
+	      ex_split_5.x2 = ex_cds_end ;
 	    }
-
-	  if (end_phase < 2)
+	  else
 	    {
-	      /* 3' split codon starts one base after end of full codon. */
-	      int correction ;
+	      start_phase = (full_data->trans_coord_counter) % 3 ;
+	      end_phase = ((full_data->trans_coord_counter + exon_length) - 1) % 3 ;
+
+	      if (start_phase)
+		{
+		  /* 5' split codon ends one base before full codon. */
+		  int correction ;
+
+		  correction = ((start_phase == 1 ? 2 : 1) - 1) ;
+
+		  ex_split_5.x1 = ex_cds_start ;
+
+		  ex_split_5.x2 = ex_split_5.x1 + correction ;
+
+		  ex_cds_start = ex_split_5.x2 + 1 ;
+		}
+
+	      if (end_phase < 2)
+		{
+		  /* 3' split codon starts one base after end of full codon. */
+		  int correction ;
 		
-	      correction = ((end_phase + 1) % 3) - 1 ;
+		  correction = ((end_phase + 1) % 3) - 1 ;
 
-	      ex_split_3.x1 = ex_cds_end - correction ;
+		  ex_split_3.x1 = ex_cds_end - correction ;
 
-	      ex_split_3.x2 = ex_cds_end ;
+		  ex_split_3.x2 = ex_cds_end ;
 
-	      ex_cds_end = ex_split_3.x1 - 1 ;
-	    }
+		  ex_cds_end = ex_split_3.x1 - 1 ;
+		}
 
 
-	  /* cds part, simple now, just set to cds_start/end (only do this if there is
-	   * more, sometimes gene prediction programs produce very short exons....) */
-	  if (ex_cds_start < exon_span->x2 && ex_cds_end > ex_split_5.x2)
-	    {
-	      ex_cds = *exon_span ;				    /* struct copy. */
+	      /* cds part, simple now, just set to cds_start/end (only do this if there is
+	       * more, sometimes gene prediction programs produce very short exons....) */
+	      if (ex_cds_start < exon_span->x2 && ex_cds_end > ex_split_5.x2)
+		{
+		  ex_cds = *exon_span ;				    /* struct copy. */
 
-	      if (ex_cds_start)
-		ex_cds.x1 = ex_cds_start ;
+		  if (ex_cds_start)
+		    ex_cds.x1 = ex_cds_start ;
 
-	      if (ex_cds_end)
-		ex_cds.x2 = ex_cds_end ;
+		  if (ex_cds_end)
+		    ex_cds.x2 = ex_cds_end ;
+		}
+
 	    }
 	}
-
 
       /* Now we've calculated positions, create all the full exon structs. */
       if (ex_utr_5.x1)
