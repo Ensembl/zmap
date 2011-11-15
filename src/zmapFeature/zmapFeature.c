@@ -1513,8 +1513,21 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 
   /* If there are no current features we just return the new one as the merged and the diff,
    * otherwise we need to do a merge of the new and current feature sets. */
+
+  /* the view is now initialised with an empty context to aoid
+     race conditions  between Rx featuresets and display
+   */
+
+#if 0
+	/* mh17: NOTE nice idea but DNA search draws stuff into a NULL seperator context
+	 * so we restore the previous code whcih should be safe as there are no race conditions
+	 */
+  zMapAssert(current_context);
+#else
   if (!current_context)
+	/* if several servers supply data before the first gets painted then some get painted twice (data is duplicated in the canvas) */
     {
+
       if (merge_debug_G)
         zMapLogWarning("%s", "No current context, returning complete new...") ;
 
@@ -1531,6 +1544,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       status = ZMAPFEATURE_CONTEXT_OK ;
     }
   else
+#endif
     {
       /* Here we need to merge for all alignments and all blocks.... */
 

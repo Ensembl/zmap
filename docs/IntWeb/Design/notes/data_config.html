@@ -68,6 +68,16 @@ Currently in a heatmap features are displayed in one canvas item which is named 
 </p>
 <p>This also means we keep all the processing of coverage data internal to ZMap.
 </p>
+<h6>Short reads data also need a virtual featureset</h6>
+<p>
+A subsequent re-implementation of the basic features display code requires a similar process when more than one short reads featureset is to be displayed in one column.  This is simple than the coverage configuration above as it requires only one virtual featureset.  See the diagram below and box for sample confiurgation.  The virtual featureset is needed to avoid data from different real featuresets overlapping when bumped.
+</p>
+<p>The difference between BAM coverage and data columns for the user is that coverage colums appear in the load columns dialog, and have several featuresets summarise in heatmap sub-columns, and data columns have the real features intermingled in the same column. Data may be requested via the coverage column menu. Both may only be requested for the mark.
+</p>
+<p><b>NOTE</b> that this is an interim solution and will change in the near future.
+</p>
+
+
 <p>
 Here is a picture of some sample featuresets and columns as needed for ENCODE data:
 <img src="Design/notes/virtual_fset.png" class="img" alt="column config example">
@@ -78,22 +88,36 @@ Configuration:
 # These are virtual featuresets; data from several real featuresets is intermingled into one heatmap
 # Each heatmap is displayed staggered in one column
 Tier1_K562_Cell_coverage = Tier1_K562_Cell_Rep1_Coverage; Tier1_K562_Cell_Rep2_Coverage
-Tier1_GM12345_Cell_coverage  =Tier1_GM12345_Cell_Coverage; Tier1_GM12345_Cell_Rep2_Coverage
+Tier1_GM12345_Cell_coverage  = Tier1_GM12345_Cell_Coverage; Tier1_GM12345_Cell_Rep2_Coverage
+
+# this is a virtual featureset that holds all the data from several real ones
+# data is displayed as normal basic features
+Tier1_K562_Cell_features = Tier1_K562_Cell_Rep1; Tier1_K562_Cell_Rep2
+
 
 [Columns]
-# The data column contains two featuresets: data is intermingled
-Tier1_K562_Cell = Tier1_K562_Cell_Rep1; Tier1_K562_Cell_Rep2
+# The data column contains two featuresets: data is intermingled but stored in a virutal featureset
+Tier1_K562_Cell = Tier1_K562_Cell_features
+
 # The coverage column contains some virtual featuresets
 Tier1_Cell_Coverage = Tier1_K562_Cell_coverage; Tier1_GM12345_Cell_coverage
+
 
 [Featureset-related]
 # we relate the virtual coverage featureset to the data column
 Tier1_K562_Cell_related = Tier1_K562_Cell
+
+# we also need to ensure that data may only be request from the mark and does not appea on the load columns dialog.
+[ZMap]
+seq_data = Tier1_K562_Cell_features; Tier1_K562_Cell_Rep1; Tier1_K562_Cell_Rep2
+columns = Tier1_Cell_Coverage
 </pre>
 Result:<br />
 When we right click on a coverage featureset (happens to be virtual)
-we request a related column, that contains some real featuresets
+we request a related column, that contains some real featuresets.
 </p>
+
+
 
 <h5>Notes from implementation</h5>
 <p>This is quite instructive in the sense that we can see how complex the configuration is and how it has become tangled.  There are a few places in the code where it has been necessary to invent ACEDB style configuration data as it is needed for various functions, and this at times can overwrite the data read in at startup.  <b>NOTE</b>:What appears here may only be partial documentation.

@@ -866,7 +866,7 @@ zMapStartTimer("Featureset Sort","");
 	    compare_func = comparePosition;
 	  else
 	    compare_func = comparePositionRev;
-
+zMapLogWarning("sort %d features in set",g_list_length(features_group->item_list));
 	  zMap_foo_canvas_sort_items(features_group, compare_func);
 	}
 

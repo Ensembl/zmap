@@ -38,32 +38,6 @@
 void zMapWindowCanvasGraphInit(void);
 
 
-#if 0
-/* Instance */
-typedef struct _zmapWindowGraphDensityItemStruct  zmapWindowGraphDensityItem, *ZMapWindowGraphDensityItem ;
 
-
-/* Class */
-typedef struct _zmapWindowGraphDensityItemClassStruct  zmapWindowGraphDensityItemClass, *ZMapWindowGraphDensityItemClass ;
-
-
-/* Public funcs */
-GType zMapWindowGraphDensityItemGetType(void);
-
-
-ZMapWindowCanvasItem zMapWindowGraphDensityItemGetDensityItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
-void zMapWindowGraphDensityAddItem(FooCanvasItem *foo, ZMapFeature feature, double dx, double y1, double y2);
-
-void zmapWindowGraphDensityItemSetColour(ZMapWindowCanvasItem   item,
-						      FooCanvasItem         *interval,
-						      ZMapFeature			feature,
-						      ZMapFeatureSubPartSpan sub_feature,
-						      ZMapStyleColourType    colour_type,
-							int colour_flags,
-						      GdkColor              *fill,
-                                          GdkColor              *border);
-
-gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowGraphDensityItem di, ZMapFeatureTypeStyle style);
-#endif
 
 #endif /* ZMAP_WINDOW_GRAPH_DENSITY_H */

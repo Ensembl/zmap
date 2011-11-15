@@ -184,6 +184,16 @@ ZMapSkipList zMapSkipListFirst(ZMapSkipList head)
 }
 
 
+int zMapSkipListCount(ZMapSkipList head)
+{
+	int i;
+
+	head = zMapSkipListFirst(head);
+	for(i = 0; head; i++)
+		head = head->next;
+	return(i);
+}
+
 
 /* we could had a tail pointer handy, but we'd need to wrap the data in a class thingy
  * keep it simple: we don't expect to call this fucntion repeatedly

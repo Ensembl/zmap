@@ -357,7 +357,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		x1 += featureset->dx;
 		x2 = x1 + feature->width;
 
-		zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, x1,x2, drawable, expose, fill_set,outline_set,fill,outline)
+		zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, x1,x2, drawable, fill_set,outline_set,fill,outline)
 	}
 	else	/* draw gapped boxes */
 	{

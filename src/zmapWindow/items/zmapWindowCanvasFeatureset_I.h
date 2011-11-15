@@ -60,6 +60,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 	double width;
 	double bump_offset;	/* for X coord */
+	int bump_col;		/* for calculating sub-col before working out width */
 
 	long flags;				/* non standard display option eg selected */
 
@@ -156,7 +157,11 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean linked_sideways;	/* that have been constructed */
 
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
+					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
+					 * but we need to sort features so GList is more convenient */
   long n_features;
+  gboolean features_sorted;	/* by start coord */
+
   gboolean re_bin;		/* re-calculate bins/ features according to zoom */
   GList *display;			/* features for display */
   /* NOTE normally features are indexed into display_index

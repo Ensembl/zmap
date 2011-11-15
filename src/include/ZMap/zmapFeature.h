@@ -1140,6 +1140,8 @@ void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context);
 
+void zMapPrintContextFeaturesets(ZMapFeatureContext context);
+
 /* THOSE IN FEATURECONTEXT.C */
 
 GList *zMapFeatureString2QuarkList(char *string_list) ;

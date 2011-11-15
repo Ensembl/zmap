@@ -132,11 +132,14 @@ typedef struct
 typedef struct _zmapWindowFocusCacheStruct
 {
 	int id;	/* counts from 1 */
+	ZMapWindow window;	/* boriingly we need this to set global colours after the window is realised */
 
 	gulong fill_pixel[N_FOCUS_GROUPS];		/* these are globally set colours */
 	gboolean fill_set[N_FOCUS_GROUPS];
 	gulong outline_pixel[N_FOCUS_GROUPS];
 	gboolean outline_set[N_FOCUS_GROUPS];
+
+	gboolean done_colours;
 
 } zmapWindowFocusCacheStruct, *ZMapWindowFocusCache;
 
@@ -242,62 +245,13 @@ ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window)
 
   	focus_cache_G = g_list_prepend(focus_cache_G,cache);
   	focus->cache_id = cache->id;
+	cache->window = window;
   }
 
   return focus ;
 }
 
 
-/* have to do this after the canvas as been realised??  as we do the mapping to device RGB */
-void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window)
-{
-	GList *l;
-	ZMapWindowFocusCache cache;
-	GdkColor *gdk;
-	gulong pixel;
-
-	for(l = focus_cache_G;l;l = l->next)
-	{
-		cache = (ZMapWindowFocusCache) l->data;
-		if(cache->id == window->focus->cache_id)
-		{
-			/* set global selected/ highlight colours if configured */
-			if(window->highlights_set.item)
-			{
-				gdk = &(window->colour_item_highlight);
-				pixel = zMap_gdk_color_to_rgba(gdk);
-				cache->fill_pixel[WINDOW_FOCUS_GROUP_FOCUS] = foo_canvas_get_color_pixel(window->canvas, pixel);
-				cache->fill_set[WINDOW_FOCUS_GROUP_FOCUS] = TRUE;
-			}
-
-			if(window->highlights_set.evidence)
-			{
-				gdk = &(window->colour_evidence_fill);
-				pixel = zMap_gdk_color_to_rgba(gdk);
-				cache->fill_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
-				cache->fill_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
-
-				gdk = &(window->colour_evidence_border);
-				pixel = zMap_gdk_color_to_rgba(gdk);
-				cache->outline_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
-				cache->outline_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
-			}
-
-			if(window->highlights_set.masked)
-			{
-				gdk = &(window->colour_masked_feature_fill);
-				pixel = zMap_gdk_color_to_rgba(gdk);
-				cache->fill_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
-				cache->fill_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
-
-				gdk = &(window->colour_masked_feature_border);
-				pixel = zMap_gdk_color_to_rgba(gdk);
-				cache->outline_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
-				cache->outline_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
-			}
-		}
-	}
-}
 
 /* return global highlight colours according to a feature's focus state, if set
  * also return whether the item is focussed/ selected
@@ -306,49 +260,96 @@ void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window)
  */
 int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *outline)
 {
-	GList *l;
-	ZMapWindowFocusCache cache;
-	int focus_type;
-	int i;
-	int ret = 0;
-	int cache_id = (id_flags >> 16);
+  GList *l;
+  ZMapWindowFocusCache cache;
+  int focus_type;
+  int i;
+  int ret = 0;
+  int cache_id = (id_flags >> 16);
 
-	if(!(id_flags & (WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_ID)))	/* use normal colours */
-		return 0;
+  if(!(id_flags & (WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_ID)))	/* use normal colours */
+    return 0;
 
-	for(l = focus_cache_G; l; l = l->next)
+  for(l = focus_cache_G; l; l = l->next)
+    {
+      cache = (ZMapWindowFocusCache) l->data;
+      if(cache->id == cache_id || !cache_id)
 	{
-		cache = (ZMapWindowFocusCache) l->data;
-		if(cache->id == cache_id || !cache_id)
+
+	  if(!cache->done_colours)
+	    {
+	      /* set global selected/ highlight colours if configured */
+	      /* window must be realised first so can only do this when displaying */
+	      ZMapWindow window = cache->window;
+	      GdkColor *gdk;
+	      gulong pixel;
+
+	      if(window->highlights_set.item)
 		{
-			focus_type = id_flags & WINDOW_FOCUS_GROUP_BITMASK;
-
-			for(i = 0; focus_type; i++, focus_type >>= 1)
-			{
-				if(focus_type & 1)
-				{
-					if(cache->fill_set[i])
-					{
-						if(fill)
-							*fill = cache->fill_pixel[i];
-						ret |= WINDOW_FOCUS_CACHE_FILL;
-					}
-					if(cache->outline_set[i])
-					{
-						if(outline)
-							*outline = cache->outline_pixel[i];
-						ret |= WINDOW_FOCUS_CACHE_OUTLINE;
-					}
-
-					if(i < N_FOCUS_GROUPS_FOCUS)
-						ret |= WINDOW_FOCUS_CACHE_SELECTED;
-
-					return ret;
-				}
-			}
+		  gdk = &(window->colour_item_highlight);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_FOCUS] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_FOCUS] = TRUE;
 		}
+
+	      if(window->highlights_set.evidence)
+		{
+		  gdk = &(window->colour_evidence_fill);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
+
+		  gdk = &(window->colour_evidence_border);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->outline_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->outline_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
+		}
+
+	      if(window->highlights_set.masked)
+		{
+		  gdk = &(window->colour_masked_feature_fill);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
+
+		  gdk = &(window->colour_masked_feature_border);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->outline_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->outline_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
+		}
+
+	      cache->done_colours = TRUE;
+	    }
+
+	  focus_type = id_flags & WINDOW_FOCUS_GROUP_BITMASK;
+
+	  for(i = 0; focus_type; i++, focus_type >>= 1)
+	    {
+	      if(focus_type & 1)
+		{
+		  if(cache->fill_set[i])
+		    {
+		      if(fill)
+			*fill = cache->fill_pixel[i];
+		      ret |= WINDOW_FOCUS_CACHE_FILL;
+		    }
+		  if(cache->outline_set[i])
+		    {
+		      if(outline)
+			*outline = cache->outline_pixel[i];
+		      ret |= WINDOW_FOCUS_CACHE_OUTLINE;
+		    }
+
+		  if(i < N_FOCUS_GROUPS_FOCUS)
+		    ret |= WINDOW_FOCUS_CACHE_SELECTED;
+
+		  return ret;
+		}
+	    }
 	}
-	return 0;
+    }
+
+  return 0;
 }
 
 

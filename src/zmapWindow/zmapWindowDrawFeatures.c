@@ -300,7 +300,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
     {
       setColours(window) ;
       window->done_colours = TRUE ;
-      zMapWindowFocusCacheSetSelectedColours(window);
     }
 
 
@@ -2526,44 +2525,68 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  GQuark feature_set_id ;
 	  char *clipboard_text = NULL;
 
+	  GdkModifierType shift_mask = GDK_SHIFT_MASK,
+		  control_mask = GDK_CONTROL_MASK,
+		  shift_control_mask = (GDK_SHIFT_MASK | GDK_CONTROL_MASK),
+		  unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+		  | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+		  | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+		  locks_mask ;
+
+		  /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
+		  * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
+		  * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
+		  * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
+	  if ((locks_mask = (but_event->state & unwanted_masks)))
+	  {
+		  shift_mask         |= locks_mask;
+		  control_mask       |= locks_mask;
+		  shift_control_mask |= locks_mask;
+	  }
+
+	  if (!zMapGUITestModifiers(but_event, shift_mask))
+		  /* shift adds to the selection so we don't unhighlight if nothing's there */
+	  {
+
 #warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
 
-	  /* Swop focus from previous item(s)/columns to this column. */
-	  zmapWindowUnHighlightFocusItems(window) ;
+		/* Swop focus from previous item(s)/columns to this column. */
+		zmapWindowUnHighlightFocusItems(window) ;
 
-	  /* Try unhighlighting dna/translations... */
-	  zmapWindowItemUnHighlightDNA(window, item) ;
-	  zmapWindowItemUnHighlightTranslations(window, item) ;
-	  zmapWindowItemUnHighlightShowTranslations(window, item) ;
+		/* Try unhighlighting dna/translations... */
+		zmapWindowItemUnHighlightDNA(window, item) ;
+		zmapWindowItemUnHighlightTranslations(window, item) ;
+		zmapWindowItemUnHighlightShowTranslations(window, item) ;
 
-	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
+		zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
 
-	  select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+		select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
 
-	  feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
-	  select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
+		feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
+		select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
 
-        {
-            GQuark q;
-            ZMapFeatureColumn gff;
+		{
+			GQuark q;
+			ZMapFeatureColumn gff;
 
-            q = zmapWindowContainerFeatureSetGetColumnId(container_set);
-            gff = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(q));
-            if(gff && gff->column_desc)
-                  clipboard_text = select.feature_desc.feature_set_description = g_strdup(gff->column_desc);
-        }
+			q = zmapWindowContainerFeatureSetGetColumnId(container_set);
+			gff = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(q));
+			if(gff && gff->column_desc)
+				clipboard_text = select.feature_desc.feature_set_description = g_strdup(gff->column_desc);
+		}
 
-	  select.type = ZMAPWINDOW_SELECT_SINGLE;
+		select.type = ZMAPWINDOW_SELECT_SINGLE;
 
-	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+		(*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-        if(clipboard_text)
-          {
-	      zMapWindowUtilsSetClipboard(window, clipboard_text);
+		if(clipboard_text)
+		{
+			zMapWindowUtilsSetClipboard(window, clipboard_text);
 
-	      g_free(clipboard_text) ;
-          }
+			g_free(clipboard_text) ;
+		}
 
+	  }
 	  event_handled = TRUE ;
 	}
     }

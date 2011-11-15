@@ -34,14 +34,14 @@
  *-------------------------------------------------------------------
  */
 
- /* NOTE
-  * this module takes a series of bins and draws then in various formats
-  * (line, hiostogram, heatmap) but in each case the source data is the same
-  * if 'density' mode is set then the source data is re-binned according to zoom level
-  * it adds a single (extended) foo_canvas item to the canvas for each set of data
-  * in a column.  It is possible to have several line graphs overlapping, but note that
-  * heatmaps and histograms would not look as good.
-  */
+/* NOTE
+ * this module takes a series of bins and draws then in various formats
+ * (line, hiostogram, heatmap) but in each case the source data is the same
+ * if 'density' mode is set then the source data is re-binned according to zoom level
+ * it adds a single (extended) foo_canvas item to the canvas for each set of data
+ * in a column.  It is possible to have several line graphs overlapping, but note that
+ * heatmaps and histograms would not look as good.
+ */
 
 /* NOTE
  * originally implemented as free standing canvas type and lter merged into CanvasFeatureset
@@ -62,6 +62,7 @@
 static GList *density_calc_bins(ZMapWindowFeaturesetItem di);
 
 gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style);
+void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose);
 
 
 int get_heat_rgb(int a,int b,double score)
@@ -106,48 +107,38 @@ gulong get_heat_colour(gulong a, gulong b, double score)
 
 
 
-static guint32 gdk_color_to_rgba(GdkColor *color)
-{
-  guint32 rgba = 0;
-
-  rgba = ((color->red & 0xff00) << 16  |
-        (color->green & 0xff00) << 8 |
-        (color->blue & 0xff00)       |
-        0xff);
-
-  return rgba;
-}
-
-
 /*
  * if we draw wiggle plots then instead of one GDK call per segment we cahce points and draw a big long poly-line
  *
- * ideally this would be implemented in the feaatureset struct as extenged for graphs
- * but we don't extend featuresets as the rest of the coed would be more complex.
+ * ideally this would be implemented in the feaatureset struct as extended for graphs
+ * but we don't extend featuresets as the rest of the code would be more complex.
  * instead we have a single cache here which works becaure we only ever display one column at a time.
  * and relies on ..PaintFlush() being called
  *
  * If we ever created threads to paint columns then this needs to be
  * moved into CanvasFeatureset and alloc'd for graphs and freed on CFS_destroy()
+ *
+ * NOTE currently we do use callbacks but these are necessarily serialised by the Foo Canvas
  */
 
 
 #define N_POINTS	2000	/* will never run out as we only display one screen's worth */
-static GdkPoint points[N_POINTS+2];		/* +2 for gaps between bins, inserting a line */
+static GdkPoint points[N_POINTS+4];		/* +2 for gaps between bins, inserting a line, plus allow for end of data trailing lines */
 static int n_points = 0;
+double last_gy = -1.0;
+
 
 
 /* paint one feature, CanvasFeatureset handles focus highlight */
 /* NOTE wiggle plots are drawn as poly-lines and get cached and painted when complete */
 /* NOTE lines have to be drawn out of the box at the edges */
-static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,  GdkEventExpose *expose)
+
+
+static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 
 {
-//      int cx1, cy1, cx2 = 0, cy2 = 0;		/* initialised for LINE mode */
-//      double i2w_dx, i2w_dy;
-//      double x1,y1,x2,y2;
-	double x1,x2;
-//      double width;
+      int cx2 = 0, cy2 = 0;		/* initialised for LINE mode */
+      double x1,x2,y2;
       gboolean draw_box = TRUE; 	/* else line */
       gulong fill,outline;
 	int colours_set, fill_set, outline_set;
@@ -157,40 +148,62 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 	{
 	case ZMAPSTYLE_GRAPH_LINE:
 		draw_box = FALSE;
-#if 0
+
 		/* output poly-line segemnts via a series of points
-		 * NOTE we start at the previous segment if any via the find algorithm
+		 * NOTE we start at the previous segment if any via the calling display code
 		 * so this caters for dangling lines above the start
 		 * and we stop after the end so this caters for dangling lines below the end
 		 */
 
-// shome mistake?  (3x : look fwds for width
-		feature->width = x2 = featureset->x_off + featureset->style->mode_data.graph.baseline + (width * feature->score) ;
-//		feature->width = x2 =  featureset->style->mode_data.graph.baseline + (width * feature->score) ;
-		y2 = (feature->y2 + feature->y1 + 1) / 2;
-		foo_canvas_w2c (item->canvas, x2 + i2w_dx, y2 - featureset->start + i2w_dy, &cx2, &cy2);
+		/* get width, y1, y2 and middle
+		 * our point is middle,width
+		 * and we join to the previous point if it's close in y
+		 * or back to baseline if y1 > prev.y2 in pixels, and then join with a vertical (add two points)
+		 */
 
-		if(feature->y1 - last_gy > bases_per_pixel * 2)	/* && fill_gaps_between_bins) */
+		if(!n_points || (feature->y1 - last_gy > featureset->bases_per_pixel * 2))	/* && fill_gaps_between_bins) */
 		{
 			int cx,cy;
 
-			if(last_gy < 0)	/* this is the first point */
+			if(n_points)
 			{
-				last_gy = search.y1;
-			}
-			else
-			{
-				foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline + i2w_dx, last_gy - featureset->start + i2w_dy, &cx, &cy);
+				/* draw from last point back to base: add baseline point at previous feature y2 */
+
+				foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline + featureset->dx, last_gy - featureset->start + featureset->dy, &cx, &cy);
+
 				points[n_points].x = cx;
 				points[n_points].y = cy;
 				n_points++;
 			}
+			else
+			{
+				/* clip to visible scroll or add initial point at featureset->clip_y1, baseline */
+				foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline  + featureset->dx, feature->y1 - featureset->start + featureset->dy, &cx, &cy);
 
-			foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline  + i2w_dx, feature->y1 - featureset->start + i2w_dy, &cx, &cy);
+#define VERTICAL_BRACKETS 0
+#if VERTICAL_BRACKETS // add vertical line off screen
+				points[n_points].x = cx;
+				points[n_points].y = featureset->clip_y1;
+				n_points++;
+#endif
+				points[n_points].x = cx;
+				points[n_points].y = cy;
+				n_points++;
+
+			}
+
+			/* add point at current feature y1, implies vertical if there's a previous point */
+			foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline  + featureset->dx, feature->y1 - featureset->start + featureset->dy, &cx, &cy);
+
 			points[n_points].x = cx;
 			points[n_points].y = cy;
 			n_points++;
 		}
+
+
+		x2 = featureset->x_off + featureset->style->mode_data.graph.baseline + feature->width;
+		y2 = (feature->y2 + feature->y1 + 1) / 2;
+		foo_canvas_w2c (item->canvas, x2 + featureset->dx, y2 - featureset->start + featureset->dy, &cx2, &cy2);
 
 		points[n_points].x = cx2;
 		points[n_points].y = cy2;
@@ -198,24 +211,15 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 		if(++n_points >= N_POINTS)
 		{
-			GdkColor c;
-
-			/* NOTE there is a bug here in that the trailing segnemt does not always paint */
-			/* kludged away by increasing N_POINTS to 2000 */
-			c.pixel = featureset->outline_pixel;
-			gdk_gc_set_foreground (featureset->gc, &c);
-
-			gdk_draw_lines(drawable,featureset->gc,points,n_points);
-			n_points = 0;
+			zMapWindowCanvasGraphPaintFlush(featureset, feature, drawable, expose);
 		}
-#endif
+
 		break;
 
 	case ZMAPSTYLE_GRAPH_HEATMAP:
 		/* colour between fill and outline according to score */
-		x1 = featureset->x_off;
-		feature->width = featureset->width;
-		x2 = x1 + feature->width;
+		x1 = featureset->x_off + featureset->dx;
+		x2 = x1 + featureset->width;
 
 		outline_set = FALSE;
 		fill_set = TRUE;
@@ -226,13 +230,12 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 	default:
 	case ZMAPSTYLE_GRAPH_HISTOGRAM:
-		x1 = featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
-		feature->width = (featureset->width * feature->score) ;
+		x1 = featureset->x_off + featureset->dx; //  + (width * zMapStyleBaseline(di->style)) ;
 		x2 = x1 + feature->width;
 
 		/* If the baseline is not zero then we can end up with x2 being less than x1
-		 * so we mst swap these round.
-		 */
+		* so we mst swap these round.
+		*/
 		if(x1 > x2)
 		{
 			double x = x1;
@@ -247,37 +250,53 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 		break;
 	}
 
-
 	if(draw_box)
 	{
-		/* draw a box */
-
-		/* colours are not defined for the CanvasFeatureSet
-		* as we can have several styles in a column
-		* but they are cached by the calling function
-		* and also the window focus code
-		*/
-
-		zMapCanvasFeaturesetDrawBoxMacro(featureset, feature, x1,x2, drawable, expose, fill_set, outline_set, fill, outline);
-
+		zMapCanvasFeaturesetDrawBoxMacro(featureset, feature, x1,x2, drawable, fill_set, outline_set, fill, outline);
 	}
-
 }
 
 
-void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
+void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
 
 	if(n_points > 1)
 	{
 		GdkColor c;
+		gboolean is_line = (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE);
+
+		if(is_line && !feature)	/* draw back to baseline from last point and add trailing line */
+		{
+			zmapWindowCanvasFeatureStruct dummy = { 0 };
+			FooCanvasItem *foo = (FooCanvasItem *) featureset;
+
+			foo_canvas_c2w (foo->canvas, 0, featureset->clip_y2, NULL, &dummy.y1);
+			dummy.y2 = dummy.y1 + 10;
+			dummy.width = 0.0;
+
+			zMapWindowCanvasGraphPaintFeature(featureset, &dummy, drawable, expose );
+#if !VERTICAL_BRACKETS
+			n_points -= 2;
+#endif
+		}
 
 		c.pixel = featureset->outline_pixel;
 		gdk_gc_set_foreground (featureset->gc, &c);
 
-		gdk_draw_lines(drawable,featureset->gc,points,n_points);
-	}
+		gdk_draw_lines(drawable, featureset->gc, points, n_points);	/* these are already clipped to the visible scroll region */
 
+		if(is_line && feature)		/* interim flush: add last point at start */
+		{
+			n_points--;
+			points[0].x = points[n_points].x;
+			points[0].y = points[n_points].y;
+			n_points = 1;
+		}
+		else
+		{
+			n_points = 0;
+		}
+	}
 }
 
 /*
@@ -319,42 +338,6 @@ void zMapWindowCanvasGraphInit(void)
 
 
 
-/* for bump_style */
-gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style)
-{
-	GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
-	FooCanvasItem *foo = (FooCanvasItem *) di;
-
-	if(di->display_index && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
-	{
-		zMapSkipListDestroy(di->display_index,zmapWindowCanvasFeatureFree);
-		di->display_index = NULL;
-	}
-
-	di->style = style;		/* includes col width */
-	di->x_off = zMapStyleDensityStagger(style) * di->set_index;
-
-		/* need to set colours */
-	zmapWindowCanvasItemGetColours(style, di->strand, di->frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
-
-	if(fill)
-	{
-		di->fill_set = TRUE;
-		di->fill_colour = gdk_color_to_rgba(fill);
-		di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
-	}
-	if(outline)
-	{
-		di->outline_set = TRUE;
-		di->outline_colour = gdk_color_to_rgba(outline);
-		di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
-	}
-
-	foo_canvas_item_request_update ((FooCanvasItem *) di);
-	return TRUE;
-}
-
-
 
 
 
@@ -380,6 +363,10 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
 	int min_bin = zMapStyleDensityMinBin(di->style);	/* min pixels per bin */
 	gboolean fixed = zMapStyleDensityFixed(di->style);
 
+	if(!di->features_sorted)
+		di->features = g_list_sort(di->features,zMapFeatureCmp);
+	di->features_sorted = TRUE;
+
 	if(!min_bin)
 		min_bin = 4;
 
@@ -392,7 +379,7 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
 	if(bases_per_bin < 1)	/* at high zoom we get many pixels per base */
 		bases_per_bin = 1;
 
-//printf("calc density item %s = %d\n",g_quark_to_string(di->id),g_list_length(di->source_bins));
+//printf("calc density item %s = %d\n",g_quark_to_string(di->id),g_list_length(di->features));
 //printf("bases per bin = %d,fixed = %d\n",bases_per_bin,fixed);
 
 	for(bin_start = start,src = di->features,dest = NULL; bin_start < end && src; bin_start = bin_end + 1)
@@ -408,7 +395,7 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
   		for(;src; src = src->next)
   		{
 			src_gs = (ZMapWindowCanvasFeature) src->data;
-//printf("src: %f,%f\n",src_gs->y1,src_gs->y2);
+//printf("src: %f,%f, %f\n",src_gs->y1,src_gs->y2,src_gs->score);
 			if(src_gs->y2 < bin_start)
 				continue;
 			if(src_gs->y1 > bin_end)
@@ -449,6 +436,7 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
 				/* this implicitly pro-rates any partial overlap of source bins */
 			if(fabs(score) > fabs(bin_gs->score))
 			{
+//printf("score set to %f\n",score);
 				bin_gs->score = score;
 				bin_gs->feature = src_gs->feature;		/* can only have one... choose the biggest */
 			}
@@ -476,6 +464,9 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
   		}
 		if(bin_gs->score > 0)
 		{
+			bin_gs->score = zMapWindowCanvasFeatureGetNormalisedScore(di->style, bin_gs->feature->score);
+			bin_gs->width = di->width * bin_gs->score;
+
 			if(!fixed && src_gs->y2 < bin_gs->y2)	/* limit dest bin to extent of src */
 			{
 				bin_gs->y2 = src_gs->y2;
