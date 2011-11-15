@@ -79,7 +79,8 @@ typedef struct
 }ResponseContextStruct, *ResponseContext;
 
 
-static char *application_execute_command(char *command_text, gpointer app_context, int *statusCode,ZMapXRemoteObj owner);
+static char *application_execute_command(char *command_text, gpointer app_context,
+					 ZMapXRemoteStatus *statusCode,ZMapXRemoteObj owner);
 static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
@@ -202,7 +203,8 @@ void zmapAppRemoteSendFinalised(ZMapAppContext app_context)
 
 /* This should just be a filter command passing to the correct
    function defined by the action="value" of the request */
-static char *application_execute_command(char *command_text, gpointer app_context_data, int *statusCode, ZMapXRemoteObj owner)
+static char *application_execute_command(char *command_text, gpointer app_context_data,
+					 ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner)
 {
   ZMapXMLParser parser;
   ZMapAppContext app_context = (ZMapAppContext)app_context_data;
