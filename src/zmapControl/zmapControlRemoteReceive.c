@@ -98,7 +98,8 @@ typedef struct
 
 
 /* ZMAPXREMOTE_CALLBACK */
-static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
+static char *control_execute_command(char *command_text, gpointer user_data,
+				     ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner);
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data);
 static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data) ;
 static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
@@ -195,7 +196,8 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 /* Return is string in the style of ZMAP_XREMOTE_REPLY_FORMAT (see ZMap/zmapXRemote.h) */
 /* Building the reply string is a bit arcane in that the xremote reply strings are really format
  * strings...perhaps not ideal...., but best in the cicrumstance I guess */
-static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner)
+static char *control_execute_command(char *command_text, gpointer user_data,
+				     ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner)
 {
   ZMapXMLParser parser;
   ZMap zmap = (ZMap)user_data;
