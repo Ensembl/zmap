@@ -759,7 +759,7 @@ void zMapXRemoteResponseSplit(ZMapXRemoteObj object, char *full_response, int *c
   return ;
 }
 
-int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply)
+int zMapXRemoteIsPingCommand(char *command, ZMapXRemoteStatus *statusCode, char **reply)
 {
   int is = 0;
 
@@ -935,7 +935,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
   else
     {
       gchar *response_text = NULL, *xml_text = NULL, *xml_stub = NULL ;
-      int statusCode = ZMAPXREMOTE_INTERNAL;
+      ZMapXRemoteStatus statusCode = ZMAPXREMOTE_INTERNAL;
 
       REMOTELOGMSG(Warning, "[XREMOTE receive] %s", command_text);
 
