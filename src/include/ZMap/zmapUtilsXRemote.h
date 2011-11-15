@@ -63,7 +63,7 @@ void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request
 				     ZMapXRemoteCallback callback, 
 				     ZMapXRemoteCallback post_callback, 
 				     gpointer user_data);
-gboolean zMapXRemoteValidateStatusCode(int *code);
+gboolean zMapXRemoteValidateStatusCode(ZMapXRemoteStatus *code);
 
 unsigned long zMapXRemoteWidgetGetXID(GtkWidget *widget);
 char *zMapXRemoteClientAcceptsActionsXML(unsigned long xwid, char **actions, int action_count);
