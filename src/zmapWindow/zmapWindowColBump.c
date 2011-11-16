@@ -41,6 +41,7 @@
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowCanvas.h>
+#include <zmapWindowCanvasFeatureset.h>
 
 
 typedef struct
@@ -316,7 +317,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   gboolean mark_set;
   int start, end ;
   double width, bump_spacing = 0.0 ;
-
+//double time;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_return_if_fail(bump_mode != ZMAPBUMP_INVALID);
@@ -356,71 +357,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
       return;
 
-  if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
-  {
-//printf("style bump_mode: %d %d\n",bump_mode,historic_bump_mode);
-     	if(zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
-    	      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
-	else
-    		zMapWarning("bump style not configured","");
-	return;
-  }
-
-  column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
-
-  /* always reset the column */
-  zMapWindowContainerFeatureSetRemoveSubFeatures(ZMAP_CONTAINER_FEATURESET(container)) ;
-
-  zmapWindowContainerShowAllHiddenFeatures(container);
-
-  zmapWindowContainerFeatureSetSortFeatures(container, 0);
-
-  zmapWindowBusy(window, TRUE) ;
-
   /* Need to know if mark is set for limiting feature display for several modes/feature types. */
   mark_set = zmapWindowMarkIsSet(window->mark) ;
-
-
-  bump_properties.container = container ;
-  bump_properties.window = window ;
-  bump_properties.overlap_mode = bump_mode ;
-
-
-  /* If user clicked on the column, not a feature within a column then we need to bump all styles
-   * and features within the column, otherwise we just bump the specific features. */
-  if (column)
-    {
-      bump_properties.bump_all      = TRUE ;
-      g_object_get(G_OBJECT(container),
-		   "unique-id", &bump_properties.style_id,
-		   NULL) ;
-
-      bump_properties.display_state = zmapWindowContainerFeatureSetGetDisplay(container);
-
-      zmapWindowContainerFeatureSetJoinAligns(container, &(bump_properties.match_threshold));
-
-      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
-      /*g_object_set(G_OBJECT(container),ZMAPSTYLE_PROPERTY_BUMP_MODE,bump_mode,NULL); // complains */
-    }
-  else
-    {
-
-      ZMapFeatureTypeStyle style;
-      ZMapFeature feature ;
-
-      feature = zmapWindowItemGetFeature(bump_item);
-      zMapAssert(feature) ;
-
-      bump_properties.bump_all = FALSE;
-      bump_properties.style_id = feature->style_id;
-
-      style = feature->style;       /* if it's displayed it has a style */
-
-//      zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
-      bump_properties.match_threshold = zMapStyleGetWithinAlignError(style);
-
-      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
-    }
 
   /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
    * or the visible section of the window. */
@@ -469,6 +407,112 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   bump_data.end = end ;
 
 
+//time = zMapElapsedSeconds;
+
+  if(zmapWindowContainerHasFeaturesetItem(container))
+  {
+	/* transitional code: columns with ZMapWindowFeaturesetItems may not contain simple FooCanvasItems */
+
+	if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
+	{
+		/* this does many featuresets, we expect heatmap sub-columns */
+		if(zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
+			zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+		else
+			zMapWarning("bump style not configured","");
+	}
+	else
+	{
+		/* bump features within each featureset item, we normally only expect one */
+		/* except for coverage data where we have a few heatmaps.*/
+
+		GList *l;
+		FooCanvasGroup *column_features;
+		BumpFeaturesetStruct bump_data = { 0 };
+		gboolean ok = TRUE;
+
+		column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
+
+		if(!column_features)
+			return;
+
+		bump_data.start = start ;	/* NOTE: different struct from previous one */
+		bump_data.end = end ;
+		bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
+
+		for(l = column_features->item_list;l;l = l->next)
+      	{
+      		/* cast to int because of headers catch22 knottiness */
+			if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+			    ok = FALSE;
+      	}
+
+      	/* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
+		 * in practice w/ heatmaps there will always be room and w/ other featrues only 1 CanavsFeatureset
+		 */
+      	if(ok)
+		  zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+	}
+//		time = zMapElapsedSeconds - time;
+//		printf("featureset bump in %.3f seconds\n", time);
+	return;
+  }
+  column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
+
+  /* always reset the column */
+  zMapWindowContainerFeatureSetRemoveSubFeatures(ZMAP_CONTAINER_FEATURESET(container)) ;
+
+  zmapWindowContainerShowAllHiddenFeatures(container);
+
+  zmapWindowContainerFeatureSetSortFeatures(container, 0);
+
+  zmapWindowBusy(window, TRUE) ;
+
+
+
+  bump_properties.container = container ;
+  bump_properties.window = window ;
+  bump_properties.overlap_mode = bump_mode ;
+
+
+  /* If user clicked on the column, not a feature within a column then we need to bump all styles
+   * and features within the column, otherwise we just bump the specific features. */
+  if (column)
+    {
+      bump_properties.bump_all      = TRUE ;
+      g_object_get(G_OBJECT(container),
+		   "unique-id", &bump_properties.style_id,
+		   NULL) ;
+
+      bump_properties.display_state = zmapWindowContainerFeatureSetGetDisplay(container);
+
+      zmapWindowContainerFeatureSetJoinAligns(container, &(bump_properties.match_threshold));
+
+      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+      /*g_object_set(G_OBJECT(container),ZMAPSTYLE_PROPERTY_BUMP_MODE,bump_mode,NULL); // complains */
+    }
+  else
+    {
+
+      ZMapFeatureTypeStyle style;
+      ZMapFeature feature ;
+
+      feature = zmapWindowItemGetFeature(bump_item);
+      zMapAssert(feature) ;
+
+      bump_properties.bump_all = FALSE;
+      bump_properties.style_id = feature->style_id;
+
+      style = feature->style;       /* if it's displayed it has a style */
+
+//      zMapStyleGetJoinAligns(style, &(bump_properties.match_threshold));
+      bump_properties.match_threshold = zMapStyleGetWithinAlignError(style);
+
+      zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+    }
+
+
+
   width = zmapWindowContainerFeatureSetGetWidth(container);
   bump_data.spacing = bump_spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
 
@@ -495,8 +539,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, hashDataDestroyCB) ;
       break ;
-    case ZMAPBUMP_NAVIGATOR:
-      break;
     case ZMAPBUMP_ALTERNATING:
       break;
 
@@ -703,6 +745,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	g_list_foreach(bump_data.pos_list, listDataDestroyCB, NULL) ;
     }
 
+//		time = zMapElapsedSeconds - time;
+//		printf("tradtional bump in %.3f seconds\n", time);
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -1012,25 +1056,6 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
 	    break ;
 	  }
-	case ZMAPBUMP_NAVIGATOR:
-	  {
-	    /* Bump features over if they overlap at all. */
-	    BumpColRange new_range ;
-
-	    new_range         = g_new0(BumpColRangeStruct, 1) ;
-	    new_range->y1     = y1 ;
-	    new_range->y2     = y2 ;
-	    new_range->offset = 0.0 ;
-	    new_range->incr   = x2 - x1 + 1.0;
-
-/*	    g_list_foreach(bump_data->pos_list, compareListOverlapCB, new_range) ;
-	    bump_data->pos_list = g_list_append(bump_data->pos_list, new_range) ;
-	    offset = new_range->offset ;
- */
-	    offset = bump_overlap(bump_data,new_range);
-	    break ;
-	  }
-	  break;
 	case ZMAPBUMP_ALTERNATING:
 	  {
 	    /* first time through ->offset == 0.0 this is where we need to draw _this_ feature.*/
@@ -1080,34 +1105,6 @@ static void hashDataDestroyCB(gpointer data)
 }
 
 
-#if MH17_NOT_USED
-/* GFunc callback func, called from g_list_foreach_find() to test whether current
- * element matches supplied overlap coords. */
-static void compareListOverlapCB(gpointer data, gpointer user_data)
-{
-  BumpColRange curr_range = (BumpColRange)data ;
-  BumpColRange new_range = (BumpColRange)user_data ;
-
-  /* Easier to test no overlap and negate. */
-  if (!(new_range->y1 > curr_range->y2 || new_range->y2 < curr_range->y1))
-    {
-      new_range->offset = curr_range->offset + curr_range->incr ;
-    }
-
-  return ;
-}
-
-static gint overlap_cmp(gconstpointer a,gconstpointer b)
-{
-      BumpColRange ra = (BumpColRange) a;
-      BumpColRange rb = (BumpColRange) b;
-
-      if(ra->column < rb->column)
-          return(-1);
-      return(1);
-}
-
-#endif
 
 /* GFunc callback func, called from g_list_foreach_find() to free list resources. */
 static void listDataDestroyCB(gpointer data, gpointer user_data)
@@ -2545,7 +2542,7 @@ static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasP
 
 /* (expecting column wide features (eg heatmaps) to bump to wiggles but let's not impose this) */
 /* change all features in the column to use the bump style or the normal one */
-/* hmmm.... we have to assume denisty style features as displaying normal foo/ zmap_canvas items
+/* hmmm.... we have to assume density style features as displaying normal foo/ zmap_canvas items
  * with an alternate style could involve hacking a huge amount of code which assumes the feature
  * decides what style it should be displayed with. it's that view and model tangle again.
  *

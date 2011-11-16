@@ -321,7 +321,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       // hide the menu item if it's not maskable
       item->type = ZMAPGUI_MENU_TOGGLE ;
 
-      if(!menu_data->container_set->maskable || !menu_data->window->highlights_set.masked)
+      if(!menu_data->container_set->maskable || !menu_data->window->highlights_set.masked || !zMapWindowFocusCacheGetSelectedColours(WINDOW_FOCUS_GROUP_MASKED, NULL, NULL))
         item->type = ZMAPGUI_MENU_HIDE;
       else if(!menu_data->container_set->masked)
         item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;

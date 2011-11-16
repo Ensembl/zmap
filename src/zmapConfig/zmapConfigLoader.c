@@ -930,7 +930,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
  * composite = source1 ; source2 ;  etc
  *
  * we also have to patch in the featureset to column mapping as config does not do this
- * which will make display anc column style tables work
+ * which will make display and column style tables work
  * NOTE the composite featureset does not exist at all and is just used to name a ZMapWindowgraphDensityItem
  */
 GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col)
@@ -1147,8 +1147,9 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 
             for(;len--;keys++)
             {
+                  q = g_quark_from_string(*keys);
                   shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
-                  glyph_shape = zMapStyleGetGlyphShape(shape);
+                  glyph_shape = zMapStyleGetGlyphShape(shape,q);
 
                   if(!glyph_shape)
                     {
@@ -1156,7 +1157,6 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
                     }
                   else
                     {
-                        q = g_quark_from_string(*keys);
                         g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
                     }
             }
@@ -1313,6 +1313,8 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_MIN_SCORE, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_MAX_SCORE, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
+      { ZMAPSTYLE_PROPERTY_SUMMARISE, FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
       { ZMAPSTYLE_PROPERTY_GFF_SOURCE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GFF_FEATURE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
@@ -1365,7 +1367,6 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE, FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
@@ -1454,6 +1455,8 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_MIN_SCORE, G_TYPE_DOUBLE,  style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_MAX_SCORE, G_TYPE_DOUBLE,  style_set_property, FALSE },
 
+    { ZMAPSTYLE_PROPERTY_SUMMARISE,   G_TYPE_DOUBLE, style_set_property, FALSE },
+
     { ZMAPSTYLE_PROPERTY_GFF_SOURCE, G_TYPE_STRING,  style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GFF_FEATURE, G_TYPE_STRING,  style_set_property, FALSE },
 
@@ -1503,7 +1506,6 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,   G_TYPE_STRING, style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE,   G_TYPE_DOUBLE, style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },

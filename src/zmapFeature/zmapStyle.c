@@ -157,6 +157,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "max-score", "maximum score",
             offsetof(zmapFeatureTypeStyleStruct, max_score),0 },
 
+    { STYLE_PROP_SUMMARISE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_SUMMARISE,
+            "summarise featureset at low zoom", "summarise featureset at low zoom",
+            offsetof(zmapFeatureTypeStyleStruct, summarise), 0 },
+
     { STYLE_PROP_GFF_SOURCE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_SOURCE,
             "gff source", "GFF Source",
             offsetof(zmapFeatureTypeStyleStruct, gff_source) ,0 },
@@ -297,9 +301,6 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_ALIGNMENT_MASK_SETS, STYLE_PARAM_TYPE_QUARK_LIST_ID, ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,
             "mask featureset against others", "mask featureset against others",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT },
-    { STYLE_PROP_ALIGNMENT_SUMMARISE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE,
-            "summarise featureset at low zoom", "summarise featureset at low zoom",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.summarise), ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
@@ -492,6 +493,17 @@ ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters
   ZMapFeatureTypeStyle style = NULL;
 
   style = styleCreate(n_parameters, parameters) ;
+
+    if(style->mode ==ZMAPSTYLE_MODE_BASIC || style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+	/* default summarise to 1000 to get round lack of configuration, can aloways set to zero if wanted */
+	  if(!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
+	  {
+		  zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
+		  style->summarise = 1000.0 ;
+	  }
+    }
+
 
   return style ;
 }
@@ -810,6 +822,9 @@ gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
  * Function returns FALSE if there style is not valid and the GError says
  * what the problem was.
  *  */
+/* (mh17) NOTE this fucntion is only called from obscure places and is not run for the majority of drawing operations
+ * so attempting to add style defaults here is doomed to failure
+ */
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 {
   gboolean valid = TRUE ;
@@ -977,8 +992,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
       }
     }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#if 0 // see comment at the top of this function
   /* Now do some mode specific stuff.... */
   if (valid)
     {
@@ -989,14 +1003,18 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
           break ;
         }
       case ZMAPSTYLE_MODE_BASIC:
-        {
-          break ;
-        }
-      case ZMAPSTYLE_MODE_TRANSCRIPT:
-        {
-          break ;
-        }
       case ZMAPSTYLE_MODE_ALIGNMENT:
+	  {
+		/* default summarise to 1000 to get round lack of configuration */
+		if(!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
+		{
+		  zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
+		  style->summarise = 1000.0 ;
+		}
+		break;
+	  }
+
+      case ZMAPSTYLE_MODE_TRANSCRIPT:
         {
           break ;
         }
@@ -1014,8 +1032,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
         }
       }
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+#endif
 
   /* Construct the error if there was one. */
   if (!valid)
@@ -1449,7 +1466,7 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 
 
 // store coordinate pairs in the struct and work out type
-ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape)
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 {
   gchar **spec,**segments,**s,**points,**p,*q;
   gboolean syntax = FALSE;
@@ -1469,6 +1486,7 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape)
   else
       syntax = TRUE;
 
+  glyph_shape->id = id;
   glyph_shape->n_coords = 0;
   cp = glyph_shape->coords;
 
@@ -1569,9 +1587,9 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn_tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>",g_quark_from_string("dn-tri")),
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
                         ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
                         ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
@@ -1585,9 +1603,9 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         // these have been swapped from the original
                         // GeneFinder uses 5' and 3' as Intron-centric
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>",g_quark_from_string("up-hook")),
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>",g_quark_from_string("dn_hook")),
 
                         ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,

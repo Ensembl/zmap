@@ -829,7 +829,8 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 	}
       while((list));
     }
-//  group->item_list = NULL; /* nor this */
+  group->item_list = NULL; /* nor this */
+  group->item_list_end = NULL;
   return ;
 }
 

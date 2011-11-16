@@ -44,6 +44,8 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
 
+#include <zmapWindowCanvasItemFeatureSet.h>
+
 // temp include for timing test
 #include <zmapWindowCanvasItem_I.h>
 
@@ -278,7 +280,7 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 
   run_data.feature_stack     = &feature_stack;
   feature_stack.feature = NULL;
-  zmapGetFeatureStack(&feature_stack,set,NULL);
+  zmapGetFeatureStack(&feature_stack,set,NULL,frame);
 
   run_data.frame   = frame;
 
@@ -315,9 +317,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   FooCanvasItem *item = NULL, *return_item = NULL;
   FooCanvasGroup *features_container = NULL;
   gboolean no_points_in_block = TRUE;
-  double summarise = 0.0;     /* 0.0 means don't */
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) parent_container;
-  ZMapWindow window;
   ZMapFeature feature = feature_stack->feature;
 
 #if MH17_REVCOMP_DEBUG > 1
@@ -581,18 +581,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  break;
 	}
 
-      summarise = zMapStyleGetSummarise(style);  /* get zoom level - not coded yet */
 
-      /* NOTE: temporarily accept any non zero zoom level
-       * need to compare style config with window zoom level
-       * but need to find out how first
-       */
-
-     window = zMapWindowContainerFeatureSetGetWindow(container);
-
-     if(!zMapWindowContainerSummarise(window,style) || zmapWindowContainerSummariseIsItemVisible(
-            window, points[0], points[1],points[2], points[3]))
-      {
+     {
             int offset,block_y1,block_y2;
 
             /*
@@ -779,6 +769,97 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 
 
 
+static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
+                              double feature_offset,
+					double x1, double y1, double x2, double y2,
+                              ZMapFeatureTypeStyle style)
+{
+  FooCanvasGroup        *parent = run_data->container;
+  FooCanvasItem   *feature_item = NULL;
+  ZMapWindowCanvasItem canvas_item;
+
+      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
+      ZMapFeatureBlock block = run_data->feature_stack->block;
+
+//       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
+      /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
+       * expects it to shuffle features into the right stranded container
+       * it's a half solution which caused a misunderstanding here.
+       * ideally the calling code would have 6 column groups prepared and we'd do one scan of the featureset
+       * that's a bit fiddly to sort now but it needs doing when containers get done
+       * We'd like to set up the 6 CanvasFeaturesets once, not recalc every time
+       * this would need 6 CanvasFeatureset id's to avoid the recalc every time
+       * Perhaps the best way is to run 6 scans for all frame and strand combinations??
+       */
+#warning code needs restructuring around zmapWindowDrawFeatureSet()
+      {
+      	/* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
+      	 * all of one type at a time
+      	 * so frame and strand are stable NOTE only frame, strand will wobble
+      	 * we save the id here to optimise the code
+      	 */
+            GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
+            FooCanvasItem * foo = FOO_CANVAS_ITEM(fset);
+            GQuark fset_id = run_data->feature_stack->set->unique_id;
+            char strand = '+';
+            char frame = '0';
+
+            if(zMapStyleIsStrandSpecific(style) && feature->strand == ZMAPSTRAND_REVERSE)
+            	strand = '-';
+            if(run_data->feature_stack->frame != ZMAPFRAME_NONE)
+            	frame += zmapWindowFeatureFrame(feature);
+
+		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
+		if(run_data->feature_stack->maps_to)
+			fset_id = run_data->feature_stack->maps_to;
+
+            char *x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+
+            run_data->feature_stack->id = g_quark_from_string(x);
+            g_free(x);
+      }
+
+            /* adds once per canvas+column+style, then returns that repeatedly */
+            /* also adds an 'interval' foo canvas item which we need to look up */
+      canvas_item = zMapWindowFeaturesetItemGetFeaturesetItem(parent, run_data->feature_stack->id,
+            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
+            run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
+
+      zMapAssert(canvas_item);
+
+/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
+ * so I changed FToIAddfeature to take the feature explicitly
+ * setting the feature here every time also fixes the problem but by fluke
+ */
+//      if(!canvas_item->feature)
+      	canvas_item->feature = feature;     /* must have one */
+
+
+	/* now we are outisde the normal ZMapWindowCanvasItem dogma */
+	/* NOTE we know that graph items are not processed by another route
+ 	 * unlike alignments that get zMapWindowFeatureReplaced()
+ 	 */
+ 	/* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
+  	 * we add a data struct and add colours to that in situ, as the feature has its style handy
+  	 */
+
+	/* NOTE as density items get re-binned on zoom and also get drawn in different ways
+	 * (line, histogram, heatmap) we only set the item's score/width here
+	 * not the x1,x2 coordinates
+	 */
+  	{
+  		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
+  		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
+
+	      zMapWindowFeaturesetAddFeature(foo, feature, y1, y2);
+	}
+
+      feature_item = (FooCanvasItem *)canvas_item;
+
+      return feature_item;
+}
+
+
 
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,
@@ -787,24 +868,32 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 {
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
-  ZMapWindowCanvasItem new_canvas_item;
+  ZMapWindowCanvasItem canvas_item;
 
-  /* clip the coords to the block, extending end to canvas drawing coords. */
-  /* Feature span coords are already clipped to block sapce.
-   * We just need to Seq2CanOffset */
- /* MH17 NOTE this makes the coordinate block relative,
-  * which has a greater effect than clipping them
-  * especially if the coordinates are not 1-based */
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
+
+	/* clip the coords to the block, extending end to canvas drawing coords. */
+	/* Feature span coords are already clipped to block sapce.
+	* We just need to Seq2CanOffset */
+	/* MH17 NOTE this makes the coordinate block relative,
+	* which has a greater effect than clipping them
+	* especially if the coordinates are not 1-based */
+	zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
 
 
-  if ((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
-    {
-      zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+	if ((canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
+	{
+		zMapWindowCanvasItemAddInterval(canvas_item, NULL, 0.0, y2 - y1, x1, x2);
 
-      feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-    }
+		feature_item = FOO_CANVAS_ITEM(canvas_item);
+	}
 
+  }
   return feature_item ;
 }
 
@@ -947,16 +1036,24 @@ static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
   FooCanvasItem *feature_item = NULL;
   guint line_width;
 
-  line_width = factory->line_width;
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
 
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
+	line_width = factory->line_width;
 
-  if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
-    {
-      zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+  	zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
-	feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-    }
+  	if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
+      {
+      	zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
+
+		feature_item = FOO_CANVAS_ITEM(new_canvas_item);
+    	}
+  }
   return feature_item ;
 }
 
@@ -1004,6 +1101,13 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   ZMapFeatureBlock        block = run_data->feature_stack->block;
   guint line_width = 0;
   gboolean rev_comped = ((ZMapWindow)(factory->user_data))->revcomped_features ;
+
+  if(!zMapStyleIsFoo(style))
+  {
+  	/* NOTE we handle gaps in here when implemented */
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
 
   if ((!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align)))
     {

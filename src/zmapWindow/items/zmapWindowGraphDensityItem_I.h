@@ -116,8 +116,8 @@ typedef struct _zmapWindowGraphDensityItemStruct
        */
   GdkGC *gc;             	  /* GC for graphics output */
 
-  guint fill_colour;            /* Fill color, RGBA */
-  guint outline_colour;         /* Outline color, RGBA */
+  gulong fill_colour;            /* Fill color, RGBA */
+  gulong outline_colour;         /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 

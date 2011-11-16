@@ -88,11 +88,14 @@ typedef struct _zmapSkipList
 typedef void (*ZMapSkipListFreeFunc) (gpointer data);
 
 ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp);
+ZMapSkipList zMapSkipListFirst(ZMapSkipList head);
+ZMapSkipList zMapSkipListLast(ZMapSkipList head);
 ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer key);
 ZMapSkipList zMapSkipListAdd(ZMapSkipList head, GCompareFunc cmp, gpointer key);
 ZMapSkipList zMapSkipListRemove(ZMapSkipList sl, ZMapSkipListFreeFunc free_func);
 void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func);
 
+int zMapSkipListCount(ZMapSkipList head);
 
 #define SKIP_LIST_CLASS	0
 

@@ -190,7 +190,7 @@ message_out "ZMap Build is $BUILD_PREFIX"
 # For some types of builds we do not want to keep the old builds. e.g. overnight builds.
 #
 if [ -n "$ERASE_SUBDIRS" ] ; then
-    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.develop-Release_*"
+    sub_dirs_pattern="$PARENT_BUILD_DIR/ZMap.*.BUILD"
     message_out "Removing previous builds with name: $sub_dirs_pattern"
     rm -rf $sub_dirs_pattern || message_exit "Failed to remove previous builds: $sub_dirs_pattern."
 fi

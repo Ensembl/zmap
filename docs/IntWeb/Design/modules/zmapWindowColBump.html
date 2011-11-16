@@ -49,7 +49,7 @@ The table below lists the available modes but from the code it's not immediately
 </p>
 
 <p>Historically there is also a compress mode given to the bump code, which hides data outside the marked region.
-Partly this was implemented to provide performance benefit, but for some bump modes (eg ZMAPBUMP_ALL) it prevents excessive horizontal scrolling.  It is thought that there will be little performance benefit in this with the new code and perhaps the use of bump modes can be reviewed.
+Partly this was implemented to provide performance benefit, but for some bump modes (eg ZMAPBUMP_ALL) it prevents excessive horizontal scrolling.  This compress mode defines the sequence range we bump (and data not straying into this region is hidden).  There are the options of Mark Visible or All, with visible corresponding to the scroll region, and All being all features.  Note that due to the implementation of featureset foo canvas items we do not have to care about whether features are visible of not as they will never be exposed if they are outside the scrolling region.  However there is some opprtunity for fine tuning of code here if this an issue.
 </p>
 
 

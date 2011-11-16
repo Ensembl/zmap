@@ -200,14 +200,11 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
       state_position_restore(window, &(state->position));
     }
 
-#warning stats focus restore removed due to several crash reports on revcomp
-/* coordinates appear to be wrong sense and cause an assert */
-#if 0
+
   if(state->focus_items_set)
     {
       state_focus_items_restore(window, &(state->focus));
     }
-#endif
 
   if(state->bump_state_set)
     {
@@ -667,13 +664,13 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
       if (focus_item)
 	{
 	  ZMapFeature feature ;
-	  FooCanvasItem *sub_item = focus_item, *highlight_item = focus_item ;
+	  FooCanvasItem *sub_item = focus_item;
 	  gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
 
 	  feature = zMapWindowCanvasItemGetFeature(focus_item) ;
 
 	  /* Pass information about the object clicked on back to the application. */
-	  zmapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, 0, 0, 0, 0,
+	  zmapWindowUpdateInfoPanel(window, feature, sub_item, NULL, 0, 0, 0, 0,
 				    NULL, replace_highlight, highlight_same_names) ;
 	}
     }

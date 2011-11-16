@@ -293,7 +293,7 @@ install-zmap-static-libs:
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
 	@list='$(LIBS_ZMAP)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
+	  $(am__strip_dir) \
 	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)/$(libdir)/$$f'"; \
 	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)/$(libdir)/$$f"; \
 	done

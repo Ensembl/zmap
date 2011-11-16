@@ -40,7 +40,7 @@
  * - index levels are implemented by list pointers up and down not an array, which means that we
  *   do not concern ourselves with how nuch data we want to index and data is allocated only when needed
  * - the list layers are explicitly balanced by inserting and deleting nodes
- * - layes are removed when they become empty
+ * - layers are removed when they become empty
  *
  * NOTE initially we do not implement balancing, and stop at the point where
  * the data structure is secure through insert and delete operations
@@ -80,10 +80,13 @@ static ZMapSkipList allocSkipList(void)
       }
 
       sl = skip_list_free_G;
-      skip_list_free_G = sl->next;
+      if(sl)
+      {
+      	skip_list_free_G = sl->next;
 
-      /* these can get re-allocated so must zero */
-      memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
+      	/* these can get re-allocated so must zero */
+      	memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
+      }
       return(sl);
 }
 
@@ -161,6 +164,56 @@ ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
 
 
 
+/* to avoid handling NULL in the cmp function we provide this to get the first leaf node
+ * NOTE that it's possible to descend to ta leaf frpm the head ans still have previous leaves
+ * depending on implementation details - this is due to add/ delete operations
+ * but we do know that downward links go direct to a leaf
+ * NOTE finding the last item efficiently is a bit harder - romm for more design here??
+ * an alternative strategy is to know min and max key values and Find them
+ */
+ZMapSkipList zMapSkipListFirst(ZMapSkipList head)
+{
+	if(head)
+	{
+		while(head->down)
+			head = head->down;
+		while(head->prev)
+			head = head->prev;
+	}
+	return head;
+}
+
+
+int zMapSkipListCount(ZMapSkipList head)
+{
+	int i;
+
+	head = zMapSkipListFirst(head);
+	for(i = 0; head; i++)
+		head = head->next;
+	return(i);
+}
+
+
+/* we could had a tail pointer handy, but we'd need to wrap the data in a class thingy
+ * keep it simple: we don't expect to call this fucntion repeatedly
+ */
+ZMapSkipList zMapSkipListLast(ZMapSkipList head)
+{
+	while(head)		/* if true will stay so */
+	{
+		/* there's alwasy a down pointer, not always an up
+		 * so we keep going next, then down, then next...
+		 */
+		while(head->next)
+			head = head->next;
+		if(!head->down)
+			break;
+		head = head->down;
+	}
+	return head;
+}
+
 /* return a pointer to the lowest list layer */
 /* find first occurence of matching data */
 /* if none then the one before or the one after if at the start of the list */
@@ -188,6 +241,7 @@ ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer
 
 	return(sl);
 }
+
 
 
 /* for the moment just add to bottom layer */

@@ -363,7 +363,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 					FooCanvasItem *curr_feature_item,
 					ZMapFeature new_feature, gboolean destroy_orig_feature) ;
-gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, gboolean destroy_feature) ;
+gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
 
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);

@@ -9,7 +9,7 @@
 # the bootstrap script makes the file zmap_version.m4 and puts zmaps current
 # version in it as the macro ZMAP_VERSION_NUMBER
 m4_include([zmap_version.m4])
- 
+
 
 AC_PREREQ(2.61)
 
@@ -39,11 +39,11 @@ echo "*"
 # what are we building on?
 AC_CANONICAL_BUILD
 case $build in
-     *-*-linux*)  
+     *-*-linux*)
      zmap_os_type="Linux";;
-     *-*-darwin*) 
+     *-*-darwin*)
      zmap_os_type="darwin";;
-     *) 
+     *)
      zmap_os_type="Unknown";;
 esac
 # replaces -DLINUX
@@ -148,7 +148,7 @@ X_LIBS="$X_LIBS -lX11"
 
 
 # Leopard and tiger have different versions of X11 installed in different places.
-# Leopard has a softlink for the tiger directory and as the tiger version is older we go 
+# Leopard has a softlink for the tiger directory and as the tiger version is older we go
 # with that one, of which there's a copy in the 10.4u sdk.
 if test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE" ; then
    X_LIBS="-L$with_macosx_sdk_path/usr/X11R6/lib -lX11"
@@ -234,17 +234,17 @@ PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 #    AC_MSG_RESULT([Are you sure?])
 #  else
 #    AC_MSG_RESULT([Canvases not found, but neither was GTK 2.10])
-#  fi                               
+#  fi
 #])
 #
 #AC_SUBST([CANVAS_TESTING])
 
 
-dnl This has to go here for our nfs mounted mac....    
+dnl This has to go here for our nfs mounted mac....
 if [ test "$zmap_os_type" = "darwin" ] && [ test -d /Users/zmap/nfs_mount ]; then
   PKG_CONFIG="$PKG_CONFIG --define-variable MOUNT_POINT=/Users/zmap/nfs_mount"
-# man pkg-config says  use --define-variable=VAR=VALUE, but 
-# pkg-config --define-variable=VAR=VALUE --atleast-pkgconfig-version 0.9.0 
+# man pkg-config says  use --define-variable=VAR=VALUE, but
+# pkg-config --define-variable=VAR=VALUE --atleast-pkgconfig-version 0.9.0
 # fails whereas
 # pkg-config --define-variable VAR=VALUE --atleast-pkgconfig-version 0.9.0
 # does not
@@ -264,15 +264,15 @@ CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 
 AC_CHECK_LIB(AceConn, [main],
-  [ have_ace_conn='true' ], 
+  [ have_ace_conn='true' ],
   [ have_ace_conn='false';
     AC_MSG_ERROR(AceConn package is required) ])
 
 if test "x$with_macosx_sdk_path" = "x$ZMAP_FALSE" ; then
-    AC_CHECK_LIB(g2, [g2_attach],  
+    AC_CHECK_LIB(g2, [g2_attach],
     [ have_g2='true';
       AC_CHECK_LIB(g2, [g2_open_gd], [ have_g2_gd='true' ], [ have_g2_gd='false';
-          AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd $X_LIBS] )], 
+          AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd $X_LIBS] )],
 	[ have_g2=have_g2_gd='false';
 	    AC_MSG_ERROR(g2 package is required) ], [-lgd $X_LIBS])
 fi
@@ -299,7 +299,7 @@ AC_SUBST(DEMO_CANVAS_LIBS)
 #    do
 #      case $l in
 #           -L*) RPATH="${RPATH} $l";;
-#      esac      
+#      esac
 #   done
 #   IFS=$save_ifs
 #fi
@@ -307,7 +307,7 @@ AC_SUBST(DEMO_CANVAS_LIBS)
 #zmapMake/platform.alpha_5:LDFLAGS = -rpath '/usr/local/gtk2/lib:$(POPT_LIB)'
 #zmapMake/platform.linux_4:LDFLAGS = -Xlinker -rpath -Xlinker $(FOO_CANVAS_PATH)/lib
 # -rpath :separated_list
-# -Wl,-rpath 
+# -Wl,-rpath
 
 ################################################################################
 ################################################################################
@@ -349,8 +349,8 @@ LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 #--------------------------------------------------------------------
 AC_CHECK_HEADER([execinfo.h], [
 			      AC_CHECK_FUNCS([backtrace backtrace_symbols_fd], [AC_DEFINE([HAVE_GNUC_BACKTRACE], [1], [Have gnu glibc and backtrace()])], [])
-			      ], 
-			      [AC_DEFINE([NO_BACKTRACE], [], [There's no backtrace from gnu glibc on this machine])], 
+			      ],
+			      [AC_DEFINE([NO_BACKTRACE], [], [There's no backtrace from gnu glibc on this machine])],
 			      [#ifndef NO_EXTRA_HEADERS
 			      #endif /* EXTRA_HEADERS */
 			      ])

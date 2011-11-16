@@ -119,9 +119,9 @@ typedef enum
     COLINEAR_INVALID,
     COLINEAR_NOT,					    /* blocks not colinear. */
     COLINEAR_IMPERFECT,					    /* blocks colinear but not contiguous. */
-    COLINEAR_PERFECT					    /* blocks colinear and contiguous. */
+    COLINEAR_PERFECT,					    /* blocks colinear and contiguous. */
+    COLINEARITY_N_TYPE
   } ColinearityType ;
-
 
 
 typedef enum {ZMAPBOUNDARY_NONE = 0, ZMAPBOUNDARY_CLONE_END,
@@ -1140,6 +1140,8 @@ void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context);
 
+void zMapPrintContextFeaturesets(ZMapFeatureContext context);
+
 /* THOSE IN FEATURECONTEXT.C */
 
 GList *zMapFeatureString2QuarkList(char *string_list) ;
@@ -1184,6 +1186,7 @@ int zmapFeatureRevCompCoord(int coord, int start, int end);
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
 
 
+void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;

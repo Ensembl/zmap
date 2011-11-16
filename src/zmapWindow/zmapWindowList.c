@@ -711,12 +711,9 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
             for(;items;items = items->next)
             {
             	ID2Canvas id2c = (ID2Canvas) items->data;
-                  FooCanvasItem *feature_item = (FooCanvasItem *) id2c->item;
 
                  /* they want to see it so remove the mask */
-//                  feature = zmapWindowItemGetFeature(feature_item);
                   feature = (ZMapFeature) id2c->feature_any;
-
                   feature->feature.homol.flags.masked = FALSE;
 
 /* MH17:
@@ -735,9 +732,10 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
              * bumping redisplays alignments and changes (re-allocates) features and items
              * but non bumped columns should have features displayed here
              */
-                  foo_canvas_item_show(feature_item);
-                  feature = zmapWindowItemGetFeature(feature_item);
-                  feature->feature.homol.flags.displayed = TRUE;
+
+			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, feature);
+			zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) id2c->item,TRUE);
+
             }
 
             if(bump_mode > ZMAPBUMP_UNBUMP)

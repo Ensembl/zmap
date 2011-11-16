@@ -742,7 +742,16 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   if(matching_interval == NULL)
     g_warning("No matching interval!");
   else if(sub_feature_out)
-    *sub_feature_out = g_object_get_data(G_OBJECT(matching_interval), ITEM_SUBFEATURE_DATA);
+  {
+  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
+  	{
+  		/* returns a static dara structure */
+  		*sub_feature_out =
+  			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
+  	}
+  	else
+  		*sub_feature_out = g_object_get_data(G_OBJECT(matching_interval), ITEM_SUBFEATURE_DATA);
+  }
 
   return matching_interval;
 }
@@ -785,6 +794,28 @@ gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureType
 
 	return ret;
 }
+
+/* like foo but for a ZMap thingy */
+gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show)
+{
+	ZMapWindowCanvasItemClass class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+	gboolean ret = FALSE;
+
+	if(class->showhide)
+		ret = class->showhide((FooCanvasItem *) item, show);
+	else
+	{
+		if(show)
+			foo_canvas_item_show(FOO_CANVAS_ITEM(item));
+		else
+			foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
+	}
+
+	return ret;
+
+}
+
+
 
 
 /* Get at parent... */
@@ -1427,6 +1458,7 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
 
+
 #if MH17_REVCOMP_DEBUG > 1
       zMapLogWarning("canvas item draw %s %p %f,%f - %f,%f",
             g_quark_to_string(canvas_item->feature->unique_id),
@@ -1533,7 +1565,8 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
             colour_target = STYLE_PROP_FRAME2_COLOURS ;
             break ;
           default:
-            zMapAssertNotReached() ;
+//            zMapAssertNotReached() ; no longer valid: frame specific style by eg for swissprot we display in one col on startup
+            break ;
           }
 
         zMapStyleGetColours(style, colour_target, colour_type,

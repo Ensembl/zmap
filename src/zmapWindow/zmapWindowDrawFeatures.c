@@ -679,7 +679,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 }
 
 
-void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature)
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature, ZMapFrame frame)
 {
   /* scan for the call to get_featureset_column_index() for 2 more fields
      feature_stack->set_index =
@@ -692,13 +692,15 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
   feature_stack->frame = ZMAPFRAME_NONE;
 
   feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
+
   if(feature && feature->style)	/* chicken */
     {
       if(zMapStyleIsStrandSpecific(feature->style))
-	feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
-      if(zMapStyleIsFrameSpecific(feature->style))
-	feature_stack->frame = zmapWindowFeatureFrame(feature);
+		feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+//      if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME(display_3_frame))
+//		feature_stack->frame = zmapWindowFeatureFrame(feature);
     }
+   feature_stack->frame = frame;
 
   zMapAssert(feature_set || feature);
 
@@ -774,6 +776,10 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
   zMapAssert(forward_col_wcp || reverse_col_wcp) ;
+#define MODULE_STATS	0
+#if MODULE_STATS
+	double time = zMapElapsedSeconds;
+#endif
 
   featureset_data.window = window ;
 
@@ -830,18 +836,22 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.styles        = styles ;
   featureset_data.feature_count = 0;
 
-  zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL);
+  zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL,frame);
 
 
-  if(zMapStyleDensity(feature_set->style))
+//  if(zMapStyleDensity(feature_set->style))
+/* now works with any CanvasFeatureset */
     {
       ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-      featureset_data.feature_stack.set_index =
-	get_featureset_column_index(window->context_map,feature_set->unique_id);
-
+	if(zMapStyleDensityStagger(feature_set->style))
+	{
+      	featureset_data.feature_stack.set_index =
+			get_featureset_column_index(window->context_map,feature_set->unique_id);
+	}
       if(f_src)
-	featureset_data.feature_stack.maps_to = f_src->maps_to;
+		featureset_data.feature_stack.maps_to = f_src->maps_to;
+
       //printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
 
       //  	if(!featureset_data.feature_stack.maps_to)
@@ -850,32 +860,16 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
-
-  if(zMapWindowContainerSummarise(window,feature_set->style))
-    {
-      GList *feature_list;
-
-#if MH17_DONT_INCLUDE
-      zMapLogWarning("summarise %s zoom: %f,%f\n", g_quark_to_string(feature_set->unique_id),
-		     zMapStyleGetSummarise(feature_set->style),zMapWindowGetZoomFactor(window));
-#endif
-      feature_list = zMapWindowContainerSummariseSortFeatureSet(feature_set);
-
-      g_list_foreach(feature_list, ProcessListFeature, &featureset_data) ;
-      g_list_free(feature_list);
-
-      zMapWindowContainerSummariseClear(window,feature_set);
-    }
-  else
-    {
-
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
-    }
 
   {
-    char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
-    zMapStopTimer("DrawFeatureSet",str);
-    g_free(str);
+  char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
+  zMapStopTimer("DrawFeatureSet",str);
+  g_free(str);
+#if MODULE_STATS
+	time = zMapElapsedSeconds - time;
+	printf("Draw featureset %s: %d features in %.3f seconds\n", g_quark_to_string(feature_set->unique_id),featureset_data.feature_count,time);
+#endif
   }
 
 
@@ -1187,6 +1181,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
       /* unbumped features might be wider */
   zmapWindowFullReposition(canvas_data->window) ;
 
+
   return ;
 }
 
@@ -1248,7 +1243,6 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 	    }
 	}
     }
-
 
   return ;
 }
@@ -2444,6 +2438,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 
   if(feature_item)
       featureset_data->feature_count++;
+
   return ;
 }
 
@@ -2530,44 +2525,68 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  GQuark feature_set_id ;
 	  char *clipboard_text = NULL;
 
+	  GdkModifierType shift_mask = GDK_SHIFT_MASK,
+		  control_mask = GDK_CONTROL_MASK,
+		  shift_control_mask = (GDK_SHIFT_MASK | GDK_CONTROL_MASK),
+		  unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+		  | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+		  | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+		  locks_mask ;
+
+		  /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
+		  * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
+		  * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
+		  * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
+	  if ((locks_mask = (but_event->state & unwanted_masks)))
+	  {
+		  shift_mask         |= locks_mask;
+		  control_mask       |= locks_mask;
+		  shift_control_mask |= locks_mask;
+	  }
+
+	  if (!zMapGUITestModifiers(but_event, shift_mask))
+		  /* shift adds to the selection so we don't unhighlight if nothing's there */
+	  {
+
 #warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
 
-	  /* Swop focus from previous item(s)/columns to this column. */
-	  zmapWindowUnHighlightFocusItems(window) ;
+		/* Swop focus from previous item(s)/columns to this column. */
+		zmapWindowUnHighlightFocusItems(window) ;
 
-	  /* Try unhighlighting dna/translations... */
-	  zmapWindowItemUnHighlightDNA(window, item) ;
-	  zmapWindowItemUnHighlightTranslations(window, item) ;
-	  zmapWindowItemUnHighlightShowTranslations(window, item) ;
+		/* Try unhighlighting dna/translations... */
+		zmapWindowItemUnHighlightDNA(window, item) ;
+		zmapWindowItemUnHighlightTranslations(window, item) ;
+		zmapWindowItemUnHighlightShowTranslations(window, item) ;
 
-	  zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
+		zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
 
-	  select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+		select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
 
-	  feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
-	  select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
+		feature_set_id = zmapWindowContainerFeatureSetColumnDisplayName(container_set);
+		select.feature_desc.feature_set = (char *) g_quark_to_string(feature_set_id);
 
-        {
-            GQuark q;
-            ZMapFeatureColumn gff;
+		{
+			GQuark q;
+			ZMapFeatureColumn gff;
 
-            q = zmapWindowContainerFeatureSetGetColumnId(container_set);
-            gff = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(q));
-            if(gff && gff->column_desc)
-                  clipboard_text = select.feature_desc.feature_set_description = g_strdup(gff->column_desc);
-        }
+			q = zmapWindowContainerFeatureSetGetColumnId(container_set);
+			gff = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(q));
+			if(gff && gff->column_desc)
+				clipboard_text = select.feature_desc.feature_set_description = g_strdup(gff->column_desc);
+		}
 
-	  select.type = ZMAPWINDOW_SELECT_SINGLE;
+		select.type = ZMAPWINDOW_SELECT_SINGLE;
 
-	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+		(*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-        if(clipboard_text)
-          {
-	      zMapWindowUtilsSetClipboard(window, clipboard_text);
+		if(clipboard_text)
+		{
+			zMapWindowUtilsSetClipboard(window, clipboard_text);
 
-	      g_free(clipboard_text) ;
-          }
+			g_free(clipboard_text) ;
+		}
 
+	  }
 	  event_handled = TRUE ;
 	}
     }

@@ -139,6 +139,8 @@ extern gboolean zmap_timing_G;
             ID,OPT); \
    }
 
+#define zMapElapsedSeconds	g_timer_elapsed(ZMAP_GLOBAL_TIMER, NULL)
+
 // can use start then stop, but stop on its own can be interpreted as previous event as start
 #define zMapStartTimer(TEXT,OPT)    zMapPrintTime("Start",TEXT,OPT)
 #define zMapStopTimer(TEXT,OPT)     zMapPrintTime("Stop",TEXT,OPT)

@@ -4,18 +4,21 @@
 <p>As user requreiments have grown to include 600+ BAM files (and 400+?? bigWig) and no doubt more in the near future the current flat .ini configuration system has become unworkable.
 </p>
 
-<p>There is a case for continuing to use the 'ZMap' config file for existing basic config but several parts of this system need to be handled differently and the obvious solution is an SQLite database.
+<p>There is a case for continuing to use the 'ZMap' config file for existing basic config but several parts of this system need to be handled differently and the obvious solution is an SQLite database.  Note that in the context of a ZMap session this data is entirely static; we explicitly choose to store any session state information elsewhere. Initially we will convert to SQLite large configuration data (style, featuresetsm columns, servers) and replicate the existing flat file information unchanged.
 </p>
 
-<p>This will be an opportunity to tidy up some configuration options that have been added hurriedly over that past few years.
-It is also an opportunity to address the complications caused by using GQuarks as unique id's for data items - with SQL we can generate unique id's in the database and have names simply as names.
+<p>This will also be an opportunity to tidy up some configuration options that have been added hurriedly over that past few years. It is also an opportunity to address the complications caused by using GQuarks as unique id's for data items - with SQL we can generate unique id's in the database and have names simply as names.
 </p>
 
-<p>There is an issue of presenting configuration data to standalone users of ZMap who would like a simple interaface with relatively small amounts of data (eg to look at EnsEMBL with only a few tracks).  This can be addressed by using an open source SQL browser or by providing a short Perl script to act as a very basic local webserver that handles HTML form submission.
+<p>There are two main use-cases: as part of the Otterlace annotation systema and as a standalone genome browser.  Otterlace can generate a database in whatever format is needed and our only concerns are that ZMap can read the data Otterlace can generate it easily.  When acting as a standalone browser we need to ensure that users unskilled in SQL can use ZMap and make minor modifications to configuration, a few examples of this will be considered later.  It is imagined that a 'standalone users' includes those who have very simple configuration needs eg Ensembl style with only a few Core tracks.
+This can be addressed by using an open source SQL browser or by providing a short Perl script to act as a very basic local webserver that handles HTML form submission.  Additionally several small Perl scripts can be provided to access and update records from the command line. (eg to re-order columns on the display, add a new data source etc etc.
 </p>
 
-<p>For generating such a database by otterlace no doubt a script could extract information from otterlace configuration, write SQL to create a database and feed it into SQLite.
+<p>As the development of ZMap is likely to require many more configuration changes in the future we need to consider how this this will affect database structure. In terms of efficiency there are no real constraints as we are dealing with small amounts of data (for a database) and only accessing it as configuration (and storing this in memory for real-time use).
 </p>
+
+
+
 
 
 <h3>What data do we need to handle?</h3>
@@ -23,7 +26,7 @@ It is also an opportunity to address the complications caused by using GQuarks a
 <h4>Styles</h4>
 
 <p>387 defined in a recent-ish but out of date file
-These work in a hierarchy and inherit attributes, if stored in SQL ths would be as a two simple tables that get processed by ZMap as at present from the ini stanza data.
+These work in a hierarchy and inherit attributes, if stored in SQL ths would be as a two simple tables that get processed by ZMap as at present from the ini stanza data - style inheritance will remain as a ZMap application function.
 </p>
 <pre>
 style table
@@ -33,22 +36,164 @@ style table
 attibute table
 	style-id	ref to style, indexed
 	attribute-id	generic attribute: completely future proof
-	value
+	value		text, converted to numeric by application code
 </pre>
+
+Note that styles have a large number of options some of which are mutually exclusive. Styles are referenced by featureset and columns; in existing flat file configuration this is by unique ID derived from the name, and we would be best converting this to a database unique ID.
 </p>
 
 
 <h4>Source data (featuresets)</h4>
 
-<p>These map into columns on display and each one contains data of the same type.  Tradtionally the type of data was identified by the display style but this confuses presentation with the data model.  The type of data (eg transcript, alignement) implies the type and amount of information that can be attached to each feature and the relationships between parts, but also there is a need to differentiate between some datasets operationally - BAM data is such high volume that we requre to restrict access to small sequences only and do that on demand rather than on startup.
+<p>These map into columns on display and each one contains data of the same type.  Tradtionally the type of data was identified by the display style but this confuses presentation with the data model.  The type of data (eg transcript, alignment) implies the type and amount of information that can be attached to each feature and the relationships between parts, and there is a need to differentiate between some datasets operationally - BAM data is such high volume that we need to restrict access to small sequences only and do that on demand rather than on startup.
 </p>
 <p>With BAM data we expect approx 1000 of these to start with.</p>
+<p>Featuresets have a display style and must be linked to a source/ server.
+<p>
+
+<h5>ACEDB legacy issues</h5>
+<p>ACEDB supports request by column and supplies a mapping from featureset to column - it will be necessary to add this to the data extracted from SQL.  We'd like to avoid updating the SQLite database OTF, as then it would become state not configuration.
+</p>
 
 
-<p>Currently there are a lot of config options invented OTF to handle historical and more recent situtations and these could benefit from a review.  The tables are preented as containing mandatory field only and optional fields are stored in another table.  To keep the data base as simple as possible values are stored as strings and are converted to numeric as required by applciation code.
+<h4>Servers</h4>
+<p>These are the sources of feature data for ZMap and can be (currently) ACEDB, DAS (not fully implmented) pipe or file. Note that we do have DAS based data but this is accessed via a pipe script.  Each server can support one or more featuresets and has options such as load on startup.  As new source types (eg BAM, coverage) extra options become necessary, although most of these are best tied to the featuresets.
+</p>
+
+
+<h4>Display Configuration: columns</h4>
+<p>Historically ZMap has operated  with a structure derived from ACEBD where columns of data (tracks) are requested and these may contain several featuresets.  Columns are ordered on the screen left to right in reverse and forward strands. Columns can be shown/ hidden and this implies operating on several featuresets in tandem.
+</p>
+<p>With BAM coverage data we need to map several featuresets into sub-columns - this has been achieved by inventing 'virtual featuresets' which map into coverage columns.  What is really needed here is nested grouping; the top level can be used to show/ hide several sub-columns and appears on the load-column dialog, and the intermediate level groups several efaturesets into a display entity: two quite distinct functions.
+</p>
+<h5>Column ordering and other options</h5>
+<p>Historically column order has been defined by a list of columns (as plain text) and while this works well for small numbers it has become unwieldy and also suffers from the (recent) existance of multiple lists and the fact that this single list of columns has mulitple functions: display order, column request, grouping of featuresets.  These need to be teased apart into distinct configuration options.
+</p>
+
+
+
+<h3>Database tables</h3>
+<p>As the database is regarded as static (write once, no updates) and only used for configuration there is little need for a higly optimised design and we opt for maximum flexibility.  Tables are defined as blank (named) records that have any number of related attibutes whcih are all defined externally.  Attributes could in theory be shared between table types but it is probably clearer/ less confusing to define separate ones for each.
+</p>
+<h5>A note abnout SQLite syntax and other foibles</h5>
+<p>SQLite syntax differs from MyySQL and PostGres and this is summaried very well in <a href="http://www.sqlite.org/lang.html">this document</a>.
+Each record has a unique rowid automatically - refer to <a href="http:/www.sqlite.org/autoinc.html">this</a> and <a href="http://www.sqlite.org/lang_createtable.html">that</a> for details.  Extra (+ composite) indices may be added if needed. Column data types are flexible and in the schema just give a general indication of what format the data takes.
+</p>
+
+<h5>Sample table schema</h5>
+<p> Here's a suggested schema, it's pre-implementation and may be subject to change.  Most of these queries have been tested but the exact syntax is not guaranteed - and example schema file will be created and circulated and should be used for real development; what's below is for discussion.
+<pre>
+-- sample database for ZMap config
+-- use 'sqlite <db-name> ".read thisfile;"' to create the schema
+-- we use rowid extensively to access tables, no need to specify explicitly
+-- ref to http://www.sqlite.org/autoinc.html and also http://www.sqlite.org/lang_createtable.html
+
+
+-- generic table attribute
+-- NB one of these must be defined for each tagged table type
+create table atom (name text);
+
+-- generic value of attribute of table row
+create table value (atom_id integer, tag integer, table_id integer, value text);
+create unique index tag_record on value (tag,table_id);
+
+
+-- generic table: links type and name to unique rowid
+-- different types can have the same name
+create table style (tag integer, name text);
+create table featureset (tag integer, name text);
+create table column (tag integer, name text);
+create table server (tag integer, name text);
+
+-- add tags for table types
+inseert into atom values ("style");
+inseert into atom values ("featureset");
+inseert into atom values ("column");
+inseert into atom values ("server");
+
+create table column_order (column_id integer, position integer);
+
+-- that's it !
+</pre>
+</p>
+<p>
+Each tagged table is expected to have attribute (atom) records associated with it, with absent attributes being given some sensible default values.  For example, a featureset record (EST_mouse) would have a style (EST_align) associated by a value record that referred to the style atom had a value of the id of the appropriate style record.
+<br />
+
+Here we assume that the four tag atoms above have been added.
+<pre>
+insert into style values("feat");			-- style rowid = 1
+insert into style values("EST_align");		-- style rowid = 2
+
+insert into featureset values("EST_mouse");	-- featureset rowid = 1
+
+
+-- assuming we know atom, tag and table rowid's already:
+-- set style for EST_mouse to EST_align
+-- values (atom_id="style", tag="featureset", featureset="EST_mouse", value/style="EST_align");
+insert into value values(1,2,1,2);
+
+-- this can be done more rigourously like this at the cost of some elegance:
+insert into value select a.rowid, t.rowid, f.rowid, s.rowid from atom as a, atom as t, featureset as f, style as s
+	where a.name="style" and t.name = "featureset" and f.name ="EST_moude" and s.name = "EST_align";
+</pre>
+</p>
+
+<h5>Table attribute options</h5>
+<p>There are quite a lot of these, they will be documented by adding atoms to the schema and commenting in situ
+</p>
+
+
+<h4>Setting column ordering</h4>
+<p>Another table will be used for this, which will contain a reference to a column (the rowid) and the position. In case of mis-configuration (ie two columns with the same position) ZMap will log an error anc carry on regardless.  There is a featrue request active to drag and drop columns when live, but this table defines the default whicih is explicitly defined centrally on request from Havana.
+</p>
+<p0>
+Queries like the following may be used to move columns around.
+<pre>
+update column_order set position = position+1 where position >= some_value;
+insert into columns_order values(column_id,some_value);
+
+</pre>
+</p>
+
+
+<h3>Suggested database generation by Otterlace</h3>
+<p>
+The database as designed is quite free format: each table is defined as a rowid and name and the useful data defined in a generic attribute table.  Perhaps the easiest way to add this information is to add all the named tables first (eg style, featureset, column, server), then request the rowid's en-masse, then add the thousands of attributes that link them together.
+eg:
+<pre>
+select row,name from style;		-- store data in Perl hash and feed into value table
+</pre>
+It's possible to use SQLite with this data in a pure form but it's not very elegant (as above).
+</p>
+
+
+<h3>End user configuration</h3>
+<p>Here we assume a user has no knowledge of SQL and we wish to ensure that reasonable configuration changes can be effected.</p>
+<h4>Re-ordering columns</h4>
+<p>This requires two seperate SQL queries and clearly needs a trivial script. Columns are ordered via a series of records and to move one it has to be deleted and inserted in the sequence, which involve updating many records.
+<h4>Adjusting a style</h4>
+<p>Styles have many attributes and these can be presented on a generic SQL browser style form.  Note that due to style modes some options will be meaningless and we need to prevent misuse.
+</p>
+<h4>Adding BAM sources and combining these into a column</h4>
+<p>This is quite complex.  The user must define URLs and query options (assuming we provide generic scripts to drive the request process).  Featuresets provided must be defined and linked to styles, which may need to be created. Columns must be defined and featuresets mapped into them.  Columns must be placed on the load columns dialog in the appropriate tab and group.
+</p>
+<p>Clearly this requires extensive user documentation, and as much scripted help as we can provide.  This looks optimistic for a naive user.
+</p>
+
+
+<h3>Driving the Load Columns dialog</h3>
+<p>One of the uses of database driven configuration is to facilitate implementation of a tidier Load Columns dialog. In this, columns that may be requested are grouped into Tabs (eg Code, RNAseq, etc) and within each tab they are grouped further (eg Transcripts,EST's etc).  This will be very easy to implement using two attributes connected to each column.
+</p>
+<p>Another requirement is to handle columns that may not be requested directly or only be requested from the marked region, and this is a clear case for more attributes.
+</p>
+
+
+<h3>Some earlier notes (before trying SQLite...)</h3>
+<p>Currently there are a lot of config options invented OTF to handle historical and more recent situtations and these could benefit from a review.  The tables are presented as containing mandatory fields only and optional fields are stored in another table.  To keep the database as simple as possible values are stored as strings and are converted to numeric as required by application code.
 <pre>
 featureset table
-	set-id	unique-key indexed
+	set-id		unique-key indexed
 	set-type	what kind of data
 	name		indexed	(we can have 1000's of these)
 	description
@@ -85,7 +230,7 @@ column table
 	loadable	appears in load columns dialog?
 	group-id	ref to attribute, group columns together in load columns dialog
 </pre>
-NOTE: if we change the server protocol such that we get the featursets supported by ACEDB separately from requesting the data we may not need the source-id field here.  It may also be possible just to configure supported featuesets in SQL rather than burying then in ACEDB.
+NOTE: if we change the server protocol such that we get the featursets supported by ACEDB separately from requesting the data we may not need the source-id field here.  It may also be possible just to configure supported featuesets in SQL rather than burying then in ACEDB. <b>This needs further investigation</b>.
 </p>
 <p>
 To order columns from left to right we can use a simple table:
@@ -94,9 +239,6 @@ column-order
 	column-id	unique-id but not sequential indexed
 	order		position of the column in the list, indexed
 </pre>
-</p>
-<h5>Using a trigger to maintain column ordering</h5>
-<p>If all else fails we can write functions in SQLlite.
 </p>
 <h5>Using a query to maintain column ordering</h5>
 <p>For example (does this work - need to try it)
@@ -130,6 +272,6 @@ source-option table	query arguments for the url
 	value		(string) may be overridden by code
 </pre>
 NOTE: type can obviously be ACEDB, Pipe, File, DAS but we can also invent sub types eg to have groups of pipe server that take different arguments<br />
-NOTE: if feature-set-if is not specified then the source-option is global eg sequence name, start, end
+NOTE: if featureset-id is not specified then the source-option is global eg sequence name, start, end
 </p>
 

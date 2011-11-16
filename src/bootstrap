@@ -17,11 +17,18 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
+
+run_autoupdate=''
+
+
+# Load common functions/settings.
+#
 . $BASE_DIR/../scripts/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 set -o history
 . $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
-zmap_message_out "Start of script."
+
+
 
 ############################################################
 ############################################################
@@ -39,6 +46,35 @@ zmap_message_out "Start of script."
 DEFAULT_INC="-I . $ACLOCAL_FLAGS"
 ############################################################
 ############################################################
+
+
+# Cmd line options....
+#
+# Do args.
+#
+usage="$SCRIPT_NAME [ -u ]"
+
+while getopts ":u" opt ; do
+    case $opt in
+	u  ) run_autoupdate='yes' ;;
+	\? ) message_exit "Bad arg flag: $usage" ;;
+    esac
+done
+
+
+# Look for extraneous args....
+#
+shift $(($OPTIND - 1))
+
+if [ $# != 0 ]; then
+  zmap_message_exit "Too many args: $usage"
+fi
+
+
+
+# Off we go......
+#
+zmap_message_out "Start of script."
 
 
 # set up zmap version number, this is arcane and horrible and all
@@ -69,10 +105,14 @@ sed -e 's/.cvsignore://' | \
 while read file; do [ ! -f "$file" ] || rm -r $file; done
 
 
+if [ -n "$run_autoupdate" ] ; then
 zmap_message_out "Running $(which $AUTOUPDATE)"
 $AUTOUPDATE                  || zmap_message_exit "Failed running $AUTOUPDATE"
+fi
+
 zmap_message_out "Running $(which $ACLOCAL) $DEFAULT_INC"
 $ACLOCAL $DEFAULT_INC        || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
+
 zmap_message_out "Running $(which $AUTOHEADER)"
 $AUTOHEADER --warnings=all   || zmap_message_exit "Failed running $AUTOHEADER"
 

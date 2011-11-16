@@ -65,6 +65,7 @@ typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config ca
   {
     gint coords[GLYPH_SHAPE_MAX_POINT];        // defined in pairs (x,y)
     gint n_coords;
+    GQuark id;
     /*
      * break between lines flagged by GLYPH_COORD_INVALID
      * for circles/ellipses we have two points and optionally two angles
@@ -125,6 +126,8 @@ typedef enum
     STYLE_PROP_MIN_SCORE,
     STYLE_PROP_MAX_SCORE,
 
+    STYLE_PROP_SUMMARISE,
+
     STYLE_PROP_GFF_SOURCE,
     STYLE_PROP_GFF_FEATURE,
 
@@ -179,7 +182,6 @@ typedef enum
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
-    STYLE_PROP_ALIGNMENT_SUMMARISE,
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
@@ -238,6 +240,11 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
 #define ZMAPSTYLE_PROPERTY_MIN_SCORE              "min-score"
 #define ZMAPSTYLE_PROPERTY_MAX_SCORE              "max-score"
+
+/* ... optimese the display */
+#define ZMAPSTYLE_PROPERTY_SUMMARISE              "summarise"
+
+
 /* ... meta */
 #define ZMAPSTYLE_PROPERTY_GFF_SOURCE             "gff-source"
 #define ZMAPSTYLE_PROPERTY_GFF_FEATURE            "gff-feature"
@@ -298,7 +305,6 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SUMMARISE           "alignment-summarise"
 
 
 /* Sequence properties. */
@@ -345,9 +351,10 @@ _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "   
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
+/* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
-
+#define N_STYLE_MODE	(ZMAPSTYLE_MODE_META + 1)
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
@@ -371,7 +378,6 @@ ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 _(ZMAPBUMP_INVALID,               , "invalid",               "invalid",                       "invalid")					\
 _(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
 _(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
-_(ZMAPBUMP_NAVIGATOR,             , "navigator",             "Navigator Overlap",             "Navigator bump: special for zmap navigator bumping.") \
 _(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
 _(ZMAPBUMP_ALTERNATING,           , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
 _(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \
@@ -694,8 +700,6 @@ typedef struct
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
 
-   double summarise;          /* only display visible features up this zoom level */
-
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
@@ -793,6 +797,7 @@ typedef struct _zmapFeatureTypeStyleStruct
                                                  have scores. */
   double min_score, max_score ;                           /*!< Min/max for score width calc. */
 
+   double summarise;         			 /* only display visible features up this zoom level */
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -938,7 +943,7 @@ gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
-ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape);
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
 
 //unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
@@ -1121,8 +1126,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)
 
-#define zMapStyleGetSummarise(style) \
-     (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.summarise : 0.0)
+#define zMapStyleGetSummarise(style) (style->summarise)
 
 
 char *zMapStyleCreateName(char *style_name) ;

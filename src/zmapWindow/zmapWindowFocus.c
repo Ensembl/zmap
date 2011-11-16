@@ -31,11 +31,23 @@
  */
 
 #include <ZMap/zmap.h>
+#include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
+
+
+int focus_group_mask[] = { 1,2,4,8,16,32,64,128,258 };
+// indexed by ZMapWindowFocusType enum
+// item flags can be stored in higher bits - define here
+
+
+#if N_FOCUS_GROUPS > 8
+#error array too short: FIX THIS, ref to WINDOW_FOCUS_GROUP_BITMASK
+// (right now there are only 3)
+#endif
 
 
 /* Used for window focus items and column.
@@ -66,6 +78,7 @@ typedef struct _ZMapWindowFocusStruct
    * (see zMapWindowCanvasItemSetIntervalColours())
    */
 
+  int cache_id;
 
   GList *overlay_managers;
 } ZMapWindowFocusStruct ;
@@ -106,6 +119,36 @@ typedef struct
   FooCanvasItem *result;
   ZMapFrame frame;
 }MatchFrameStruct, *MatchFrame;
+
+
+/* cache of global highlight colours ref'd by a window index
+ * we normally expect only one window (or more with identical config)
+ * but due to scope issues cannot find the colours without a window, which a canvas item does not have
+ * howver they can have flags (an integer) and we can use that to provide a blank interface
+ * these structs are held in a module global list, set by zMapWindowFocusCreate()
+ * due to implemntation if we split a window then we get another one of thse with identical data
+ * but it's too much grief to ammend the window code just now
+ */
+typedef struct _zmapWindowFocusCacheStruct
+{
+	int id;	/* counts from 1 */
+	ZMapWindow window;	/* boriingly we need this to set global colours after the window is realised */
+
+	gulong fill_pixel[N_FOCUS_GROUPS];		/* these are globally set colours */
+	gboolean fill_set[N_FOCUS_GROUPS];
+	gulong outline_pixel[N_FOCUS_GROUPS];
+	gboolean outline_set[N_FOCUS_GROUPS];
+
+	gboolean done_colours;
+
+} zmapWindowFocusCacheStruct, *ZMapWindowFocusCache;
+
+GList *focus_cache_G = NULL;
+int focus_cache_id_G = 0;	/* one for each window, we allow for up to 64k
+					 * and just pray that no-one makes that many windows
+					 * i'm not a gambling man but it looks like a good punt
+					 */
+
 
 
 ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item);
@@ -166,23 +209,13 @@ static gboolean overlay_manager_list_debug_G = FALSE;
  * and not the SetHotItem function in this file which had code to do this that was never run
  */
 
-int focus_group_mask[] = { 1,2,4,8,16,32,64,128,258 };
-// indexed by ZMapWindowFocusType enum
-// item flags can be stored in higher bits - define here
-#define WINDOW_FOCUS_GROUP_ALL 0xff
-
-#if N_FOCUS_GROUPS > 8
-#error array too short: FIX THIS
-// (right now there are only 3)
-#endif
-
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 {
   GList *l;
   ZMapWindowFocusItem fl;
 
-  if(type == WINDOW_FOCUS_GROUP_ALL)
+  if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
     return(focus->focus_item_set != NULL);
 
   for(l = focus->focus_item_set;l;l = l->next)
@@ -200,12 +233,126 @@ gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window)
 {
   ZMapWindowFocus focus ;
+  ZMapWindowFocusCache cache;
 
   focus = g_new0(ZMapWindowFocusStruct, 1) ;
   focus->window = window;
 
+  cache = g_new0(zmapWindowFocusCacheStruct,1);
+  if(cache)
+  {
+  	cache->id = ++focus_cache_id_G;	/* zero means highlight not ever set; global window colours */
+
+  	focus_cache_G = g_list_prepend(focus_cache_G,cache);
+  	focus->cache_id = cache->id;
+	cache->window = window;
+  }
+
   return focus ;
 }
+
+
+
+/* return global highlight colours according to a feature's focus state, if set
+ * also return whether the item is focussed/ selected
+ * NOTE that this is used to get focus colours and also global colours such as EST masked
+ * if the cache/window id is 0 just use the first one - allow lookup of global colours w/ no window
+ */
+int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *outline)
+{
+  GList *l;
+  ZMapWindowFocusCache cache;
+  int focus_type;
+  int i;
+  int ret = 0;
+  int cache_id = (id_flags >> 16);
+
+  if(!(id_flags & (WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_ID)))	/* use normal colours */
+    return 0;
+
+  for(l = focus_cache_G; l; l = l->next)
+    {
+      cache = (ZMapWindowFocusCache) l->data;
+      if(cache->id == cache_id || !cache_id)
+	{
+
+	  if(!cache->done_colours)
+	    {
+	      /* set global selected/ highlight colours if configured */
+	      /* window must be realised first so can only do this when displaying */
+	      ZMapWindow window = cache->window;
+	      GdkColor *gdk;
+	      gulong pixel;
+
+	      if(window->highlights_set.item)
+		{
+		  gdk = &(window->colour_item_highlight);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_FOCUS] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_FOCUS] = TRUE;
+		}
+
+	      if(window->highlights_set.evidence)
+		{
+		  gdk = &(window->colour_evidence_fill);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
+
+		  gdk = &(window->colour_evidence_border);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->outline_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->outline_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
+		}
+
+	      if(window->highlights_set.masked)
+		{
+		  gdk = &(window->colour_masked_feature_fill);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
+
+		  gdk = &(window->colour_masked_feature_border);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->outline_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->outline_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
+		}
+
+	      cache->done_colours = TRUE;
+	    }
+
+	  focus_type = id_flags & WINDOW_FOCUS_GROUP_BITMASK;
+
+	  for(i = 0; focus_type; i++, focus_type >>= 1)
+	    {
+	      if(focus_type & 1)
+		{
+		  if(cache->fill_set[i])
+		    {
+		      if(fill)
+			*fill = cache->fill_pixel[i];
+		      ret |= WINDOW_FOCUS_CACHE_FILL;
+		    }
+		  if(cache->outline_set[i])
+		    {
+		      if(outline)
+			*outline = cache->outline_pixel[i];
+		      ret |= WINDOW_FOCUS_CACHE_OUTLINE;
+		    }
+
+		  if(i < N_FOCUS_GROUPS_FOCUS)
+		    ret |= WINDOW_FOCUS_CACHE_SELECTED;
+
+		  return ret;
+		}
+	    }
+	}
+    }
+
+  return 0;
+}
+
+
 
 /* N.B. unless there are no items, then item is added to end of list,
  * it is _not_ the new hot item so we do not reset the focus column for instance. */
@@ -349,8 +496,13 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
   item = focus->hot_item;
 
   /* for composite canvas items */
-  if(item)
-  	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
+  /* NOTE there's a theory that iten may be Foo but not Zmap eg when clicking on a trancript's exon */
+  /* it's quite difficult to tell how true this is, need to trawl thro'
+   * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
+   */
+
+  if(item && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+    zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
 
   return item ;
 }
@@ -412,7 +564,7 @@ void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusT
   for(l = focus->focus_item_set;l;l = l->next)
     {
       list_item = (ZMapWindowFocusItem) l->data;
-      if(type == WINDOW_FOCUS_GROUP_ALL || (list_item->flags & focus_group_mask[type]))
+      if(type == WINDOW_FOCUS_GROUP_FOCUSSED || (list_item->flags & focus_group_mask[type]))
             callback((gpointer) list_item,user_data);
     }
 
@@ -483,8 +635,8 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 	  if (gonner->item == item)
             {
 
-	      if(type == WINDOW_FOCUS_GROUP_ALL)
-		gonner->flags &= ~WINDOW_FOCUS_GROUP_ALL;        // zap the lot
+	      if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
+		gonner->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;        // zap the lot
 	      else
 		gonner->flags &= ~focus_group_mask[type];        // remove from this group
 
@@ -493,7 +645,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 
 	      FocusUnmaskOverlay(focus) ;   // (not sure what this is for)
 
-	      if(!(gonner->flags & WINDOW_FOCUS_GROUP_ALL))   // no groups: remove from list
+	      if(!(gonner->flags & WINDOW_FOCUS_GROUP_FOCUSSED))   // no groups: remove from list
 		{
 		  zmapWindowFocusItemDestroy(gonner);
 		  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
@@ -601,10 +753,22 @@ void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus)
 
 void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 {
+  GList *l;
   zMapAssert(focus) ;
 
-  freeFocusItems(focus,WINDOW_FOCUS_GROUP_ALL) ;
+  freeFocusItems(focus,WINDOW_FOCUS_GROUP_FOCUSSED) ;
 
+  for(l = focus_cache_G;l;l = l->next)
+  {
+  	ZMapWindowFocusCache cache;
+
+  	cache = (ZMapWindowFocusCache) l->data;
+  	if(cache->id == focus->cache_id)
+  	{
+  		focus_cache_G = g_list_delete_link(focus_cache_G,l);
+  		break;
+  	}
+  }
   focus->focus_column = NULL ;
 
   g_free(focus) ;
@@ -656,12 +820,26 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)list_item->item ;
   GList **list_ptr = (GList **)user_data ;
   GList *user_hidden_items = *list_ptr ;
+  ID2Canvas id2c;
 
   zMapAssert(FOO_IS_CANVAS_ITEM(item));
 
-  foo_canvas_item_hide(item) ;
+  id2c = g_new0(ID2CanvasStruct,1);
+  id2c->item = list_item->item;
+  id2c->feature_any = (ZMapFeatureAny) list_item->feature;
+  /* hash table is NULL, that is correct */
 
-  user_hidden_items = g_list_append(user_hidden_items, item) ;
+  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  {
+	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) list_item->feature);
+	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) item, FALSE);
+  }
+  else
+  {
+  	foo_canvas_item_hide(item) ;
+  }
+
+  user_hidden_items = g_list_append(user_hidden_items, id2c) ;
 
   *list_ptr = user_hidden_items ;
 
@@ -732,10 +910,10 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
   GList *l;
 
 
-  if((item->flags & WINDOW_FOCUS_GROUP_ALL) == item->display_state)
+  if((item->flags & WINDOW_FOCUS_GROUP_FOCUSSED) == item->display_state)
     return;
 
-  if((item->flags & WINDOW_FOCUS_GROUP_ALL))
+  if((item->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
     {
       if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
       {
@@ -788,7 +966,7 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
       }
     }
 
-   item->display_state = item->flags & WINDOW_FOCUS_GROUP_ALL;
+   item->display_state = item->flags & WINDOW_FOCUS_GROUP_FOCUSSED;
 
   return ;
 }
@@ -829,7 +1007,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   for(gl = focus->focus_item_set;gl;gl = gl->next)
     {
       list_item = (ZMapWindowFocusItem) gl->data;
-      if(list_item->item == item) // && list_item->feature == feature)
+      if(list_item->item == item && list_item->feature == feature)
 	break;
     }
   if(!gl)     // didn't find it
@@ -841,7 +1019,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   if(!feature)
   	feature = zMapWindowCanvasItemGetFeature(item);
 
-  list_item->flags |= focus_group_mask[type];
+  list_item->flags |= focus_group_mask[type] | (focus->cache_id << 16);
   list_item->item = item;
   list_item->feature = feature;
 
@@ -887,14 +1065,14 @@ static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type)
       del = l;
       l = l->next;
 
-      if(type == WINDOW_FOCUS_GROUP_ALL)
-            li->flags &= ~WINDOW_FOCUS_GROUP_ALL;
+      if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
+            li->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;
       else
             li->flags &= ~focus_group_mask[type];
 
       highlightItem(focus->window,li);
 
-      if(!(li->flags & WINDOW_FOCUS_GROUP_ALL))
+      if(!(li->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
       {
             zmapWindowFocusItemDestroy(del->data);
             focus->focus_item_set = g_list_delete_link(focus->focus_item_set,del) ;

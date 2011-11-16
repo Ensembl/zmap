@@ -390,7 +390,6 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   zmap_view->context_map.column_2_styles = zMap_g_hashlist_create() ;
 
-
   return view_window ;
 }
 
@@ -2252,8 +2251,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
 	      view_window = list_item->data ;
 
-	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
-		zMapWindowHighlightObject(view_window->window, item,
+		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+		    zMapWindowHighlightObject(view_window->window, item,
 					  window_select->replace_highlight_item,
 					  window_select->highlight_same_names) ;
 	    }
@@ -2392,7 +2391,6 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->session_data = g_new0(ZMapViewSessionStruct, 1) ;
 
   zmap_view->session_data->sequence = zmap_view->view_sequence->sequence ;
-
 
   return zmap_view ;
 }
@@ -4015,6 +4013,17 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
   zMapStartTimer("Merge Context","") ;
 
+  if(!view->features)
+  {
+	/* we need a context with a master_align with a block, all with valid sequence coordinates */
+	/* this is all back to front, we only know what we requested when the answer comes back */
+	/* and we need to have asked the same qeusrtion 3 times */
+	ZMapFeatureBlock block = zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
+
+	view->features = zMapFeatureContextCopyWithParents((ZMapFeatureAny) block) ;
+  }
+
+
   if(!view->view_sequence->end)
     {
       view->view_sequence->start = new_features->master_align->sequence_span.x1;
@@ -4102,10 +4111,13 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
 	  x = g_strconcat(x," ",y,NULL);
 	}
-      zMapLogWarning(x,"");
+//      zMapLogWarning(x,"");
+printf("%s\n",x);
+
     }
 
-  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context,featureset_names) ;
+  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context, featureset_names) ;
+
 
   //  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
   //  printf("just Merge diff = %s\n",zMapFeatureContextGetDNAStatus(diff_context) ? "yes" : "non");
@@ -4139,6 +4151,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	      x = g_strconcat(x,",",y,NULL);
 	    }
 	  zMapLogWarning(x,"");
+	  printf("%s\n",x);
 	}
 
       // mask ESTs with mRNAs if configured
@@ -4415,6 +4428,7 @@ static ZMapFeatureContext createContext(ZMapFeatureSequenceMap sequence, GList *
 
 
   /* Add other alignments if any were specified in a config file. */
+  /* NOTE it's iffed out */
   addAlignments(context) ;
 
 

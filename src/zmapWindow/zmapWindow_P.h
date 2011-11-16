@@ -181,6 +181,7 @@ typedef struct
 /* the FtoIHash, search now returns these not the items */
 /* We store ids with the group or item that represents them in the canvas.
  * May want to consider more efficient way of storing these than malloc... */
+/* NOTE also used for user hidden items stack */
 typedef struct
 {
   FooCanvasItem *item ;					    /* could be group or item. */
@@ -515,14 +516,42 @@ typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
 
 typedef enum
 {
-      // types of groups of features, used to index an array
-      WINDOW_FOCUS_GROUP_FOCUS,
+      /* types of groups of features, used to index an array
+       * NOTE: these are in order of priority
+       */
+      WINDOW_FOCUS_GROUP_FOCUS = 0,
       WINDOW_FOCUS_GROUP_EVIDENCE,
       WINDOW_FOCUS_GROUP_TEXT,
+
+      /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
+
+	/* window focus has a cache of colours per window
+	 * we can retrieve these by id which does note require out of scope data or headers
+	 */
+      WINDOW_FOCUS_GROUP_MASKED,	/* use to store colours but not set as a focus type */
+/* NOTE this must be the first blurred one */
+#define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
+
       N_FOCUS_GROUPS
 } ZMapWindowFocusType;
 
 
+extern int focus_group_mask[];	/* indexed by ZMapWindowFocusType */
+
+#define WINDOW_FOCUS_GROUP_FOCUSSED 0x07	/* all the focus types */
+#define WINDOW_FOCUS_GROUP_BITMASK	0xff	/* all the colour types, focussed and blurred */
+#define WINDOW_FOCUS_DONT_USE	0xff00	/* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
+/* x-ref with zmapWindowCanvasFeatureset_I.h */
+
+#define WINDOW_FOCUS_ID	0xffff0000
+
+/* bitmap return values from the following function, _please_ don't enum them! */
+#define WINDOW_FOCUS_CACHE_FILL 		1
+#define WINDOW_FOCUS_CACHE_OUTLINE		2
+#define WINDOW_FOCUS_CACHE_SELECTED		4
+int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
+
+void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
@@ -612,7 +641,7 @@ typedef struct _ZMapWindowStruct
 
 
   /* Detailed colours (NOTE...NEED MERGING WITH THE ABOVE.... */
-  gboolean done_colours ;
+  gboolean done_colours;
   GdkColor colour_root ;
   GdkColor colour_alignment ;
   GdkColor colour_block ;
@@ -720,12 +749,6 @@ typedef struct _ZMapWindowStruct
 
 
   ZMapWindowRulerCanvas ruler ;
-
-  /* stuff for column summarise */
-  GList *col_cover;     /* temp. data structs */
-  gint n_col_cover_show;      /* stats for my own curiosity/ to justify the code */
-  gint n_col_cover_hide;
-  gint n_col_cover_list;
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
@@ -1108,7 +1131,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       gboolean isExon);
 
 void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       FooCanvasItem *sub_item, FooCanvasItem *full_item,
+			       FooCanvasItem *item, ZMapFeatureSubPartSpan sub_feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
@@ -1262,7 +1285,7 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
-void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature);
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature, ZMapFrame frame);
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
