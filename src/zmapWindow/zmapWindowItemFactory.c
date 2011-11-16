@@ -2186,6 +2186,9 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 
   if(!zMapStyleIsFoo(style))
   {
+	  feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+#if 0
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
@@ -2281,6 +2284,7 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
 
       feature_item = (FooCanvasItem *)canvas_item;
   }
+#endif
   else      // original code preserved unchangesd
   {
 	// NOTE this is for a histogram, -ve values are meaningless

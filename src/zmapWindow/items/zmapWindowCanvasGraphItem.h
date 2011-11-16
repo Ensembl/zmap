@@ -1,5 +1,4 @@
-
-/*  File: zmapWindowCanvasBasic.c
+/*  File: zmapWindowGraphItem.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,12 +26,18 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem basic features
+ * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
 
+#ifndef ZMAP_WINDOW_GRAPH_DENSITY_H
+#define ZMAP_WINDOW_GRAPH_DENSITY_H
+
 #include <ZMap/zmap.h>
 
+void zMapWindowCanvasGraphInit(void);
 
-void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose);
-void zMapWindowCanvasBasicInit(void);
+
+
+
+#endif /* ZMAP_WINDOW_GRAPH_DENSITY_H */

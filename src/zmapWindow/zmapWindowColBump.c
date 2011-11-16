@@ -2556,10 +2556,12 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
 	GList *l;
 	FooCanvasGroup *column_features;
 
+
 	if(col_style->bump_style)
 	{
 		if(bump)
 			col_style = g_hash_table_lookup(container->window->context_map->styles, GUINT_TO_POINTER(col_style->bump_style));
+
 		if(!col_style)
 			return FALSE;
 

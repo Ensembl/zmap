@@ -116,6 +116,13 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
 
 
 
+/* NOTE this class/ structure is used for all types of columns
+ * it is not inherited and various optional functions have been squeezed in
+ * eg:
+ * -- graph density feature get re-binned before display (and we have two lists of feature database)
+ * -- gapped alignments are recalulated for display when zoom changes (extra data per feature, one list)
+ */
+
 typedef struct _zmapWindowFeaturesetItemStruct
 {
   FooCanvasItem __parent__;
@@ -123,6 +130,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   GQuark id;
   ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */
   ZMapFeatureTypeStyle featurestyle; 	/* current cached style for features */
+
+  zmapWindowCanvasFeatureType type;
 
   ZMapStrand strand;
   ZMapFrame frame;
@@ -148,11 +157,25 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean linked_sideways;	/* that have been constructed */
 
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
+					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
+					 * but we need to sort features so GList is more convenient */
   long n_features;
+  gboolean features_sorted;	/* by start coord */
+
+  gboolean re_bin;		/* re-calculate bins/ features according to zoom */
+  GList *display;			/* features for display */
+  /* NOTE normally features are indexed into display_index
+   * coverage data gets re-binned and new features stored in display which is then indexed
+   * if we add new features then we re-create the index - new features are added to features
+   * if display is not NULL then we have to free both lists on destroy
+   */
   ZMapSkipList display_index;
 
   gboolean bumped;		/* using bumped X or not */
   ZMapStyleBumpMode bump_mode;	/* if set */
+
+  int set_index;			/* for staggered columns (heatmaps) */
+  double x_off;
 
       /* graphics context for all contained features
        * each one has its own colours that we set on draw (eg for heatmaps)
@@ -181,6 +204,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapFeature point_feature;	/* set by cursor movement */
 
 } zmapWindowFeaturesetItemStruct;
+
 
 
 

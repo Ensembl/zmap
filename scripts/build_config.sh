@@ -223,7 +223,8 @@ SPECIFIC_CONFIGURE_ARGS=""
 FOOCANVAS_DEV=no
 FOOCANVAS_PREFIX=/var/tmp/rds/software
 # For machines that mount /software tree this should automatically be machine specific!
-GTK_PREFIX=/software/acedb
+#GTK_PREFIX=/software/acedb
+GTK_PREFIX=/usr
 USE_GPROF=no
 UNIVERSAL_BUILD=no
 

@@ -345,10 +345,19 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 //			featureset->strand == ZMAPSTRAND_REVERSE ||
 		  !zMapStyleIsShowGaps(feature->feature->style) || !(feature->feature->feature.homol.align))
 	{
+		double x1,x2;
+
 		/* draw a simple ungapped box */
 		/* we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be */
-		zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, drawable, expose, fill_set,outline_set,fill,outline)
-		/* the above is once again identical to zMapWindowCanvasBasicPaintFeature() and we could call that instead */
+
+		x1 = featureset->width / 2 - feature->width / 2;
+		if(featureset->bumped)
+			x1 += feature->bump_offset;
+
+		x1 += featureset->dx;
+		x2 = x1 + feature->width;
+
+		zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, x1,x2, drawable, fill_set,outline_set,fill,outline)
 	}
 	else	/* draw gapped boxes */
 	{
@@ -560,18 +569,28 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
  * if we are displaying a gapped alignment, recalculate this data
  * do this by freeing the existing data, new stuff will be added by the paint fucntion
  */
-static void zMapWindowCanvasAlignmentZoomFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature)
+static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset)
 {
-	ZMapWindowCanvasAlignment align = (ZMapWindowCanvasAlignment) feature;
-	AlignGap ag, del;
+	ZMapSkipList sl;
 
-	for(ag = align->gapped; ag;)
+		/* feature specific eg bumped gapped alignments - adjust gaps display */
+	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
-		del = ag;
-		ag = ag->next;
-		align_gap_free(del);
+		ZMapWindowCanvasAlignment align = (ZMapWindowCanvasAlignment) sl->data;
+		AlignGap ag, del;
+
+		if(align->feature.type != FEATURE_ALIGN)	/* we could have other types in the col due to mis-config */
+			continue;
+
+		  /* delete the old, these get created on paint */
+		for(ag = align->gapped; ag;)
+		{
+			del = ag;
+			ag = ag->next;
+			align_gap_free(del);
+		}
+		align->gapped = NULL;
 	}
-	align->gapped = NULL;
 }
 
 
@@ -582,7 +601,7 @@ void zMapWindowCanvasAlignmentInit(void)
 
 	funcs[FUNC_PAINT]  = zMapWindowCanvasAlignmentPaintFeature;
 	funcs[FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent;
-	funcs[FUNC_ZOOM]   = zMapWindowCanvasAlignmentZoomFeature;
+	funcs[FUNC_ZOOM]   = zMapWindowCanvasAlignmentZoomSet;
 #if CANVAS_FEATURESET_LINK_FEATURE
 	funcs[FUNC_LINK]   = zMapWindowCanvasAlignmentLinkFeature;
 #endif

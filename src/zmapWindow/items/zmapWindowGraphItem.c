@@ -55,6 +55,9 @@ Some of the class function field external calls and pass throught to the relevan
 #include <math.h>
 #include <string.h>
 #include <zmapWindowGraphItem_I.h>
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasItemFeatureSet_I.h>
+
 
 
 static void zmap_window_graph_item_class_init  (ZMapWindowGraphItemClass graph_class);
@@ -172,9 +175,9 @@ static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x
 
 	foo = group->item_list->data;
 
-	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_GRAPH_DENSITY))
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
 	{
-		ZMapWindowGraphDensityItem di = (ZMapWindowGraphDensityItem) foo;
+		ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) foo;
 
 		if(di->point_feature)
 		{
@@ -198,11 +201,11 @@ static gboolean zmap_window_graph_item_set_style(FooCanvasItem *item, ZMapFeatur
 
 	foo = group->item_list->data;
 
-	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_GRAPH_DENSITY))
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
 	{
-		ZMapWindowGraphDensityItem di = (ZMapWindowGraphDensityItem) foo;
+		ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) foo;
 
-		zMapWindowGraphDensityItemSetStyle(di,style);
+		zMapWindowFeaturesetItemSetStyle(di,style);
 	}
 	return FALSE;
 }
@@ -217,9 +220,9 @@ static void zmap_window_graph_item_set_colour(ZMapWindowCanvasItem   item,
 						      GdkColor              *fill,
                                           GdkColor              *border)
 {
-	if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_GRAPH_DENSITY))
+	if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
 	{
-		zmapWindowGraphDensityItemSetColour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+		zmapWindowFeaturesetItemSetColour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
 	}
 	else
 	{

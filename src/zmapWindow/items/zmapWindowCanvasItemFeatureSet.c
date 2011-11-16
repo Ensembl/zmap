@@ -53,6 +53,7 @@ this does nothing excpet interface to existing canvas item/ group code
 
 static void zmap_window_featureset_item_class_init  (ZMapWindowCanvasFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_init        (ZMapWindowCanvasFeaturesetItem      group);
+static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
 static void zmap_window_featureset_item_set_property(GObject               *object,
                                        guint                  param_id,
                                        const GValue          *value,
@@ -84,9 +85,7 @@ static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, dou
 
 static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show);
 
-#if 0
-static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
-#endif
+
 
 ZMapWindowCanvasItemClass parent_class_G;
 
@@ -120,13 +119,12 @@ GType zMapWindowCanvasFeaturesetItemGetType(void)
 
 
 
-/* remove a feature friom the foo canvas item in our zmapcanvasitem */
-/* item is a foo canvas group, we have one foo canvas item in the item list */
-int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo,ZMapFeature feature)
+/* remove a feature from the foo canvas item in our zmapcanvasitem */
+/* it's a foo canvas group, we have one foo canvas item in the item list */
+int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
 {
 	FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
 	ZMapWindowFeaturesetItem fi;
-	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
 
 	zMapAssert(group && group->item_list);
 
@@ -180,7 +178,7 @@ static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetIte
   canvas_class->set_colour = zmap_window_featureset_item_set_colour;
 
   canvas_class->set_feature = zmap_window_featureset_item_set_feature;
-//  canvas_class->set_style = zmap_window_featureset_item_set_style;
+  canvas_class->set_style = zmap_window_featureset_item_set_style;
   canvas_class->showhide = zmap_window_featureset_item_show_hide;
 
   canvas_class->check_data   = NULL;
@@ -224,7 +222,6 @@ static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, dou
 	return FALSE;
 }
 
-#if 0
 /* redisplay the column using an alternate style */
 static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style)
 {
@@ -237,15 +234,14 @@ static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapF
 
 	foo = group->item_list->data;
 
-	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
+	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 	{
 		ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) foo;
-
-		zMapWindowFeaturesetDensityItemSetStyle(di,style);
+		zMapWindowFeaturesetItemSetStyle(di,style);
 	}
 	return FALSE;
 }
-#endif
+
 
 
 static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show)
