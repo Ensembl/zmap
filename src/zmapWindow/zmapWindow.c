@@ -4666,8 +4666,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_r:
       {
 	/* Reverse complement. */
+#if TEMP_REMOVED_TO_AVOID_CRASH_WHILE_WE_FIX_IT
 	revCompRequest(window) ;
-
+#endif
 	break ;
       }
 

@@ -1610,6 +1610,9 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   feat->y2 = y2;
 
 	/* NOTE maybe this is not generic enough eg for glyphs, graphs */
+
+  feat->width = featureset_item->width;
+
   if(feature->flags.has_score)
   {
 	if(featureset_item->style->mode == ZMAPSTYLE_MODE_GRAPH)
@@ -1619,11 +1622,13 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 	}
 	else
 	{
-		feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->score);
+		if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
+			feat->width = zmap_window_featureset_item_set_width_from_score(style, featureset_item->width, feature->score);
+		else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
+			feat->width = zmap_window_featureset_item_set_width_from_score(style, featureset_item->width, feature->feature.homol.percent_id);
 	}
   }
-  else
-  	feat->width = featureset_item->width;
+
 
   if(y2 - y1 > featureset_item->longest)
 	featureset_item->longest = y2 - y1;

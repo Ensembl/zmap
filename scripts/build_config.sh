@@ -120,10 +120,10 @@ ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 
 # temp for ubuntu builds...
-#ZMAP_BUILD_MACHINES="deskpro20407 mac18480i lucid-dev64"
+ZMAP_BUILD_MACHINES="deskpro20407 mac18480i lucid-dev64"
 
 # previous lenny builds...
-ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
@@ -223,7 +223,8 @@ SPECIFIC_CONFIGURE_ARGS=""
 FOOCANVAS_DEV=no
 FOOCANVAS_PREFIX=/var/tmp/rds/software
 # For machines that mount /software tree this should automatically be machine specific!
-GTK_PREFIX=/software/acedb
+#GTK_PREFIX=/software/acedb
+GTK_PREFIX=/usr
 USE_GPROF=no
 UNIVERSAL_BUILD=no
 
