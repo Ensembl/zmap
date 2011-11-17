@@ -91,8 +91,8 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-ZMAP_MASTER_HOST=tviewsrv
-#ZMAP_MASTER_HOST=deskpro16113
+#ZMAP_MASTER_HOST=tviewsrv
+ZMAP_MASTER_HOST=deskpro20407
 
 
 # disabling this until I can work out how to selectively include doxygen...
