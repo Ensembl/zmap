@@ -50,6 +50,11 @@ while read first second
 
 
 if [ -n $git_version ] && [ -n $git_branch ] ; then
+
+    # branches can have a '/' in their names as a qualifier so change to underscore to avoid
+    # problems with using the string in filenames etc.
+    git_branch=$(echo $git_branch | sed -e 's/\//_/g')
+
     echo "$git_branch-$git_version"
 else
    message_err 'Could not find git version and branch.' ; exit 1 ; 
