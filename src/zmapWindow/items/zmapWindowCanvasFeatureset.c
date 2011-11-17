@@ -1609,7 +1609,6 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   feat->y1 = y1;
   feat->y2 = y2;
 
-	/* NOTE maybe this is not generic enough eg for glyphs, graphs */
 
   feat->width = featureset_item->width;
 
@@ -1623,9 +1622,9 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 	else
 	{
 		if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
-			feat->width = zmap_window_featureset_item_set_width_from_score(style, featureset_item->width, feature->score);
+			feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->score);
 		else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
-			feat->width = zmap_window_featureset_item_set_width_from_score(style, featureset_item->width, feature->feature.homol.percent_id);
+			feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->feature.homol.percent_id);
 	}
   }
 
