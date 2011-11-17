@@ -918,15 +918,18 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-  while ((status = g_io_channel_read_line_string(server->gff_pipe, server->gff_line,
-						 &terminator_pos,
-						 &gff_pipe_err)) == G_IO_STATUS_NORMAL)
+	/* we have already read the first non header line in pipeGetheader */
+  do
     {
       *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
       if(!zMapGFFParseSequence(server->parser, server->gff_line->str, &sequence_finished) || sequence_finished)
 	break;
     }
+  while ((status = g_io_channel_read_line_string(server->gff_pipe, server->gff_line,
+						 &terminator_pos,
+						 &gff_pipe_err)) == G_IO_STATUS_NORMAL);
+
 
   error = zMapGFFGetError(server->parser) ;
 
