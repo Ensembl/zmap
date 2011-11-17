@@ -37,7 +37,11 @@
 #define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
 #define ZMAP_VERSION 0
 #define ZMAP_RELEASE 1
+<<<<<<< HEAD
 #define ZMAP_UPDATE 138
+=======
+#define ZMAP_UPDATE 137
+>>>>>>> production
 
 
 /* Create a copyright string for dialogs etc. */
