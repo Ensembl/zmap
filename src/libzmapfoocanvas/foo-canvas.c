@@ -360,9 +360,9 @@ redraw_and_repick_if_mapped (FooCanvasItem *item)
 	}
 }
 
-/* Dispose handler for canvas items */
+
 static void
-foo_canvas_item_dispose (GObject *object)
+reset_current(GObject *object)
 {
 	FooCanvasItem *item;
 
@@ -371,7 +371,6 @@ foo_canvas_item_dispose (GObject *object)
 	item = FOO_CANVAS_ITEM (object);
 
 	if (item->canvas) {
-		foo_canvas_item_request_redraw (item);
 
 		/* Make the canvas forget about us */
 
@@ -395,6 +394,26 @@ foo_canvas_item_dispose (GObject *object)
 
 		if (item == item->canvas->focused_item)
 			item->canvas->focused_item = NULL;
+	}
+}
+
+/* Dispose handler for canvas items */
+static void
+foo_canvas_item_dispose (GObject *object)
+{
+	FooCanvasItem *item;
+
+	g_return_if_fail (FOO_IS_CANVAS_ITEM (object));
+
+	item = FOO_CANVAS_ITEM (object);
+
+	if (item->canvas) {
+		foo_canvas_item_request_redraw (item);
+
+		/* Make the canvas forget about us */
+
+		reset_current(object);
+
 
 		/* Normal destroy stuff */
 
@@ -1426,6 +1445,8 @@ foo_canvas_group_destroy (GtkObject *object)
 	while (list) {
 		child = list->data;
 		list = list->next;
+
+		reset_current((GObject *)child);	/* clear current items to avoid race condition on dispose callback */
 
 		gtk_object_destroy (GTK_OBJECT (child));
 	}

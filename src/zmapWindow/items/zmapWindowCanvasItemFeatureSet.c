@@ -126,6 +126,7 @@ int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature 
 	FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
 	ZMapWindowFeaturesetItem fi;
 
+
 	zMapAssert(group && group->item_list);
 
 	fi = (ZMapWindowFeaturesetItem) group->item_list->data;
