@@ -23,7 +23,7 @@ GLOBAL_LOG=''
 
 # SRC_MACHINE= The machine to log into to start everything going
 #SRC_MACHINE='tviewsrv'
-SRC_MACHINE='deskpro20407'
+SRC_MACHINE='deskpro021045'
 
 # SSH_ID is userid which we use to ssh in for other machines.
 SSH_ID='zmap'
