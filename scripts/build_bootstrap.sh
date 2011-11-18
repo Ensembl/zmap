@@ -224,18 +224,18 @@ if [ "x$gen_checkout_script" != "x" ]; then
     MASTER_SRC_DIR=$CVS_MODULE.master
 
     # clone the zmap repository and switch to named branch.
-    _checkout_message_out "Running git clone of zmap.git into $MASTER_SRC_DIR"
-    git clone git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
+    _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
+    git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
 #    _checkout_message_out "Forcing branch to 'production'"
 #    BRANCH='production'
 
-    _checkout_message_out "switching to git branch $BRANCH"
-    ( cd $MASTER_SRC_DIR ; git branch $BRANCH origin/$BRANCH ; git checkout $BRANCH || _checkout_message_exit "Failed to switch to branch $BRANCH" )
+#    _checkout_message_out "switching to git branch $BRANCH"
+#    ( cd $MASTER_SRC_DIR ; git branch $BRANCH origin/$BRANCH ; git checkout $BRANCH || _checkout_message_exit "Failed to switch to branch $BRANCH" )
 
   else
 
-      _checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
+    _checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
  
     MASTER_SRC_DIR=$ZMAP_MASTER_BUILD_COPY_DIR
 
