@@ -97,7 +97,7 @@ function message_exit
     message_out $*
 
     if [ -n "$CRON" ] ; then
-	zmap_message_out "$*" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
+	zmap_message_out "$*" | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT;
     fi
 
     exit 1
@@ -178,10 +178,12 @@ LINK_NAME="$BASE_DIR/$LINK_PREFIX.$BUILD_PREFIX"
 # for the overnight build to update the name there too.
 #
 GLOBAL_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_BUILD.LOG
+FTP_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_FTP_LOG
 
 
 # remove any previous log.
 rm -f $GLOBAL_LOG || message_exit "Cannot remove log from previous build: $GLOBAL_LOG"
+rm -f $FTP_LOG || message_exit "Cannot remove log from previous build: $FTP_LOG"
 
 
 message_out "ZMap Build is $BUILD_PREFIX"
@@ -295,6 +297,7 @@ if [ -z "$CRON" ] ; then
     message_out "    Link directory: $LINK_NAME"
     message_out "   Command options: $CMD_OPTIONS"
     message_out "        Global log: $GLOBAL_LOG"
+    message_out "           FTP log: $FTP_LOG"
     message_out "Errors reported to: $ERROR_RECIPIENT"
     message_out "      Seqtools dir: $SEQTOOLS_DIR"
     message_out "==================="
@@ -330,7 +333,7 @@ message_out "About to run $BUILD_SCRIPT as:  root_checkout.sh $CMD_OPTIONS"
 # The /bin/kill -9 -$$; line is there to make sure no processes are left behind if the
 # root_checkout.sh looses one... In testing, but appears kill returns non-zero in $?
 # actually it's probably the bash process returning the non-zero, but the next test
-# appears to succeed if we enter _rm_exit(), which is what we want. 
+# appears to succeed if we enter _rm_exit(), which is what we want.
 # We use ssh -x so that during testing FowardX11=no is forced so that zmap_test_suite.sh
 # doesn't try to use the forwarded X11 connection, which will be the user's own not zmap's
 cat $BUILD_SCRIPT | ssh "$SSH_ID@$SRC_MACHINE" '/bin/bash -c "\
@@ -352,7 +355,7 @@ rm -f root_checkout.sh || exit 1;   \
 "' >> $GLOBAL_LOG 2>&1
 
 
-# ================== ERROR HANDLING ================== 
+# ================== ERROR HANDLING ==================
 
 # should we mail about build success or just for cron mode...???
 
@@ -383,6 +386,18 @@ fi
 
 message_out $MAIL_SUBJECT
 
+# build worked so update the ftp site and web site links
+# email result separately
+if !$RC
+then
+	./zmap_update_ftp.sh -r -t $BUILD_PREFIX > FTP_LOG
+	if [ $? != 0 ]; then
+		$MAIL_SUBJECT="FTP upload failed"
+	else
+		$MAIL_SUBJECT="FTP upload succeeded"
+	fi
+	cat $FTP_LOG  | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
+fi
 
 exit $RC
-# ================== END OF SCRIPT ================== 
+# ================== END OF SCRIPT ==================

@@ -884,7 +884,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 //      FooCanvasGroup *group;
 
       /* optimise repeat calls: the foo canvas does 6 calls for a click event (3 down 3 up)
-       * and if we are zoomed into a bumped peptide alignemnt column that means looking at a lot of features
+       * and if we are zoomed into a bumped peptide alignment column that means looking at a lot of features
        * each one goes through about 12 layers of canvas containers first but that's another issue
        * then if we move the lassoo that gets silly (button down: calls point())
        */
@@ -918,21 +918,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	x += fi->dx;
 	y += fi->dy;
 #warning this code is in the wrong place, review when containers rationalised
-/*
- * The foo canvas calls point() with group relative coordinates ad to the
- * world coordinates ie our feature coordinates we have to add the containign group's x,ypos
- * this should be accounted for by fi->dx,y as that's derived from a _i2w call
- * but it doesn't work. So this is a bodge to make the cursor work. There must be another
- * mistake/ bodge somewhere requiring this.
- * but we need to get the column containing our ZmapCanvasItem
- * or is that the container that conatind the features that contains the list of conatiners that contain out ZmapCanvasItem?
- * regardless this has no effect.
 
- 	group = FOO_CANVAS_GROUP(item->parent);
- 	group = FOO_CANVAS_GROUP((FOO_CANVAS_ITEM(group)->parent));
- 	x += group->xpos;
- 	y += group->ypos;
- */
 	y1 = y - item->canvas->close_enough;
 	y2 = y + item->canvas->close_enough;
 
@@ -956,11 +942,17 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 
 		if(gs->feature->x1 <= y && gs->feature->x2 >= y)	/* overlaps cursor */
 		{
-			wx = fi->dx;
+			double left,right;
+
+			wx = fi->dx + gs->feature_offset;
 			if(fi->bumped)
 				wx += gs->bump_offset;
 
-			if(x >= wx && x < wx + gs->width)	/* item contains cursor */
+				/* get coords within one pixel */
+			left =  wx - 1;	/* X coords are on fixed zoom, allow one pixel grace */
+			right = wx + gs->width + 2;
+
+			if(x > left && x < right)	/* item contains cursor */
 			{
 				best = 0.0;
 				fi->point_feature = gs->feature;
@@ -1454,6 +1446,15 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
 	ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
 
+	if(!featb)
+	{
+		if(!feata)
+			return(0);
+		return(1);
+	}
+	if(!feata)
+		return(-1);
+
 	if(feata->feature->strand < featb->feature->strand)
 		return(-1);
 	if(feata->feature->strand > featb->feature->strand)
@@ -1474,6 +1475,17 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
 	ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
+
+	/* we can get NULLs due to GLib being silly */
+	/* this code is pedantic, but I prefer stable sorting */
+	if(!featb)
+	{
+		if(!feata)
+			return(0);
+		return(1);
+	}
+	if(!feata)
+		return(-1);
 
 	if(feata->y1 < featb->y1)
 		return(-1);

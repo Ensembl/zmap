@@ -58,8 +58,11 @@ typedef struct _zmapWindowCanvasFeatureStruct
       double y1, y2;    	/* top, bottom of item (box or line) */
 	double score;		/* determines feature width */
 
+	/* ideally these could be ints but the canvas works with doubles */
 	double width;
-	double bump_offset;	/* for X coord */
+	double bump_offset;	/* for X coord  (left hand side of sub column */
+	double feature_offset;	/* for X coord (LHS of column to LHS of feature */
+
 	int bump_col;		/* for calculating sub-col before working out width */
 
 	long flags;				/* non standard display option eg selected */
@@ -90,7 +93,7 @@ typedef struct _pixRect
 						 */
 
 	ZMapWindowCanvasFeature feature;
-	int y1,x2,y2;			/* we only need x2 as features are aligned centrally */
+	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
 	int start;				/* we need to remember the real start as we trim the rect from the front */
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 

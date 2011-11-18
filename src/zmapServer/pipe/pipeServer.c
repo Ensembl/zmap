@@ -919,10 +919,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-<<<<<<< HEAD
 	/* we have already read the first non header line in pipeGetheader */
-=======
->>>>>>> production
   do
     {
 	if(!first)
@@ -935,10 +932,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
   while ((status = g_io_channel_read_line_string(server->gff_pipe, server->gff_line,
 						 &terminator_pos,
 						 &gff_pipe_err)) == G_IO_STATUS_NORMAL);
-<<<<<<< HEAD
 
-=======
->>>>>>> production
 
   error = zMapGFFGetError(server->parser) ;
 

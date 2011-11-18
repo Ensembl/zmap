@@ -351,6 +351,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		/* we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be */
 
 		x1 = featureset->width / 2 - feature->width / 2;
+		feature->feature_offset = x1;
+
 		if(featureset->bumped)
 			x1 += feature->bump_offset;
 
