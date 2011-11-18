@@ -91,8 +91,8 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-#ZMAP_MASTER_HOST=tviewsrv
-ZMAP_MASTER_HOST=deskpro20407
+ZMAP_MASTER_HOST=tviewsrv
+#ZMAP_MASTER_HOST=deskpro20407
 
 
 # disabling this until I can work out how to selectively include doxygen...
@@ -120,10 +120,10 @@ ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 
 # temp for ubuntu builds...
-ZMAP_BUILD_MACHINES="deskpro20407 mac18480i lucid-dev64"
+#ZMAP_BUILD_MACHINES="deskpro20407 mac18480i lucid-dev64"
 
 # previous lenny builds...
-#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
