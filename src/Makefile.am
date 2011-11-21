@@ -30,11 +30,12 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 # toplevel files
 # noinst_DATA = INSTALL
 
+
 EXTRA_DIST = INSTALL \
 	README.zmap \
-	bootstrap \
 	$(DX_CONFIG)
 	$(NULL)
+
 
 # support for pkg-config
 pkgconfigdir   = $(libdir)/pkgconfig
