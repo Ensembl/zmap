@@ -23,7 +23,7 @@ branch='develop'
 script='development'
 sub_branch=''
 branch_arg=''
-respository_name='ZMap'
+respository_name='./ZMap'
 
 
 # Do args.
@@ -62,9 +62,12 @@ done
 #fi
 
 
+
 build_script="./zmap_build_$script.sh"
 script_dir="$respository_name/scripts"
 
+
+curr_dir=`pwd`
 
 # Clone requested branch.
 #
@@ -86,6 +89,16 @@ cd $script_dir || zmap_message_exit "Cannot cd to $script_dir."
 zmap_message_out "Starting build....."
 $build_script $branch_arg || zmap_message_exit "build failed !"
 zmap_message_out "Finished build....."
+
+
+cd $curr_dir || zmap_message_exit "Cannot cd back to $curr_dir."
+
+# safety first....
+if [[ -d $respository_name ]] ; then
+  rm -rf $respository_name || zmap_message_exit "Cannot cd back to $curr_dir."
+else
+  zmap_message_exit "Cannot erase git clone dir $respository_name, not found !"
+fi
 
 
 exit $RC
