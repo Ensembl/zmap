@@ -205,7 +205,7 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 /* only access via wrapper functions to allow type checking */
 
 /* paint one feature, all context needed is in the FeaturesetItem */
-/* we need the expose regrion to clip at high zoom esp with peptide alignments */
+/* we need the expose region to clip at high zoom esp with peptide alignments */
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
 void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -1148,8 +1148,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
 	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
 
-//printf("expose %s %d-%d, dx,y = %f,%f\n",g_quark_to_string(fi->id),(int) search.y1,(int) search.y2,fi->dx,fi->dy);
-
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1, y2);
 	if(!sl)
 		return;
@@ -1169,6 +1167,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 		if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
 			break;	/* finished */
+
 		if(feat->y2 < y1)
 		{
 		    /* if bumped and complex then the first feature does the join up lines */
@@ -1177,9 +1176,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		}
 
 		if((feat->flags & FEATURE_HIDDEN))
-		{
 			continue;
-		}
+
 		/* when bumped we can have a sequence wide 'bump_overlap
 		 * which means we could try to paint all the features
 		 * which would be slow
@@ -1216,7 +1214,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 	/* flush out any stored data (eg if we are drawing polylines) */
 	zMapWindowCanvasFeaturesetPaintFlush(fi, NULL, drawable, expose);
-
 
 	highlight = g_list_reverse(highlight);	/* preserve normal display ordering */
 
@@ -1651,6 +1648,7 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 		/* quick fix FTM, de-calc which requires a re-calc on display */
 		zMapSkipListDestroy(featureset_item->display_index, NULL);
 		featureset_item->display_index = NULL;
+		featureset_item->features_sorted = FALSE;
 	}
 #else
   	{
@@ -1711,6 +1709,7 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 		/* quick fix FTM, de-calc which requires a re-calc on display */
 		zMapSkipListDestroy(fi->display_index, NULL);
 		fi->display_index = NULL;
+		/* is still sorted if it was before */
 	}
 	/* NOTE we may not have an index so this flag must be unset seperately */
 	fi->linked_sideways = FALSE;
@@ -1740,6 +1739,7 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   {
   	zMapSkipListDestroy(featureset_item->display_index, NULL);
 	featureset_item->display_index = NULL;
+	featureset_item->features_sorted = FALSE;
   }
   if(featureset_item->display)	/* was re-binned */
   {
