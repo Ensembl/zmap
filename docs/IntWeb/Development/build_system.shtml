@@ -68,6 +68,44 @@ build system:</p>
   <li> <a href="#code_version">The Code Version System.</a></li>
 </ol>
 
+<h2>New Methodology (hot off the press 21 Nov 2011)</h2>
+(cut and paste from an email: will be tidied up shortly)
+
+<pre>
+Malcolm,
+
+
+with all the messing about with different machines/different branches I found a few bugs that were simply to do with things getting out of synch in our main build system.
+
+I've changed it a bit in a way that I hope will avoid the getting out of synch and make things a bit easier.
+
+To do the build you now need to:
+
+> ssh -l zmap tviewsrv            (or whichever main machine we settle on)
+
+> cd BUILD_CHECKOUT
+
+> ./zmap_master_build
+
+by default this will do a develop branch build, options are:
+
+
+-d            development build
+-o            overnight build
+-p            production build
+-r <sub_branch>        release branch, where sub_branch is the last part of=
+            release branch, e.g. Release_0_1_138
+
+The script does a clone of the appropriate branch, cd's into that clone and runs the appropriate build script which will deal with the sync problems. Otherwise the build is unaltered in the way it runs.
+
+
+If you list BUILD_CHECKOUT you will see copies of zmap_functions.sh and zmap_master_build, we will need to update these by hand if they get changed but that shouldn't be too onerous....
+
+The build script does a git clone into BUILD_CHECKOUT/ZMap and this is removed if the build is successful so you may need to remove the ZMap directory if it fails for some reason. It's all pretty straightforward though.
+
+
+Ed
+</pre>
 
 <a name="day_to_day"></a>
 <h2>1) Day to day Compiling of ZMap</h2>
@@ -235,7 +273,7 @@ To: edgrif@sanger.ac.uk
 Subject: ZMap ONE_OFF_BUILD Succeeded
 
 [root_checkout.sh (15:45:17)] Binary reports version=ZMap - 0.1.132
-[root_checkout.sh (15:45:17)] 
+[root_checkout.sh (15:45:17)]
 [root_checkout.sh (15:45:17)] Results:
 [root_checkout.sh (15:45:17)] --------
 [root_checkout.sh (15:45:17)] Build run on  tviewsrv mac18480i cbi4e
@@ -464,7 +502,7 @@ then
 <pre>
 1) gunzip and untar the file.
 
-2) cd zmap-V-R-U 
+2) cd zmap-V-R-U
 
 3) run ./configure as follows:
 
@@ -562,9 +600,9 @@ setenv http-proxy-port 3128
 
 
 3) Edit the .subversion/servers file to include the following lines in the
-[global] section: 
+[global] section:
 
-http-proxy-host = wwwcache.sanger.ac.uk 
+http-proxy-host = wwwcache.sanger.ac.uk
 http-proxy-port = 3128
 
 
@@ -634,7 +672,7 @@ The downloaded file then needs to be gunzip'd and untar'd and then installed:
 
 
 
-5) Install libg2 
+5) Install libg2
 
 As with libgd this package is not supported by MacPorts and can be downloaded from:
 
@@ -656,7 +694,7 @@ Supported devices:
     FIG
     X11
     Xdbe
-    GD              &lt;------ These two are vital !! 
+    GD              &lt;------ These two are vital !!
     GD (GIF)        &lt;------
 
 > sudo make install
@@ -699,7 +737,7 @@ a cron job to care should be taken in altering it (and the scripts it calls).</p
   <li><p>If you write a bash script then you should make use of the general
       functions and variables in the  ZBfunctions script file.  This file is
       now being  phased out  in favour of  a separate  zmap_functions.sh and
-      build_config.sh.  zmap_functions.sh holds the common functions as 
+      build_config.sh.  zmap_functions.sh holds the common functions as
       ZBfunctions did, but not the variables.  The build_config.sh and its
       fellows take care of the setting of common variables now.</p></li>
 
@@ -813,7 +851,7 @@ Scripts cover the following tasks:
 
     <td>buildaceconn</td>
   </tr>
-  
+
 
   <tr>
     <td>Make a zmap release directory containing
@@ -924,7 +962,7 @@ e.g.
 
 &gt; versioner -increment -update -path /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/ -file src/include/ZMap/zmapXRemote.h
 Using '/nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap' as Checkout Directory.
-The CVS tag should be RELEASE_1-1-3. 
+The CVS tag should be RELEASE_1-1-3.
 RELEASE_1-1-3
 Local Version is now RELEASE_1-1-4, previous version in /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/include/ZMap/zmapXRemote.h.backup
 &gt;
@@ -957,7 +995,7 @@ src/Makefile.am where 'build-version-file' is specified. You will see warnings l
 these:</p>
 
 <pre>
-make -k 
+make -k
 Makefile:1292: warning: overriding commands for target `all'
 Makefile:533: warning: ignoring old commands for target `all'
 </pre>
