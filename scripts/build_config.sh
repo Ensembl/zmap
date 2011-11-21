@@ -119,10 +119,16 @@ ZMAP_MASTER_BUILD_CANVAS_DIST=no
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 
+<<<<<<< HEAD
 # temp for ubuntu or lenny builds...
 #ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
 ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
 
+=======
+# temp for ubuntu builds...
+#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
+>>>>>>> release/Release_0_1_138
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \

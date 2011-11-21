@@ -39,7 +39,7 @@ typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph;
 
 GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which);
 ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score);
-void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable);
+void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose);
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
 
 

@@ -1325,8 +1325,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME,
 			       ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
   {
-    char *colours = "normal fill red ; normal draw black" ;
-    char *strand_colours = "normal fill green ; normal draw black" ;
+    char *colours = "normal fill red ; normal draw black ; selected fill red; selected draw black" ;
+    char *strand_colours = "normal fill green ; normal draw black ; selected fill green ; selected draw black" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                   ZMAPSTYLE_MODE_BASIC,
