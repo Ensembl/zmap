@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+# Launch a full build....doing the git checkout etc....
+#
+#
+#
+#
+#
+
+
+# Program stuff.
+RC=0
+PROGNAME=`basename $0`
+
+
+
+# Usage:    message_exit "Your Message"
+function message_exit
+{
+    echo $* >&2
+
+    exit 1
+}
+
+
+
+branch='develop'
+sub_branch=''
+branch_arg=''
+respository_name='ZMap'
+
+
+# Do args.
+#
+usage="$PROGNAME [ -d -p -r <release_sub_branch e.g. Release_0_1_138> ]"
+
+while getopts ":dpr:" opt ; do
+    case $opt in
+	d  ) branch='develop'
+	     script='development' ;;
+	p  ) branch='production'
+	     script='production' ;;
+	r  ) branch='release'
+	     sub_branch="/$OPTARG"
+	     branch_arg="$branch$sub_branch"
+	     script='release' ;;
+
+	\? ) message_exit "Bad arg flag: $usage" ;;
+    esac
+done
+
+
+# Process final arg, DON'T HAVE ONE JUST NOW......
+#
+#shift $(($OPTIND - 1))
+#
+#if [ $# == 1 ]; then
+#    BUILD_PREFIX=$1
+#
+#    # redo _default_ mail subject now we have a name for the build.
+#    MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Failed (control script)"
+#else
+#  message_exit "No build prefix specifed: $usage"
+#fi
+
+
+curr_dir=`pwd`
+build_script="./zmap_build_$script.sh"
+script_dir="$respository_name/scripts"
+
+
+# Clone requested branch.
+#
+if ! [[ -d $respository_name ]] ; then
+  echo "cloning $branch$sub_branch of zmap repository..."
+  echo git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || { echo "git clone failed" ; RC=1 ; }
+  echo "finished cloning $branch$sub_branch of zmap repository..."
+else
+  message_exit "git clone aborted, $respository_name repository already exists !"
+fi
+
+
+cd $script_dir || message_exit "Cannot cd to $script_dir."
+
+
+
+#
+# Launch the build....
+#
+echo "Starting build....."
+echo $build_script $branch_arg || message_exit "build failed !"
+echo "Finished build....."
+
+cd $curr_dir || message_exit "could not cd back to $curr_dir !"
+
+
+exit $RC
+
