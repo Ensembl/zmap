@@ -389,13 +389,14 @@ message_out $MAIL_SUBJECT
 # build worked so update the ftp site and web site links
 # email result separately
 if [ $RC == 0 ] ; then
-	./zmap_update_ftp.sh -r -t $BUILD_PREFIX > $FTP_LOG
-	if [ $? != 0 ]; then
-		$MAIL_SUBJECT="FTP upload failed"
-	else
-		$MAIL_SUBJECT="FTP upload succeeded"
-	fi
-	cat $FTP_LOG  | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
+    ./zmap_update_ftp.sh -r -t $BUILD_PREFIX > $FTP_LOG
+    if [ $? != 0 ] ; then
+	MAIL_SUBJECT="FTP upload failed"
+    else
+	MAIL_SUBJECT="FTP upload succeeded"
+    fi
+
+    cat $FTP_LOG  | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
 fi
 
 exit $RC
