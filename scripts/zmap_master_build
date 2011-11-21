@@ -11,20 +11,16 @@
 # Program stuff.
 RC=0
 PROGNAME=`basename $0`
+FUNCTIONS_SCRIPT="zmap_functions.sh"
+BASE_DIR=~zmap
 
-
-
-# Usage:    message_exit "Your Message"
-function message_exit
-{
-    echo $* >&2
-
-    exit 1
-}
-
+# try to load useful shared shell functions...after this we will have access to
+# common message funcs.
+. $FUNCTIONS_SCRIPT || { echo "Aborted $PROGNAME - Failed to load common functions file: $FUNCTIONS_SCRIPT"; exit 1; }
 
 
 branch='develop'
+script='development'
 sub_branch=''
 branch_arg=''
 respository_name='ZMap'
@@ -32,12 +28,14 @@ respository_name='ZMap'
 
 # Do args.
 #
-usage="$PROGNAME [ -d -p -r <release_sub_branch e.g. Release_0_1_138> ]"
+usage="$PROGNAME [ -d -o -p -r <release_sub_branch e.g. Release_0_1_138> ]"
 
-while getopts ":dpr:" opt ; do
+while getopts ":dopr:" opt ; do
     case $opt in
 	d  ) branch='develop'
 	     script='development' ;;
+	o  ) branch='develop'
+	     script='overnight' ;;
 	p  ) branch='production'
 	     script='production' ;;
 	r  ) branch='release'
@@ -45,7 +43,7 @@ while getopts ":dpr:" opt ; do
 	     branch_arg="$branch$sub_branch"
 	     script='release' ;;
 
-	\? ) message_exit "Bad arg flag: $usage" ;;
+	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
 
@@ -60,11 +58,10 @@ done
 #    # redo _default_ mail subject now we have a name for the build.
 #    MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Failed (control script)"
 #else
-#  message_exit "No build prefix specifed: $usage"
+#  zmap_message_exit "No build prefix specifed: $usage"
 #fi
 
 
-curr_dir=`pwd`
 build_script="./zmap_build_$script.sh"
 script_dir="$respository_name/scripts"
 
@@ -72,26 +69,23 @@ script_dir="$respository_name/scripts"
 # Clone requested branch.
 #
 if ! [[ -d $respository_name ]] ; then
-  echo "cloning $branch$sub_branch of zmap repository..."
-  echo git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || { echo "git clone failed" ; RC=1 ; }
-  echo "finished cloning $branch$sub_branch of zmap repository..."
+  zmap_message_out "cloning $branch$sub_branch of zmap repository..."
+  git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || zmap_message_exit "git clone failed"
+  zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
 else
-  message_exit "git clone aborted, $respository_name repository already exists !"
+  zmap_message_exit "git clone aborted, $respository_name repository already exists !"
 fi
 
 
-cd $script_dir || message_exit "Cannot cd to $script_dir."
-
+cd $script_dir || zmap_message_exit "Cannot cd to $script_dir."
 
 
 #
 # Launch the build....
 #
-echo "Starting build....."
-echo $build_script $branch_arg || message_exit "build failed !"
-echo "Finished build....."
-
-cd $curr_dir || message_exit "could not cd back to $curr_dir !"
+zmap_message_out "Starting build....."
+$build_script $branch_arg || zmap_message_exit "build failed !"
+zmap_message_out "Finished build....."
 
 
 exit $RC
