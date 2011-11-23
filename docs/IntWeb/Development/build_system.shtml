@@ -39,8 +39,8 @@ legend{ font-weight: bold }
 <p>There are three major tasks for the zmap build system:</p>
 
 <ol>
-  <li> <a href="#day_to_day">Compiling zmap during day to day development.</a></li>
-  <li> <a href="#dist">Building a full zmap distribution.</a></li>
+  <li> <a href="#day_to_day">Compiling zmap locally during day to day development.</a></li>
+  <li> <a href="#dist">Building a full zmap distribution on all supported machines.</a></li>
   <li> <a href="#install">Installing zmap from a distribution file.</a></li>
 </ol>
 
@@ -68,47 +68,8 @@ build system:</p>
   <li> <a href="#code_version">The Code Version System.</a></li>
 </ol>
 
-<h2>New Methodology (hot off the press 21 Nov 2011)</h2>
-(cut and paste from an email: will be tidied up shortly)
-
-<pre>
-Malcolm,
-
-
-with all the messing about with different machines/different branches I found a few bugs that were simply to do with things getting out of synch in our main build system.
-
-I've changed it a bit in a way that I hope will avoid the getting out of synch and make things a bit easier.
-
-To do the build you now need to:
-
-> ssh -l zmap tviewsrv            (or whichever main machine we settle on)
-
-> cd BUILD_CHECKOUT
-
-> ./zmap_master_build
-
-by default this will do a develop branch build, options are:
-
-
--d            development build
--o            overnight build
--p            production build
--r <sub_branch>        release branch, where sub_branch is the last part of=
-            release branch, e.g. Release_0_1_138
-
-The script does a clone of the appropriate branch, cd's into that clone and runs the appropriate build script which will deal with the sync problems. Otherwise the build is unaltered in the way it runs.
-
-
-If you list BUILD_CHECKOUT you will see copies of zmap_functions.sh and zmap_master_build, we will need to update these by hand if they get changed but that shouldn't be too onerous....
-
-The build script does a git clone into BUILD_CHECKOUT/ZMap and this is removed if the build is successful so you may need to remove the ZMap directory if it fails for some reason. It's all pretty straightforward though.
-
-
-Ed
-</pre>
-
 <a name="day_to_day"></a>
-<h2>1) Day to day Compiling of ZMap</h2>
+<h2>1) Day to day Local Compiling of ZMap</h2>
 
 
 <p>Assuming that you have a copy of the ZMap source code as ./ZMap then:</p>
@@ -181,7 +142,58 @@ on a different machine:</p>
 
 
 <a name="dist"></a>
-<h2>2) How to make a distribution</h2>
+<h2>2) Building a full zmap distribution on all supported machines</h2>
+
+<p>A full distribution build includes building on linux 32 and 64 bit machines
+and also on Mac OS X. The builds are executed by a series of shell scripts that
+ssh into the appropriate machines, check out the right branch from our central
+git repository, do the build locally and then copy the results into a single
+"distribution" directory. This section describes how to use the master build
+script which hides all the gory details and should make the build process easy
+but also goes into more detail about the build scripts.</p>
+
+
+<h3>Running the master build script</h3>
+
+<p>The master build script provides a simple interface to performing the main
+types of zmap build and should be used wherever possible. Whichever build
+is executed the basic steps are the same:</p>
+
+<pre>
+&gt; ssh -l zmap tviewsrv
+
+&gt; cd BUILD_CHECKOUT
+
+&gt; ./zmap_master_build [build option]
+</pre>
+
+<p>The valid build options are:
+
+<pre>
+-d                     development build (this is the default build)
+-o                     overnight build
+-p                     production build
+-r &lt;sub_branch&gt;        release branch, where sub_branch is the last part of release branch, e.g. Release_0_1_138
+</pre>
+
+<p>The script does a clone of the appropriate branch into the current
+directory, cd's into that clone and runs the appropriate build script (build scripts
+are discussed in more detail below).</p>
+
+<p>If you list BUILD_CHECKOUT you will see copies of zmap_functions.sh and
+zmap_master_build which can be found in the scripts subdirectory of the zmap git repository.
+These copies will need to be updated by hand if they are changed but that should be straight forward.</p>
+
+<p>NOTE that if the build script fails then it leaves behind the git clone'd copy in BUILD_CHECKOUT
+and this must be removed by hand before the script will run again.</p>
+
+
+
+<h3>Running individual build scripts</h3>
+
+<p>This section describes how to run the individual build scripts, this shouldn't be necessary
+as the master build script described in the previous section should cover most situations.</p>
+
 
 <p>Making distributions is done as the zmap user on the master build machine
 (currently tviewsrv). Usual practice is to ssh into tviewsrv as zmap:</p>

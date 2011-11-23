@@ -185,7 +185,8 @@ typedef enum
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
-    STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS,
+    STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS,
+    STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS,
     STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_START_CODON_COLOURS,
     STYLE_PROP_SEQUENCE_STOP_CODON_COLOURS,
@@ -310,7 +311,8 @@ typedef enum
 /* Sequence properties. */
 #define ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS       "sequence-non-coding-colours"
 #define ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS           "sequence-coding-colours"
-#define ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS      "sequence-split-codon-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_5_COLOURS    "sequence-split-codon-5-colours"
+#define ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_3_COLOURS    "sequence-split-codon-3-colours"
 #define ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS  "sequence-in-frame-coding-colours"
 #define ZMAPSTYLE_PROPERTY_SEQUENCE_START_CODON_COLOURS      "sequence-start-codon-colours"
 #define ZMAPSTYLE_PROPERTY_SEQUENCE_STOP_CODON_COLOURS       "sequence-stop-codon-colours"
@@ -596,7 +598,8 @@ typedef struct
   /* Colours for highlighting parts of sequence. */
   ZMapStyleFullColourStruct non_coding ;
   ZMapStyleFullColourStruct coding ;
-  ZMapStyleFullColourStruct split_codon ;
+  ZMapStyleFullColourStruct split_codon_5 ;
+  ZMapStyleFullColourStruct split_codon_3 ;
   ZMapStyleFullColourStruct in_frame_coding ;
 
   ZMapStyleFullColourStruct start_codon ;

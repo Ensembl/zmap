@@ -230,7 +230,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		    ZMapStyleColourType colour_type = ZMAPSTYLE_COLOURTYPE_NORMAL ;
 		    GdkColor *non_coding_background, *non_coding_foreground, *non_coding_outline ;
 		    GdkColor *coding_background, *coding_foreground, *coding_outline ;
-		    GdkColor *split_codon_background, *split_codon_foreground, *split_codon_outline ;
+		    GdkColor *split_codon_5_background, *split_codon_5_foreground, *split_codon_5_outline ;
+		    GdkColor *split_codon_3_background, *split_codon_3_foreground, *split_codon_3_outline ;
 		    GdkColor *in_frame_background, *in_frame_foreground, *in_frame_outline ;
 		    gboolean result ;
 
@@ -242,8 +243,11 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
 						 &coding_background, &coding_foreground, &coding_outline) ;
 
-		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS, colour_type,
-						 &split_codon_background, &split_codon_foreground, &split_codon_outline) ;
+		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, colour_type,
+						 &split_codon_5_background, &split_codon_5_foreground, &split_codon_5_outline) ;
+
+		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, colour_type,
+						 &split_codon_3_background, &split_codon_3_foreground, &split_codon_3_outline) ;
 
 		    result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
 						 &in_frame_background, &in_frame_foreground, &in_frame_outline) ;
@@ -304,9 +308,15 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 			    }
 
 			  case EXON_START_NOT_FOUND:
-			  case EXON_SPLIT_CODON:
+			  case EXON_SPLIT_CODON_5:
+			  case EXON_SPLIT_CODON_3:
 			    {
-			      GdkColor *coding_colour = split_codon_background ;
+			      GdkColor *coding_colour ;
+
+			      if (current_exon->region_type == EXON_SPLIT_CODON_5)
+				coding_colour = split_codon_5_background ;
+			      else
+				coding_colour = split_codon_3_background ;
 
 			      /* For peptides only show split codon for inframe col.,
 			       * confusing otherwise. */

@@ -437,7 +437,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 				     &(full_data->trans_coord_counter)) ;
 
       if (ex_split_5.x1)
-	full_exon_split_5 = exonCreate(feature->x1, EXON_SPLIT_CODON, &ex_split_5,
+	full_exon_split_5 = exonCreate(feature->x1, EXON_SPLIT_CODON_5, &ex_split_5,
 				       &(full_data->feature_coord_counter),
 				       &(full_data->spliced_coord_counter),
 				       &(full_data->cds_coord_counter),
@@ -456,7 +456,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 				     &(full_data->cds_coord_counter),
 				     &(full_data->trans_coord_counter)) ;
       if (ex_split_3.x1)
-	full_exon_split_3 = exonCreate(feature->x1, EXON_SPLIT_CODON, &ex_split_3,
+	full_exon_split_3 = exonCreate(feature->x1, EXON_SPLIT_CODON_3, &ex_split_3,
 				       &(full_data->feature_coord_counter),
 				       &(full_data->spliced_coord_counter),
 				       &(full_data->cds_coord_counter),
