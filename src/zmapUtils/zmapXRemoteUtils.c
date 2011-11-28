@@ -152,7 +152,7 @@ Window zMapXRemoteWidgetGetXID(GtkWidget *widget)
   return id ;
 }
 
-gboolean zMapXRemoteValidateStatusCode(int *code)
+gboolean zMapXRemoteValidateStatusCode(ZMapXRemoteStatus *code)
 {
   gboolean valid = FALSE;
 
@@ -258,7 +258,7 @@ static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProper
 				      notify_data->data))
     {
       char *request = "dummy request";
-      int code;
+      ZMapXRemoteStatus code = ZMAPXREMOTE_OK ;
 
       if((ev->state != GDK_PROPERTY_DELETE) && notify_data->post_cb)
 	(notify_data->post_cb)(request, notify_data->data, &code, notify_data->xremote);
