@@ -539,6 +539,7 @@ typedef enum
 extern int focus_group_mask[];	/* indexed by ZMapWindowFocusType */
 
 #define WINDOW_FOCUS_GROUP_FOCUSSED 0x07	/* all the focus types */
+#define WINDOW_FOCUS_GROUP_BLURRED	0x18	/* all the blurred types */
 #define WINDOW_FOCUS_GROUP_BITMASK	0xff	/* all the colour types, focussed and blurred */
 #define WINDOW_FOCUS_DONT_USE	0xff00	/* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
 /* x-ref with zmapWindowCanvasFeatureset_I.h */

@@ -69,7 +69,8 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
-#define FEATURE_FOCUS_BITMAP	WINDOW_FOCUS_GROUP_BITMASK		/* includes masking (EST) */
+#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
+#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
 #define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
 #define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
