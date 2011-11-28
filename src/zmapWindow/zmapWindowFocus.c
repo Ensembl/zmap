@@ -132,7 +132,7 @@ typedef struct
 typedef struct _zmapWindowFocusCacheStruct
 {
 	int id;	/* counts from 1 */
-	ZMapWindow window;	/* boriingly we need this to set global colours after the window is realised */
+	ZMapWindow window;	/* boringly we need this to set global colours after the window is realised */
 
 	gulong fill_pixel[N_FOCUS_GROUPS];		/* these are globally set colours */
 	gboolean fill_set[N_FOCUS_GROUPS];
