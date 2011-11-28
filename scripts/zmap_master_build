@@ -53,12 +53,9 @@ done
 #shift $(($OPTIND - 1))
 #
 #if [ $# == 1 ]; then
-#    BUILD_PREFIX=$1
-#
-#    # redo _default_ mail subject now we have a name for the build.
-#    MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Failed (control script)"
+#    # do stuff...
 #else
-#  zmap_message_exit "No build prefix specifed: $usage"
+#  zmap_message_exit "No blah, blah specifed: $usage"
 #fi
 
 
@@ -95,7 +92,7 @@ cd $curr_dir || zmap_message_exit "Cannot cd back to $curr_dir."
 
 # safety first....
 if [[ -d $respository_name ]] ; then
-  rm -rf $respository_name || zmap_message_exit "Cannot cd back to $curr_dir."
+  rm -rf $respository_name || zmap_message_exit "Cannot remove $respository_name, remove by hand before rebuilding."
 else
   zmap_message_exit "Cannot erase git clone dir $respository_name, not found !"
 fi
