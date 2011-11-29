@@ -2167,7 +2167,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 	    }
 	}
 
-      g_string_append_printf(line, ";gap=%s", align_str->str) ;
+      g_string_append_printf(line, ";Gap=%s", align_str->str) ;
 
       g_string_free(align_str, TRUE) ;
     }
