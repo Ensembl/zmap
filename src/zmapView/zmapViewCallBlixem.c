@@ -2173,7 +2173,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
     }
 
 
-  if (sequence)
+  if (sequence && *sequence)
     {
       g_string_append_printf(line, ";sequence=%s", sequence) ;
     }
