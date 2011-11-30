@@ -48,7 +48,7 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 {
 	gulong fill,outline;
 	int colours_set, fill_set, outline_set;
-
+	double x1,x2;
 
 	/* draw a box */
 
@@ -62,7 +62,16 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,drawable, expose,fill_set,outline_set,fill,outline);
+	x1 = featureset->width / 2 - feature->width / 2;
+	feature->feature_offset = x1;
+
+	if(featureset->bumped)
+		x1 += feature->bump_offset;
+
+	x1 += featureset->dx;
+	x2 = x1 + feature->width;
+
+	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,x1,x2, drawable, fill_set,outline_set,fill,outline);
 }
 
 

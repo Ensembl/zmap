@@ -91,8 +91,8 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-#ZMAP_MASTER_HOST=tviewsrv
-ZMAP_MASTER_HOST=deskpro021045
+ZMAP_MASTER_HOST=tviewsrv
+#ZMAP_MASTER_HOST=deskpro021045
 
 
 # disabling this until I can work out how to selectively include doxygen...
@@ -120,8 +120,8 @@ ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 
 # temp for ubuntu builds...
-#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
-ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
+ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+#ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
@@ -221,7 +221,8 @@ SPECIFIC_CONFIGURE_ARGS=""
 FOOCANVAS_DEV=no
 FOOCANVAS_PREFIX=/var/tmp/rds/software
 # For machines that mount /software tree this should automatically be machine specific!
-GTK_PREFIX=/software/acedb
+#GTK_PREFIX=/software/acedb
+GTK_PREFIX=/usr
 USE_GPROF=no
 UNIVERSAL_BUILD=no
 

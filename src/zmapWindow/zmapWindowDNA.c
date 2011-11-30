@@ -787,10 +787,13 @@ static void remapCoords(gpointer data, gpointer user_data)
   if (match_data->match_type == ZMAPSEQUENCE_PEPTIDE)
     {
       zMapSequencePep2DNA(&(match_data->start), &(match_data->end), match_data->frame) ;
+
+      /* Oh dear....what's going on with peptide searches that we need to correct like this.. */
+      match_data->start += (search_data->screen_search_start - 1) ;
+      match_data->end += (search_data->screen_search_start - 1) ;
     }
 
   zMapBlock2FeatureCoords(block, &(match_data->start), &(match_data->end)) ;
-
 
   zmapWindowCoordPairToDisplay(search_data->window, match_data->start, match_data->end,
 			       &(match_data->screen_start), &(match_data->screen_end)) ;

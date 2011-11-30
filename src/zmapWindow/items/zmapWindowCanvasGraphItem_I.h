@@ -1,5 +1,4 @@
-
-/*  File: zmapWindowCanvasGlyph.c
+/*  File: zmapWindowGraphItem_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,20 +26,30 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem glyph features
+ * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
+#ifndef ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H
+#define ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H
 
-typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph;
-
-
-
-GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which);
-ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score);
-void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose);
-void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasGraphItem.h>
 
 
-void zMapWindowCanvasGlyphInit(void);
+
+/*
+ * minimal data struct to define a graph segment
+ * handle boxes as y1,y2 + width
+ * handle lines as a series of points y2 + width
+ * Is the same as zmapWindowCanvasFeatureStruct as defined in zmapWindowCanvasFeatureset_I.h
+ */
+
+/*
+ * The original graph density code had extra stuff to deal with re-binned data
+ * this has been moved into CanvasFeatureset and can be re-used for other type of pre display processing if necessary
+ */
+
+
+#endif /* ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H */

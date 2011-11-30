@@ -435,7 +435,6 @@ static void zmap_window_canvas_glyph_draw (ZMapWindowFeaturesetItem featureset, 
 
 
 
-
 /* handle sub feature and free standing glyphs */
 /* called from above fucntion and also ...PaintAlignment() */
 static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, double y1, GdkDrawable *drawable)
@@ -493,7 +492,7 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
 
 /* the interface for free-standing glyphs, called via CanvasFeatureset virtual functions  */
 /* must calculate the shape coords etc on first paint */
-void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable)
+void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose)
 {
 	ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph) feature;
 	ZMapFeature feat = feature->feature;

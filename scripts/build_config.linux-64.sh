@@ -1,24 +1,22 @@
 #!/bin/echo dot script please source
 
 
-# For testing alternative versions of gtk+
-GTK_PREFIX=/software/acedb/gtk
+# Required to get backtraces otherwise many symbols are not passed to ELF linker.
+CFLAGS_args="$CFLAGS_args -rdynamic"
 
 
-# This shouldn't get overwritten.
+# Set this prefix to target different installations of gtk.
+#GTK_PREFIX=/software/acedb/gtk
+
+
+# This shouldn't get overwritten, note we need /software/acedb in the path
+# for libs like foocanvas, AceConn etc.
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
+PKG_CONFIG_PATH=$GTK_PREFIX/lib/pkgconfig:/software/acedb/gtk/lib/pkgconfig
 
-
-#PACKAGE_CFG_PATH="$PACKAGE_CFG_PATH:/usr/share/pkgconfig"
-
-
-# I think I missed a trick installing the autotools
-# aclocal doesn't add the system path as well as
-# its install path to the search dirs
+# Make sure we look in the right place of autoconf macros...
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
 
-
-# autotools in /usr is newer.
-#PATH=$GTK_PREFIX/bin:$PATH
-PATH=$PATH:$GTK_PREFIX/bin
+# set up autotools path
+PATH=$GTK_PREFIX/bin:$PATH
 

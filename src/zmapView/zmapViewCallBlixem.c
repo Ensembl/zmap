@@ -1880,23 +1880,32 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       source_name = (char *)g_quark_to_string(feature->source_id) ;
 
 
+      if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+	{
+	  ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+
+	  seq_str = sequence->sequence ;
+	}
+      else
+	{
+	  /* In theory we should be checking for a description for non-local sequences,
+	   * see acedb code in doShowAlign...don't know how important this is..... */
+	  seq_str = "" ;
+	}
+
+
+
       /* Phase out stupid curr_channel                    */
 
       /* need to put this choice for seqbl into the exblx routine below... */
       if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
 	{
-	  if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+	  if (*seq_str)
 	    {
-	      ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
-
-	      seq_str = sequence->sequence ;
 	      curr_channel = blixem_data->seqbl_channel ;
 	    }
 	  else
 	    {
-	      /* In theory we should be checking for a description for non-local sequences,
-	       * see acedb code in doShowAlign...don't know how important this is..... */
-	      seq_str = "" ;
 	      curr_channel = blixem_data->exblx_channel ;
 	    }
 
@@ -2164,9 +2173,9 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
     }
 
 
-  if (sequence)
+  if (sequence && *sequence)
     {
-      g_string_append_printf(line, ";Sequence=%s", sequence) ;
+      g_string_append_printf(line, ";sequence=%s", sequence) ;
     }
 
   g_string_append_c(line, '\n') ;

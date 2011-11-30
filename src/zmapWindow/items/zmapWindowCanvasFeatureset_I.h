@@ -58,15 +58,19 @@ typedef struct _zmapWindowCanvasFeatureStruct
       double y1, y2;    	/* top, bottom of item (box or line) */
 	double score;		/* determines feature width */
 
+	/* ideally these could be ints but the canvas works with doubles */
 	double width;
-	double bump_offset;	/* for X coord */
+	double bump_offset;	/* for X coord  (left hand side of sub column */
+	double feature_offset;	/* for X coord (LHS of column to LHS of feature */
+
 	int bump_col;		/* for calculating sub-col before working out width */
 
 	long flags;				/* non standard display option eg selected */
 
 
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
-#define FEATURE_FOCUS_BITMAP	WINDOW_FOCUS_GROUP_BITMASK		/* includes masking (EST) */
+#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
+#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
 #define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
 #define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
@@ -90,7 +94,7 @@ typedef struct _pixRect
 						 */
 
 	ZMapWindowCanvasFeature feature;
-	int y1,x2,y2;			/* we only need x2 as features are aligned centrally */
+	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
 	int start;				/* we need to remember the real start as we trim the rect from the front */
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 
@@ -116,6 +120,13 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
 
 
 
+/* NOTE this class/ structure is used for all types of columns
+ * it is not inherited and various optional functions have been squeezed in
+ * eg:
+ * -- graph density feature get re-binned before display (and we have two lists of feature database)
+ * -- gapped alignments are recalulated for display when zoom changes (extra data per feature, one list)
+ */
+
 typedef struct _zmapWindowFeaturesetItemStruct
 {
   FooCanvasItem __parent__;
@@ -123,6 +134,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   GQuark id;
   ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */
   ZMapFeatureTypeStyle featurestyle; 	/* current cached style for features */
+
+  zmapWindowCanvasFeatureType type;
 
   ZMapStrand strand;
   ZMapFrame frame;
@@ -148,11 +161,25 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean linked_sideways;	/* that have been constructed */
 
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
+					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
+					 * but we need to sort features so GList is more convenient */
   long n_features;
+  gboolean features_sorted;	/* by start coord */
+
+  gboolean re_bin;		/* re-calculate bins/ features according to zoom */
+  GList *display;			/* features for display */
+  /* NOTE normally features are indexed into display_index
+   * coverage data gets re-binned and new features stored in display which is then indexed
+   * if we add new features then we re-create the index - new features are added to features
+   * if display is not NULL then we have to free both lists on destroy
+   */
   ZMapSkipList display_index;
 
   gboolean bumped;		/* using bumped X or not */
   ZMapStyleBumpMode bump_mode;	/* if set */
+
+  int set_index;			/* for staggered columns (heatmaps) */
+  double x_off;
 
       /* graphics context for all contained features
        * each one has its own colours that we set on draw (eg for heatmaps)
@@ -181,6 +208,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapFeature point_feature;	/* set by cursor movement */
 
 } zmapWindowFeaturesetItemStruct;
+
 
 
 

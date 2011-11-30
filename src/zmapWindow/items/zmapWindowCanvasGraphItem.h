@@ -1,5 +1,4 @@
-
-/*  File: zmapWindowCanvasGlyph.c
+/*  File: zmapWindowGraphItem.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,20 +26,18 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem glyph features
+ * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
 
+#ifndef ZMAP_WINDOW_GRAPH_DENSITY_H
+#define ZMAP_WINDOW_GRAPH_DENSITY_H
+
 #include <ZMap/zmap.h>
 
-typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph;
+void zMapWindowCanvasGraphInit(void);
 
 
 
-GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which);
-ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score);
-void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose);
-void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
 
-
-void zMapWindowCanvasGlyphInit(void);
+#endif /* ZMAP_WINDOW_GRAPH_DENSITY_H */
