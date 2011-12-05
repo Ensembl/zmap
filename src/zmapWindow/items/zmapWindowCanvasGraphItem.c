@@ -129,6 +129,39 @@ double last_gy = -1.0;
 
 
 
+void zMapWindowCanvasGraphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
+{
+      int cx2 = 0, cy2 = 0;		/* initialised for LINE mode */
+      double x2,y2;
+	FooCanvasItem *item = (FooCanvasItem *) featureset;
+
+	if(zMapStyleGraphMode(featureset->style) != ZMAPSTYLE_GRAPH_LINE)
+		return;
+
+	n_points = 0;
+
+	if(feature)
+			/* add first point to join up to */
+	{
+		/* this is probable a paint in the middle of the window */
+		/* and the line has been drawn previously, we need to paint over it exactly */
+		feature->feature_offset = 0;
+		x2 = featureset->style->mode_data.graph.baseline + feature->width;
+		y2 = (feature->y2 + feature->y1 + 1) / 2;
+		foo_canvas_w2c (item->canvas, x2 + featureset->dx + featureset->x_off, y2 - featureset->start + featureset->dy, &cx2, &cy2);
+
+		points[n_points].x = cx2;
+		points[n_points].y = cy2;
+		n_points++;
+		last_gy = feature->y2;
+	}
+	else
+	{
+		/* trigger vertical bracket at the start */
+		last_gy = featureset->start;
+	}
+}
+
 /* paint one feature, CanvasFeatureset handles focus highlight */
 /* NOTE wiggle plots are drawn as poly-lines and get cached and painted when complete */
 /* NOTE lines have to be drawn out of the box at the edges */
@@ -161,39 +194,19 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 		 * or back to baseline if y1 > prev.y2 in pixels, and then join with a vertical (add two points)
 		 */
 
-		if(!n_points || (feature->y1 - last_gy > featureset->bases_per_pixel * 2))	/* && fill_gaps_between_bins) */
+		if((feature->y1 - last_gy > featureset->bases_per_pixel * 2))	/* && fill_gaps_between_bins) */
 		{
 			int cx,cy;
 
-			if(n_points)
-			{
-				/* draw from last point back to base: add baseline point at previous feature y2 */
+			/* draw from last point back to base: add baseline point at previous feature y2 */
+			foo_canvas_w2c (item->canvas, featureset->style->mode_data.graph.baseline + featureset->dx + featureset->x_off, last_gy - featureset->start + featureset->dy, &cx, &cy);
 
-				foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline + featureset->dx, last_gy - featureset->start + featureset->dy, &cx, &cy);
-
-				points[n_points].x = cx;
-				points[n_points].y = cy;
-				n_points++;
-			}
-			else
-			{
-				/* clip to visible scroll or add initial point at featureset->clip_y1, baseline */
-				foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline  + featureset->dx, feature->y1 - featureset->start + featureset->dy, &cx, &cy);
-
-#define VERTICAL_BRACKETS 0
-#if VERTICAL_BRACKETS // add vertical line off screen
-				points[n_points].x = cx;
-				points[n_points].y = featureset->clip_y1;
-				n_points++;
-#endif
-				points[n_points].x = cx;
-				points[n_points].y = cy;
-				n_points++;
-
-			}
+			points[n_points].x = cx;
+			points[n_points].y = cy;
+			n_points++;
 
 			/* add point at current feature y1, implies vertical if there's a previous point */
-			foo_canvas_w2c (item->canvas, featureset->x_off + featureset->style->mode_data.graph.baseline  + featureset->dx, feature->y1 - featureset->start + featureset->dy, &cx, &cy);
+			foo_canvas_w2c (item->canvas, featureset->style->mode_data.graph.baseline  + featureset->dx + featureset->x_off, feature->y1 - featureset->start + featureset->dy, &cx, &cy);
 
 			points[n_points].x = cx;
 			points[n_points].y = cy;
@@ -202,9 +215,9 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 
 		feature->feature_offset = 0;
-		x2 = featureset->x_off + featureset->style->mode_data.graph.baseline + feature->width;
+		x2 = featureset->style->mode_data.graph.baseline + feature->width;
 		y2 = (feature->y2 + feature->y1 + 1) / 2;
-		foo_canvas_w2c (item->canvas, x2 + featureset->dx, y2 - featureset->start + featureset->dy, &cx2, &cy2);
+		foo_canvas_w2c (item->canvas, x2 + featureset->dx + featureset->x_off, y2 - featureset->start + featureset->dy, &cx2, &cy2);
 
 		points[n_points].x = cx2;
 		points[n_points].y = cy2;
@@ -220,7 +233,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 	case ZMAPSTYLE_GRAPH_HEATMAP:
 		/* colour between fill and outline according to score */
 		feature->feature_offset = 0;
-		x1 = featureset->x_off + featureset->dx;
+		x1 = featureset->dx + featureset->x_off;
 		x2 = x1 + featureset->width;
 
 		outline_set = FALSE;
@@ -232,7 +245,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 	default:
 	case ZMAPSTYLE_GRAPH_HISTOGRAM:
-		x1 = featureset->x_off + featureset->dx; //  + (width * zMapStyleBaseline(di->style)) ;
+		x1 = featureset->dx + featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
 		feature->feature_offset = 0;
 		x2 = x1 + feature->width;
 
@@ -268,19 +281,20 @@ void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWi
 		GdkColor c;
 		gboolean is_line = (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE);
 
+
 		if(is_line && !feature)	/* draw back to baseline from last point and add trailing line */
+
 		{
 			zmapWindowCanvasFeatureStruct dummy = { 0 };
 			FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
 			foo_canvas_c2w (foo->canvas, 0, featureset->clip_y2, NULL, &dummy.y1);
-			dummy.y2 = dummy.y1 + 10;
+			dummy.y1 += featureset->bases_per_pixel * 2;
+			dummy.y2 = dummy.y1 + 1.0;
 			dummy.width = 0.0;
 
 			zMapWindowCanvasGraphPaintFeature(featureset, &dummy, drawable, expose );
-#if !VERTICAL_BRACKETS
-			n_points -= 2;
-#endif
+			n_points -= 1;	/* remove this point and leave the dosnstream vertical */
 		}
 
 		c.pixel = featureset->outline_pixel;
@@ -332,6 +346,7 @@ void zMapWindowCanvasGraphInit(void)
 {
 	gpointer funcs[FUNC_N_FUNC] = { NULL };
 
+	funcs[FUNC_PREPARE]= zMapWindowCanvasGraphPaintPrepare;
 	funcs[FUNC_PAINT]  = zMapWindowCanvasGraphPaintFeature;
 	funcs[FUNC_FLUSH]  = zMapWindowCanvasGraphPaintFlush;
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasGraphZoomSet;

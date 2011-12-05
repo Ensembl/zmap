@@ -222,7 +222,8 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 		pix_rect_free(pr);
 	}
 
-//printf("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
+//zMapLogWarning("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
+//printf        ("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
 
 	n_summarise_hidden = 0;
 	n_summarise_list = 0;
