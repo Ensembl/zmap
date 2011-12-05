@@ -636,11 +636,8 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 		/* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
 		 * colour flags has a window id set into it
 		 */
-long a,b,c;
-a = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK));
-b = ((gs->flags & ~FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID));
-c = (gs->flags & FEATURE_FOCUS_BLURRED);
 
+		/* these flags are very fiddly: handle with care */
 		gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
 			((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
 			(gs->flags & FEATURE_FOCUS_BLURRED);

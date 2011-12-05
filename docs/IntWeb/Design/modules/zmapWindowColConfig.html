@@ -14,9 +14,9 @@
 <h3>Load and display columns: reformatting the dialog</h3>
 <p>It would seem natural to be able to request and show/hide columns from the same GTK pane although this will give a more cluttered display, however it is possible to handle several options from one widget: Otterlace shows status and allows requests via a single check box.
 </p>
-<p>Here's a sample layout for the normal columns:
+<p>Here's a sample layout for the normal columns: <b>NOTE</b>: this picture is out of date and will be replaced. The fiorst TAN will be 'Core' whcih will include all the esseentail columns and further tabs will be created according to the data  available.<br />
 <img src="Design/modules/load_columns.png"  class="img" alt="picture of column config dialog"><br />
-Note that the interface is significantly more complicated than the existing ZMap and Otterlace  and implies some further coding in ZMap beyond just implementing the dialog. An attempt has been made to present useful default single clicks to select any column.
+Note that the interface is significantly more complicated than the existing ZMap and Otterlace and implies some further coding in ZMap beyond just implementing the dialog. An attempt has been made to present useful default single clicks to select any column.
 </p>
 
 <p>
@@ -52,6 +52,17 @@ For loaded the first click will be load all unless the mark is set in which case
 </p>
 <p>Show Translation in Zmap is controlled via the column's right click menu.</p>
 <p>It is probably possible to configure these columns into a suitable column group and show them with the loaded status widget disabled, probably triggering this by not finding a server config for the featureset in the column.
+</p>
+
+<h3>Implementation</h3>
+<h4>The dialog should respond to ZMap state</h4>
+<p>Displayed and loaded column status should change to reflect ZMap's state:
+<ul>
+<li> loaded status should change as data arrives
+<li> show/hide column via the mouse should update the dialog
+<li> setting the mark should change the state of request buttons
+</ul>
+NOTE: For load from mark it may be acceptable have the option always enabled and only action the request if the mark is set.
 </p>
 
 

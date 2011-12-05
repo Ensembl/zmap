@@ -59,7 +59,8 @@ gboolean zMapUtilsConfigDebug(void)
   if((context = zMapConfigIniContextProvide()))
     {
       result = TRUE;
-
+#if 0
+// very odd! callinf this function fropm zmaplogging.c resulted in some limk errors !!!
       zMapConfigIniContextGetBoolean(context,
 					ZMAPSTANZA_DEBUG_CONFIG,
 					ZMAPSTANZA_DEBUG_CONFIG,
@@ -73,7 +74,7 @@ gboolean zMapUtilsConfigDebug(void)
                               ZMAPSTANZA_DEBUG_CONFIG,
                               ZMAPSTANZA_DEBUG_CONFIG,
                               ZMAPSTANZA_DEBUG_APP_STYLES, &zmap_server_styles_debug_G);
-
+#endif
       zMapConfigIniContextGetBoolean(context,
                               ZMAPSTANZA_DEBUG_CONFIG,
                               ZMAPSTANZA_DEBUG_CONFIG,

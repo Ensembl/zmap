@@ -1161,7 +1161,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
                              container_mask_cb, canvas_data);
 
 
-  zMapStartTimer("DrawContext","");
+  zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_START,0,"");
 
   /* We iterate through the diff context to draw new data */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)diff_context,
@@ -1170,11 +1170,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
                                     NULL,
                                     canvas_data);
 
-  {
-  char *str = g_strdup_printf("Context has %d features",canvas_data->feature_count);
-  zMapStopTimer("DrawContext",str);
-  g_free(str);
-  }
+  zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_STOP,canvas_data->feature_count,"");
 
   zmapWindowHideEmpty(canvas_data->window);
 

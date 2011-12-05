@@ -672,6 +672,13 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  	ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
 	  	emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
 	  	g_free(ok_mess);
+
+	  	{
+			static long total = 0;
+
+			total += lfd->num_features;
+			zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+	  	}
 	  }
 	  else
 	  	emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");

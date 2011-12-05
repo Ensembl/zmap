@@ -151,6 +151,31 @@ extern gboolean zmap_timing_G;
 /* Takes an optional Gtimer* and an optional char* (you must supply the args but either can be NULL */
 #define zMapPrintTimer(TIMER, TEXT) (void) 0    // zmapPrintTime(TEXT ? TEXT : "?","")
 
+
+/* time in seconds as a double */
+#define zMap_elapsed()	g_timer_elapsed(ZMAP_GLOBAL_TIMER, NULL)
+
+/* see zmapLogging.c for these: do not change without changing the code */
+#define TIMER_NONE	0
+#define TIMER_EXPOSE	1
+#define TIMER_UPDATE	2
+#define TIMER_DRAW	3
+#define TIMER_DRAW_CONTEXT	4
+#define TIMER_REVCOMP	5
+#define TIMER_ZOOM	6
+#define TIMER_BUMP	7
+#define TIMER_SETVIS	8
+#define TIMER_LOAD	9
+
+#define N_TIMES		10
+
+#define TIMER_CLEAR	0
+#define TIMER_START	1
+#define TIMER_STOP	2
+#define TIMER_ELAPSED	3
+
+void zMapLogTime(int what, int how, long data, char *string);
+
 #endif /* ZMAP_DISABLE_TIMER */
 
 

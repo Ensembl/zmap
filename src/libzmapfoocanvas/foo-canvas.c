@@ -76,7 +76,7 @@
 void (*foo_log_stack)(void) = NULL;
 int n_group_draw = 0;
 int n_item_pick = 0;
-void (*foo_timer)(char *, char *, char *) = NULL;
+void (*foo_timer)(int,int) = NULL;
 
 static void foo_canvas_request_update (FooCanvas      *canvas);
 static void group_add                   (FooCanvasGroup *group,
@@ -3057,6 +3057,7 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 	g_print ("Expose\n");
 #endif
 n_group_draw = n_item_pick = 0;
+      if(foo_timer) foo_timer(0,1);
 
       /* If there are any outstanding items that need updating, do them now */
 	if (canvas->idle_id) {
@@ -3069,7 +3070,7 @@ n_group_draw = n_item_pick = 0;
 
 		g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_UPDATE], 0);
 
-            if(foo_timer) foo_timer("Start","canvas_expose","do_update");
+            if(foo_timer) foo_timer(1,1);
 
 		canvas->doing_update = TRUE;
 		foo_canvas_item_invoke_update (canvas->root, 0, 0, 0);
@@ -3078,7 +3079,7 @@ n_group_draw = n_item_pick = 0;
 
 		canvas->doing_update = FALSE;
 
-            if(foo_timer) foo_timer("Stop","canvas_expose","do_update");
+            if(foo_timer) foo_timer(1,2);
 
 		canvas->need_update = FALSE;
 
@@ -3097,12 +3098,12 @@ n_group_draw = n_item_pick = 0;
       {
 //            if(canvas->need_redraw)
 // we get a flicker then a blank window
-                  if(foo_timer) foo_timer("Start","canvas_expose","draw");
+                  if(foo_timer) foo_timer(2,1);
 
 		      (* FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->draw) (canvas->root,
 								      canvas->layout.bin_window,
 								      event);
-                  if(foo_timer) foo_timer("Stop","canvas_expose","draw");
+                  if(foo_timer) foo_timer(2,2);
 
             canvas->need_redraw = FALSE;
       }
@@ -3122,6 +3123,7 @@ if(foo_timer)
             event->area.x, event->area.y,event->area.width, event->area.height);
 }
 #endif
+      if(foo_timer) foo_timer(0,2);
 	return FALSE;
 }
 
@@ -3150,7 +3152,7 @@ update_again:
 
 		g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_UPDATE], 0);
 
-            if(foo_timer) foo_timer("Start","do_update","");
+            if(foo_timer) foo_timer(1,1);
 
 		canvas->doing_update = TRUE;
 		foo_canvas_item_invoke_update (canvas->root, 0, 0, 0);
@@ -3158,7 +3160,7 @@ update_again:
 		g_return_if_fail (canvas->doing_update);
 
 		canvas->doing_update = FALSE;
-            if(foo_timer) foo_timer("Stop","do_update","");
+            if(foo_timer) foo_timer(1,2);
 
 		canvas->need_update = FALSE;
 

@@ -196,8 +196,6 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
   zmapWindowBusy(window, TRUE) ;
 
 
-  zMapStartTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
-
   // yuk...
   three_frame_id = GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME));
   three_frame_Id = GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME));
@@ -222,14 +220,12 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
        * THE TRANSLATION COLUMN OR WHATEVER.....AND THE FOCUS REMOVE WILL NEED REDOING. */
       // remove always columns or 3-frame depending on mode
       zmapWindowDrawRemove3FrameFeatures(window);
-      zMapStopTimer("3FrameRemove","");
 
       /* Set up the frame state. */
       set3FrameState(window, frame_mode) ;
 
       // draw always columns or 3-frame depending on mode
       zmapWindowDraw3FrameFeatures(window);
-      zMapStopTimer("3FrameDraw","");
 
      /* Now we've drawn all the features we can position them all. */
      zmapWindowColOrderColumns(window);
@@ -243,7 +239,6 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
       zMapWarning("%s", "No '" ZMAP_FIXED_STYLE_3FRAME "' column in config file.");
     }
 
-  zMapStopTimer("3Frame" , IS_3FRAME(window->display_3_frame) ? "off" : "on");
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -376,7 +371,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
   ZMapStyleColumnDisplayState curr_col_state ;
   gboolean cur_visible,new_visible;
 
-  zMapStartTimer("SetState","");
+  zMapLogTime(TIMER_SETVIS,TIMER_START,0,"");
 
   container = (ZMapWindowContainerFeatureSet)column_group;
 
@@ -408,7 +403,6 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       {
             if(!cur_visible)
             {
-                  zMapStartTimer("SetState","SetVis show");
                   redraw = TRUE;
                   zmapWindowContainerSetVisibility(column_group, TRUE) ;
             }
@@ -417,18 +411,16 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       {
             if(cur_visible)
             {
-                  zMapStartTimer("SetState","SetVis show");
                   redraw = TRUE;
                   zmapWindowContainerSetVisibility(column_group, FALSE) ;
             }
       }
-      if(redraw)
-            zMapStopTimer("SetState","SetVis");
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
             zmapWindowFullReposition(window) ;
    }
+  zMapLogTime(TIMER_SETVIS,TIMER_STOP,0,"");
 }
 
 

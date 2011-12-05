@@ -2220,6 +2220,15 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
   zmapWindowInterruptExpose(window);
 
+	zMapLogTime(TIMER_ZOOM,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"zoom");
+      zMapLogTime(TIMER_ZOOM,TIMER_START,0,"");
+
+
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
       adjust =
@@ -2300,6 +2309,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
 
   zMapWindowRedraw(window);
+
+  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
 
  uninterrupt:
   zmapWindowUninterruptExpose(window);
