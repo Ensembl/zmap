@@ -204,6 +204,22 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 /* define feature specific functions here */
 /* only access via wrapper functions to allow type checking */
 
+/* handle upstream edge effects converse of flush */
+/* feature may be NULL to signify start of data */
+static gpointer _featureset_prepare_G[FEATURE_N_TYPE] = { 0 };
+void zMapWindowCanvasFeaturesetPaintPrepare(ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
+{
+	void (*func) (ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
+
+	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+		func = _featureset_prepare_G[featureset->type];
+	if(!func)
+		return;
+
+	func(featureset, feature, drawable, expose);
+}
+
+
 /* paint one feature, all context needed is in the FeaturesetItem */
 /* we need the expose region to clip at high zoom esp with peptide alignments */
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
@@ -359,6 +375,7 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
 
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int struct_size)
 {
+	_featureset_prepare_G[featuretype] = funcs[FUNC_PREPARE];
 	_featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
 	_featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
 	_featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
@@ -449,6 +466,8 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
       }
       else
       {
+		int stagger;
+
             /* need a wrapper to get ZWCI with a foo_featureset inside it */
             foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
 
@@ -479,6 +498,11 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
 		{
 			di->overlap = FALSE;
 			di->re_bin = TRUE;
+
+			/* this was originally invented for heatmaps & it would be better as generic, but that's another job */
+			stagger = zMapStyleDensityStagger(style);
+			di->set_index = index;
+			di->x_off = stagger * di->set_index;
 		}
 
 		di->width = zMapStyleGetWidth(di->style);
@@ -853,7 +877,8 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 		(* parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
 
 	// cribbed from FooCanvasRE; this sets the canvas coords in the foo item
-	di->dx = x1 = i2w_dx;
+	/* x_off is needed for staggered graphs, is currently 0 for all other types */
+	di->dx = x1 = i2w_dx + di->x_off;
 	x2 = x1 + (di->bumped? di->bump_width : di->width);
 
 	di->dy = y1 = i2w_dy;
@@ -950,7 +975,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 		{
 			double left,right;
 
-			wx = fi->dx + gs->feature_offset;
+			wx = fi->dx + fi->x_off + gs->feature_offset;
 			if(fi->bumped)
 				wx += gs->bump_offset;
 
@@ -1154,8 +1179,11 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		/* get the previous one to handle wiggle plots that must go off screen */
 	is_line = (zMapStyleGetMode(fi->style) == ZMAPSTYLE_MODE_GRAPH && fi->style->mode_data.graph.mode == ZMAPSTYLE_GRAPH_LINE);
 
-	if(is_line && sl->prev)
-		sl = sl->prev;
+	if(is_line)
+	{
+		feat = sl->prev ? (ZMapWindowCanvasFeature) sl->prev->data : NULL;
+		zMapWindowCanvasFeaturesetPaintPrepare(fi,feat,drawable,expose);
+	}
 
 	for(fi->featurestyle = NULL;sl;sl = sl->next)
 	{
@@ -1191,7 +1219,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		'intervals' as item relative
 		*/
 
-		if((feat->flags & FEATURE_FOCUS_MASK))
+			/* we don't display focus on lines */
+		if(!is_line && (feat->flags & FEATURE_FOCUS_MASK))
 		{
 			highlight = g_list_prepend(highlight, feat);
 			continue;
@@ -1211,20 +1240,24 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	}
 
 	/* flush out any stored data (eg if we are drawing polylines) */
-	zMapWindowCanvasFeaturesetPaintFlush(fi, NULL, drawable, expose);
+	zMapWindowCanvasFeaturesetPaintFlush(fi, sl ? feat : NULL, drawable, expose);
 
-	highlight = g_list_reverse(highlight);	/* preserve normal display ordering */
-
-	/* now paint the focus features on top, clear style to force colours lookup */
-	for(fi->featurestyle = NULL;highlight;highlight = highlight->next)
+	if(!is_line && highlight)
 	{
-		feat = (ZMapWindowCanvasFeature) highlight->data;
+		highlight = g_list_reverse(highlight);	/* preserve normal display ordering */
 
-		zmapWindowCanvasFeaturesetSetColours(fi,feat);
-		zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable,expose);
+		/* now paint the focus features on top, clear style to force colours lookup */
+		for(fi->featurestyle = NULL;highlight;highlight = highlight->next)
+		{
+			feat = (ZMapWindowCanvasFeature) highlight->data;
+
+			zmapWindowCanvasFeaturesetSetColours(fi,feat);
+			zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable,expose);
+		}
+		zMapWindowCanvasFeaturesetPaintFlush(fi, feat ,drawable, expose);
 	}
-	zMapWindowCanvasFeaturesetPaintFlush(fi, NULL ,drawable, expose);
 }
+
 
 
 void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature feat)
