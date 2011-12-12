@@ -34,6 +34,9 @@ CLEANFILES = $(pkgconfig_DATA)
 
 MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
+
+
+
 # toplevel files
 # noinst_DATA = INSTALL
 
@@ -288,6 +291,9 @@ docs: mkdocdir doxygen-doc
 
 maintainer-clean-local:
 	rm -rf cleanDir
+
+distclean-local:
+	rm -f $(top_srcdir)/m4/*.m4
 
 # the next two targets are required for installing the static
 # libraries.  Not something we should be doing I'm sure, but
