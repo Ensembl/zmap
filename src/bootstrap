@@ -102,10 +102,10 @@ fi
 
 
 # Use autoreconf to run the autotools chain in the right order with
-# the right args. -v for verbose, -i for add missing files.
+# the right args.
 #
 zmap_message_out "About to run autoreconf to bootstrap autotools builds system"
-autoreconf $verbose $install_missing || zmap_message_exit "Failed running autoreconf"
+autoreconf $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
 zmap_message_out "Finished running autoreconf for bootstrap"
 
 
