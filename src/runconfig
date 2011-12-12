@@ -113,8 +113,6 @@ case $opsys in
 	    fi
 
 
-
-
 	    # Now add LDFLAGS to args so they get through to configure.
             CFLAGS_args="$CFLAGS $CFLAGS_args"
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
