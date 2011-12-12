@@ -46,7 +46,7 @@ case $build in
      *-*-linux*)
      zmap_os_type="Linux";;
      *-*-darwin*)
-     zmap_os_type="darwin";;
+     zmap_os_type="darwin" ;;
      *)
      zmap_os_type="Unknown";;
 esac
@@ -55,6 +55,7 @@ if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
    AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
 elif test "$zmap_os_type" = "darwin" ; then
+
    AC_MSG_RESULT([Got OS type of Darwin])
    AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
 
