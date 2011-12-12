@@ -21,6 +21,10 @@ AC_INIT([ZMap],[ZMAP_VERSION_NUMBER],[zmap@sanger.ac.uk])
 AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
 AC_CONFIG_HEADER(config.h)
 
+# try it....
+AC_CONFIG_MACRO_DIR([m4])
+
+
 echo "************************************************************"
 echo "* Welcome to ./configure for $PACKAGE_STRING"
 echo "* Cmd: $0 $@"
@@ -190,7 +194,6 @@ AC_SUBST(VERSION)
 
 AC_PROG_CXX
 AC_PROG_CC
-#AC_PROG_RANLIB
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
 
