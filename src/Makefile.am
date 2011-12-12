@@ -19,6 +19,13 @@ include $(srcdir)/Makefile.common
 #include $(srcdir)/am_doxygen.am
 
 
+# Local macros.
+#
+ACLOCAL_AMFLAGS = -I m4
+
+
+
+
 # ZMAP_SRC_DIRS See configure.ac
 
 SUBDIRS = $(ZMAP_SRC_DIRS) libpfetch libcurlobject libzmapfoocanvas include $(CANVAS_TESTING)
