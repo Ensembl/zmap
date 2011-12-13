@@ -96,6 +96,7 @@ AC_ARG_WITH([macosx-sdk-path],
         AS_HELP_STRING([--with-maxosx-sdk-path=path], [enable building of mac osx universal binary using 'path' to SDK]),
         [], [with_macosx_sdk_path=$ZMAP_FALSE])
 
+
 MACOSX_UNIVERSAL_FILE=".deps/zmap.c"
 MACOSX_UNIVERSAL_FLAGS=""
 AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
@@ -402,6 +403,7 @@ zmapGFF \
 zmapMake \
 zmapManager \
 zmapRemoteControl \
+zmapRemoteControl/remotetest \
 zmapServer \
 zmapThreads \
 zmapUtils \
