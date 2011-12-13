@@ -2650,11 +2650,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      //if(reply != ZMAPTHREAD_REPLY_WAIT)
 	      //      zMapLogWarning("thread reply %d",reply);
 #if 0
-if(reply != ZMAPTHREAD_REPLY_WAIT)
-{
-	ZMapViewConnectionStep step = (ZMapViewConnectionStep) view_con->step_list->current->data;
-	zMapLogWarning("thread reply %d = %d/%d, %s",step->request,reply,view_con->thread_status, err_msg);
-}
+	      if(reply != ZMAPTHREAD_REPLY_WAIT)
+		{
+		  ZMapViewConnectionStep step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+		  zMapLogWarning("thread reply %d = %d/%d, %s",step->request,reply,view_con->thread_status, err_msg);
+		}
 #endif
 	      switch (reply)
 		{
@@ -2757,7 +2757,8 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 					" error was: %s", view_con->url, err_msg) ;
 
 			/* Signal thread to die. */
-			zMapThreadKill(thread) ;
+			if (zMapThreadExists(thread))
+			  zMapThreadKill(thread) ;
 		      }
 
 		    /* Reset the reply from the slave. */
@@ -2843,13 +2844,13 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 	  // do this before counting up the number of step lists
 	  if (thread_has_died)
 	    {
-            ZMapViewConnectionStep step;
+	      ZMapViewConnectionStep step;
 
-		is_continue = FALSE;
-		if(view_con->step_list)
-            {
-            	step = (ZMapViewConnectionStep) view_con->step_list->current->data;
-			is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
+	      is_continue = FALSE;
+	      if(view_con->step_list)
+		{
+		  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+		  is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
 		}
 
 	      /* We are going to remove an item from the list so better move on from
@@ -2863,24 +2864,24 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 
 	      if (reply == ZMAPTHREAD_REPLY_QUIT && view_con->thread_status != THREAD_STATUS_FAILED)
 		{
-                if (step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
+		  if (step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
 		    {
 		      view_con->thread_status = THREAD_STATUS_OK ;
 #if 0
-(we get the original or last error here)
-		      /* patch out confusing error message about termination */
-		      /* really this ought to just report OK from the server code */
-		      if (err_msg)
-			{
-			  g_free(err_msg) ;
-			  err_msg = NULL ;
-			}
+		      (we get the original or last error here)
+			/* patch out confusing error message about termination */
+			/* really this ought to just report OK from the server code */
+			if (err_msg)
+			  {
+			    g_free(err_msg) ;
+			    err_msg = NULL ;
+			  }
 #endif
 		    }
 		}
-		else
+	      else
 		{
-	      	view_con->thread_status = THREAD_STATUS_FAILED ;
+		  view_con->thread_status = THREAD_STATUS_FAILED ;
 		}
 
 	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)
@@ -2888,7 +2889,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 	    }
 
 	  /* Check for more connection steps and dispatch them or clear up if finished. */
- 	    if ((view_con->step_list))
+	  if ((view_con->step_list))
 	    {
 	      /* If there were errors then all connections may have been removed from
 	       * step list or if we have finished then destroy step_list. */
@@ -2905,9 +2906,9 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
                   zmapViewStepListDestroy(view_con) ;
                   reqs_finished = TRUE;
                   if (view_con->thread_status != THREAD_STATUS_FAILED)
-                  	view_con->thread_status = THREAD_STATUS_OK ;
+		    view_con->thread_status = THREAD_STATUS_OK ;
 		  //zMapLogMessage("step list %s finished\n",view_con->url);
-		    steps_finished = TRUE ;
+		  steps_finished = TRUE ;
 		}
 	    }
 
@@ -2921,21 +2922,21 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		  if (view_con->thread_status == THREAD_STATUS_FAILED)
 		    {
 		      if(!err_msg)
-		      {
-		    	/* NOTE on TERMINATE OK/REPLY_QUIT we get thread_has_died and NULL the error message */
-		    	/* but if we set thread_status for FAILED on successful exit then we get this, so let's not do that: */
-		        err_msg = "Thread failed but there is no error message to say why !" ;
+			{
+			  /* NOTE on TERMINATE OK/REPLY_QUIT we get thread_has_died and NULL the error message */
+			  /* but if we set thread_status for FAILED on successful exit then we get this, so let's not do that: */
+			  err_msg = "Thread failed but there is no error message to say why !" ;
 
-		        zMapLogWarning("%s", err_msg) ;
+			  zMapLogWarning("%s", err_msg) ;
 
-		        err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
-		      }
+			  err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
+			}
 
 		      if (!zmap_view->thread_fail_silent && is_continue)
 		        {
-		        	/* we get here at the end of a step list, prev errors not reported till now */
-		        	zMapWarning("Data request failed: %s\n%s%s",err_msg,
-		        		cd->stderr_out && *cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
+			  /* we get here at the end of a step list, prev errors not reported till now */
+			  zMapWarning("Data request failed: %s\n%s%s",err_msg,
+				      cd->stderr_out && *cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
 		        }
 		    }
 
@@ -3569,23 +3570,24 @@ static void killConnections(ZMapView zmap_view)
 {
   GList* list_item ;
 
-  if(!(zmap_view->connection_list))
-      return;
-
-  list_item = g_list_first(zmap_view->connection_list) ;
-  do
+  if ((zmap_view->connection_list))
     {
-      ZMapViewConnection view_con ;
-      ZMapThread thread ;
+      list_item = g_list_first(zmap_view->connection_list) ;
+      do
+	{
+	  ZMapViewConnection view_con ;
+	  ZMapThread thread ;
 
-      view_con = list_item->data ;
-      thread = view_con->thread ;
+	  view_con = list_item->data ;
+	  thread = view_con->thread ;
 
-      /* NOTE, we do a _kill_ here, not a destroy. This just signals the thread to die, it
-       * will actually die sometime later. */
-      zMapThreadKill(thread) ;
+	  /* NOTE, we do a _kill_ here, not a destroy. This just signals the thread to die, it
+	   * will actually die sometime later. */
+	  if (zMapThreadExists(thread))
+	    zMapThreadKill(thread) ;
+	}
+      while ((list_item = g_list_next(list_item))) ;
     }
-  while ((list_item = g_list_next(list_item))) ;
 
   return ;
 }
