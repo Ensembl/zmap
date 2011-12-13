@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 14:30 2011 (edgrif) */
 /*  File: zmapXML.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -36,16 +37,11 @@
 #include <expat.h>
 #include <glib.h>
 
-/*! @addtogroup zmapXML
- * @{
- * */
-
-/*!
- * \brief macro to abort parsing if expression is true.
- * \param expression to test
- * \param zmapXMLParser parser object
- * \param char *message which will be returned to user
- * \retval TRUE also returning from calling function
+/* macro to abort parsing if expression is true.
+ * expression to test
+ * zmapXMLParser parser object
+ * char *message which will be returned to user
+ * returns TRUE also returning from calling function
 
  * Without a validating parser it's difficult to ensure everything is
  * as it seems.  When writing start and end handlers for nested
@@ -160,6 +156,7 @@ typedef enum
   {
     ZMAPXML_EVENT_DATA_NONE,
     ZMAPXML_EVENT_DATA_QUARK,
+    ZMAPXML_EVENT_DATA_STRING,
     ZMAPXML_EVENT_DATA_INTEGER,
     ZMAPXML_EVENT_DATA_DOUBLE,
     ZMAPXML_EVENT_DATA_INVALID
@@ -172,12 +169,13 @@ typedef struct _ZMapXMLUtilsEventStackStruct
   ZMapXMLWriterEventDataType data_type;
   union
   {
-    char  *s;
-    int    i;
-    double d;
-  }value;
+    int     i ;
+    double  d ;
+    GQuark  q ;
+    char   *s ;
+  } value ;
 
-}ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
+} ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
 
 typedef struct _ZMapXMLWriterEventStruct
 {
@@ -355,17 +353,16 @@ ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
 char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer);
 char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
 
-/* UTILS */
 
-GArray *zMapXMLUtilsCreateEventsArray(void);
-GArray *zMapXMLUtilsAddStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack,
-                                          GArray *events_array);
-GArray *zMapXMLUtilsAddStackToEventsArrayStart(ZMapXMLUtilsEventStackStruct *event_stack,
-                                               GArray *events_array);
-GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack);
+/* UTILS */
+GArray *zMapXMLUtilsCreateEventsArray(void) ;
+GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayMiddle(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
+
+
 
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 
 #endif /* ZMAP_XML_H */
-
-/*! @} end of zmapXML docs  */
