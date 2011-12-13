@@ -2,6 +2,3 @@
 *
 # Except this file
 !.gitignore
-!linux
-!linux_64
-!macosx
