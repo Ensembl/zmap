@@ -1,3 +1,4 @@
+/*  Last edited: Oct 27 20:28 2011 (edgrif) */
 /*  File: zmapXMLWriter.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -32,19 +33,18 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <zmapXML_P.h>
 #include <ZMap/zmapUtils.h>
+
+
 
 typedef struct
 {
   GQuark name;
   GArray *attribute_list;
 }ElementStackMemberStruct, *ElementStackMember;
+
+
 
 static void maybeFlush(ZMapXMLWriter writer);
 static void pushElement(ZMapXMLWriter writer, ElementStackMember element);
@@ -54,6 +54,10 @@ static gboolean attributeIsUnique(ElementStackMember element, GQuark attribute_n
 static void addAttribute(ElementStackMember element, GQuark attribute_name);
 static void flushToOutput(ZMapXMLWriter writer);
 static void setErrorCode(ZMapXMLWriter writer, ZMapXMLWriterErrorCode code);
+
+
+
+
 
 ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, 
                                   gpointer flush_data)
@@ -77,21 +81,25 @@ ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *ele
 {
   ZMapXMLWriterErrorCode code;
   ElementStackMemberStruct curr_element = {0};
-  int i = 0, depth = 0;
+  int i, depth ;
 
-  depth = writer->element_stack->len;
+  depth = writer->element_stack->len ;
 
-  if(!(writer->stack_top_has_content) && depth > 0)
+  if (!(writer->stack_top_has_content) && depth > 0)
     {
       g_string_append_c(writer->xml_output, '>');
       g_string_append_c(writer->xml_output, '\n');
     }
   else
-    writer->stack_top_has_content = FALSE;
+    {
+      writer->stack_top_has_content = FALSE;
+    }
 
-  depth*=2;
-  for(i=0;i<depth;i++)
-    { g_string_append_c(writer->xml_output, ' '); }
+
+  for (i = 0 ; i < (depth * 2) ; i++)
+    {
+      g_string_append_c(writer->xml_output, ' ') ;
+    }
 
   g_string_append_c(writer->xml_output, '<');
 
@@ -99,10 +107,12 @@ ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *ele
   
   curr_element.name = g_quark_from_string(element_name);
   //curr_element.has_content = FALSE; //not needed
+
   pushElement(writer, &curr_element);
 
   maybeFlush(writer);
   code = writer->errorCode;
+
   return code;
 }
 
@@ -305,6 +315,27 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
   return status;
 }
 
+char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer)
+{
+  return writer->error_msg;
+}
+
+
+
+char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer)
+{
+  char *verbose;
+
+  verbose = g_strdup_printf("Error (%d) Occurred:\n%s\n%s\n",
+                            writer->errorCode,
+                            writer->error_msg,
+                            writer->xml_output->str);
+
+  return verbose;
+}
+
+
+
 ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer)
 {
   ZMapXMLWriterErrorCode code = ZMAPXMLWRITER_OK;
@@ -321,24 +352,16 @@ ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer)
   return code;
 }
 
-char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer)
-{
-  return writer->error_msg;
-}
 
-char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer)
-{
-  char *verbose;
 
-  verbose = g_strdup_printf("Error (%d) Occurred:\n%s\n%s\n",
-                            writer->errorCode,
-                            writer->error_msg,
-                            writer->xml_output->str);
 
-  return verbose;
-}
 
-/* internal code */
+
+/*
+ *                    internal routines
+ */
+
+
 static void maybeFlush(ZMapXMLWriter writer)
 {
   writer->flush_counter++;
