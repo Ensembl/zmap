@@ -43,6 +43,23 @@
 #include <zmapThreads_P.h>
 
 
+
+/* zMapThreads routines create, issue requests to, and destroy slave threads.
+ * On creation slave threads are given a routine that they will call whenever
+ * they receive a request. This routine handles the request and returns the
+ * result to the slave thread code which forwards it to the master thread.
+ */
+
+
+
+
+static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
+			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
+static void destroyThread(ZMapThread thread) ;
+
+
+
+
 /* Turn on/off all debugging messages for threads. */
 gboolean zmap_thread_debug_G = FALSE ;
 
@@ -63,35 +80,37 @@ gboolean zmap_thread_debug_G = FALSE ;
 static pthread_mutex_t thread_fork_mutex_G;
 
 void zMapThreadForkLock(void)
-//void prepare_atfork(void)
 {
-      static int init = 0;
-      int locked;
+  static int init = 0;
+  int locked;
 
-      if(!init)
-      {
-            init = 1;
-            pthread_mutex_init(&thread_fork_mutex_G,NULL);
-            // prevent concurrent fork() calls from slave threads -> and also the main one?
-//          pthread_atfork(prepare_atfork,parent_atfork,child_atfork);
-      }
+  if(!init)
+    {
+      init = 1;
+      pthread_mutex_init(&thread_fork_mutex_G,NULL);
+      // prevent concurrent fork() calls from slave threads -> and also the main one?
+      //          pthread_atfork(prepare_atfork,parent_atfork,child_atfork);
+    }
 
-      locked = !pthread_mutex_lock(&thread_fork_mutex_G);
-      // NB: don't ever nest calls to this function
+  locked = !pthread_mutex_lock(&thread_fork_mutex_G);
+  // NB: don't ever nest calls to this function
 
-      zMapAssert(locked);
+  zMapAssert(locked);
+
+  return ;
 }
 
 
 void zMapThreadForkUnlock(void)
-//void parent_atfork(void)
 {
-      int unlocked;
+  int unlocked;
 
-//      printf("unlock mutex\n");
-      unlocked = !pthread_mutex_unlock(&thread_fork_mutex_G);
-//      zMapAssert(unlocked); /* don't assert as we call this on thread cleanup regardless of ownership */
-//      printf("mutex unlocked\n");
+  //      printf("unlock mutex\n");
+  unlocked = !pthread_mutex_unlock(&thread_fork_mutex_G);
+  //      zMapAssert(unlocked); /* don't assert as we call this on thread cleanup regardless of ownership */
+  //      printf("mutex unlocked\n");
+
+  return ;
 }
 
 #if MH17_NOT_USED
@@ -101,24 +120,6 @@ void child_atfork(void)
     pthread_mutex_init(&thread_fork_mutex_G,NULL);
 }
 #endif
-
-static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
-			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
-static void destroyThread(ZMapThread thread) ;
-
-
-/*! @defgroup zmapthreads   zMapThreads: creating, controlling and destroying slave threads
- * @{
- *
- * \brief  Slave Threads
- *
- * zMapThreads routines create, issue requests to, and destroy slave threads.
- * On creation slave threads are given a routine that they will call whenever
- * they receive a request. This routine handles the request and returns the
- * result to the slave thread code which forwards it to the master thread.
- *
- *
- *  */
 
 
 
@@ -177,7 +178,9 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
     }
 
   if (status == 0)
-    thread->thread_id = thread_id ;
+    {
+      thread->thread_id = thread_id ;
+    }
   else
     {
       /* Ok to just destroy thread here as the thread was not successfully created so
@@ -228,6 +231,16 @@ gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
   return got_value ;
 }
 
+gboolean zMapThreadExists(ZMapThread thread)
+{
+  gboolean exists = FALSE ;
+
+  if (!pthread_kill(thread->thread_id, 0))
+    exists = TRUE ;
+
+  return exists ;
+}
+
 
 /* User must free returned string, note that we need this routine because pthread_t is defined
  * in very different ways on different systems...... */
@@ -248,13 +261,10 @@ char *zMapThreadGetThreadID(ZMapThread thread)
 }
 
 
-
 /* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadRequest2ExactStr, ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReply2ExactStr, ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
-
-
 
 
 
@@ -278,15 +288,14 @@ void zMapThreadKill(ZMapThread thread)
   return ;
 }
 
-gboolean zMapThreadExists(ZMapThread thread)
-{
-//      if(pthread_kill(thread->thread_id,0) != ESRCH)
-      if(!pthread_kill(thread->thread_id,0))
-            return(TRUE);
-      return(FALSE);
-}
 
-/* Release the threads resources, don't do this until the slave thread has gone. */
+/* Release the threads resources, don't do this until the slave thread has gone.
+ * 
+ * THIS ISN'T CALLED AND DOESN'T WORK JUST NOW....WE NEED TO SORT OUT PTHREAD_CANCEL
+ * PROPERLY.....
+ * 
+ * 
+ *  */
 void zMapThreadDestroy(ZMapThread thread)
 {
   ZMAPTHREAD_DEBUG(("GUI: destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
