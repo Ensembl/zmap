@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 12:34 2011 (edgrif) */
 /*  File: zmapControlRemoteSend.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -74,7 +75,7 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
 static ZMapXMLUtilsEventStackStruct wrap_start_G[] =
   {
     {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {0}},
     {0}
   } ;
 
@@ -151,10 +152,10 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
 
       wrap_ptr = &wrap_start_G[1];
-      wrap_ptr->value.s = action;
+      wrap_ptr->value.s = g_strdup(action) ;
 
-      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_start_G[0], xml_events);
-      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_end_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(xml_events, &wrap_start_G[0]);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayEnd(xml_events, &wrap_end_G[0]);
       
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, message_data.full_text);
 
