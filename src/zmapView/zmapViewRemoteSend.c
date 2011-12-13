@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 14:05 2011 (edgrif) */
 /*  File: zmapViewRemoteSend.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -68,7 +69,7 @@ static ZMapXMLUtilsEventStackStruct wrap_end_G[] =
 static ZMapXMLUtilsEventStackStruct wrap_request_G[] =
   {
     {ZMAPXML_START_ELEMENT_EVENT, "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {0}},
     {0}
   } ;
 
@@ -128,15 +129,15 @@ ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
 
       wrap_ptr = &wrap_request_G[1] ;
-      wrap_ptr->value.s = action ;
+      wrap_ptr->value.s = g_strdup(action) ;
 
-      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_request_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(xml_events, &wrap_request_G[0]);
 
-      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_start_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(xml_events, &wrap_start_G[0]);
 
-      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_request_end_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayEnd(xml_events, &wrap_request_end_G[0]);
 
-      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_end_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayEnd(xml_events, &wrap_end_G[0]);
 
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, full_text);
 
