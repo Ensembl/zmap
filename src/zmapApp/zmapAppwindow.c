@@ -1,3 +1,4 @@
+/*  Last edited: Dec  1 10:39 2011 (edgrif) */
 /*  File: zmapappmain.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -39,6 +40,9 @@
 #include <locale.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
+
+
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
@@ -173,14 +177,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   getConfiguration(app_context) ;
 
 
-  if (!zmapAppRemoteControlCreate(app_context))
-    {
-      printf("Could not initialise remote control interface.") ;
-    }
-
-
   {
-    /* locale setting */
+    /* locale setting, essential for much of our display, e.g. fixed width dna display. */
     char *default_locale = "POSIX";
     char *locale_in_use, *user_req_locale, *new_locale;
     locale_in_use = setlocale(LC_ALL, NULL);
@@ -219,10 +217,28 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
-  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
-					   G_CALLBACK(remoteInstaller),
-					   (gpointer)app_context) ;
+  if (!(app_context->peer_unique_id))
+    {
+      zMapLogWarning("%s", "No peer for remote connection specified so remote interface cannot be created.") ;
+    }
+  else
+    {
+      if (zmapAppRemoteControlCreate(app_context))
+	{
+	  /* Rest of initialisation requires a window so code is in a map callback
+	   * where we are guaranteed to have a window. */
+	  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
+						   G_CALLBACK(remoteInstaller),
+						   (gpointer)app_context) ;
+	}
+      else
+	{
+	  zMapCritical("%s", "Could not initialise remote control interface.") ;
+	}
+    }
 
+
+  /* Handler for when main window is destroyed (by whichever route). */
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
 
@@ -908,20 +924,24 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
+  /* Stop ourselves being called again. */
   g_signal_handler_disconnect(app_context->app_widg, app_context->mapCB_id) ;
   app_context->mapCB_id = 0 ;
 
-  /* Whatever happens we try to set up our remote control object, if we were
-   * given a peers unique string then we also try to connect to it. */
-  if (!zmapAppRemoteControlInit(app_context))
+  /* Set up our remote handler. */
+  if (zmapAppRemoteControlInit(app_context))
     {
-      zMapCritical("%s", "Failed to initialise remote control interface.") ;
-    }
-  else if (app_context->peer_unique_id)
-    {
+      printf("about to try to connect to peer.....\n") ;
+
+
       if (!zmapAppRemoteControlConnect(app_context))
 	zMapCritical("%s", "Failed to connect to peer using %s.", app_context->peer_unique_id) ;
     }
+  else
+    {
+      zMapLogCritical("%s", "Cannot initialise zmap remote control interface.") ;
+    }
+
 
   return ;
 }
