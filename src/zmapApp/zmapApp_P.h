@@ -1,3 +1,4 @@
+/*  Last edited: Oct 26 14:26 2011 (edgrif) */
 /*  File: zmapApp.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -91,7 +92,11 @@ typedef struct _ZMapAppContextStruct
   ZMap selected_zmap ;
 
 
-  /* **NEW XREMOTE** the new xremote object.  */
+  /* **NEW XREMOTE** the new xremote object, there could be more than one
+   * of these.... */
+  char *app_unique_id ;
+  char *peer_unique_id ;				    /* Peer application atom id for remote control. */
+
   gulong mapCB_id ;
   ZMapRemoteControl remote_controller ;
 
@@ -109,7 +114,7 @@ typedef struct _ZMapAppContextStruct
       /* Was a default sequence specified in the config. file.*/
   ZMapFeatureSequenceMap default_sequence;
 
-  char *peer_unique_id ;				    /* Peer application atom id for remote control. */
+
 
   char *locale;
   gboolean sent_finalised ;
