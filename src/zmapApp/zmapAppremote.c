@@ -1,3 +1,4 @@
+/*  Last edited: Oct 26 14:07 2011 (edgrif) */
 /*  File: zmapAppRemote.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -21,8 +22,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -32,17 +32,14 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
+
 #include <zmapApp_P.h>
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtilsXRemote.h>
+
 
 typedef enum {
   ZMAP_APP_REMOTE_ALL = 1
@@ -104,6 +101,8 @@ static ZMapXMLObjTagFunctionsStruct end_handlers_G[] = {
 static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
   NULL, "new_zmap", "shutdown", NULL
 };
+
+
 
 /* Installs the handlers to monitor/handle requests to/from an external program. */
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
@@ -293,8 +292,8 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
   ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
-      /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
-      // default sequence may be NULL
+  /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
+  // default sequence may be NULL
   if(app->default_sequence)
         seq_map->dataset = app->default_sequence->dataset;
   seq_map->sequence = sequence;
@@ -304,6 +303,7 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   zmapAppCreateZMap(app, seq_map) ;
 
   response_data->handled = TRUE;
+
   /* that screwy rabbit */
   g_string_append_printf(response_data->message, "%s", app->info->message);
 
