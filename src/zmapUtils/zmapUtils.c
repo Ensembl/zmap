@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 13:51 2011 (edgrif) */
 /*  File: zmapUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -41,6 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>
+#include <unistd.h>
 
 #include <zmapUtils_P.h>
 
