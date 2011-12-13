@@ -27,7 +27,7 @@
  * Description: External interface to remote control package.
  *
  * HISTORY:
- * Last edited: Jun 27 11:13 2011 (edgrif)
+ * Last edited: Dec  1 16:01 2011 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -37,59 +37,66 @@
 
 #include <gtk/gtk.h>
 
-
-/* temporary while we are testing....???? This needs to be advertised on a per zmap instance
- * basis so naming is crucial...in practice one application will tell the other it's id, then
- * the other can say hello and pass it's id over.... */
-#define ZMAP_REMOTE_ID "ZMAP_REMOTE_INIT_ID"
+#include <ZMap/zmapRemoteProtocol.h>
 
 
-
-
-#define TEST_REMOTE_ID "TEST_REMOTE_ID"
-
-
-
-
-#define ZMAP_ANNOTATION_DATA_TYPE   "ZMAP_ANNOTATION_STR"
-#define ZMAP_ANNOTATION_DATA_FORMAT 8			    /* Bits per unit. */
-
-
-
-
-/* errr...what's this for ??? */
-#define ANNOTATION_ICC "ANNOTATION_DATA"
-
-
-
-
-
+/* Opaque type representing a single peer-peer pair. There must be one of these for each pair
+ * of peers that wish to communicate. */
 typedef struct ZMapRemoteControlStructName *ZMapRemoteControl ;
+
+
+
+/* 
+ *                         Callback definitions.
+ */
 
 
 /* RemoteControl callback. */
 typedef gboolean (*ZMapRemoteControlCallWithReplyFunc)(void *remote_data, void *reply, int reply_len) ;
 
-/* App Callbacks. */
-typedef gboolean (*ZMapRemoteControlRequestHandlerFunc)(ZMapRemoteControlCallWithReplyFunc remote_reply_func,
+/* App Callbacks, will be called by remotecontrol when a request, a reply or an error occurs respectively. */
+typedef gboolean (*ZMapRemoteControlRequestHandlerFunc)(ZMapRemoteControl remote_control,
+							ZMapRemoteControlCallWithReplyFunc remote_reply_func,
 							void *remote_reply_data,
 							void *request, void *user_data) ;
-typedef gboolean (*ZMapRemoteControlReplyHandlerFunc)(void *reply, void *user_data) ;
-typedef gboolean (*ZMapRemoteControlTimeoutHandlerFunc)(void *user_data) ;
-typedef gboolean (*ZMapRemoteControlErrorFunc)(void *user_data, char *err_msg) ;
+typedef gboolean (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
+typedef gboolean (*ZMapRemoteControlTimeoutHandlerFunc)(ZMapRemoteControl remote_control, void *user_data) ;
 
+
+/* do we need an error handler callback here....perhaps one of the errors should be a timeout ??
+   and not have a specific timeout handler callback....better.... */
+
+
+/* App-defined function to output remote control errors. */
+typedef gboolean (*ZMapRemoteControlErrorReportFunc)(void *user_data, char *err_msg) ;
+
+
+/* 
+ *            The RemoteControl interface.
+ */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
-					  char *remote_control_unique_str,
-					  ZMapRemoteControlRequestHandlerFunc request_func, gpointer request_data,
-					  ZMapRemoteControlReplyHandlerFunc reply_func, gpointer reply_data,
-					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data) ;
-gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
-				     ZMapRemoteControlErrorFunc err_func, gpointer err_data) ;
+					  ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
+
+gboolean zMapRemoteControlSelfInit(ZMapRemoteControl remote_control,
+				   char *app_str,
+				   ZMapRemoteControlRequestHandlerFunc request_func, gpointer request_data,
+				   ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data) ;
+
+/* I think we need to do this....split out from above call the stuff to set up the clipboard. */
+gboolean zMapRemoteControlSelfWaitForRequest(ZMapRemoteControl remote_control) ;
+
+gboolean zMapRemoteControlPeerInit(ZMapRemoteControl remote_control,
+				   char *peer_unique_str,
+				   ZMapRemoteControlReplyHandlerFunc reply_func, gpointer reply_data,
+				   ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data) ;
+gboolean zMapRemoteControlPeerRequest(ZMapRemoteControl remote_control, char *peer_xml_request) ;
+
+gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, gboolean debug_on) ;
 gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_secs) ;
-gboolean zMapRemoteControlInit(ZMapRemoteControl remote_control, GtkWidget *remote_control_widget) ;
-gboolean zMapRemoteControlRequest(ZMapRemoteControl remote_control,
-				  char *peer_unique_str, char *peer_xml_request, guint32 time) ;
+gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
+				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
+gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
 void zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
 
 
