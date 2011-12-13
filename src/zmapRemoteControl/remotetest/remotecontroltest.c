@@ -28,7 +28,7 @@
  *
  * Exported functions: none
  * HISTORY:
- * Last edited: Nov 25 13:57 2010 (edgrif)
+ * Last edited: Dec  1 09:45 2011 (edgrif)
  * Created: Tue Oct 26 15:56:03 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -196,10 +196,6 @@ typedef struct RemoteDataStructName
 
 
 
-
-
-
-
 typedef struct
 {
   RemoteData remote_data;
@@ -246,11 +242,12 @@ static gboolean messageProcess(char *message_xml_in, gboolean full_process,
 			       char **action_out, XRemoteMessage *message_out) ;
 
 
-static gboolean requestHandlerCB(ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
+static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
+				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
 				 void *request, void *user_data) ;
-static gboolean requestCB(void *reply, void *user_data) ;
-static gboolean replyCB(void *reply, void *user_data) ;
-static gboolean timeoutCB(void *user_data) ;
+static gboolean requestCB(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
+static gboolean replyCB(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
+static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data) ;
 
 
 
@@ -440,22 +437,6 @@ int main(int argc, char *argv[])
 
   /* Set up remote communication with zmap. */
   remote_data->unique_atom_str = zMapMakeUniqueID(REMOTECONTROL_APPNAME) ;
-  if (!(remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
-							   remote_data->unique_atom_str,
-							   requestHandlerCB, remote_data,
-							   replyCB, remote_data,
-							   timeoutCB, remote_data)))
-    {
-      zMapCritical("%s", "Could not initialise remote control.") ;
-      
-      appExit(FALSE) ;
-    }
-  else
-    {
-      /* set no timeout for now... */
-      zMapRemoteControlSetTimeout(remote_data->remote_cntl, 0) ;
-    }
-
 
   gtk_widget_show_all(remote_data->app_toplevel) ;
 
@@ -635,17 +616,26 @@ static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
 
-  if (!zMapRemoteControlInit(remote_data->remote_cntl, remote_data->app_toplevel))
+  /* Stop us being called multiple times. */
+  g_signal_handler_disconnect(remote_data->app_toplevel, remote_data->mapCB_id) ;
+  remote_data->mapCB_id = 0 ;
+
+  if ((remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
+							  NULL, NULL))
+      && zMapRemoteControlSelfInit(remote_data->remote_cntl,
+				   remote_data->unique_atom_str,
+				   requestHandlerCB, remote_data,
+				   replyCB, remote_data,
+				   timeoutCB, remote_data)
+      && zMapRemoteControlSelfWaitForRequest(remote_data->remote_cntl))
     {
-      zMapGUIShowMsg(ZMAP_MSG_CRITICAL, "Could not initialise remote control.") ;
-      
-      appExit(FALSE) ;
+      zMapMessage("%s", "Initialised remote control.") ;
     }
   else
     {
-      /* Stop us being called multiple times. */
-      g_signal_handler_disconnect(remote_data->app_toplevel, remote_data->mapCB_id) ;
-      remote_data->mapCB_id = 0 ;
+      zMapCritical("%s", "Could not initialise remote control.") ;
+      
+      appExit(FALSE) ;
     }
 
   return ;
@@ -894,68 +884,70 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
     end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
 	     {0}},
     req_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-	       {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {0}},
 		   {0}},
     req_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		 {0}},
-      align_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "align",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		       {ZMAPXML_ATTRIBUTE_EVENT,     "name", ZMAPXML_EVENT_DATA_QUARK, {""}},
-		       {0}},
-	align_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "align",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		       {0}},
-      block_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "block",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		       {ZMAPXML_ATTRIBUTE_EVENT,     "name", ZMAPXML_EVENT_DATA_QUARK, {""}},
-		       {0}},
-	block_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "block",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		       {0}},
-    feature[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {""}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {"+|-"}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "style",      ZMAPXML_EVENT_DATA_QUARK,   {""}},
-		   {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {""}},
-		   {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+    align_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "align", ZMAPXML_EVENT_DATA_NONE,  {0}},
+		     {ZMAPXML_ATTRIBUTE_EVENT,     "name",  ZMAPXML_EVENT_DATA_QUARK, {0}},
+		     {0}},
+    align_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "align",   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		   {0}},
+    block_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "block", ZMAPXML_EVENT_DATA_NONE,  {0}},
+		     {ZMAPXML_ATTRIBUTE_EVENT,     "name",  ZMAPXML_EVENT_DATA_QUARK, {0}},
+		     {0}},
+    block_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "block",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+		   {0}},
+    feature[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "style",      ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {0}},
     segment[] = {{ZMAPXML_START_ELEMENT_EVENT, "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-		     {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
-		     {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {(char *)1}},
-		     {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		     {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
     client[] = {{ZMAPXML_START_ELEMENT_EVENT, "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "request_atom",    ZMAPXML_EVENT_DATA_QUARK, {NULL}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "response_atom",      ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "request_atom",    ZMAPXML_EVENT_DATA_QUARK, {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "response_atom",      ZMAPXML_EVENT_DATA_QUARK, {0}},
 		{ZMAPXML_END_ELEMENT_EVENT,   "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
 		{0}};
   RemoteData remote_data = (RemoteData)data;
   ZMapXMLUtilsEventStack data_ptr = NULL ;
   ZMapXMLWriter writer;
-  GArray *events;
-  char **action;
+  GArray *events ;
+  GQuark *action ;
   gboolean do_feature_xml = FALSE ;
 
 
-  action = &(req_start[1].value.s);
+  action = &(req_start[1].value.q) ;
 
   switch(callback_action)
     {
     case XREMOTE_NEW_ZMAP:
-      *action  = "new_zmap";
+      *action = g_quark_from_string("new_zmap") ;
 
       break;
 
     case XREMOTE_NEW_VIEW:
-      *action  = "new_view";
+      *action = g_quark_from_string("new_view") ;
+   
       data_ptr = &segment[0];
-      segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(remote_data->sequence));
+
+      segment[1].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->sequence))) ;
 
       break;
 
@@ -963,52 +955,59 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
       {
 	char *client_id ;
 
-	*action  = "register_client" ;
+	*action  = g_quark_from_string("register_client") ;
+
 	data_ptr = &client[0] ;
 
 	client_id = remote_data->window_id ;
-	client[1].value.s = client_id ;
-	client[2].value.s = ZMAP_CLIENT_REQUEST_ATOM_NAME ;
-	client[3].value.s = ZMAP_CLIENT_RESPONSE_ATOM_NAME ;
+	client[1].value.s = g_strdup(client_id) ;
+	client[2].value.s = g_strdup(ZMAP_CLIENT_REQUEST_ATOM_NAME) ;
+	client[3].value.s = g_strdup(ZMAP_CLIENT_RESPONSE_ATOM_NAME) ;
 
 	break;
       }
 
     case XREMOTE_ZOOMTO:
-      *action  = "zoom_to";
+      *action  = g_quark_from_string("zoom_to") ;
+
       data_ptr = &feature[0];
 
       do_feature_xml = TRUE ;
       break;
     case XREMOTE_DELETE:
-      *action  = "delete_feature";
+      *action  = g_quark_from_string("delete_feature") ;
+
       data_ptr = &feature[0];
 
       do_feature_xml = TRUE ;
       break;
     case XREMOTE_CREATE:
-      *action  = "create_feature";
+      *action  = g_quark_from_string("create_feature") ;
+
       data_ptr = &feature[0];
 
       do_feature_xml = TRUE ;
       break;
     case XREMOTE_ZOOMIN:
-      *action  = "zoom_in";
+      *action  = g_quark_from_string("zoom_in") ;
+
       data_ptr = NULL;
 
       do_feature_xml = TRUE ;
       break;
     case XREMOTE_ZOOMOUT:
-      *action  = "zoom_out";
+      *action  = g_quark_from_string("zoom_out") ;
+
       data_ptr = NULL;
 
       do_feature_xml = TRUE ;
       break;
-
     case XREMOTE_SHUTDOWN:
-      *action  = "shutdown";
+      *action  = g_quark_from_string("shutdown") ;
+
       data_ptr = NULL;
       break;
+
     default:
       zMapAssertNotReached();
       break;
@@ -1017,28 +1016,28 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
   /* Create the xml for the request. */
   events = zMapXMLUtilsStackToEventsArray(&start[0]);
 
-  events = zMapXMLUtilsAddStackToEventsArray(&req_start[0], events);
+  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &req_start[0]);
 
   if (do_feature_xml)
     {
-      events = zMapXMLUtilsAddStackToEventsArray(&align_start[0], events);
+      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &align_start[0]);
 
-      events = zMapXMLUtilsAddStackToEventsArray(&block_start[0], events);
+      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &block_start[0]);
     }
 
   if (data_ptr)
-    events = zMapXMLUtilsAddStackToEventsArray(data_ptr, events);
+    events = zMapXMLUtilsAddStackToEventsArrayEnd(events, data_ptr);
 
   if (do_feature_xml)
     {
-      events = zMapXMLUtilsAddStackToEventsArray(&block_end[0], events);
+      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &block_end[0]);
 
-      events = zMapXMLUtilsAddStackToEventsArray(&align_end[0], events);
+      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &align_end[0]);
     }
 
-  events = zMapXMLUtilsAddStackToEventsArray(&req_end[0], events);
+  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &req_end[0]);
 
-  events = zMapXMLUtilsAddStackToEventsArray(&end[0], events);
+  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &end[0]);
 
   if ((writer = zMapXMLWriterCreate(events_to_text_buffer, remote_data)))
     {
@@ -1953,7 +1952,17 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
     }
   else if ((zmap_path = (char *)gtk_entry_get_text(GTK_ENTRY(remote_data->zmap_path))) == NULL || (*zmap_path == '\0'))
     {
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmap_path = "./zmap";
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      zmap_path = "/Users/edgrif/ZMap/ZMap_xremote/src/build/macosx/zmap";
+
+
     }
 
   if (zmap_path != NULL)
@@ -2204,11 +2213,14 @@ static void appExit(gboolean exit_ok)
 
 
 
-static gboolean requestHandlerCB(ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
+static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
+				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
 				 void *request, void *user_data)
 {
   gboolean result = TRUE ;
   char *test_data = "Test reply from remotetest." ;
+
+  zMapDebugPrint(debug_G, "%s", "Enter...") ;
 
   /* this is where we need to process the zmap commands perhaps passing on the remote_reply_func
    * and data to be called from a callback for an asynch. request.
@@ -2216,6 +2228,7 @@ static gboolean requestHandlerCB(ZMapRemoteControlCallWithReplyFunc remote_reply
    * For now we just call straight back for testing.... */
   result = (remote_reply_func)(remote_reply_data, test_data, strlen(test_data) + 1) ;
 
+  zMapDebugPrint(debug_G, "%s", "Exit...") ;
 
   return result ;
 }
@@ -2223,7 +2236,7 @@ static gboolean requestHandlerCB(ZMapRemoteControlCallWithReplyFunc remote_reply
 
 
 
-static gboolean requestCB(void *reply, void *user_data)
+static gboolean requestCB(ZMapRemoteControl remote_control, void *reply, void *user_data)
 {
   gboolean result = FALSE ;
 
@@ -2238,7 +2251,7 @@ static gboolean requestCB(void *reply, void *user_data)
 }
 
 
-static gboolean replyCB(void *reply, void *user_data)
+static gboolean replyCB(ZMapRemoteControl remote_control, void *reply, void *user_data)
 {
   gboolean result = FALSE ;
 
@@ -2255,7 +2268,7 @@ static gboolean replyCB(void *reply, void *user_data)
 
 
 
-static gboolean timeoutCB(void *user_data)
+static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data)
 {
   gboolean result = FALSE ;
 
