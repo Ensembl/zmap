@@ -1,3 +1,4 @@
+/*  Last edited: Nov  3 11:28 2011 (edgrif) */
 /*  File: zmapUtilsGUI.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -432,8 +433,9 @@ typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIRaiseToTop(GtkWidget *widget);
-
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
+
+char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
