@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 12:36 2011 (edgrif) */
 /*  File: zmapFeatureXML.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -480,7 +481,7 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
       {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
       {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
       {0}
     };
@@ -504,9 +505,9 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
 
           /* ontology */
           event = &elements[3];
-          event->value.s = "exon";
+          event->value.q = g_quark_from_string("exon") ;
           
-          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArray(&elements[0], xml_data->xml_events_out);
+          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArrayEnd(xml_data->xml_events_out, &elements[0]);
         }
     }
 
@@ -527,9 +528,9 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
 
           /* ontology */
           event = &elements[3];
-          event->value.s = "intron";
+          event->value.q = g_quark_from_string("intron") ;
           
-          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArray(&elements[0], xml_data->xml_events_out);
+          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArrayEnd(xml_data->xml_events_out, &elements[0]);
         }
     }
 
