@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 14:41 2011 (edgrif) */
 /*  File: zmapXMLUtils.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -43,8 +44,100 @@
 static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest);
 
 
-GArray *zMapXMLUtilsAddStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack,
-                                          GArray *events_array)
+
+/* 
+ *                       External Interface.
+ */
+
+
+/* GHASTLY....SURELY THE THING THAT PERSISTS SHOULD BE THE FIRST PARAM IN ALL THE
+ * CALLS SINCE IT IS THE INVARIANT IN ALL THE CALLS.... */
+
+/* Create an empty events array. */
+GArray *zMapXMLUtilsCreateEventsArray(void)
+{
+  GArray *events;
+
+  events = g_array_sized_new(TRUE, TRUE, sizeof(ZMapXMLWriterEventStruct), 512);
+
+  return events;
+}
+
+
+/* Take an events stack and turn it into an events array. */
+GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack)
+{
+  GArray *events;
+
+  events = zMapXMLUtilsCreateEventsArray();
+
+  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, event_stack);
+
+  return events;
+}
+
+
+/* Add an events stack to the beginning of an events array. */
+GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
+{
+  ZMapXMLUtilsEventStack input;
+  ZMapXMLWriterEventStruct single = {0};
+  gint size = 0;
+
+  input = event_stack;
+
+  while (input && input->event_type)
+    {
+      input++;
+      size++;
+    }
+
+  for (input = &event_stack[--size]; size >= 0; size--, input--)
+    {
+      transfer(input, &single);
+      events_array = g_array_prepend_val(events_array, single);
+    }
+
+  return events_array;
+}
+
+
+/* Add the event stack to the middle of the events array. Use this to allow
+ * insertion of new xml levels into a pre-existing nest of xml.
+ * 
+ * NOTE: if the array you supply has an odd number of elements the insert
+ * occurs _after_ the middle element of the events array.
+ *  */
+GArray *zMapXMLUtilsAddStackToEventsArrayMiddle(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
+{
+  GArray *result = events_array ;
+  ZMapXMLUtilsEventStack input ;
+  ZMapXMLWriterEventStruct single = {0} ;
+  int insert_pos ;
+
+  insert_pos = ((result->len + 1) / 2) + 1 ;		    /* Note GArray inserts _at_ the given
+							       index which is one past the middle element. */
+
+  input = event_stack ;
+
+  while (input && input->event_type)
+    {
+      transfer(input, &single) ;
+
+      result = g_array_insert_val(result, insert_pos, single) ;
+
+      insert_pos = ((result->len + 1) / 2) + 1 ;
+
+      input++ ;
+    }
+
+  return result ;
+}
+
+
+
+/* Add the event stack to the end of the events array. */
+GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
 {
   ZMapXMLUtilsEventStack input;
   ZMapXMLWriterEventStruct single = {0};
@@ -61,44 +154,31 @@ GArray *zMapXMLUtilsAddStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_st
   return events_array;
 }
 
-GArray *zMapXMLUtilsAddStackToEventsArrayStart(ZMapXMLUtilsEventStackStruct *event_stack,
-                                               GArray *events_array)
+
+
+/* I think there may be a glib function to do the string replacement ! */
+/* copy a string and replace &thing; */
+/* sadly needed to unescape &apos;, no other characters are handled */
+/* quickly hacked for a bug fix, will review when the new XRemote is introduced */
+char *zMapXMLUtilsUnescapeStrdup(char *str)
 {
-  ZMapXMLUtilsEventStack input;
-  ZMapXMLWriterEventStruct single = {0};
-  gint size = 0;
+  char *result = g_strdup(str);
+  char *p = result;
 
-  input = event_stack;
-
-  while(input && input->event_type){ input++; size++; }
-
-  for(input = &event_stack[--size]; size >= 0; size--, input--)
+  while (*p)
     {
-      transfer(input, &single);
-      events_array = g_array_prepend_val(events_array, single);
+      if (!g_ascii_strncasecmp(p, "&apos;", 6))
+	{
+	  *p++ = '\'';
+	  strcpy(p, p+5);
+	}
+      else
+	{
+	  p++;
+	}
     }
 
-  return events_array;
-}
-
-GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack)
-{
-  GArray *events;
-
-  events = zMapXMLUtilsCreateEventsArray();
-
-  events = zMapXMLUtilsAddStackToEventsArray(event_stack, events);
-
-  return events;
-}
-
-GArray *zMapXMLUtilsCreateEventsArray(void)
-{
-  GArray *events;
-
-  events = g_array_sized_new(TRUE, TRUE, sizeof(ZMapXMLWriterEventStruct), 512);
-
-  return events;
+  return result ;
 }
 
 
@@ -106,6 +186,9 @@ GArray *zMapXMLUtilsCreateEventsArray(void)
 
 
 
+/* 
+ *                        Internal routines.
+ */
 
 static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 {
@@ -117,18 +200,33 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
     case ZMAPXML_END_ELEMENT_EVENT:
       dest->data.name = g_quark_from_string(source->name);
       break;
+
     case ZMAPXML_ATTRIBUTE_EVENT:
-      dest->data.comp.name = g_quark_from_string(source->name);
-      dest->data.comp.data = data_type = source->data_type;
-      if(data_type == ZMAPXML_EVENT_DATA_QUARK)
-        dest->data.comp.value.quark = g_quark_from_string(source->value.s);
-      else if(data_type == ZMAPXML_EVENT_DATA_INTEGER)
-        dest->data.comp.value.integer = source->value.i;
-      else if(data_type == ZMAPXML_EVENT_DATA_DOUBLE)
-        dest->data.comp.value.flt = source->value.d;
-      else
-        zMapAssertNotReached();
-      break;
+      {
+	dest->data.comp.name = g_quark_from_string(source->name);
+	dest->data.comp.data = data_type = source->data_type;
+
+	switch (data_type)
+	  {
+	  case ZMAPXML_EVENT_DATA_INTEGER:
+	    dest->data.comp.value.integer = source->value.i;
+	    break ;
+	  case ZMAPXML_EVENT_DATA_DOUBLE:
+	    dest->data.comp.value.flt = source->value.d ;
+	    break ;
+	  case ZMAPXML_EVENT_DATA_QUARK:
+	    dest->data.comp.value.quark = source->value.q ;
+	    break ;
+	  case ZMAPXML_EVENT_DATA_STRING:
+	    dest->data.comp.value.quark = g_quark_from_string(source->value.s) ;
+	    break ;
+	  default:
+	    zMapAssertNotReached();
+	    break ;
+	  }
+
+	break;
+      }
     default:
       break;
     }
@@ -136,27 +234,4 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 }
 
 
-
-/* copy a string and replace &thing; */
-/* sadly needed to unescape &apos;, no other characters are handled */
-/* quickly hacked for a bug fix, will review when the new XRemote is introduced */
-char *zMapXMLUtilsUnescapeStrdup(char *str)
-{
-	char *result = g_strdup(str);
-	char *p = result;
-
-	while (*p)
-	{
-		if(!g_ascii_strncasecmp(p,"&apos;",6))
-		{
-			*p++ = '\'';
-			strcpy(p,p+5);
-		}
-		else
-		{
-			p++;
-		}
-	}
-	return(result);
-}
 
