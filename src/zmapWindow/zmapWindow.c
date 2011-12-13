@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 16:06 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -30,6 +29,8 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.h>
+
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
@@ -37,7 +38,6 @@
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
 
-#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapFASTA.h>
