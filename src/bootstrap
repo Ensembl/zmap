@@ -1,13 +1,16 @@
 #!/bin/bash
-############################################################
-############################################################
-# simple script bootstrap and create the configure script
-# run this when changing any of the following:
+###############################################################################
+# Simple script to bootstrap and create the configure script, should be run
+# when any control files have been changed (e.g. new source files added which
+# led to changes to Makefile.am files) including:
+#
 #    configure.ac
 #    Makefile.am
 #    Makefile.in
+#
 ############################################################
-############################################################
+
+
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
  SCRIPT_DIR=$(dirname $0)
@@ -17,9 +20,10 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
-
-run_autoupdate=''
-
+RC=0
+run_autoupdate=''					    # don't run autoupdate by default.
+install_missing='-i'
+verbose=''
 
 # Load common functions/settings.
 #
@@ -29,34 +33,17 @@ set -o history
 
 
 
-
-############################################################
-############################################################
-# Setup
-[ "x$LIBTOOLIZE" != "x" ]  || LIBTOOLIZE=libtoolize
-[ "x$AUTOHEADER" != "x" ]  || AUTOHEADER=autoheader
-[ "x$ACLOCAL" != "x" ]     || ACLOCAL=aclocal
-[ "x$AUTOMAKE" != "x" ]    || AUTOMAKE=automake
-[ "x$AUTOCONF" != "x" ]    || AUTOCONF=autoconf
-[ "x$AUTOUPDATE" != "x" ]  || AUTOUPDATE=autoupdate
-
-# default to include current directory as we use ac_path_lib.m4
-# I did fix it up to work with current autoconf and stop it
-# complaining about deprecated macros
-DEFAULT_INC="-I . $ACLOCAL_FLAGS"
-############################################################
-############################################################
-
-
 # Cmd line options....
 #
 # Do args.
 #
 usage="$SCRIPT_NAME [ -u ]"
 
-while getopts ":u" opt ; do
+while getopts ":iuv" opt ; do
     case $opt in
+	i  ) install_missing='-i' ;;
 	u  ) run_autoupdate='yes' ;;
+	v  ) verbose='-v' ;;
 	\? ) message_exit "Bad arg flag: $usage" ;;
     esac
 done
@@ -74,7 +61,8 @@ fi
 
 # Off we go......
 #
-zmap_message_out "Start of script."
+zmap_message_out "bootstrap starting...."
+
 
 
 # set up zmap version number, this is arcane and horrible and all
@@ -90,9 +78,7 @@ echo "m4_define([ZMAP_VERSION_NUMBER], [$ZMAP_VERSION])" >> $version_macro_file
 zmap_message_out "ZMap version is: $ZMAP_VERSION"
 
 
-############################################################
-############################################################
-
+# SURELY THIS ISN'T NEEDED NOW....OR WE SHOULD DELETE THE CVSIGNORE STUFF FROM THE REPOSITORY.
 # clean up first
 # xargs: I've removed the -r because not all platforms have it.
 # rm: I've added -r to deal with directories and taken away the -f so we can see any errors.
@@ -105,27 +91,26 @@ sed -e 's/.cvsignore://' | \
 while read file; do [ ! -f "$file" ] || rm -r $file; done
 
 
+# Optionally run autoupdate.....
+#
 if [ -n "$run_autoupdate" ] ; then
-zmap_message_out "Running $(which $AUTOUPDATE)"
-$AUTOUPDATE                  || zmap_message_exit "Failed running $AUTOUPDATE"
+  [ "x$AUTOUPDATE" != "x" ]  || AUTOUPDATE=autoupdate
+  zmap_message_out "Running $(which $AUTOUPDATE)"
+  $AUTOUPDATE || zmap_message_exit "Failed running $AUTOUPDATE"
+  zmap_message_out "Finished $(which $AUTOUPDATE)"
 fi
 
-zmap_message_out "Running $(which $ACLOCAL) $DEFAULT_INC"
-$ACLOCAL $DEFAULT_INC        || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
 
-zmap_message_out "Running $(which $AUTOHEADER)"
-$AUTOHEADER --warnings=all   || zmap_message_exit "Failed running $AUTOHEADER"
+# Use autoreconf to run the autotools chain in the right order with
+# the right args.
+#
+zmap_message_out "About to run autoreconf to bootstrap autotools builds system"
+autoreconf $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
+zmap_message_out "Finished running autoreconf for bootstrap"
 
-if [ "x$NEED_LIBTOOLIZE" == "x$ZMAP_TRUE" ]; then 
-  zmap_message_out "Running $(which $LIBTOOLIZE)"
-  $LIBTOOLIZE --force --copy || zmap_message_exit "Failed running $LIBTOOLIZE"
-  zmap_message_out "Running $(which $ACLOCAL) (again)"
-  $ACLOCAL $DEFAULT_INC      || zmap_message_exit "Failed running $ACLOCAL (second time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
-fi
 
-zmap_message_out "Running $(which $AUTOMAKE)"
-$AUTOMAKE --gnu     \
-    --add-missing   \
-    --copy                   || zmap_message_exit "Failed running $AUTOMAKE"
-zmap_message_out "Running $(which $AUTOCONF)"
-$AUTOCONF --warnings=all     || zmap_message_exit "Failed running $AUTOCONF"
+# finished !
+zmap_message_out "bootstrap finished...."
+
+
+exit $RC
