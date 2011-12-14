@@ -179,7 +179,7 @@ LINK_NAME="$BASE_DIR/$LINK_PREFIX.$BUILD_PREFIX"
 # for the overnight build to update the name there too.
 #
 GLOBAL_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_BUILD.LOG
-FTP_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_FTP_LOG
+FTP_LOG="$PARENT_BUILD_DIR/$BUILD_PREFIX"_FTP.LOG
 
 
 # remove any previous log.
@@ -384,20 +384,26 @@ else
     fi
 fi
 
-
 message_out $MAIL_SUBJECT
 
-# build worked so update the ftp site and web site links
-# email result separately
-if [ $RC == 0 ] ; then
-    ./zmap_update_ftp.sh -r -t $BUILD_PREFIX > $FTP_LOG
-    if [ $? != 0 ] ; then
-	MAIL_SUBJECT="FTP upload failed"
-    else
-	MAIL_SUBJECT="FTP upload succeeded"
-    fi
 
-    cat $FTP_LOG  | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
+# build worked so update the ftp site and web site links, email result separately.
+#
+if [ $RC == 0 ] ; then
+
+    # We only do this for certain types of build.
+    if [[ $BUILD_PREFIX == 'OVERNIGHT' || $BUILD_PREFIX == 'DEVELOPMENT' || $BUILD_PREFIX == 'PRODUCTION' ]] ; then
+
+	message_out "Copying build to ftp and web sites."
+
+	MAIL_SUBJECT="FTP upload succeeded"
+
+	./zmap_update_ftp.sh -r -t $BUILD_PREFIX > $FTP_LOG || MAIL_SUBJECT="FTP upload failed"
+
+	message_out "$MAIL_SUBJECT"
+
+	cat $FTP_LOG  | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
+    fi
 fi
 
 exit $RC
