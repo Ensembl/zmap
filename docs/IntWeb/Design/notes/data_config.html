@@ -107,7 +107,7 @@ Tier1_Cell_Coverage = Tier1_K562_Cell_coverage; Tier1_GM12345_Cell_coverage
 # we relate the virtual coverage featureset to the data column
 Tier1_K562_Cell_related = Tier1_K562_Cell
 
-# we also need to ensure that data may only be request from the mark and does not appea on the load columns dialog.
+# we also need to ensure that data may only be requested from the mark and does not appear on the load columns dialog.
 [ZMap]
 seq_data = Tier1_K562_Cell_features; Tier1_K562_Cell_Rep1; Tier1_K562_Cell_Rep2
 columns = Tier1_Cell_Coverage
@@ -132,9 +132,9 @@ we request a related column, that contains some real featuresets.
 <li> virtual featuresets always re-bin (due to overlap) (they always are re-binned)
 <li> density code must handle overlap (not an issue if always rebinned and bins are in the same place)
 <li> blixem needs to be given real featuresets not virtual ones. NOTE: due to a fluke this is not a problem as we do not blixem coverage data.
-<li>
+<li> the virutal featuresets also need to have a style set
 </ul>
-<p><b>NOTE</b>:there is a slight nuance with the [featureset-related] stanza.  To link a coverage column such that the user can right click to request the related underlying data we need to related each real coverage featureset to the column for the underlying data.  To prevent the coverage column from being requestable without the mark being set we need to relate the virtual featureset also.  This could probably be fixed bu a small tweak to the code.  Likewise there is a report that the virtual featureset requires a style to be set.
+<p><b>NOTE</b>:there is a slight nuance with the [featureset-related] stanza.  To link a coverage column such that the user can right click to request the related underlying data we need to related each real coverage featureset to the column for the underlying data.  To prevent the coverage column from being requestable without the mark being set we need to relate the virtual featureset also.  This could probably be fixed by a small tweak to the code.  Likewise there is a report that the virtual featureset requires a style to be set.
 </p>
 
 
