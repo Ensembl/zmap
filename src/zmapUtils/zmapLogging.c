@@ -148,7 +148,7 @@ void zMapLogTime(int what, int how, long data, char *string)
 	static double times[N_TIMES];
 	static double when[N_TIMES];
 	double x,e;
-	int i;
+
 	/* these mirror the #defines in zmapUtilsDebug.h */
 	char *which[] = { "none", "foo-expose", "foo-update", "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 };
 
@@ -206,6 +206,10 @@ gboolean zMapLogCreate(char *logname)
 
   zMapUtilsConfigDebug();
 
+
+#if 0		// log timing stats from foo
+		// have to take this out to get xremote to compile for perl
+		// should be ok when we get the new xremote
   if(zmap_timing_G)
   {
 	extern void (*foo_timer)(int,int);
@@ -219,6 +223,7 @@ gboolean zMapLogCreate(char *logname)
 
 	foo_log_stack = zMapPrintStack;
   }
+#endif
 
   log_G = log = createLog() ;
 
