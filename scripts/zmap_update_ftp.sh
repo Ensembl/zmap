@@ -180,7 +180,7 @@ then
   inc_file_name="development"
 elif [[ $build_id == $overnight ]]
 then
-  inc_file_name="overnight"
+  inc_file_name="daily"
 else
   bomb_out "Bad build type $build_id: expected $overnight|$development|$production"
 fi

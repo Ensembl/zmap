@@ -12,38 +12,15 @@
 </p>
 
 <h3>Load and display columns: reformatting the dialog</h3>
-<p>It would seem natural to be able to request and show/hide columns from the same GTK pane although this will give a more cluttered display, however it is possible to handle several options from one widget: Otterlace shows status and allows requests via a single check box.
+<p>It would seem natural to be able to request and show/hide columns from the same GTK pane although this will give a more cluttered display.
 </p>
-<p>Here's a sample layout for the normal columns: <b>NOTE</b>: this picture is out of date and will be replaced. The fiorst TAN will be 'Core' whcih will include all the esseentail columns and further tabs will be created according to the data  available.<br />
-<img src="Design/modules/load_columns.png"  class="img" alt="picture of column config dialog"><br />
-Note that the interface is significantly more complicated than the existing ZMap and Otterlace and implies some further coding in ZMap beyond just implementing the dialog. An attempt has been made to present useful default single clicks to select any column.
+<p>Here's a sample layout for the normal columns.  (NOTE that this is just an example, we expect to have RNAseq tabs as well and many more columns; there will also be several buttons at the bottom to operate on all columns and to apply the requests).
+The combo boxes show status for each column and can be used to enter requests.
+<img src="Design/modules/col_config.png"  class="img" alt="picture of column config dialog"><br />
 </p>
 
-<p>
-Loaded status can be one of:
-<ul>
-<li> White - available but not requested
-<li> Yellow - requested
-<li> Orange - requested from mark
-<li> Green - loaded fully
-<li> Blue - loaded from mark
-<li> Red - loading failed
-<li> Pink - loading partially failed (eg one featureset of several in a column)
-<li> Black - loaded but no data
-</ul>
-There will be some combination of the above that are possible but not included (eg req from mark partially failed) and these will be mapped onto the colours defined.  Possibly there are already too many colours??
-</p>
-<p>
-Display status can be:
-<ul>
-<li> Green	- visible
-<li> Cyan - auto (visible depending on zoom)
-<li> Blue - hidden
-</ul>
-To change the display or loaded status of a column the user will click on the corresponding indicator. For display if a column is visible (shown or visible at this zoom) then the first click will select hidden and subsequent clicks will cycle round auto and show, and the converse for not visible.
-For loaded the first click will be load all unless the mark is set in which case it will be load from mark and subsequent clicks will cycle round request all (if allowed) and 'don't request'.
-</p>
-<p>Buttons are provided to operate on all columns in the group.  Note that 'request failed' will have to know about the previous request ie if it was from the mark or not.  Options can be selected for several groups and actioned with the Apply button.  Revert will set the current group back to its current status (cancel any requests in the group) and Revert All will reset all groups.
+
+<p>Buttons will are provided to operate on all columns in the group.  Note that 'request failed' will have to know about the previous request ie if it was from the mark or not.  Options can be selected for several groups and actioned with the Apply button.  Revert will set the current group back to its current status (cancel any requests in the group) and Revert All will reset all groups.
 </p>
 <h3>Special Columns</h3>
 <p>3FT is not a loadable column and will not appear but instead will be controlled by the 3-Frame menu button.
