@@ -122,7 +122,7 @@ typedef union
 #define ZMAPARG_CONFIG_DIR     "conf_dir"
 #define ZMAPARG_WINDOW_ID      "win_id"
 #define ZMAPARG_TIMING         "timing"
-
+#define ZMAPARG_SHRINK         "shrink"	// to allow the window to shrink: gives too small size by default
 
 
 void zMapCmdLineArgsCreate(int *argc, char *argv[]) ;

@@ -48,6 +48,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
+gboolean zmap_shrink_G = FALSE;
 
 /* Makes the toplevel window and control panels for an individual zmap. */
 gboolean zmapControlWindowCreate(ZMap zmap)
@@ -62,7 +63,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;	// allow shrink for charlie'ss RT 215415
+								/* ref to GTK help: it says 'don't allow shrink' */
   gtk_window_set_title(GTK_WINDOW(toplevel), zmap->zmap_id) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
