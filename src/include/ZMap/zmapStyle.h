@@ -173,6 +173,7 @@ typedef enum
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
+    STYLE_PROP_ALIGNMENT_ALWAYS_GAPPED,
     STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
     STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN,
     STYLE_PROP_ALIGNMENT_PFETCHABLE,
@@ -297,6 +298,7 @@ typedef enum
 /* alignment properties */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED       "alignment-always-gapped"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN          "alignment-join-align"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
@@ -702,6 +704,7 @@ typedef struct
    gboolean parse_gaps ;                            /* TRUE means parse gaps from input data,  */
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
+   gboolean always_gapped;				/* even when not bumped */
 
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
@@ -1125,6 +1128,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleIsParseGaps(style) (style->mode_data.alignment.parse_gaps)
 //gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsShowGaps(style)   (style->mode_data.alignment.show_gaps)
+#define zMapStyleIsAlwaysGapped(style)   (style->mode_data.alignment.always_gapped)
 
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)

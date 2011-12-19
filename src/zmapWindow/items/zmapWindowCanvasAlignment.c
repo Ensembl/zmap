@@ -341,9 +341,14 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-	if(!featureset->bumped ||
+	if(  !(feature->feature->feature.homol.align)  ||
+		(
+			!zMapStyleIsAlwaysGapped(feature->feature->style) &&
+			(!featureset->bumped ||
 //			featureset->strand == ZMAPSTRAND_REVERSE ||
-		  !zMapStyleIsShowGaps(feature->feature->style) || !(feature->feature->feature.homol.align))
+			!zMapStyleIsShowGaps(feature->feature->style))
+		)
+	  )
 	{
 		double x1,x2;
 
