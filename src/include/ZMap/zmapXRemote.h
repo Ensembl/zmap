@@ -101,14 +101,6 @@
 #define ZMAP_DEFAULT_RESPONSE_ATOM_NAME "_ZMAP_XREMOTE_RESPONSE"
 
 
-#define ZMAPXREMOTE_CALLBACK(f)                    ((ZMapXRemoteCallback) (f))
-
-typedef struct _ZMapXRemoteObjStruct  *ZMapXRemoteObj;
-
-typedef char * (*ZMapXRemoteCallback) (char *command, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
-
-
-
 
 typedef enum
   {
@@ -133,7 +125,7 @@ typedef enum
 
 
 
-
+/* This was an attempt to mirror http like stuff...not a great idea ?? */
 typedef enum {
   /* 1xx  Informational */
 
@@ -167,6 +159,17 @@ typedef enum {
 
 } ZMapXRemoteStatus ;
 
+
+#define ZMAPXREMOTE_CALLBACK(f)                    ((ZMapXRemoteCallback) (f))
+
+typedef struct _ZMapXRemoteObjStruct  *ZMapXRemoteObj;
+
+typedef char * (*ZMapXRemoteCallback) (char *command, gpointer user_data,
+				       ZMapXRemoteStatus *status_code, ZMapXRemoteObj owner) ;
+
+
+
+
 extern gboolean externalPerl;
 
 /* ================================================ */
@@ -184,7 +187,7 @@ char *zMapXRemoteGetResponse(ZMapXRemoteObj object);
 Window zMapXRemoteGetWindowID(ZMapXRemoteObj object) ;
 void zMapXRemoteResponseSplit(ZMapXRemoteObj object, char *full_response, int *code, char **response);
 gboolean zMapXRemoteResponseIsError(ZMapXRemoteObj object, char *response);
-int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply);
+int zMapXRemoteIsPingCommand(char *command, ZMapXRemoteStatus *statusCode, char **reply);
 void zMapXRemoteDestroy(ZMapXRemoteObj object);
 
 /* ================================================ */

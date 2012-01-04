@@ -21,6 +21,10 @@ AC_INIT([ZMap],[ZMAP_VERSION_NUMBER],[zmap@sanger.ac.uk])
 AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
 AC_CONFIG_HEADER(config.h)
 
+# try it....
+AC_CONFIG_MACRO_DIR([m4])
+
+
 echo "************************************************************"
 echo "* Welcome to ./configure for $PACKAGE_STRING"
 echo "* Cmd: $0 $@"
@@ -42,7 +46,7 @@ case $build in
      *-*-linux*)
      zmap_os_type="Linux";;
      *-*-darwin*)
-     zmap_os_type="darwin";;
+     zmap_os_type="darwin" ;;
      *)
      zmap_os_type="Unknown";;
 esac
@@ -51,6 +55,7 @@ if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
    AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
 elif test "$zmap_os_type" = "darwin" ; then
+
    AC_MSG_RESULT([Got OS type of Darwin])
    AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
 
@@ -190,7 +195,6 @@ AC_SUBST(VERSION)
 
 AC_PROG_CXX
 AC_PROG_CC
-#AC_PROG_RANLIB
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
 

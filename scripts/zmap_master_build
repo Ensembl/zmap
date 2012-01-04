@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Launch a full build....doing the git checkout etc....
+#
+#
+#
+#
+#
+
+
+# Program stuff.
+RC=0
+PROGNAME=`basename $0`
+FUNCTIONS_SCRIPT="zmap_functions.sh"
+BASE_DIR=~zmap
+
+# try to load useful shared shell functions...after this we will have access to
+# common message funcs.
+. $FUNCTIONS_SCRIPT || { echo "Aborted $PROGNAME - Failed to load common functions file: $FUNCTIONS_SCRIPT"; exit 1; }
+
+
+branch='develop'
+script='development'
+sub_branch=''
+branch_arg=''
+respository_name='./ZMap'
+
+
+# Do args.
+#
+usage="$PROGNAME [ -d -o -p -r <release_sub_branch e.g. Release_0_1_138> ]"
+
+while getopts ":dopr:" opt ; do
+    case $opt in
+	d  ) branch='develop'
+	     script='development' ;;
+	o  ) branch='develop'
+	     script='overnight' ;;
+	p  ) branch='production'
+	     script='production' ;;
+	r  ) branch='release'
+	     sub_branch="/$OPTARG"
+	     branch_arg="$branch$sub_branch"
+	     script='release' ;;
+
+	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
+    esac
+done
+
+
+# Process final arg, DON'T HAVE ONE JUST NOW......
+#
+#shift $(($OPTIND - 1))
+#
+#if [ $# == 1 ]; then
+#    # do stuff...
+#else
+#  zmap_message_exit "No blah, blah specifed: $usage"
+#fi
+
+
+
+build_script="./zmap_build_$script.sh"
+script_dir="$respository_name/scripts"
+
+
+curr_dir=`pwd`
+
+# Clone requested branch.
+#
+if ! [[ -d $respository_name ]] ; then
+  zmap_message_out "cloning $branch$sub_branch of zmap repository..."
+  git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || zmap_message_exit "git clone failed"
+  zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
+else
+  zmap_message_exit "git clone aborted, $respository_name repository already exists !"
+fi
+
+
+cd $script_dir || zmap_message_exit "Cannot cd to $script_dir."
+
+
+#
+# Launch the build....
+#
+zmap_message_out "Starting build....."
+$build_script $branch_arg || zmap_message_exit "build failed !"
+zmap_message_out "Finished build....."
+
+
+cd $curr_dir || zmap_message_exit "Cannot cd back to $curr_dir."
+
+# safety first....
+if [[ -d $respository_name ]] ; then
+  rm -rf $respository_name || zmap_message_exit "Cannot remove $respository_name, remove by hand before rebuilding."
+else
+  zmap_message_exit "Cannot erase git clone dir $respository_name, not found !"
+fi
+
+
+exit $RC
+

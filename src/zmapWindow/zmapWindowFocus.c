@@ -353,6 +353,105 @@ int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *o
 }
 
 
+#if 0
+/* a debug thing: print out the foo canvas parent string from the focussed item, plus also the foo canvas current item  */
+/* we suspect a race condition on clear canvas and item destroy via queued callbacks */
+/* Oh the joy of object oriented programming: hand over control and hope for the best */
+void zMapWindowFocusDump(char *str)
+{
+	/* we assume one window and one hot item */
+	ZMapWindowFocusCache cache;
+	ZMapWindow window;
+	FooCanvasItem *hot;
+	static FooCanvas * canvas = NULL;
+
+	if(canvas)
+	{
+		hot = canvas->current_item;
+
+		printf("%s focus dump current item %p %p %p\n",str,hot,canvas->focused_item,canvas->grabbed_item);
+		while(hot)
+		{
+			ZMapWindowCanvasItem z;
+			ZMapWindowContainerGroup g;
+			char * name;
+			int level;
+
+			name = "not ZMWCI";  zMapWindowFocusDump("set focus");
+			level = 0;
+			if(ZMAP_IS_CANVAS_ITEM(hot))
+			{
+				z = (ZMapWindowCanvasItem) hot;
+				if(!z->feature)
+					name = "canvas item";
+				else
+					name = g_quark_to_string(z->feature->unique_id);
+			}
+			else if (ZMAP_IS_CONTAINER_GROUP(hot))
+			{
+				g = (ZMapWindowContainerGroup) hot;
+				if(!g->feature_any)
+					name = "group";
+				else
+					name = g_quark_to_string(g->feature_any->unique_id);
+				level = (int) g->level;
+
+			}
+			printf("  foo item = %p -> %p %s level %d\n",hot,hot->parent,name,level);
+			hot = hot->parent;
+		}
+	}
+
+	if(!focus_cache_G)
+	{
+		printf("%s: no focus cache\n",str);
+		return;
+	}
+
+	cache = (ZMapWindowFocusCache) focus_cache_G->data;
+	window = cache->window;
+	if(!window || !window->focus || !window->focus->hot_item)
+	{
+		printf("%s: no focus item\n",str);
+		return;
+	}
+	hot = window->focus->hot_item;
+	canvas = hot->canvas;
+	printf("%s focus dump item\n",str);
+	while(hot)
+	{
+		ZMapWindowCanvasItem z;
+		ZMapWindowContainerGroup g;
+		char * name;
+		int level;
+
+		name = "not ZMWCI";
+		if(ZMAP_IS_CANVAS_ITEM(hot))
+		{
+			z = (ZMapWindowCanvasItem) hot;
+			if(!z->feature)
+				name = "canvas item";
+			else
+				name = g_quark_to_string(z->feature->unique_id);
+			level = 0;
+		}
+		else if (ZMAP_IS_CONTAINER_GROUP(hot))
+		{
+			g = (ZMapWindowContainerGroup) hot;
+			if(!g->feature_any)
+				name = "group";
+			else
+				name = g_quark_to_string(g->feature_any->unique_id);
+			level = (int) g->level;
+
+		}
+		printf("  foo item = %p -> %p %s level %d\n",hot,hot->parent,name,level);
+		hot = hot->parent;
+	}
+}
+#endif
+
+
 
 /* N.B. unless there are no items, then item is added to end of list,
  * it is _not_ the new hot item so we do not reset the focus column for instance. */

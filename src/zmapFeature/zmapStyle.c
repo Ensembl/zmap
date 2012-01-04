@@ -309,9 +309,12 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_SEQUENCE_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,
             "coding exon region colour", "Colour used to highlight coding section of an exon.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.coding), ZMAPSTYLE_MODE_SEQUENCE },
-    { STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS,
-            "coding exon split codon colour", "Colour used to highlight split codon coding section of an exon.",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.coding), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_5_COLOURS,
+            "coding exon split codon colour", "Colour used to highlight split codon 5' coding section of an exon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.split_codon_5), ZMAPSTYLE_MODE_SEQUENCE },
+    { STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_3_COLOURS,
+            "coding exon split codon colour", "Colour used to highlight split codon 3' coding section of an exon.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.split_codon_3), ZMAPSTYLE_MODE_SEQUENCE },
     { STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS,
             "in-frame coding exon region colour", "Colour used to highlight coding section of an exon that is in frame.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.in_frame_coding), ZMAPSTYLE_MODE_SEQUENCE },
@@ -1206,8 +1209,11 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
     case STYLE_PROP_SEQUENCE_CODING_COLOURS:
       full_colour = &(style->mode_data.sequence.coding) ;
       break;
-    case STYLE_PROP_SEQUENCE_SPLIT_CODON_COLOURS:
-      full_colour = &(style->mode_data.sequence.split_codon) ;
+    case STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS:
+      full_colour = &(style->mode_data.sequence.split_codon_5) ;
+      break;
+    case STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS:
+      full_colour = &(style->mode_data.sequence.split_codon_3) ;
       break;
     case STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS:
       full_colour = &(style->mode_data.sequence.in_frame_coding) ;

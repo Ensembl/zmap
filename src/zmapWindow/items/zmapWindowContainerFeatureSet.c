@@ -1364,32 +1364,36 @@ static gint comparePosition(gconstpointer a, gconstpointer b)
   ZMapFeature feature1, feature2 ;
   gint result = -1 ;
 
-  zMapAssert(ZMAP_IS_CANVAS_ITEM(a));
-  zMapAssert(ZMAP_IS_CANVAS_ITEM(b));
-
-  item1 = (ZMapWindowCanvasItem)a;
-  item2 = (ZMapWindowCanvasItem)b;
-
-  feature1 = item1->feature;
-  feature2 = item2->feature;
-
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature1)) ;
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature2)) ;
-
-
-  if (feature1->x1 > feature2->x1)
-    result = 1 ;
-  else if (feature1->x1 == feature2->x1)
+  /* it would appear that for lists of length == 1 one of the input pointers is NULL.....sigh.. */
+  if (a && b)
     {
-      int diff1, diff2 ;
+      zMapAssert(ZMAP_IS_CANVAS_ITEM(a));
+      zMapAssert(ZMAP_IS_CANVAS_ITEM(b));
 
-      diff1 = feature1->x2 - feature1->x1 ;
-      diff2 = feature2->x2 - feature2->x1 ;
+      item1 = (ZMapWindowCanvasItem)a;
+      item2 = (ZMapWindowCanvasItem)b;
 
-      if (diff1 < diff2)
+      feature1 = item1->feature;
+      feature2 = item2->feature;
+
+      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature1)) ;
+      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature2)) ;
+
+
+      if (feature1->x1 > feature2->x1)
 	result = 1 ;
-      else if (diff1 == diff2)
-	result = 0 ;
+      else if (feature1->x1 == feature2->x1)
+	{
+	  int diff1, diff2 ;
+
+	  diff1 = feature1->x2 - feature1->x1 ;
+	  diff2 = feature2->x2 - feature2->x1 ;
+
+	  if (diff1 < diff2)
+	    result = 1 ;
+	  else if (diff1 == diff2)
+	    result = 0 ;
+	}
     }
 
   return result ;

@@ -1158,7 +1158,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
     char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
     char *coding_colours = "normal fill darkgreen ; normal draw black ; selected fill pink" ;
-    char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *split_codon_5_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *split_codon_3_colours = "normal fill yellow ; normal draw black ; selected fill pink" ;
     char *in_frame_colours = "normal fill green ; normal draw black ; selected fill pink" ;
 
     /* we need draw colour here as well.... */
@@ -1182,7 +1183,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
-		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_5_COLOURS, split_codon_5_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_3_COLOURS, split_codon_3_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS, in_frame_colours,
 		 NULL);
   }
@@ -1195,7 +1197,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
     char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
     char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
     char *coding_colours = "normal fill green ; normal draw black ; selected fill pink" ;
-    char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *split_codon_5_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *split_codon_3_colours = "normal fill yellow ; normal draw black ; selected fill pink" ;
     char *in_frame_colours = "normal fill green ; normal draw black ; selected fill pink" ;
 
     g_object_set(G_OBJECT(curr),
@@ -1215,7 +1218,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
-		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_5_COLOURS, split_codon_5_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_3_COLOURS, split_codon_3_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS, in_frame_colours,
 		 NULL);
   }
@@ -1229,7 +1233,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
     char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
     char *coding_colours = "normal fill green ; normal draw black ; selected fill pink" ;
-    char *split_codon_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *split_codon_5_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
+    char *split_codon_3_colours = "normal fill yellow ; normal draw black ; selected fill pink" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
@@ -1249,7 +1254,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS, non_coding_colours,
 		 ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS, coding_colours,
-		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_COLOURS, split_codon_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_5_COLOURS, split_codon_5_colours,
+		 ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_3_COLOURS, split_codon_3_colours,
 
 		 NULL);
   }

@@ -137,7 +137,8 @@ typedef struct
 
   GdkColor *non_coding ;
   GdkColor *coding ;
-  GdkColor *split ;
+  GdkColor *split_5 ;
+  GdkColor *split_3 ;
 
   GList *text_attrs ;
 } MakeTextAttrStruct, *MakeTextAttr ;
@@ -186,9 +187,11 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
                                                                       char **error_out) ;
 
 static gboolean getSeqColours(ZMapFeatureTypeStyle style,
-			      GdkColor **non_coding_out, GdkColor **coding_out, GdkColor **split_out) ;
+			      GdkColor **non_coding_out, GdkColor **coding_out,
+			      GdkColor **split_5_out, GdkColor **split_3_out) ;
 static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboolean cds,
-				     GdkColor *non_coding_out, GdkColor *coding_out, GdkColor *split_out) ;
+				     GdkColor *non_coding_out, GdkColor *coding_out,
+				     GdkColor *split_5_out, GdkColor *split_3_out) ;
 static void createExonTextTag(gpointer data, gpointer user_data) ;
 static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
@@ -560,7 +563,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 	  char *dna_fasta ;
 	  char *window_title ;
 	  ZMapFeatureTypeStyle style ;
-	  GdkColor *non_coding, *coding, *split ;
+	  GdkColor *non_coding, *coding, *split_5, *split_3 ;
 
 	  window_title = g_strdup_printf("%s%s%s",
 					 seq_name,
@@ -575,13 +578,13 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 	      && (user_start <= feature->x1 && user_end >= feature->x2)
 	      && ((style = zMapFindStyle(menu_data->window->context_map->styles,
 					 zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
-		  && getSeqColours(style, &non_coding, &coding, &split)))
+		  && getSeqColours(style, &non_coding, &coding, &split_5, &split_3)))
 	    {
 	      char *dna_fasta_title ;
 	      int title_len ;
 
 	      text_attrs = getTranscriptTextAttrs(feature, spliced, cds,
-						  non_coding, coding, split) ;
+						  non_coding, coding, split_5, split_3) ;
 
 	      /* Find out length of FASTA title so we can offset for it. */
 	      dna_fasta_title = zMapFASTATitle(ZMAPFASTA_SEQTYPE_DNA, seq_name, molecule_type, gene_name, seq_len) ;
@@ -2143,18 +2146,22 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 
 /* Get colours for coding, non-coding etc of sequence. */
 static gboolean getSeqColours(ZMapFeatureTypeStyle style,
-			      GdkColor **non_coding_out, GdkColor **coding_out, GdkColor **split_out)
+			      GdkColor **non_coding_out, GdkColor **coding_out,
+			      GdkColor **split_5_out, GdkColor **split_3_out)
 {
   gboolean result =  FALSE ;
 
   /* I'm sure this is not the way to access these...find out from Malcolm where we stand on this... */
   if (style->mode_data.sequence.non_coding.normal.fields_set.fill
       && style->mode_data.sequence.coding.normal.fields_set.fill
-      && style->mode_data.sequence.split_codon.normal.fields_set.fill)
+      && style->mode_data.sequence.split_codon_5.normal.fields_set.fill
+      && style->mode_data.sequence.split_codon_3.normal.fields_set.fill)
     {
       *non_coding_out = (GdkColor *)(&(style->mode_data.sequence.non_coding.normal.fill)) ;
       *coding_out = (GdkColor *)(&(style->mode_data.sequence.coding.normal.fill)) ;
-      *split_out = (GdkColor *)(&(style->mode_data.sequence.split_codon.normal.fill)) ;
+      *split_5_out = (GdkColor *)(&(style->mode_data.sequence.split_codon_5.normal.fill)) ;
+      *split_3_out = (GdkColor *)(&(style->mode_data.sequence.split_codon_3.normal.fill)) ;
+
       result = TRUE ;
     }
 
@@ -2166,7 +2173,8 @@ static gboolean getSeqColours(ZMapFeatureTypeStyle style,
  * corresponding text attributes for each one, these give position of annotated
  * exon and it's colour. */
 static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboolean cds,
-				     GdkColor *non_coding, GdkColor *coding, GdkColor *split)
+				     GdkColor *non_coding, GdkColor *coding,
+				     GdkColor *split_5, GdkColor *split_3)
 {
   GList *text_attrs = NULL ;
   GList *exon_list = NULL ;
@@ -2180,7 +2188,8 @@ static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboo
       text_data.spliced = spliced ;
       text_data.non_coding = non_coding ;
       text_data.coding = coding ;
-      text_data.split = split ;
+      text_data.split_5 = split_5 ;
+      text_data.split_3 = split_3 ;
       text_data.text_attrs = text_attrs ;
 
       g_list_foreach(exon_list, createExonTextTag, &text_data) ;
@@ -2246,8 +2255,13 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 	  }
 
 	case EXON_START_NOT_FOUND:
-	case EXON_SPLIT_CODON:
-	  text_attr->background = text_data->split ;
+	case EXON_SPLIT_CODON_5:
+	  text_attr->background = text_data->split_5 ;
+
+	  break ;
+
+	case EXON_SPLIT_CODON_3:
+	  text_attr->background = text_data->split_3 ;
 
 	  break ;
 

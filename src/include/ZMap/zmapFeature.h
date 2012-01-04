@@ -189,7 +189,10 @@ typedef struct
  * just the span, all derived from the the transcript feature.
  *
  * Note that for EXON_NON_CODING none of the cds/peptide stuff is populated. */
-typedef enum {EXON_INVALID, EXON_NON_CODING, EXON_CODING, EXON_SPLIT_CODON, EXON_START_NOT_FOUND} ExonRegionType ;
+typedef enum {EXON_INVALID,
+	      EXON_NON_CODING, EXON_CODING,
+	      EXON_SPLIT_CODON_5, EXON_SPLIT_CODON_3,
+	      EXON_START_NOT_FOUND} ExonRegionType ;
 
 typedef struct
 {
