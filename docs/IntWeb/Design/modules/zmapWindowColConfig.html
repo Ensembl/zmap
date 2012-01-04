@@ -16,7 +16,7 @@
 </p>
 <p>Here's a sample layout for the normal columns.  (NOTE that this is just an example, we expect to have RNAseq tabs as well and many more columns; there will also be several buttons at the bottom to operate on all columns and to apply the requests).
 The combo boxes show status for each column and can be used to enter requests.
-<img src="Design/modules/col_config.png"  class="img" alt="picture of column config dialog"><br />
+<img src="Design_notes/modules/col_config.png" class="img" alt="a picture of the dialog box"><br />
 </p>
 
 
@@ -40,6 +40,14 @@ The combo boxes show status for each column and can be used to enter requests.
 <li> setting the mark should change the state of request buttons
 </ul>
 NOTE: For load from mark it may be acceptable have the option always enabled and only action the request if the mark is set.
+</p>
+
+
+<h2>Operation WRT multiple windows and views</h2>
+<p>Existing code supports a separate Columns dialog for each window (NB a window is a single pane in a view, and a view is a ZMap X window).
+The dialog is created by clicking on the columns button in the toolbar, and is created for the current focussed window.  This is necessary to allow column display to be turned on/off for the selected pane.  Load columns operates on the feature context and when data completes loading it is displayed in all the windows in the view.
+</p>
+<p>To avoid creating extra work this will not be changed for the first implementation, as we expect users to only use one dialog at a time, and extra ones can be destroyed quite easily.
 </p>
 
 
@@ -101,7 +109,7 @@ On requesting a column to be loaded ZMap will initiate requests for all the feat
 <h3>A sample layout</h3>
 <p>
 Here's the existing layout:<br />
-<img src="Design_notes/modules/col_config.png" class="img" alt="a picture of the dialog box"><br />
+
 
 Here's a sample layout in text, to be replaced with a real picture when implemented.
 <pre>
