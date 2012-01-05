@@ -238,6 +238,7 @@ static int equaliseLists(AcedbServer server, GList **feature_sets_inout, GList *
 static gint quarkCaseCmp(gconstpointer a, gconstpointer b) ;
 static void setErrMsg(AcedbServer server, char *new_msg) ;
 static void resetErr(AcedbServer server) ;
+static void createSet2StyleList(gpointer data, gpointer user_data) ;
 
 static void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column) ;
 static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data) ;
@@ -248,6 +249,7 @@ static gboolean get_url_query_boolean(char *full_query, char *key) ;
 
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
+
 
 /*
  *             Server interface functions.
@@ -437,7 +439,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   char *method_string = NULL ;
   int num_methods = 0, num_feature_sets ;
   GList *feature_sets, *feature_set_methods, *feature_methods, *col_group_methods,  *method_names ;
-  GList *required_styles ;
+  GList *required_styles, *all_methods ;
   GHashTable *featureset_2_stylelist ;
 
   resetErr(server) ;
@@ -448,6 +450,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
       server->all_methods = NULL ;
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (server->has_new_tags)
     {
 
@@ -464,6 +468,10 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
       server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  server->method_2_data = g_hash_table_new_full(NULL, NULL, NULL, freeDataCB) ;
+  server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
 
 
   /* Here we need to find methods for all the given feature set names and then look
@@ -511,13 +519,9 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     {
       if ((result = getObjNames(server, &feature_set_methods)) == ZMAP_SERVERRESPONSE_OK)
 	{
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 	  if (num_feature_sets != num_methods)
 	    {
@@ -540,22 +544,36 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   /* If we are using styles/column groups then extra processing is required, otherwise we just
    * return what methods we have and if possible the list of required styles. The all_methods
    * list is used by acedb in retrieving just those features in a seqget/seqfeatures call. */
-  if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->has_new_tags)
+  if (result != ZMAP_SERVERRESPONSE_REQFAIL)
     {
       featureset_2_stylelist = *featureset_2_stylelist_inout ;
 
-      if ((result = findColStyleTags(server,
-				     &feature_sets, &feature_methods,
-				     &required_styles, &featureset_2_stylelist))
-	  != ZMAP_SERVERRESPONSE_REQFAIL)
+      if (server->has_new_tags)
 	{
-	  server->all_methods = feature_methods ;
+	  /* Use zmap_style class. */
+	  if ((result = findColStyleTags(server,
+					 &feature_sets, &feature_methods,
+					 &required_styles, &featureset_2_stylelist)) != ZMAP_SERVERRESPONSE_REQFAIL)
+	    {
+	      all_methods = feature_methods ;
+
+	      /* hack for now...should really check that they are all in feature_methods. */
+	      if (sources)
+		all_methods = sources ;
+	    }
+	}
+      else
+	{
+	  /* Use method not zmap_style class. */
+	  all_methods = feature_set_methods ;
+
+	  g_list_foreach(feature_sets, createSet2StyleList, featureset_2_stylelist) ;
+	}
 
 
-	  /* hack for now...should really check that they are all in feature_methods. */
-	  if (sources)
-	    server->all_methods = sources ;
-
+      if (result != ZMAP_SERVERRESPONSE_REQFAIL)
+	{
+	  server->all_methods = all_methods ;
 
 	  *feature_sets_inout = feature_sets ;
 
@@ -563,21 +581,14 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
 	  *featureset_2_stylelist_inout = featureset_2_stylelist ;
 
-        overlayFeatureSet2Column(server->method_2_feature_set,*featureset_2_column_inout);
+	  overlayFeatureSet2Column(server->method_2_feature_set, *featureset_2_column_inout) ;
 	  *featureset_2_column_inout = server->method_2_feature_set ;
 
-        overlaySource2Data(server->method_2_data,*source_2_sourcedata_inout);
+	  overlaySource2Data(server->method_2_data, *source_2_sourcedata_inout) ;
 	  *source_2_sourcedata_inout = server->method_2_data ;
 	}
     }
-  else if (result != ZMAP_SERVERRESPONSE_REQFAIL)
-    {
-      server->all_methods = feature_set_methods ;
 
-      *feature_sets_inout = feature_sets ;
-
-      *required_styles_out = g_list_copy(feature_set_methods) ;
-    }
 
   return result ;
 }
@@ -644,9 +655,9 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
 {
-      *exit_code = 0;
-      *stderr_out = NULL;
-      return ZMAP_SERVERRESPONSE_OK;
+  *exit_code = 0;
+  *stderr_out = NULL;
+  return ZMAP_SERVERRESPONSE_OK;
 }
 
 
@@ -739,35 +750,36 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   /* Fetch all the alignment blocks for all the sequences. */
   g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_features) ;
 
-      /* get the list of source featuresets */
+  /* get the list of source featuresets */
   feature_context->src_feature_set_names = get_features.src_feature_set_names;
 
 #if MH17_this_cant_work
-      /* replace the list of requested columns with a list of requested featuresets
-       * this is needed to keep track of what featuresets were actually requested.
-       *
-       * NOTE src_feature_set_names is constructed per block and merged
-       * req_feature_set_names is as given and applies to all blocks??
-       * NOTE multiple block requests are not currently used and cannot apply to pipe servers
-       * It would be much simpler to use single block requests only and if
-       * necessary implement multiple block requests from the main ZMap code
-       * as this would be compatable with pipeServers
-       */
+  /* replace the list of requested columns with a list of requested featuresets
+   * this is needed to keep track of what featuresets were actually requested.
+   *
+   * NOTE src_feature_set_names is constructed per block and merged
+   * req_feature_set_names is as given and applies to all blocks??
+   * NOTE multiple block requests are not currently used and cannot apply to pipe servers
+   * It would be much simpler to use single block requests only and if
+   * necessary implement multiple block requests from the main ZMap code
+   * as this would be compatable with pipeServers
+   */
 #warning review this if multiple blocks are implemented
   GList *req_names,*req_cols;
   req_cols = feature_context->req_feature_set_names;
   req_names = NULL;
   while(req_cols)
-  {
+    {
 
       column = g_hash_table_lookup(server->method_2_feature_set,);
       if(column)
-      {
-            req_names = g_list_concat(req_names,column->features
-      }
-      req_cols = g_list_delete_link(req_names,req_cols);
+	{
+	  req_names = g_list_concat(req_names,column->features
+				      }
+	    req_cols = g_list_delete_link(req_names,req_cols);
 
-  }
+	}
+    }
 #endif
 
   zMapPrintTimer(NULL, "In thread, got features") ;
@@ -782,7 +794,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	// see comment in zmapFeature,h/ ref: num_features
+  // see comment in zmapFeature,h/ ref: num_features
   feature_context->num_features = get_features.num_features;
 
 
@@ -2532,12 +2544,18 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 
   if (result)
     {
-      GQuark method_id = 0, style_id = 0, text_id = 0, feature_set_id ;
+      GQuark method_id, style_id, feature_set_id, text_id = 0 ;
       ZMapFeatureSource source_data ;
 
       /* name/style are mandatory, remark is optional. */
       method_id = zMapStyleCreateID(name) ;
       style_id = zMapStyleCreateID(zmap_style) ;
+
+      if (col_parent)
+	feature_set_id = zMapStyleCreateID(col_parent) ;
+      else
+	feature_set_id = zMapStyleCreateID(name) ;
+
       if (remark)
 	text_id = g_quark_from_string(remark) ;
 
@@ -2546,11 +2564,6 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 
       get_sets->required_styles = g_list_append(get_sets->required_styles,
 						GINT_TO_POINTER(style_id)) ;
-
-      if (col_parent)
-	feature_set_id = zMapStyleCreateID(col_parent) ;
-      else
-	feature_set_id = zMapStyleCreateID(name) ;
 
       zMap_g_hashlist_insert(get_sets->set_2_styles, feature_set_id, GINT_TO_POINTER(style_id)) ;
 
@@ -4520,6 +4533,18 @@ static void freeSetCB(gpointer data)
   ZMapFeatureSource source_data = (ZMapFeatureSource)data ;
 
   g_free(source_data) ;
+
+  return ;
+}
+
+
+/* A GFunc() to fill a hashlist with data that equals the key, a kind of 'dummy' hashlist */
+static void createSet2StyleList(gpointer data, gpointer user_data)
+{
+  GQuark feature_set_id = GPOINTER_TO_INT(data) ;
+  GHashTable *set_2_styles = (GHashTable *)user_data ;
+
+  zMap_g_hashlist_insert(set_2_styles, feature_set_id, GINT_TO_POINTER(feature_set_id)) ;
 
   return ;
 }
