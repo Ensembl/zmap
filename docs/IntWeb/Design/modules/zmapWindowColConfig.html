@@ -41,6 +41,11 @@ The combo boxes show status for each column and can be used to enter requests.
 </ul>
 NOTE: For load from mark it may be acceptable have the option always enabled and only action the request if the mark is set.
 </p>
+<h4>ZMap should remember previous selections on restarting a session</h4>
+<p>Currently Otterlace maintains session state and can continue to start ZMap with the appropriate columns to load. ZMap should default to load the same columns on a session restart and this can be saves in a separate SQLite database (to ensure that static databases remain static).
+</p>
+<h4>Default selection and column groups</h4>
+<p>Column groups (eg EST) conatin a number of columns some of which are considered 'core' depending on the sequence viewed.  It is necessary to privode a 'Default' button to select all the 'core' columns.
 
 
 <h2>Operation WRT multiple windows and views</h2>

@@ -803,6 +803,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
             GQuark fset_id = run_data->feature_stack->set->unique_id;
             char strand = '+';
             char frame = '0';
+		char *x;
 
             if(zMapStyleIsStrandSpecific(style) && feature->strand == ZMAPSTRAND_REVERSE)
             	strand = '-';
@@ -811,9 +812,16 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
 		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
 		if(run_data->feature_stack->maps_to)
+		{
+			/* a virtual featureset for combing several source into one display item */
 			fset_id = run_data->feature_stack->maps_to;
-
-            char *x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+			x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+		}
+		else
+		{
+			/* a display column for combing one or several sources into one display item */
+			x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
+		}
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);
