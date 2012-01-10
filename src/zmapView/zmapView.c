@@ -1,4 +1,4 @@
-/*  Last edited: Jul 11 15:42 2011 (edgrif) */
+/*  Last edited: Dec 16 10:13 2011 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -1211,6 +1211,8 @@ void zMapViewRedraw(ZMapViewWindow view_window)
 
   return ;
 }
+
+
 
 
 /* Show stats for this view. */
