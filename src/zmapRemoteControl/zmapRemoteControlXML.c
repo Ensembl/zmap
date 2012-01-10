@@ -30,6 +30,9 @@
  */
 
 
+/* note sure we need this separate file...put it all in command ?? */
+
+
 /* Make an zmap xml command, constructs:
  * 
  * <zmap version="1.0">
