@@ -28,6 +28,7 @@ ZMap/zmapNavigator.h \
 ZMap/zmapNavigatorStippleG.xbm \
 ZMap/zmapPeptide.h \
 ZMap/zmapReadLine.h \
+ZMap/zmapRemoteCommand.h \
 ZMap/zmapRemoteControl.h \
 ZMap/zmapRemoteProtocol.h \
 ZMap/zmapSeqBitmap.h \
