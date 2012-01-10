@@ -7,6 +7,7 @@ noinst_LTLIBRARIES = libZMapRemoteControl.la
 
 libZMapRemoteControl_la_SOURCES = zmapRemoteControl_.h \
 zmapRemoteControl.c \
+zmapRemoteCommand.c \
 remotetest/remotecontroltest.c \
 $(NULL)
 
