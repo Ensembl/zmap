@@ -23,7 +23,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -32,11 +32,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
@@ -61,23 +56,30 @@ typedef struct
 } XMLContextDumpStruct, *XMLContextDump;
 
 
-void generateContextXMLEvents   (ZMapFeatureContext feature_context, XMLContextDump xml_data);
-void generateAlignXMLEvents     (ZMapFeatureAlignment feature_align, XMLContextDump xml_data);
-void generateBlockXMLEvents     (ZMapFeatureBlock feature_block,     XMLContextDump xml_data);
-void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,         XMLContextDump xml_data);
-void generateFeatureXMLEvents   (ZMapFeature feature,                XMLContextDump xml_data);
-void generateClosingEvents      (ZMapFeatureAny feature_any,         XMLContextDump xml_data);
-void generateFeatureSpanEventsXremote(ZMapFeature feature,           XMLContextDump xml_data);
-void generateContextXMLEndEvent   (XMLContextDump xml_data);
-void generateAlignXMLEndEvent     (XMLContextDump xml_data);
-void generateBlockXMLEndEvent     (XMLContextDump xml_data);
-void generateFeatureSetXMLEndEvent(XMLContextDump xml_data);
-void generateFeatureXMLEndEvent   (XMLContextDump xml_data);
+static void generateContextXMLEvents   (ZMapFeatureContext feature_context, XMLContextDump xml_data);
+static void generateAlignXMLEvents     (ZMapFeatureAlignment feature_align, XMLContextDump xml_data);
+static void generateBlockXMLEvents     (ZMapFeatureBlock feature_block,     XMLContextDump xml_data);
+static void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,         XMLContextDump xml_data);
+static void generateFeatureXMLEvents   (ZMapFeature feature,                XMLContextDump xml_data);
+static void generateClosingEvents      (ZMapFeatureAny feature_any,         XMLContextDump xml_data);
+static void generateFeatureSpanEventsXremote(ZMapFeature feature,           XMLContextDump xml_data);
+static void generateContextXMLEndEvent   (XMLContextDump xml_data);
+static void generateAlignXMLEndEvent     (XMLContextDump xml_data);
+static void generateBlockXMLEndEvent     (XMLContextDump xml_data);
+static void generateFeatureSetXMLEndEvent(XMLContextDump xml_data);
+static void generateFeatureXMLEndEvent   (XMLContextDump xml_data);
 
-ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, 
-                                          gpointer data, 
-                                          gpointer user_data, 
-                                          char **error);
+static ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, gpointer data, gpointer user_data, char **error);
+
+static gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+				    ZMapXMLWriter xml_writer, GArray **xml_events_out,
+				    int xml_type) ;
+
+
+
+/* 
+ *            External interface.
+ */
 
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
@@ -92,16 +94,26 @@ GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
   return array;
 }
 
+
+
+
+/* 
+ *            Internal interface.
+ */
+
+
+/* THIS FUNCTION IS NOT CALLED FROM ANYWHERE EXCEPT IN THIS FILE SO I'M MAKING IT STATIC....
+ * THE BELOW COMMENTS IMPLY THAT NONE OF THIS IS VERY WELL THOUGHT OUT........ */
+
 /* don't like this interface of either or with xml_writer and xml_events_out!!!
  * 
  * Yes...there's quite a lot that needs changing to make things easier in the
  * future....
  * 
  *  */
-gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
-                             ZMapXMLWriter xml_writer,
-                             GArray **xml_events_out,
-                             int xml_type)
+static gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+				    ZMapXMLWriter xml_writer, GArray **xml_events_out,
+				    int xml_type)
 {
   XMLContextDumpStruct xmlDumpData = {{0},0};
   
@@ -139,6 +151,8 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
 
   return xmlDumpData.status;
 }
+
+
 
 ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, 
                                           gpointer data, 
@@ -234,7 +248,7 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
   return cs;
 }
 
-void generateClosingEvents(ZMapFeatureAny feature_any, 
+static void generateClosingEvents(ZMapFeatureAny feature_any, 
                            XMLContextDump xml_data)
 {
   ZMapFeatureStructType start_point = ZMAPFEATURE_STRUCT_FEATURE, 
@@ -279,7 +293,7 @@ void generateClosingEvents(ZMapFeatureAny feature_any,
 }
 
 
-void generateContextXMLEvents(ZMapFeatureContext feature_context,
+static void generateContextXMLEvents(ZMapFeatureContext feature_context,
                               XMLContextDump xml_data)
 {
 #ifdef RDS_KEEP_GCC_QUIET
@@ -298,7 +312,7 @@ void generateContextXMLEvents(ZMapFeatureContext feature_context,
   return ;
 }
 
-void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
+static void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
                             XMLContextDump xml_data)
 {
 #ifdef RDS_KEEP_GCC_QUIET
@@ -324,7 +338,7 @@ void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
   return ;
 }
 
-void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
+static void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
                             XMLContextDump xml_data)
 {
 #ifdef RDS_KEEP_GCC_QUIET
@@ -349,7 +363,7 @@ void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
   return ;
 }
 
-void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set, 
+static void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set, 
                                  XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
@@ -408,7 +422,7 @@ void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
   return ;
 }
 
-void generateFeatureXMLEvents(ZMapFeature feature,
+static void generateFeatureXMLEvents(ZMapFeature feature,
                               XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
@@ -472,7 +486,7 @@ void generateFeatureXMLEvents(ZMapFeature feature,
   return ;
 }
 
-void generateFeatureSpanEventsXremote(ZMapFeature feature, 
+static void generateFeatureSpanEventsXremote(ZMapFeature feature, 
                                       XMLContextDump xml_data)
 {
   GArray *span_array = NULL;
@@ -537,7 +551,7 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
   return ;
 }
 
-void generateContextXMLEndEvent(XMLContextDump xml_data)
+static void generateContextXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -555,7 +569,7 @@ void generateContextXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateAlignXMLEndEvent(XMLContextDump xml_data)
+static void generateAlignXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -575,7 +589,7 @@ void generateAlignXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateBlockXMLEndEvent(XMLContextDump xml_data)
+static void generateBlockXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -595,7 +609,7 @@ void generateBlockXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
+static void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -615,7 +629,7 @@ void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateFeatureXMLEndEvent(XMLContextDump xml_data)
+static void generateFeatureXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
