@@ -1,3 +1,4 @@
+/*  Last edited: Dec 16 12:00 2011 (edgrif) */
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -20,7 +21,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for controlling a single "view", a view
  *              comprises one or more windowsw which display data
@@ -34,10 +36,13 @@
 #define ZMAPVIEW_H
 
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <ZMap/zmapUrl.h>
+#include <ZMap/zmapRemoteCommand.h>
+
 
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
@@ -229,15 +234,23 @@ int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
+RemoteCommandRCType zMapViewProcessRemoteRequest(ZMapView user_data, char *command, char **reply_out) ;
+
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
 void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
 
 void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 
+char *zMapViewRemoteReceiveAccepts(ZMapView view);
+
 void zMapViewDestroy(ZMapView zmap_view) ;
 
-char *zMapViewRemoteReceiveAccepts(ZMapView view);
+
+
+
+
+
 
 /* HACK! not really to be used... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
