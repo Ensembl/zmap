@@ -109,7 +109,8 @@ $(NULL)
 
 # Programs we're going to compile.
 
-bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
+#bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
+bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
 
 
 # Try Jeremy's new build stuff....
@@ -163,11 +164,11 @@ xml_writer_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 # program that knows about the xremote protocol.
-xremote_gui_SOURCES      = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
-xremote_gui_LDFLAGS      = 
-xremote_gui_LDADD        = $(zmap_LDADD)
-xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
-xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+#xremote_gui_SOURCES      = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
+#xremote_gui_LDFLAGS      = 
+#xremote_gui_LDADD        = $(zmap_LDADD)
+#xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
+#xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 # The new program that knows about the xremote protocol.
