@@ -107,8 +107,10 @@ fi
 # Use autoreconf to run the autotools chain in the right order with
 # the right args.
 #
-zmap_message_out "About to run autoreconf to bootstrap autotools builds system"
+zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
+zmap_message_out "-------------------------------------------------------------------"
 autoreconf $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
+zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "Finished running autoreconf for bootstrap"
 
 
