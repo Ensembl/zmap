@@ -1,4 +1,4 @@
-/*  Last edited: Jul  7 09:13 2011 (edgrif) */
+/*  Last edited: Dec 16 12:15 2011 (edgrif) */
 /*  File: zmapViewRemoteRequests.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -198,6 +198,9 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 
 
 
+static RemoteCommandRCType localProcessRemoteRequest(ZMapView view, char *command, char **reply_out) ;
+
+
 
 /*
  *               Globals
@@ -289,6 +292,53 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 
 
 
+/* 
+ * NEW CODE......
+ * 
+ *  */
+
+
+
+/* See if view can process the command, if not then try all the windows to see if one can process the request. */
+RemoteCommandRCType zMapViewProcessRemoteRequest(ZMapView view, char *command, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+
+  if ((result = localProcessRemoteRequest(view, command, reply_out) == REMOTE_COMMAND_RC_UNKNOWN))
+    {
+      GList* list_item ;
+
+      list_item = g_list_first(view->window_list) ;
+      do
+	{
+	  ZMapViewWindow view_window ;
+
+	  view_window = list_item->data ;
+
+	  result = zMapWindowProcessRemoteRequest(view_window->window, command, reply_out) ;
+	}
+      while ((result == REMOTE_COMMAND_RC_OTHER) && (list_item = g_list_next(list_item))) ;
+    }
+
+  return result ;
+}
+
+
+
+
+
+
+
+/* 
+ * 
+ *       OLD CODE.....
+ * 
+ * 
+ *  */
+
+
+
+
 /* Where is all starts from. Everything else should be static */
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
 {
@@ -321,6 +371,19 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view)
 /*
  *                       Internal functions.
  */
+
+
+
+/* THIS FUNCTION COULD CALL THE ONE BELOW IT...... */
+static RemoteCommandRCType localProcessRemoteRequest(ZMapView view, char *command, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+
+
+  return result ;
+}
+
+
 
 
 
