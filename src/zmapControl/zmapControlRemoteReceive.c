@@ -1,3 +1,4 @@
+/*  Last edited: Dec 16 11:43 2011 (edgrif) */
 /*  File: zmapControlRemoteReceive.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -33,17 +34,13 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
 
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsXRemote.h>
+#include <ZMap/zmapRemoteCommand.h>
 #include <zmapControl_P.h>
 
 enum
@@ -124,6 +121,14 @@ static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLElement zmap_element,
                                    ZMapXMLParser parser);
 
+
+
+static RemoteCommandRCType localProcessRemoteRequest(ZMap zmap, char *command, char **reply_out) ;
+
+
+
+
+
 static gboolean control_execute_debug_G = FALSE;
 
 static ZMapXMLObjTagFunctionsStruct control_starts_G[] = {
@@ -165,6 +170,58 @@ static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
 
 
 
+
+
+
+
+
+
+/* New remote code...... */
+
+RemoteCommandRCType zMapControlProcessRemoteRequest(ZMap zmap, char *command, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+
+  if ((result = localProcessRemoteRequest(zmap, command, reply_out) == REMOTE_COMMAND_RC_UNKNOWN))
+    {
+      if (zmap->view_list)
+	{
+	  GList *next_view ;
+
+	  /* Try all the views. */
+	  next_view = g_list_first(zmap->view_list) ;
+	  do
+	    {
+	      ZMapView view = (ZMapView)next_view ;
+
+	      result = zMapViewProcessRemoteRequest(view, command, reply_out) ;
+	    }
+	  while ((result == REMOTE_COMMAND_RC_OTHER) && (next_view = g_list_next(next_view))) ;
+	}
+    }
+
+  return result ;
+}
+
+
+
+
+
+
+
+
+
+
+/* 
+ * 
+ * 
+ *             OLD CODE......................
+ * 
+ * 
+ */
+
+
+
 void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
@@ -191,6 +248,23 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 /* ========================= */
 /* ONLY INTERNALS BELOW HERE */
 /* ========================= */
+
+/* THIS FUNCTION COULD CALL THE ONE BELOW IT...... */
+static RemoteCommandRCType localProcessRemoteRequest(ZMap zmap, char *command, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+
+  /* Dummied for now..... */
+
+
+  return result ;
+}
+
+
+
+
+
+
 
 /* Handle commands sent from xremote. */
 /* Return is string in the style of ZMAP_XREMOTE_REPLY_FORMAT (see ZMap/zmapXRemote.h) */
@@ -567,3 +641,15 @@ static gboolean xml_return_true_cb(gpointer user_data,
 {
   return TRUE;
 }
+
+
+
+
+
+
+
+
+
+
+
+
