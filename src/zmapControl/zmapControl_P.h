@@ -154,7 +154,7 @@ typedef struct
 {
   GtkWidget *feature_name, *feature_strand,
     *feature_coords, *sub_feature_coords,
-    *feature_frame, *feature_score, *feature_type,
+    *feature_frame, *feature_population, *feature_score, *feature_type,
     *feature_set, *feature_source ;
 
   GtkWidget *hbox;

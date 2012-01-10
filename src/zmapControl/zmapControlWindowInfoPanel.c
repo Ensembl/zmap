@@ -42,7 +42,7 @@
 
 /* Keep in step with number of feature details widgets. NOTE that _not_ every text field in
  * the feature description is displayed in a label. */
-enum {TOTAL_LABELS = 9} ;
+enum {TOTAL_LABELS = 10} ;
 
 
 /* Used for naming the info panel widgets so we can set their background colour with a style. */
@@ -60,10 +60,11 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
   label[2] = &(labels->feature_coords) ;
   label[3] = &(labels->sub_feature_coords) ;
   label[4] = &(labels->feature_frame) ;
-  label[5] = &(labels->feature_score) ;
-  label[6] = &(labels->feature_type) ;
-  label[7] = &(labels->feature_set) ;
-  label[8] = &(labels->feature_source) ;
+  label[5] = &(labels->feature_population) ;
+  label[6] = &(labels->feature_score) ;
+  label[7] = &(labels->feature_type) ;
+  label[8] = &(labels->feature_set) ;
+  label[9] = &(labels->feature_source) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -100,7 +101,7 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
  * or for a column is:
  *
  *                                     column name
- * 
+ *
  * THE APPROACH HERE IS NOT CORRECT, SHOULD BE REWRITTEN TO KNOW NOTHING ABOUT FEATURES
  * AND SIMPLY DISPLAY IN ORDER A NUMBER OF FIELDS WITH TOOLTIP TEXT PROVIDED BY THE
  * CALLER, THIS SHOULD BE A DUMB DISPLAY FACILITY.
@@ -120,10 +121,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   label[2] = labels->feature_coords ;
   label[3] = labels->sub_feature_coords ;
   label[4] = labels->feature_frame ;
-  label[5] = labels->feature_score ;
-  label[6] = labels->feature_type ;
-  label[7] = labels->feature_set ;
-  label[8] = labels->feature_source ;
+  label[5] = labels->feature_population ;
+  label[6] = labels->feature_score ;
+  label[7] = labels->feature_type ;
+  label[8] = labels->feature_set ;
+  label[9] = labels->feature_source ;
 
 
   /* If no feature description then blank the info panel. */
@@ -213,22 +215,27 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 
 	  text[4] = feature_desc->feature_frame ; /* Frame */
 
+	  if(feature_desc->feature_population)
+	  {
+		text[5] = g_strdup_printf("%s",feature_desc->feature_population);
+	  }
+
 	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
-	      text[5] = g_strdup_printf("%s%s%s",
+	      text[6] = g_strdup_printf("%s%s%s",
 					feature_desc->feature_score,
 					(feature_desc->feature_percent_id ? " / " : ""),
 					(feature_desc->feature_percent_id ? feature_desc->feature_percent_id : "")) ;
 	    }
 	  else if (feature_desc->feature_score)
 	    {
-	      text[5] = g_strdup_printf("%s", feature_desc->feature_score) ;
+	      text[7] = g_strdup_printf("%s", feature_desc->feature_score) ;
 	    }
 
 
-	  text[6] = feature_desc->feature_term ; /* Style type */
-	  text[7] = feature_desc->feature_set ;	/* Feature set */
-	  text[8] = feature_desc->feature_source ; /* Source */
+	  text[7] = feature_desc->feature_term ; /* Style type */
+	  text[8] = feature_desc->feature_set ;	/* Feature set */
+	  text[9] = feature_desc->feature_source ; /* Source */
 
 	  /* Now to the tooltips... */
 
@@ -296,14 +303,16 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 
 	  tooltip[4] = "Frame" ;
 
-	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
-	    tooltip[5] = g_strdup("Score / percent ID") ;
-	  else if (feature_desc->feature_score)
-	    tooltip[5] = g_strdup("Score") ;
+	  tooltip[5] = "Population" ;
 
-	  tooltip[6] = "Feature Type" ;
-	  tooltip[7] = "Feature Set" ;
-	  tooltip[8] = "Feature Source" ;
+	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
+	    tooltip[6] = g_strdup("Score / percent ID") ;
+	  else if (feature_desc->feature_score)
+	    tooltip[6] = g_strdup("Score") ;
+
+	  tooltip[7] = "Feature Type" ;
+	  tooltip[8] = "Feature Set" ;
+	  tooltip[9] = "Feature Source" ;
 	}
     }
 
@@ -350,6 +359,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
       g_free(text[2]) ;
       g_free(text[3]) ;
       g_free(text[5]) ;
+      g_free(text[6]) ;
     }
 
   /* I don't know if we need to do this each time....or if it does any harm.... */

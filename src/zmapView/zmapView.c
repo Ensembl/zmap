@@ -4155,6 +4155,13 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  printf("%s\n",x);
 	}
 
+	/* collpase short reads if configured
+	 * NOTE this is simpler than EST masking as we simply don't display the collapsed features
+	 * if it is thought necessary to change this then follow the example of EST masking code
+	 * you will need to head into window code via just DrawContext()
+	 */
+	zMapViewCollapseFeatureSets(view,diff_context);
+
       // mask ESTs with mRNAs if configured
       l = zMapViewMaskFeatureSets(view, diff_context->src_feature_set_names);
 

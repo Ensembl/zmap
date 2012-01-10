@@ -156,10 +156,17 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_MAX_SCORE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_MAX_SCORE,
             "max-score", "maximum score",
             offsetof(zmapFeatureTypeStyleStruct, max_score),0 },
+    { STYLE_PROP_SCORE_SCALE, STYLE_PARAM_TYPE_GRAPH_SCALE, ZMAPSTYLE_PROPERTY_SCORE_SCALE,
+            "graph-scale", "Graph Scale",
+            offsetof(zmapFeatureTypeStyleStruct, score_scale) , 0 },
 
     { STYLE_PROP_SUMMARISE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_SUMMARISE,
             "summarise featureset at low zoom", "summarise featureset at low zoom",
             offsetof(zmapFeatureTypeStyleStruct, summarise), 0 },
+
+    { STYLE_PROP_COLLAPSE, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_COLLAPSE,
+            "collapse identical features into one", "collapse identical features into one",
+            offsetof(zmapFeatureTypeStyleStruct, collapse), 0 },
 
     { STYLE_PROP_GFF_SOURCE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_SOURCE,
             "gff source", "GFF Source",

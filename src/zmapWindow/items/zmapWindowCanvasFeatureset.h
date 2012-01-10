@@ -172,6 +172,9 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature);
 gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
+gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score);
+gulong zMapWindowCanvasFeatureGetHeatPixel(gulong a, gulong b, double score);
+
 
 /* holds all data need to drive exotic bump modes */
 typedef struct

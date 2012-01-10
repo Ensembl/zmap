@@ -341,6 +341,17 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
+	if(fill_set && feature->feature->population)
+	{
+		ZMapFeatureTypeStyle style = feature->feature->style;
+
+		if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
+		{
+			fill = (fill << 8) | 0xff;	/* convert back to RGBA */
+			fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+		}
+	}
+
 	if(  !(feature->feature->feature.homol.align)  ||
 		(
 			!zMapStyleIsAlwaysGapped(feature->feature->style) &&

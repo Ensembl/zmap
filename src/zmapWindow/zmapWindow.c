@@ -1723,6 +1723,10 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (zMapStyleIsFrameSpecific(style))
 	select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
 
+	if(feature->population)
+		select.feature_desc.feature_population = g_strdup_printf("%d", feature->population) ;
+
+
       /* quality measures. */
       if (feature->flags.has_score)
 	select.feature_desc.feature_score = g_strdup_printf("%g", (double) feature->score) ;

@@ -407,6 +407,8 @@ GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_li
 /* zmapViewFeatureMask.c */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 
+gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_context);
+
 
 
 #ifdef LOTS_OF_EXONS

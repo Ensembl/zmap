@@ -781,6 +781,9 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
+	if(feature->flags.collapsed)	/* just don't display duplicates */
+		return(feature_item);
+
 //       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
       /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
        * expects it to shuffle features into the right stranded container
