@@ -1,3 +1,4 @@
+/*  Last edited: Dec 16 09:46 2011 (edgrif) */
 /*  File: zmapManager.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -29,6 +30,7 @@
 #define ZMAP_MANAGER_H
 
 #include <ZMap/zmapControl.h>
+#include <ZMap/zmapRemoteCommand.h>
 
 
 /* Specifies result of trying to add a new zmap to manager. */
@@ -72,6 +74,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
+RemoteCommandRCType zMapManagerProcessRemoteRequest(ZMapManager zmaps, char *command, char **reply_out) ;
 gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
 gboolean zMapManagerKillAllZMaps(ZMapManager zmaps);
 gboolean zMapManagerDestroy(ZMapManager zmaps) ;
