@@ -49,6 +49,10 @@
 #include <ZMap/zmapUtilsGUI.h>
 
 #include <ZMap/zmapRemoteControl.h>
+#include <ZMap/zmapRemoteCommand.h>
+
+
+
 
 /* Some of these need to go.... */
 #include <ZMap/zmapXRemote.h>
@@ -161,14 +165,27 @@ typedef struct RemoteDataStructName
   char *unique_atom_str ;
   Atom unique_atom_id ;
 
+  char *peer_app_id ;
+  char *peer_unique_id ;
 
   ZMapRemoteControl remote_cntl ;
 
 
+  char *request ;
+  char *request_id ;
+
+  RemoteCommandRCType reply_rc ;
+  char *reply ;
 
 
+
+  ZMapXMLParser parser;
+  gpointer parse_cbdata ;
+
+
+
+  /* NOT NEEDED ?? */
   char *window_id ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GtkWidget *text_area ;
@@ -196,6 +213,21 @@ typedef struct RemoteDataStructName
 
 
 
+typedef struct GetPeerStructName
+{
+  RemoteData remote_data ;
+  char *app_id ;
+  char *unique_id ;
+} GetPeerStruct, *GetPeer ;
+
+
+
+
+
+
+
+
+/* I THINK MOST OF THIS CAN GO NOW......... */
 typedef struct
 {
   RemoteData remote_data;
@@ -245,9 +277,26 @@ static gboolean messageProcess(char *message_xml_in, gboolean full_process,
 static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
 				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
 				 void *request, void *user_data) ;
-static gboolean requestCB(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
-static gboolean replyCB(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
-static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data) ;
+static gboolean replyHandlerCB(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
+static gboolean errorCB(ZMapRemoteControl remote_control, void *user_data) ;
+
+
+RemoteCommandRCType processRequest(gpointer user_data, char *request, char **reply_out) ;
+static gboolean handleHandshake(char *command_text, RemoteData remote_data) ;
+
+static char *makeReply(RemoteData remote_data, char *request, char *raw_reply) ;
+static GArray *addReplyElement(GArray *xml_stack_inout, RemoteCommandRCType remote_rc, char *reply) ;
+
+
+static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+static gboolean xml_reply_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+static gboolean xml_reply_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement client_element, ZMapXMLParser parser) ;
+static gboolean xml_peer_end_cb(gpointer user_data, ZMapXMLElement client_element, ZMapXMLParser parser) ;
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+
+
 
 
 
@@ -261,9 +310,10 @@ static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void installPropertyNotify(GtkWidget *ignored, GdkEvent *event, gpointer user_data) ;
+static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
+
 static GtkWidget *entry_box_widgets(RemoteData remote_data);
 static GtkWidget *menubar(GtkWidget *parent, RemoteData remote_data);
 static GtkWidget *message_box(RemoteData remote_data);
@@ -300,19 +350,6 @@ static gboolean api_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
 static gboolean api_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 
-
-static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
-                                  ZMapXMLParser parser);
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser);
-static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
-                                    ZMapXMLParser parser);
-static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_element,
-				  ZMapXMLParser parser);
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
-                                 ZMapXMLParser parser);
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
-                                ZMapXMLParser parser);
 
 static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_data);
 static char *getXML(RemoteData remote_data, int *length_out);
@@ -585,108 +622,7 @@ static void addTextArea(RemoteData remote_data, GtkBox *parent_box, char *text_t
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* THE OLD CODE..... */
 
-/* install the property notify, receives the requests from zmap, when started with --win_id option */
-static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-  RemoteData remote_data = (RemoteData)user_data ;
-
-  zMapXRemoteInitialiseWidget(widget, "xremote_gui_test",
-                              "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME",
-                              handle_register_client, remote_data);
-  externalPerl = TRUE;
-
-  if (remote_data->cmd_line_args && remote_data->cmd_line_args->command_file)
-    {
-      process_command_file(remote_data, remote_data->cmd_line_args->command_file);
-    }
-
-  remote_data->window_id = g_strdup_printf("0x%lx", GDK_DRAWABLE_XID(remote_data->app_toplevel->window)) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-/* Called when main window mapped, this is where we init our remote control object. */
-static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-  RemoteData remote_data = (RemoteData)user_data ;
-
-  /* Stop us being called multiple times. */
-  g_signal_handler_disconnect(remote_data->app_toplevel, remote_data->mapCB_id) ;
-  remote_data->mapCB_id = 0 ;
-
-  if ((remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
-							  NULL, NULL))
-      && zMapRemoteControlSelfInit(remote_data->remote_cntl,
-				   remote_data->unique_atom_str,
-				   requestHandlerCB, remote_data,
-				   replyCB, remote_data,
-				   timeoutCB, remote_data)
-      && zMapRemoteControlSelfWaitForRequest(remote_data->remote_cntl))
-    {
-      zMapMessage("%s", "Initialised remote control.") ;
-    }
-  else
-    {
-      zMapCritical("%s", "Could not initialise remote control.") ;
-      
-      appExit(FALSE) ;
-    }
-
-  return ;
-}
-
-
-
-
-
-
-/* The property notify, receives the requests from zmap, when started with --win_id option */
-static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner )
-{
-  RemoteData remote_data = (RemoteData)user_data;
-  ZMapXMLObjTagFunctionsStruct starts[] = {
-    {"zmap",     xml_zmap_start_cb   },
-    {"client",   xml_client_start_cb },
-    { NULL, NULL}
-  };
-  ZMapXMLObjTagFunctionsStruct ends[] = {
-    {"zmap",   xml_zmap_end_cb  },
-    {"client", xml_client_end_cb },
-    { NULL, NULL}
-  };
-  SendCommandDataStruct parser_data = {NULL};
-  ZMapXMLParser parser;
-  gboolean parse_ok;
-  char *reply;
-  int status = 500;
-
-  parser_data.remote_data = remote_data;
-
-  parser = zMapXMLParserCreate(&parser_data, FALSE, FALSE);
-
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
-
-  reply = g_strdup_printf("%s", "** no reply text **");
-
-  if((parse_ok = zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))))
-    {
-      status = 200;
-    }
-  else
-    status = 403;
-
-  if(statusCode)
-    *statusCode = status;
-
-
-  return reply ;
-}
 
 /* create the entry box widgets */
 static GtkWidget *entry_box_widgets(RemoteData remote_data)
@@ -857,6 +793,346 @@ static void quitCB(GtkWidget *unused_button, gpointer user_data)
 
   return ;
 }
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* THE OLD CODE..... */
+
+/* install the property notify, receives the requests from zmap, when started with --win_id option */
+static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  RemoteData remote_data = (RemoteData)user_data ;
+
+  zMapXRemoteInitialiseWidget(widget, "xremote_gui_test",
+                              "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME",
+                              handle_register_client, remote_data);
+  externalPerl = TRUE;
+
+  if (remote_data->cmd_line_args && remote_data->cmd_line_args->command_file)
+    {
+      process_command_file(remote_data, remote_data->cmd_line_args->command_file);
+    }
+
+  remote_data->window_id = g_strdup_printf("0x%lx", GDK_DRAWABLE_XID(remote_data->app_toplevel->window)) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+/* Called when main window mapped, this is where we init our remote control object. */
+static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  RemoteData remote_data = (RemoteData)user_data ;
+  gboolean result = TRUE ;
+
+  /* Stop us being called multiple times. */
+  g_signal_handler_disconnect(remote_data->app_toplevel, remote_data->mapCB_id) ;
+  remote_data->mapCB_id = 0 ;
+
+  if (result)
+    result = ((remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
+								  errorCB, remote_data,
+								  NULL, NULL)) != NULL) ;
+
+  if (result)
+    result = zMapRemoteControlSelfInit(remote_data->remote_cntl,
+				       remote_data->unique_atom_str,
+				       requestHandlerCB, remote_data) ;
+
+  if (result)
+    result = zMapRemoteControlSelfWaitForRequest(remote_data->remote_cntl) ;
+
+
+  if (!result)
+    {
+      zMapCrash("%s", "Could not initialise remote control, exiting") ;
+      
+      appExit(FALSE) ;
+    }
+
+
+  return ;
+}
+
+
+
+/* Make sure we return a pucker exit code in the right way. */
+static void appExit(gboolean exit_ok)
+{
+  int true_rc ;
+
+  if (exit_ok)
+    true_rc = EXIT_SUCCESS ;
+  else
+    true_rc = EXIT_FAILURE ;
+
+  gtk_exit(true_rc) ;
+
+  return ;						    /* We shouldn't ever get here.... */
+}
+
+
+
+static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
+				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
+				 void *request, void *user_data)
+{
+  gboolean result = TRUE ;
+  RemoteData remote_data = (RemoteData)user_data ;
+  RemoteCommandRCType request_rc ;
+  char *reply = NULL ;
+  char *full_reply ;
+  char *error_msg = NULL ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *test_data = "Test reply from remotetest." ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  zMapDebugPrint(debug_G, "%s", "Enter...") ;
+
+
+  if ((result = zMapRemoteControlValidateRequest(remote_data->peer_unique_id, request, &error_msg)))
+    {
+      /* Call handler routine to field requests.... */
+      request_rc = processRequest(remote_data, request, &reply) ;
+
+
+      /* Format reply..... */
+      full_reply = makeReply(remote_data, request, reply) ;
+
+
+      /* this is where we need to process the zmap commands perhaps passing on the remote_reply_func
+       * and data to be called from a callback for an asynch. request.
+       * 
+       * For now we just call straight back for testing.... */
+      result = (remote_reply_func)(remote_reply_data, full_reply, strlen(full_reply) + 1) ;
+    }
+
+  zMapDebugPrint(debug_G, "%s", "Exit...") ;
+
+  return result ;
+}
+
+
+static gboolean replyHandlerCB(ZMapRemoteControl remote_control, void *reply, void *user_data)
+{
+  gboolean result = TRUE ;
+
+  zMapDebugPrint(debug_G, "%s", "Enter...") ;
+
+
+
+
+
+  zMapDebugPrint(debug_G, "%s", "Exit...") ;
+
+  return result ;
+}
+
+
+static gboolean errorCB(ZMapRemoteControl remote_control, void *user_data)
+{
+  gboolean result = FALSE ;
+
+  zMapDebugPrint(debug_G, "%s", "Enter...") ;
+
+
+
+
+  zMapDebugPrint(debug_G, "%s", "Exit...") ;
+
+  return result ;
+}
+
+
+/* Processes all requests from zmap. */
+RemoteCommandRCType processRequest(gpointer user_data, char *request, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  RemoteData remote_data = (RemoteData)user_data ;
+  char *action ;
+  char *reply = NULL ;
+  char *error = NULL ;
+
+
+  /* Find out what action has been requested. */
+  if (!(action = zMapRemoteControlRequestGetCommand(request)))
+    {
+      result = REMOTE_COMMAND_RC_BAD_XML ;
+
+      error = reply = g_strdup_printf("Cannot find \"action\" in request \"%s\" ", request) ;
+    }
+  else
+    {
+      gboolean parse_result ;
+
+      remote_data->parser = zMapXMLParserCreate(remote_data, FALSE, FALSE) ;
+
+      if (g_ascii_strcasecmp(action, ZACP_HANDSHAKE) == 0)
+	{
+	  parse_result = handleHandshake(request, remote_data) ;
+	}
+      /* There will be more options here..... */
+
+
+      if (parse_result)
+	{
+	  result = remote_data->reply_rc ;
+
+	  reply = remote_data->reply ;
+
+	  if (result != REMOTE_COMMAND_RC_OK)
+	    error = reply ;
+	}
+      else
+	{
+	  result = REMOTE_COMMAND_RC_BAD_XML ;
+
+	  error = reply = zMapXMLParserLastErrorMsg(remote_data->parser) ;
+	}
+    }
+
+  if (error)
+    zMapGUIShowMsg(ZMAP_MSG_WARNING, error) ;
+
+  *reply_out = reply ;
+
+
+  return result ;
+}
+
+
+
+static gboolean handleHandshake(char *command_text, RemoteData remote_data)
+{
+  gboolean parse_result = FALSE ;
+  ZMapXMLObjTagFunctionsStruct starts[] =
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {"zmap",     xml_zmap_start_cb   },
+      {"request",  xml_request_start_cb },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      {"peer",     xml_peer_start_cb },
+      {NULL, NULL}
+    };
+  ZMapXMLObjTagFunctionsStruct ends[] =
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {"zmap",    xml_zmap_end_cb},
+      {"request", xml_request_end_cb},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      {"peer",    xml_peer_end_cb},
+      {NULL, NULL}
+    };
+  GetPeerStruct peer_data = {NULL} ;
+
+  remote_data->parse_cbdata = &peer_data ;
+
+  zMapXMLParserSetMarkupObjectTagHandlers(remote_data->parser, &starts[0], &ends[0]) ;
+
+  if ((parse_result = zMapXMLParserParseBuffer(remote_data->parser, command_text, strlen(command_text))))
+    {
+      /* Parse was ok so act on it.... */
+      if (remote_data->reply_rc == REMOTE_COMMAND_RC_OK)
+	{
+	  /* Need to init peer interface........ */
+	  if (zMapRemoteControlPeerInit(remote_data->remote_cntl,
+					peer_data.unique_id,
+					replyHandlerCB, remote_data))
+	    {
+	      remote_data->reply = g_strdup_printf("Handshake successful with peer \"%s\", id \"%s\".",
+						   peer_data.app_id, peer_data.unique_id) ;
+
+	      remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
+
+
+	      /* Update our state.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      remote_data->request =  ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+	    }
+	  else
+	    {
+	      remote_data->reply = g_strdup_printf("Handshake failed for peer \"%s\", id \"%s\".",
+						   peer_data.app_id, peer_data.unique_id) ;
+
+	      zMapCritical("%s", remote_data->reply) ;
+
+	      remote_data->reply_rc = REMOTE_COMMAND_RC_FAILED ;
+	    }
+	}
+    }
+
+  return parse_result ;
+}
+
+
+
+static char *makeReply(RemoteData remote_data, char *request, char *raw_reply)
+{
+  char *full_reply = NULL ;
+  GArray *xml_stack ;
+  char *err_msg = NULL ;
+  ZMapXMLWriter writer ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  xml_stack = zMapRemoteControlCreateReply(remote_data->peer_unique_id, remote_data->request_id) ;
+
+  xml_stack = zMapRemoteControlReplyAddResult(xml_stack, remote_data->reply_rc, NULL, raw_reply) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  xml_stack = zMapRemoteControlCreateReplyFromRequest(request, remote_data->reply_rc, NULL, raw_reply, &err_msg) ;
+
+
+  if ((writer = zMapXMLWriterCreate(NULL, NULL)))
+    {
+      ZMapXMLWriterErrorCode xml_status ;
+
+      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack)) != ZMAPXMLWRITER_OK)
+        zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLWriterErrorMsg(writer));
+      else
+	full_reply = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
+
+      zMapXMLWriterDestroy(writer) ;
+    }
+
+
+
+  return full_reply ;
+}
+
+
+static GArray *addReplyElement(GArray *xml_stack_inout, RemoteCommandRCType remote_rc, char *reply)
+{
+  GArray *xml_stack = xml_stack_inout ;
+  static ZMapXMLUtilsEventStackStruct
+    reply_body[] =
+    {
+      {ZMAPXML_ATTRIBUTE_EVENT,     "result",    ZMAPXML_EVENT_DATA_QUARK,  {0}},
+      {ZMAPXML_CHAR_DATA_EVENT,     "",          ZMAPXML_EVENT_DATA_STRING, {0}},
+      {ZMAPXML_NULL_EVENT}
+    } ;
+
+  /* Fill in peer element attributes. */
+  reply_body[0].value.q = g_quark_from_string(zMapRemoteControlRC(remote_rc)) ;
+  reply_body[1].value.s = g_strdup(reply) ;
+
+  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "reply", &reply_body[0]) ;
+
+  return xml_stack ;
+}
+
 
 
 /* Menu commands internal to put xml events into the text buffer as text (xml) */
@@ -1261,13 +1537,128 @@ static void action_elements_to_list(gpointer list_data, gpointer user_data)
   return ;
 }
 
+
+
 /* ------------------ */
 /* XML event handlers */
 /* ------------------ */
 
-static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_element,
-				  ZMapXMLParser parser)
+static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
+                                  ZMapXMLParser parser)
 {
+  SendCommandData send_data  = (SendCommandData)user_data;
+  RemoteData remote_data = send_data->remote_data;
+  ZMapXMLAttribute attr = NULL;
+
+  if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
+    {
+      GQuark action = zMapXMLAttributeGetValue(attr);
+
+      if (action == g_quark_from_string("register_client"))
+        remote_data->is_register_client = TRUE;
+      else
+        remote_data->is_register_client = FALSE;
+
+      /* When we get this it means the zmap is exitting so clean up the client
+       * connection. */
+      if (action == g_quark_from_string("finalised"))
+	{
+	  g_hash_table_foreach_remove(remote_data->xremote_clients, remove_cb, NULL) ;
+	}
+    }
+
+  return FALSE;
+}
+
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+  return TRUE;
+}
+
+
+static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+
+
+
+  return TRUE ;
+}
+
+
+static gboolean xml_request_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+
+
+
+  return TRUE ;
+}
+
+static gboolean xml_reply_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+
+
+
+  return TRUE ;
+}
+
+
+static gboolean xml_reply_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+
+
+
+  return TRUE ;
+}
+
+
+
+
+
+static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement peer_element, ZMapXMLParser parser)
+{
+  gboolean result = TRUE ;
+  RemoteData remote_data = (RemoteData)user_data ;
+  GetPeer peer_data = (GetPeer)(remote_data->parse_cbdata) ;
+  ZMapXMLAttribute attr ;
+  char *app_id = NULL, *unique_id = NULL ;
+
+  if (result && (attr = zMapXMLElementGetAttributeByName(peer_element, "app_id")) != NULL)
+    {
+      app_id  = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)) ;
+    }
+  else
+    {
+      zMapXMLParserRaiseParsingError(parser, "app_id is a required attribute for the \"peer\" element.") ;
+      remote_data->reply_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+      result = FALSE ;
+    }
+
+  if (result && (attr  = zMapXMLElementGetAttributeByName(peer_element, "unique_id")) != NULL)
+    {
+      unique_id = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
+    }
+  else
+    {
+      zMapXMLParserRaiseParsingError(parser, "\"unique_id\" is a required attribute for the \"peer\" element.") ;
+      remote_data->reply_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+      result = FALSE ;
+    }
+
+  if (result)
+    {
+      peer_data->app_id = g_strdup(app_id) ;
+      peer_data->unique_id = g_strdup(unique_id) ;
+      remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
+    }
+
+  return result ;
+}
+
+
+static gboolean xml_peer_end_cb(gpointer user_data, ZMapXMLElement peer_element, ZMapXMLParser parser)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   SendCommandData send_data  = (SendCommandData)user_data;
   RemoteData remote_data = send_data->remote_data;
   ZMapXRemoteObj new_client;
@@ -1304,90 +1695,16 @@ static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_elem
 
       addClientToHash(remote_data->xremote_clients, new_client, wxid, actions, TRUE);
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return TRUE;
 }
 
 
-static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
-                                  ZMapXMLParser parser)
-{
-  SendCommandData send_data  = (SendCommandData)user_data;
-  RemoteData remote_data = send_data->remote_data;
-  ZMapXMLAttribute attr = NULL;
 
-  if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
-    {
-      GQuark action = zMapXMLAttributeGetValue(attr);
 
-      if (action == g_quark_from_string("register_client"))
-        remote_data->is_register_client = TRUE;
-      else
-        remote_data->is_register_client = FALSE;
 
-      /* When we get this it means the zmap is exitting so clean up the client
-       * connection. */
-      if (action == g_quark_from_string("finalised"))
-	{
-	  g_hash_table_foreach_remove(remote_data->xremote_clients, remove_cb, NULL) ;
-	}
-    }
-
-  return FALSE;
-}
-
-static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
-                                    ZMapXMLParser parser)
-{
-  SendCommandData send_data  = (SendCommandData)user_data;
-  RemoteData remote_data = send_data->remote_data;
-  ZMapXRemoteObj new_client;
-  ZMapXMLAttribute attr;
-  Window wxid = 0;
-  char *xid = NULL, *req = NULL, *resp = NULL;
-
-  if (remote_data->is_register_client)
-    {
-      if((attr = zMapXMLElementGetAttributeByName(client_element, "xwid")) != NULL)
-        {
-          xid  = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-          wxid = (Window)(strtoul(xid, (char **)NULL, 16));
-        }
-      else
-        zMapXMLParserRaiseParsingError(parser, "id is a required attribute for client.");
-
-      if((attr  = zMapXMLElementGetAttributeByName(client_element, "request_atom")) != NULL)
-        req = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-
-      if((attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
-        resp = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-
-      if (wxid && req && resp && (new_client = zMapXRemoteNew(NULL)))
-        {
-	  GList *actions = NULL;
-
-          zMapXRemoteInitClient(new_client, wxid);
-          zMapXRemoteSetRequestAtomName(new_client, req);
-          zMapXRemoteSetResponseAtomName(new_client, resp);
-
-	  if ((remote_data->cmd_line_args->timeout))
-	    zMapXRemoteSetTimeout(new_client, 0.0) ;
-
-	  actions = g_list_append(actions, g_strdup("new_zmap"));
-	  actions = g_list_append(actions, g_strdup("shutdown"));
-
-          addClientToHash(remote_data->xremote_clients, new_client, wxid, actions, TRUE);
-        }
-    }
-
-  return FALSE;
-}
-
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
-                                ZMapXMLParser parser)
-{
-  return TRUE;
-}
 
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser)
@@ -1395,26 +1712,24 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
   return TRUE;
 }
 
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser)
-{
-
-
-
-  return FALSE;
-}
 
 
 /* really send an xremote command */
 static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_data)
 {
+  gboolean dead_client = FALSE;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* DISABLE OLD CODE.... */
+
   HashEntry entry = (HashEntry)hash_data;
   ZMapXMLParser parser;
   ZMapXRemoteObj client;
   SendCommandData send_data = (SendCommandData)user_data;
   char *full_response, *xml;
   int result, code;
-  gboolean parse_ok = FALSE, dead_client = FALSE;
+  gboolean parse_ok = FALSE ;
   ZMapXMLObjTagFunctionsStruct starts[] = {
     {"zmap",     xml_zmap_start_cb     },
     {"response", xml_response_start_cb },
@@ -1470,6 +1785,8 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
 	  dead_client = TRUE;
 	}
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return dead_client;
 }
@@ -1954,13 +2271,14 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
     {
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
       zmap_path = "./zmap";
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zmap_path = "/Users/edgrif/ZMap/ZMap_xremote/src/build/macosx/zmap";
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
-      zmap_path = "/Users/edgrif/ZMap/ZMap_xremote/src/build/macosx/zmap";
 
 
     }
@@ -2196,88 +2514,3 @@ static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_eleme
 
 
 
-/* Make sure we return a pucker exit code in the right way. */
-static void appExit(gboolean exit_ok)
-{
-  int true_rc ;
-
-  if (exit_ok)
-    true_rc = EXIT_SUCCESS ;
-  else
-    true_rc = EXIT_FAILURE ;
-
-  gtk_exit(true_rc) ;
-
-  return ;						    /* We shouldn't ever get here.... */
-}
-
-
-
-static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
-				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
-				 void *request, void *user_data)
-{
-  gboolean result = TRUE ;
-  char *test_data = "Test reply from remotetest." ;
-
-  zMapDebugPrint(debug_G, "%s", "Enter...") ;
-
-  /* this is where we need to process the zmap commands perhaps passing on the remote_reply_func
-   * and data to be called from a callback for an asynch. request.
-   * 
-   * For now we just call straight back for testing.... */
-  result = (remote_reply_func)(remote_reply_data, test_data, strlen(test_data) + 1) ;
-
-  zMapDebugPrint(debug_G, "%s", "Exit...") ;
-
-  return result ;
-}
-
-
-
-
-static gboolean requestCB(ZMapRemoteControl remote_control, void *reply, void *user_data)
-{
-  gboolean result = FALSE ;
-
-  zMapDebugPrint(debug_G, "%s", "Enter...") ;
-
-
-
-
-  zMapDebugPrint(debug_G, "%s", "Exit...") ;
-
-  return result ;
-}
-
-
-static gboolean replyCB(ZMapRemoteControl remote_control, void *reply, void *user_data)
-{
-  gboolean result = FALSE ;
-
-  zMapDebugPrint(debug_G, "%s", "Enter...") ;
-
-
-
-
-  zMapDebugPrint(debug_G, "%s", "Exit...") ;
-
-  return result ;
-}
-
-
-
-
-static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data)
-{
-  gboolean result = FALSE ;
-
-  zMapDebugPrint(debug_G, "%s", "Enter...") ;
-
-
-
-
-  zMapDebugPrint(debug_G, "%s", "Exit...") ;
-
-  return result ;
-}
