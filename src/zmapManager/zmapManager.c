@@ -1,3 +1,4 @@
+/*  Last edited: Dec 16 10:00 2011 (edgrif) */
 /*  File: zmapManager.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -189,6 +190,31 @@ gboolean zMapManagerRaise(ZMap zmap)
 
   return result ;
 }
+
+RemoteCommandRCType zMapManagerProcessRemoteRequest(ZMapManager zmaps, char *command, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+
+  if (zmaps->zmap_list)
+    {
+      GList *next_zmap ;
+
+      /* Try all the views. */
+      next_zmap = g_list_first(zmaps->zmap_list) ;
+      do
+	{
+	  ZMap zmap = (ZMap)next_zmap ;
+
+	  result = zMapControlProcessRemoteRequest(zmap, command, reply_out) ;
+	}
+      while ((result == REMOTE_COMMAND_RC_OTHER) && (next_zmap = g_list_next(next_zmap))) ;
+    }
+
+  return result ;
+}
+
+
+
 
 
 /* Note the zmap will get removed from managers list once it signals via destroyedCB()
