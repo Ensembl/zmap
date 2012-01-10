@@ -27,7 +27,7 @@
  * Description: External interface to remote control package.
  *
  * HISTORY:
- * Last edited: Dec  1 15:49 2011 (edgrif)
+ * Last edited: Dec 16 10:14 2011 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -35,40 +35,82 @@
 #ifndef ZMAP_REMOTE_PROTOCOL_H
 #define ZMAP_REMOTE_PROTOCOL_H
 
-#include <gtk/gtk.h>
+
+/* 
+ *     ZMap Annotation Command Protocol (ZACP)
+ * 
+ * Note that _all_ element and attribute keywords must be in lowercase
+ * because XML is case sensitive.
+ * 
+ * 
+ */
+
+
+/* Protocol "types", describe what type of message it is.
+ * 
+ * This is version 2 of the protocol because there will be some incompatible changes
+ * from version 1.
+ *  */
+#define ZACP_TAG "zmap"
+#define ZACP_VERSION  "2.0"
+
+
+
+/* Request and Reply envelope elements and attributes. */
+#define ZACP_REQUEST  "request"
+#define ZACP_REPLY    "reply"
+
+#define ZACP_TYPE       "type"
+#define ZACP_VERSION_ID "version"
+#define ZACP_PEER_ID    "peer_id"
+#define ZACP_REQUEST_ID "request_id"
+
+
+
+/* Commands element and attributes. */
+#define ZACP_CMD "command"
+
+#define ZACP_HANDSHAKE "handshake"
+#define ZACP_PING "ping"
+
+
+/* Results element and attributes. */
+#define ZACP_RESULT "result"
+
+#define ZACP_RETURN_CODE "return_code"
+#define ZACP_REASON      "reason"
+
+
+
+
+
+
+
+/* uM....NOT REALLY USEFUL AS XML WRITER DOES ALL THIS........ */
+
+/* Protocol envelope format:
+ * 
+ *   <zmap version="v.r" type=["request" | "reply"] peer_id="xxxxx" request_id="nnnnn" [timeout="secs"]>
+ * 
+ */
+#define ZACP_ENVELOPE_FORMAT "<" ZACP_TAG " version=\"" ZACP_VERSION "\" type=\"%s\" peer_id=\"%s\" request_id=\"%s\">"
+
+
+/* Request format: */
+
 
 
 
 /* 
- *     Genome Annotation Transfer Protocol (GACP)
+ *    Data type descriptors.
  */
-
-
-/* Protocol name used in header. */
-#define GACP_NAME "GACP"
-
-/* Protocol "types", describe what type of message it is. */
-#define GACP_REQUEST  "request"
-#define GACP_REPLY    "reply"
-#define GACP_VERSION  "2.0"
-
-/* Protocol format, used to format the protocol message headers:
- * 
- *              "<GACP version=vv type=[request | reply] serial_number=nnnnn>"
- * 
- *  */
-#define GACP_HEADER_FORMAT "<" GACP_NAME " version=" GACP_VERSION " type=%s serial_number=%d>"
-
-
-#define GACP_CLIPBOARD_DATA_TYPE   "GACP_COMMAND_STR"
-#define GACP_CLIPBOARD_DATA_FORMAT 8			    /* Bits per unit. */
+#define ZACP_DATA_TYPE   "ZACP_COMMAND_STR"
+#define ZACP_DATA_FORMAT 8			    /* Bits per unit. */
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* errr...what's this for ??? */
-#define ANNOTATION_ICC "ANNOTATION_DATA"
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 
 #endif /* ZMAP_REMOTE_PROTOCOL_H */
