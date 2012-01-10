@@ -1,3 +1,4 @@
+/*  Last edited: Dec 16 12:18 2011 (edgrif) */
 /*  File: zmapWindowRemoteReceive.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -90,6 +91,27 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 
   return xml;
 }
+
+
+
+
+/* See if view can process the command, if not then try all the windows to see if one can process the request. */
+RemoteCommandRCType zMapWindowProcessRemoteRequest(ZMapWindow window, char *command, char **reply_out)
+{
+  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+
+
+  /* dummied for now.... */
+
+
+  return result ;
+}
+
+
+
+
+
+
 
 #if MH17_UNUSED_CODE_FOR_WINDOW_XML
 
@@ -202,6 +224,19 @@ static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
 
     {NULL, NULL}
   };
+
+
+
+
+
+
+/* 
+ * OLD CODE...
+ * 
+ * 
+ *  */
+
+
 
 
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget)
