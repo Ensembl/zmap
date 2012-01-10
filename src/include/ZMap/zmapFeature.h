@@ -32,7 +32,6 @@
 
 #include <gdk/gdkcolor.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
-#include <ZMap/zmapXML.h>
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapUtils.h>
 
@@ -1331,10 +1330,6 @@ void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMa
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
                                   /* ZMapFeatureXMLType xml_type */
                                   int xml_type);
-gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
-                             ZMapXMLWriter xml_writer,
-                             GArray **xml_events_out,
-                             int xml_type);
 
 gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 
