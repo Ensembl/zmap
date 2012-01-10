@@ -27,7 +27,7 @@
  * Description: Private header for remote control package.
  *
  * HISTORY:
- * Last edited: Dec  1 15:58 2011 (edgrif)
+ * Last edited: Dec 16 10:13 2011 (edgrif)
  * Created: Fri Sep 24 14:44:59 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -42,13 +42,12 @@
 
 /* Using the XXX_LIST macros to declare enums means we get lots of enum functions for free (see zmapEnum.h). */
 
-
 /* Is the remote object idle, a client or a server ? */
-#define REMOTE_TYPE_LIST(_)                                                                                 \
-_(REMOTE_TYPE_INVALID,            , "invalid"           , "Remote is invalid !"                             , "") \
-_(REMOTE_TYPE_IDLE,               , "idle"              , "Remote is idle."                             , "") \
-_(REMOTE_TYPE_CLIENT,               , "client"              , "Remote is acting as client."    , "") \
-_(REMOTE_TYPE_SERVER,               , "server"              , "Remote is acting as server."         , "")
+#define REMOTE_TYPE_LIST(_)                                                  \
+_(REMOTE_TYPE_INVALID,  , "invalid"  , "Remote is invalid !"           , "") \
+_(REMOTE_TYPE_IDLE,     , "idle"     , "Remote is idle."               , "") \
+_(REMOTE_TYPE_CLIENT,   , "client"   , "Remote is acting as client."   , "") \
+_(REMOTE_TYPE_SERVER,   , "server"   , "Remote is acting as server."   , "")
 
 ZMAP_DEFINE_ENUM(RemoteType, REMOTE_TYPE_LIST) ;
 
@@ -58,33 +57,33 @@ ZMAP_DEFINE_ENUM(RemoteType, REMOTE_TYPE_LIST) ;
 _(REMOTE_STATE_INVALID,            ,					\
   "invalid"           , "Invalid state !"                             , "") \
 _(REMOTE_STATE_IDLE,               ,				\
-  "idle"              , "Peer - not waiting for a request/not making a request."     , "") \
-_(REMOTE_STATE_CLIENT_WAIT_GET,     ,\
-  "client-waiting-for-get"    , "Peer/client - contacted server, waiting for server ask for request."     , "") \
-_(REMOTE_STATE_CLIENT_WAIT_REQ_ACK,	   ,\
-  "client-waiting-for-req-ack"    , "Peer/client - sent request waiting for server to acknowledge.", "") \
-_(REMOTE_STATE_CLIENT_WAIT_REPLY,  ,\
-  "client-waiting-for-reply" , "Peer/client - waiting for server to signal it has a reply to send." , "") \
-_(REMOTE_STATE_CLIENT_WAIT_SEND,  ,\
-  "client-waiting-for-send" , "Peer/client - asked for reply, waiting for server to send it." , "") \
-_(REMOTE_STATE_CLIENT_WAIT_REPLY_ACK,  ,\
-  "client-waiting-for-reply-ack" , "Peer/client - waiting for server to acknowledge end of transaction." , "") \
-_(REMOTE_STATE_SERVER_WAIT_SIGNAL_NEW,  ,\
-  "server-waiting" , "Peer/server - waiting for client to signal they have a new request."  , "") \
-_(REMOTE_STATE_SERVER_WAIT_REQ,  ,\
-  "server-waiting-for-request" , "Peer/server - waiting for client to send request."  , "") \
-_(REMOTE_STATE_SERVER_WAIT_REQ_ACK,  ,\
-  "server-waiting-for-req-ack" , "Peer/server - told client we have request, waiting for acknowledgement."  , "") \
-_(REMOTE_STATE_SERVER_REQ_PROCESS,     ,\
-  "server-processing"    , "Peer/server - Contacted client to say we have reply, now processing reply."    , "") \
-_(REMOTE_STATE_SERVER_WAIT_GET,     ,\
-  "server-waiting-for-get"    , "Peer/server - Sent reply, waiting for client to acknowledge they have it."    , "") \
-_(REMOTE_STATE_SERVER_WAIT_REPLY_ACK,     ,\
-  "server-waiting-for-reply-ack"    , "Peer/server - Sent reply, waiting for client to acknowledge they have it."    , "") \
-_(REMOTE_STATE_RESETTING,          ,\
-  "resetting"         , "Peer - Resetting to idle state after error."      , "") \
+  "idle"              , "Peer - not in client or server state."     , "") \
+_(REMOTE_STATE_RESETTING_TO_IDLE,               ,				\
+  "reset_idle"        , "Peer - resetting to idle state."     , "") \
 _(REMOTE_STATE_DYING,              ,\
-  "dying"             , "Peer - Dying after error."                        , "")
+  "dying"             , "Peer - Dying."                        , "") \
+_(REMOTE_STATE_CLIENT_WAIT_GET,     ,\
+  "client-waiting-for-req-get"    , "Client - signalled server we have a request, waiting for server to ask for it."     , "") \
+_(REMOTE_STATE_CLIENT_WAIT_REQ_ACK,	   ,\
+  "client-waiting-for-req-ack"    , "Client - sent request to server, waiting for server to signal they have it.", "") \
+_(REMOTE_STATE_CLIENT_WAIT_REPLY,  ,\
+  "client-waiting-for-reply" , "Client - Server signalled they have request, waiting for server to signal it has a reply to send." , "") \
+_(REMOTE_STATE_CLIENT_WAIT_SEND,  ,\
+  "client-waiting-for-reply-send" , "Client - Server signalled they have a reply, signalled server to send it." , "") \
+_(REMOTE_STATE_CLIENT_WAIT_REPLY_ACK,  ,\
+  "client-waiting-for-reply-ack" , "Client - told server we have reply, waiting for server to acknowledge." , "") \
+_(REMOTE_STATE_SERVER_WAIT_NEW_REQ,  ,\
+  "server-waiting" , "Server - waiting for client to signal they have a new request."  , "") \
+_(REMOTE_STATE_SERVER_WAIT_REQ_SEND,  ,\
+  "server-waiting-for-request-send" , "Server - client has signalled they have a request, waiting for client to send it."  , "") \
+_(REMOTE_STATE_SERVER_WAIT_REQ_ACK,  ,\
+  "server-waiting-for-req-ack" , "Server - told client we have request, waiting for client to acknowledge."  , "") \
+_(REMOTE_STATE_SERVER_PROCESS_REQ,     ,\
+  "server-processing"    , "Server - client acknowledged we have received request, now processing it."    , "") \
+_(REMOTE_STATE_SERVER_WAIT_GET,     ,\
+  "server-waiting-for-reply-get"    , "Server - signalled client we have reply, waiting for client to ask for it."    , "") \
+_(REMOTE_STATE_SERVER_WAIT_REPLY_ACK,     ,\
+  "server-waiting-for-reply-ack"    , "Server - sent reply, waiting for client to acknowledge they have it."    , "") \
 
 
 ZMAP_DEFINE_ENUM(RemoteControlState, REMOTE_STATE_LIST) ;
@@ -129,9 +128,6 @@ typedef struct RemoteSelfStructName
   ZMapRemoteControlRequestHandlerFunc request_func ;
   gpointer request_func_data ;
 
-  ZMapRemoteControlTimeoutHandlerFunc timeout_func ;
-  gpointer timeout_func_data ;
-
 } RemoteSelfStruct, *RemoteSelf ;
 
 
@@ -156,9 +152,6 @@ typedef struct RemotePeerStructName
   /* Callback functions specified by caller to receive requests and subsequent replies/errors. */
   ZMapRemoteControlReplyHandlerFunc reply_func ;
   gpointer reply_func_data ;
-
-  ZMapRemoteControlTimeoutHandlerFunc timeout_func ;
-  gpointer timeout_func_data ;
 
 } RemotePeerStruct, *RemotePeer ;
 
@@ -188,12 +181,15 @@ typedef struct ZMapRemoteControlStructName
   /* atom representation of target type for data. */
   GdkAtom target_atom ;
 
+  /* App function to call when there is an error, e.g. timeout. */
+  ZMapRemoteControlErrorHandlerFunc error_func ;
+  gpointer error_func_data ;
 
+  /* where to send error messages, can be overridden by app. */
+  ZMapRemoteControlErrorReportFunc err_report_func ;
+  gpointer err_report_data ;
 
-  /* where to send error messages, can be overridden by user. */
-  ZMapRemoteControlErrorReportFunc err_func ;
-  gpointer err_data ;
-
+  /* Used for timeouts..... */
   guint timer_source_id ;
 
 
