@@ -29,7 +29,6 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_XML_H
 #define ZMAP_XML_H
 
@@ -340,8 +339,7 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset);
 
 
 /* WRITER */
-ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback,
-                                  gpointer flush_data);
+ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, gpointer flush_data) ;
 ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name);
 ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value);
 ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *content);
@@ -349,6 +347,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
 ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer);
 ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag);
 ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events);
+char *zMapXMLWriterGetXMLStr(ZMapXMLWriter writer) ;
 ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
 char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer);
 char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
@@ -358,10 +357,9 @@ char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
 GArray *zMapXMLUtilsCreateEventsArray(void) ;
 GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
-GArray *zMapXMLUtilsAddStackToEventsArrayMiddle(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
+						      char *element_name, ZMapXMLUtilsEventStackStruct *event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
-
-
 
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 
