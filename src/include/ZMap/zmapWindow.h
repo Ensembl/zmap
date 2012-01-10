@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 15:01 2011 (edgrif) */
+/*  Last edited: Dec 16 11:16 2011 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -42,6 +42,7 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapRemoteCommand.h>
 #include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapXMLHandler.h>
 
@@ -337,6 +338,10 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 			  void *app_data, ZMapWindow old,
 			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
 			  ZMapWindowLockType window_locking) ;
+
+
+RemoteCommandRCType zMapWindowProcessRemoteRequest(ZMapWindow window, char *command, char **reply_out) ;
+
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
 #ifdef __GNUC__
