@@ -1,4 +1,3 @@
-/*  Last edited: Oct 27 20:28 2011 (edgrif) */
 /*  File: zmapXMLWriter.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -58,9 +57,22 @@ static void setErrorCode(ZMapXMLWriter writer, ZMapXMLWriterErrorCode code);
 
 
 
-
-ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, 
-                                  gpointer flush_data)
+/* On creation a callback function and data can be specified for custom
+ * output of the final xml text.
+ * 
+ * If compress_empty_elements == TRUE then elements like this:
+ * 
+ * <request action="xxx">
+ * </request>
+ * 
+ * are compressed into this:
+ * 
+ * <request action="xxx"/>
+ * 
+ * With current code, allowing compression will make it impossible to insert elements that should be nested
+ * inside the compressed element.
+ *  */
+ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, gpointer flush_data)
 {
   ZMapXMLWriter writer = NULL;
 
@@ -85,7 +97,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *ele
 
   depth = writer->element_stack->len ;
 
-  if (!(writer->stack_top_has_content) && depth > 0)
+  if(!(writer->stack_top_has_content) && depth > 0)
     {
       g_string_append_c(writer->xml_output, '>');
       g_string_append_c(writer->xml_output, '\n');
@@ -169,7 +181,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
 
   name_quark = g_quark_from_string(element);
 
-  if((stack_head = popElement(writer, name_quark)))
+  if ((stack_head = popElement(writer, name_quark)))
     {
       if(!(writer->stack_top_has_content))
         {
@@ -224,6 +236,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *do
 
   maybeFlush(writer);
   code = writer->errorCode;
+
   return code;
 }
 
@@ -237,11 +250,12 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer)
   flushToOutput(writer);
 
   code = writer->errorCode;
+
   return code;
 }
 
-/* Event processing code */
-/* FIFO logic, processed in exactly the same order as created... */
+
+/* Event processing code.  FIFO logic, processed in exactly the same order as created... */
 ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events)
 {
   int event_count = 0, i = 0;
@@ -306,7 +320,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
         }
     }
 
-  if(status == ZMAPXMLWRITER_OK)
+  if (status == ZMAPXMLWRITER_OK)
     {
       flushToOutput(writer);
       status = writer->errorCode;
@@ -314,6 +328,19 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
 
   return status;
 }
+
+
+/* The string returned belongs to zMapXMLWriter so should not be free'd. */
+char *zMapXMLWriterGetXMLStr(ZMapXMLWriter writer)
+{
+  char *xml_str = NULL ;
+
+  if (writer->xml_output->len)
+    xml_str = writer->xml_output->str ;
+
+  return xml_str ;
+}
+
 
 char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer)
 {
@@ -452,30 +479,39 @@ static int memorycallback(ZMapXMLWriter writer, char *xml, int xml_length, void 
 }
 #endif
 
+
+
 static void flushToOutput(ZMapXMLWriter writer)
 {
-  ZMapXMLWriterErrorCode code;
-  int length2flush = 0;
+  if (writer->output_callback)
+    {
+      ZMapXMLWriterErrorCode code ;
+      int length2flush = 0 ;
 
-  code = writer->errorCode;
+      code = writer->errorCode ;
 
-  if(code == ZMAPXMLWRITER_OK && (length2flush = writer->xml_output->len))
-    {                           /* Carry on with flushing */
-      int length_flushed = 0;
-      setErrorCode(writer, ZMAPXMLWRITER_INCOMPLETE_FLUSH);
+      if (code == ZMAPXMLWRITER_OK && (length2flush = writer->xml_output->len))
+	{
+	  /* Carry on with flushing */
+	  int length_flushed = 0 ;
+
+	  setErrorCode(writer, ZMAPXMLWRITER_INCOMPLETE_FLUSH) ;
   
-      length_flushed = (writer->output_callback)(writer, 
-                                                 writer->xml_output->str, 
-                                                 length2flush,
-                                                 writer->output_userdata);
+	  length_flushed = (writer->output_callback)(writer, 
+						     writer->xml_output->str, 
+						     length2flush,
+						     writer->output_userdata) ;
 
-      if(length_flushed == length2flush)
-        {
-          g_string_truncate(writer->xml_output, 0);
-          setErrorCode(writer, ZMAPXMLWRITER_OK);
-        }
-      else
-        setErrorCode(writer, ZMAPXMLWRITER_FAILED_FLUSHING);
+	  if (length_flushed == length2flush)
+	    {
+	      g_string_truncate(writer->xml_output, 0) ;
+	      setErrorCode(writer, ZMAPXMLWRITER_OK) ;
+	    }
+	  else
+	    {
+	      setErrorCode(writer, ZMAPXMLWRITER_FAILED_FLUSHING) ;
+	    }
+	}
     }
 
   return ;
