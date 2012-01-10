@@ -108,6 +108,7 @@ typedef struct _ZMapXMLWriterStruct
   ZMapXMLWriterErrorCode errorCode;
   char *error_msg;
   gboolean stack_top_has_content;
+  gboolean compress_empty_elements ;
 } ZMapXMLWriterStruct;
 
 
