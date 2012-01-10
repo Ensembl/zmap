@@ -105,30 +105,57 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
 /* Add the event stack to the middle of the events array. Use this to allow
  * insertion of new xml levels into a pre-existing nest of xml.
  * 
- * NOTE: if the array you supply has an odd number of elements the insert
- * occurs _after_ the middle element of the events array.
  *  */
-GArray *zMapXMLUtilsAddStackToEventsArrayMiddle(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char *element_name,
+						      ZMapXMLUtilsEventStackStruct *event_stack)
 {
-  GArray *result = events_array ;
+  GArray *result = NULL ;
+
   ZMapXMLUtilsEventStack input ;
+
   ZMapXMLWriterEventStruct single = {0} ;
+  
   int insert_pos ;
+  int i ;
+  gboolean found_element ;
 
-  insert_pos = ((result->len + 1) / 2) + 1 ;		    /* Note GArray inserts _at_ the given
-							       index which is one past the middle element. */
 
-  input = event_stack ;
 
-  while (input && input->event_type)
+  /* Find first position in the array after the named element _and_ that elements attributes.  */
+  for (i = 0, insert_pos = 0, found_element = FALSE ; i < events_array->len ; i++)
     {
-      transfer(input, &single) ;
+      ZMapXMLWriterEvent event ;
 
-      result = g_array_insert_val(result, insert_pos, single) ;
+      event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
 
-      insert_pos = ((result->len + 1) / 2) + 1 ;
+      if (event->type == ZMAPXML_START_ELEMENT_EVENT
+	  && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
+	{
+	  found_element = TRUE ;
+	}
+      else if (found_element && (event->type == ZMAPXML_END_ELEMENT_EVENT
+				 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
+	{
+	  insert_pos = i ;
+	  break ;
+	}
+    }
 
-      input++ ;
+  if (found_element)
+    {
+      result = events_array ;
+      input = event_stack ;
+
+      while (input && input->event_type)
+	{
+	  transfer(input, &single) ;
+
+	  result = g_array_insert_val(result, insert_pos, single) ;
+
+	  insert_pos++ ;
+
+	  input++ ;
+	}
     }
 
   return result ;
