@@ -1,3 +1,4 @@
+/*  Last edited: Dec 16 11:43 2011 (edgrif) */
 /*  File: zmapControl.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -69,6 +70,8 @@ char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
+
+RemoteCommandRCType zMapControlProcessRemoteRequest(ZMap zmap, char *command, char **reply_out) ;
 
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
