@@ -177,10 +177,32 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 //	zMapLogWarning("collapse %d,%d (%d) %d,%d",feature->x1,feature->x2,feature->population,f->x1,f->x2);
 		    if(!feature || f->x1 != feature->x1 || f->x2 != feature->x2)
 			duplicate = FALSE;
+
 		    if(f->type == ZMAPSTYLE_MODE_ALIGNMENT)
 		    {
 			    /* compare gaps array */
-#warning have not programmed gaps array compare
+			    GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
+
+			    if(g1->len != g2->len)
+			    {
+				    duplicate = FALSE;
+			    }
+			    else
+			    {
+				    int i;
+				    ZMapAlignBlock a1, a2;
+
+				    for(i = 0;i < g1->len; i++)
+				    {
+					    a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
+					    a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
+					    if(memcmp(a1,a2,sizeof(ZMapAlignBlockStruct)))
+					    {
+						    duplicate = FALSE;
+						    break;
+					    }
+				    }
+			    }
 		    }
 
 		    if(duplicate)

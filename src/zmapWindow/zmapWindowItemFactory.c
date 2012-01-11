@@ -777,12 +777,28 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
+  ZMapWindowCanvasItem last_item = (ZMapWindowCanvasItem) run_data->canvas_item;
 
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-	if(feature->flags.collapsed)	/* just don't display duplicates */
-		return(feature_item);
+	if(feature->flags.collapsed)
+	{
+		/* collapsed item are not disaplayed as they contain no new information
+		 * but they cam be searched for in the FToI hash
+		 * so return the item that they got collapsed into
+		 * if selected from the search they get assigned to the canvas item
+		 * and the population copied in.
+		 */
+
+#warning this works only because short reads are sorted and displayed in order, we do not get new features OTF, other than complete blocks
+#warning window search does not find these features so this is not working
+
+		/* NOTE on revcomp last item can be freed in whcih case feature may be 0 */
+		if(last_item && last_item->feature && last_item->feature->population)	/* just don't display duplicates */
+			return((FooCanvasItem *)last_item);
+		return(NULL);
+	}
 
 //       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
       /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
@@ -866,6 +882,9 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;
+
+	if(feature->population)		/* keep displayed iten for use by collapsed ones in FtoI hash */
+		run_data->canvas_item = feature_item;
 
       return feature_item;
 }
