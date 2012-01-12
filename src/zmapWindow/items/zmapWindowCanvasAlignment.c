@@ -41,6 +41,7 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasAlignment_I.h>
 
+#include <ZMap/zmapUtilsLog.h>
 
 /* optimise setting of colours, thes have to be GdkParsed and mapped to the canvas */
 /* we has a flag to set these on the first draw operation which requires map and relaise of the canvas to have occured */
@@ -121,6 +122,7 @@ These are the rules I implemented in the ExonCanvas for flagging good splice sit
 These can be configured in/out via styles:
 sub-features=non-concensus-splice:nc-splice-glyph
 */
+#define DEBUG_SPLICE 0
 
 static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 {
@@ -145,8 +147,8 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
       if(!g_ascii_strncasecmp(fragment_b,"AC",2) || !g_ascii_strncasecmp(fragment_b,"GCC",3))
            splice = TRUE;
     }
-#if 0
-zMapLogWarning("nc splice = %d (%.3s, %.3s)",splice,fragment_a,fragment_b);
+#if DEBUG_SPLICE
+zMapLogWarning("concensus splice = %d (%.3s, %.3s)",splice,fragment_a,fragment_b);
 #endif
   return splice;
 }
@@ -166,6 +168,10 @@ gboolean is_nc_splice(ZMapFeature left,ZMapFeature right)
        * we assume any reversal is a series break
        * and do not attempt to splice inverted exons
        */
+
+#if DEBUG_SPLICE
+zMapLogWarning("splice %s",g_quark_to_string(left->unique_id));
+#endif
 
           // 3' end of exon: get 1 base  + 2 from intron
       ldna = zMapFeatureGetDNA((ZMapFeatureAny)left,
@@ -495,6 +501,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 					align->glyph3 = zMapWindowCanvasGetGlyph(featureset, nc_splice, feature->feature, 3, 0.0);
 					next->glyph5 = zMapWindowCanvasGetGlyph(featureset, nc_splice, next->feature.feature, 5, 0.0);
+#if DEBUG_SPLICE
+zMapLogWarning("set nc splice 3 %s -> %s",g_quark_to_string(feature->feature->unique_id),g_quark_to_string(align->glyph3->sig));
+zMapLogWarning("set nc splice 5 %s -> %s",g_quark_to_string(feature->right->feature->unique_id),g_quark_to_string(next->glyph5->sig));
+#endif
 				}
 			}
 
@@ -537,6 +547,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 			}
 		}
 
+zMapLogWarning("paint glyphs %s %p,%p",g_quark_to_string(feature->feature->unique_id),align->glyph5,align->glyph3);
 			/* all features: add glyphs if present */
 		zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph5, drawable);
 		zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph3, drawable);
