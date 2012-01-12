@@ -27,9 +27,36 @@ The combo boxes show status for each column and can be used to enter requests.
 </p>
 <p>DNA will be handled as a normal column; it is possible request this (and is normally done on startup).
 </p>
-<p>Show Translation in Zmap is controlled via the column's right click menu.</p>
+<p>Show Translation in ZMap is controlled via the column's right click menu.</p>
 <p>It is probably possible to configure these columns into a suitable column group and show them with the loaded status widget disabled, probably triggering this by not finding a server config for the featureset in the column.
 </p>
+
+<h3>Some notes about 'columns'</h3>
+<p>
+Historically ZMap has provided a 'Columns' dialog which has been used to request data and also control the display.  Requesting a column related to ACEDB which assigns one or more featuresets to a column - the ZMap user cannot request a simgle featuetset in a column that contains more than one.  Otterlace by contrast provides a 'load columns' dialog that deals with 'filters' which can contain one or more featuresets and these do not correspond directly to display columns.  Some examples illustrate the combinations in use:
+<ul>
+<li> ZMap can request a column called 'Predicted Transcripts' which contains the featuresets Augustus and Genscan.  Otterlace allows the users to request the featuresets but not the column.
+<li> The column 'Repeats' contains 3 featruesets that can be requested from Otterlace as RepeatMasker plus one more that can be requested from Otterlace as TRF.
+</ul>
+Featuresets from one filter cannot be assigned to different columns.
+</p>
+<p>An Otterlace filter can be described as corresponding to an analysis of some kind.
+</p>
+<p>To replace the existing ZMap and Otterlace load column dialogs with one new one we need to provide requests using otterlace filters and control display by column.  The otterlace configuration lists filters which somehow result in the required featuresets being requested.  Each filter defined defaults to providing a single featureset of the same name which should be displayed in a column of the same name, but this can be set differently if necessary.  There may be a requirement to hide/show individual featuresets within a column eg solexa introns can be split into 1dpf, 2dpf etc.
+</p>
+
+<p>
+Running grep over otter_config relveals that the only columns implicated are predicted transcripts, Predicted Regulatory Features, repeats and the solexa 1dpf etc columns.  However ENCODE data comes in repeats whcih are currently reqeusted together and we may wish to control this mory closely.
+</p>
+
+<p>
+Request these two pages in firefox to see the current otterlace config.
+<pre>
+https://enigma.sanger.ac.uk/sso/login
+http://dev.sanger.ac.uk/cgi-bin/otter/60/get_otter_config?client=otterlace
+</pre>
+</p>
+
 
 <h3>Implementation</h3>
 <h4>The dialog should respond to ZMap state</h4>
@@ -48,7 +75,7 @@ NOTE: For load from mark it may be acceptable have the option always enabled and
 <p>Column groups (eg EST) conatin a number of columns some of which are considered 'core' depending on the sequence viewed.  It is necessary to privode a 'Default' button to select all the 'core' columns.
 
 
-<h2>Operation WRT multiple windows and views</h2>
+<h3>Operation WRT multiple windows and views</h3>
 <p>Existing code supports a separate Columns dialog for each window (NB a window is a single pane in a view, and a view is a ZMap X window).
 The dialog is created by clicking on the columns button in the toolbar, and is created for the current focussed window.  This is necessary to allow column display to be turned on/off for the selected pane.  Load columns operates on the feature context and when data completes loading it is displayed in all the windows in the view.
 </p>
