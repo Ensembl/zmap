@@ -159,12 +159,12 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
 /* Turn on/off 3 frame cols. */
 void zMapWindow3FrameToggle(ZMapWindow window)
 {
-  ZMapWindow3FrameMode mode = ZMAP_WINDOW_3FRAME_COLS;
+  ZMapWindow3FrameMode mode = ZMAP_WINDOW_3FRAME_TRANS ;
 
-  if(IS_3FRAME(window->display_3_frame))
-      mode =ZMAP_WINDOW_3FRAME_INVALID;
+  if (IS_3FRAME(window->display_3_frame))
+      mode = ZMAP_WINDOW_3FRAME_INVALID ;
 
-  myWindowSet3FrameMode(window, mode ) ;
+  myWindowSet3FrameMode(window, mode) ;
 
   return ;
 }
