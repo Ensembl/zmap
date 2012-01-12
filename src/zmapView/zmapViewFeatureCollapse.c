@@ -178,7 +178,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		    if(!feature || f->x1 != feature->x1 || f->x2 != feature->x2)
 			duplicate = FALSE;
 
-		    if(f->type == ZMAPSTYLE_MODE_ALIGNMENT)
+		    if(feature && f->type == ZMAPSTYLE_MODE_ALIGNMENT)
 		    {
 			    /* compare gaps array */
 			    GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
