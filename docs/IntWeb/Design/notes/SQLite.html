@@ -79,7 +79,7 @@ Note that styles have a large number of options some of which are mutually exclu
 <p>
 </p>
 <h5>Column ordering and other options</h5>
-<p>Historically column order has been defined by a list of columns (as plain text) and while this works well for small numbers it has become unwieldy and also suffers from the (recent) existance of multiple lists and the fact that this single list of columns has mulitple functions: display order, column request, grouping of featuresets.  These need to be teased apart into distinct configuration options.
+<p>Historically column order has been defined by a list of columns (as plain text) and while this works well for small numbers it has become unwieldy and also suffers from the (recent) existance of multiple lists and the fact that this single list of columns has multiple functions: display order, column request, grouping of featuresets.  These need to be teased apart into distinct configuration options.
 </p>
 
 
@@ -227,7 +227,7 @@ select tag as attribute, value as description from zmap_style_attribute where st
 
 
 <h4>Setting column ordering</h4>
-<p>A column attribute record will be used for this, which will contain a reference to a column (the column_id) and the position. In case of mis-configuration (ie two columns with the same position) ZMap will log an error and carry on regardless - the ordering of the misconfigured columns will be stable relative to the others .  There is a feature request active to drag and drop columns when live, but this table defines the default which is explicitly defined centrally on request from Havana.
+<p>A fiedl in the columns record will be use to store a colum's display position. In case of mis-configuration (ie two columns with the same position) ZMap will carry on regardless - the ordering of the misconfigured columns will be stable relative to the others .  There is a feature request active to drag and drop columns when live, but this table defines the default which is explicitly defined centrally on request from Havana.
 </p>
 <p0>
 Queries like the following may be used to move columns around, eg to insert a column after the 5th from the left:
@@ -236,6 +236,11 @@ Queries like the following may be used to move columns around, eg to insert a co
 update zmap_column_attribute set value=value+1 where tag = "position" and value >= 6;
 insert into zmap_column_attribute (column_id, tag. value values(123, "position", 6);
 </pre>
+</p>
+<h5>Column Ordering and Tabs</h5>
+<p>Columns are defined as appearing on different Tabs on the load columns dialog and are grouped with other similar columns.  Order is defined relative to each Tab: these are defined from several different data sources (eg otterlace, encode) and these tabs are optional depending on the desired configuration.  It is believed that each tab contains data of significanlty different types and there is no requirement to mix these.
+</p>
+<p>Groups of columns are nominally displayed together but it is possible to have a group of columns in the load columns dialog that are disjunct on the display.  Many columns are optional depending on species and these are defined for all species/ datasets which implies that the column ordering within each Tab will be stable.
 </p>
 
 
