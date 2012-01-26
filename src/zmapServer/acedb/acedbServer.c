@@ -567,7 +567,27 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  /* Use method not zmap_style class. */
 	  all_methods = feature_set_methods ;
 
+
+	  /* CHECK THIS....SHOULD WE ALWAYS DO THIS...??? */
+	  if (sources)
+	    all_methods = sources ;
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 	  g_list_foreach(feature_sets, createSet2StyleList, featureset_2_stylelist) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMap_g_list_quark_print(feature_sets, "features_sets", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
 
 
@@ -4543,8 +4563,11 @@ static void createSet2StyleList(gpointer data, gpointer user_data)
 {
   GQuark feature_set_id = GPOINTER_TO_INT(data) ;
   GHashTable *set_2_styles = (GHashTable *)user_data ;
+  GQuark unique_id ;
 
-  zMap_g_hashlist_insert(set_2_styles, feature_set_id, GINT_TO_POINTER(feature_set_id)) ;
+  unique_id = zMapFeatureSetCreateID(g_quark_to_string(feature_set_id)) ;
+
+  zMap_g_hashlist_insert(set_2_styles, unique_id, GINT_TO_POINTER(unique_id)) ;
 
   return ;
 }
