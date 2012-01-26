@@ -2281,6 +2281,10 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	    homol_type = ZMAPHOMOL_X_HOMOL ;
 	  else if (g_ascii_strncasecmp(homol_type_str, "Motif", 5) == 0)
 	    homol_type = ZMAPHOMOL_N_HOMOL ;
+	  else if (g_ascii_strncasecmp(homol_type_str, "Mass_spec_peptide", 5) == 0)
+	    homol_type = ZMAPHOMOL_X_HOMOL ;
+	  else if (g_ascii_strncasecmp(homol_type_str, "SAGE_tag", 5) == 0)
+	    homol_type = ZMAPHOMOL_N_HOMOL ;
 	}
       else
 	{

@@ -113,7 +113,8 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
       || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
       || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0
       || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
-      || g_ascii_strcasecmp(feature_type, "protein_match") == 0)
+      || g_ascii_strcasecmp(feature_type, "protein_match") == 0
+      || g_ascii_strcasecmp(feature_type, "SAGE_tag") == 0)
     {
       type = ZMAPSTYLE_MODE_ALIGNMENT ;
     }
@@ -150,7 +151,12 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	   || g_ascii_strcasecmp(feature_type, "SNP") == 0
 	   || g_ascii_strcasecmp(feature_type, "STS") == 0
 	   || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
-	   || g_ascii_strcasecmp(feature_type, "substitution") == 0)
+	   || g_ascii_strcasecmp(feature_type, "substitution") == 0
+           || g_ascii_strcasecmp(feature_type, "segmental_duplication") == 0
+           || g_ascii_strcasecmp(feature_type, "three_prime_UTR") == 0
+           || g_ascii_strcasecmp(feature_type, "TSS") == 0
+           || g_ascii_strcasecmp(feature_type, "transcription_end_site") == 0
+           || g_ascii_strcasecmp(feature_type, "binding_site") == 0)
     {
       type = ZMAPSTYLE_MODE_BASIC ;
     }
