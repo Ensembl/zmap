@@ -168,6 +168,7 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "collapse identical features into one", "collapse identical features into one",
             offsetof(zmapFeatureTypeStyleStruct, collapse), 0 },
 
+
     { STYLE_PROP_GFF_SOURCE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_SOURCE,
             "gff source", "GFF Source",
             offsetof(zmapFeatureTypeStyleStruct, gff_source) ,0 },
@@ -300,17 +301,29 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "perfect alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,
-            "colinear alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
+            "colinear alignment indicator colour", "Colours used to show two alignments have gapped contiguous coords.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,
-            "noncolinear alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
+            "noncolinear alignment indicator colour", "Colours used to show two alignments have overlapping coords.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR, STYLE_PARAM_TYPE_COLDISP, ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
             "paint colinear lines when unmarked", "paint colinear lines when unmarked ?",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unmarked_colinear), ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_GAP_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS,
+            "gap between spilt read", "Colours used to show gap between two parts of a split read.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_COMMON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS,
+            "common part of squashed split read", "Colours used to show part of a squashed split read that is common to all source features.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_MIXED_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS,
+            "mixed part of squashed split read that", "Colours used to show  part of a squashed split read that is not common to all source features.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_MASK_SETS, STYLE_PARAM_TYPE_QUARK_LIST_ID, ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,
             "mask featureset against others", "mask featureset against others",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_SQUASH, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH,
+            "squash overlapping split reads into one", "squash overlapping split reads into one",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.squash),ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
@@ -1204,12 +1217,15 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
       break;
 
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
+    case STYLE_PROP_ALIGNMENT_GAP_COLOURS:
       full_colour = &(style->mode_data.alignment.perfect) ;
       break;
     case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
-      full_colour = &(style->mode_data.alignment.colinear) ;
+    case STYLE_PROP_ALIGNMENT_COMMON_COLOURS:
+	    full_colour = &(style->mode_data.alignment.colinear) ;
       break;
     case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+    case STYLE_PROP_ALIGNMENT_MIXED_COLOURS:
       full_colour = &(style->mode_data.alignment.noncolinear) ;
       break;
 

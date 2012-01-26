@@ -184,7 +184,11 @@ typedef enum
     STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR,
+    STYLE_PROP_ALIGNMENT_GAP_COLOURS,
+    STYLE_PROP_ALIGNMENT_COMMON_COLOURS,
+    STYLE_PROP_ALIGNMENT_MIXED_COLOURS,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
+    STYLE_PROP_ALIGNMENT_SQUASH,
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
@@ -311,7 +315,12 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS     "alignment-gap-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS    "alignment-common-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS "alignment-mixed-colours"
+
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH                 	   "alignment-squash"
 
 
 /* Sequence properties. */
@@ -700,6 +709,13 @@ typedef struct
    unsigned int between_align_error ;
 
    /*! Colours for bars joining up intra/inter alignment gaps. */
+   /* mh17 I'm reusing these for short reads which are gapped alignments sometimes
+    * for when we use the squash option
+    * perfect is for the line in the middle (default is normal fill colour)
+    * colinear is for the common
+    * non colinear is for the grey edges
+    * they have different tags in the style def but referennce the same structs
+    */
    ZMapStyleFullColourStruct perfect ;
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
@@ -711,6 +727,8 @@ typedef struct
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
    gboolean always_gapped;				/* even when not bumped */
+   gboolean squash;					/* combine features that have the same gap */
+
 
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
@@ -813,6 +831,7 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   ZMapStyleGraphScale score_scale;       		// log or linear, for collapse option
   gboolean collapse;				/* for duplicated features */
+  /* see also alignment.squash: even better form of collapse for short reads */
 
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
@@ -1146,6 +1165,8 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 
 #define zMapStyleGetSummarise(style) (style->summarise)
 #define zMapStyleIsCollapse(style)   (style->collapse)
+#define zMapStyleIsSquash(style)   	 (style->mode_data.alignment.squash)
+
 
 
 char *zMapStyleCreateName(char *style_name) ;

@@ -235,11 +235,16 @@ AlignGap align_gap_alloc(void)
  * So it's a bit slack trusting an external program but ZMap has been doing that for a long time.
  * "roll on CIGAR strings" which prevent this kind of problem
  * NOTE that sorting a GArray might sort the data structures themselves, so schoolboy error kind of slow.
- * If they do need to be sorted then the place in in zmapGFF2Parser.c/loadGaps()
+ * If they do need to be sorted then the place is in zmapGFF2Parser.c/loadGaps()
  *
  * sorting is interesting here as the display optimisation would produce a comppletely wrong picture if it was not done
  *
  * we draw boxes etc at the target coordinates ie on the genomic sequence
+ *
+ * NOTE for short reads we have an option to squash those that have the same gap
+ * (they only have one gap ,except for a few pathological cases)
+ * in this case the first and last blocks are a diff colour, so we flasg this if the colour is visible and add another box not a line. Yuk
+ *
  */
 AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 {
@@ -251,10 +256,12 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 
 	ZMapAlignBlock ab;
 	int cy1,cy2,fy1;
+	int n = feature->feature.homol.align->len;
+	gboolean edge;
 
 	foo_canvas_w2c (foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
 
-	for(i = 0; i < feature->feature.homol.align->len;i++)
+	for(i = 0; i < n ;i++)
 	{
 		ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
 
@@ -266,6 +273,20 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 
 		if(last_box)
 		{
+			if(i == 1 && feature->flags.squashed_start)
+			{
+				last_box->edge = TRUE;
+				if(last_box->y2 - last_box->y1 > 2)
+					last_box = NULL;	/* force a new box if the colours are visible */
+			}
+			edge = FALSE;
+			if(i == (n-1) && feature->flags.squashed_end)
+			{
+				if(last_box->y2 - last_box->y1 > 2)
+					last_box = NULL;	/* force a new box if the colours are visible */
+				edge = TRUE;
+			}
+
 			if(last_box->y2 == cy1 && cy2 != cy1)
 			{
 				/* extend last box and add a line where last box ended */
@@ -303,12 +324,15 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 			ag->y1 = cy1;
 			ag->y2 = cy2;
 			ag->type = GAP_BOX;
+			ag->edge = edge;
+
 			if(last_ag)
 				last_ag->next = ag;
 			last_box = last_ag = ag;
 			if(!display_ag)
 				display_ag = ag;
 		}
+
 	}
 
 	return display_ag;
@@ -324,6 +348,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	ZMapFeatureTypeStyle homology = NULL,nc_splice = NULL;
 	gulong fill,outline;
 	int colours_set, fill_set, outline_set;
+	gulong edge;
+	gboolean edge_set;
 	double mid_x;
 	double x1,x2;
 
@@ -355,6 +381,13 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		{
 			fill = (fill << 8) | 0xff;	/* convert back to RGBA */
 			fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+		}
+
+		if(zMapStyleIsSquash(style))		/* diff colours for first and last box */
+		{
+			edge = 0x808080ff;
+			edge_set = TRUE;
+#warning get alignment colour for edge
 		}
 	}
 

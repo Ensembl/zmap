@@ -1063,7 +1063,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  *
  */
 #define PROCESS_BAM	0
-#define QUOTED_HASH_KILLS_ATTRIBUTES	1	/* set to 1 for previous code */
+#define QUOTED_HASH_KILLS_ATTRIBUTES	0	/* set to 1 for previous code */
 
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length)
 {
@@ -2252,7 +2252,7 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
  *
  * BAM data looks like this:
 	chr14-04    encode    read    20781639    20781714    .    -    .    Target "JOHNLENNON_0006:1:61:1280:6420#0 1 76 -";sequence "CAAGAACACCAGACTGTGCAATCATGGATGGTTCAAGGGTGCCTTCATGGTTAGCAATAGTGATGTTTCGTAGCCT";Gap="M76";Name="JOHNLENNON_0006:1:61:1280:6420#0"
- *
+ * but is being recoded as an align with Gap called Cigar
  *
  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,

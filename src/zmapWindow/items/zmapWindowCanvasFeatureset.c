@@ -1352,7 +1352,7 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
  * in which case we destroy the index to force a rebuild: slow but not run very often
  * original foo code actually deleted the features, we will just flag them away.
  * feature homol flags displayed means 'is in foo'
- * so we sould have to post process the featureset->features list
+ * so we could have to post process the featureset->features list
  * to delete then and then rebuild the index (skip list)
  * if the colour is not defined we should not have the show/hide menu item
  */

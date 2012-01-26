@@ -52,7 +52,7 @@ Featuresets from one filter cannot be assigned to different columns.
 </ul>
 
 <p>
-Running grep over otter_config relveals that the only columns implicated are predicted transcripts, Predicted Regulatory Features, repeats and the solexa 1dpf etc columns.  However ENCODE data comes in repetitions which are currently requested together and we may wish to control this more closely.
+Running grep over otter_config reveals that the only columns implicated are predicted transcripts, Predicted Regulatory Features, repeats and the solexa 1dpf etc columns.  However ENCODE data comes in repetitions which are currently requested together and we may wish to control this more closely.
 </p>
 
 <p>
@@ -70,9 +70,9 @@ http://dev.sanger.ac.uk/cgi-bin/otter/60/get_otter_config?client=otterlace
 <ul>
 <li> loaded status should change as data arrives
 <li> show/hide column via the mouse should update the dialog
-<li> setting the mark should change the state of request buttons
 </ul>
-NOTE: For load from mark it may be acceptable have the option always enabled and only action the request if the mark is set.
+For load from mark it may be acceptable have the option always enabled and only action the request if the mark is set.
+It will also be easier to always provide options to request data and only action them if data is not yet loaded.
 </p>
 <h4>ZMap should remember previous selections on restarting a session</h4>
 <p>Currently Otterlace maintains session state and can continue to start ZMap with the appropriate columns to load. ZMap should default to load the same columns on a session restart and this can be saves in a separate SQLite database (to ensure that static databases remain static).
@@ -82,10 +82,10 @@ NOTE: For load from mark it may be acceptable have the option always enabled and
 
 
 <h3>Operation WRT multiple windows and views</h3>
-<p>Existing code supports a separate Columns dialog for each window (NB a window is a single pane in a view, and a view is a ZMap X window).
-The dialog is created by clicking on the columns button in the toolbar, and is created for the current focussed window.  This is necessary to allow column display to be turned on/off for the selected pane.  Load columns operates on the feature context and when data completes loading it is displayed in all the windows in the view.
+<p>Existing code supports a separate Columns dialog for each window (NOTE: a window is a single pane in a ZMap X window. Normally a view corresponds to the whole X window but it is possible to have multiple views in a single X window).
+The dialog is created by clicking on the columns button in the toolbar, and is created for the current focussed window.  This is necessary to allow column display to be turned on/off for the selected pane.  Load columns operates on the feature context and when data completes loading it is displayed in all the windows in the relevant view (each view has its own feature context).
 </p>
-<p>To avoid creating extra work this will not be changed for the first implementation, as we expect users to only use one dialog at a time, and extra ones can be destroyed quite easily.
+<p>To avoid creating extra work this will not be changed for the first implementation, as we expect users to only use one dialog at a time, and extra ones can be creeted/ destroyed quite easily.
 </p>
 
 

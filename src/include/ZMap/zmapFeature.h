@@ -629,8 +629,11 @@ typedef struct ZMapFeatureStruct_
     unsigned int has_score : 1 ;
     unsigned int has_boundary : 1 ;
 
-    /* if we have collapsed features then the visible one will have non-zero population, so no need for another flag */
+    /* if we have collapsed/ squashed features then the visible one will have non-zero population, so no need for another flag */
     unsigned int collapsed: 1 ;
+    unsigned int squashed: 1 ;
+    unsigned int squashed_start : 1;	/* do the edges get frayed? */
+    unsigned int squashed_end : 1;
   } flags ;
 
 
