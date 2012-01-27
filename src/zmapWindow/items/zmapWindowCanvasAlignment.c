@@ -547,7 +547,9 @@ zMapLogWarning("set nc splice 5 %s -> %s",g_quark_to_string(feature->right->feat
 			}
 		}
 
+#if DEBUG_SPLICE
 zMapLogWarning("paint glyphs %s %p,%p",g_quark_to_string(feature->feature->unique_id),align->glyph5,align->glyph3);
+#endif
 			/* all features: add glyphs if present */
 		zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph5, drawable);
 		zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph3, drawable);

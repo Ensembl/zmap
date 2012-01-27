@@ -538,7 +538,7 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 		return;
 
 	y1 = glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1;
-zMapLogWarning("paint glyph %f,%f %d, %s",feature->y1,feature->y2, glyph->which,g_quark_to_string(glyph->sig));
+//zMapLogWarning("paint glyph %f,%f %d, %s",feature->y1,feature->y2, glyph->which,g_quark_to_string(glyph->sig));
 
 	zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y1, drawable);
 
