@@ -156,7 +156,8 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
            || g_ascii_strcasecmp(feature_type, "three_prime_UTR") == 0
            || g_ascii_strcasecmp(feature_type, "TSS") == 0
            || g_ascii_strcasecmp(feature_type, "transcription_end_site") == 0
-           || g_ascii_strcasecmp(feature_type, "binding_site") == 0)
+           || g_ascii_strcasecmp(feature_type, "binding_site") == 0
+           || g_ascii_strcasecmp(feature_type, "low_complexity_region") == 0)
     {
       type = ZMAPSTYLE_MODE_BASIC ;
     }
