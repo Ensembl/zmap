@@ -22,10 +22,10 @@ This can be addressed by using an open source SQL browser or by providing a shor
 <pre>
 zmap --conf_file=ZMap_my_stuff --conf_db=my_config.db
 </pre>
-or by a configuration option in the Zmap configuration file:
+or by a configuration option in the ZMap configuration file:
 <pre>
 [ZMap]
-database = my_config.db
+database = ZMap_otterlace.db; ZMap_encode.db
 </pre>
 Where files names are specified they are relative to the selected configuration unless they begin with '/'.
 </p>
@@ -284,10 +284,23 @@ WHERE f.featureset_id = fa.featureset_id
 </pre>
 </p>
 
+<h3>Database use</h3>
+<p>Separate databases will be defined for different major sets of data - Otterlace will prove a database for all its data and ZMap will use another database for ENCODE data. Further data sets may be added in future as needed.  ZMap will read in configuration data by submitting identical queries to each configured database in turn.
+</p>
+
+<h4>Otterlace</h4>
+<p>Typically ZMap is run in an Otterlace environment using data from a single species/ genomic sequence, but there is a need for multiple views containing data from more than one species (eg human/mouse, multiple mouse strains).  Servers are defined generically and ZMap plugs in sequence information such as species chromosome start and end.  Columns (filters) are defined as relevant to a particular species, but featuresets and servers are not.
+</p>
+<h4>ENCODE</h4>
+<p>This is all human data and columns should be defined as human specific, although this may not be necessary as we can simply not use the ENCODE configuration database when looking at other species' data.
+</p>
+
+
 <h3>End user configuration</h3>
 <p>Here we assume a user has no knowledge of SQL and we wish to ensure that reasonable configuration changes can be effected.</p>
 <h4>Re-ordering columns</h4>
-<p>This requires two seperate SQL queries and clearly needs a trivial script. Columns are ordered via a series of records and to move one it has to be deleted and inserted in the sequence, which involves updating many records.
+<p>This requires two seperate SQL queries and clearly needs a trivial script. Columns are ordered via a series of records and to move one it has to be deleted and inserted in the sequence, which involves updating many records.  However this can be done with a single SQL query.
+
 <h4>Adjusting a style</h4>
 <p>Styles have many attributes and these can be presented on a generic SQL browser style form.  Note that due to style modes some options will be meaningless and we need to prevent misuse.
 </p>
@@ -296,13 +309,101 @@ WHERE f.featureset_id = fa.featureset_id
 </p>
 <p>Clearly this requires extensive user documentation, and as much scripted help as we can provide.  This looks optimistic for a naive user.
 </p>
+<p>Initially we will provide scripts to generate this data in some agreed format and do not expect end user configuration.  We can provide alternatives on request quite easily.
 
 
 <h3>Driving the Load Columns dialog</h3>
-<p>One of the uses of database driven configuration is to facilitate implementation of a tidier Load Columns dialog. In this, columns that may be requested are grouped into Tabs (eg Code, RNAseq, etc) and within each tab they are grouped further (eg Transcripts,EST's etc).  This will be very easy to implement using two attributes connected to each column.
+<p>One of the uses of database driven configuration is to facilitate implementation of a tidier Load Columns dialog. In this, columns that may be requested are grouped into Tabs (eg Core, RNAseq, etc) and within each tab they are grouped further (eg Transcripts,EST's etc).  This will be very easy to implement using two attributes connected to each column.
 </p>
 <p>Another requirement is to handle columns that may not be requested directly or only be requested from the marked region, and this is a clear case for more attributes.
 </p>
+
+<h4>Large comples datasets present a problem</h4>
+<p>ENCODE contains a large amount of data and on the <a href="http://genome.crg.es/encode_RNA_dashboard/">dashboard</a> page there is a table that uses four or five dimensions to group the data.  Mapping this onto a ZMap dialog is not simple (we have chosen two levels of grouping and do not want to make this more complex; in particular we want to avoid implementing third party interfaces embedded in our appllication).
+The  attempted solutuion is to have Tabs for major ENCODE groupings (cell type) anf groups for another (rnaExtract) and to have all other variable lumped together.  This means we do not have a single Tab for ENCODE, and if we ever have another large dataset included at the same time will run out of space.  One solution would be to have tabs within tabs or to provide separate dialog for major groupings of data,
+</p>
+
+
+<h3>Development Roadmap</h3>
+<p>Originally it was intended to implement data to support the new load columns dialog only and fit this onto the existing ZMap with existing configuration from flat .ini files.   The requirement to provide access to all ENCODE data at the same time (via the new load columns dialog as requested) means that it makes more sense to implement featuresets and servers in the database at the same time.  This is due to the fact than an interim solution would require duplicated effort a) defining columns b) defining featuresets and servers and mapping these to columns, and having two teams working on different views of the same data would probably introduce errors.
+</p>
+<p>Therefore, we propose the following sequence of events:
+<ul>
+<li> Column configuration for otterlace and encode, generated by scripts that process existing configuratio and add this to a database
+<li> featureset and server configuration for encode.  (Existing server URLS can be generated without referring to otter_config).
+<li> provision of a global styles file which acts as a default. No servers currently provide styles - ACEDB does traditionally and if we wish to restore this we specify a null file.
+<li> completion of the load columns dialog code.
+<li> featureset and server configuration for Otterlace via scripts and database.  This requires the scripts to handle multiple featuresets per server.
+<li> styles configuration via database (very simple).
+</ul>
+NOTE that some of this may imply some internal re-organisation of data in ZMap.  It is essential to do the first four items to have a workable system.
+</p>
+
+
+<h3>Server configuration</h3>
+<p>The main problem to solve here is constructing long urls that contain script options for different sources and sequences.  Many servers are similar (eg otterlace gff sources, bam_get, bam_coverage) and share similar options: these common options will be defined in a server records that others refer to.  Attribute strings must allow server spcific data to be added: generically we need to add species (dataset) chromosome, start, end, cvser etc, and these cannot be defined as hard coded is we are to use a server for different species as would be required with ZMap running with two sequences loaded.
+</p>
+<p> There are three main categories of option:
+<ul>
+<li> script/ data specific which must be defined per data source (eg gff_source=ensembl_bodymap_adipose)
+<li> script generic: the same for all scripts of that type (eg client=otter&amp;cookie_jar=)
+<li> sequence specific (eg gff_seqname=chr4-04)
+</ul>
+but note that many of the otterlace scripts refer to a 'server script' such as get_gff_das_features and there is an opportunity here to define three layers of server (otterlace, das etc, featureset) and add sequence specific data at the base level.  ACEDB will be in a category of its own and not inherit any of the sequence information as URL arguments.
+</p>
+<p>
+Some standard tokens will be defined to cover what's needed. These will be defined as '$token' as $ appears not to be used in existing URL syntax.  Initially we will use only the tokens needed by encode servers, and as is currently implemented in ZMap we will adjust sequence specific options (start, end, dataset, gff_seqname) automatically.
+<pre>
+url=pipe:///bigwig_get?
+	-chr=chr4-04&
+	-chr_prefix=chr&
+	-csver=GRCh37&
+	-end=9721721&
+	-file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqAg04450CellPapPlusRawSigRep2.bigWig
+	&-gff_feature_source=Tier3_AG04450_cell_longPolyA_rep2_coverage_plus
+	&-gff_version=2
+	&-start=9324643
+	&-strand=1
+
+url=pipe:///bam_get?
+	--chr=chr4-04
+	&--chr_prefix=chr
+	&--csver=GRCh37
+	&--end=9721721
+	&--file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqHsmmCellPapAlnRep2.bam
+	&--gff_feature_source=Tier3_HSMM_cell_longPolyA_rep2
+	&--start=9324643
+	&-gff_version=2
+</pre>
+
+Note that 'normal' otterlace scripts have a different set of options:
+<pre>
+url=pipe:///filter_get?
+	analysis=HUVEC_WholeCell_Ap_Long_CSHL
+	&client=otterlace
+	&cookie_jar=%2Fnfs%2Fusers%2Fnfs_m%2Fmh17%2F.otter%2Fns_cookie_jar
+	&cs=chromosome
+	&csver=Otter
+	&dataset=human
+	&end=9721721
+	&gff_seqname=chr4-04
+	&gff_source=ensembl_cshl_huvec_3
+	&metakey=gencode_dev_cshl_huvec
+	&name=4
+	&server_script=get_gff_genes
+	&session_dir=%2Fvar%2Ftmp%2Flace_61.mh17.23729.1
+	&start=9324643
+	&transcript_analyses=IDR_0.1
+	&type=chr4-04
+	&url_root=http%3A%2F%2Fdev.sanger.ac.uk%3A80%2Fcgi-bin%2Fotter%2F61
+</pre>
+and to process these URLs reliably we have to be careful to preserve what's configured.  We also need to process 'chr' and 'gff_seqname' interchangably and update both if they are present, but not add chr if it's not there.  Specifically this means that encode URL's need to include -chr= and not -gff_seqname=. Otterlace URLs do not include chr but do include gff_seqname, and this is added if not present.
+</p>
+
+<p>
+Some of the otterlace options are session specific and need to be passed to ZMap somehow,
+</p>
+
 
 
 

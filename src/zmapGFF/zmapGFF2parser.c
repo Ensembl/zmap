@@ -1269,6 +1269,85 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 }
 
 
+#define BAM_ALIGNMENT_CIGAR 1
+
+#if BAM_ALIGNMENT_CIGAR
+/* temp bit of code to read in a gap string as provided for ENCODE data
+ * of the form M23 N12234 M53
+ *
+ * NOTE that the two M's add up to 76 but this is not always the case
+ * NOTE also that we tend to get one gap only but more are logically possible
+ * and we need to cope
+ * we only process M and N tags (or I or D instead of N if that's what anacode end up sending us)
+ *
+ * this is a deliberately dumb but simple function
+ * if we get unexpected stuff like N88 M76 or M12 N12 N23 M29 then we handle it silently
+ */
+
+static gboolean loadGapString(ZMapGFFParser parser,
+				char *attributes, GArray **gaps_out,
+				ZMapStrand ref_strand, int ref_start, int ref_end,
+				ZMapStrand match_strand)
+{
+	char *p = attributes;
+	ZMapAlignBlock ab;
+	int match_start = 1;
+
+	while(*p <= ' ') p++;
+	if(*p++ != '"')
+		return FALSE;
+
+	while (*p && *p != '"')
+	{
+		if(*p == 'M')
+		{
+			int match = atoi(++p);
+
+			/* add a block */
+			ab = g_new0(ZMapAlignBlockStruct,1);
+			/* Gap coords are positive, 1-based, start < end " So: q2 is off the end of the match */
+
+			ab->q1 = match_start;
+			ab->q2 = match_start + match;
+			ab->q_strand = match_strand;
+			ab->t1 = ref_start;
+			ab->t2 = ref_start + match;
+			ab->t_strand = ref_strand;
+
+			g_array_append_val(*gaps_out,ab);
+
+			/* skip to end of block */
+			ref_start += match;
+			match_start += match;
+		}
+		else if (*p == 'N')
+		{
+			int gap = atoi(++p);
+
+			/* skip to start of next block */
+			ref_start += gap;
+			match_start += gap;
+		}
+		else
+		{
+			return FALSE;
+		}
+
+		while(*p && *p <= ' ')
+			p++;
+		while(*p >= '0' && *p <= '9')
+			p++;
+		while(*p && *p <= ' ')
+			p++;
+	}
+
+	return TRUE;
+}
+
+
+ #endif
+
+
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
@@ -1674,6 +1753,20 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		}
 	      else if ((gaps_onwards = strstr(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " ")))
 		{
+#if BAM_ALIGNMENT_CIGAR
+#warning temporary code to get BAM alignments working, to be replaced by 'proper' cigar string handling
+		  if (!g_ascii_strcasecmp(ontology, "read"))
+		  {
+			  if(!loadGapString(parser,
+					 gaps_onwards, &gaps,
+				       strand, start, end,
+				       query_strand))
+			  {
+				zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+			  }
+		  }
+		  else
+#endif
 		  if (!loadAlignString(parser,
 				       gaps_onwards, &gaps,
 				       strand, start, end,
