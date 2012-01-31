@@ -1723,6 +1723,10 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (zMapStyleIsFrameSpecific(style))
 	select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
 
+	if(feature->population)
+		select.feature_desc.feature_population = g_strdup_printf("%d", feature->population) ;
+
+
       /* quality measures. */
       if (feature->flags.has_score)
 	select.feature_desc.feature_score = g_strdup_printf("%g", (double) feature->score) ;
@@ -2220,6 +2224,15 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
   zmapWindowInterruptExpose(window);
 
+	zMapLogTime(TIMER_ZOOM,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"zoom");
+	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"zoom");
+      zMapLogTime(TIMER_ZOOM,TIMER_START,0,"");
+
+
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
       adjust =
@@ -2300,6 +2313,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
 
   zMapWindowRedraw(window);
+
+  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
 
  uninterrupt:
   zmapWindowUninterruptExpose(window);

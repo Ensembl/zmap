@@ -777,9 +777,28 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
+  ZMapWindowCanvasItem last_item = (ZMapWindowCanvasItem) run_data->canvas_item;
 
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
+
+	if(feature->flags.collapsed)
+	{
+		/* collapsed item are not disaplayed as they contain no new information
+		 * but they cam be searched for in the FToI hash
+		 * so return the item that they got collapsed into
+		 * if selected from the search they get assigned to the canvas item
+		 * and the population copied in.
+		 */
+
+#warning this works only because short reads are sorted and displayed in order, we do not get new features OTF, other than complete blocks
+#warning window search does not find these features so this is not working
+
+		/* NOTE on revcomp last item can be freed in whcih case feature may be 0 */
+		if(last_item && last_item->feature && last_item->feature->population)	/* just don't display duplicates */
+			return((FooCanvasItem *)last_item);
+		return(NULL);
+	}
 
 //       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
       /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
@@ -803,6 +822,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
             GQuark fset_id = run_data->feature_stack->set->unique_id;
             char strand = '+';
             char frame = '0';
+		char *x;
 
             if(zMapStyleIsStrandSpecific(style) && feature->strand == ZMAPSTRAND_REVERSE)
             	strand = '-';
@@ -811,9 +831,16 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
 		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
 		if(run_data->feature_stack->maps_to)
+		{
+			/* a virtual featureset for combing several source into one display item */
 			fset_id = run_data->feature_stack->maps_to;
-
-            char *x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+			x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+		}
+		else
+		{
+			/* a display column for combing one or several sources into one display item */
+			x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
+		}
 
             run_data->feature_stack->id = g_quark_from_string(x);
             g_free(x);
@@ -855,6 +882,9 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;
+
+	if(feature->population)		/* keep displayed iten for use by collapsed ones in FtoI hash */
+		run_data->canvas_item = feature_item;
 
       return feature_item;
 }

@@ -780,6 +780,19 @@ gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, dou
 /* a pointless function created due to scope issues */
 gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature)
 {
+	int pop = 0;
+
+	/* collpased features have 0 population, the one that was displayed has the total
+	 * if we use window seacrh then select a collapsed feature we have to update this
+	 * see zmapViewfeatureCollapse.c etc; scan for 'population' and 'collasped'
+	 */
+
+	if(item->feature)
+		pop = item->feature->population;
+
+	if(feature->flags.collapsed)
+		feature->population = pop;
+
 	item->feature = feature;
 	return(TRUE);
 }

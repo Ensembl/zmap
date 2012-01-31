@@ -137,16 +137,65 @@ static ZMapLog log_G = NULL ;
 
 static gboolean enable_core_dumping_G = TRUE;
 
+void zmapfoo_print_time(char *x, char *y, char *z)
+{
+      zMapPrintTime(x,y,z);   /* is a macro */
+}
+
+
+void zMapLogTime(int what, int how, long data, char *string)
+{
+	static double times[N_TIMES];
+	static double when[N_TIMES];
+	double x,e;
+
+	/* these mirror the #defines in zmapUtilsDebug.h */
+	char *which[] = { "none", "foo-expose", "foo-update", "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 };
+
+	if(!zmap_timing_G)
+		return;
+
+	e = zMap_elapsed();
+
+	switch(how)
+	{
+	case TIMER_CLEAR:
+		times[what] = 0;
+		zMapLogMessage("Timed: %s %s (%ld) Clear",which[what],string,data);
+		break;
+	case TIMER_START:
+		when[what] = e;
+		zMapLogMessage("Timed: %s %s (l%d) Start  %.3f",which[what],string,data,e);
+		break;
+	case TIMER_STOP:
+		x = e - when[what];
+		times[what] += x;
+		zMapLogMessage("Timed: %s %s (%ld) Stop %.3f = %.3f",which[what],string,data,x,times[what]);
+		break;
+	case TIMER_ELAPSED:
+		zMapLogMessage("Timed: %s %s (%ld) Elasped %.3f",which[what],string,data,e);
+		break;
+	}
+}
+
+void zmap_foo_log_time(int what, int how)
+{
+	int stuff[] = { TIMER_EXPOSE, TIMER_UPDATE, TIMER_DRAW };
+		/* indexed by what */
+		/* foo canvas does not have our defines */
+	if(what >= 0 && what < 3)
+	{
+		what = stuff[what];
+		zMapLogTime(what,how,0,"");
+	}
+}
+
 /* This function is NOT thread safe, you should not call this from individual threads. The log
  * package expects you to call this outside of threads then you should be safe to use the log
  * routines inside threads.
  * Note that the package expects the caller to have called  g_thread_init() before calling this
  * function. */
 
-void zmapfoo_print_time(char *x, char *y, char *z)
-{
-      zMapPrintTime(x,y,z);   /* is a macro */
-}
 
 gboolean zMapLogCreate(char *logname)
 {
@@ -155,12 +204,25 @@ gboolean zMapLogCreate(char *logname)
 
   zMapAssert(!log) ;
 
-#if 0 // MH17_debug_foo_canvas_here
-extern void (*foo_log_stack)(void);
-extern void (*foo_timer)(char *, char *, char *);
+  zMapUtilsConfigDebug();
 
-foo_log_stack = zMapPrintStack;
-foo_timer = zmapfoo_print_time;;
+
+#if 0		// log timing stats from foo
+		// have to take this out to get xremote to compile for perl
+		// should be ok when we get the new xremote
+  if(zmap_timing_G)
+  {
+	extern void (*foo_timer)(int,int);
+
+	foo_timer = zmap_foo_log_time;
+  }
+
+  if(zmap_debug_G)
+  {
+	extern void (*foo_log_stack)(void);
+
+	foo_log_stack = zMapPrintStack;
+  }
 #endif
 
   log_G = log = createLog() ;

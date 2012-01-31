@@ -403,7 +403,7 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 
     for (columnList = setList = NULL ; l ; l = l->next)
       {
-	zMapPrintQuark(GPOINTER_TO_UINT(l->data)) ;
+//	zMapPrintQuark(GPOINTER_TO_UINT(l->data)) ;
 
 
 	if ((f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, l->data)))
@@ -413,7 +413,7 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  {
-	    zMapPrintQuark(f2c->column_ID) ;
+//	    zMapPrintQuark(f2c->column_ID) ;
 
 	    if(!g_list_find(columnList, GUINT_TO_POINTER(f2c->column_ID)))
 	      columnList = g_list_append(columnList, GUINT_TO_POINTER(f2c->column_ID));

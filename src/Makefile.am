@@ -276,6 +276,9 @@ build-version-file: forcemake
 all: config.h build-version-file
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
+# This doesn't work because the original "all" target also has to have a double colon...sigh
+#all:: build-version-file
+
 dist dist-all: build-version-file distdir
 	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__remove_distdir)

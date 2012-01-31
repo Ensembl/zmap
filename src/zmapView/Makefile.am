@@ -12,6 +12,7 @@ zmapView_P.h \
 zmapViewCallBlixem.c \
 zmapViewRemoteSend.c \
 zmapViewFeatureMask.c \
+zmapViewFeatureCollapse.c \
 $(NULL)
 
 libZMapView_la_CFLAGS = $(INCLUDE_COMMON)

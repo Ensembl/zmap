@@ -766,7 +766,10 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
 	*/
 
       column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
-      zMapAssert(column);
+
+//      zMapAssert(column);	// would crash in a mis-config
+	if(!column)
+		return list;
 
 	if(unique_id)
      	{

@@ -125,8 +125,10 @@ typedef enum
     STYLE_PROP_SCORE_MODE,
     STYLE_PROP_MIN_SCORE,
     STYLE_PROP_MAX_SCORE,
+    STYLE_PROP_SCORE_SCALE,
 
     STYLE_PROP_SUMMARISE,
+    STYLE_PROP_COLLAPSE,
 
     STYLE_PROP_GFF_SOURCE,
     STYLE_PROP_GFF_FEATURE,
@@ -173,6 +175,7 @@ typedef enum
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
+    STYLE_PROP_ALIGNMENT_ALWAYS_GAPPED,
     STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
     STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN,
     STYLE_PROP_ALIGNMENT_PFETCHABLE,
@@ -241,9 +244,11 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
 #define ZMAPSTYLE_PROPERTY_MIN_SCORE              "min-score"
 #define ZMAPSTYLE_PROPERTY_MAX_SCORE              "max-score"
+#define ZMAPSTYLE_PROPERTY_SCORE_SCALE            "score-scale"		/* reuses GRAPH_SCALE options */
 
 /* ... optimese the display */
 #define ZMAPSTYLE_PROPERTY_SUMMARISE              "summarise"
+#define ZMAPSTYLE_PROPERTY_COLLAPSE               "collapse"
 
 
 /* ... meta */
@@ -297,6 +302,7 @@ typedef enum
 /* alignment properties */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED       "alignment-always-gapped"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN          "alignment-join-align"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
@@ -490,7 +496,9 @@ _(ZMAPSCORE_INVALID,   , "invalid"  , "Use column width only - default. ", "") \
 _(ZMAPSCORE_WIDTH,     , "width"    , "Use column width only - default. ", "") \
 _(ZMAPSCORE_HEIGHT,    , "height"   , "scale height of glyph. ", "") \
 _(ZMAPSCORE_SIZE,      , "size"     , "scale size of glyph. ", "") \
-_(ZMAPSCORE_OFFSET,    , "offset"   , ""                                 , "") \
+_(ZMAPSCORE_HEAT,      , "heat"     , "heat colour according to score. ", "") \
+_(ZMAPSCORE_HEAT_WIDTH, , "heat-width", "heat colour and width according to score. ", "") \
+_(ZMAPSCORE_OFFSET,     , "offset"   , ""                                 , "") \
 _(ZMAPSCORE_HISTOGRAM, , "histogram", ""                                 , "") \
 _(ZMAPSCORE_PERCENT,   , "percent"  , ""                                 , "")\
 _(ZMAPSTYLE_SCORE_ALT, , "alt" , "alternate colour for glyph" , "")
@@ -702,6 +710,7 @@ typedef struct
    gboolean parse_gaps ;                            /* TRUE means parse gaps from input data,  */
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
+   gboolean always_gapped;				/* even when not bumped */
 
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
@@ -800,7 +809,11 @@ typedef struct _zmapFeatureTypeStyleStruct
                                                  have scores. */
   double min_score, max_score ;                           /*!< Min/max for score width calc. */
 
-   double summarise;         			 /* only display visible features up this zoom level */
+  double summarise;         			 /* only display visible features up this zoom level */
+
+  ZMapStyleGraphScale score_scale;       		// log or linear, for collapse option
+  gboolean collapse;				/* for duplicated features */
+
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -969,6 +982,7 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 //ZMapStyleScoreMode zMapStyleGetScoreMode(ZMapFeatureTypeStyle style);
 #define zMapStyleGetScoreMode(style)   (style->score_mode)
 //ZMapStyleBumpMode zMapStyleGetBumpMode(ZMapFeatureTypeStyle style) ;
+#define zMapStyleGetScoreScale(style)   (style->score_scale)
 
 
 #define zMapStyleGetInitialBumpMode(style) (style->initial_bump_mode)
@@ -1125,11 +1139,13 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleIsParseGaps(style) (style->mode_data.alignment.parse_gaps)
 //gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsShowGaps(style)   (style->mode_data.alignment.show_gaps)
+#define zMapStyleIsAlwaysGapped(style)   (style->mode_data.alignment.always_gapped)
 
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)
 
 #define zMapStyleGetSummarise(style) (style->summarise)
+#define zMapStyleIsCollapse(style)   (style->collapse)
 
 
 char *zMapStyleCreateName(char *style_name) ;

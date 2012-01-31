@@ -660,11 +660,8 @@ void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
 		/* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
 		 * colour flags has a window id set into it
 		 */
-long a,b,c;
-a = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK));
-b = ((gs->flags & ~FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID));
-c = (gs->flags & FEATURE_FOCUS_BLURRED);
 
+		/* these flags are very fiddly: handle with care */
 		gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
 			((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
 			(gs->flags & FEATURE_FOCUS_BLURRED);
@@ -1507,6 +1504,7 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
 
 /* sort by genomic coordinate for display purposes */
 /* start coord then end coord reversed, mainly for summarise fucntion */
+/* also used by collapse code */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {
 	ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
@@ -1535,6 +1533,49 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 		return(1);
 	return(0);
 }
+
+
+
+int get_heat_rgb(int a,int b,double score)
+{
+	int val = b - a;
+
+	val = a + (int) (val * score);
+	if(val < 0)
+		val = 0;
+	if(val > 0xff)
+		val = 0xff;
+	return(val);
+}
+
+/* find an RGBA pixel value between a and b */
+/* NOTE foo canvas and GDK have got in a tangle with pixel values and we go round in circle to do this
+ * but i acted dumb and followed the procedures (approx) used elsewhere
+ */
+gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score)
+{
+	int ar,ag,ab;
+	int br,bg,bb;
+	gulong colour;
+
+	a >>= 8;		/* discard alpha */
+	ab = a & 0xff; a >>= 8;
+	ag = a & 0xff; a >>= 8;
+	ar = a & 0xff; a >>= 8;
+
+	b >>= 8;
+	bb = b & 0xff; b >>= 8;
+	bg = b & 0xff; b >>= 8;
+	br = b & 0xff; b >>= 8;
+
+	colour = 0xff;
+	colour |= get_heat_rgb(ab,bb,score) << 8;
+	colour |= get_heat_rgb(ag,bg,score) << 16;
+	colour |= get_heat_rgb(ar,br,score) << 24;
+
+	return(colour);
+}
+
 
 
 
@@ -1585,9 +1626,6 @@ double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, dou
 {
 	double numerator, denominator, dx ;
 	double max_score, min_score ;
-
-	if(style->mode != ZMAPSTYLE_MODE_GRAPH)
-		return(1.0);
 
 	min_score = zMapStyleGetMinScore(style) ;
 	max_score = zMapStyleGetMaxScore(style) ;
@@ -1660,7 +1698,16 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 
   feat->width = featureset_item->width;
 
-  if(feature->flags.has_score)
+  if(feature->population)	/* collapsed duplicated features, takes precedence over score */
+  {
+	double score = (double) feature->population;
+
+	feat->score = zMapWindowCanvasFeatureGetNormalisedScore(style, score);
+
+	if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
+		feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, score);
+  }
+  else if(feature->flags.has_score)
   {
 	if(featureset_item->style->mode == ZMAPSTYLE_MODE_GRAPH)
 	{

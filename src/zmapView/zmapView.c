@@ -524,6 +524,8 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
    *
    */
 
+  zMapLogTime(TIMER_LOAD,TIMER_CLEAR,0,"View init");
+
   if ((context = zMapConfigIniContextProvide()))
     {
       if(config_str)
@@ -1254,6 +1256,13 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zmapViewBusy(zmap_view, TRUE) ;
 
+	zMapLogTime(TIMER_REVCOMP,TIMER_CLEAR,0,"Revcomp");
+	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"Revcomp");
+	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"Revcomp");
+	zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"Revcomp");
+	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"Revcomp");
+	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"Revcomp");
+
       if((list_item = g_list_first(zmap_view->window_list)))
 	{
 	  do
@@ -1262,27 +1271,25 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
 	      view_window = list_item->data ;
 
-            zMapStartTimer("RevComp","Window");
 	      zMapWindowFeatureReset(view_window->window, TRUE) ;
-            zMapStopTimer("RevComp","Window");
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
 	}
 
       zMapWindowNavigatorReset(zmap_view->navigator_window);
 
-      zMapStartTimer("RevComp","Context");
+	zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
-      zMapStopTimer("RevComp","Context");
+	zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
+
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
-      zMapStopTimer("RevComp","Navigator");
 
       if((list_item = g_list_first(zmap_view->window_list)))
 	{
@@ -1292,9 +1299,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
 	      view_window = list_item->data ;
 
-            zMapStartTimer("RevComp","Window");
 	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,TRUE) ;
-            zMapStopTimer("RevComp","Window");
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
 	}
@@ -1303,7 +1308,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
 
-      zMapStopTimer("RevComp","");
+	zMapLogTime(TIMER_REVCOMP,TIMER_ELAPSED,0,"");
       zmapViewBusy(zmap_view, FALSE);
 
       result = TRUE ;
@@ -4034,11 +4039,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   /* When coming from xremote we don't need to do this. */
   if (revcomp_if_needed && view->revcomped_features)
     {
-      zMapStartTimer("MergeRevComp","") ;
-
       zMapFeatureContextReverseComplement(new_features, view->context_map.styles);
-
-      zMapStopTimer("MergeRevComp","") ;
     }
 
 
@@ -4112,7 +4113,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  x = g_strconcat(x," ",y,NULL);
 	}
 //      zMapLogWarning(x,"");
-printf("%s\n",x);
+	printf("%s\n",x);
 
     }
 
@@ -4153,6 +4154,13 @@ printf("%s\n",x);
 	  zMapLogWarning(x,"");
 	  printf("%s\n",x);
 	}
+
+	/* collpase short reads if configured
+	 * NOTE this is simpler than EST masking as we simply don't display the collapsed features
+	 * if it is thought necessary to change this then follow the example of EST masking code
+	 * you will need to head into window code via just DrawContext()
+	 */
+	zMapViewCollapseFeatureSets(view,diff_context);
 
       // mask ESTs with mRNAs if configured
       l = zMapViewMaskFeatureSets(view, diff_context->src_feature_set_names);

@@ -143,7 +143,7 @@ BumpColRange bump_col_range_free_G = NULL;
 static void bump_col_range_free(BumpColRange bcr);
 
 GHashTable *sub_col_width_G = NULL;	 /* for complex overlap */
-
+GHashTable *sub_col_offset_G = NULL;
 
 #define N_BUMP_COL_RANGE_ALLOC	1000	/* we expect to bump 10-200k features, normally 1-20k */
 
@@ -289,6 +289,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		sub_col_width_G = g_hash_table_new(NULL,NULL);
 	else
 		g_hash_table_remove_all(sub_col_width_G);
+
+	if(!sub_col_offset_G)
+		sub_col_offset_G = g_hash_table_new(NULL,NULL);
+	else
+		g_hash_table_remove_all(sub_col_offset_G);
 
 	bump_data->offset = 0.0;
 	bump_data->incr = featureset->width + bump_data->spacing;
@@ -463,8 +468,10 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 			/* get whole column width  and set column offsets */
 		for(n = 0, featureset->bump_width = 0; (width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(n)))) ;n++)
 		{
-			g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
+			g_hash_table_insert(sub_col_offset_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
 			featureset->bump_width += width + bump_data->spacing;
+//zMapLogWarning("bump: offset of %d = %f (%f)",featureset->bump_width, width, bump_data->spacing);
+
 		}
 
 		for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
@@ -473,10 +480,16 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 
 			if(!(feature->flags & FEATURE_HIDDEN))
 			{
-				/* feature->bump offset is really column index till we set it here */
-				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( (int) feature->bump_col)));
+				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
+				feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col)));
 //printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
-				feature->bump_offset = width;
+				/* features are displayed relative to the centre of the column when unbumped
+				 * so we have to offset the feature as if that is the case
+				 */
+//zMapLogWarning("bump: feature of %d = %f",feature->bump_col,feature->bump_offset);
+
+				feature->bump_offset -= (featureset->width - width) / 2;
+
 			}
 		}
 
@@ -592,8 +605,9 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
 	/* totally yuk casting here but bear with me */
   width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(new_range->column)));
   if(width < bump_data->width)
-  	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int) bump_data->width));
+  	g_hash_table_replace(sub_col_width_G, GUINT_TO_POINTER(new_range->column), GUINT_TO_POINTER((int)  bump_data->width));
 
+//zMapLogWarning("bump: width of %d = %f (%f)",new_range->column,width, bump_data->width);
 //  printf("feature %s @ %p %f,%f col %d\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,new_range->column);
   return pos_list;
 }

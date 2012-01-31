@@ -354,7 +354,9 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_TIMING,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_TIMING_DESC,  ZMAPARG_NO_ARG },
 
-    /* Must be the last entry. */
+    { ZMAPARG_SHRINK,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SHRINK_DESC,  ZMAPARG_NO_ARG },
+
+/* Must be the last entry. */
     { G_OPTION_REMAINING, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING_ARRAY, NULL,
       ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
 
@@ -365,6 +367,7 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
   if (entries[0].arg_data == NULL)
     {
       extern gboolean zmap_timing_G;
+      extern gboolean zmap_shrink_G;
 
       entries[0].arg_data = &(arg_context->version);
       entries[1].arg_data = &(arg_context->serial);
@@ -372,7 +375,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       entries[3].arg_data = &(arg_context->end);
       entries[4].arg_data = &(arg_context->sleep);
       entries[5].arg_data = &(zmap_timing_G);
-      entries[6].arg_data = &(arg_context->sequence_arg);
+      entries[6].arg_data = &(zmap_shrink_G);
+      entries[7].arg_data = &(arg_context->sequence_arg);
     }
 
   return &entries[0] ;

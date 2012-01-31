@@ -12,46 +12,74 @@
 </p>
 
 <h3>Load and display columns: reformatting the dialog</h3>
-<p>It would seem natural to be able to request and show/hide columns from the same GTK pane although this will give a more cluttered display, however it is possible to handle several options from one widget: Otterlace shows status and allows requests via a single check box.
+<p>It would seem natural to be able to request and show/hide columns from the same GTK pane although this will give a more cluttered display.
 </p>
-<p>Here's a sample layout for the normal columns:
-<img src="Design/modules/load_columns.png"  class="img" alt="picture of column config dialog"><br />
-Note that the interface is significantly more complicated than the existing ZMap and Otterlace  and implies some further coding in ZMap beyond just implementing the dialog. An attempt has been made to present useful default single clicks to select any column.
+<p>Here's a sample layout for the normal columns.  (NOTE that this is just an example, we expect to have RNAseq tabs as well and many more columns; there will also be several buttons at the bottom to operate on all columns and to apply the requests).
+The combo boxes show status for each column and can be used to enter requests.
+<img src="Design_notes/modules/col_config.png" class="img" alt="a picture of the dialog box"><br />
 </p>
 
-<p>
-Loaded status can be one of:
-<ul>
-<li> White - available but not requested
-<li> Yellow - requested
-<li> Orange - requested from mark
-<li> Green - loaded fully
-<li> Blue - loaded from mark
-<li> Red - loading failed
-<li> Pink - loading partially failed (eg one featureset of several in a column)
-<li> Black - loaded but no data
-</ul>
-There will be some combination of the above that are possible but not included (eg req from mark partially failed) and these will be mapped onto the colours defined.  Possibly there are already too many colours??
-</p>
-<p>
-Display status can be:
-<ul>
-<li> Green	- visible
-<li> Cyan - auto (visible depending on zoom)
-<li> Blue - hidden
-</ul>
-To change the display or loaded status of a column the user will click on the corresponding indicator. For display if a column is visible (shown or visible at this zoom) then the first click will select hidden and subsequent clicks will cycle round auto and show, and the converse for not visible.
-For loaded the first click will be load all unless the mark is set in which case it will be load from mark and subsequent clicks will cycle round request all (if allowed) and 'don't request'.
-</p>
-<p>Buttons are provided to operate on all columns in the group.  Note that 'request failed' will have to know about the previous request ie if it was from the mark or not.  Options can be selected for several groups and actioned with the Apply button.  Revert will set the current group back to its current status (cancel any requests in the group) and Revert All will reset all groups.
+
+<p>Buttons will are provided to operate on all columns in the group.  Note that 'request failed' will have to know about the previous request ie if it was from the mark or not.  Options can be selected for several groups and actioned with the Apply button.  Revert will set the current group back to its current status (cancel any requests in the group) and Revert All will reset all groups.
 </p>
 <h3>Special Columns</h3>
 <p>3FT is not a loadable column and will not appear but instead will be controlled by the 3-Frame menu button.
 </p>
 <p>DNA will be handled as a normal column; it is possible request this (and is normally done on startup).
 </p>
-<p>Show Translation in Zmap is controlled via the column's right click menu.</p>
+<p>Show Translation in ZMap is controlled via the column's right click menu.</p>
 <p>It is probably possible to configure these columns into a suitable column group and show them with the loaded status widget disabled, probably triggering this by not finding a server config for the featureset in the column.
+</p>
+
+<h3>Some notes about 'columns'</h3>
+<p>
+Historically ZMap has provided a 'Columns' dialog which has been used to request data and also control the display.  Requesting a column related to ACEDB which assigns one or more featuresets to a column - the ZMap user cannot request a simgle featuetset in a column that contains more than one.  Otterlace by contrast provides a 'load columns' dialog that deals with 'filters' which can contain one or more featuresets and these do not correspond directly to display columns.  Some examples illustrate the combinations in use:
+<ul>
+<li> ZMap can request a column called 'Predicted Transcripts' which contains the featuresets Augustus and Genscan.  Otterlace allows the users to request the featuresets but not the column.
+<li> The column 'Repeats' contains 3 featruesets that can be requested from Otterlace as RepeatMasker plus one more that can be requested from Otterlace as TRF.
+</ul>
+Featuresets from one filter cannot be assigned to different columns.
+</p>
+<p>An Otterlace filter can be described as corresponding to an analysis of some kind.
+</p>
+<p>To replace the existing ZMap and Otterlace load column dialogs with one new one we need to provide requests using otterlace filters and control display by column.  The otterlace configuration lists filters which somehow result in the required featuresets being requested.  Each filter defined defaults to providing a single featureset of the same name which should be displayed in a column of the same name, but this can be set differently if necessary.  There may be a requirement to hide/show individual featuresets within a column eg solexa introns can be split into 1dpf, 2dpf etc.
+</p>
+
+<p>
+Running grep over otter_config relveals that the only columns implicated are predicted transcripts, Predicted Regulatory Features, repeats and the solexa 1dpf etc columns.  However ENCODE data comes in repeats whcih are currently reqeusted together and we may wish to control this mory closely.
+</p>
+
+<p>
+Request these two pages in firefox to see the current otterlace config.
+<pre>
+https://enigma.sanger.ac.uk/sso/login
+http://dev.sanger.ac.uk/cgi-bin/otter/60/get_otter_config?client=otterlace
+</pre>
+</p>
+
+
+<h3>Implementation</h3>
+<h4>The dialog should respond to ZMap state</h4>
+<p>Displayed and loaded column status should change to reflect ZMap's state:
+<ul>
+<li> loaded status should change as data arrives
+<li> show/hide column via the mouse should update the dialog
+<li> setting the mark should change the state of request buttons
+</ul>
+NOTE: For load from mark it may be acceptable have the option always enabled and only action the request if the mark is set.
+</p>
+<h4>ZMap should remember previous selections on restarting a session</h4>
+<p>Currently Otterlace maintains session state and can continue to start ZMap with the appropriate columns to load. ZMap should default to load the same columns on a session restart and this can be saves in a separate SQLite database (to ensure that static databases remain static).
+</p>
+<h4>Default selection and column groups</h4>
+<p>Column groups (eg EST) conatin a number of columns some of which are considered 'core' depending on the sequence viewed.  It is necessary to privode a 'Default' button to select all the 'core' columns.
+
+
+<h3>Operation WRT multiple windows and views</h3>
+<p>Existing code supports a separate Columns dialog for each window (NB a window is a single pane in a view, and a view is a ZMap X window).
+The dialog is created by clicking on the columns button in the toolbar, and is created for the current focussed window.  This is necessary to allow column display to be turned on/off for the selected pane.  Load columns operates on the feature context and when data completes loading it is displayed in all the windows in the view.
+</p>
+<p>To avoid creating extra work this will not be changed for the first implementation, as we expect users to only use one dialog at a time, and extra ones can be destroyed quite easily.
 </p>
 
 
@@ -113,7 +141,7 @@ On requesting a column to be loaded ZMap will initiate requests for all the feat
 <h3>A sample layout</h3>
 <p>
 Here's the existing layout:<br />
-<img src="Design_notes/modules/col_config.png" class="img" alt="a picture of the dialog box"><br />
+
 
 Here's a sample layout in text, to be replaced with a real picture when implemented.
 <pre>

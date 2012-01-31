@@ -628,6 +628,9 @@ typedef struct ZMapFeatureStruct_
   {
     unsigned int has_score : 1 ;
     unsigned int has_boundary : 1 ;
+
+    /* if we have collapsed features then the visible one will have non-zero population, so no need for another flag */
+    unsigned int collapsed: 1 ;
   } flags ;
 
 
@@ -666,6 +669,8 @@ typedef struct ZMapFeatureStruct_
    * e.g. TRANSCRIPTS WILL NEED SCORE BECAUSE THEY MAY BE PRODUCED BY PREDICTION PROGRAMS...
    *  */
   float score ;
+
+  int population;		/* the number of features collapsed, is diff from feature score */
 
   /* Source name and text, gives information about all features of a particular type. */
   GQuark source_id ;
@@ -732,6 +737,9 @@ typedef struct
   char *sub_feature_term;     /* Avoid monkeying all over the shop. */
 
   /* more specific details (more strings) */
+
+  char *feature_population;
+
   char *feature_score ;
   char *feature_percent_id ;
 

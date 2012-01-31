@@ -65,47 +65,6 @@ gboolean zMapWindowGraphDensityItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFea
 void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose);
 
 
-int get_heat_rgb(int a,int b,double score)
-{
-	int val = b - a;
-
-	val = a + (int) (val * score);
-	if(val < 0)
-		val = 0;
-	if(val > 0xff)
-		val = 0xff;
-	return(val);
-}
-
-/* find an RGB pixel value between a and b */
-/* NOTE foo canvas and GDK have got in a tangle with pixel values and we go round in circle to do this
- * but i acted dumb and followed the procedures (approx) used elsewhere
- */
-gulong get_heat_colour(gulong a, gulong b, double score)
-{
-	int ar,ag,ab;
-	int br,bg,bb;
-	gulong colour;
-
-	a >>= 8;		/* discard alpha */
-	ab = a & 0xff; a >>= 8;
-	ag = a & 0xff; a >>= 8;
-	ar = a & 0xff; a >>= 8;
-
-	b >>= 8;
-	bb = b & 0xff; b >>= 8;
-	bg = b & 0xff; b >>= 8;
-	br = b & 0xff; b >>= 8;
-
-	colour = 0xff;
-	colour |= get_heat_rgb(ab,bb,score) << 8;
-	colour |= get_heat_rgb(ag,bg,score) << 16;
-	colour |= get_heat_rgb(ar,br,score) << 24;
-
-	return(colour);
-}
-
-
 
 /*
  * if we draw wiggle plots then instead of one GDK call per segment we cahce points and draw a big long poly-line
@@ -239,7 +198,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 		outline_set = FALSE;
 		fill_set = TRUE;
 		fill = foo_canvas_get_color_pixel(item->canvas,
-			get_heat_colour(featureset->fill_colour,featureset->outline_colour,feature->score));
+			zMapWindowCanvasFeatureGetHeatColour(featureset->fill_colour,featureset->outline_colour,feature->score));
 		break;
 
 

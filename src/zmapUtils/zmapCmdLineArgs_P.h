@@ -44,6 +44,7 @@
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
 #define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
 #define ZMAPARG_TIMING_DESC         "switch on timing functions"
+#define ZMAPARG_SHRINK_DESC         "allow shrinkable ZMap window"
 
 #define ZMAPARG_NO_ARG         "<none>"
 #define ZMAPARG_COORD_ARG      "coord"

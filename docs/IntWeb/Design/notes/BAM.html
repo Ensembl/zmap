@@ -153,7 +153,7 @@ We expect coverage data to be displayed by default and the users to request sub-
 <p>
 Each BAM pipe server will support the relevant ZMap featureset, and coverage data will link to real data via another stanza in the ZMap configuration:
 <pre>
-[Coverage]
+[featureset-related]
 14dpf_coverage=14dpf		# (coverage = real data)
 </pre>
 and right clicking on a coverage column will display an option to display the real data column. (This will replace the inclusion of all BAM data sets in the RC menu as at present). Whether or not this causes the columns to switch or display together is not relevant here.  Existing ZMap configuration (eg [featureset-description]) will be used to specify display names and helpful information as at present.
@@ -182,3 +182,56 @@ and right clicking on a coverage column will display an option to display the re
 </p>
 
 </fieldset>
+
+<h2>Compressing the display of Short Reads data</h2>
+<p>Many features are duplicated and when bumped take up a lot of space on the screen, and we can compress this by collapsing identical features into a single display item with a score, which can be dislayed by width or heat colour.
+</p>
+
+<p>The features are explicitly named and displaying a composite feature will loose some of this information, however this is not thought to be a problem.  If we store all the source features in the feature context and have these sorted by start coordinate then it will be relatively simple to provide a list of these if necessary.
+</p>
+
+<p>Compressiing features on display presents some problems:
+<ul>
+<li> if we are to add multiple featuresets to a column then we have to decide whether to collapse feature from multiple featureset (eg experimental repetions). Arguably it is important to keep these separate, and fortuitously this allows the easiest way to implement this effeiciently: sort the source featuresets and collapse the features as they are added to the canvas.
+<li> displaying a composite feature requires us to either add explicit composite features in the feature context or to add flags ect to existing ones.  By analogy with EST masking we can hide duplicates and flag the first or last such feature as displayable.  Re-using this mechanism also allows us the option of displaying individual features OTF as for ESTs
+</ul>
+</p>
+<h3>Implementation: choices</h3>
+<h4>Configuration</h4>
+<p>A style option will be added to switch on compression, and this will apply to any type of feature: ideally we should be dealing with alignments only, but simple features are implicated as BAM data is currently presented like this.
+<pre>
+[short-read]
+collapse = true
+score-mode=width # or heat
+score-scale=log	# (default is linear)
+</pre>
+We provide an option for log scale scoring to cope with sparse and highly populated regions.  Previous types of style do not precess the scores and where log scales are required these have hostirically been pre-computed,  However we need to keep the scores as integer numbers (a count of the number of features) and display then logarithmically.  The score-scale must default to linear to prevent contamination of existing scored features.
+</p>
+<p> min and max score apply as normal, but not that this may apply to the actual score not the log scale.
+</p>
+<p><b>NOTE</b> if we collapse alignments then these may have a score and score mode set. If both collase and score mode is set then collapse will take priority.  If collapsed alignments have differtn scores then we will loose this information from the display - if it is necessary to observe different scores then it is not valid to collapse features.
+</p>
+
+<h4>Flagging features for display</h4>
+<p>When a featureset is merged into the feature context we will process this as follows:
+<ul>
+<li> sort into start coordinate and end coordinat reversed order
+<li> do a linear scan and for each novel feature count up the number of identical ones following.
+<li> flags each subsequent identical feature as collapsed
+<li> collapsed features are not added to the canvas
+<li> in future, if it is decided that we need to display collapsed features (eg via a menu selection or bump option) then these will be added to the canvas but intially hidden
+<li> in future we may show all the collapsed features names in the feature details dialog.
+<li> different repetitions will be displayed (not collapsed)
+</ul>
+</p>
+
+<h4>A Gotcha: the FtoI Hash</h4>
+<p>As the original; features appear in the feature context they can be searched for and despite not being in the canvas they need to map to a canvas item.  One way to resolve this is to have all the source features in the FToI hash mappng to the same canvas item (the CanvasFeatureset.  This is a many to one mapping, but the reverse is one to one.  Alternatively we can just frop the feature from the FToI hash.
+</p>
+
+<h4>Handling simple features and alignments</h4>
+<p>If the style used specifies an alignment then we need to run some different code and require each part of the alignment to match.
+NOTE however as we are dealing with short reads we can assume that each alignment is one simple gapped block and that each one appears as a simgle feature.  We do not need to match several 'exons' as for EST masking.
+</p>
+
+<h4>

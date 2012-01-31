@@ -3,11 +3,11 @@
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can refeaturesetstribute it and/or
- * mofeaturesetfy it under the terms of the GNU General Public License
+ * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is featuresetstributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -61,6 +61,18 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
+
+	if(fill_set && feature->feature->population)
+	{
+		FooCanvasItem *foo = (FooCanvasItem *) featureset;
+		ZMapFeatureTypeStyle style = feature->feature->style;
+
+		if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
+		{
+			fill = (fill << 8) | 0xff;	/* convert back to RGBA */
+			fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+		}
+	}
 
 	x1 = featureset->width / 2 - feature->width / 2;
 	feature->feature_offset = x1;
