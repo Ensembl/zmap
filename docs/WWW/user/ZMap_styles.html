@@ -1,0 +1,902 @@
+<!--#set var="banner" value="ZMap Feature Sets and Styles"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- Start of page. -->
+<!-- CVS info:  $Id: styles.shtml,v 1.1 2011-01-10 13:34:29 edgrif Exp $ -->
+<h2>ZMap Feature Sets and Styles</h2>
+
+
+<h3>Preface</h3>
+
+<p>This page documents style configuration as used by ZMap, nominally related to features supplied by a piper server script. A single styles file is noramlly passed to each pipe server and defines styles for all types of feature but this is not a requirement - different files could be passed (for example) to each one of a set of related servers.  Historically ZMap used styles defined by the ACEDB server and these were held within the ACE database, but current use (2011. 2012) is for the features supplied by ACEDB to be displayed using pipe server styles.  Other types of server (eg DAS) are envisaged which also provide their own styles.  For a discussion of ACEDB styles used refer to <a href="styles.shtml">this page</a>
+</p>
+
+
+<h3>Feature Sets</h3>
+
+<p>These are the fundamental groups of features that ZMap displays. Each feature
+set has a unique name which can be used to query, find and retrieve the features within that set.
+</p>
+
+<p>Feature sets are displayed in columns in the ZMap window and one or more of these may appear in a single column.  Each featureset consistsi fo a collection fo similar features that are all displyed using the same style.  A single style may be used by more than one featureset.
+</p>
+
+<p>By default a featureset will be displayed in a column of the same name but can be mapped elsewhere using the [columns] stanza:
+<pre>
+[columns]
+repeats = Repeatmasker_LINE; Repeatmasker_SINE; trf
+</pre>
+This would put the three named featuresets into a single column call 'Repeats'.
+</p>
+
+<p>By default a featureset will be displayed using a style of the same name but the can be changed using the [featureset_style] stanza:
+<pre>
+[featureset_style]
+DiTag = gapped_align_style
+</pre>
+
+
+
+<h3>Styles</h3>
+
+These control the appearance and processing of features within ZMap.
+They control aspects such as colour, width, style of feature display but also how
+those features are processed during user interaction, e.g. by clicking on them to
+display details or perhaps dumping them to files. These properties are specified
+in keyword value format in configuration files. The following example defines
+a Style called "Allele" with a column width of 8 and coloured red with a black border:</p>
+
+<pre class="example">
+
+[Allele]
+mode = basic
+width = 8
+colours = normal fill red ; normal border black
+
+</pre>
+
+<p>The following sections describe the data types used in specifying the properties and
+the properties themselves.
+
+
+<h3>Data Types used in Style Properties</h3>
+
+<table class="zebra" id="data_types" border="2" cellpadding="10" valign="top">
+  <caption align=top>Special Value Types</caption>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Value range</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>boolean</td>
+      <td>true | false</td>
+      <td>be sure to use lower case ! </td>
+    </tr>
+    <tr>
+      <td>int</td>
+      <td nowrap>min_int <= value <= max_int</td>
+      <td>Min and Max values for int are system dependent and usually
+      much more than required by ZMap.</td>
+    </tr>
+    <tr>
+      <td>double</td>
+      <td nowrap>min_double <= value <= max_double</td>
+      <td>Min and Max values for double are system dependent and usually
+      much more than required by ZMap.</td>
+    </tr>
+    <tr>
+      <td>one-of</td>
+      <td>&lt; value | value | value &gt;</td>
+      <td>Several properties can take only one of several values, these are explained
+	  in the property table that follows.
+    </tr>
+    <tr>
+      <td>list</td>
+      <td>&lt; value ; value ; value &gt;</td>
+      <td>A property can be assing one or more values, expressed as strings.
+    </tr>
+    <tr>
+      <td>colour_type</td>
+      <td>"Type Target Colour" triplet(s)</td>
+      <td>The triplet specifies colours for "normal" or "selected" feature display with "fill", "draw"
+	  and "border" colours:
+	  <ul>
+	    <li>Type = &lt; normal | selected &gt;
+	    <li>Target = &lt; fill | draw | border &gt;
+	    <li>Colour = a colour from the X11 rgb.txt list or in hex format:
+		'#rgb', '#rrggbb', '#rrrgggbbb' or '#rrrrggggbbbb'.
+	  </ul>
+	  e.g. "normal fill light blue".</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<h3>Style Properties</h3>
+
+<p>The following table gives a definitive list of Styles properties:
+</p>
+
+<table class="zebra" id="properties" border="2" cellpadding="10">
+  <caption align=top>Styles Properties</caption>
+  <thead>
+    <tr>
+      <th width="25%">Keyword</th>
+      <th width="25%">Value Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>parent</td>
+      <td>string</td>
+      <td>Name of a style from which to inherit properties.</td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>string</td>
+      <td>Text describing the style perhaps with comments about inheritance etc.</td>
+    </tr>
+    <tr>
+      <td>mode</td>
+      <td>&lt; basic | alignment | transcript | raw-sequence | pep-sequence | text | graph | glyph
+	  | assembly-path &gt; </td>
+      <td>Identifies how a feature should be displayed and processed, e.g. a transcript will be displayed
+	  using the accepted block/angle line style.</td>
+    </tr>
+    <tr>
+      <td>colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for normal display.</td>
+    </tr>
+    <tr>
+      <td>frame0-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame zero in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>frame1-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame one in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>frame2-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame two in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>rev-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for display on reverse strand.</td>
+    </tr>
+    <tr>
+      <td>display-mode</td>
+      <td>&lt; hide | show_hide | show &gt;</td>
+      <td>Controls when features are displayed:
+	  <ul>
+	    <li><b>hide:</b> never show the features.
+	    <li><b>show_hide:</b> show/hide according to zoom, min/max mag.
+	    <li><b>show:</b> always show features.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>bump-mode</td>
+      <td>&lt; unbump | overlap | alternating | all | style &gt;</td>
+      <td>Controls how features are arranged within their column:
+	  <ul>
+	    <li><b>unbump:</b> No bumping (default)
+	    <li><b>overlap:</b> Bump any features overlapping each other.
+	    <li><b>alternating:</b> Alternate features between two sub_columns, e.g. to display assemblies.
+	    <li><b>all:</b> A sub-column for every feature.
+	    <li><b>style:</b> use a different style when bumped
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>default-bump-mode</td>
+      <td>(as for bump-mode)</td>
+      <td>(as for bump-mode)</td>
+    </tr>
+    <tr>
+      <td>bump-style</td>
+      <td>string</td>
+      <td>Specifies whcih style to use with the style bump-mode.</td>
+    </tr>
+    <tr>
+      <td>bump-spacing</td>
+      <td>double</td>
+      <td>Specifies space to leave between sub-columns of features.</td>
+    </tr>
+    <tr>
+      <td>frame-mode</td>
+      <td>&lt; never | always | only-3 | only-1 &gt;</td>
+      <td>Controls how a column is processed for 3 Frame display:
+	  <ul>
+	    <li><b>never:</b> column is not 3 frame sensitive, display as normal.
+	    <li><b>always:</b> in 3 frame mode, display column features in their 3 columns, as single column
+		otherwise.
+	    <li><b>only-3:</b> display as 3 frame columns only in 3 frame mode.
+	    <li><b>only-1:</b> display as single column only in 3 frame mode.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>min-mag</td>
+      <td>double</td>
+      <td>Do not display features when zoom is below this magnification.</td>
+    </tr>
+    <tr>
+      <td>max-mag</td>
+      <td>double</td>
+      <td>Do not display features when zoom is above this magnification.</td>
+    </tr>
+    <tr>
+      <td>width</td>
+      <td>double</td>
+      <td>Gives a default width to the feature, some features will have different
+	  widths, e.g. if they are scaled by score.</td>
+    </tr>
+    <tr>
+      <td>score-mode</td>
+      <td>&lt; width | height | size | alt | offset | histogram | percent | heat | heat-width  &gt;</td>
+      <td>For features with scores, controls how they are displayed:
+	  <ul>
+	    <li><b>width:</b> features displayed as blocks or glyphs, higher the score, wider the block.
+          <li><b>height:</b> features displayed as glyphs, higher the score, taller the block.
+          <li><b>size:</b> features displayed as glyphs, higher the score, height and width combined.
+	    <li><b>offset:</b> features displayed as blocks, higher the score, bigger the offset.
+	    <li><b>histogram:</b> features displayed as a graph/histogram.
+	    <li><b>percent:</b> features displayed as graph within certain percentage range.
+	    <li><b>heat:</b> features displayed as blocks: higher the score , more saturated the colour
+	    <li><b>heat-width:</b> heat combined with width
+          <li><b>alt:</b> features displayed as glyphs - diferent colour depending on glyph-threshold
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>score-scale</td>
+      <td>&lt; log | linear&gt;</td>
+      <td>allows the score to be expressed on a log scale. (NOTE: a feature's score may be expressed on a log scale from source).</td>
+    </tr>
+    <tr>
+      <td>min-score</td>
+      <td>double</td>
+      <td>limits a features score to a desired range.</td>
+    </tr>
+    <tr>
+      <td>max-score</td>
+      <td>double</td>
+      <td>limits a features score to a desired range.</td>
+    </tr>
+    <tr>
+      <td>summarise</td>
+      <td>double</td>
+      <td>switches on summarise mode display when there are more than this many features in a column (Default is 1000 - set to 0 to turn off completely).</td>
+    </tr>
+    <tr>
+      <td>collapse</td>
+      <td>boolean</td>
+      <td>switches on collapse mode display, whcih combines identical features and sets a score depending on how many.  Use with min-score, max-scoree, score_scale, score-mode.</td>
+    </tr>
+
+    <tr>
+      <td>gff-source</td>
+      <td>string</td>
+      <td>Alternative GFF "source" name to output in GFF dump, default is style name.</td>
+    </tr>
+    <tr>
+      <td>gff-feature</td>
+      <td>string</td>
+      <td>Alternative GFF "feature" type to output in GFF dump, default is taken from features type.</td>
+    </tr>
+    <tr>
+      <td>displayable</td>
+      <td>boolean</td>
+      <td>if false, never display column.</td>
+    </tr>
+    <tr>
+      <td>show-when-empty</td>
+      <td>boolean</td>
+      <td>If true, show column even if it has no features.</td>
+    </tr>
+    <tr>
+      <td>show-text</td>
+      <td>boolean</td>
+      <td>If true, display any remarks/text relating to the feature.</td>
+    </tr>
+    <tr>
+      <td>sub-features</td>
+      <td>string</td>
+      <td>This is a list of included sub-features and styles associcated with them. The styles are normally glyph mode styles (which must be defined in the styles file). Recognised sub-features are:
+      <ul>
+      <li><b>homology</b>
+      <li><b>non-concensus-splice</b>
+      </ul>
+      The sub-feature and style should be seperated by a ':' and multiple sub-features separated by a ';'.
+      </td>
+    </tr>
+    <tr>
+      <td>strand-specific</td>
+      <td>boolean</td>
+      <td>If true, feature is strand specific meaning that in normal display only forward strand
+	  features get displayed (see show-reverse-strand for reverse strand features).</td>
+    </tr>
+    <tr>
+      <td>show-reverse-strand</td>
+      <td>boolean</td>
+      <td>If true, for strand specific features, features on reverse strand are displayed in the reverse strand
+	  area.</td>
+    </tr>
+    <tr>
+      <td>hide-forward-strand</td>
+      <td>boolean</td>
+      <td>If true, for strand specific features, features on forward strand are not displayed when the view is reverse complemented. (main use is for GF-splice features).
+      </td>
+    </tr>
+    <tr>
+      <td>show-only-in-separator</td>
+      <td>boolean</td>
+      <td>If true, features are displayed in the strand separator bar.</td>
+    </tr>
+    <tr>
+      <td>directional-ends</td>
+      <td>boolean</td>
+      <td>If true, features which are directional (transcripts, matches etc)
+	  are drawn with arrow ends to show direction.</td>
+    </tr>
+    <tr>
+      <td>graph-mode</td>
+      <td>&lt; line | heatmap | histogram &gt;</td>
+      <td>Controls drawing style for a graph column:
+	  <ul>
+	    <li><b>line:</b> a line graph.
+	    <li><b>heatmap:</b> a heatmap - score varies between fill and outline colours
+	    <li><b>histogram:</b> a histogram.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>graph-baseline</td>
+      <td>double</td>
+      <td>Set's a baseline for drawing, graphs are drawn up and downwards from this value.</td>
+    </tr>
+
+    <tr>
+      <td>graph-density</td>
+      <td>boolean</td>
+      <td>Sets density mode for the graph: data is re-binned according to zoom level.</td>
+    </tr>
+
+    <tr>
+      <td>graph-density-fixed</td>
+      <td>boolean</td>
+      <td>Anchor bins to pixel boundaries.</td>
+    </tr>
+    <tr>
+      <td>graph-density-min-bin</td>
+      <td>boolean</td>
+      <td>Minimum bin size in pixels</td>
+    </tr>
+    <tr>
+      <td>graph-density-stagger</td>
+      <td>boolean</td>
+      <td>horizontal offset in column for a featureset - mainly used for overlapping line plots.</td>
+    </tr>
+    <tr>
+      <td>graph-scale</td>
+      <td>&lt; log | linear &gt;</td>
+      <td>Convert data to log scale?</td>
+    </tr>
+
+    <tr>
+      <td>alignment-parse-gaps</td>
+      <td>boolean</td>
+      <td>If true, gapped alignment data is parsed out of the incoming data stream.</td>
+    </tr>
+    <tr>
+      <td>alignment-align-gaps</td>
+      <td>boolean</td>
+      <td>If true, gapped alignment data is drawn.</td>
+    </tr>
+    <tr>
+      <td>alignment-within-error</td>
+      <td>int</td>
+      <td>Specifies allowable alignment error in bases between sub-blocks <b>within</b> a single gapped alignment.</td>
+    </tr>
+    <tr>
+      <td>alignment-between-error</td>
+      <td>int</td>
+      <td>Specifies allowable alignment error in bases between separate alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-allow-misalign</td>
+      <td>boolean</td>
+      <td>If true then match and reference do not have to be exactly the same length, reference
+	  coords will be used for display.</td>
+    </tr>
+    <tr>
+      <td>alignment-blixem</td>
+      <td>&lt; blixem-n | blixem-x &gt;</td>
+      <td>If specified then the sequences of the features will be passed to blixem for:
+	  <ul>
+	    <li><b>blixem-n:</b> nucleotide alignment.
+	    <li><b>blixem-x:</b> peptide alignment.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>alignment-pfetchable</td>
+      <td>boolean</td>
+      <td>If true, the sequence for an alignment feature can be retrieved using the pfetch server.</td>
+    </tr>
+    <tr>
+      <td>alignment-perfect-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining perfectly colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-colinear-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-noncolinear-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining non-colinear alignments.</td>
+    </tr>
+
+    <tr>
+      <td>alignment-gap-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining squashed alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-common-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the common part of squashed alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-mixed-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the  mixed part of squashed alignments.</td>
+    </tr>
+
+     <tr>
+      <td>alignment-unmarked-colinear</td>
+      <td>boolean</td>
+      <td>Allows a column to be bumped when unmarked.</td>
+    </tr>
+     <tr>
+      <td>alignment-mask_sets</td>
+      <td>string</td>
+      <td>Specifies a list of featuresets with which to mask any featureset using this style. This list may include the word 'self' (it is most efficient to place this at the front of the list).  Masked features are not displayed unless selected from the column's Right-Click menu.
+      </td>
+    </tr>
+
+    <tr>
+      <td>always-gapped</td>
+      <td>boolean</td>
+      <td>Display alignments as gapped even when unbumped.</td>
+    </tr>
+
+    <tr>
+      <td>alignment-squash</td>
+      <td>boolean</td>
+      <td>Allows RNAseq data to be compressed where the gap is the same.</td>
+    </tr>
+
+    <tr>
+      <td>transcript-cds-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the CDS part of a transcript.</td>
+    </tr>
+    <tr>
+      <td>non-assembly-colours</td>
+      <td>colour_type</td>
+      <td>Colours for the non-assembly section of a clone.</td>
+    </tr>
+
+
+    <tr>
+      <td>glyph</td>
+      <td>string</td>
+      <td>The glyph shape to draw as defined in the ZMap config stanza [glyphs]. Unless overriddent this will be drawn at the 5' and 3' ends of a feature wehere relevant.</td>
+    </tr>
+    <tr>
+      <td>glyph-5</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 5' end of a feature.</td>
+    </tr>
+    <tr>
+      <td>glyph-3</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 3' end of a feature.</td>
+    </tr>
+
+
+
+    <tr>
+      <td>glyph-threshold</td>
+      <td>integer</td>
+      <td>Value at which to trigger alternate colours</td>
+    </tr>
+
+    <tr>
+      <td>glyph-strand</td>
+      <td>flip-x flip-y</td>
+      <td>If a feature is in the reverse strand flip the X or Y coordinates.  This specifies which coordinate to flip ie flip-x means inverting around the Y-axis.</td>
+    </tr>
+
+    <tr>
+      <td>glyph-align</td>
+      <td>left centre right</td>
+      <td>By default glyphs are aligned to the centre of a column. If glyph-align is set then the column width must also be set.</td>
+    </tr>
+
+    <tr>
+      <td>glyph-alt-colours</td>
+      <td>colour type</td>
+      <td>Set the colours to be used below the specified threshold when glyph-score-mode is set to alt.</td>
+    </tr>
+
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h3>Inheritance</h3>
+
+<p>There is only one mandatory property for a style and that is it's name, the name is used
+to make a unique id for the style. This very flexible policy is what allows inheritance to
+work but has the disadvantage that the user must set certain properties explicitly for there
+to be enough information for ZMap to display the set of features referencing that style.</p>
+
+<p>The implementation allows any number of styles inheriting settings
+from parent styles to any number of levels. This facility can be used to give common
+properties to sets of features
+that are common in some way (e.g. all wublast hits).
+</p>
+
+<p>If you have several styles that are similar you can specify all the common properties in
+one parent style and then in the child styles just specify those properties that are
+different. You can have any level of inheritance you like BUT the inheritance must be
+a DAG, no circularities or multiple inheritance are allowed:</p>
+
+<pre class="example">
+# parent-style gives the name of a style from which to inherit properties
+# which can be overridden in this style.
+parent-style = &lt; name of parent style &gt;
+
+</pre>
+
+
+<p>Here's an example in keyword-value format showing a base parent for all box like features, a subparent
+for all BLASTN data sets and then some styles for different BLASTN columns:
+</p>
+
+<pre class="example">
+[Basic_Feature_Parent]
+description = The base style for all box like features.
+Colours = Normal Border black
+
+
+[BLASTN_Parent]
+mode = alignment
+parent-style = basic_feature_parent
+colours = normal fill brown
+width = 15.000000
+bump-mode = complete
+score-mode = width
+min-score = 100.000000
+max-score = 400.000000
+gff-feature = transcription
+
+
+[blastn_est_briggsae]
+style-parent = blastn_parent
+strand-sensitive = true
+gff-source = blastn_est_briggsae
+
+
+[blastn_est_elegans]
+style-parent = blastn_parent
+strand-sensitive = true
+gff-source = blastn_est_elegans
+
+
+[blastn_tc1]
+description = this method was used to map flanking sequences of tc1 insertions etc etc
+style-parent = blastn_parent
+gff-source = blastn_tc1
+</pre>
+
+
+
+
+
+<h3>Minimum Drawable Style</h3>
+
+<p>In order to support inheritance (see later) there are _no_ defaults in styles, this means that
+the user needs to specify a minimum subset of properties in order for a style to be "drawable".
+<b>Note</b> that ZMap does not have display defaults embedded in the code because past experience has shown that
+this requires a large number of defaults that are at best "guesses" as to what the user wants to
+see.  This leads to confusion and uncertainty about how feature display is controlled.  </p>
+
+
+<p>The following properties <b>must</b> be specified if the features referencing the style are to be
+displayed:
+</p>
+
+
+<table class="zebra" id="min_displayable" border="2" cellpadding="10" valign="top">
+  <caption align=top>Minimum Displayable Style</caption>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>"mode"</td>
+      <td>How the feature should be displayed/processed.</td>
+    </tr>
+    <tr>
+      <td>"bump-mode"</td>
+      <td>How the feature should be bumped.</td>
+    </tr>
+    <tr>
+      <td>"width"</td>
+      <td>Basic display width of feature.</td>
+    </tr>
+    <tr>
+      <td>"border" and/or "fill" and/or "draw" colour</td>
+      <td>Basic, Transcript and Alignment features require fill and/or border colours,
+	  all text (e.g. dna) requires fill and/or draw colours.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>Thus the minimum specification of a style is:
+
+<pre class="example">
+# Min drawable class.
+[min_drawable_style]
+mode = xxxxx
+width = nnn.nnn
+colours	= normal border some colour
+bump-mode = xxxx
+</pre>
+
+
+
+<p>
+Here are some examples:
+</p>
+
+<pre class="example">
+[allele]
+mode = basic
+colours = normal fill orange
+width = 1.100000
+bump-mode = complete
+
+
+[blastn_est_briggsae]
+mode = alignment
+colours = normal fill brown
+width = 15.000000
+bump-mode = complete
+
+
+[curated]
+mode = transcript
+colours = normal border darkblue
+width = 15.000000
+bump-mode = compact_cluster
+</pre>
+
+
+<h4>Colours</h4>
+
+
+<p>There is no automatic border colour so it needs to be specified for most
+features, e.g.</p>
+
+<pre class="example">
+colours = normal fill blue
+colours = normal border black
+</pre>
+
+
+<p>The following colours are used by Otterlace but do not exist in the X11 rgb.txt file
+and so produce errors in the colour conversion call in the style code:</p>
+
+<pre class="example">
+paleviolet
+paleorange
+palegray
+cerise
+</pre>
+
+
+
+
+<h4>Strand stuff</h4>
+
+<p>If a featureset is not strand senesitive the it will always be displayed on the forward strand only, by converntion to the right of strand sensitive columns.
+Otherwise it is necessary to define which display option is required:
+
+<ul>
+  <li>show this column but when 3 frame is turned on redisplay the column
+      split into the three frames
+  <li>only show this column when 3 frame is turned on split into the three frames.
+  <li>only show this column when 3 frame is turned on but as a single column.
+</ul>
+
+Which of these is to happen is set with the following options:
+
+<pre class="example">
+frame-mode = always        gives the first behaviour
+
+frame-mode = only-3        gives the second behaviour
+
+frame-mode = only-1        gives the third behaviour
+</pre>
+</p>
+
+<h4>Bump stuff</h4>
+
+<p>Bump modes need to be set explicitly or nothing will happen to the column on bumping.</p>
+
+
+<pre class="example">
+bump-mode = XXXXXXX      sets the initial bump mode.
+
+bump-mode-default = XXXXXX    sets the mode that the column will be bumped with by default.
+</pre>
+
+<p>If you want the column to be initially "unbumped" but bumped with colinear lines etc when
+it is bumped you just need to set bump-mode-default, bump-mode will be unbumped by default, e.g.</p>
+
+<pre class="example">
+bump-mode-default = range_colinear
+</pre>
+
+
+
+
+<h4>Alignments</h4>
+
+<p>All alignments, e.g. EST_human, should be given the mode "Alignment", not "Basic" and also need
+the "Internal" and "External" tags setting if internal and external (between HSP) gaps for all matches
+for a given sequence should be
+joined up with lines:</p>
+
+
+<pre class="example">
+[WABA_parent_all]
+description = Inherited method for all WABA hits.
+colours = normal fill darkgreen ; normal border black
+width = 6.000000
+bump-mode = complete
+bump-mode-default = range_colinear
+score-mode = width
+score_min = 40.000000
+score_max = 120.000000
+alignment-align-gaps = true
+</pre>
+
+
+
+
+
+
+
+<h3>Predefined Styles</h3>
+
+<p>There are a number of predefined styles for common features such as DNA sequence display. These
+features have reserved names which should not be used for other sorts of features. The feature set
+and the style for these features have the same name.
+</p>
+
+<p>Some of these styles are "meta" styles which control the action of a column rather than
+specific features, e.g. "3 Frame" controls whether and where the 3 frame translation columns are displayed
+but the individual 3 Frame columns display is controlled by the style for each column. Others are normal
+styles and some of their settings can be overridden by the user. The following table summarises
+the predefined styles:
+</p>
+
+<table class="zebra" id="predefined" border="2" cellpadding="10" valign="top">
+  <caption align=top>Predefined Styles</caption>
+  <thead>
+    <tr>
+      <th>Style</th>
+      <th>Style Type</th>
+      <th>User Modifiable</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>3 Frame</td>
+      <td>Meta</td>
+      <td>No</td>
+      <td>controlling 3 frame display</td>
+    </tr>
+    <tr>
+      <td>3 Frame Translation</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>3 frame protein translation display</td>
+    </tr>
+    <tr>
+      <td>dna</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>dna sequence display</td>
+    </tr>
+    <tr>
+      <td>Locus</td>
+      <td>Normal</td>
+	  <td>Yes</td>
+      <td>display of a column of locus names + display of locus names in navigator</td>
+    </tr>
+    <tr>
+      <td>GeneFinderFeatures</td>
+      <td>Meta</td>
+      <td>No</td>
+      <td>splice sites from the Gene Finder program</td>
+    </tr>
+    <tr>
+      <td>Show Translation</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>Show peptide translation column</td>
+    </tr>
+    <tr>
+      <td>Assembly Path</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>Show reference sequence assembly path</td>
+    </tr>
+</table>
+
+<p>The rules for using these predefined styles are:
+
+<ul>
+  <li>The features for the predefined style must be fetchable from the database,
+      e.g. no "dna" means no dna display.
+  <li>To display the data for a predefined style the <b>style name</b> must be specified
+      in the "feature_sets" list in the "source" stanza of the config file. For predefined
+      styles the feature set name, method name and style name are all the same.
+  <li>The style itself does not have to exist in the database, ZMap will create the
+      style with sensible defaults for display.
+  <li>"Normal" styles can have relevant fields overriden by specifying them in
+      a style of the same name in the database, e.g. foreground/background colours
+      can be overidden for "dna".
+</ul>
+
+
+<p>
+
+
+
+
+
+
