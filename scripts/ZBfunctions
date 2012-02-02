@@ -5,7 +5,7 @@
 #
 # Should be run as a dot script as the first statement executed in all
 # build scripts, $0 should be given as the single arg so the script name
-# can be included in messages: 
+# can be included in messages:
 #                                . ZBfunctions $0
 #
 # to unset the functions call like this:
@@ -48,7 +48,7 @@ ZBExportOSVars()
             ZBbuildOSCanon="MACOSX"
             ZBbuildOSDir=build/macosx ;;
         * )
-            ZBmsgAndExit "unsupported operating system: $opsys" ;;       
+            ZBmsgAndExit "unsupported operating system: $opsys" ;;
     esac
 }
 
@@ -101,7 +101,7 @@ ZBmsgInfo ()
 ZBmsgMail ()
 {
 
-mailx -s "ZMap Build - $2" zmapdev@sanger.ac.uk <<EOF
+mailx -s "ZMap Build - $2" annotools@sanger.ac.uk <<EOF
 
 Build Message:
 
@@ -155,7 +155,7 @@ ZBusage ()
 ZBRemoteDirectories ()
 {
     ZBRBaseDir=`ssh $1 zmapbase`
-    
+
     ZBRbuildBase=$ZBRBaseDir/BUILDS
     ZBROverDir="$ZBRBaseDir/BUILD.OVERNIGHT"
     ZBRDevDir="$ZBRBaseDir/BUILD.DEVELOPMENT"
@@ -165,7 +165,7 @@ ZBRemoteDirectories ()
 #Arrgh this hurts....
 
 # Basically  because we have  a machine  which cannot  currently mount
-# ~zmap as ~zmap we need to have this. Why? 
+# ~zmap as ~zmap we need to have this. Why?
 
 # Because:
 # local -> ssh build machine
@@ -174,7 +174,7 @@ ZBRemoteDirectories ()
 
 opsys=`uname`
 case $opsys in
-    
+
     OSF1 )
         real_home=~zmap ;;
     Linux )
@@ -183,7 +183,7 @@ case $opsys in
 #        real_home=~zmap/nfs_mount ;;
         real_home=~zmap ;;
     * )
-        ZBmsgAndExit "unsupported operating system: $opsys" ;;       
+        ZBmsgAndExit "unsupported operating system: $opsys" ;;
 esac
 # END OF INSANE BIT
 

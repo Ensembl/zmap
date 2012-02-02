@@ -4,7 +4,7 @@
 #
 # It may also be run as ./build_bootstrap.sh by a user possibly with arguments
 #
-# The logic is as follows. 
+# The logic is as follows.
 # 1. Checkout a full copy of ZMap module from cvs
 # 2. possibly tag/version increment zmap version in cvs
 # 3. Do all the builds requested.
@@ -78,7 +78,7 @@ fi
 
 
 # For use when developing so not every edit in the scripts dir needs a cvs commit...
-# It should be a scp location e.g. 'hostname:/path/to/scripts' 
+# It should be a scp location e.g. 'hostname:/path/to/scripts'
 
 # By setting  it all  .sh files will  be copied into  the ZMap/scripts
 # directory and overwrite any that might be there.
@@ -116,7 +116,7 @@ cat <<'EOF'
 #
 # Generated! Can be found in build_bootstrap.sh
 #
-# By default this script does a repository checkout, alternative is to copy an 
+# By default this script does a repository checkout, alternative is to copy an
 # existing zmap directory, e.g. a feature branch directory.
 #
 
@@ -209,7 +209,7 @@ _checkout_message_out "zmap_tmp_dir set to $zmap_tmp_dir"
 _checkout_mk_cd_dir $zmap_tmp_dir
 
 if [ "x$gen_checkout_script" != "x" ]; then
-  # This is being run from the master (this code was sourced from build_bootstrap.sh). 
+  # This is being run from the master (this code was sourced from build_bootstrap.sh).
   # The .master directory should _not_ have any runconfig etc run in it!
 
   cd $save_root || _checkout_message_out "Failed to cd to $save_root"
@@ -236,7 +236,7 @@ if [ "x$gen_checkout_script" != "x" ]; then
   else
 
     _checkout_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
- 
+
     MASTER_SRC_DIR=$ZMAP_MASTER_BUILD_COPY_DIR
 
     _checkout_message_out "just doing a copy of $ZMAP_MASTER_BUILD_COPY_DIR"
@@ -294,7 +294,7 @@ zmap_message_out "Finished running checkout script $gen_checkout_script"
 
 
 
-# Here we copy from the development dir to the checked out one.  
+# Here we copy from the development dir to the checked out one.
 if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
     zmap_message_out "*** WARNING: Developing! Using $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR ***"
     chmod 755 $BASE_DIR/*.sh
@@ -359,8 +359,8 @@ for host in $ZMAP_BUILD_MACHINES
   # 3 seconds should be enough for any site machine.
   # StrictHostKeyChecking=no ignores new/changed hosts
   #  (copies/updates the key in ~/.ssh/known_hosts file)
-  # PasswordAuthentication=no & NumberOfPasswordPrompts=0 makes sure 
-  # we can do the password-less login. If not then it will fail 
+  # PasswordAuthentication=no & NumberOfPasswordPrompts=0 makes sure
+  # we can do the password-less login. If not then it will fail
   # instantly and the whole script will fail, not sit there waiting
   # for user input...
   # If it fails the key is to cat ~/.ssh/id_*.pub >> ~/.ssh/authorized_keys
@@ -468,7 +468,7 @@ if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     cp $PATH_TO_MODIFIED_WEB_HEADER $PATH_TO_MASTER_WEB_HEADER || zmap_message_exit "Failed to cp web header"
 
     if [ "x$ZMAP_MASTER_RT_TO_CVS" == "x$ZMAP_TRUE" ]; then
-	# The release notes file will need editing. mail zmapdev about that.
+	# The release notes file will need editing. mail annotools about that.
 	FILE_DATE=$(date "+%Y_%m_%d")
 	RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
 	(cat <<EOF
@@ -511,7 +511,7 @@ fi
 
 
 
-# ================== FARM OFF BUILDS ================== 
+# ================== FARM OFF BUILDS ==================
 
 
 tar_target=$(hostname):$ZMAP_BUILD_CONTAINER
@@ -556,7 +556,7 @@ if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
   _checkout_message_out "*** WARNING : If this is in production! Edit ZMAP_MASTER_BUILD_DEVELOPMENT_DIR in build_bootstrap.sh ***"
   chmod 755 \$BASE_DIR/*.sh
   scp -r $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR/*.sh \$SCRIPTS_DIR/
-  # Copying runconfig might be a little unexpected here... Possibly remove after first commit... 
+  # Copying runconfig might be a little unexpected here... Possibly remove after first commit...
   # chmod 755 \$SRC_DIR/runconfig
   # scp -r $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR/../src/runconfig \$SRC_DIR/
   _checkout_message_out "*** WARNING : If this is in production! Edit ZMAP_MASTER_BUILD_DEVELOPMENT_DIR in build_bootstrap.sh ***"
@@ -608,7 +608,7 @@ rm -f host_checkout.sh     || exit 1;   \
       zmap_message_err "Build on $host failed!"
       let HOSTS_FAILED=HOSTS_FAILED+1
       if [ "x$ZMAP_MASTER_NOTIFY_MAIL" != "x" ]; then
-	  # mail tail $host.log to zmapdev@sanger.ac.uk
+	  # mail tail $host.log to annotools@sanger.ac.uk
 	  echo "ZMap Build Failed"                                   > fail.log
 	  echo ""                                                   >> fail.log
  	  echo "Tail of log:"                                       >> fail.log
@@ -652,7 +652,7 @@ fi
 
 
 
-# ================== MASTER BUILD TASKS ================== 
+# ================== MASTER BUILD TASKS ==================
 
 # We need to run bootstrap and  configure to get the make file targets
 # docs and dist.
@@ -835,4 +835,4 @@ zmap_message_out "--------"
 zmap_message_out "Successfully reached last line of script!"
 
 exit $RC
-# ================== END OF SCRIPT ================== 
+# ================== END OF SCRIPT ==================
