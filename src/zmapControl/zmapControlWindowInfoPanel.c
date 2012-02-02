@@ -229,7 +229,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    }
 	  else if (feature_desc->feature_score)
 	    {
-	      text[7] = g_strdup_printf("%s", feature_desc->feature_score) ;
+	      text[6] = g_strdup_printf("%s", feature_desc->feature_score) ;
 	    }
 
 
