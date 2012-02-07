@@ -529,6 +529,7 @@ typedef enum
 	 * we can retrieve these by id which does note require out of scope data or headers
 	 */
       WINDOW_FOCUS_GROUP_MASKED,	/* use to store colours but not set as a focus type */
+      WINDOW_FOCUS_GROUP_FILTERED,
 /* NOTE this must be the first blurred one */
 #define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
 
@@ -539,7 +540,7 @@ typedef enum
 extern int focus_group_mask[];	/* indexed by ZMapWindowFocusType */
 
 #define WINDOW_FOCUS_GROUP_FOCUSSED 0x07	/* all the focus types */
-#define WINDOW_FOCUS_GROUP_BLURRED	0x18	/* all the blurred types */
+#define WINDOW_FOCUS_GROUP_BLURRED	0xf8	/* all the blurred types */
 #define WINDOW_FOCUS_GROUP_BITMASK	0xff	/* all the colour types, focussed and blurred */
 #define WINDOW_FOCUS_DONT_USE	0xff00	/* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
 /* x-ref with zmapWindowCanvasFeatureset_I.h */
@@ -762,6 +763,7 @@ typedef struct _ZMapWindowStruct
     unsigned int column : 1 ;
     unsigned int evidence : 1 ;
     unsigned int masked: 1;
+    unsigned int filtered: 1;
 
   } highlights_set ;
 
@@ -774,7 +776,9 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_masked_feature_fill ;  /* masked features normally not displayed but this is optional */
   GdkColor colour_masked_feature_border ;  /* if not set display as normal */
 
-  /* Holds the marked region or item. */
+  GdkColor colour_filtered_column ; 	 /* to highlight the filter widget */
+
+/* Holds the marked region or item. */
   ZMapWindowMark mark ;
 
   ZMapWindowStateQueue history ;

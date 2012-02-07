@@ -637,6 +637,33 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 }
 
 
+void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
+{
+	double i2w_dx,i2w_dy;
+	int cx1,cx2,cy1,cy2;
+	FooCanvasItem *foo = (FooCanvasItem *) fi;
+	double x1;
+	double width = fi->width;
+
+	x1 = 0.0;
+	if(fi->bumped)
+		width = fi->bump_width;
+
+	/* trigger a repaint */
+	/* get canvas coords */
+	i2w_dx = i2w_dy = 0.0;
+	foo_canvas_item_i2w (foo, &i2w_dx, &i2w_dy);
+
+	/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
+	foo_canvas_w2c (foo->canvas, x1 + i2w_dx, i2w_dy, &cx1, &cy1);
+	foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
+
+		/* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
+		 * really ought to work out max glyph size or rather have true featrue extent
+		 * NOTE this is only currently used via OTF remove exisitng features
+		 */
+	foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
+}
 
 /* interface design driven by exsiting application code */
 void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
@@ -693,6 +720,9 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
 	}
 }
+
+
+
 
 
 
@@ -1665,7 +1695,107 @@ double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, dou
 	return(dx);
 }
 
+double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo)
+{
+	  ZMapWindowFeaturesetItem featureset_item;
 
+	  featureset_item = (ZMapWindowFeaturesetItem) foo;
+	  return featureset_item->filter_value ;
+}
+
+int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo)
+{
+	  ZMapWindowFeaturesetItem featureset_item;
+
+	  featureset_item = (ZMapWindowFeaturesetItem) foo;
+	  return featureset_item->n_filtered ;
+}
+
+int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
+{
+	ZMapWindowFilter filter	= (ZMapWindowFilter) gfilter;
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) filter->featureset;
+	ZMapSkipList sl;
+	int was = fi->n_filtered;
+	double score;
+
+	fi->filter_value = value;
+	fi->n_filtered = 0;
+
+	for(sl = zMapSkipListFirst(fi->display_index); sl; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+		ZMapWindowCanvasFeature f;
+
+		if(feature->left)		/* we do joined up alignments */
+			continue;
+
+		if(! feature->feature->flags.has_score)
+			continue;
+
+
+		/* get score for whole series of alignments */
+		for(f = feature, score = 0.0; f; f = f->right)
+		{
+			double feature_score = f->feature->score;
+			/* NOTE feature->score is normalised, feature->feature->score is what we filter by */
+
+			if(zMapStyleGetScoreMode(f->feature->style) == ZMAPSCORE_PERCENT)
+				feature_score = f->feature->feature.homol.percent_id;
+
+			if(feature_score > score)
+				score = feature_score;
+		}
+
+		/* set flags for whole series based on max score: filter is all below value */
+		for(f = feature; f; f = f->right)
+		{
+			/* reset in case score went down */
+			f->flags &= ~FEATURE_HIDE_FILTER;
+
+			if(score < value)
+			{
+				f->flags |= FEATURE_HIDE_FILTER;
+				fi->n_filtered++;
+
+				/* NOTE many of these may be HIDE_SUMMARISED whcih is not operative during bump
+				 * so setting HIDDEN here must be done for the filtered features only
+				 * Hmmm... not quite sure of the mechanism, but putting this if
+				 * outside the brackets give a glitch on set column focus when bumped
+				 */
+				if((f->flags & FEATURE_HIDE_REASON))
+					f->flags |= FEATURE_HIDDEN;
+				else
+					f->flags &= ~FEATURE_HIDDEN;
+			}
+		}
+	}
+
+	if(fi->n_filtered != was)
+	{
+		if(fi->bumped)
+		{
+			ZMapWindowCompressMode compress_mode;
+
+			if (zmapWindowMarkIsSet(filter->window->mark))
+				compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+			else
+				compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+
+			zmapWindowColumnBumpRange(filter->column, ZMAPBUMP_INVALID, ZMAPWINDOW_COMPRESS_INVALID);
+
+			/* dissapointing: we only need to reposition columns to the right of this one */
+#warning need a better reposition function
+			zmapWindowFullReposition(filter->window) ;
+		}
+		else
+		{
+			zMapWindowCanvasFeaturesetRedraw(fi);
+		}
+	}
+
+	return(fi->n_filtered);
+}
 
 
 /* no return, as all this data in internal to the column featureset item */

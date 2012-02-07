@@ -76,7 +76,8 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_REASON	0x1e00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
+#define FEATURE_HIDE_REASON	0x3e00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
 
@@ -155,7 +156,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   double start,end;
   double longest;			/* feature y-coords extent of biggest feature */
   gboolean overlap;		/* default is to assume features do, some styles imply that they do not (eg coverage/ heatmap) */
-  double bump_overlap;	/* calculated according length of compound features */
+  double bump_overlap;		/* calculated according length of compound features */
 
   gboolean link_sideways;	/* has complex features */
   gboolean linked_sideways;	/* that have been constructed */
@@ -206,6 +207,10 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean outline_set;	 	/* Is outline color set? */
 
   ZMapFeature point_feature;	/* set by cursor movement */
+
+  double filter_value;		/* active level, default 0.0 */
+  int n_filtered;
+  gboolean enable_filter;	/* has score in a feature and style allows it */
 
 } zmapWindowFeaturesetItemStruct;
 

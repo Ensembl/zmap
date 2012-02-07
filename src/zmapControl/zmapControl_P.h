@@ -106,9 +106,13 @@ typedef struct _ZMapStruct
     *hsplit_button, *vsplit_button,
     *unlock_but, *unsplit_but,
     *zoomin_but, *zoomout_but,
+    *filter_but,
     *revcomp_but, *column_but,
     *quit_button, *frame3_but,
     *dna_but, *back_button;
+
+  ZMapWindowFilterStruct filter;
+  gboolean filter_spin_pressed;			/* flag to prevent value changed signal handling when spinning button */
 
 #ifdef SEE_INFOPANEL_STRUCT
   /* Feature details display. */
@@ -226,7 +230,7 @@ void zmapControlInfoSet(void *data, int code, char *format, ...);
 
 void zmapControlWindowSetStatus(ZMap zmap) ;
 void zmapControlWindowSetGUIState(ZMap zmap) ;
-void zmapControlWindowSetButtonState(ZMap zmap) ;
+void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter filter) ;
 ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
                                                     ZMapWindow zmap_window,

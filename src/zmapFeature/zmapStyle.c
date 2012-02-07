@@ -209,6 +209,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "as Foo Canvas Items", "use old technology",
             offsetof(zmapFeatureTypeStyleStruct, foo),0 },
 
+    { STYLE_PROP_FILTER, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FILTER,
+            "filter by score", "filter column by score",
+            offsetof(zmapFeatureTypeStyleStruct, filter),0 },
+
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },

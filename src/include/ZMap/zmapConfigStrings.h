@@ -686,6 +686,7 @@
 #define ZMAPSTANZA_WINDOW_ITEM_EVIDENCE_FILL   "colour-evidence-fill"
 #define ZMAPSTANZA_WINDOW_MASKED_FEATURE_FILL   "colour-masked-feature-fill"
 #define ZMAPSTANZA_WINDOW_MASKED_FEATURE_BORDER   "colour-masked-feature-border"
+#define ZMAPSTANZA_WINDOW_FILTERED_COLUMN   "colour-filtered-column"
 
 
 /*! @addtogroup config_stanzas

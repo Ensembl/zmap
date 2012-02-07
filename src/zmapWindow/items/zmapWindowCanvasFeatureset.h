@@ -203,4 +203,11 @@ double zMapWindowCanvasFeatureGetWidthFromScore(ZMapFeatureTypeStyle style, doub
 double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, double score);
 
 
+double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo);
+int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo);
+int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value);
+
+
+
+
 #endif /* ZMAP_WINDOW_FEATURESET_H */

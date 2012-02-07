@@ -1748,6 +1748,34 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       select.highlight_same_names = highlight_same_names ;
 
+
+	/* dis/enable the filter by score widget and set min and max */
+	select.filter.enable = FALSE;
+	if(style && zMapStyleIsFilter(style) && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+	{
+			/* get the canvasFeatureset inside the canvas item */
+		FooCanvasGroup *group = FOO_CANVAS_GROUP(item);
+		FooCanvasItem *foo;
+
+		zMapAssert(group && group->item_list);
+
+		foo = (FooCanvasItem *) group->item_list->data;
+
+		select.filter.min = zMapStyleGetMinScore(style);
+		select.filter.max = zMapStyleGetMaxScore(style);
+		select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue(foo);
+		select.filter.n_filtered = zMapWindowCanvasFeaturesetGetFilterCount(foo);
+		select.filter.featureset = (ZMapWindowFeaturesetItem) group->item_list->data;
+		select.filter.column =  item;	/* needed for re-bumping */
+		select.filter.enable = TRUE;
+		select.filter.window = window;
+
+		select.filter.func = zMapWindowCanvasFeaturesetFilter;
+
+
+	}
+
+
       /* We've set up the select data so now callback to the layer above with this data. */
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 

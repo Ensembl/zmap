@@ -71,7 +71,7 @@ bump overlap 0x82df270_basic_100000_basic_100000: 99985 features 31285276 compar
 100k        977ms         740ms     237ms  729       702
 
 So: this can make bumping work 30% or 25% faster depending on how you do the sums.
-Not earth shattering bu significant.  memory alloc is not linear, but not as bad as my lovely de-overlap algorithm.
+Not earth shattering but significant.  memory alloc is not linear, but not as bad as my lovely de-overlap algorithm.
 A more salient point is the the GList implementation is a bit esoteric and contains covert performance pitfalls such as insert_before(NULL).
 
 Implementation by #define mostly, a bit messy but the calling code is identical.

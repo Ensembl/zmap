@@ -389,7 +389,7 @@ void zmapControlClose(ZMap zmap)
 void zmapControlWindowSetGUIState(ZMap zmap)
 {
 
-  zmapControlWindowSetButtonState(zmap) ;
+  zmapControlWindowSetButtonState(zmap,&zmap->filter) ;
 
   /* We also need to set the navigator state..... */
 
@@ -406,7 +406,7 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
   int pane_width ;
 
   /* There is replication here so need to deal with that.... */
-  zmapControlWindowSetButtonState(zmap) ;
+  zmapControlWindowSetButtonState(zmap,&zmap->filter) ;
 
   zmapControlWindowSetZoomButtons(zmap, vis_change->zoom_status) ;
 
@@ -790,9 +790,15 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
       labels = g_hash_table_lookup(zmap->view2infopanel, zMapViewGetView(view_window));
       /* Display the feature details in the info. panel. */
       if (vselect)
-        zmapControlInfoPanelSetText(zmap, labels, &(vselect->feature_desc)) ;
+	{
+		zmapControlInfoPanelSetText(zmap, labels, &(vselect->feature_desc)) ;
+		zmapControlWindowSetButtonState(zmap,&(vselect->filter) );	/* for filter button */
+      }
       else
-        zmapControlInfoPanelSetText(zmap, labels, NULL) ;
+	{
+		zmapControlInfoPanelSetText(zmap, labels, NULL) ;
+		zmapControlWindowSetButtonState(zmap,&zmap->filter);	/* for filter button */
+	}
     }
 
   return ;

@@ -318,6 +318,14 @@ int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *o
 		  cache->outline_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
 		}
 
+	      if(window->highlights_set.filtered)
+		{
+		  gdk = &(window->colour_filtered_column);
+		  pixel = zMap_gdk_color_to_rgba(gdk);
+		  cache->fill_pixel[WINDOW_FOCUS_GROUP_FILTERED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+		  cache->fill_set[WINDOW_FOCUS_GROUP_FILTERED] = TRUE;
+		}
+
 	      cache->done_colours = TRUE;
 	    }
 

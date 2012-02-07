@@ -139,6 +139,7 @@ typedef struct _ZMapViewSelectStruct
 {
   ZMapWindowSelectType  type;
   ZMapFeatureDescStruct feature_desc ;
+  ZMapWindowFilterStruct filter;
   char                 *secondary_text;
 } ZMapViewSelectStruct, *ZMapViewSelect ;
 

@@ -151,6 +151,8 @@ typedef enum
 
     STYLE_PROP_FOO,
 
+    STYLE_PROP_FILTER,
+
     // mode dependant data
 
 
@@ -278,6 +280,10 @@ typedef enum
 
 /* developemnt control to allow reconfig to legacy code */
 #define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
+
+
+#define ZMAPSTYLE_PROPERTY_FILTER			  "filter"		/*filter column by score */
+
 
 /* glyph properties - can be for mode glyph or as sub-features */
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME             "glyph"
@@ -864,6 +870,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean foo;
 
+  gboolean filter;		/* can filter by score */
+
 #if MH17_NO_DEFERRED
   gboolean deferred;           /*flag for to say if this style is deferred loaded */
 
@@ -1043,6 +1051,8 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 //double zMapStyleGetMinScore(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetMinScore(style)   (style->min_score)
 //gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
+#define zMapStyleIsFilter(style)   (style->filter)
+
 #define zMapStyleGetShowWhenEmpty(style)   (style->show_when_empty)
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;

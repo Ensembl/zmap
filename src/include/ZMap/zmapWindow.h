@@ -95,6 +95,29 @@ typedef struct
 } ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
 
 
+/* info to operate spin button for filter by score */
+/* NOTE this works only with a ZMapWindowCanvasFeatureset, not with normal Foo items, on account of speed */
+
+
+typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value) ;
+
+typedef struct
+{
+	double min,max;			/* for the spin button */
+	double value;
+	ZMapWindow window;
+	gpointer featureset;		/* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */
+	gpointer column;			/* where to filter, is a ZMapWindowCanvasFeaturesetItem... scope :-( */
+
+	ZMapWindowFilterCallbackFunc func;		/* function to do it */
+
+	int n_filtered;			/* how many we hid */
+	gboolean enable;
+
+} ZMapWindowFilterStruct, *ZMapWindowFilter;
+
+
+
 
 /*! Data returned to the focus callback routine, called whenever a feature is selected. */
 
@@ -121,6 +144,7 @@ typedef struct
   char *secondary_text ;				    /* Simple string description. */
 
 
+  ZMapWindowFilterStruct filter;
 
   /* For Xremote XML actions/events. */
   ZMapXRemoteSendCommandError remote_result ;
@@ -128,6 +152,9 @@ typedef struct
   ZMapXMLHandlerStruct xml_handler ;
 
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
+
+
+
 
 
 
@@ -368,6 +395,8 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
+gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
+
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,
