@@ -1750,9 +1750,6 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 		/* set flags for whole series based on max score: filter is all below value */
 		for(f = feature; f; f = f->right)
 		{
-			/* reset in case score went down */
-			f->flags &= ~FEATURE_HIDE_FILTER;
-
 			if(score < value)
 			{
 				f->flags |= FEATURE_HIDE_FILTER;
@@ -1766,6 +1763,13 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 				if((f->flags & FEATURE_HIDE_REASON))
 					f->flags |= FEATURE_HIDDEN;
 				else
+					f->flags &= ~FEATURE_HIDDEN;
+			}
+			else
+			{
+				/* reset in case score went down */
+				f->flags &= ~FEATURE_HIDE_FILTER;
+				if(!(f->flags & FEATURE_HIDE_REASON))
 					f->flags &= ~FEATURE_HIDDEN;
 			}
 		}
