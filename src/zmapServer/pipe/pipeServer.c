@@ -1377,7 +1377,6 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
       else
 	*(gff_line->str + terminator_pos) = '\0' ;	    /* Remove terminating newline. */
 
-
       if (!zMapGFFParseLine(parser, gff_line->str))
 	{
 	  GError *error = zMapGFFGetError(parser) ;

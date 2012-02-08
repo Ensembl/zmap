@@ -178,6 +178,7 @@ typedef enum
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
     STYLE_PROP_ALIGNMENT_ALWAYS_GAPPED,
+    STYLE_PROP_ALIGNMENT_UNIQUE,
     STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
     STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN,
     STYLE_PROP_ALIGNMENT_PFETCHABLE,
@@ -313,6 +314,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED       "alignment-always-gapped"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNIQUE              "alignment-unique"		/* don't join up */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN          "alignment-join-align"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
@@ -321,12 +323,12 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS     "alignment-gap-colours"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS    "alignment-common-colours"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS "alignment-mixed-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS         "alignment-gap-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS      "alignment-common-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS       "alignment-mixed-colours"
 
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH                 	   "alignment-squash"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH              "alignment-squash"
 
 
 /* Sequence properties. */
@@ -733,6 +735,7 @@ typedef struct
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
    gboolean always_gapped;				/* even when not bumped */
+   gboolean unique;					/* don't display joined up */
    gboolean squash;					/* combine features that have the same gap */
 
 
@@ -1169,6 +1172,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 //gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsShowGaps(style)   (style->mode_data.alignment.show_gaps)
 #define zMapStyleIsAlwaysGapped(style)   (style->mode_data.alignment.always_gapped)
+#define zMapStyleIsUnique(style)   (style->mode_data.alignment.unique)
 
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)

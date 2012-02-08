@@ -1059,10 +1059,10 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  *
  * NOTE to handle BAM data that includes # inside attribute strings we take attributes and comments as one section
  * (comments are not processed anywhere)
- * Then we scan attributes and split this in an unquoted # and out the reamainder into commments
+ * Then we scan attributes and split this on an unquoted # and put the reamainder into commments
  *
  */
-#define PROCESS_BAM	0
+
 #define QUOTED_HASH_KILLS_ATTRIBUTES	0	/* set to 1 for previous code */
 
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length)
@@ -1168,7 +1168,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 	  result = FALSE ;
  	}
     }
-
 
   if (result)
     {
@@ -1284,54 +1283,29 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
  * if we get unexpected stuff like N88 M76 or M12 N12 N23 M29 then we handle it silently
  */
 
+/*NOTE James did the string like this:
+ * 23M1234N43M
+ * ... which is different
+ *
+ * target is ref, query is match; see commant above loadGaps()
+ */
+
 static gboolean loadGapString(ZMapGFFParser parser,
 				char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand)
 {
 	char *p = attributes;
-	ZMapAlignBlock ab;
 	int match_start = 1;
 
-	while(*p <= ' ') p++;
-	if(*p++ != '"')
+	/* skip over <cigar "> */
+	while(*p && *p != '"' ) p++;
+	if(!*p++)
 		return FALSE;
 
 	while (*p && *p != '"')
 	{
-		if(*p == 'M')
-		{
-			int match = atoi(++p);
-
-			/* add a block */
-			ab = g_new0(ZMapAlignBlockStruct,1);
-			/* Gap coords are positive, 1-based, start < end " So: q2 is off the end of the match */
-
-			ab->q1 = match_start;
-			ab->q2 = match_start + match;
-			ab->q_strand = match_strand;
-			ab->t1 = ref_start;
-			ab->t2 = ref_start + match;
-			ab->t_strand = ref_strand;
-
-			g_array_append_val(*gaps_out,ab);
-
-			/* skip to end of block */
-			ref_start += match;
-			match_start += match;
-		}
-		else if (*p == 'N')
-		{
-			int gap = atoi(++p);
-
-			/* skip to start of next block */
-			ref_start += gap;
-			match_start += gap;
-		}
-		else
-		{
-			return FALSE;
-		}
+		int bases = atoi(p);
 
 		while(*p && *p <= ' ')
 			p++;
@@ -1339,6 +1313,37 @@ static gboolean loadGapString(ZMapGFFParser parser,
 			p++;
 		while(*p && *p <= ' ')
 			p++;
+
+		if(*p == 'M')
+		{
+			/* add a block */
+			ZMapAlignBlockStruct ab = { 0 };
+
+			/* Gap coords are positive, 1-based, start < end " So: q2 is off the end of the match */
+
+			ab.q1 = match_start;
+			ab.q2 = match_start + bases - 1;
+			ab.q_strand = match_strand;
+			ab.t1 = ref_start;
+			ab.t2 = ref_start + bases - 1;
+			ab.t_strand = ref_strand;
+
+			g_array_append_val(*gaps_out,ab);
+
+			/* skip to end of block */
+			ref_start += bases;
+			match_start += bases;
+		}
+		else if (*p == 'N')
+		{
+			/* skip to start of next block */
+			ref_start += bases;
+		}
+		else
+		{
+			return FALSE;
+		}
+		p++;
 	}
 
 	return TRUE;
@@ -1381,7 +1386,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark clone_id = 0, source_id = 0 ;
   GQuark SO_acc = 0 ;
   char *name_string = NULL, *variation_string = NULL ;
-
 
   /* If the parser was given a source -> data mapping then
    * use that to get the style id and other
@@ -1755,18 +1759,28 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		{
 #if BAM_ALIGNMENT_CIGAR
 #warning temporary code to get BAM alignments working, to be replaced by 'proper' cigar string handling
-		  if (!g_ascii_strcasecmp(ontology, "read"))
+//		  if (!g_ascii_strcasecmp(ontology, "read"))
 		  {
+			gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+
 			  if(!loadGapString(parser,
 					 gaps_onwards, &gaps,
 				       strand, start, end,
 				       query_strand))
 			  {
-				zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+				zMapLogWarning("Could not parse cigar string: %s", gaps_onwards) ;
+				g_array_free(gaps, TRUE) ;
+				gaps = NULL ;
+			  }
+			  else if (gaps->len < 2)	/* ie is ungapped */
+			  {
+  				g_array_free(gaps, TRUE) ;
+				gaps = NULL ;
+
 			  }
 		  }
-		  else
-#endif
+//		  else
+#else
 		  if (!loadAlignString(parser,
 				       gaps_onwards, &gaps,
 				       strand, start, end,
@@ -1774,6 +1788,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		    {
 		      zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
 		    }
+#endif
 		}
 	    }
 
@@ -2347,6 +2362,11 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
 	chr14-04    encode    read    20781639    20781714    .    -    .    Target "JOHNLENNON_0006:1:61:1280:6420#0 1 76 -";sequence "CAAGAACACCAGACTGTGCAATCATGGATGGTTCAAGGGTGCCTTCATGGTTAGCAATAGTGATGTTTCGTAGCCT";Gap="M76";Name="JOHNLENNON_0006:1:61:1280:6420#0"
  * but is being recoded as an align with Gap called Cigar
  *
+ * or via the bam_get_align script:
+ *
+ chr10-10        Tier2_HepG2_cytosol_longPolyA_rep2      similarity      50944554        50945894        .       -       .
+       Name "MICHAELJACKSON_0008:2:20:8069:5465#0" ; cigar "13M1265N63M" ; Align "1 76 -" ; Length "76" ; percentID "100"
+ *
  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out, ZMapStrand *query_strand,
@@ -2398,7 +2418,6 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	      if (percent_ID > 0)
 		{
 		  *percent_ID_out = percent_ID ;
-
 		  result = TRUE ;
 		}
 	      else
@@ -2472,36 +2491,6 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	    }
 	}
     }
-#if PROCESS_BAM
-	/* quick and easy hack to get BAM simple features dispplayed as gapped aligns
-	 * better to have a BAM data type/style flag but that brings in vast amounts of config/ foo canvas/ item factory stuff
-	 */
-  else
-    {
-  		if(strstr(attributes, "Sequence") && (tag_pos = strstr(attributes, "Target")))
-  		{
-#if 0
-  		    /* target is used to get names from other types of feature but the format is different */
-	          /* In acedb output at least, homologies all have the same format. */
-			int attr_fields ;
-			char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
-			char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
-
-			attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
-
-			if (attr_fields == 1)
-			{
-			has_name = FALSE ;
-			*feature_name = g_strdup(name) ;
-			*feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-								start, end, query_start, query_end) ;
-			}
-#endif
-		      *homol_type_out = ZMAPHOMOL_N_HOMOL ;
-  		}
-    }
-#endif
-
 
   return result ;
 }
@@ -2998,7 +2987,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser)
   g_string_append_printf(format_str,
                          "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
 			 G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"
-			 G_GSSIZE_FORMAT "c",
+			 G_GSSIZE_FORMAT "[^\n]s",
 			 length, length, length, length, length, length, length) ;
 #endif
   parser->format_str = g_string_free(format_str, FALSE) ;

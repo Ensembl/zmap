@@ -299,12 +299,15 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 	bump_data->incr = featureset->width + bump_data->spacing;
 
 	bump_data->complex = TRUE;	/* use complex features if possible */
+	if(zMapStyleIsUnique(featureset->style))
+		bump_data->complex = 0;
+
 	/*
 	 * a complex feature is a transcript or joined up alignment
 	 * some alignments (eg repeats) should not be - this need to go into styles or config somewhere
 	 * alignments should be joind up in the feature context if they are a set
 	 * if not then we'll have complex features of 1 sub-feature
-	 * if we want bump modes with unjoined up alignemnts then the mode can clear this flag
+	 * if we want bump modes with unjoined up alignemnts then the mode can clear this flag (as above)
 	 */
 
 	if(bump_mode != ZMAPBUMP_UNBUMP)

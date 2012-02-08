@@ -243,7 +243,7 @@ AlignGap align_gap_alloc(void)
  *
  * NOTE for short reads we have an option to squash those that have the same gap
  * (they only have one gap ,except for a few pathological cases)
- * in this case the first and last blocks are a diff colour, so we flasg this if the colour is visible and add another box not a line. Yuk
+ * in this case the first and last blocks are a diff colour, so we flag this if the colour is visible and add another box not a line. Yuk
  *
  */
 AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
@@ -552,7 +552,7 @@ zMapLogWarning("set nc splice 5 %s -> %s",g_quark_to_string(feature->right->feat
 			align->bump_set = TRUE;
 		}
 
-		if(!feature->left)	/* first feature: draw colinear lines */
+		if(!feature->left && !zMapStyleIsUnique(feature->feature->style))	/* first feature: draw colinear lines */
 		{
 			ZMapWindowCanvasFeature feat;
 
@@ -607,21 +607,25 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
 	*width = feature->width;
 
-	while(first->left)
+	if(!zMapStyleIsUnique(feature->feature->style))
+		/* if not joining up same name features they don't need to go in the same column */
 	{
-		first = first->left;
-		if(first->width > *width)
-		    *width = first->width;
-	}
+		while(first->left)
+		{
+			first = first->left;
+			if(first->width > *width)
+			*width = first->width;
+		}
 
-	while(feature->right)
-	{
-		feature = feature->right;
-		if(feature->width > *width)
-		    *width = feature->width;
-	}
+		while(feature->right)
+		{
+			feature = feature->right;
+			if(feature->width > *width)
+			*width = feature->width;
+		}
 
-	first->y2 = feature->y2;
+		first->y2 = feature->y2;
+	}
 
 	span->x1 = first->y1;
 	span->x2 = first->y2;

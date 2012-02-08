@@ -246,25 +246,34 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 				/* compare gaps array */
 				GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
 
-				if(g1->len != g2->len)
+				if(g1 && g2)
 				{
-					duplicate = FALSE;
-				}
-				else
-				{
-					int i;
-					ZMapAlignBlock a1, a2;
-
-					for(i = 0;i < g1->len; i++)
+					/* if there are gaps they must be identical */
+					if(g1->len != g2->len)
 					{
-						a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
-						a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
-						if(memcmp(a1,a2,sizeof(ZMapAlignBlockStruct)))
+						duplicate = FALSE;
+					}
+					else
+					{
+						int i;
+						ZMapAlignBlock a1, a2;
+
+						for(i = 0;i < g1->len; i++)
 						{
-							duplicate = FALSE;
-							break;
+							a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
+							a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
+							if(memcmp(a1,a2,sizeof(ZMapAlignBlockStruct)))
+							{
+								duplicate = FALSE;
+								break;
+							}
 						}
 					}
+				}
+				else if(g1 || g2)
+				{
+					/* if there are no gaps then bioth must be ungapped */
+					duplicate = FALSE;
 				}
 			}
 
