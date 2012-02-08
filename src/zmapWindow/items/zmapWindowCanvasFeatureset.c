@@ -1752,24 +1752,24 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 		{
 			if(score < value)
 			{
-				f->flags |= FEATURE_HIDE_FILTER;
+				f->flags |= FEATURE_HIDE_FILTER | FEATURE_HIDDEN;
 				fi->n_filtered++;
 
-				/* NOTE many of these may be HIDE_SUMMARISED whcih is not operative during bump
+				/* NOTE many of these may be FEATURE_SUMMARISED which is not operative during bump
 				 * so setting HIDDEN here must be done for the filtered features only
 				 * Hmmm... not quite sure of the mechanism, but putting this if
-				 * outside the brackets give a glitch on set column focus when bumped
+				 * outside the brackets give a glitch on set column focus when bumped (features not painted)
+				 * .... summarised features (FEATURE_SUMMARISED set but not HIDDEN bue to bumping) set to hidden when bumped
 				 */
-				if((f->flags & FEATURE_HIDE_REASON))
-					f->flags |= FEATURE_HIDDEN;
-				else
-					f->flags &= ~FEATURE_HIDDEN;
 			}
 			else
 			{
 				/* reset in case score went down */
+
 				f->flags &= ~FEATURE_HIDE_FILTER;
 				if(!(f->flags & FEATURE_HIDE_REASON))
+					f->flags &= ~FEATURE_HIDDEN;
+				else if(fi->bumped && (f->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED)
 					f->flags &= ~FEATURE_HIDDEN;
 			}
 		}
@@ -1777,6 +1777,12 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 
 	if(fi->n_filtered != was)
 	{
+		/* trigger a re-calc if summarised to ensure the picture is pixel perfect
+		 * NOTE if bumped we don;t calculate so no creeping inefficiency here
+		 */
+		fi->zoom = 0;
+
+
 		if(fi->bumped)
 		{
 			ZMapWindowCompressMode compress_mode;
