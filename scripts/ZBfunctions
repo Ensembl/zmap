@@ -101,7 +101,7 @@ ZBmsgInfo ()
 ZBmsgMail ()
 {
 
-mailx -s "ZMap Build - $2" zmapdev@sanger.ac.uk <<EOF
+mailx -s "ZMap Build - $2" annotools@sanger.ac.uk <<EOF
 
 Build Message:
 

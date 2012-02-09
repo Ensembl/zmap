@@ -84,6 +84,6 @@ zmap_message_out "--------------------------------------------------------------
 
 zmap_message_out "Mailing file to zmap developers"
 
-mailx -s "[$SCRIPT_NAME] $this_host machine info" zmapdev@sanger.ac.uk < $MACHINE_INFO_FILE || zmap_message_exit "Failed to mail information to developers"
+mailx -s "[$SCRIPT_NAME] $this_host machine info" annotools@sanger.ac.uk < $MACHINE_INFO_FILE || zmap_message_exit "Failed to mail information to developers"
 
 rm -f $MACHINE_INFO_FILE $TMP_X11PERF_FILE

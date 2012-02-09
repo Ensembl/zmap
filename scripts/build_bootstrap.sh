@@ -468,7 +468,7 @@ if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     cp $PATH_TO_MODIFIED_WEB_HEADER $PATH_TO_MASTER_WEB_HEADER || zmap_message_exit "Failed to cp web header"
 
     if [ "x$ZMAP_MASTER_RT_TO_CVS" == "x$ZMAP_TRUE" ]; then
-	# The release notes file will need editing. mail zmapdev about that.
+	# The release notes file will need editing. mail annotools about that.
 	FILE_DATE=$(date "+%Y_%m_%d")
 	RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
 	(cat <<EOF
@@ -608,7 +608,7 @@ rm -f host_checkout.sh     || exit 1;   \
       zmap_message_err "Build on $host failed!"
       let HOSTS_FAILED=HOSTS_FAILED+1
       if [ "x$ZMAP_MASTER_NOTIFY_MAIL" != "x" ]; then
-	  # mail tail $host.log to zmapdev@sanger.ac.uk
+	  # mail tail $host.log to annotools@sanger.ac.uk
 	  echo "ZMap Build Failed"                                   > fail.log
 	  echo ""                                                   >> fail.log
  	  echo "Tail of log:"                                       >> fail.log

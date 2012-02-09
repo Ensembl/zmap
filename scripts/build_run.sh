@@ -30,7 +30,7 @@ SRC_MACHINE='tviewsrv'
 SSH_ID='zmap'
 
 # ERROR_RECIPIENT= Someone to email
-ERROR_RECIPIENT='zmapdev@sanger.ac.uk'
+ERROR_RECIPIENT='annotools@sanger.ac.uk'
 
 # default mail subject.
 MAIL_SUBJECT="ZMap Build Failed (control script)"
