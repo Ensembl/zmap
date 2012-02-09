@@ -1,4 +1,3 @@
-/*  Last edited: Jul 11 09:23 2011 (edgrif) */
 /*  File: zmapFeatureTranscript.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2011
@@ -40,8 +39,6 @@
 
 typedef struct
 {
-  gboolean result ;
-
   ZMapFeature feature ;
 
   int feature_start ;
@@ -200,7 +197,11 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
-
+/* Takes a transcript feature and produces a list of "annotated" exon regions
+ * which include information about 5' and 3' split codons, frame and much else,
+ * see the ZMapFullExon struct.
+ * 
+ */
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
 					 GList **exon_regions_list_out)
 {
@@ -209,7 +210,7 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 
   if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
     {
-      ItemShowTranslationTextDataStruct full_data = { FALSE } ;
+      ItemShowTranslationTextDataStruct full_data = {NULL} ;
 
       full_data.feature = feature ;
       full_data.feature_start = feature->x1 ;
@@ -231,8 +232,8 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 	    }
 	}
 
-      full_data.full_exons = exon_regions_list_out ;
 
+      full_data.full_exons = exon_regions_list_out ;
 
       /* SHOULD WE ALLOW USER TO TRANSLATE ANY TRANSCRIPT ?? PROBABLY USEFUL....
        * THINK ABOUT THIS.... */
@@ -243,16 +244,18 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 	  full_data.translation = zMapFeatureTranslation(feature, &real_length);
 	}
 
+
       zMapFeatureTranscriptExonForeach(feature, getDetailedExon, &full_data) ;
+
+      if (g_list_length(*exon_regions_list_out) > 0)
+	result = TRUE ;
 
       if (exon_debug)
 	g_list_foreach(*exon_regions_list_out, printDetailedExons, NULL) ;
 
+      /* err....don't understand the code here.... */
       if (include_protein && full_data.translation)
 	g_free(full_data.translation) ;
-
-      /* In case there are no exons */
-      result = full_data.result ;
     }
 
 
@@ -411,11 +414,15 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 		  ex_cds_end = ex_split_3.x1 - 1 ;
 		}
 
+	      /* I'm not happy with this now...there are many, many combinations of pathological
+	       * cases to cope with and the code needs a rethink..... */
 
-	      /* cds part, simple now, just set to cds_start/end (only do this if there is
+	      /* cds part, "simple" now, just set to cds_start/end (only do this if there is
 	       * more, sometimes gene prediction programs produce very short exons so whole
 	       * exon is either split 5 or split 3 codon....) */
-	      if (ex_cds_start < exon_span->x2 && ex_cds_start < ex_split_3.x1 && ex_cds_end > ex_split_5.x2)
+	      if (ex_cds_start <= ex_cds_end 
+		  && (ex_cds_start >= exon_span->x1 || (ex_split_5.x2 && ex_cds_start > ex_split_5.x2))
+		  && (ex_cds_end <=  exon_span->x2 || (ex_split_3.x1 && ex_cds_end < ex_split_3.x1)))
 		{
 		  ex_cds = *exon_span ;				    /* struct copy. */
 
@@ -542,10 +549,6 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_utr_3)
     *(full_data->full_exons) = g_list_append(*(full_data->full_exons), full_exon_utr_3) ;
-
-
-  /* what more can we do? */
-  full_data->result = TRUE;
 
   return ;
 }
