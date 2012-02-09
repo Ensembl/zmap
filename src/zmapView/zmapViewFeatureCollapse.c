@@ -181,7 +181,7 @@ gint zMapFeatureGapCompare(gconstpointer a, gconstpointer b)
 }
 
 
-// mask new featureset with all (old+new) data in same block
+// collaspe similar features into one
 static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
                                                          gpointer data,
                                                          gpointer user_data,
@@ -193,7 +193,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
   ZMapFeatureTypeStyle style;
   GList *features = NULL, *fl;
   ZMapFeature feature = NULL, f;
-  gboolean duplicate;
+
 
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
 
@@ -214,197 +214,184 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 
     case ZMAPFEATURE_STRUCT_FEATURESET:
     {
-	    ZMapFeatureSet feature_set = NULL;
-          feature_set = (ZMapFeatureSet)feature_any;
-	    style = feature_set->style;
+		ZMapFeatureSet feature_set = NULL;
+		feature_set = (ZMapFeatureSet)feature_any;
+		style = feature_set->style;
+		gboolean collapse, squash;
+		GArray *new_gaps = NULL;	/* to replace original in visible squashed feature */
 
-	    if(!style)
+		if(!style)
 		break;
 
-	    if(zMapStyleIsCollapse(style))
-	    {
-		/* hide duplicated features: same start and end and same gaps array if present */
+		collapse = zMapStyleIsCollapse(style);
+		squash   = zMapStyleIsSquash(style);
+
+		if(!collapse && !squash)
+			break;
+
+		/* NOTE: rules of engagement as follows
+		 *
+		 * collapse combines identical features into one, they have identical start end, and gaps if present
+		 * squash combines features with identical gaps (must be present) and same or varied start and end
+		 * squash can only be set for alignments, collapse can be set for simple features too
+		 *
+		 * if both are selected then squash overrides collapse, but only for gapped features
+		 * so we only scan the features once
+		 *
+		 * squashed and collapsed features are flagged as such and the visible one has a population count
+		 *
+		 * visible squashed features have extra gaps data with contiguous regions at start and end (both optional)
+		 * these get displayed in a diff colour
+		 * but to compare gaps arrays for equeality we can only add these on afterwards :-(
+		 *
+		 * if we want to be flash we could do many of these to have a colour gradient according to populatiom
+		 * NOTE * that would be complicated *
+		 *
+		 * NOTE I used some old fashioned coding methodology here,
+		 * The idea is to do just what is required, taking into account squash and/or collapse,
+		 * feature types and gaps array status, while doing a single _linear_ scan.
+		 * There is no assumption that all features are of the same type
+		 * Take great care to be aware of all cases if you modify this.
+		 * Quite a few statements rely on implied status of some flags.
+		 * I've added some Asserts for documentation purposes.
+		 */
 
 		/* sort into start, -end coord order */
 		zMap_g_hash_table_get_data(&features, feature_set->features);
 		features = g_list_sort(features,zMapFeatureCompare);
 
+
 		/* flag unique features as displayed, duplicated as hidden */
 		/* count up how many */
 		for(fl = features; fl; fl = fl->next)
 		{
+			gboolean squash_this = FALSE;		/* can only be set to TRUE for alignemnts */
+			gboolean collapse_this = collapse;
+			gboolean duplicate = TRUE;
+			/* we only squash or collapse if duplicate is TRUE, how depends on the other flags */
+
 			f = (ZMapFeature) fl->data;
 			duplicate = TRUE;
-
-//if(feature)
-//	zMapLogWarning("collapse %d,%d (%d) %d,%d",feature->x1,feature->x2,feature->population,f->x1,f->x2);
-			if(!feature || f->x1 != feature->x1 || f->x2 != feature->x2)
+			if(!feature)
 				duplicate = FALSE;
-
-			if(feature && f->type == ZMAPSTYLE_MODE_ALIGNMENT)
-			{
-				/* compare gaps array */
-				GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
-
-				if(g1 && g2)
-				{
-					/* if there are gaps they must be identical */
-					if(g1->len != g2->len)
-					{
-						duplicate = FALSE;
-					}
-					else
-					{
-						int i;
-						ZMapAlignBlock a1, a2;
-
-						for(i = 0;i < g1->len; i++)
-						{
-							a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
-							a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
-							if(memcmp(a1,a2,sizeof(ZMapAlignBlockStruct)))
-							{
-								duplicate = FALSE;
-								break;
-							}
-						}
-					}
-				}
-				else if(g1 || g2)
-				{
-					/* if there are no gaps then bioth must be ungapped */
-					duplicate = FALSE;
-				}
-			}
 
 			if(duplicate)
 			{
-				feature->population++;
-				f->flags.collapsed = 1;
+				if(f->x1 != feature->x1 || f->x2 != feature->x2)
+				{
+					collapse_this = FALSE;	/* must be identical */
+					if(!squash)
+					{
+						// zMapAsset(collapse);
+						duplicate = FALSE;
+					}
+				}
+
+				if(f->type == ZMAPSTYLE_MODE_ALIGNMENT)
+				{
+					/* compare gaps array */
+					/* if there are gaps the must be identical */
+					/* collapse is ok without gaps */
+
+					GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
+
+					/* test gaps equal for both squash and collapse */
+					if(g1 && g2)
+					{
+						/* if there are gaps they must be identical */
+						if(g1->len != g2->len)
+						{
+							duplicate = FALSE;
+						}
+						else
+						{
+							int i;
+							ZMapAlignBlock a1, a2;
+
+							for(i = 0;i < g1->len; i++)
+							{
+								a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
+								a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
+								if(memcmp(a1,a2,sizeof(ZMapAlignBlockStruct)))
+								{
+									duplicate = FALSE;
+									break;
+								}
+							}
+						}
+					}
+					else if(squash || g1 || g2)
+					{
+						/* if there are no gaps then both must be ungapped for collapse */
+						/* squash requires gaps */
+						duplicate = FALSE;
+					}
+					if(duplicate && squash)		/* has prioriy over collapse */
+					{
+						squash_this = TRUE;
+					}
+				}
+			}
+
+			if(!duplicate)	/* get ready to test the next */
+			{
+				if(feature && (feature->flags.squashed_start || feature->flags.squashed_end))
+				{
+					zMapAssert(squash && new_gaps);
+					/* update the gaps array */
+
+					/* NOTE interim implementation
+					 * we alter the visible feature in situ and cannot goback to the original
+					 * later we'll add a new feature to allow alternate styled displays
+					 * eg of squashed and raw data
+					 */
+
+					g_array_free(feature->feature->feature.homol.align,TRUE);
+					feature->feature->feature.homol.align = new_gaps;
+				}
+				else if(new_gaps)
+				{
+					g_array_free(new_gaps,TRUE);
+					new_gaps = NULL;
+				}
+
+				feature = f;
+				feature->population = 1;
+
+				if(squash && f->feature->feature.homol.align)
+				{
+					/* prepare a new replacement gaps array */
+					int i;
+					GArray *f_gaps = f->feature->feature->homol.align;
+//					ZMapAlignBlock ab;
+
+					new_gaps = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), f_gaps->len + 2);
+					for(i = 0;i < f_gaps->len; i++)
+					{
+//						ab = &g_array_index(f_gaps,ZMapAlignBlockStruct,i);
+						g_array_append_val(new_gaps, g_array_index(f_gaps,ZMapAlignBlockStruct,i));
+					}
+					/* not very satisfactory: we will prepend the start in almost all cases */
+				}
+
 			}
 			else
 			{
-				feature = f;
-				feature->population = 1;
-			}
-		}
-	    }
-
-	    if(zMapStyleIsSquash(style))	/* can only be set for alignments */
-	    {
-		/* hide duplicated features: same start and end and same gaps array if present */
-		/* NOTE: this is quite fiddly... WTH did i dream this up???
-		 * there are also some interesting interactions with make_gapped() in zmapWindowCanvasAlignment.c
-		 */
-
-		GArray *g1= NULL,*g2;
-		ZMapAlignBlock ab1,ab2;
-		int x1,x2;	/* current feature gap coords */
-		int fx1,fx2;	/* current feature gap coords */
-		int edge1,edge2;	/* define common region */
-
-
-		gboolean squash = FALSE;
-
-		/* sort into gap start, -end coord order */
-		zMap_g_hash_table_get_data(&features, feature_set->features);
-		features = g_list_sort(features,zMapFeatureGapCompare);		/* NOTE: slow sort */
-
-		/* flag unique features as displayed, duplicated as hidden */
-		/* count up how many */
-		for(fl = features, feature = NULL; fl; fl = fl->next)
-		{
-			f = (ZMapFeature) fl->data;
-			squash = TRUE;
-
-			if(!feature || feature->strand != f->strand)
-			{
-				squash = FALSE;
-			}
-
-			if(squash)
-			{
-				g2 = f->feature.homol.align;
-				ab1 = &g_array_index(g2, ZMapAlignBlockStruct,0);
-				fx1 = ab1->q1;
-				ab2 = &g_array_index(g2, ZMapAlignBlockStruct,1);
-				fx2 = ab2->q2;
-
-				/* we should test all the gaps, but that's really tedious
-				* so if any reads span 3 exons we don't squash them
-				*/
-
-				if(g2->len != 2)
+				if(squash_this)
 				{
-					squash = FALSE;
+					/* adjust replacement gaps array */
+
+					feature->population++;
+					f->flags.squashed = TRUE;
 				}
 				else
 				{
-					if(x1 != ab1->q2)
-					{
-						squash = FALSE;
-					}
-
-					if(x2 != ab2->q1)
-					{
-						squash = FALSE;
-					}
+					zMapAssert(collapse);
+					feature->population++;
+					f->flags.collapsed = TRUE;
 				}
-
-			}
-
-			if(squash)
-			{
-				feature->population++;
-				f->flags.squashed = 1;
-
-				if(edge1 < fx1)
-				{
-					edge1 = fx1;
-					feature->flags.squashed_start = 1;
-				}
-				if(edge2 > fx2)
-				{
-					edge2 = fx2;
-					feature->flags.squashed_end = 1;
-				}
-			}
-			else
-			{
-				if(feature)
-				{
-					/* update the gaps array to include grey regions at each end */
-					ZMapAlignBlock edge;
-
-					if(feature->flags.squashed_start)		/* such attention to detail :-) */
-					{
-						edge = g_new0(ZMapAlignBlockStruct,1);
-						memcpy(edge,ab1,sizeof (ZMapAlignBlockStruct));
-						edge->t2 -= edge->q2 - edge1;
-						edge->q2 = edge1;
-						g_array_prepend_val(g1,edge);
-					}
-
-					if(feature->flags.squashed_end)
-					{
-						edge = g_new0(ZMapAlignBlockStruct,1);
-						memcpy(edge,ab1,sizeof (ZMapAlignBlockStruct));
-						edge->t1 += edge2 - edge->q1;
-						edge->q1 = edge2;
-						g_array_append_val(g1,edge);
-					}
-				}
-
-				feature = f;
-				feature->population = 1;
-				g1 = f->feature.homol.align;
-				x1 = ab1->q2;
-				x2 = ab2->q1;
-				edge1 = fx1;
-				edge2 = fx2;
 			}
 		}
-	    }
 
 	    if(features)
 		    g_list_free(features);

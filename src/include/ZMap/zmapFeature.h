@@ -510,6 +510,7 @@ typedef struct
 
 
 
+
 /* Homology feature. */
 typedef struct
 {
@@ -599,6 +600,7 @@ typedef struct
 } ZMapAssemblyPathStruct, *ZMapAssemblyPath ;
 
 
+
 /* The Feature structure itsself. Describes a single feature, the feature may be compound
  * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
@@ -630,12 +632,11 @@ typedef struct ZMapFeatureStruct_
     unsigned int has_boundary : 1 ;
 
     /* if we have collapsed/ squashed features then the visible one will have non-zero population, so no need for another flag */
-    unsigned int collapsed: 1 ;
-    unsigned int squashed: 1 ;
-    unsigned int squashed_start : 1;	/* do the edges get frayed? */
+    unsigned int collapsed: 1 ;		/* generic */
+    unsigned int squashed: 1 ;		/* alignments only */
+    unsigned int squashed_start : 1;	/* do the edges get frayed? display in a diff colour */
     unsigned int squashed_end : 1;
   } flags ;
-
 
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
