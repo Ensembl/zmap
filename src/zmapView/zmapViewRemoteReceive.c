@@ -198,7 +198,8 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 
 
 
-static RemoteCommandRCType localProcessRemoteRequest(ZMapView view, char *command, char **reply_out) ;
+static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
+					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 
 
@@ -300,11 +301,13 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
-RemoteCommandRCType zMapViewProcessRemoteRequest(ZMapView view, char *command, char **reply_out)
+gboolean zMapViewProcessRemoteRequest(ZMapView view, char *command_name, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  gboolean result = FALSE ;
 
-  if ((result = localProcessRemoteRequest(view, command, reply_out) == REMOTE_COMMAND_RC_UNKNOWN))
+  if (!(result = localProcessRemoteRequest(view, command_name, request,
+					   app_reply_func, app_reply_data)))
     {
       GList* list_item ;
 
@@ -315,9 +318,10 @@ RemoteCommandRCType zMapViewProcessRemoteRequest(ZMapView view, char *command, c
 
 	  view_window = list_item->data ;
 
-	  result = zMapWindowProcessRemoteRequest(view_window->window, command, reply_out) ;
+	  result = zMapWindowProcessRemoteRequest(view_window->window, command_name, request,
+						  app_reply_func, app_reply_data) ;
 	}
-      while ((result == REMOTE_COMMAND_RC_OTHER) && (list_item = g_list_next(list_item))) ;
+      while ((!result) && (list_item = g_list_next(list_item))) ;
     }
 
   return result ;
@@ -375,9 +379,43 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view)
 
 
 /* THIS FUNCTION COULD CALL THE ONE BELOW IT...... */
-static RemoteCommandRCType localProcessRemoteRequest(ZMapView view, char *command, char **reply_out)
+static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
+					  ZMapRemoteAppReturnReplyFunc app_reply_func,
+					  gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  gboolean result = FALSE ;
+  ZMapView view = (ZMapView)local_data ;
+  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
+  char *reason  = NULL ;
+  ZMapXMLUtilsEventStack reply = NULL ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* Dummied for now.... */
+
+  /* Need to insert all the command handling code here. */
+
+  if (strcmp(command_name, "handshake") == 0)
+    {
+      printf("found handshake\n") ;
+
+      command_rc = REMOTE_COMMAND_RC_OK ;
+      reason = NULL ;
+      reply = "handshake successful." ;
+      
+      result = TRUE ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  if (result)
+    {
+      (app_reply_func)(command_name, command_rc, reason, reply, app_reply_data) ;
+    }
+
 
 
   return result ;

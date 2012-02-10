@@ -37,6 +37,7 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapWindow.h>
+#include <ZMap/zmapAppRemote.h>
 
 /* Opaque type, represents an instance of a ZMap. */
 typedef struct _ZMapStruct *ZMap ;
@@ -53,13 +54,17 @@ typedef struct _ZMapCallbacksStruct
 {
   ZMapCallbackFunc destroy ;				    /* Reports that this zmap instance has
 							       been destroyed. */
-  ZMapCallbackFunc quit_req ;				    /* Requests application termination. */
+  ZMapCallbackFunc quit_req ;				    /* Requests application
+							       termination. */
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;	    /* App level function to call to make requests. */
+
 } ZMapCallbacksStruct, *ZMapCallbacks ;
 
 
 
 void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map) ;
+int zMapNumViews(ZMap zmap) ;
 ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
@@ -70,9 +75,9 @@ char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
-
-RemoteCommandRCType zMapControlProcessRemoteRequest(ZMap zmap, char *command, char **reply_out) ;
-
+gboolean zMapControlProcessRemoteRequest(gpointer local_data,
+					 char *command_name, char *request,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
 

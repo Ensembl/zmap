@@ -27,7 +27,7 @@
  * Description: External interface to remote control package.
  *
  * HISTORY:
- * Last edited: Dec 16 10:14 2011 (edgrif)
+ * Last edited: Feb  1 19:01 2012 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -60,22 +60,49 @@
 #define ZACP_REQUEST  "request"
 #define ZACP_REPLY    "reply"
 
-#define ZACP_TYPE       "type"
-#define ZACP_VERSION_ID "version"
-#define ZACP_PEER_ID    "peer_id"
-#define ZACP_REQUEST_ID "request_id"
+#define ZACP_TYPE          "type"
+#define ZACP_VERSION_ID    "version"
+#define ZACP_APP_ID        "app_id"
+#define ZACP_CLIPBOARD_ID  "clipboard_id"
+#define ZACP_REQUEST_ID    "request_id"
 
 
 
-/* Commands element and attributes. */
+/* Command attribute and its values. */
 #define ZACP_CMD "command"
 
-#define ZACP_HANDSHAKE "handshake"
-#define ZACP_PING "ping"
+#define ZACP_HANDSHAKE     "handshake"
+#define ZACP_PING          "ping"
+#define ZACP_GOODBYE       "goodbye"
+#define ZACP_SHUTDOWN      "shutdown"
+#define ZACP_NEWVIEW       "new_view"
+#define ZACP_ADD_TO_VIEW   "add_to_view"
+#define ZACP_CLOSEVIEW     "close_view"
+
+
+#define ZACP_VIEWID  "view_id"
+#define ZACP_TIMEOUT "timeout"
+
+
+#define ZACP_SEQUENCE_TAG   "sequence"
+#define ZACP_SEQUENCE_NAME  "name"
+#define ZACP_SEQUENCE_START "start"
+#define ZACP_SEQUENCE_END   "end"
+
+#define ZACP_MESSAGE   "message"
+
+#define ZACP_VIEW   "view"
+
+
+
 
 
 /* Results element and attributes. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZACP_RESULT "result"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #define ZACP_RETURN_CODE "return_code"
 #define ZACP_REASON      "reason"

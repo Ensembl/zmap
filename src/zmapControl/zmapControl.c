@@ -91,7 +91,8 @@ ZMapViewCallbacksStruct view_cbs_G = {
   controlSplitToPatternCB,
   controlVisibilityChangeCB,
   viewStateChangeCB,
-  viewKilledCB
+  viewKilledCB,
+  NULL
 } ;
 
 
@@ -121,8 +122,13 @@ void zMapInit(ZMapCallbacks callbacks)
   zmap_cbs_G->destroy = callbacks->destroy ;
   zmap_cbs_G->quit_req = callbacks->quit_req ;
 
+  zmap_cbs_G->remote_request_func = callbacks->remote_request_func ;
+
+
   /* Init view.... */
+  view_cbs_G.remote_request_func = callbacks->remote_request_func ;
   zMapViewInit(&view_cbs_G) ;
+
 
   return ;
 }
@@ -165,6 +171,17 @@ gboolean zMapRaise(ZMap zmap)
 }
 
 
+/* Noddy function to return number of current views. */
+int zMapNumViews(ZMap zmap)
+{
+  int num_views ;
+
+  num_views = g_list_length(zmap->view_list) ;
+
+  return num_views ;
+}
+
+
 
 /* Might rename this to be more meaningful maybe.... */
 ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
@@ -172,8 +189,8 @@ ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
   ZMapView view = NULL ;
 
   zMapAssert(zmap && sequence_map->sequence && *sequence_map->sequence
-	     && (sequence_map->start > 0 &&
-           (sequence_map->end == 0 || sequence_map->end > sequence_map->start))) ;
+	     && (sequence_map->start > 0
+		 && (sequence_map->end == 0 || sequence_map->end > sequence_map->start))) ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 

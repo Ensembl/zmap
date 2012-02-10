@@ -25,11 +25,18 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Application level functions to set up ZMap remote control
- *              to communicate with a peer program.
+ *              and communicate with a peer program.
+ *              
+ *              This code provides the interface between ZMapRemoteControl
+ *              and the _whole_ of the rest of ZMap. It doesn't "know"
+ *              about the inidividual commands it just ensures that
+ *              requests and replies get moved between the remote control
+ *              code and the various components of zmap (e.g. Control,
+ *              View, Window) and back.
  *
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Dec 16 10:19 2011 (edgrif)
+ * Last edited: Feb  8 21:31 2012 (edgrif)
  * Created: Mon Nov  1 10:32:56 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -37,109 +44,96 @@
 
 #include <string.h>
 #include <glib.h>
-#include <ZMap/zmapRemoteControl.h>
+
 #include <ZMap/zmapRemoteCommand.h>
+#include <ZMap/zmapAppRemote.h>
 #include <zmapApp_P.h>
 
 
 
-static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
-				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
-				 void *request, void *user_data) ;
-static gboolean replyHandlerCB(ZMapRemoteControl remote_control, void *reply, void *user_data) ;
-static gboolean errorHandlerFunc(ZMapRemoteControl remote_control, void *user_data) ;
+static void ourRequestEndedCB(void *user_data) ;
+static void theirRequestEndedCB(void *user_data) ;
+static gboolean errorHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
 
-static char *getHandshakeMessage(char *app_id, char *unique_id) ;
-static GArray *addPeerElement(GArray *xml_stack_inout, char *app_id, char *app_unique_id) ;
+static void requestHandlerCB(ZMapRemoteControl remote_control,
+			     ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
+			     char *request, void *user_data) ;
+static void replyHandlerCB(ZMapRemoteControl remote_control,
+			   ZMapRemoteControlCallReplyDoneFunc remote_reply_func, void *remote_reply_data,
+			   char *reply, void *user_data) ;
 
-RemoteCommandRCType processRequest(ZMapAppContext app_context, char *command, char **reply_out) ;
+static void handleZMapRepliesCB(char *command, RemoteCommandRCType result, char *reason,
+				ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
+static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_body, gpointer app_request_data,
+				 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static GArray *createRequestEnvelope(ZMapAppRemote remote, char *unique_id, char *command) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
 
 
-/* COPY STUFF FROM OLD REMOTE... */
 
-/* Requests that come to us from an external program. */
-typedef enum
-  {
-    ZMAPAPP_REMOTE_INVALID,
-    ZMAPAPP_REMOTE_OPEN_ZMAP,				    /* Open a new zmap window. */
-    ZMAPAPP_REMOTE_CLOSE_ZMAP,				    /* Close a window. */
-    ZMAPAPP_REMOTE_UNKNOWN
-  } ZMapAppValidXRemoteAction;
 
-/* This should be somewhere else ...
-   or we should be making other objects */
-typedef struct
+
+
+/* 
+ *                       External interface.
+ */
+
+
+/* Returns the function that sub-systems in zmap call when they have a request to be sent to a peer. */
+ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void)
 {
-  ZMapAppContext app_context;
-  ZMapAppValidXRemoteAction action;
-  GQuark sequence;
-  GQuark start;
-  GQuark end;
-  GQuark source;
-} RequestDataStruct, *RequestData;
+  ZMapRemoteAppMakeRequestFunc req_func ;
 
-typedef struct
-{
-  int code;
-  gboolean handled;
-  GString *message;
-}ResponseContextStruct, *ResponseContext;
+  req_func = handleZMapRequestsCB ;
 
-
-
-
-
-static char *application_execute_command(char *command_text, gpointer app_context,
-					 int *statusCode, ZMapXRemoteObj owner);
-static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
-static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
-static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
-static gboolean req_end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
-
-static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response);
-static void send_finalised(ZMapXRemoteObj client);
-static gboolean finalExit(gpointer data) ;
-
-static RemoteCommandRCType localRequest(ZMapAppContext app_context, char *command, char **reply_out) ;
-
-
-static ZMapXMLObjTagFunctionsStruct start_handlers_G[] = {
-  { "zmap", start },
-  { "request", req_start },
-  { NULL,   NULL  }
-};
-static ZMapXMLObjTagFunctionsStruct end_handlers_G[] = {
-  { "zmap",    end  },
-  { "request", req_end  },
-  { NULL,   NULL }
-};
-
-static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
-  NULL, "new_zmap", "shutdown", NULL
-};
-
-
-
+  return req_func ;
+}
 
 
 
 /* Set up the remote controller object. */
-gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context)
+gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name, char *peer_clipboard)
 {
   gboolean result = FALSE ;
+  ZMapAppRemote remote ;
+  char *app_id ;
+  ZMapRemoteControl remote_control ;
+  
 
-  app_context->app_id = g_strdup(zMapGetAppName()) ;
-  app_context->app_unique_id = zMapMakeUniqueID(app_context->app_id) ;
-
-  if ((app_context->remote_controller = zMapRemoteControlCreate(app_context->app_id,
-								errorHandlerFunc, app_context,
-								NULL, NULL)))
+  app_id = zMapGetAppName() ;
+  if ((remote_control = zMapRemoteControlCreate(app_id,
+						ourRequestEndedCB, app_context,
+						theirRequestEndedCB, app_context,
+						errorHandlerCB, app_context,
+						NULL, NULL)))
     {
+      remote = g_new0(ZMapAppRemoteStruct, 1) ;
+      remote->app_id = g_strdup(app_id) ;
+      remote->app_unique_id = zMapMakeUniqueID(remote->app_id) ;
+
+      remote->peer_name = peer_name ;
+      remote->peer_clipboard = peer_clipboard ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      remote->request_id_num = 0 ;
+      remote->request_id = g_string_new("") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      remote->remote_controller = remote_control ;
+
       /* set no timeout for now... */
-      zMapRemoteControlSetTimeout(app_context->remote_controller, 0) ;
+      zMapRemoteControlSetTimeout(remote->remote_controller, 0) ;
+
+      remote->view2zmap = g_hash_table_new(NULL, NULL) ;
+
+      app_context->remote_control = remote ;
 
       result = TRUE ;
     }
@@ -159,43 +153,56 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context)
 gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
 {
   gboolean result = TRUE ;
+  ZMapAppRemote remote = app_context->remote_control ;
 
   if (result)
-    result = zMapRemoteControlSelfInit(app_context->remote_controller,
-				       app_context->app_unique_id,
-				       requestHandlerCB, app_context) ;
+    result = zMapRemoteControlReceiveInit(remote->remote_controller,
+					  remote->app_unique_id,
+					  requestHandlerCB, app_context) ;
 
   if (result)
-    result = zMapRemoteControlPeerInit(app_context->remote_controller,
-				       app_context->peer_unique_id,
+    result = zMapRemoteControlSendInit(remote->remote_controller,
+				       remote->peer_name, remote->peer_clipboard,
 				       replyHandlerCB, app_context) ;
 
   if (result)
-    result = zMapRemoteControlSelfWaitForRequest(app_context->remote_controller) ;
+    result = zMapRemoteControlReceiveWaitForRequest(remote->remote_controller) ;
 
   return result ;
 }
 
 
 
-/* We need to contact the peer and get their id to establish two way communication. Note
- * this will happen asychronously.... */
-gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context)
+void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppCBFunc exit_routine)
 {
-  gboolean result = FALSE ;
-  char *hello_msg ;
+  app_context->remote_control->exit_routine = exit_routine ;
 
-  hello_msg = getHandshakeMessage(app_context->app_id, app_context->app_unique_id) ;
-
-  if (!(result = zMapRemoteControlPeerRequest(app_context->remote_controller, hello_msg)))
-    {
-      zMapLogCritical("%s", "Could not connect to peer program.") ;
-
-      zMapCritical("%s", "Could not connect to peer program.") ;
-    }
-
-  return result ;
+  return ;
 }
+
+
+/* Destroy all resources for the remote controller object. */
+void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
+{
+  ZMapAppRemote remote ;
+
+  remote = app_context->remote_control ;
+
+  g_free(remote->app_id) ;
+  g_free(remote->app_unique_id) ;
+
+  zMapRemoteControlDestroy(remote->remote_controller) ;
+
+  g_hash_table_destroy(remote->view2zmap) ;
+
+  g_free(app_context->remote_control) ;
+  app_context->remote_control = NULL ;
+
+  return ;
+}
+
+
+
 
 
 
@@ -206,55 +213,126 @@ gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context)
  */
 
 
-static gboolean requestHandlerCB(ZMapRemoteControl remote_control,
-				 ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
-				 void *request, void *user_data)
+
+/*             Functions called directly by ZMapRemoteControl.                */
+
+
+/* 
+ * Called by ZMapRemoteControl: receives all requests sent to zmap by a peer.
+ */
+static void requestHandlerCB(ZMapRemoteControl remote_control,
+			     ZMapRemoteControlCallWithReplyFunc remotecontrol_request_done_func,
+			     void *remotecontrol_request_done_data,
+			     char *request, void *user_data)
 {
-  gboolean result = TRUE ;
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  RemoteCommandRCType command_rc ;
-  char *reply = NULL ;
+  ZMapAppRemote remote = app_context->remote_control ;
+  gboolean result ;
+  char *error_out = NULL ;
+
+  /* should we be validating at this level ?....surely remotecontrol code should have done that ? */
+  if (!(result = zMapRemoteCommandValidateRequest(remote->remote_controller, request, &error_out)))
+    {
+      /* error message etc...... */
+      zMapLogWarning("Bad remote message from peer: %s", error_out) ;
+
+      g_free(error_out) ;
+    }
+  else
+    {
+      /* Cache these, must be called from handleZMapRepliesCB() */
+      remote->remotecontrol_request_done_func = remotecontrol_request_done_func ;
+      remote->remotecontrol_request_done_data = remotecontrol_request_done_data ;
+
+      /* Call the command processing code....if it succeeds we don't need to do anything, we will
+       * be called back. */
+      if (!(result = zmapAppProcessAnyRequest(app_context, request, handleZMapRepliesCB)))
+	{
+	  /* report error.... */
+
+	}
+    }
 
 
-  /* Call the command processing code....
-   * 
-   * 
-   *  */
-  command_rc = processRequest(app_context, request, &reply) ;
-
-
-
-  /* this is where we need to process the zmap commands perhaps passing on the remote_reply_func
-   * and data to be called from a callback for an asynch. request.
-   * 
-   * For now we just call straight back for testing.... */
-  result = (remote_reply_func)(remote_reply_data, reply, strlen(reply) + 1) ;
-
-
-
-  return result ;
+  return ;
 }
 
 
 
-
-static gboolean replyHandlerCB(ZMapRemoteControl remote_control, void *request, void *user_data)
+/* 
+ * Called by ZMapRemoteControl: Receives all replies sent to zmap by a peer.
+ */
+static void replyHandlerCB(ZMapRemoteControl remote_control,
+			   ZMapRemoteControlCallReplyDoneFunc remote_reply_done_func,
+			   void *remote_reply_done_data,
+			   char *reply, void *user_data)
 {
-  gboolean result = TRUE ;
-  char *reply = (char *)request ;
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  ZMapAppRemote remote = app_context->remote_control ;
+  gboolean result ;
+  char *error_out = NULL ;
+
+  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller, remote->curr_request, reply, &error_out)))
+    {
+       /* error message etc...... */
+      zMapLogWarning("Bad remote message from peer: %s", error_out) ;
+
+      g_free(error_out) ;
+    }
+  else
+    {
+      remote->reply_done_func = remote_reply_done_func ;
+      remote->reply_done_data = remote_reply_done_data ;
+
+      /* Call the command processing code....if it succeeds we don't need to do anything, we will
+       * be called back. */
+      if (!(result = zmapAppProcessAnyReply(app_context, reply)))
+	{
+	  /* report error.... */
+	}
+
+      /* We could just call back to remotecontrol from here....alternative is pass functions
+       * right down to reply handler....and have them call back to appcommand level and then
+       * app command level calls back here...needed if asynch....  */
+      (remote_reply_done_func)(remote_reply_done_data) ;
+    }
+
+
+
+  return ;
+}
+
+
+/* Called by RemoteControl when a request we sent has been replied to by the peer
+ * and the transaction is ended. */
+static void ourRequestEndedCB(void *user_data)
+{
+
+
+
+  return ;
+}
+
+
+
+/* Called by RemoteControl when our peer sent a request and our reply has been sent
+ * and the transaction is ended. */
+static void theirRequestEndedCB(void *user_data)
+{
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
   
+  zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
 
 
-
-  return result ;
+  return ;
 }
 
 
-
-
-static gboolean errorHandlerFunc(ZMapRemoteControl remote_control, void *user_data)
+/* 
+ *         Called by ZMapRemoteControl: Receives all errors (e.g. timeouts).
+ */
+static gboolean errorHandlerCB(ZMapRemoteControl remote_control, void *user_data)
 {
   gboolean result = FALSE ;
 
@@ -266,323 +344,92 @@ static gboolean errorHandlerFunc(ZMapRemoteControl remote_control, void *user_da
 
 
 
-/* Receives all remote commands sent to zmap, if it's an app-level command it calls the
- * appropriate to process the command otherwise it forwards it to the view and so on.
+/*        Functions called by ZMap sub-components, e.g. Control, View, Window   */
+
+
+
+/* Called by any component of ZMap (e.g. control, view etc) which has processed a command
+ * and needs to return the reply for sending to the peer program.
+ * 
+ * This function calls back to ZMapRemoteControl to return the result of a command.
  *  */
-RemoteCommandRCType processRequest(ZMapAppContext app_context, char *command, char **reply_out)
+static void handleZMapRepliesCB(char *command, RemoteCommandRCType command_rc, char *reason,
+				ZMapXMLUtilsEventStack reply,
+				gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
-
-
-  if ((result = localRequest(app_context, command, reply_out)) == REMOTE_COMMAND_RC_UNKNOWN)
-    {
-      /* Command not known, try lower down... */
-
-
-      result = zMapManagerProcessRemoteRequest(app_context->zmap_manager, command, reply_out) ;
-    }
-
-  return result ;
-}
-
-
-
-static RemoteCommandRCType localRequest(ZMapAppContext app_context, char *command, char **reply_out)
-{
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
-
-  /* dummied for now.... */
-
-  return result ;
-}
-
-
-
-
-static char *getHandshakeMessage(char *app_id, char *unique_id)
-{
-  char *hello_message = NULL ;
+  ZMapAppContext app_context = (ZMapAppContext)app_reply_data ;
+  ZMapAppRemote remote = app_context->remote_control ;
   GArray *xml_stack ;
-  ZMapXMLWriter writer;
+  char *err_msg = NULL ;
+  char *full_reply = NULL ;
 
-  static int i = 0 ;					    /* hack to scaffold ids for now... */
-  static GString *id_str = NULL ;
-
-  i++ ;
-  if (!id_str)
-    id_str = g_string_new("") ;
-  g_string_printf(id_str, "%d", i) ;
-
-
-  xml_stack = zMapRemoteControlCreateRequest(unique_id, id_str->str, -1, "handshake") ;
-
-
-  xml_stack = addPeerElement(xml_stack, app_id, unique_id) ;
-
-
-  if ((writer = zMapXMLWriterCreate(NULL, NULL)))
+  /* Make a zmap protocol reply from the return code etc..... */
+  if (!(xml_stack = zMapRemoteCommandCreateReplyFromRequest(remote->remote_controller,
+							    remote->curr_request,
+							    command_rc, reason, reply, &err_msg))
+      || !(full_reply = zMapRemoteCommandStack2XML(xml_stack, &err_msg)))
     {
-      ZMapXMLWriterErrorCode xml_status ;
+      zMapLogWarning("%s", err_msg) ;
 
-      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack)) != ZMAPXMLWRITER_OK)
-        zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLWriterErrorMsg(writer));
-      else
-	hello_message = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
+      /* There's a problem here....if the app messes up the request syntax somehow this
+       * part will fail and then we lose communication....need to tie down who looks
+       * after the request that we make the reply from...be better to keep it internally
+       * if possible..... */
 
-      zMapXMLWriterDestroy(writer) ;
+      full_reply = "disaster...bad xml...." ;
     }
 
-  return hello_message ;
-}
-
-
-
-static GArray *addPeerElement(GArray *xml_stack_inout, char *app_id, char *app_unique_id)
-{
-  GArray *xml_stack = xml_stack_inout ;
-  static ZMapXMLUtilsEventStackStruct
-    peer[] =
-    {
-      {ZMAPXML_START_ELEMENT_EVENT, "peer",      ZMAPXML_EVENT_DATA_NONE,  {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "app_id",    ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "unique_id",    ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_END_ELEMENT_EVENT, "peer",        ZMAPXML_EVENT_DATA_NONE,  {0}},
-      {ZMAPXML_NULL_EVENT}
-    } ;
-
-  /* Fill in peer element attributes. */
-  peer[1].value.q = g_quark_from_string(app_id) ;
-  peer[2].value.q = g_quark_from_string(app_unique_id) ;
-
-  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "request", &peer[0]) ;
-
-  return xml_stack ;
-}
-
-
-
-/* This should just be a filter command passing to the correct
-   function defined by the action="value" of the request */
-static char *application_execute_command(char *command_text,
-					 gpointer app_context_data, int *statusCode, ZMapXRemoteObj owner)
-{
-  ZMapXMLParser parser;
-  ZMapAppContext app_context = (ZMapAppContext)app_context_data;
-  char *xml_reply      = NULL;
-  gboolean cmd_debug   = FALSE;
-  gboolean parse_ok    = FALSE;
-  RequestDataStruct request_data = {0};
-
-  if(zMapXRemoteIsPingCommand(command_text, statusCode, &xml_reply) != 0)
-    {
-      goto HAVE_RESPONSE;
-    }
-
-  parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug);
-
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers_G, end_handlers_G);
-
-  if ((parse_ok = zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))))
-    {
-      ResponseContextStruct response_data = {0};
-
-      response_data.code    = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
-      response_data.message = g_string_sized_new(256);
-
-      switch(request_data.action)
-        {
-        case ZMAPAPP_REMOTE_OPEN_ZMAP:
-          createZMap(app_context_data, &request_data, &response_data);
-          if(app_context->info)
-            response_data.code = app_context->info->code;
-          break;
-        case ZMAPAPP_REMOTE_CLOSE_ZMAP:
-	  {
-	    guint handler_id ;
-
-	    /* Send a response to the external program that we got the CLOSE. */
-	    g_string_append_printf(response_data.message, "zmap is closing, wait for finalised request.") ;
-	    response_data.handled = TRUE ;
-	    response_data.code = ZMAPXREMOTE_OK;
-
-            /* Remove the notify handler. */
-            if(app_context->property_notify_event_id)
-              g_signal_handler_disconnect(app_context->app_widg, app_context->property_notify_event_id);
-            app_context->property_notify_event_id = 0 ;
-
-	    /* Attach an idle handler from which we send the final quit, we must do this because
-	     * otherwise we end up exitting before the external program sees the final quit. */
-	    handler_id = g_idle_add(finalExit, app_context) ;
-	  }
-          break;
-        case ZMAPAPP_REMOTE_UNKNOWN:
-        case ZMAPAPP_REMOTE_INVALID:
-        default:
-          response_data.code = ZMAPXREMOTE_UNKNOWNCMD;
-          g_string_append_printf(response_data.message, "Unknown command");
-          break;
-        }
-
-      *statusCode = response_data.code;
-      xml_reply   = g_string_free(response_data.message, FALSE);
-    }
-  else
-    {
-      *statusCode = ZMAPXREMOTE_BADREQUEST;
-      xml_reply   = g_strdup(zMapXMLParserLastErrorMsg(parser));
-    }
-
-  /* Free the parser!!! */
-  zMapXMLParserDestroy(parser);
-
- HAVE_RESPONSE:
-  if(!zMapXRemoteValidateStatusCode(statusCode) && xml_reply != NULL)
-    {
-      zMapLogWarning("%s", xml_reply);
-      g_free(xml_reply);
-      xml_reply = g_strdup("Broken code. Check zmap.log file");
-    }
-  if(xml_reply == NULL){ xml_reply = g_strdup("Broken code."); }
-
-  return xml_reply;
-}
-
-
-static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response_data)
-{
-  char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
-  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
-
-  /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
-  // default sequence may be NULL
-  if(app->default_sequence)
-        seq_map->dataset = app->default_sequence->dataset;
-  seq_map->sequence = sequence;
-  seq_map->start = request_data->start;
-  seq_map->end = request_data->end;
-
-  zmapAppCreateZMap(app, seq_map) ;
-
-  response_data->handled = TRUE;
-
-  /* that screwy rabbit */
-  g_string_append_printf(response_data->message, "%s", app->info->message);
-
-  /* Clean up. */
-  if (sequence)
-    g_free(sequence) ;
+  /* Must ALWAYS call back to ZMapRemoteControl to return reply to peer. */
+  (remote->remotecontrol_request_done_func)(remote->remotecontrol_request_done_data, full_reply) ;
 
   return ;
 }
 
-static void send_finalised(ZMapXRemoteObj client)
+
+
+/* Called by any component of ZMap (e.g. control, view etc) which needs a request
+ * to be sent to the peer program. This is the entry point for zmap sub-systems
+ * that wish to send a request.
+ * 
+ *  */
+static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_body, gpointer app_request_data,
+				 ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data)
 {
-  char *request = "<zmap>\n"
-                  "  <request action=\"finalised\" />\n"
-                  "</zmap>" ;
-  char *response = NULL;
+  gboolean result = FALSE ;
+  ZMapAppContext app_context = (ZMapAppContext)app_request_data ;
+  ZMapAppRemote remote = app_context->remote_control ;
+  GArray *request_stack ;
+  char *request ;
+  char *err_msg = NULL ;
+  char *view = NULL ;					    /* to be filled in later..... */
 
-  g_return_if_fail(client != NULL);
 
-  /* Send the final quit, after this we can exit. */
-  if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+  /* Build the request. */
+  request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller, command, view, -1) ;
+
+  if (request_body)
+    request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body) ;
+
+  request = zMapRemoteCommandStack2XML(request_stack, &err_msg) ;
+
+
+  /* cache the command and request, need them later. */
+  remote->curr_command = command ;
+  remote->curr_request = request ;
+
+  /* Cache app function to be called when we receive a reply from the peer. */
+  remote->process_reply_func = process_reply_func ;
+  remote->process_reply_func_data = process_reply_func_data ;
+
+
+  if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_request)))
     {
-      response = response ? response : zMapXRemoteGetResponse(client);
-      zMapLogWarning("Final Quit to client program failed: \"%s\"", response) ;
+      zMapLogCritical("Could not send request to peer program: %s.", request) ;
+
+      zMapCritical("Could not send request to peer program: %s.", request) ;
     }
 
   return ;
-}
-
-/* A GSourceFunc() called from an idle handler to do the final clear up. */
-static gboolean finalExit(gpointer data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)data ;
-
-  /* Signal zmap we want to exit now. */
-  zmapAppExit(app_context) ;
-
-  return FALSE ;
-}
-
-
-/* all the action has been moved from <zmap> to <request> */
-static gboolean start(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
-{
-  gboolean handled  = FALSE;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  RequestData request_data = (RequestData)user_data;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return handled ;
-}
-
-static gboolean end(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
-{
-  gboolean handled = TRUE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  RequestData request_data = (RequestData)user_data;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return handled;
-}
-
-
-static gboolean req_start(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
-{
-  gboolean handled  = FALSE;
-  RequestData request_data = (RequestData)user_data;
-  ZMapXMLAttribute attr = NULL;
-
-  if ((attr = zMapXMLElementGetAttributeByName(element, "action")) != NULL)
-    {
-      GQuark action = zMapXMLAttributeGetValue(attr);
-
-      if (action == g_quark_from_string(actions_G[ZMAPAPP_REMOTE_OPEN_ZMAP]))
-	{
-	  request_data->action = ZMAPAPP_REMOTE_OPEN_ZMAP ;
-	  handled = TRUE ;
-	}
-      else if (action == g_quark_from_string(actions_G[ZMAPAPP_REMOTE_CLOSE_ZMAP]))
-	{
-	  request_data->action = ZMAPAPP_REMOTE_CLOSE_ZMAP ;
-	  handled = TRUE ;
-	}
-    }
-  else
-    zMapXMLParserRaiseParsingError(parser, "Attribute 'action' is required for element 'request'.");
-
-  return handled ;
-}
-
-static gboolean req_end(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
-{
-  gboolean handled = TRUE ;
-  RequestData request_data = (RequestData)user_data;
-  ZMapXMLElement child ;
-  ZMapXMLAttribute attr;
-
-  if ((child = zMapXMLElementGetChildByName(element, "segment")) != NULL)
-    {
-      if((attr = zMapXMLElementGetAttributeByName(child, "sequence")) != NULL)
-        request_data->sequence = zMapXMLAttributeGetValue(attr);
-
-      if((attr = zMapXMLElementGetAttributeByName(child, "start")) != NULL)
-        request_data->start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
-      else
-        request_data->start = 1;
-
-      if((attr = zMapXMLElementGetAttributeByName(child, "end")) != NULL)
-        request_data->end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
-      else
-        request_data->end = 0;
-    }
-
-  return handled;
 }
 
 

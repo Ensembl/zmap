@@ -96,9 +96,10 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
-RemoteCommandRCType zMapWindowProcessRemoteRequest(ZMapWindow window, char *command, char **reply_out)
+gboolean zMapWindowProcessRemoteRequest(ZMapWindow window, char *command_name, char *request,
+					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  gboolean result = FALSE ;
 
 
   /* dummied for now.... */

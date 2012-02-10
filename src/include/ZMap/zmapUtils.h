@@ -194,6 +194,9 @@ char *zMapMakeUniqueID(char *prefix) ;
 
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 
+const char *zMapUtilsPtr2Str(void *ptr) ;
+void *zMapUtilsStr2Ptr(char *ptr_str) ;
+
 char zMapInt2Char(int num) ;
 
 gboolean zMapStr2Bool(char *str, gboolean *bool_out) ;

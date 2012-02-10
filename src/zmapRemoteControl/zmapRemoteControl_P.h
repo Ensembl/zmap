@@ -35,6 +35,7 @@
 #ifndef ZMAP_REMOTE_CONTROL__P_H
 #define ZMAP_REMOTE_CONTROL__P_H
 
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
 #include <ZMap/zmapRemoteControl.h>
 
@@ -95,6 +96,20 @@ ZMAP_DEFINE_ENUM(RemoteControlState, REMOTE_STATE_LIST) ;
 typedef struct RemoteAnyStructName
 {
   RemoteType remote_type ;
+
+  GQuark any_app_name ;
+
+  GQuark any_unique_str ;
+  GdkAtom any_atom ;
+  char *any_atom_string ;				    /* Cached because it's a pain to get the string. */
+  GtkClipboard *any_clipboard ;
+
+  guint32 timeout_ms ;					    /* timeout in milliseconds. */
+
+  /* Our record of the two way traffic. */
+  char *any_request ;
+  char *any_reply ;
+
 } RemoteAnyStruct, *RemoteAny ;
 
 
@@ -102,17 +117,36 @@ typedef struct RemoteAnyStructName
 typedef struct RemoteIdleStructName
 {
   RemoteType remote_type ;
+
+  GQuark any_app_name ;
+
+  /* Their 'request' atom for receiving our requests and giving us responses, stays the same for
+   * the life of this control struct. */
+  GQuark any_unique_str ;
+  GdkAtom any_atom ;
+  char *any_atom_string ;				    /* Cached because it's a pain to get the string. */
+  GtkClipboard *any_clipboard ;
+
+  guint32 timeout_ms ;					    /* timeout in milliseconds. */
+
+  /* Our record of the two way traffic. */
+  char *any_request ;
+  char *any_reply ;
+
 } RemoteIdleStruct, *RemoteIdle ;
 
 
 
 /* Control block for when acting as a server, i.e. we have received a request from the peer. */
-typedef struct RemoteSelfStructName
+typedef struct RemoteReceiveStructName
 {
   RemoteType remote_type ;
 
+  GQuark our_app_name ;
+
   /* Our atom for receiving peer requests and returning a response, stays the same for
    * the life of this control struct. */
+  GQuark our_unique_str ;
   GdkAtom our_atom ;
   char *our_atom_string ;				    /* Cached because it's a pain to get the string. */
   GtkClipboard *our_clipboard ;
@@ -125,20 +159,23 @@ typedef struct RemoteSelfStructName
 
 
   /* Callback functions specified by caller to receive requests and subsequent replies/errors. */
-  ZMapRemoteControlRequestHandlerFunc request_func ;
-  gpointer request_func_data ;
+  ZMapRemoteControlRequestHandlerFunc process_request_func ;
+  gpointer process_request_func_data ;
 
-} RemoteSelfStruct, *RemoteSelf ;
+} RemoteReceiveStruct, *RemoteReceive ;
 
 
 
 /* Control block for when acting as a client, i.e. we are making a request. */
-typedef struct RemotePeerStructName
+typedef struct RemoteSendStructName
 {
   RemoteType remote_type ;
 
+  GQuark their_app_name ;
+
   /* Their 'request' atom for receiving our requests and giving us responses, stays the same for
    * the life of this control struct. */
+  GQuark their_unique_str ;
   GdkAtom their_atom ;
   char *their_atom_string ;				    /* Cached because it's a pain to get the string. */
   GtkClipboard *their_clipboard ;
@@ -150,10 +187,10 @@ typedef struct RemotePeerStructName
   char *their_reply ;
 
   /* Callback functions specified by caller to receive requests and subsequent replies/errors. */
-  ZMapRemoteControlReplyHandlerFunc reply_func ;
-  gpointer reply_func_data ;
+  ZMapRemoteControlReplyHandlerFunc process_reply_func ;
+  gpointer process_reply_func_data ;
 
-} RemotePeerStruct, *RemotePeer ;
+} RemoteSendStruct, *RemoteSend ;
 
 
 
@@ -165,21 +202,35 @@ typedef struct ZMapRemoteControlStructName
    * so we need to be able to check if they are valid. */
   ZMapMagic magic ;
 
+  GQuark version ;					    /* Current protocol version. */
+
   /* Our current state. */
   RemoteControlState state ;
   RemoteAny curr_remote ;				    /* points to idle, self or peer. */
 
-  /* The idle, self (== when are acting as server) and peer (== when we are acting as client) interfaces. */
+  /* The idle, receive (== when are acting as server) and send (== when we are acting as client) interfaces. */
   RemoteIdle idle ;
-  RemoteSelf self ;
-  RemotePeer peer ;
+  RemoteReceive receive ;
+  RemoteSend send ;
 
 
   /* Applications "name", good for debug messages. */
-  char *app_id ;
+  GQuark app_id ;
 
   /* atom representation of target type for data. */
   GdkAtom target_atom ;
+
+  /* Used to provide a unique id for each request, N.B. kept here so we can construct requests
+   * even if "send" has not been intialised. */
+  int request_id_num ;
+  GString *request_id ;
+
+  /* App functions that are called back once a request we sent or a request
+   * the peer sent us has been definitively sent. */
+  ZMapRemoteControlReportRequestSentEndFunc req_sent_func ;
+  gpointer req_sent_func_data ;
+  ZMapRemoteControlReportRequestReceivedEndFunc req_received_func ;
+  gpointer req_received_func_data ;
 
   /* App function to call when there is an error, e.g. timeout. */
   ZMapRemoteControlErrorHandlerFunc error_func ;
@@ -201,6 +252,8 @@ typedef struct ZMapRemoteControlStructName
 ZMAP_ENUM_AS_EXACT_STRING_DEC(remoteType2ExactStr, RemoteType) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(remoteState2ExactStr, RemoteControlState) ;
 
+char *zmapRemoteControlMakeReqID(ZMapRemoteControl remote_control) ;
+char *zmapRemoteControlGetCurrCommand(ZMapRemoteControl remote_control) ;
 
 
 #endif /* ZMAP_REMOTE_CONTROL__P_H */

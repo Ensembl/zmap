@@ -235,7 +235,8 @@ ZMapWindowCallbacksStruct window_cbs_G =
   setZoomStatusCB,
   viewVisibilityChangeCB,
   commandCB,
-  loaded_dataCB
+  loaded_dataCB,
+  NULL
 } ;
 
 
@@ -293,9 +294,11 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->visibility_change = callbacks->visibility_change ;
   view_cbs_G->state_change = callbacks->state_change ;
   view_cbs_G->destroy = callbacks->destroy ;
+  view_cbs_G->remote_request_func = callbacks->remote_request_func ;
 
 
   /* Init windows.... */
+  window_cbs_G.remote_request_func = callbacks->remote_request_func ;
   zMapWindowInit(&window_cbs_G) ;
 
   return ;

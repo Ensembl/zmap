@@ -1,4 +1,4 @@
-/*  Last edited: Dec 16 09:34 2011 (edgrif) */
+/*  Last edited: Feb  8 20:46 2012 (edgrif) */
 /*  File: zmapRemoteCommand.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2010: Genome Research Ltd.
@@ -40,48 +40,73 @@
 #include <glib.h>
 
 #include <ZMap/zmapEnum.h>
+#include <ZMap/zmapXML.h>
+#include <ZMap/zmapRemoteControl.h>
+
 
 
 /* Using the XXX_LIST macros to declare enums means we get lots of enum functions for free (see zmapEnum.h). */
 
 
 /* Return code values from command processing function. */
-#define REMOTE_COMMAND_RC_LIST(_)                                            \
-_(REMOTE_COMMAND_RC_OK,        , "ok"       , "Command succeeded."    , "")  \
-_(REMOTE_COMMAND_RC_UNKNOWN,   , "unknown"  , "Command not known."    , "")  \
-_(REMOTE_COMMAND_RC_OTHER,     , "other"    , "Command known but is not for this resource."    , "")  \
-_(REMOTE_COMMAND_RC_BAD_XML ,  , "bad_xml"  , "Command XML is malformed."  , "")  \
-_(REMOTE_COMMAND_RC_BAD_ARGS,  , "bad_args" , "Command args are wrong."  , "")  \
-_(REMOTE_COMMAND_RC_FAILED,    , "failed"   , "Command failed."       , "")
+#define REMOTE_COMMAND_RC_LIST(_)                                                 \
+_(REMOTE_COMMAND_RC_OK,        , "ok"       , "Command succeeded."        , "")   \
+_(REMOTE_COMMAND_RC_BAD_XML ,  , "bad_xml"  , "Command XML is malformed." , "")   \
+_(REMOTE_COMMAND_RC_BAD_ARGS,  , "bad_args" , "Command args are wrong."   , "")   \
+_(REMOTE_COMMAND_RC_FAILED,    , "failed"   , "Command failed."           , "")   \
+_(REMOTE_COMMAND_RC_UNKNOWN,   , "unknown"  , "Command is unknown."       , "")
 
 ZMAP_DEFINE_ENUM(RemoteCommandRCType, REMOTE_COMMAND_RC_LIST) ;
 
 
+/*  */
+typedef gboolean (*ZMapRemoteControlReturnReplyFunc)(gpointer user_data,
+						     RemoteCommandRCType result,
+						     char *reason,
+						     char *reply) ;
 
 /* Command processing function typedef. */
 /* THERE WILL BE OTHER ARGS FOR SURE !! */
-typedef RemoteCommandRCType (*ZMapRemoteControlCommandFunc)(gpointer user_data, char *command, char **reply_out) ;
+typedef RemoteCommandRCType (*ZMapRemoteControlCommandProcessFunc)(gpointer user_data,
+								   char *command,
+								   char **reply_out) ;
 
-/* I think this is the place to add commands to write stuff..... */
-GArray *zMapRemoteControlCreateRequest(char *peer_id, char* request_id, int timeout_secs, char *command) ;
-GArray *zMapRemoteControlCreateReply(char *peer_id, char* request_id) ;
-GArray *zMapRemoteControlCreateReplyFromRequest(char *xml_request,
-						RemoteCommandRCType return_code, char *reason, char *result,
+
+
+GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
+				       char *command, char *view_id, int timeout_secs) ;
+GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
+						char *original_request,
+						RemoteCommandRCType return_code, char *reason,
+						ZMapXMLUtilsEventStack reply,
 						char **error_out) ;
+GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
+				 ZMapXMLUtilsEventStack request_body) ;
+char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **error_out) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GArray *zMapRemoteControlReplyAddResult(GArray *reply_envelope,
-					RemoteCommandRCType return_code, char *reason,
-					char *result) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(char *message) ;
+
+const char *zMapRemoteCommandGetCurrCommand(ZMapRemoteControl remote_control) ;
+
+gboolean zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control, char *request, char **error_out) ;
+gboolean zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
+					char *original_request, char *reply, char **error_out) ;
+
+gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command) ;
+char *zMapRemoteCommandRequestGetCommand(char *request) ;
+
+gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
+					     char **command_out,
+					     RemoteCommandRCType *return_code_out, char **reason_out,
+					     char **reply_body_out,
+					     char **error_out) ;
 
 
+gboolean zMapRemoteCommandGetAttribute(char *message,
+				       char *element, char *attribute, char **attribute_value_out,
+				       char **error_out) ;
 
-gboolean zMapRemoteControlValidateRequest(char *peer_id, char *xml_request, char **error_out) ;
-gboolean zMapRemoteControlRequestIsCommand(char *request, char *command) ;
-char *zMapRemoteControlRequestGetCommand(char *request) ;
-
-ZMAP_ENUM_AS_NAME_STRING_DEC(zMapRemoteControlRC, RemoteCommandRCType) ;
-
+ZMAP_ENUM_AS_NAME_STRING_DEC(zMapRemoteCommandRC2Str, RemoteCommandRCType) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapRemoteCommandStr2RC, RemoteCommandRCType) ;
 
 #endif /* ZMAP_REMOTE_COMMAND_H */

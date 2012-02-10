@@ -232,8 +232,12 @@ static char *application_execute_command(char *command_text, gpointer app_contex
         {
         case ZMAPAPP_REMOTE_OPEN_ZMAP:
           createZMap(app_context_data, &request_data, &response_data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           if(app_context->info)
             response_data.code = app_context->info->code;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
           break;
         case ZMAPAPP_REMOTE_CLOSE_ZMAP:
 	  {
@@ -300,12 +304,20 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   seq_map->start = request_data->start;
   seq_map->end = request_data->end;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapAppCreateZMap(app, seq_map) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   response_data->handled = TRUE;
 
   /* that screwy rabbit */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_string_append_printf(response_data->message, "%s", app->info->message);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Clean up. */
   if (sequence)

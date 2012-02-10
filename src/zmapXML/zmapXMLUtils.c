@@ -33,15 +33,13 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
 #include <string.h>
-#include <zmapXML_P.h>
-#include <ZMap/zmapUtils.h>
 
-static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest);
+#include <ZMap/zmapUtils.h>
+#include <zmapXML_P.h>
+
+
+static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest) ;
 
 
 
@@ -92,10 +90,10 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
       size++;
     }
 
-  for (input = &event_stack[--size]; size >= 0; size--, input--)
+  for (input = &event_stack[--size] ; size >= 0 ; size--, input--)
     {
-      transfer(input, &single);
-      events_array = g_array_prepend_val(events_array, single);
+      transfer(input, &single) ;
+      events_array = g_array_prepend_val(events_array, single) ;
     }
 
   return events_array;
@@ -254,9 +252,16 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 
 	break;
       }
+
+      /* I'M TRYING THIS HERE...SEEMS TO BE MISSING ?? */
+    case ZMAPXML_CHAR_DATA_EVENT:
+      dest->data.comp.value.s = source->value.s ;
+      break ;
+
     default:
       break;
     }
+
   return ;
 }
 

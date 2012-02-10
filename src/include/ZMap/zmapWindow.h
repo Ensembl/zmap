@@ -1,4 +1,4 @@
-/*  Last edited: Dec 16 11:16 2011 (edgrif) */
+/*  Last edited: Feb  8 20:50 2012 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -42,8 +42,16 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapRemoteCommand.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <ZMap/zmapAppRemote.h>
+
+/* should be able to get rid of this shortly... */
 #include <ZMap/zmapXRemote.h>
+
 #include <ZMap/zmapXMLHandler.h>
 
 
@@ -322,6 +330,9 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
   ZMapWindowCallbackFunc drawn_data ;
+
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
@@ -339,8 +350,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
 			  ZMapWindowLockType window_locking) ;
 
-
-RemoteCommandRCType zMapWindowProcessRemoteRequest(ZMapWindow window, char *command, char **reply_out) ;
+gboolean zMapWindowProcessRemoteRequest(ZMapWindow window, char *command_name, char *request,
+					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;

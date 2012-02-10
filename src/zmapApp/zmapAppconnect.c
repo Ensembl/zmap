@@ -32,9 +32,6 @@
 
 
 
-
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -119,49 +116,80 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 }
 
 
-/* sequence etc can be unspecified to create a blank zmap. */
-void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map)
+/* Make a new zmap, if sequence is unspecified then the zmap will be blank and view
+ * will not be set. */
+gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
+			   ZMap *zmap_inout, ZMapView *view_out, char **err_msg_out)
 {
-  ZMap zmap ;
+  gboolean result = FALSE ;
+  ZMap zmap = *zmap_inout ;
+  ZMapView view = NULL ;
   GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
 
-  /* Set the text.  This is done even if it's already set, ah well! */
-  if (sequence_map->sequence)
-    gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence_map->sequence);
 
-  add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap) ;
-  if (add_result == ZMAPMANAGER_ADD_DISASTER)
+  if (sequence_map->sequence && (sequence_map->start < 1 || sequence_map->end < sequence_map->start))
     {
-      zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
-                  " save your work and exit now !") ;
-    }
-  else if (add_result == ZMAPMANAGER_ADD_FAIL)
-    {
-      zMapWarning("%s", "Failed to create ZMap") ;
+      *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
+
+      zMapWarning("%s", *err_msg_out) ;
     }
   else
     {
-      /* If we tried to load a sequence but couldn't connect then warn user, otherwise
-       * we just created the requested blank zmap. */
-      if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
-	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
+      /* Set the text.  This is done even if it's already set, ah well! */
+      if (sequence_map->sequence)
+	gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence_map->sequence);
 
-      gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
-      gtk_tree_store_set (app_context->tree_store_widg, &iter1,
-                          ZMAPID_COLUMN, zMapGetZMapID(zmap),
-                          ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-                          ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-                          ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-                          ZMAPDATA_COLUMN, (gpointer)zmap,
-                          -1);
+
+      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
+
+      if (add_result == ZMAPMANAGER_ADD_DISASTER)
+	{
+	  *err_msg_out = g_strdup_printf("%s", "Failed to create ZMap and then failed to clean up properly,"
+				     " save your work and exit now !") ;
+
+	  zMapWarning("%s", *err_msg_out) ;
+	}
+      else if (add_result == ZMAPMANAGER_ADD_FAIL)
+	{
+	  *err_msg_out = g_strdup_printf("%s", "Failed to create ZMap") ;
+
+	  zMapWarning("%s", *err_msg_out) ;
+	}
+      else
+	{
+	  /* agh....ok this not connected bit needs sorting out..... */
+
+
+	  /* If we tried to load a sequence but couldn't connect then warn user, otherwise
+	   * we just created the requested blank zmap. */
+	  if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
+	    zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
+
+	  gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
+	  gtk_tree_store_set (app_context->tree_store_widg, &iter1,
+			      ZMAPID_COLUMN, zMapGetZMapID(zmap),
+			      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+			      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+			      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+			      ZMAPDATA_COLUMN, (gpointer)zmap,
+			      -1);
+
 #ifdef RDS_NEVER_INCLUDE_THIS_CODE
-      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-                (row + 1), row_text[0], row_text[1]) ;
+	  zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		    (row + 1), row_text[0], row_text[1]) ;
 #endif /* RDS_NEVER_INCLUDE_THIS_CODE */
+
+	  *zmap_inout = zmap ;
+
+	  if (view)
+	    *view_out = view ;
+
+	  result = TRUE ;
+	}
     }
 
-  return ;
+  return result ;
 }
 
 
@@ -175,45 +203,42 @@ void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequen
 static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  char *sequence = "", *start_txt, *end_txt ;
-  int start = 1, end = 0 ;
-  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
+  char *sequence, *start_txt, *end_txt ;
+  int start = 0, end = 0 ;
+  ZMapFeatureSequenceMap seq_map ;
+  char *err_msg = NULL ;
+  ZMap zmap = NULL ;
+  ZMapView view = NULL ;
 
-  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
-  if (sequence && strlen(sequence) == 0)		    /* gtk_entry returns "" for "no text". */
+  /* Note: gtk_entry returns "" for "no text" so must test contents of string returned,
+   * zMapStr2Int() only sets integer if string is valid. */
+
+  if (!(sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg))))
     sequence = NULL ;
 
-  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->start_widg)) ;
-  if ((start_txt && strlen(start_txt) >= 1))		    /* gtk_entry returns "" for "no text". */
-    {
-      if (!zMapStr2Int(start_txt, &start))
-	start = 1 ;
-    }
-  else
-    start = 1 ;
+  if ((start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->start_widg))))
+    zMapStr2Int(start_txt, &start) ;
 
+  if ((end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->end_widg))))
+    zMapStr2Int(end_txt, &end) ;
 
-  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->end_widg)) ;
-  if ((end_txt && strlen(end_txt) >= 1))		    /* gtk_entry returns "" for "no text". */
-    {
-      if (!zMapStr2Int(end_txt, &end))
-	end = 0 ;
-    }
-  else
-    end = 0 ;
+  /* MH17: this is a bodge FTM, we need a dataset widget as well */
+  seq_map = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
-      /* MH17: this is a bodge FTM, we need a dataset widget as well */
   seq_map->dataset = app_context->default_sequence->dataset;
   seq_map->sequence = sequence;
   seq_map->start = start;
   seq_map->end = end;
 
-  /* N.B. currently the user is allowed to create a blank zmap, may need to revisit this... */
-  zmapAppCreateZMap(app_context, seq_map) ;
-
+  /* N.B. currently the user is allowed to create a blank zmap, may need to revisit this...
+   * 
+   * Note also that we discard the returned zmap. Some time we may need to record it
+   * for xremote purposes.
+   *  */
+  if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
+    zMapWarning("%s", err_msg) ;
 
 
   return ;
 }
-
 

@@ -267,6 +267,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
     {
       char *first = NULL, *second = NULL;
       event = &(g_array_index(events, ZMapXMLWriterEventStruct, i));
+
       switch(event->type)
         {
         case ZMAPXML_START_ELEMENT_EVENT:
@@ -278,7 +279,12 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
           status = zMapXMLWriterEndElement(writer, first);
           break;
         case ZMAPXML_CHAR_DATA_EVENT:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           first  = (char *)g_quark_to_string(event->data.name);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+          first  = event->data.comp.value.s ;
           status = zMapXMLWriterElementContent(writer, first);
           break;
         case ZMAPXML_START_DOC_EVENT:
@@ -298,14 +304,26 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
                 second = (char *)g_quark_to_string(event->data.comp.value.quark);
                 free_second = FALSE;
               }
-            else if(event->data.comp.data == ZMAPXML_EVENT_DATA_INTEGER)
-              second = g_strdup_printf("%d", event->data.comp.value.integer);
-            else if(event->data.comp.data == ZMAPXML_EVENT_DATA_DOUBLE)
-              second = g_strdup_printf("%f", event->data.comp.value.flt);
+            else if (event->data.comp.data == ZMAPXML_EVENT_DATA_INTEGER)
+	      {
+		second = g_strdup_printf("%d", event->data.comp.value.integer);
+	      }
+            else if (event->data.comp.data == ZMAPXML_EVENT_DATA_DOUBLE)
+	      {
+		second = g_strdup_printf("%f", event->data.comp.value.flt);
+	      }
+            else if (event->data.comp.data == ZMAPXML_EVENT_DATA_STRING)
+	      {
+		second = (char *)g_quark_to_string(event->data.comp.value.quark) ;
+		free_second = FALSE;
+	      }
             else
-              zMapAssertNotReached();
+	      {
+		zMapAssertNotReached();
+	      }
 
             status = zMapXMLWriterAttribute(writer, first, second);
+
             if(free_second && second)
               g_free(second);
           }

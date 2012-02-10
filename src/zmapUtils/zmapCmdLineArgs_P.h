@@ -41,7 +41,8 @@
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
-#define ZMAPARG_PEER_ID_DESC        "Remote Control unique ID of the controlling application."
+#define ZMAPARG_PEER_NAME_DESC      "Peer Remote Control app name."
+#define ZMAPARG_PEER_CLIPBOARD_DESC "Peer Remote Control clipboard name."
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
 #define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
 #define ZMAPARG_TIMING_DESC         "switch on timing functions"
@@ -53,7 +54,8 @@
 #define ZMAPARG_DIR_ARG        "directory"
 #define ZMAPARG_WINID_ARG      "0x0000000"
 #define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
-#define ZMAPARG_PEER_ID_ARG    "unique id"
+#define ZMAPARG_PEER_NAME_ARG  "peer app name"
+#define ZMAPARG_PEER_CLIPBOARD_ARG    "peer clipboard unique id"
 #define ZMAPARG_SERIAL_ARG     "<none>"
 
 #define ZMAPARG_INVALID_INT -1
@@ -61,14 +63,17 @@
 #define ZMAPARG_INVALID_STR NULL
 #define ZMAPARG_INVALID_FLOAT 0.0
 
-enum {ARG_SET = 1,					    /* Special value, do not alter. */
-      ARG_VERSION,
-      ARG_SERIAL,
-      ARG_START, ARG_END,
-      ARG_CONF_FILE, ARG_CONF_DIR,
-      ARG_WINID, ARG_PEER_ID,
-      ARG_TIMING
-} ;
+enum
+  {
+    ARG_SET = 1,					    /* Special value, do not alter. */
+    ARG_VERSION,
+    ARG_SERIAL,
+    ARG_START, ARG_END,
+    ARG_CONF_FILE, ARG_CONF_DIR,
+    ARG_WINID,
+    ARG_PEER_NAME, ARG_PEER_CLIPBOARD,
+    ARG_TIMING
+  } ;
 
 
 
@@ -96,7 +101,8 @@ typedef struct _ZMapCmdLineArgsStruct
   char *config_file_path ;
   char *window ;
 
-  char *peer_id ;
+  char *peer_name ;
+  char *peer_clipboard ;
 
 } ZMapCmdLineArgsStruct, *ZMapCmdLineArgs ;
 

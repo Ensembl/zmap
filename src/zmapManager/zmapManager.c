@@ -33,12 +33,10 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <ZMap/zmapUtils.h>
+
+
+
 #include <zmapManager_P.h>
 
 
@@ -52,7 +50,7 @@ static ZMapManagerCallbacks manager_cbs_G = NULL ;
 
 
 /* Holds callbacks we set in the level below us (ZMap window) to be called back on. */
-ZMapCallbacksStruct zmap_cbs_G = {destroyedCB, quitReqCB} ;
+ZMapCallbacksStruct zmap_cbs_G = {destroyedCB, quitReqCB, NULL} ;
 
 
 
@@ -77,8 +75,12 @@ void zMapManagerInit(ZMapManagerCallbacks callbacks)
   manager_cbs_G->quit_req_func = callbacks->quit_req_func ; /* called when layer below requests
 							       that zmap app exits. */
 
+  manager_cbs_G->remote_request_func = callbacks->remote_request_func ;
+
 
   /* Init control callbacks.... */
+  zmap_cbs_G.remote_request_func = callbacks->remote_request_func ;
+  
   zMapInit(&zmap_cbs_G) ;
 
   return ;
@@ -101,22 +103,28 @@ ZMapManager zMapManagerCreate(void *gui_data)
 
 /* Add a new zmap window with associated thread and all the gubbins.
  * Return indicates what happened on trying to add zmap.
- *
+ * 
+ * If zmap_inout is NULL view is displayed in a new window, if an
+ * existing  zmap is given then view is added to that zmap.
+ * 
  * Policy is:
  *
  * If no connection can be made for the view then the zmap is destroyed,
  * if any connection succeeds then the zmap is added but errors are reported,
  * if sequence is NULL a blank zmap is created.
  *  */
-ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out)
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
+				    ZMap *zmap_inout, ZMapView *view_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
-  ZMap zmap = NULL ;
+  ZMap zmap = *zmap_inout ;
   ZMapView view = NULL ;
 
-  zMapAssert(zmaps) ;
 
-  if ((zmap = zMapCreate((void *)zmaps, sequence_map)))
+  if (!zmap && !(zmap = zMapCreate((void *)zmaps, sequence_map)))
+    zMapLogWarning("%s", "Cannot create zmap.") ;
+
+  if (zmap)
     {
       if (!sequence_map->sequence)
 	{
@@ -126,8 +134,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
       else
 	{
 	  /* Try to load the sequence. */
-	  if ((view = zMapAddView(zmap, sequence_map))
-	      && zMapConnectView(zmap, view))
+	  if ((view = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, view))
 	    {
 	      result = ZMAPMANAGER_ADD_OK ;
 	    }
@@ -145,13 +152,33 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
   if (result == ZMAPMANAGER_ADD_OK || result == ZMAPMANAGER_ADD_NOTCONNECTED)
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
-      *zmap_out = zmap ;
+      *zmap_inout = zmap ;
+
+      /* Only fill if there was a sequence and we created the view. */
+      if (view)
+	*view_out = view ;
 
       (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
     }
 
   return result ;
 }
+
+
+
+
+
+/* Delete a view from within a zmap. */
+gboolean zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view)
+{
+  gboolean result = FALSE ;
+
+  result = zMapDeleteView(zmap, view) ;
+
+  return result ;
+}
+
+
 
 guint zMapManagerCount(ZMapManager zmaps)
 {
@@ -191,24 +218,34 @@ gboolean zMapManagerRaise(ZMap zmap)
   return result ;
 }
 
-RemoteCommandRCType zMapManagerProcessRemoteRequest(ZMapManager zmaps, char *command, char **reply_out)
+gboolean zMapManagerProcessRemoteRequest(gpointer local_data,
+					 char *command_name, char *request,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  gboolean result = FALSE ;
+
+  /* Scaffolded for now as we don't have any command processing below here for now..... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapManager zmaps = (ZMapManager)local_data ;
 
   if (zmaps->zmap_list)
     {
       GList *next_zmap ;
 
-      /* Try all the views. */
+      /* Try all the zmaps. */
       next_zmap = g_list_first(zmaps->zmap_list) ;
       do
 	{
 	  ZMap zmap = (ZMap)next_zmap ;
 
-	  result = zMapControlProcessRemoteRequest(zmap, command, reply_out) ;
+	  result = zMapControlProcessRemoteRequest(zmap,
+						   command_name, request,
+						   app_reply_func, app_reply_data) ;
 	}
-      while ((result == REMOTE_COMMAND_RC_OTHER) && (next_zmap = g_list_next(next_zmap))) ;
+      while (!result && (next_zmap = g_list_next(next_zmap))) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return result ;
 }

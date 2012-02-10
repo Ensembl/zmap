@@ -77,11 +77,13 @@ G_STMT_START{                                                      \
     zMapXMLIsTrue(STRING) ? TRUE : FALSE)
 
 #define zMapXMLElementContentsToInt(ELEMENT)        \
-(strtol(ELEMENT->contents->str, (char **)NULL, 10))
+(strtol((ELEMENT)->contents->str, (char **)NULL, 10))
 #define zMapXMLElementContentsToDouble(ELEMENT)     \
-(g_ascii_strtod(ELEMENT->contents->str, (char **)NULL))
+(g_ascii_strtod((ELEMENT)->contents->str, (char **)NULL))
 #define zMapXMLElementContentsToBool(ELEMENT)       \
-(zMapXMLStringToBool(ELEMENT->contents->str))
+(zMapXMLStringToBool((ELEMENT)->contents->str))
+#define zMapXMLElementContentsToString(ELEMENT)       \
+((ELEMENT)->contents->str)
 
 #define zMapXMLAttributeValueToStr(ATTRIBUTE)       \
   ((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)))
@@ -190,9 +192,10 @@ typedef struct _ZMapXMLWriterEventStruct
       ZMapXMLWriterEventDataType data;
       union
       {
-        GQuark quark   ;
         int    integer ;
-        double flt;
+        double flt ;
+        GQuark quark ;
+	char *s ;
       } value;
     } comp ;                    /* complex for attributes and namespaced elements */
 
@@ -318,11 +321,9 @@ void zMapXMLParserDestroy(ZMapXMLParser parser);
  * \retval char * as XML_GetBase would
  */
 char *zMapXMLParserGetBase(ZMapXMLParser parser);
-/*!
- * \brief calls XML_GetCurrentByteIndex assuming parser is valid
- * \param parser
- * \retval long as XML_GetCurrentByteIndex would
- */
+
+
+/* calls XML_GetCurrentByteIndex assuming parser is valid */
 long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser);
 
 
@@ -355,11 +356,11 @@ char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
 
 /* UTILS */
 GArray *zMapXMLUtilsCreateEventsArray(void) ;
-GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack) ;
-GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
+GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
-						      char *element_name, ZMapXMLUtilsEventStackStruct *event_stack) ;
-GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack) ;
+						      char *element_name, ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
 
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 

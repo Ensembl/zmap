@@ -123,7 +123,8 @@ static gboolean xml_return_true_cb(gpointer user_data,
 
 
 
-static RemoteCommandRCType localProcessRemoteRequest(ZMap zmap, char *command, char **reply_out) ;
+static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
+					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 
 
@@ -178,12 +179,17 @@ static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
 
 /* New remote code...... */
 
-RemoteCommandRCType zMapControlProcessRemoteRequest(ZMap zmap, char *command, char **reply_out)
+gboolean zMapControlProcessRemoteRequest(gpointer local_data,
+					 char *command_name, char *request,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  gboolean result = FALSE ;
 
-  if ((result = localProcessRemoteRequest(zmap, command, reply_out) == REMOTE_COMMAND_RC_UNKNOWN))
+  if (!(result = localProcessRemoteRequest(local_data, command_name, request,
+					   app_reply_func, app_reply_data)))
     {
+      ZMap zmap = (ZMap)local_data ;
+
       if (zmap->view_list)
 	{
 	  GList *next_view ;
@@ -194,9 +200,10 @@ RemoteCommandRCType zMapControlProcessRemoteRequest(ZMap zmap, char *command, ch
 	    {
 	      ZMapView view = (ZMapView)next_view ;
 
-	      result = zMapViewProcessRemoteRequest(view, command, reply_out) ;
+	      result = zMapViewProcessRemoteRequest(view, command_name, request,
+						    app_reply_func, app_reply_data) ;
 	    }
-	  while ((result == REMOTE_COMMAND_RC_OTHER) && (next_view = g_list_next(next_view))) ;
+	  while ((!result) && (next_view = g_list_next(next_view))) ;
 	}
     }
 
@@ -250,11 +257,41 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 /* ========================= */
 
 /* THIS FUNCTION COULD CALL THE ONE BELOW IT...... */
-static RemoteCommandRCType localProcessRemoteRequest(ZMap zmap, char *command, char **reply_out)
+static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
+					  ZMapRemoteAppReturnReplyFunc app_reply_func,
+					  gpointer app_reply_data)
 {
-  RemoteCommandRCType result = REMOTE_COMMAND_RC_UNKNOWN ;
+  gboolean result = FALSE ;
+  ZMap zmap = (ZMap)local_data ;
+  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
+  char *reason = NULL ;
+  ZMapXMLUtilsEventStack reply = NULL ;
 
-  /* Dummied for now..... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* DUMMIED FOR NOW.... */
+
+  /* Needs to call execute function below.... */
+
+  if (strcmp(command_name, "XXXX") == 0)
+    {
+      printf("found XXXX\n") ;
+
+      command_rc = REMOTE_COMMAND_RC_OK ;
+      reason = NULL ;
+      reply = "XXXX successful." ;
+      
+      result = TRUE ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  if (result)
+    {
+      (app_reply_func)(command_name, command_rc, reason, reply, app_reply_data) ;
+    }
 
 
   return result ;

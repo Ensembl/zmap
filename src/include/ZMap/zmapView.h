@@ -1,4 +1,4 @@
-/*  Last edited: Dec 16 12:00 2011 (edgrif) */
+/*  Last edited: Feb  8 20:50 2012 (edgrif) */
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -41,7 +41,12 @@
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <ZMap/zmapUrl.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapRemoteCommand.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <ZMap/zmapAppRemote.h>
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -74,6 +79,9 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewWindowCallbackFunc visibility_change ;
   ZMapViewCallbackFunc state_change ;
   ZMapViewCallbackFunc destroy ;
+
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
@@ -234,7 +242,8 @@ int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
-RemoteCommandRCType zMapViewProcessRemoteRequest(ZMapView user_data, char *command, char **reply_out) ;
+gboolean zMapViewProcessRemoteRequest(ZMapView user_data, char *command_name, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 

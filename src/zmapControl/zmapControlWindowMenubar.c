@@ -491,26 +491,38 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 }
 #endif /* ALLOW_POPOUT_PANEL */
 
+
+/* THIS NEEDS REDOING TO ALLOW USER TO ENTER START/END, WILL FAIL NOW WITHOUT THEM. */
 /* Load a new sequence into a zmap. */
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
   char *new_sequence ;
   ZMapView view ;
-  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   /* these should be passed in ...... */
   int start = 1, end = 0 ;
+  
 
   /* Get a new sequence to show.... */
-  if ((new_sequence = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, "New Sequence:", FALSE)))
+  if (!(new_sequence = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, "New Sequence:", FALSE)))
     {
+      zMapWarning("%s", "You must give the name of a sequence.") ;
+    }
+  else
+    {
+      ZMapFeatureSequenceMap seq_map ;
+
+      /* WHAT NEEDS DEFINING AND HOW ???? */
 #warning need dataset defined here as well as start,end
       zMapAssert(zmap->default_sequence);
-      seq_map->dataset = zmap->default_sequence->dataset;
-      seq_map->sequence = new_sequence;
-      seq_map->start = start;
-      seq_map->end = end;
+
+      seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
+      seq_map->dataset = zmap->default_sequence->dataset ;
+      seq_map->sequence = new_sequence ;
+      seq_map->start = start ;
+      seq_map->end = end ;
+
       if ((view = zmapControlAddView(zmap, seq_map)))
 	zMapViewConnect(view, NULL) ;				    /* return code ???? */
     }

@@ -1,4 +1,4 @@
-/*  Last edited: Dec 16 09:46 2011 (edgrif) */
+/*  Last edited: Feb  8 20:50 2012 (edgrif) */
 /*  File: zmapManager.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -30,7 +30,12 @@
 #define ZMAP_MANAGER_H
 
 #include <ZMap/zmapControl.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapRemoteCommand.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <ZMap/zmapAppRemote.h>
 
 
 /* Specifies result of trying to add a new zmap to manager. */
@@ -64,17 +69,24 @@ typedef struct
   ZMapManagerCallbackFunc zmap_deleted_func ;
   ZMapManagerCallbackFunc zmap_set_info_func ;
   ZMapManagerCallbackFunc quit_req_func ;
+
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+
 } ZMapManagerCallbacksStruct, *ZMapManagerCallbacks ;
 
 
 
 void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
-ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out) ;
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
+				    ZMap *zmap_out, ZMapView *view_out) ;
+gboolean zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
-RemoteCommandRCType zMapManagerProcessRemoteRequest(ZMapManager zmaps, char *command, char **reply_out) ;
+gboolean zMapManagerProcessRemoteRequest(gpointer local_data,
+					 char *command_name, char *request,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
 gboolean zMapManagerKillAllZMaps(ZMapManager zmaps);
 gboolean zMapManagerDestroy(ZMapManager zmaps) ;

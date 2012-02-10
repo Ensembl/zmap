@@ -247,6 +247,29 @@ char *zMapMakeUniqueID(char *prefix)
 
 
 
+/* Convert a pointer to a string and vice-versa. */
+const char *zMapUtilsPtr2Str(void *ptr)
+{
+  char *ptr_str ;
+
+  ptr_str = g_strdup_printf("%p", ptr) ;
+
+  return ptr_str ;
+}
+
+void *zMapUtilsStr2Ptr(char *ptr_str)
+{
+  void *ptr = NULL ;
+
+  if (sscanf(ptr_str, "%p", &ptr) != 1)
+    ptr = NULL ;
+
+  return ptr ;
+}
+
+
+
+
 
 /*!
  * Returns a string representing a format of the current time or NULL on error.
