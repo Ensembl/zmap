@@ -66,8 +66,6 @@ typedef struct _zmapWindowCanvasFeatureStruct
 	int bump_col;		/* for calculating sub-col before working out width */
 
 	long flags;				/* non standard display option eg selected */
-
-
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
 #define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
 #define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
@@ -80,6 +78,14 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_HIDE_REASON	0x3e00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
+
+#if 0
+#define FEATURE_SQUASHED_START	0x10000
+#define FEATURE_SQUASHED_END		0x20000
+#define FEATURE_SQUASHED		0x30000
+
+	GArray *gaps;					/* alternate gaps array for alignments if squashed */
+#endif
 
 	ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 

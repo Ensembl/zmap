@@ -253,17 +253,18 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 	AlignGap last_box = NULL;
 	AlignGap last_ag = NULL;
 	AlignGap display_ag = NULL;
+	GArray *gaps = feature->feature.homol.align;
 
 	ZMapAlignBlock ab;
 	int cy1,cy2,fy1;
-	int n = feature->feature.homol.align->len;
+	int n = gaps->len;
 	gboolean edge;
 
 	foo_canvas_w2c (foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
 
 	for(i = 0; i < n ;i++)
 	{
-		ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+		ab = &g_array_index(gaps, ZMapAlignBlockStruct, i);
 
 		/* get pixel coords of block relative to feature y1, +1 to cover all of last base on cy2 */
 		foo_canvas_w2c (foo->canvas, 0, ab->t1 + offset, NULL, &cy1);
@@ -271,22 +272,25 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 		cy1 -= fy1;
 		cy2 -= fy1;
 
+
 		if(last_box)
 		{
-			if(i == 1 && feature->flags.squashed_start)
+			if(i == 1 && (feature->flags.squashed_start))
 			{
 				last_box->edge = TRUE;
 				if(last_box->y2 - last_box->y1 > 2)
 					last_box = NULL;	/* force a new box if the colours are visible */
 			}
 			edge = FALSE;
-			if(i == (n-1) && feature->flags.squashed_end)
+			if(i == (n-1) && (feature->flags.squashed_end))
 			{
-				if(last_box->y2 - last_box->y1 > 2)
+				if(last_box && last_box->y2 - last_box->y1 > 2)
 					last_box = NULL;	/* force a new box if the colours are visible */
 				edge = TRUE;
 			}
-
+		}
+		if(last_box)
+		{
 			if(last_box->y2 == cy1 && cy2 != cy1)
 			{
 				/* extend last box and add a line where last box ended */
@@ -420,7 +424,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	{
 		AlignGap ag;
 		GdkColor c;
-      	int cx1, cy1, cx2, cy2;
+      		int cx1, cy1, cx2, cy2;
 
 
 		/* create a list of things to draw at this zoom taking onto account bases per pixel */
