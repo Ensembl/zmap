@@ -358,15 +358,11 @@ the properties themselves.
       <td>If true, features which are directional (transcripts, matches etc)
 	  are drawn with arrow ends to show direction.</td>
     </tr>
+
     <tr>
-      <td>deferred</td>
+      <td>collapse</td>
       <td>boolean</td>
-      <td>If true, features are not loaded at start up but later by user request.</td>
-    </tr>
-    <tr>
-      <td>loaded</td>
-      <td>boolean</td>
-      <td>If true, indicates that a set of features has been loaded.</td>
+      <td>If true, features which are identical are combined into one on display. Applies to simple features and  alignments only.</td>
     </tr>
     <tr>
       <td>graph-mode</td>
@@ -458,6 +454,13 @@ the properties themselves.
       </td>
     </tr>
 
+     <tr>
+      <td>alignment-squash</td>
+      <td>boolean</td>
+      <td>(for Short-Reads data).  Where reads are split due to splicing these may be combined into one feature in display if the gap is identical. Data ate either end is shown as mixed (not all features are included) and common (region covers all features).
+      </td>
+    </tr>
+
     <tr>
       <td>transcript-cds-colours</td>
       <td>colour type</td>
@@ -483,7 +486,17 @@ the properties themselves.
     <tr>
       <td>glyph-3</td>
       <td>string</td>
-      <td>The glyph shape to draw at the 3' end of a feature.</td>
+      <td>The glyph shape to draw at the 3' end of a feature</td>
+    </tr>
+    <tr>
+      <td>glyph-5-rev</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 5' end of a feature for a reverse strand alignment, defaults to glyph-5 or glyph.</td>
+    </tr>
+    <tr>
+      <td>glyph-3-rev</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 3' end of a feature for a reverse strand alignment, defaults to glyph-3 or glyph.</td>
     </tr>
 
 
