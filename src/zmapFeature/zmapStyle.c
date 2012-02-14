@@ -229,6 +229,14 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
              "glyph-type-5", "Type of glyph to show at 5' end.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), ZMAPSTYLE_MODE_GLYPH },
 
+    { STYLE_PROP_GLYPH_NAME_5_REV, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,
+            "glyph-name for 5' end reverse strand", "Glyph name used to reference glyphs config stanza",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5_rev),ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_SHAPE_5_REV, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV,
+             "glyph-type-5-rev", "Type of glyph to show at 5' end on reverse strand.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5rev), ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_NAME_3, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,
             "glyph-name for 3' end", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),ZMAPSTYLE_MODE_GLYPH },
@@ -236,6 +244,14 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_GLYPH_SHAPE_3, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
              "glyph-type-3", "Type of glyph to show at 3' end.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_NAME_3_REV, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,
+            "glyph-name for 3' end reverse strand", "Glyph name used to reference glyphs config stanza",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3_rev),ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_SHAPE_3_REV, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV,
+             "glyph-type-3-rev", "Type of glyph to show at 3' end on reverse strand.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3rev), ZMAPSTYLE_MODE_GLYPH },
 
     { STYLE_PROP_GLYPH_ALT_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,
             "alternate glyph colour", "Colours used to show glyphs when below thrashold.",

@@ -524,10 +524,22 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 			/* find and/or allocate glyph structs */
 			if(!feature->left && homology)	/* top end homology incomplete ? */
 			{
-				double score = feature->feature->feature.homol.y1 - 1;
+				/* design by guesswork: this is not well documented */
+				ZMapHomol homol = &feature->feature->feature.homol;
+				double score = homol->y1 - 1;
+				if(feature->feature->strand != homol->strand)
+					score = homol->length - homol->y2;
 
 				if(score)
 					align->glyph5 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 5, score);
+
+#if DEBUG
+char *sig = "";
+if(align->glyph5)
+	sig = g_quark_to_string(zMapWindowCanvasGlyphSignature(homology, feature->feature,5, score));
+
+printf("%s glyph5 %f (%d %d, %d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, 1, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
+#endif
 			}
 
 			if(feature->right && nc_splice)	/* nc-splice ?? */
@@ -547,10 +559,22 @@ zMapLogWarning("set nc splice 5 %s -> %s",g_quark_to_string(feature->right->feat
 
 			if(!feature->right && homology)	/* bottom end homology incomplete ? */
 			{
-				double score = feature->feature->feature.homol.length - feature->feature->feature.homol.y2;
+				/* design by guesswork: this is not well documented */
+				ZMapHomol homol = &feature->feature->feature.homol;
+				double score = homol->length - homol->y2;
+				if(feature->feature->strand != homol->strand)
+					score = homol->y1 - 1;
 
 				if(score)
 					align->glyph3 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 3, score);
+
+#if DEBUG
+char *sig = "";
+if(align->glyph3)
+	sig = g_quark_to_string(zMapWindowCanvasGlyphSignature(homology, feature->feature,3, score));
+
+/printf("%s glyph3 %f (%d %d,%d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, feature->feature->feature.homol.length, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
+#endif
 			}
 
 			align->bump_set = TRUE;
@@ -639,7 +663,7 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
 /*
  * if we are displaying a gapped alignment, recalculate this data
- * do this by freeing the existing data, new stuff will be added by the paint fucntion
+ * do this by freeing the existing data, new stuff will be added by the paint function
  */
 static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset)
 {

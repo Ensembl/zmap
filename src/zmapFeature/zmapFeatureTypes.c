@@ -499,26 +499,30 @@ GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
 
 
 
-ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style)
+ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = NULL;
+  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
-    shape = &style->mode_data.glyph.glyph5;
-  else
-    shape = &style->mode_data.glyph.glyph;
+	shape = &style->mode_data.glyph.glyph5;
+
+  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5_REV))
+		shape = &style->mode_data.glyph.glyph5rev;
+
   return(shape);
 }
 
 
-ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style)
+ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = NULL;
+  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
-    shape = &style->mode_data.glyph.glyph3;
-  else
-    shape = &style->mode_data.glyph.glyph;
+	shape = &style->mode_data.glyph.glyph3;
+
+  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
+		shape = &style->mode_data.glyph.glyph3rev;
+
   return(shape);
 }
 

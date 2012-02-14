@@ -657,10 +657,18 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GH
 
                   if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME,curr_config_style->name))
                     shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE;
+
                   else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,curr_config_style->name))
                     shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5;
+
+                  else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,curr_config_style->name))
+                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV;
+
                   else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,curr_config_style->name))
                     shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3;
+
+                  else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,curr_config_style->name))
+                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV;
 
                   if(shape_param)
                     {
@@ -1340,8 +1348,12 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
@@ -1492,7 +1504,9 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
       // the names specify a shape string to be extracted from [glyphs]
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   G_TYPE_INT, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   G_TYPE_STRING, style_set_property, FALSE },

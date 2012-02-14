@@ -160,8 +160,12 @@ typedef enum
     STYLE_PROP_GLYPH_SHAPE,
     STYLE_PROP_GLYPH_NAME_5,
     STYLE_PROP_GLYPH_SHAPE_5,
+    STYLE_PROP_GLYPH_NAME_5_REV,
+    STYLE_PROP_GLYPH_SHAPE_5_REV,
     STYLE_PROP_GLYPH_NAME_3,
     STYLE_PROP_GLYPH_SHAPE_3,
+    STYLE_PROP_GLYPH_NAME_3_REV,
+    STYLE_PROP_GLYPH_SHAPE_3_REV,
     STYLE_PROP_GLYPH_ALT_COLOURS,
     STYLE_PROP_GLYPH_THRESHOLD,
     STYLE_PROP_GLYPH_STRAND,
@@ -291,8 +295,12 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE            "glyph-shape"
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME_5           "glyph-5"
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5          "glyph-shape-5"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV       "glyph-5-rev"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV      "glyph-shape-5-rev"
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME_3           "glyph-3"
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3          "glyph-shape-3"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV       "glyph-3-rev"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV      "glyph-shape-3-rev"
 
 #define ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS      "glyph-alt-colours"
 #define ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD        "glyph-threshold"
@@ -675,10 +683,12 @@ typedef struct
 typedef struct
 {
       // sub feature glyphs or glyphs for glyph mode
-  GQuark glyph_name,glyph_name_5,glyph_name_3;
+  GQuark glyph_name,glyph_name_5,glyph_name_5_rev,glyph_name_3,glyph_name_3_rev;
   ZMapStyleGlyphShapeStruct glyph;        // single glyph or unspecified 5' or 3' end
   ZMapStyleGlyphShapeStruct glyph5;       // shape for 5' end
   ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
+  ZMapStyleGlyphShapeStruct glyph5rev;    // optional shape for 5' end on reverse strand
+  ZMapStyleGlyphShapeStruct glyph3rev;    // optional shape for 3' end on reverse strand
   ZMapStyleFullColourStruct glyph_alt_colours;
   ZMapStyleGlyphStrand glyph_strand;
   ZMapStyleGlyphAlign glyph_align;
@@ -841,6 +851,8 @@ typedef struct _zmapFeatureTypeStyleStruct
   ZMapStyleGraphScale score_scale;       		// log or linear, for collapse option
   gboolean collapse;				/* for duplicated features */
   /* see also alignment.squash: even better form of collapse for short reads */
+
+  int join_overlap;				/* for amalgamating short reads */
 
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
@@ -1036,8 +1048,8 @@ void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 
 //ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
 #define zMapStyleGlyphShape(style)   (&style->mode_data.glyph.glyph)
-ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style);
-ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style);
+ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse);
+ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse);
 
 void zMapStyleSetShowGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
 
@@ -1181,7 +1193,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleIsCollapse(style)   (style->collapse)
 #define zMapStyleIsSquash(style)   	 (style->mode_data.alignment.squash)
 
-
+#define zMapStyleJoinOverlap(style)	 (style->join_overlap)
 
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;

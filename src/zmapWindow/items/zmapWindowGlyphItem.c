@@ -202,8 +202,8 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
   double offset = 0.0, origin = 0.0;
   double col_width;
 
-  shape =   (which == 5) ? zMapStyleGlyphShape5(style) :
-            (which == 3) ? zMapStyleGlyphShape3(style) :
+  shape =   (which == 5) ? zMapStyleGlyphShape5(style, rev_strand) :
+            (which == 3) ? zMapStyleGlyphShape3(style, rev_strand) :
             zMapStyleGlyphShape(style);
 
   if(shape && shape->type != GLYPH_DRAW_INVALID && shape->n_coords)

@@ -223,8 +223,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      text[6] = g_strdup_printf("%s%s%s",
-					feature_desc->feature_score,
-					(feature_desc->feature_percent_id ? " / " : ""),
+					feature_desc->feature_score ? feature_desc->feature_score : "",
+					((feature_desc->feature_percent_id && feature_desc->feature_score) ? " / " : ""),
 					(feature_desc->feature_percent_id ? feature_desc->feature_percent_id : "")) ;
 	    }
 	  else if (feature_desc->feature_score)

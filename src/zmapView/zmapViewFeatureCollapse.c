@@ -230,17 +230,23 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		ZMapFeatureSet feature_set = NULL;
 		feature_set = (ZMapFeatureSet)feature_any;
 		style = feature_set->style;
-		gboolean collapse, squash;
+		gboolean collapse = FALSE, squash = FALSE;
+		int join = 0;
 		GArray *new_gaps = NULL;	/* to replace original in visible squashed feature */
-		double y1,y2,edge1,edge2;		/* boundaries of visible squashed feature */
+		double y1,y2,edge1,edge2;	/* boundaries of visible squashed feature */
+
+		GHashTable *splice_hash;	/* accumulate all splice coordinates */
+		GList  *splice_list;		/* sorted list of splice coordinates */
 
 		if(!style)
-		break;
+			break;
 
-		collapse = zMapStyleIsCollapse(style);
 		squash   = zMapStyleIsSquash(style);
+		join 	   =  zMapStyleJoinOverlap(style);
+		if(!join)
+			collapse = zMapStyleIsCollapse(style);	/* collaspe is like join_overlap = feature length */
 
-		if(!collapse && !squash)
+		if(!collapse && !squash && !join)
 			break;
 
 		/* NOTE: rules of engagement as follows
@@ -248,6 +254,8 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 * collapse combines identical features into one, they have identical start end, and gaps if present
 		 * squash combines features with identical gaps (must be present) and same or varied start and end
 		 * squash can only be set for alignments, collapse can be set for simple features too
+		 * join will amalgamate overlapping ungapped reads between splice coordinates
+		 * and assumes that these have been sorted to appear after gapped ones in the list of features.
 		 *
 		 * if both are selected then squash overrides collapse, but only for gapped features
 		 * so we only scan the features once
@@ -275,6 +283,8 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 
 		/* sort into start, -end coord order */
 		/* sort by first gap, if no gaps sort by x1,x2: we get two groups of features */
+		/* NOTE it's important that ungapped reads go to the end, to allow joining bewteen splice junctions */
+
 		zMap_g_hash_table_get_data(&features, feature_set->features);
 		features = g_list_sort(features,zMapFeatureGapCompare);
 
