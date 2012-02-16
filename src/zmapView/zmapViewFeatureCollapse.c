@@ -193,7 +193,7 @@ gint zMapFeatureGapCompare(gconstpointer a, gconstpointer b)
 	return(0);
 }
 
-#define SQUASH_DEBUG	0
+#define SQUASH_DEBUG	1
 // collaspe similar features into one
 static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
                                                          gpointer data,
@@ -279,6 +279,14 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 * Take great care to be aware of all cases if you modify this.
 		 * Quite a few statements rely on implied status of some flags or data.
 		 * I've added some Asserts for documentation purpose *and* some helpful comments
+		 */
+
+		/* NOTE
+		 * adding blocks to eg gaps array turned out to be a nightmnare due to queury coords beign reversed sometimes
+		 * 1-based coords of cours make like tedious too
+		 * mismatches at the start/ end os a read also cause grief
+		 * I'd like to rewrite this :-(
+		 * and will have to to move it to the canvas anyway.
 		 */
 
 		/* sort into start, -end coord order */
@@ -455,94 +463,131 @@ printf("collapse this\n");
 					ZMapAlignBlock first;
 					ZMapAlignBlock edge = NULL;
 					int diff;
-					int offset; /* related to leading edge */
 
 					zMapAssert(squash && feature->feature.homol.align);
 #if SQUASH_DEBUG
-printf("squashing...\n");
+printf("\nsquashing...\n");
+#if SQUASH_DEBUG
+{ int i;
+ZMapAlignBlock ab;
+GArray *f_gaps = feature->feature.homol.align;
+
+printf("feature: %s %d,%d\n",g_quark_to_string(f->original_id), feature->x1,feature->x2);
+
+if (f_gaps) for(i = 0;i < f_gaps->len; i++)
+{
+	ab = & g_array_index(f_gaps,ZMapAlignBlockStruct,i);
+	printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
+}
+}
+#endif
+
 #endif
 					/* update the gaps array */
 
 					/* NOTE we add an alternate gaps array to the feature
-					 * to preserve the orogonal we need to add a new composite feature
+					 * to preserve the origonal we need to add a new composite feature
 					 * so we could display the real features w/ a diff style
 					 * beware interactions with canvasAlignment.c where y2 gets changed to paint homology lines
 					 * but as we don't do this with style alignment-unique it should be ok.
 					 */
 
 					/* prepare a new replacement gaps array */
+					/* just do the target first them make up the query
+					 * as there's too many variants it's hopeless trying to adjust it OTF
+					 * we force the query to start at 1
+					 */
 
 					GArray *f_gaps = feature->feature.homol.align;
 					ZMapAlignBlock ab;
+					int extra1, extra2;	/* added to the ends */
+					int diff1, diff2;		/* featrue shrinks by this much as the edge approaches the gap */
+					int q = 1;
 
 					/* NOTE almost always there will be exactly two items but this works for all cases */
 
 					new_gaps = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), f_gaps->len + 2);
+
+					/* NOTE: edge 1,2 are in the common part of the block */
+
+					extra1 = feature->x1 - y1;
+					extra2 = y2 - feature->x2;
+					diff1 = edge1 - feature->x1;
+					diff2 = feature->x2 - edge2;
 #if SQUASH_DEBUG
-printf("new gaps: <%p>\n",new_gaps);
+
+printf("y1,y2, egde1,2 = %.1f,%.1f %.1f,%.1f\n",y1,y2,edge1,edge2);
+printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
+
 #endif
 
-					/* add ragged leading edge */
-					first = &g_array_index(f_gaps,ZMapAlignBlockStruct,0);
+					first = & g_array_index(f_gaps,ZMapAlignBlockStruct,0);
 
-					if(y1 != feature->x1 || edge1 != y1)
+					if(extra1 || diff1)
 					{
 						edge = g_new0(ZMapAlignBlockStruct,1);
-						diff = edge1 - y1;
-#if SQUASH_DEBUG
-printf("diff,ft2,edge1: %d %d %f\n",diff,feature->x1,y1);
-#endif
-						edge->q1 = 1;
-						edge->q2 = diff + 1;
+						diff = edge1 - y1 - 1;
+						zMapAssert(diff >= 0);
+
+						/* target blocks are always fwd strand coords */
+						/* this is not immediately obvious, but Ed says it will work like this */
+
 						edge->t1 = y1;
 						edge->t2 = y1 + diff;
-						offset = diff;
+						edge->t_strand = first->t_strand;
+						edge->q_strand = first->q_strand;
+
 						g_array_append_val(new_gaps,*edge);
 					}
 
 					/* add first feature match block and adjust */
-					g_array_append_val(new_gaps, g_array_index(f_gaps,ZMapAlignBlockStruct,0));
+					g_array_append_val(new_gaps,*first);
 					first = &g_array_index(new_gaps,ZMapAlignBlockStruct,1);
-					first->t1 = edge1 + 1;
-					first->q1 += diff + 1;
-					first->q2 += diff;	/* was already 1-based */
+					first->t1 = edge1;
 
-#if SQUASH_DEBUG
-if(edge) printf("leading edge %d,%d , query %d,%d\n", edge->t1,edge->t2,edge->q1,edge->q2);
-printf("first block  %d,%d , query %d,%d\n", first->t1,first->t2,first->q1,first->q2);
-#endif
-
-					/* add remaining match blocks copied from feature */
+					/* add remaining match blocks copied from feature, normally only 1 but zebrafish has a few triple reads */
 					for(i = 1;i < f_gaps->len; i++)
 					{
 						g_array_append_val(new_gaps, g_array_index(f_gaps,ZMapAlignBlockStruct,i));
-						ab = & g_array_index(new_gaps,ZMapAlignBlockStruct,new_gaps->len - 1);
-						ab->q1 += offset;
-						ab->q2 += offset;
 					}
+					ab = & g_array_index(new_gaps,ZMapAlignBlockStruct,new_gaps->len - 1);
 
-
-					if(y2 != feature->x2 || edge2 != y2)
+					if(extra2 || diff2)
 					{
 						edge = g_new0(ZMapAlignBlockStruct,1);
-						memcpy(edge,ab,sizeof (ZMapAlignBlockStruct));
-						diff = y2 - edge2;
-#if SQUASH_DEBUG
-printf("diff,lt1,edge2: %d %d %f\n",diff,feature->x2,edge2);
-#endif
-						edge->t1 += diff + 1;
-						edge->q1 += diff + 1;
+						diff = edge2 - ab->t1 - 1;
+						zMapAssert(diff >= 0);
+
+						edge->t1 = ab->t1 + diff + 1;
+						edge->t2 = y2;
+						edge->t_strand = ab->t_strand;
+						edge->q_strand = ab->q_strand;
 
 						g_array_append_val(new_gaps,*edge);
-
 						ab->t2 = ab->t1 + diff;
-						ab->q2 = ab->q1 + diff;
 					}
-#if SQUASH_DEBUG
-printf("last block %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
-if(edge) printf("trailing edge %d,%d , query %d,%d\n", edge->t1,edge->t2,edge->q1,edge->q2);
-printf("feature gaps %s (%d)<%p>\n",g_quark_to_string(feature->original_id),new_gaps->len,new_gaps);
-#endif
+
+					if(first->q_strand == first->t_strand)
+					{
+						for(i = 0,q = 1; i < new_gaps->len; i++)
+						{
+							ab = & g_array_index(new_gaps,ZMapAlignBlockStruct,i);
+							ab->q1 = q;
+							q += ab->t2 - ab->t1;
+							ab->q2 = q++;
+						}
+					}
+					else
+					{
+						for(i =  new_gaps->len,q = 1; i > 0;)
+						{
+							i--;
+							ab = & g_array_index(new_gaps,ZMapAlignBlockStruct,i);
+							ab->q1 = q;
+							q += ab->t2 - ab->t1;
+							ab->q2 = q++;
+						}
+					}
 
 					feature->feature.homol.align = new_gaps;
 
@@ -555,14 +600,57 @@ printf("feature gaps %s (%d)<%p>\n",g_quark_to_string(feature->original_id),new_
 { int i;
 ZMapAlignBlock ab;
 GArray *f_gaps = feature->feature.homol.align;
+int failed = 0;
 
 printf("new feature %d,%d\n",feature->x1,feature->x2);
 for(i = 0;i < f_gaps->len; i++)
 {
+	int q1,q2;
+
 	ab = & g_array_index(f_gaps,ZMapAlignBlockStruct,i);
 	printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
+
+	/* now do some automated QA */
+	/* test that t1 -> t2 == q1 -> q2 */
+	/* test that query coords are contiguous */
+
+	if(ab->q_strand == ab->t_strand)
+	{
+		if((ab->t2 - ab->t1) != (ab->q2 - ab->q1))
+		{
+			printf("failed: fwd block %d query and target are different lengths (%d %d)\n",i,ab->t2 - ab->t1, ab->q2 - ab->q1 );
+			failed++;
+		}
+
+		if(i && (ab->q1 - q2) != 1)
+		{
+			printf("failed: fwd block %d query is not contiguous (%d,%d -> %d)\n",i, ab->q1, q2,ab->q1 - q2);
+			failed++;
+		}
+	}
+	else
+	{
+		if((ab->t2 - ab->t1) != (ab->q2 - ab->q1))
+		{
+			printf("failed: rev block %d query and target are different lengths (%d %d)\n",i,ab->t2 - ab->t1, ab->q2 - ab->q1 );
+			failed++;
+		}
+
+		if(i && (q1 - ab->q2) != 1)
+		{
+			printf("failed: rev block %d query is not contiguous (%d,%d -> %d)\n",i, q1, ab->q2, q1 - ab->q2);
+			failed++;
+		}
+	}
+	q1 = ab->q1;
+	q2 = ab->q2;
 }
+if(!failed)
+	printf("%s tested ok\n\n",(ab->q_strand == ab->t_strand) ? "fwd" : "rev");
+else
+	printf("\n");
 }
+
 #endif
 				}
 
@@ -595,6 +683,7 @@ for(i = 0;i < f_gaps->len; i++)
 
   return status;
 }
+
 
 
 
