@@ -102,7 +102,7 @@ typedef struct _pixRect
 
 	ZMapWindowCanvasFeature feature;
 	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
-	int start;				/* we need to remember the real start as we trim the rect from the front */
+//	int start;				/* we need to remember the real start as we trim the rect from the front */
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 
 #define N_PIXRECT_ALLOC		20

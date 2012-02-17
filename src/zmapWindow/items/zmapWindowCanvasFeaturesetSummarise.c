@@ -46,8 +46,8 @@
       revisited after implementing CanvasFeatureset foo items: can finaly implement fully
       original file may be deleted.
       works from within the CanvasFeatureset, all features are there so can be displayed willy nilly
-      the original code would hide features that wsould have been dislayed on top of others
-      argualbly not a problem but we aim for the exact picture ot lower zoom
+      the original code would hide features that would have been dislayed on top of others
+      argualbly not a problem but we aim for the exact picture at lower zoom
       most important perfornance gains are at min zoom and this will operate fastest then
 */
 
@@ -78,8 +78,9 @@ static PixRect pix_rect_free_G = NULL;
 
 void pix_rect_free(PixRect pix)
 {
-	if(pix_rect_free_G)
-		pix_rect_free_G->next = pix;
+	/* alloc list only has prev pointers set */
+
+	pix->next = pix_rect_free_G;
 	pix_rect_free_G = pix;
 }
 
@@ -100,8 +101,8 @@ PixRect alloc_pix_rect(void)
 	}
 
 	ret = pix_rect_free_G;
+	pix_rect_free_G = pix_rect_free_G->next;
 	memset((void *) ret,0,sizeof(pixRect));
-	pix_rect_free_G = pix_rect_free_G->prev;
 	return ret;
 }
 
@@ -113,20 +114,67 @@ PixRect alloc_pix_rect(void)
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature)
 {
 	FooCanvasItem *foo = &featureset->__parent__;
-	PixRect this = alloc_pix_rect();
+	PixRect this;
+	PixRect blocks = NULL;
 	PixRect pr,del,last = NULL;
+	gboolean always_gapped = (zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_ALIGNMENT) &&
+		zMapStyleIsAlwaysGapped(featureset->style) && feature->feature->feature.homol.align;
 
+	/*
+	 * NOTE this was originally written for simple features, and alignments split into separate features
+	 * for always gapped alignments (ditags and short reads) we have to expand the match blocks and process each one
+	 * so we have a pix_rect for each match block and each one of these points to a feature
+	 * this requires us to set features visible explicilty as one feature appears in several blocks
+	 *
+	 * good news is that this process can be extended to other complex features
+	 * eg (vulgar alignments and transcripts) when they are implemented
+	 */
 
-	feature->flags &= ~FEATURE_SUMMARISED;
-	if(!(feature->flags & FEATURE_HIDE_REASON))
-		feature->flags &= ~FEATURE_HIDDEN;
+	feature->flags |= FEATURE_SUMMARISED | FEATURE_HIDDEN;
 
 	/* NOTE we don't care about exact canvas coords, just the size and relative position */
 
-      foo_canvas_w2c (foo->canvas, 0,feature->y1, NULL, &this->y1);
-      this->start = this->y1;
-      foo_canvas_w2c (foo->canvas, feature->width, feature->y2, &this->x2, &this->y2);
-      this->feature = feature;
+	if(always_gapped)
+	{
+		/* make list of blocks */
+		ZMapAlignBlock ab;
+		int i;
+		GArray *gaps;	/* actually blocks */
+
+		/* this is less efficient as we get a long dangly list og block at the other side of the gap */
+		/* however, due to the nature of the data we will get a lot of hits */
+		/* see reults at the bottom of this file */
+#warning review this for efficiency when complex alignments (VULGAR) are implemented
+		for(gaps = feature->feature->feature.homol.align, i = 0; i < gaps->len; i++)
+		{
+			ab = & g_array_index(gaps,ZMapAlignBlockStruct, i);
+
+			this = alloc_pix_rect();
+
+			foo_canvas_w2c (foo->canvas, 0,ab->t1, NULL, &this->y1);
+//			this->start = this->y1;
+			foo_canvas_w2c (foo->canvas, feature->width, ab->t2, &this->x2, &this->y2);
+			this->feature = feature;
+
+			if(last)
+				last->next = this;
+			/* we don't care about the prev pointer */
+
+			last = this;
+			if(!blocks)
+				blocks = this;
+		}
+	}
+	else
+	{
+		this = alloc_pix_rect();
+
+		foo_canvas_w2c (foo->canvas, 0,feature->y1, NULL, &this->y1);
+//		this->start = this->y1;
+		foo_canvas_w2c (foo->canvas, feature->width, feature->y2, &this->x2, &this->y2);
+		this->feature = feature;
+		blocks = this;
+	}
 
 	/* new revised algorithm !
 	 *
@@ -140,68 +188,84 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 	 * if it shrinks to 0 then that feature is hidden.
 	 */
 
-      /* trim out of scope visible rectangles off the start of the list */
-      while(pix && pix->y1 < this->y1)
+	last = NULL;
+
+	while(blocks)
 	{
-		/* feature is visible */
-		n_summarise_show++;
-		n_summarise_list--;
+		this = blocks;
+		blocks = blocks->next;		/* one feature only, or a list of always gappad blocks in the feature */
+		this->next = this->prev = NULL;
 
-		pr = pix;
-		pix = pix->next;
-		if(pix)
-      		pix->prev = NULL;
-		pix_rect_free(pr);
-	}
+		/* original code now in a loop */
 
-	for(pr = pix; pr; )
-	{
-		del = NULL;
-		last = pr;
-
-		if(this->x2 >= pr->x2)		/* enough overlap to care about */
+		/* trim out of scope visible rectangles off the start of the list */
+		while(pix && pix->y1 < this->y1)
 		{
-			pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
+			/* feature is visible */
+			n_summarise_show++;
+			n_summarise_list--;
 
-			if(pr->y1 > pr->y2)	/* feature is hidden by features on top of it */
-			{
-				del = pr;
-				pr->feature->flags |= FEATURE_HIDDEN | FEATURE_SUMMARISED;
-				pr = pr->next;
+			pr = pix;
 
-				n_summarise_hidden++;
-				n_summarise_list--;
+				/* one block of the feature is visible so it all is */
+			pr->feature->flags &= ~FEATURE_SUMMARISED;
+			if(!(pr->feature->flags & FEATURE_HIDE_REASON))
+				pr->feature->flags &= ~FEATURE_HIDDEN;
 
-				if(del->next)
-					del->next->prev = del->prev;
-				else
-					last = del->prev;
-
-				if(del->prev)
-					del->prev->next = del->next;
-				else
-					pix = del->next;
-			}
+			pix = pix->next;
+			if(pix)
+				pix->prev = NULL;
+			pix_rect_free(pr);
 		}
 
-		if(del)
-			pix_rect_free(del);
+		for(pr = pix; pr; )
+		{
+			del = NULL;
+			last = pr;
+
+			if(this->x2 >= pr->x2)		/* enough overlap to care about */
+			{
+				pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
+
+				if(pr->y1 > pr->y2)	/* feature is hidden by features on top of it */
+				{
+					del = pr;
+					pr = pr->next;
+
+					n_summarise_hidden++;
+					n_summarise_list--;
+
+					if(del->next)
+						del->next->prev = del->prev;
+					else
+						last = del->prev;
+
+					if(del->prev)
+						del->prev->next = del->next;
+					else
+						pix = del->next;
+				}
+			}
+
+			if(del)
+				pix_rect_free(del);
+			else
+				pr = pr->next;
+		}
+
+		n_summarise_list++;
+		if(n_summarise_list > n_summarise_max)
+			n_summarise_max = n_summarise_list;
+
+		if(last)
+		{
+			last->next = this;
+			this->prev = last;
+		}
 		else
-			pr = pr->next;
-	}
-
-	n_summarise_list++;
-	if(n_summarise_list > n_summarise_max)
-		n_summarise_max = n_summarise_list;
-
-	if(last)
-	{
-		last->next = this;
-		this->prev = last;
-	}
-	else
-	{
-		pix = this;
+		{
+			pix = this;
+		}
 	}
 
 	return pix;
@@ -223,7 +287,7 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 	}
 
 //zMapLogWarning("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
-//printf        ("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
+printf        ("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
 
 	n_summarise_hidden = 0;
 	n_summarise_list = 0;
@@ -233,10 +297,22 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 
 
 
+/*
+
+results:
+
+summarise 0x82c8178_tier2_hepg2_cytosol_longpolya_rep2_-0 (129.040659): 190+1723/1832 = 20)
+summarise 0x82c8178_tier2_hepg2_cytosol_longpolya_rep2_+0 (0.123354): 1218+687/1832 = 40)
+
+summarise 0x82c72a8_solexa_introns_+0 (480.702198): 1067+2372/1111 = 535)
+summarise 0x82c72a8_solexa_introns_+0 (0.401186): 2393+485/1111 = 1097)
 
 
+NOTE solexa/ zebrafish is a much more varied dataset than encode and includes about a dozen featuresets
+The list size is a bit dissappointing: it starts to look quadratic
 
-
+ENCODE includes a lot of ungapped features which helps matters somewhat
+*/
 
 
 

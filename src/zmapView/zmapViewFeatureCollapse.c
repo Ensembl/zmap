@@ -193,7 +193,7 @@ gint zMapFeatureGapCompare(gconstpointer a, gconstpointer b)
 	return(0);
 }
 
-#define SQUASH_DEBUG	1
+#define SQUASH_DEBUG	0
 // collaspe similar features into one
 static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
                                                          gpointer data,
@@ -613,6 +613,7 @@ for(i = 0;i < f_gaps->len; i++)
 	/* now do some automated QA */
 	/* test that t1 -> t2 == q1 -> q2 */
 	/* test that query coords are contiguous */
+	/* (this was written for a more complicated versio of the code above) */
 
 	if(ab->q_strand == ab->t_strand)
 	{
