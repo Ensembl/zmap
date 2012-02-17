@@ -364,6 +364,13 @@ the properties themselves.
       <td>boolean</td>
       <td>If true, features which are identical are combined into one on display. Applies to simple features and  alignments only.</td>
     </tr>
+
+    <tr>
+      <td>filter</td>
+      <td>boolean</td>
+      <td>If true, features which have a score less than a threshold will be hidden. The threeshol is set by a spin button at the top of the ZMap window.  Min and max-score must be set.</td>
+    </tr>
+
     <tr>
       <td>graph-mode</td>
       <td>&lt; line | histogram &gt;</td>
