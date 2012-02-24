@@ -5730,7 +5730,7 @@ static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoint
   GString *text = (GString *) user_data;
 
   /* Note strand groups do not have features.... */
-  if ((any_feature = zmapWindowItemGetFeatureAny(container_parent)))
+  if ((any_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *)container_parent)))
     {
       switch (any_feature->struct_type)
 	{

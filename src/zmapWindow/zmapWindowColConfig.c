@@ -551,7 +551,7 @@ static void configure_get_column_lists(ColConfigure configure_data,
       /* get block */
       block_group = configure_get_point_block_container(configure_data, column_group);
 
-      block = zmapWindowItemGetFeatureBlock(block_group);
+      block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)block_group);
 
       forward_reverse_lists.loaded_or_deferred = FALSE;
       forward_reverse_lists.block_group = (ZMapWindowContainerBlock)block_group;
@@ -1453,7 +1453,7 @@ static void deferred_page_populate(NotebookPage notebook_page, FooCanvasGroup *c
 
   page_data   = (DeferredPageData)notebook_page->page_data;
 
-  page_data->block = zmapWindowItemGetFeatureBlock(point_block);
+  page_data->block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)point_block);
 
 
   if(column_group)
@@ -1504,7 +1504,7 @@ static void deferred_page_apply(NotebookPage notebook_page)
 
   if((block_group = configure_get_point_block_container(configure_data, NULL)))
     {
-      block = zmapWindowItemGetFeatureBlock(block_group);
+      block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)block_group);
 
       /* Go through the mark only ones... */
       g_list_foreach(deferred_data->load_in_mark, add_name_to_list, &mark_list);
