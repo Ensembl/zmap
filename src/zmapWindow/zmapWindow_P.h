@@ -900,7 +900,9 @@ void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow,
 				  FooCanvasItem *feature_item) ;
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type) ;
-void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;
+void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list,
+			     char *ref_seq_name, char *match_sequence, char *match_details,
+			     ZMapFeatureBlock block) ;
 char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type,
 			  int *sequence_start_out, int *sequence_end_out) ;
 
@@ -1059,7 +1061,7 @@ void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean it
 						  ZMapFrame required_frame,
 						  ZMapSequenceType coords_type,
 						  int region_start, int region_end) ;
-  void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem *item) ;
 
 
 
@@ -1068,13 +1070,10 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos) ;
 
-#define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
-#define zmapWindowItemGetFeatureAlign(ITEM)   (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_ALIGN)
-#define zmapWindowItemGetFeatureBlock(ITEM)   (ZMapFeatureBlock)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_BLOCK)
-#define zmapWindowItemGetFeatureSet(ITEM)     (ZMapFeatureSet)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_FEATURESET)
-#define zmapWindowItemGetFeature(ITEM)        (ZMapFeature)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_FEATURE)
-#define zmapWindowItemGetFeatureAny(ITEM)     zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), -1)
-ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type);
+ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
+ZMapFeature zmapWindowItemGetFeature(FooCanvasItem *item) ;
+ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item) ;
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type) ;
 
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
