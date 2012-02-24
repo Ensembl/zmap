@@ -402,6 +402,6 @@ void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func)
 	}
 
 
-	printf("skip list: %ld %ld %ld\n", n_block_alloc, n_skip_alloc, n_skip_free);
+//	printf("skip list: %ld %ld %ld\n", n_block_alloc, n_skip_alloc, n_skip_free);
 }
 

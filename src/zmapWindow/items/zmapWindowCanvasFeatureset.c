@@ -1992,7 +1992,8 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
   /* what's more interesting is why an object has to be killed twice */
 
-  printf("zmap_window_featureset_item_item_destroy %p\n",object);
+
+//  printf("zmap_window_featureset_item_item_destroy %p\n",object);
 
   g_return_if_fail(ZMAP_IS_WINDOW_FEATURESET_ITEM(object));
 
@@ -2034,7 +2035,8 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 
 //  printf("removing %s\n",g_quark_to_string(featureset_item->id));
 
-printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
+//printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
+
 
 
   if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
