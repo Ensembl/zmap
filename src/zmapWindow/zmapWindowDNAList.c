@@ -30,8 +30,11 @@
  *-------------------------------------------------------------------
  */
 
-#include <glib.h>
 #include <ZMap/zmap.h>
+
+#include <string.h>
+#include <glib.h>
+
 #include <ZMap/zmapBase.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSequence.h>
@@ -43,21 +46,26 @@
 typedef struct _ZMapWindowListStruct
 {
   ZMapWindow        window ;
+
   char             *title ;
+  char *match_details ;
+
   GtkWidget        *view  ;
   GtkWidget        *toplevel ;
   GtkWidget        *tree_widget;
+
   GList            *dna_match_list ;
   ZMapWindowDNAList dna_list;
+
   ZMapFeatureBlock  block;
+
 } DNAWindowListDataStruct, *DNAWindowListData ;
 
-static GtkWidget *zmapWindowDNAListNewToplevel(char *title);
 
+
+static GtkWidget *createToplevel(char *title) ;
 static void drawListWindow(DNAWindowListData windowList, GtkWidget *tree_view);
-
 static GtkWidget *makeMenuBar(DNAWindowListData wlist);
-
 
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -70,6 +78,10 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 static void freeDNAMatchCB(gpointer data, gpointer user_data_unused) ;
 
 
+
+/* 
+ *                       Globals
+ */
 
 
 /* menu GLOBAL! */
@@ -85,6 +97,11 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
+/* 
+ *                     External routines
+ */
+
+
 /* Displays a list of selectable DNA locations
  *
  * All the features the chosen column are displayed in ascending start-coordinate
@@ -92,17 +109,35 @@ static GtkItemFactoryEntry menu_items_G[] = {
  * and the selected item highlighted.
  *
  */
-void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list, char *title, ZMapFeatureBlock block)
+void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list,
+			     char *ref_seq_name, char *match_sequence, char *match_details,
+			     ZMapFeatureBlock block)
 {
   DNAWindowListData window_list ;
+  GString *title_str ;
+  enum {MAX_LEN = 20} ;
 
   window_list = g_new0(DNAWindowListDataStruct, 1) ;
 
-  window_list->window         = zmap_window ;
-  window_list->title          = title;
+  window_list->window = zmap_window ;
   window_list->dna_match_list = dna_list ;
-  window_list->dna_list       = zMapWindowDNAListCreate();
-  window_list->block          = block;
+  window_list->dna_list = zMapWindowDNAListCreate();
+  window_list->block = block;
+
+  title_str = g_string_new(ref_seq_name) ;
+  title_str = g_string_append(title_str, ": \"") ;
+  if (strlen(match_sequence) <= MAX_LEN)
+    {
+      g_string_append_printf(title_str, "%s\"", match_sequence) ;
+    }
+  else
+    {
+      title_str = g_string_append_len(title_str, match_sequence, MAX_LEN) ;
+      title_str = g_string_append(title_str, "...\"") ;
+    }
+  window_list->title = g_string_free(title_str, FALSE) ;
+
+  window_list->match_details = match_details ;
 
   g_object_get(G_OBJECT(window_list->dna_list),
              "tree-view", &(window_list->tree_widget),
@@ -118,14 +153,75 @@ void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list, char *titl
 
   drawListWindow(window_list, window_list->tree_widget) ;
 
+  g_free(window_list->title) ;
+
   return ;
 }
 
 
 
-/***************** Internal functions ************************************/
 
-static GtkWidget *zmapWindowDNAListNewToplevel(char *title)
+/*
+ *                 Internal routines
+ */
+
+
+static void drawListWindow(DNAWindowListData window_list, GtkWidget *tree_view)
+{
+  GtkWidget *window, *vbox, *label, *sub_frame, *scrolled_window ;
+
+  /* Create window top level */
+  window_list->toplevel = window = createToplevel(window_list->title);
+
+  /* Add ptrs so parent knows about us, and we know parent */
+  g_ptr_array_add(window_list->window->dnalist_windows, (gpointer)window);
+
+  /* And a destroy function */
+  g_signal_connect(GTK_OBJECT(window), "destroy",
+                   GTK_SIGNAL_FUNC(destroyCB), window_list);
+
+  /* Start drawing things in it. */
+  vbox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(window), vbox);
+
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(window_list), FALSE, FALSE, 0);
+
+
+  sub_frame = gtk_frame_new(NULL);
+
+  gtk_frame_set_shadow_type(GTK_FRAME(sub_frame), GTK_SHADOW_ETCHED_IN);
+
+  gtk_box_pack_start(GTK_BOX(vbox), sub_frame, FALSE, FALSE, 0);
+
+  label =  gtk_label_new(window_list->match_details) ;
+
+  gtk_container_add(GTK_CONTAINER(sub_frame), GTK_WIDGET(label));
+
+
+  sub_frame = gtk_frame_new(NULL);
+
+  gtk_frame_set_shadow_type(GTK_FRAME(sub_frame), GTK_SHADOW_ETCHED_IN);
+
+  gtk_box_pack_start(GTK_BOX(vbox), sub_frame, TRUE, TRUE, 0);
+
+  scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+
+  gtk_container_add(GTK_CONTAINER(sub_frame), GTK_WIDGET(scrolled_window));
+
+  gtk_container_add(GTK_CONTAINER(scrolled_window), window_list->tree_widget) ;
+
+
+  /* Now show everything. */
+  gtk_widget_show_all(window) ;
+
+  return ;
+}
+
+
+static GtkWidget *createToplevel(char *title)
 {
   GtkWidget *window;
   GtkWindow *gtk_window;
@@ -143,66 +239,8 @@ static GtkWidget *zmapWindowDNAListNewToplevel(char *title)
   return window;
 }
 
-static void drawListWindow(DNAWindowListData window_list,
-                     GtkWidget        *tree_view)
-{
-  GtkWidget *window, *vbox, *sub_frame, *scrolled_window;
-  char *frame_label = NULL;
 
-  /* Create window top level */
-  window_list->toplevel = window =
-    zmapWindowDNAListNewToplevel(window_list->title);
-
-  /* Add ptrs so parent knows about us, and we know parent */
-  g_ptr_array_add(window_list->window->dnalist_windows, (gpointer)window);
-
-  /* And a destroy function */
-  g_signal_connect(GTK_OBJECT(window), "destroy",
-                   GTK_SIGNAL_FUNC(destroyCB), window_list);
-
-  /* Start drawing things in it. */
-  vbox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(window), vbox);
-
-  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(window_list), FALSE, FALSE, 0);
-
-  frame_label = g_strdup_printf("Feature set %s", window_list->title);
-
-  sub_frame = gtk_frame_new(NULL);
-
-  if(frame_label)
-    g_free(frame_label);
-
-  gtk_frame_set_shadow_type(GTK_FRAME(sub_frame), GTK_SHADOW_ETCHED_IN);
-
-  gtk_box_pack_start(GTK_BOX(vbox), sub_frame, TRUE, TRUE, 0);
-
-  scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-
-  gtk_container_add(GTK_CONTAINER(sub_frame), GTK_WIDGET(scrolled_window));
-
-  gtk_container_add(GTK_CONTAINER(scrolled_window), window_list->tree_widget) ;
-
-#ifdef NO_BUTTONS_YET
-  /* Our Button(s) */
-  sub_frame = gtk_frame_new(NULL);
-
-  gtk_box_pack_start(GTK_BOX(vbox), sub_frame, FALSE, FALSE, 0);
-#endif      /* NO_BUTTONS_YET */
-
-  /* Now show everything. */
-  gtk_widget_show_all(window) ;
-
-  return ;
-}
-
-
-
-/* make the menu from the global defined above !
- */
+/* make the menu from the global defined above ! */
 GtkWidget *makeMenuBar(DNAWindowListData wlist)
 {
   GtkAccelGroup *accel_group;
@@ -449,16 +487,16 @@ ZMapWindowDNAList zMapWindowDNAListCreate(void)
 }
 
 void zMapWindowDNAListAddMatch(ZMapWindowDNAList dna_list,
-                         ZMapDNAMatch match)
+			       ZMapDNAMatch match)
 {
-  zMapGUITreeViewAddTuple(ZMAP_GUITREEVIEW(dna_list), match);
+  zMapGUITreeViewAddTuple(ZMAP_GUITREEVIEW(dna_list), match) ;
   return ;
 }
 
 void zMapWindowDNAListAddMatches(ZMapWindowDNAList dna_list,
-                         GList *list_of_matches)
+				 GList *list_of_matches)
 {
-  zMapGUITreeViewAddTuples(ZMAP_GUITREEVIEW(dna_list), list_of_matches);
+  zMapGUITreeViewAddTuples(ZMAP_GUITREEVIEW(dna_list), list_of_matches) ;
   return ;
 }
 
@@ -714,20 +752,21 @@ static void dna_match_match_to_value (GValue *value, gpointer user_data)
 
   return ;
 }
-static void dna_match_start_to_value (GValue *value, gpointer user_data)
+
+static void dna_match_start_to_value(GValue *value, gpointer user_data)
 {
   ZMapDNAMatch match = (ZMapDNAMatch)user_data;
 
-  g_value_set_int(value, match->start);
+  g_value_set_int(value, match->ref_start);
 
   return ;
 }
 
-static void dna_match_end_to_value   (GValue *value, gpointer user_data)
+static void dna_match_end_to_value(GValue *value, gpointer user_data)
 {
   ZMapDNAMatch match = (ZMapDNAMatch)user_data;
 
-  g_value_set_int(value, match->end);
+  g_value_set_int(value, match->ref_end);
 
   return ;
 }
