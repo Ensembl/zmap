@@ -1350,6 +1350,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR, TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,                colours,
 		 ZMAPSTYLE_PROPERTY_REV_COLOURS,            strand_colours,
+		 ZMAPSTYLE_PROPERTY_FOO,                    TRUE,
 		 NULL);
   }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
