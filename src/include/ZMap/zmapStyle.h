@@ -287,6 +287,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
 
 
+
 #define ZMAPSTYLE_PROPERTY_FILTER			  "filter"		/*filter column by score */
 
 
