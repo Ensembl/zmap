@@ -499,6 +499,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   ZMapStrand strand = ZMAPSTRAND_NONE ;
   ZMapFrame frame = ZMAPFRAME_NONE ;
 
+
   /* If we are revcomp'd these coords will be the wrong way round. */
   search_data->search_start = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_start) ;
   search_data->search_end = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_end) ;
@@ -506,6 +507,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     zMapUtilsSwop(int, search_data->search_start, search_data->search_end) ;
 
 
+  /* Set the strand and frame. */
   if (search_data->strand_entry && (strand_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry))))
     {
       if (!(zMapFeatureFormatStrand(strand_str, &strand)))
@@ -538,22 +540,16 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	}
     }
 
-
-  /* NEED TO SORT WHOLE COORD JUNK OUT....USER SHOULD SEE BLOCK COORDS WE SHOULD DO RELATIVE COORDS... */
   /* Convert to relative coords.... */
-
   start = search_data->search_start - search_data->block->block_to_sequence.block.x1 ;
   end = search_data->search_end - search_data->block->block_to_sequence.block.x1 ;
   dna = search_data->block->sequence.sequence ;
   dna_len = strlen(dna) ;
 
 
-  /* Note that gtk_entry returns "" for no text, _not_ NULL. */
+  /* Validate the query string, note that gtk_entry returns "" for no text, _not_ NULL. */
   query_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->dna_entry)) ;
   query_txt = g_strdup(query_txt);
-#ifdef TESTING
-  query_txt = g_strdup("   t gg  ccc   tt    cccc   gg  t a tagc  t   gg a  t");
-#endif /* TESTING */
   query_txt = zMapStringFlatten(query_txt);
 
   gtk_entry_set_text(GTK_ENTRY(search_data->dna_entry), query_txt);
@@ -604,25 +600,33 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  ZMapFeatureSet new_feature_set = NULL;
 	  ZMapFeatureTypeStyle new_style = NULL;
-	  char *title ;
+	  ZMapDNAMatch match_data ;
+	  char *match_seq, *match_details ;
 
-          if(window_dna_debug_G)
+          if (window_dna_debug_G)
             g_list_foreach(match_list, printCoords, dna) ;
 
-	  title = g_strdup_printf("Matches for \"%s\", (start = %d, end = %d, max errors = %d, max N's %d",
-				  g_quark_to_string(search_data->block->original_id),
-				  search_data->search_start, search_data->search_end,
-				  search_data->max_errors, search_data->max_Ns) ;
+	  match_data = (ZMapDNAMatch)(match_list->data) ;
+	  match_seq = match_data->match ;
+
+	  match_details = g_strdup_printf("Matches for \"%s\", start = %d, end = %d, max errors = %d, max N's %d",
+					  g_quark_to_string(search_data->block->original_id),
+					  search_data->search_start, search_data->search_end,
+					  search_data->max_errors, search_data->max_Ns) ;
 
 
 	  /* Need to convert coords back to block coords here.... */
 	  g_list_foreach(match_list, remapCoords, search_data) ;
 
-	  zmapWindowDNAListCreate(search_data->window, match_list, title, search_data->block) ;
+	  zmapWindowDNAListCreate(search_data->window, match_list,
+				  (char *)g_quark_to_string(search_data->block->original_id),
+				  match_seq,
+				  match_details,
+				  search_data->block) ;
 
 	  remove_current_matches_from_display(search_data);
 
-	  if(zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
+	  if (zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
 	      zmapWindowDrawSeparatorFeatures(search_data->window,
 					      search_data->block,
@@ -630,34 +634,44 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 					      new_style);
 	    }
 
-	  g_free(title) ;
+	  g_free(match_details) ;
 	}
       else if (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE
-	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt, strand, frame, start, end - start + 1,
+	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt,
+							search_data->window->revcomped_features,
+							strand, frame, start, end - start + 1,
 							search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
 	  ZMapFeatureSet new_feature_set = NULL;
 	  ZMapFeatureTypeStyle new_style = NULL;
-	  char *title ;
+	  ZMapDNAMatch match_data ;
+	  char *match_seq, *match_details ;
 
           if(window_dna_debug_G)
             g_list_foreach(match_list, printCoords, dna) ;
 
+	  match_data = (ZMapDNAMatch)(match_list->data) ;
+	  match_seq = match_data->match ;
 
-	  title = g_strdup_printf("Matches for \"%s\", (start = %d, end = %d, max errors = %d, max N's %d",
-				  g_quark_to_string(search_data->block->original_id),
-				  search_data->search_start, search_data->search_end,
-				  search_data->max_errors, search_data->max_Ns) ;
+	  match_details = g_strdup_printf("Reference: \"%s\", Match: \"%s\"\n"
+					  "Start = %d, End = %d, Max Errors = %d, Max N's %d",
+					  g_quark_to_string(search_data->block->original_id), match_seq,
+					  search_data->search_start, search_data->search_end,
+					  search_data->max_errors, search_data->max_Ns) ;
 
 
 	  /* Need to convert coords back to block coords here.... */
 	  g_list_foreach(match_list, remapCoords, search_data) ;
 
-	  zmapWindowDNAListCreate(search_data->window, match_list, title, search_data->block) ;
+	  zmapWindowDNAListCreate(search_data->window, match_list,
+				  (char *)g_quark_to_string(search_data->block->original_id),
+				  match_seq,
+				  match_details,
+				  search_data->block) ;
 
 	  remove_current_matches_from_display(search_data);
 
-	  if(zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
+	  if (zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
 	      zmapWindowDrawSeparatorFeatures(search_data->window,
 					      search_data->block,
@@ -665,7 +679,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 					      new_style);
 	    }
 
-	  g_free(title) ;
+	  g_free(match_details) ;
 	}
       else
 	{
@@ -676,6 +690,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   if (err_text)
     g_free(err_text) ;
+
   g_free(query_txt) ;
 
   return ;
@@ -779,23 +794,10 @@ static void remapCoords(gpointer data, gpointer user_data)
   DNASearchData search_data = (DNASearchData)user_data ;
   ZMapFeatureBlock block = (ZMapFeatureBlock)search_data->block ;
 
-  /* Change to 1 based..... */
-  match_data->start++ ;
-  match_data->end++ ;
 
+  zMapBlock2FeatureCoords(block, &(match_data->ref_start), &(match_data->ref_end)) ;
 
-  if (match_data->match_type == ZMAPSEQUENCE_PEPTIDE)
-    {
-      zMapSequencePep2DNA(&(match_data->start), &(match_data->end), match_data->frame) ;
-
-      /* Oh dear....what's going on with peptide searches that we need to correct like this.. */
-      match_data->start += (search_data->screen_search_start - 1) ;
-      match_data->end += (search_data->screen_search_start - 1) ;
-    }
-
-  zMapBlock2FeatureCoords(block, &(match_data->start), &(match_data->end)) ;
-
-  zmapWindowCoordPairToDisplay(search_data->window, match_data->start, match_data->end,
+  zmapWindowCoordPairToDisplay(search_data->window, match_data->ref_start, match_data->ref_end,
 			       &(match_data->screen_start), &(match_data->screen_end)) ;
 
   if (search_data->window && search_data->window->revcomped_features)
@@ -825,10 +827,14 @@ static void printCoords(gpointer data, gpointer user_data)
 
   match_str = g_string_new("") ;
 
-  match_str = g_string_append_len(match_str, (dna + match_data->start),
-				  (match_data->end - match_data->start + 1)) ;
+  match_str = g_string_append_len(match_str,
+				  (dna + match_data->ref_start),
+				  (match_data->ref_end - match_data->ref_start + 1)) ;
 
-  printf("Start, End  =  %d, %d     %s\n", match_data->start, match_data->end, match_str->str) ;
+  printf("Ref start,end  =  %d,%d  Match start,end = %d,%d    %s\n",
+	 match_data->ref_start, match_data->ref_end,
+	 match_data->start, match_data->end,
+	 match_str->str) ;
 
 
   g_string_free(match_str, TRUE) ;
@@ -867,6 +873,8 @@ static ZMapFeatureSet my_feature_set_copy(ZMapFeatureSet feature_set)
   return new_feature_set;
 }
 
+
+
 static void matches_to_features(gpointer list_data, gpointer user_data)
 {
   ZMapDNAMatch current_match = (ZMapDNAMatch)list_data;
@@ -879,8 +887,8 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   int start, end;
   gboolean has_score = TRUE;
 
-  start = current_match->start;
-  end   = current_match->end;
+  start = current_match->ref_start;
+  end   = current_match->ref_end;
 
   feature_set = fstyle->feature_set;
   style       = fstyle->feature_style;
