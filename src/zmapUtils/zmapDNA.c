@@ -313,8 +313,14 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 	  match = g_new0(ZMapDNAMatchStruct, 1) ;
 	  match->match_type = ZMAPSEQUENCE_DNA ;
 	  match->strand = ZMAPSTRAND_FORWARD ;
+
 	  match->start = start - dna ;
 	  match->end = end - dna ;
+
+	  /* Must be one-based for reference. */
+	  match->ref_start = match->start + 1 ;
+	  match->ref_end = match->end + 1 ;
+
 	  match->frame = zMapSequenceGetFrame(match->start + 1) ;
 
 	  if (return_matches)
@@ -358,12 +364,20 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 	  match = g_new0(ZMapDNAMatchStruct, 1) ;
 	  match->match_type = ZMAPSEQUENCE_DNA ;
 	  match->strand = ZMAPSTRAND_REVERSE ;
+
 	  match->start = (length - (start - revcomp_dna)) + offset - 1 ;
 	  match->end = (length - (end - revcomp_dna)) + offset - 1 ;
 	  tmp = match->start ;
 	  match->start = match->end ;
 	  match->end = tmp ;
+
+	  /* Must be one-based for reference. */
+	  match->ref_start = match->start + 1 ;
+	  match->ref_end = match->end + 1 ;
+
+
 	  match->frame = zMapSequenceGetFrame(match->start + 1) ;
+
 	  if (return_matches)
 	    match->match = *match_ptr ;
 
