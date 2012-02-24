@@ -74,14 +74,40 @@ static long n_summarise_list = 0;
 static long n_summarise_max = 0;
 static long n_summarise_show = 0;
 
+
+#if PIX_LIST_DEBUG
+static long n_block_alloc = 0;
+static long n_pix_alloc = 0;
+static long n_pix_free = 0;
+static long n_list = 0;
+static int pix_id = 0;
+#endif
+
+
 static PixRect pix_rect_free_G = NULL;
 
 void pix_rect_free(PixRect pix)
 {
-	/* alloc list only has prev pointers set */
+	/* NOTE alloc list only has next pointers set */
+
+#if PIX_LIST_DEBUG
+	zMapAssert(pix && pix->alloc);
+	printf("free %d: ",pix->which);
+
+	pix->alloc = FALSE;
+#endif
 
 	pix->next = pix_rect_free_G;
 	pix_rect_free_G = pix;
+
+#if PIX_LIST_DEBUG
+	n_list ++;
+	n_pix_free++;
+
+for(pix = pix_rect_free_G; pix; pix = pix->next)
+	printf(" %d",pix->which);
+printf("\n");
+#endif
 }
 
 PixRect alloc_pix_rect(void)
@@ -92,17 +118,66 @@ PixRect alloc_pix_rect(void)
 
 	if(!pix_rect_free_G)
 	{
+#if PIX_LIST_DEBUG
+		zMapAssert(!n_list);
+#endif
+
 		mem = g_malloc(sizeof(pixRect) * N_PIXRECT_ALLOC);
 		for(i = 0; i < N_PIXRECT_ALLOC; i++)
 		{
-			pix_rect_free((PixRect) mem);
+			ret = (PixRect) mem;
+#if PIX_LIST_DEBUG
+			ret->alloc = TRUE;
+			ret->which = pix_id++;
+#endif
+			pix_rect_free(ret);
 			mem += sizeof(pixRect);
 		}
+#if PIX_LIST_DEBUG
+		n_block_alloc++;
+#endif
 	}
 
 	ret = pix_rect_free_G;
+#if PIX_LIST_DEBUG
+printf("alloc %d:",ret->which);
+
+zMapAssert(!ret->alloc);
+zMapAssert(ret->next || n_list == 1);
+#endif
+
 	pix_rect_free_G = pix_rect_free_G->next;
+
+#if PIX_LIST_DEBUG
+{
+PixRect pix;
+for(pix = pix_rect_free_G; pix; pix = pix->next)
+	printf(" %d",pix->which);
+printf("\n");
+}
+#endif
+
+#if PIX_LIST_DEBUG
+	ret->y1 = ret->y2 = ret->x2 = 0;
+	ret->next = ret->prev = NULL;
+	ret->feature = NULL;
+	ret->alloc = TRUE;
+
+	n_pix_alloc++;
+	n_list--;
+#else
 	memset((void *) ret,0,sizeof(pixRect));
+#endif
+
+
+#if PIX_LIST_DEBUG
+//	zMapAssert( !(((gboolean) pix_rect_free_G) ^ ((gboolean) n_list)));
+	if(pix_rect_free_G) zMapAssert(n_list);
+	if(n_list) zMapAssert(pix_rect_free_G);
+	if(!pix_rect_free_G) zMapAssert(!n_list);
+	if(!n_list) zMapAssert(!pix_rect_free_G);
+#endif
+
 	return ret;
 }
 
@@ -141,7 +216,7 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 		int i;
 		GArray *gaps;	/* actually blocks */
 
-		/* this is less efficient as we get a long dangly list og block at the other side of the gap */
+		/* this is less efficient as we get a long dangly list of blocks at the other side of the gap */
 		/* however, due to the nature of the data we will get a lot of hits */
 		/* see reults at the bottom of this file */
 #warning review this for efficiency when complex alignments (VULGAR) are implemented
@@ -195,6 +270,11 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 		this = blocks;
 		blocks = blocks->next;		/* one feature only, or a list of always gappad blocks in the feature */
 		this->next = this->prev = NULL;
+		last = NULL;
+
+#if PIX_LIST_DEBUG
+printf("this = %d\n",this->which);
+#endif
 
 		/* original code now in a loop */
 
@@ -212,6 +292,10 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 			if(!(pr->feature->flags & FEATURE_HIDE_REASON))
 				pr->feature->flags &= ~FEATURE_HIDDEN;
 
+#if PIX_LIST_DEBUG
+printf("visible %d\n",pr->which);
+#endif
+
 			pix = pix->next;
 			if(pix)
 				pix->prev = NULL;
@@ -222,6 +306,9 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 		{
 			del = NULL;
 			last = pr;
+#if PIX_LIST_DEBUG
+printf("testing %d\n",pr->which);
+#endif
 
 			if(this->x2 >= pr->x2)		/* enough overlap to care about */
 			{
@@ -231,14 +318,17 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 				{
 					del = pr;
 					pr = pr->next;
+#if PIX_LIST_DEBUG
+printf("hidden %d\n",del->which);
+#endif
 
 					n_summarise_hidden++;
 					n_summarise_list--;
 
 					if(del->next)
 						del->next->prev = del->prev;
-					else
-						last = del->prev;
+
+					last = del->prev;
 
 					if(del->prev)
 						del->prev->next = del->next;
@@ -248,7 +338,13 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 			}
 
 			if(del)
+			{
 				pix_rect_free(del);
+#if PIX_LIST_DEBUG
+printf("del %d\n",del->which);
+#endif
+			}
+
 			else
 				pr = pr->next;
 		}
@@ -287,8 +383,13 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 	}
 
 //zMapLogWarning("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
-printf        ("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
 
+#if PIX_LIST_DEBUG
+printf        ("summarise %s (%f): %ld+%ld/%ld = %ld), alloc = %ld, %ld, %ld\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max,
+		   n_block_alloc, n_pix_alloc, n_pix_free);
+#else
+//printf        ("summarise %s (%f): %ld+%ld/%ld = %ld)\n", g_quark_to_string(featureset->id), featureset->bases_per_pixel, n_summarise_show, n_summarise_hidden, featureset->n_features, n_summarise_max);
+#endif
 	n_summarise_hidden = 0;
 	n_summarise_list = 0;
 	n_summarise_show = 0;

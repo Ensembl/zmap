@@ -103,6 +103,13 @@ typedef struct _pixRect
 	ZMapWindowCanvasFeature feature;
 	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
 //	int start;				/* we need to remember the real start as we trim the rect from the front */
+
+#define PIX_LIST_DEBUG	0
+#if PIX_LIST_DEBUG
+	gboolean alloc;			/* for double alloc/free debug */
+	int which;
+#endif
+
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 
 #define N_PIXRECT_ALLOC		20
@@ -201,8 +208,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   double dx,dy;			  /* canvas offsets as calculated for paint */
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
-  gulong fill_colour;            /* Fill color, RGBA */
-  gulong outline_colour;         /* Outline color, RGBA */
+  gulong fill_colour;           /* Fill color, RGBA */
+  gulong outline_colour;        /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
