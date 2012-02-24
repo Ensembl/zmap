@@ -700,7 +700,7 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 		}
 		align->gapped = NULL;
 	}
-printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
+//printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
 }
 
 static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset)
