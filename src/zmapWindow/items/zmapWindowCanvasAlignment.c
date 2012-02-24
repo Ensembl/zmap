@@ -198,11 +198,18 @@ zMapLogWarning("splice %s",g_quark_to_string(left->unique_id));
 
 static AlignGap align_gap_free_G = NULL;
 
+static long n_block_alloc = 0;
+static long n_gap_alloc = 0;
+static long n_gap_free = 0;
+
+
 
 void align_gap_free(AlignGap ag)
 {
 	ag->next = align_gap_free_G;
 	align_gap_free_G = ag;
+
+	n_gap_free++;
 }
 
 /* simple list structure, avioding extra malloc/free associated with GList code */
@@ -218,13 +225,17 @@ AlignGap align_gap_alloc(void)
 		{
 			align_gap_free(((AlignGap) mem) + i);
 		}
+
+		n_block_alloc++;
 	}
 
 	if(align_gap_free_G)
 	{
 		ag = (AlignGap) align_gap_free_G;
-		memset((gpointer) ag, 0, sizeof(AlignGapStruct));
 		align_gap_free_G = align_gap_free_G->next;
+		memset((gpointer) ag, 0, sizeof(AlignGapStruct));
+
+		n_gap_alloc++;
 	}
 	return ag;
 }
@@ -664,6 +675,8 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 /*
  * if we are displaying a gapped alignment, recalculate this data
  * do this by freeing the existing data, new stuff will be added by the paint function
+ *
+ * NOTE ref to FreeSet() below
  */
 static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset)
 {
@@ -687,8 +700,14 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 		}
 		align->gapped = NULL;
 	}
+printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
 }
 
+static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset)
+{
+	/* frees gapped data _and does not alloc any more_ */
+	zMapWindowCanvasAlignmentZoomSet(featureset);
+}
 
 
 void zMapWindowCanvasAlignmentInit(void)
@@ -701,6 +720,7 @@ void zMapWindowCanvasAlignmentInit(void)
 #if CANVAS_FEATURESET_LINK_FEATURE
 	funcs[FUNC_LINK]   = zMapWindowCanvasAlignmentLinkFeature;
 #endif
+	funcs[FUNC_FREE]   = zMapWindowCanvasAlignmentFreeSet;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
 

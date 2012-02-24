@@ -303,6 +303,20 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
 #endif
 
 
+/* if a featureset has and allocated data free it */
+static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
+void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
+{
+	void (*func) (ZMapWindowFeaturesetItem featureset) = NULL;
+
+	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+		func = _featureset_free_G[featureset->type];
+	if(!func)
+		return;
+
+	func(featureset);
+}
+
 
 
 
@@ -383,6 +397,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int str
 #if CANVAS_FEATURESET_LINK_FEATURE
 	_featureset_link_G[featuretype] = funcs[FUNC_LINK];
 #endif
+	_featureset_free_G[featuretype] = funcs[FUNC_FREE];
+
 	featureset_class_G->struct_size[featuretype] = struct_size;
 }
 
@@ -1439,6 +1455,10 @@ void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show,
 }
 
 
+static long n_block_alloc = 0;
+static long n_feature_alloc = 0;
+static long n_feature_free = 0;
+
 
 /* allocate a free list for an unknown structure */
 ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type)
@@ -1468,6 +1488,7 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 			feat->feature = NULL;
                   zmapWindowCanvasFeatureFree((gpointer) mem);
             }
+            n_block_alloc++;
       }
       zMapAssert(featureset_class_G->feature_free_list[type]);
 
@@ -1480,6 +1501,7 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 
       feat->type = type;
 
+	n_feature_alloc++;
       return(feat);
 }
 
@@ -1495,6 +1517,8 @@ void zmapWindowCanvasFeatureFree(gpointer thing)
 
       featureset_class_G->feature_free_list[type] =
             g_list_prepend(featureset_class_G->feature_free_list[type], thing);
+
+	n_feature_free++;
 }
 
 
@@ -1968,10 +1992,13 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
   /* what's more interesting is why an object has to be killed twice */
 
-//  printf("zmap_window_featureset_item_item_destroy %p\n",object);
+  printf("zmap_window_featureset_item_item_destroy %p\n",object);
+
   g_return_if_fail(ZMAP_IS_WINDOW_FEATURESET_ITEM(object));
 
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
+
+  zMapWindowCanvasFeaturesetFree(featureset_item);
 
   if(featureset_item->display_index)
   {
@@ -2005,11 +2032,14 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   	/* removing it the second time will fail gracefully */
   g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id));
 
-//  printf("removing %s\n",g_quark_to_string(featureset->id));
+//  printf("removing %s\n",g_quark_to_string(featureset_item->id));
+
+printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
 
 
   if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
 	(* GTK_OBJECT_CLASS (parent_class_G)->destroy) (GTK_OBJECT(object));
+
 
   return ;
 }
