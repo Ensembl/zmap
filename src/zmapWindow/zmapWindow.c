@@ -1723,8 +1723,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (zMapStyleIsFrameSpecific(style))
 	select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
 
-	if(feature->population)
-		select.feature_desc.feature_population = g_strdup_printf("%d", feature->population) ;
+      if (feature->population)
+	select.feature_desc.feature_population = g_strdup_printf("%d", feature->population) ;
 
 
       /* quality measures. */
@@ -1750,29 +1750,27 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 
 	/* dis/enable the filter by score widget and set min and max */
-	select.filter.enable = FALSE;
-	if(style && zMapStyleIsFilter(style) && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+      select.filter.enable = FALSE;
+      if (style && zMapStyleIsFilter(style) && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
 	{
-			/* get the canvasFeatureset inside the canvas item */
-		FooCanvasGroup *group = FOO_CANVAS_GROUP(item);
-		FooCanvasItem *foo;
+	  /* get the canvasFeatureset inside the canvas item */
+	  FooCanvasGroup *group = FOO_CANVAS_GROUP(item);
+	  FooCanvasItem *foo;
 
-		zMapAssert(group && group->item_list);
+	  zMapAssert(group && group->item_list);
 
-		foo = (FooCanvasItem *) group->item_list->data;
+	  foo = (FooCanvasItem *) group->item_list->data;
 
-		select.filter.min = zMapStyleGetMinScore(style);
-		select.filter.max = zMapStyleGetMaxScore(style);
-		select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue(foo);
-		select.filter.n_filtered = zMapWindowCanvasFeaturesetGetFilterCount(foo);
-		select.filter.featureset = (ZMapWindowFeaturesetItem) group->item_list->data;
-		select.filter.column =  item;	/* needed for re-bumping */
-		select.filter.enable = TRUE;
-		select.filter.window = window;
+	  select.filter.min = zMapStyleGetMinScore(style);
+	  select.filter.max = zMapStyleGetMaxScore(style);
+	  select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue(foo);
+	  select.filter.n_filtered = zMapWindowCanvasFeaturesetGetFilterCount(foo);
+	  select.filter.featureset = (ZMapWindowFeaturesetItem) group->item_list->data;
+	  select.filter.column =  item;	/* needed for re-bumping */
+	  select.filter.enable = TRUE;
+	  select.filter.window = window;
 
-		select.filter.func = zMapWindowCanvasFeaturesetFilter;
-
-
+	  select.filter.func = zMapWindowCanvasFeaturesetFilter;
 	}
 
 
