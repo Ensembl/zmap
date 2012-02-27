@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Makes the information panel at the top of a zmap which
  *              shows details of features that the user selects.
@@ -31,11 +31,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <zmapControl_P.h>
 
@@ -143,13 +138,13 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     {
       if (feature_desc->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	{
-        text[0] = g_strdup(feature_desc->feature_set) ;
-        if (feature_desc->feature_set_description)
+	  text[0] = g_strdup(feature_desc->feature_set) ;
+	  if (feature_desc->feature_set_description)
 	    {
 	      tooltip[0] = g_strdup_printf("Description  -  \"%s\"",
 					   feature_desc->feature_set_description) ;
 	    }
-        else
+	  else
             tooltip[0] = g_strdup_printf("Description  -  \"%s\"",text[0]);
 	}
       else
@@ -165,10 +160,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 				      (feature_desc->feature_total_length ? feature_desc->feature_total_length : ""),
 				      (feature_desc->feature_total_length ? ")" : "")) ;
 
-	  if (feature_desc->feature_query_strand)
+	  if (feature_desc->feature_strand)
 	    {
-	      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-		text[1] = g_strdup_printf("%s / %s", feature_desc->feature_strand, feature_desc->feature_query_strand) ;
+	      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_query_strand)
+		text[1] = g_strdup_printf("%s / %s",
+					  feature_desc->feature_strand, feature_desc->feature_query_strand) ;
 	      else
 		text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
 	    }
@@ -216,9 +212,9 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  text[4] = feature_desc->feature_frame ; /* Frame */
 
 	  if(feature_desc->feature_population)
-	  {
-		text[5] = g_strdup_printf("%s",feature_desc->feature_population);
-	  }
+	    {
+	      text[5] = g_strdup_printf("%s",feature_desc->feature_population);
+	    }
 
 	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
@@ -367,6 +363,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     gtk_tooltips_enable(zmap->feature_tooltips) ;
   else
     gtk_tooltips_disable(zmap->feature_tooltips) ;
+
+
 
   return ;
 }
