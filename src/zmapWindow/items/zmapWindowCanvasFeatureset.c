@@ -1925,6 +1925,7 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 		featureset_item->display_index = NULL;
 	}
   }
+  /* must set this independantly as empty columns with no index get flagged as sorted */
   featureset_item->features_sorted = FALSE;
 #else
 // untested code
