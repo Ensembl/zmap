@@ -945,7 +945,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
  /* by a process of guesswork x,y are world coordinates and cx,cy are canvas (i think) */
  /* No: x,y are parent item local coordinates ie offset within the group
-  * we have a ZMapCanvasItem group with no offset, s we nee to adjust by the x,ypos of that group
+  * we have a ZMapCanvasItem group with no offset, so we need to adjust by the x,ypos of that group
   */
 double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item)
 {
@@ -1001,12 +1001,15 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	/* NOTE close_enough is zero */
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1 , y2);
 
+//printf("point %s	%f,%f %d,%d: %p\n",g_quark_to_string(fi->id),x,y,cx,cy,sl);
 	if(!sl)
 		return(0.0);
 
 	for(; sl ; sl = sl->next)
 	{
 		gs = (ZMapWindowCanvasFeature) sl->data;
+
+//printf("gs: %x %f %f\n",gs->flags, gs->y1,gs->y2);
 
 		if(gs->flags & FEATURE_HIDDEN)
 			continue;
@@ -1018,6 +1021,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 		{
 			double left,right;
 
+//printf("overlaps y\n");
 			wx = fi->dx + fi->x_off + gs->feature_offset;
 			if(fi->bumped)
 				wx += gs->bump_offset;
@@ -1031,6 +1035,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 				best = 0.0;
 				fi->point_feature = gs->feature;
 				*actual_item = item;
+//printf("overlaps x\n");
 
 #warning this could concievably cause a memory fault if we freed save_gs but that seems unlikely if we don-t nove the cursor
       			save_gs = gs;
@@ -1094,6 +1099,7 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	 * then we can define a feature type specific sort function
 	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
 	 */
+//printf("sort sideways\n");
 	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
 	fi->features_sorted = FALSE;
 
@@ -1139,6 +1145,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 
     if(!fi->features_sorted)
     {
+//printf("sort index\n");
 	    fi->features = g_list_sort(fi->features,zMapFeatureCmp);
 	    fi->features_sorted = TRUE;
     }
@@ -1157,6 +1164,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       double width;
       GList *highlight = NULL;	/* must paint selected on top ie last */
 	gboolean is_line;
+//gboolean debug = FALSE;
 
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
@@ -1214,7 +1222,11 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
 	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
 
+//if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
+
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1, y2);
+//if(debug) printf("draw %s	%f,%f: %p\n",g_quark_to_string(fi->id),y1,y2,sl);
+
 	if(!sl)
 		return;
 
@@ -1233,6 +1245,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		feat = (ZMapWindowCanvasFeature) sl->data;
 //printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
 
+//if(debug) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
 
 		if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
 			break;	/* finished */
@@ -1270,7 +1283,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		}
 
 		/* clip this one (GDK does that? or is it X?) and paint */
-//printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
+//if(debug) printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 
 		/* set style colours if they changed */
 		zmapWindowCanvasFeaturesetSetColours(fi,feat);
@@ -1904,22 +1917,27 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   	/* it's very rare that we add features anyway */
   	/* although we could have several featuresets being loaded into one column */
   	/* whereby this may be more efficient ? */
- #if 1
+#if 1
 	{
 		/* need to recalc bins */
 		/* quick fix FTM, de-calc which requires a re-calc on display */
 		zMapSkipListDestroy(featureset_item->display_index, NULL);
 		featureset_item->display_index = NULL;
-		featureset_item->features_sorted = FALSE;
 	}
+  }
+  /* must set this independantly as empty columns with no index get flagged as sorted */
+  featureset_item->features_sorted = FALSE;
 #else
+// untested code
   	{
   		featureset_item->display_index =
   			zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
 #warning need to fix linked_sideways
   	}
-#endif
   }
+#endif
+
+
   /* NOTE we may not have an index so this flag must be unset seperately */
   /* eg on OTF w/ delete existing selected */
   featureset_item->linked_sideways = FALSE;

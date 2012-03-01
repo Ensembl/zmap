@@ -405,6 +405,9 @@ results:
 summarise 0x82c8178_tier2_hepg2_cytosol_longpolya_rep2_-0 (129.040659): 190+1723/1832 = 20)
 summarise 0x82c8178_tier2_hepg2_cytosol_longpolya_rep2_+0 (0.123354): 1218+687/1832 = 40)
 
+
+NOTE these stats were due to a bug! it's really just like simple features
+
 summarise 0x82c72a8_solexa_introns_+0 (480.702198): 1067+2372/1111 = 535)
 summarise 0x82c72a8_solexa_introns_+0 (0.401186): 2393+485/1111 = 1097)
 
