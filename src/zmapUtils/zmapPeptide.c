@@ -451,7 +451,9 @@ gboolean zMapPeptideMatch(char *cp, char *end,
 }
 
 
+/* I don't like the need for revcomp'd....something must be wrong ?? */
 GList *zMapPeptideMatchFindAll(char *target, char *query,
+			       gboolean rev_comped,
 			       ZMapStrand orig_strand, ZMapFrame orig_frame,
 			       int from_in, int length,
 			       int max_errors, int max_Ns, gboolean return_matches)
@@ -460,7 +462,8 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
   int  dna_len, n ;
   char *cp ;
   char *start, *end ;
-  char *search_start, *search_end, *match ;
+  char *search_start, *search_end ;
+  char *match_str = NULL ;
   char **match_ptr = NULL ;
   int from ;
   int frames[6] = {0}, frame_num, i, frame ;
@@ -477,7 +480,7 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 
   /* Return the actual match string ? */
   if (return_matches)
-    match_ptr = &match ;
+    match_ptr = &match_str ;
 
   search_start = target + from_in ;
   search_end = search_start + length - 1 ;
@@ -544,6 +547,7 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
     {
       char *protein ;
       ZMapFrame zmap_frame ;
+      int frame_offset ;
 
       frame = frames[i] ;
 
@@ -565,7 +569,11 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
       if (from + length > dna_len)
 	length = dna_len - from ;
 
+      /* Sort this out....needs better error handling.... */
       zMapAssert(length > 0) ;
+
+      /* offset in reference sequence where search will start. */
+      frame_offset = from - from_in ;
 
       protein = zMapPeptideCreateRawSegment(target, from, length, strand,
 					    NULL, FALSE) ;
@@ -582,6 +590,7 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 			      &start, &end, match_ptr))
 	{
 	  ZMapDNAMatch match ;
+	  int incr ;
 
 	  /* Record this match but match needs to record if its dna or peptide so coords are
 	   * interpreted correctly.... */
@@ -592,6 +601,16 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 
 	  match->start = start - search_start ;
 	  match->end = end - search_start ;
+
+	  /* There are routines to do these calculations...find them.... */
+	  /* start/end on reference (dna) sequence. */
+	  if (rev_comped)
+	    incr = -2 ;
+	  else
+	    incr = 0 ;
+
+	  match->ref_start = from_in + ((match->start * 3)  + frame_offset + 1) ;
+	  match->ref_end = from_in + (((match->end * 3) + 2)  + frame_offset + 1) ;
 
 	  if (return_matches)
 	    match->match = *match_ptr ;

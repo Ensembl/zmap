@@ -47,6 +47,7 @@
  */
 
 #include <memory.h>
+#include <stdio.h>
 #include <ZMap/zmapSkipList.h>
 
 
@@ -60,6 +61,10 @@
 /* faster but very difficult to detect the change */
 
 #define N_SKIP_LIST_ALLOC	1000
+
+static long n_block_alloc = 0;
+static long n_skip_alloc = 0;
+static long n_skip_free = 0;
 
 static ZMapSkipList allocSkipList(void);
 static void freeSkipList(ZMapSkipList sl);
@@ -77,6 +82,8 @@ static ZMapSkipList allocSkipList(void)
 
             for(i = 0;i < N_SKIP_LIST_ALLOC;i++)
                   freeSkipList(sl++);
+
+		n_block_alloc++;
       }
 
       sl = skip_list_free_G;
@@ -87,6 +94,8 @@ static ZMapSkipList allocSkipList(void)
       	/* these can get re-allocated so must zero */
       	memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
       }
+
+      n_skip_alloc++;
       return(sl);
 }
 
@@ -96,6 +105,8 @@ static void freeSkipList(ZMapSkipList sl)
 {
       sl->next = skip_list_free_G;
       skip_list_free_G = sl;
+
+	n_skip_free++;
 }
 
 #endif
@@ -389,5 +400,8 @@ void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func)
 		skip_list = (ZMapSkipList) skip_list->next;
 		freeSkipList(delete);
 	}
+
+
+//	printf("skip list: %ld %ld %ld\n", n_block_alloc, n_skip_alloc, n_skip_free);
 }
 

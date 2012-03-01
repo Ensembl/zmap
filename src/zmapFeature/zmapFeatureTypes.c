@@ -499,26 +499,30 @@ GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
 
 
 
-ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style)
+ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = NULL;
+  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
-    shape = &style->mode_data.glyph.glyph5;
-  else
-    shape = &style->mode_data.glyph.glyph;
+	shape = &style->mode_data.glyph.glyph5;
+
+  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5_REV))
+		shape = &style->mode_data.glyph.glyph5rev;
+
   return(shape);
 }
 
 
-ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style)
+ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = NULL;
+  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
-    shape = &style->mode_data.glyph.glyph3;
-  else
-    shape = &style->mode_data.glyph.glyph;
+	shape = &style->mode_data.glyph.glyph3;
+
+  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
+		shape = &style->mode_data.glyph.glyph3rev;
+
   return(shape);
 }
 
@@ -1227,8 +1231,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 
 
   /* DNA */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
-			       ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
   {
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
     char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
@@ -1263,8 +1266,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 
 
   /* Locus */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_LOCUS_NAME,
-			 ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT) ;
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT) ;
   {
     char *colours = "normal fill white ; normal draw black" ;
 
@@ -1286,50 +1288,46 @@ GHashTable *zMapStyleGetAllPredefined(void)
    * we hand it a style which has a hard coded name
    * despite the fact that we supply a different one in otter_styles.ini
    */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_GFF_NAME,
-			       ZMAP_FIXED_STYLE_GFF_NAME_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_GFF_NAME, ZMAP_FIXED_STYLE_GFF_NAME_TEXT);
   g_object_set(G_OBJECT(curr),
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
 	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
+	       ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
 
 
   /* Scale Bar */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SCALE_NAME,
-			       ZMAP_FIXED_STYLE_SCALE_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SCALE_NAME, ZMAP_FIXED_STYLE_SCALE_TEXT);
   g_object_set(G_OBJECT(curr),
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
 	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
+	       ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
 
 
   /* strand separator */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR,
-			       ZMAP_FIXED_STYLE_STRAND_SEPARATOR_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, ZMAP_FIXED_STYLE_STRAND_SEPARATOR_TEXT);
   g_object_set(G_OBJECT(curr),
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
 	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
+	       ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
 
 
   /* Search results hits */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME,
-			       ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
   {
     char *colours = "normal fill red ; normal draw black ; selected fill red; selected draw black" ;
     char *strand_colours = "normal fill green ; normal draw black ; selected fill green ; selected draw black" ;
@@ -1346,14 +1344,14 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR, TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,                colours,
 		 ZMAPSTYLE_PROPERTY_REV_COLOURS,            strand_colours,
+//		 ZMAPSTYLE_PROPERTY_FOO,                    TRUE,
 		 NULL);
   }
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
 
 
   /* Assembly path */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME,
-			 ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT) ;
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME, ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT) ;
   {
     char *colours = "normal fill gold ; normal border black ; selected fill orange ; selected border blue" ;
     char *non_path_colours = "normal fill brown ; normal border black ; selected fill red ; selected border black" ;

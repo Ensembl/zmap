@@ -48,6 +48,8 @@ typedef struct _AlignGapStruct
 #define GAP_HLINE	2
 #define GAP_VLINE	3
 
+	gboolean edge;	/* for squashed short reads: edge blocks are diff colour */
+
 	struct _AlignGapStruct *next;
 
 } AlignGapStruct, *AlignGap;

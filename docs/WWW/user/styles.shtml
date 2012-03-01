@@ -358,16 +358,19 @@ the properties themselves.
       <td>If true, features which are directional (transcripts, matches etc)
 	  are drawn with arrow ends to show direction.</td>
     </tr>
+
     <tr>
-      <td>deferred</td>
+      <td>collapse</td>
       <td>boolean</td>
-      <td>If true, features are not loaded at start up but later by user request.</td>
+      <td>If true, features which are identical are combined into one on display. Applies to simple features and  alignments only.</td>
     </tr>
+
     <tr>
-      <td>loaded</td>
+      <td>filter</td>
       <td>boolean</td>
-      <td>If true, indicates that a set of features has been loaded.</td>
+      <td>If true, features which have a score less than a threshold will be hidden. The threeshol is set by a spin button at the top of the ZMap window.  Min and max-score must be set.</td>
     </tr>
+
     <tr>
       <td>graph-mode</td>
       <td>&lt; line | histogram &gt;</td>
@@ -458,6 +461,13 @@ the properties themselves.
       </td>
     </tr>
 
+     <tr>
+      <td>alignment-squash</td>
+      <td>boolean</td>
+      <td>(for Short-Reads data).  Where reads are split due to splicing these may be combined into one feature in display if the gap is identical. Data ate either end is shown as mixed (not all features are included) and common (region covers all features).
+      </td>
+    </tr>
+
     <tr>
       <td>transcript-cds-colours</td>
       <td>colour type</td>
@@ -483,7 +493,17 @@ the properties themselves.
     <tr>
       <td>glyph-3</td>
       <td>string</td>
-      <td>The glyph shape to draw at the 3' end of a feature.</td>
+      <td>The glyph shape to draw at the 3' end of a feature</td>
+    </tr>
+    <tr>
+      <td>glyph-5-rev</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 5' end of a feature for a reverse strand alignment, defaults to glyph-5 or glyph.</td>
+    </tr>
+    <tr>
+      <td>glyph-3-rev</td>
+      <td>string</td>
+      <td>The glyph shape to draw at the 3' end of a feature for a reverse strand alignment, defaults to glyph-3 or glyph.</td>
     </tr>
 
 
@@ -935,12 +955,198 @@ be copied and pasted direct into a models.wrm file.
 <h4>The ?ZMap_style Class</h4>
 
 <!-- models included here (see zmapsServer/acedb directory)-->
+<!-- replaced this with the text below because the included file has disappeared!!
+<pre class="example"><!--#include virtual="models.wrm.shtml"-></pre> -->
+
 <pre class="example">
-<!--#include virtual="models.wrm.shtml"-->
+//=========================================================================================
+// The New ZMap_style Classes
+//
+// The new classes all begin with "ZMap_" to separate them from any likely existing
+// classes. Acedb tags have scope within classes so we can call our tags what we want.
+//
+// All classes have a "Remark" field to allow database documentation, this tag is not used by
+// ZMap, ZMap uses the "Description" tag in the ?Zmap_style class.
+//
+
+
+//-----------------------------------------------------------------------------------------
+//
+// Sub classes used in ZMap styles.
+//
+
+
+// Note that ZMap_feature_colour and ZMap_colour are hash included into their parents
+// rather than being separate objects for two reasons: 1) the child/parent system for
+// ZMap_Style objects largely removes the need for separate colours and 2) we don't
+// want to force the DB administrator to have to think up lots of unique names for
+// colour objects.
+
+// Specifies a set of colours, colours should be specified in standard X11 colour format,
+// e.g. "light pink" or "#ff00de"
+//
+// There are no default colours.
+//
+?ZMap_colour Draw UNIQUE Text
+             Fill UNIQUE Text
+             Border UNIQUE Text
+
+// Specifies the colours for a feature, the feature will be displayed with "Normal"
+// colours initially and then with "Selected" colours when selected in some way.
+//
+?ZMap_feature_colour Normal UNIQUE #ZMap_colour
+		     Selected UNIQUE #ZMap_colour
+
+
+// Controls GFF dumping.
+?Zmap_GFF Remark Text
+          Version UNIQUE Int
+          Source UNIQUE Text
+          Feature UNIQUE Text
+
+
+//-----------------------------------------------------------------------------------------
+//
+// Following "modes" define fields specific to each "type" of feature supported,
+// e.g. "transcript", "graph" etc.
+//
+
+// Specifies properties unique to a basic feature.
+//
+?Zmap_mode_basic dummy
+
+// Specifies properties unique to a transcript feature.
+//
+?Zmap_mode_transcript  CDS_colour UNIQUE #ZMap_feature_colour
+
+// Specifies properties unique to an alignment feature.
+//
+?Zmap_mode_alignment Gapped Parse Show
+                     Join_align UNIQUE Int
+                     Allow_misalign   // Homol reference/match coords do not have to align exactly, ref coords override.
+                     // Colours for bars joining up intra and inter alignment gaps.
+                     Match_colours Perfect UNIQUE #ZMap_feature_colour
+                                   Colinear UNIQUE #ZMap_feature_colour
+                                   Non_colinear  UNIQUE #ZMap_feature_colour
+                     Pfetchable  // If present it means these alignments have pfetch entries.
+                     Blixem UNIQUE Blixem_N  // Allow blixem to be run on dna sequences for features in this set.
+                                   Blixem_X  // Allow blixem to be run on peptide sequences for features in this set.
+
+
+
+// Specifies properties unique to a sequence feature.
+//
+?Zmap_mode_sequence dummy Text
+
+// Specifies properties unique to a peptide feature.
+//
+?Zmap_mode_peptide dummy Text
+
+// Specifies properties unique to a text feature.
+//
+?Zmap_mode_text dummy Text
+
+// Specifies properties unique to a graph feature.
+//
+?Zmap_mode_graph Remark Text
+                 Mode UNIQUE Histogram            // Currently we only support histograms.
+                 Baseline UNIQUE Float            // baseline value for graph.
+
+
+// Specifies properties unique to a glyph feature.
+//
+?Zmap_mode_glyph Remark Text
+                 Mode UNIQUE Splice
+
+
+// Specifies how columns should be displayed when bumped.
+?Zmap_bump Remark Text
+           Bump_mode UNIQUE Unbump                // No bumping (default)
+                            Overlap               // Bump any features overlapping each other.
+                            Start_position        // Bump if features have same start coord.
+                            Alternating           // Alternate features between two sub_columns, e.g. to display assemblies.
+                            All                   // A sub-column for every feature.
+                            Name                  // A sub-column for features with the same name.
+                            Name_interleave       // All features with same name in a single sub-column
+                                                  // but several names interleaved in each sub-column, the most compact display.
+                            Name_no_interleave    // Display as for Interleave but no interleaving of different names.
+                            Name_colinear         // As for No Interleave but for alignments only colinear shown.
+                            Name_best_Ends        // As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
+
+
+
+//-----------------------------------------------------------------------------------------
+//
+// ZMap style, secifies display and processing options for features.
+//
+
+?ZMap_Style Remark Text
+            // Text displayed in zmap to describe features.
+            Description UNIQUE Text
+            //
+            // Parent points to a parent style from which attributes can be inherited,
+            // there can be an arbitrary depth of parents/children but they must form
+            // a DAG, cycles are _not_ permitted.
+            Parent Style_parent UNIQUE ?ZMap_Style XREF Style_child
+                   Style_child         ?ZMap_Style XREF Style_parent
+            //
+            // The mode of the features, i.e. transcript, text or what.....
+            Mode UNIQUE Basic #Zmap_mode_basic
+                        Transcript #Zmap_mode_transcript
+                        Alignment #Zmap_mode_alignment
+                        Sequence #Zmap_mode_sequence
+                        Peptide #Zmap_mode_peptide
+                        Plain_Text #Zmap_mode_text
+                        Graph #ZMap_mode_graph
+                        Glyph #ZMap_mode_glyph
+            //
+            // Controls loading of features, only one tag currently, may need more.
+            //
+            Feature_loading Deferred_load         // Don't load features initially.
+            //
+            // Controls all aspects of feature display.
+            //
+            Display Col_display UNIQUE Not_displayable     // never display this column (for meta columns)
+                                       Displayable Col_state UNIQUE Hide      // hide column always (can be unset by user)
+                                                                    Show_hide // hide column according to zoom/mark etc. (can be unset by user)
+                                                                    Show      // show column always (can be unset by user)
+                                                   Show_when_empty            // Show set even if empty (default FALSE)
+                                                   // No_Compress              // Always show, even in "compressed" display.
+                    //
+                    Colours UNIQUE #ZMap_feature_colour
+                    //
+                    Width UNIQUE Float                             // default is 0.0
+                    //
+                    // Don't show below/above these magnifications, default is always show.
+                    Min_mag UNIQUE Float
+                    Max_mag UNIQUE Float
+                    //
+                    // Should boxes have pointy ends to show features direction ? (default = FALSE)
+                    Directional_ends
+                    //
+                    // Bumping controls display of features when there are so many in a column that they overlap.
+                    Bump_initial #Zmap_bump                  // sets initial mode when Zmap opens.
+                    Bump_default #ZMap_bump                  // sets normal bumping mode for column.
+                    Bump_fixed                               // Cannot be changed from initial mode.
+                    Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
+                    //
+                    Strand_sensitive Show_up_strand
+                    //
+                    // Read frame sensitive features, in 3 frame mode shown in separate reading frame cols.
+                    Frame_sensitive Frame_display Show_only_as_3_frame    // show only in 3 frame mode.
+                                                  Show_only_as_1_column   // show only in 3 frame mode but as single col.
+                                    Frame_colours Frame_0 UNIQUE #ZMap_feature_colour
+                                                  Frame_1 UNIQUE #ZMap_feature_colour
+                                                  Frame_2 UNIQUE #ZMap_feature_colour
+                    //
+                    // Score_bounds controls feature width when related to score, specifies min/max.
+                    Score Score_style UNIQUE Score_by_width          // only visual display supported for now.
+                          Score_bounds UNIQUE Float UNIQUE Float     // limits for squashing
+                          Score_type UNIQUE Score_percent            // score is a '%' (use in display ?)
+            //
+            // Dumping options
+            Dump GFF #Zmap_GFF
 </pre>
-
-
-
 
 
 <h4>Expressing Inheritance using the ZMap_style class</h4>
@@ -1287,18 +1493,35 @@ shows which tags ZMap reads.
 
 <h4>Converting from ?Method to ?ZMap_style objects</h4>
 
-<p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion, the result will
+<p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion. The result will
 require hand editting as some fields cannot be determined from the ?Method object,
 e.g. Mode.</p>
 
-
 <pre class="example">
-SYNOPSIS: methods2style.pl -file <methods.ace> -help
+SYNOPSIS: methods2style.pl -file &lt;methods.ace&gt; -format &lt;format&gt; -help
 
-e.g.      methods2style.pl -file ./my/methods/file > ./my_new/styles/file
+            where &lt;methods.ace&gt; is the input file and &lt;format&gt; is the output format: either 'keyfile' for an ini-style file (the default) or 'ace' for a .ace file.
+
+e.g.      methods2style.pl -file ./my/methods/file -format ace > ./my_new/styles/file.ace
 </pre>
 
-
+<p>To update an AceDB database to use ZMap styles, the process is as follows:</p>
+<ul>
+  <li>First, backup the models.wrm file and the methods file.
+  <li>Edit the models.wrm file and add the following (as detailed above):
+  <ul>
+    <li>add the Style tag to the ?Method class
+    <li>add the ?ZMap_Style class and its sub-classes
+  </ul>
+  <li>Edit the methods file and add a Style tag to each method. The Style tag value should be the same text as the Method name (including the quotes).  Watch out if scripting this because extra text can appear after the method name (outside the quotes).
+  <li>Run methods2style.pl on the methods file with the <code>-format ace</code> argument and save the output to a file, e.g, zmap_styles.ace.
+  <li>Do any manual editing of the styles file as necessary.
+  <li>Re-read the models/method/styles in xace:
+  <ul>
+    <li>Start xace and on the main window and from the "Edit" menu button select the "Read Models and Full Reindex" option. This will produce a warning message about taking a long time, just click "Yes" to continue. There is another warning about "screwing up" the system, just click "Yes". Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code>If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.
+    <li>From the Edit menu select "Read .ace file" and read in both your original methods file and your new styles file.
+  </ul>
+</ul>
 
 </fieldset>
 

@@ -151,6 +151,8 @@ typedef enum
 
     STYLE_PROP_FOO,
 
+    STYLE_PROP_FILTER,
+
     // mode dependant data
 
 
@@ -158,8 +160,12 @@ typedef enum
     STYLE_PROP_GLYPH_SHAPE,
     STYLE_PROP_GLYPH_NAME_5,
     STYLE_PROP_GLYPH_SHAPE_5,
+    STYLE_PROP_GLYPH_NAME_5_REV,
+    STYLE_PROP_GLYPH_SHAPE_5_REV,
     STYLE_PROP_GLYPH_NAME_3,
     STYLE_PROP_GLYPH_SHAPE_3,
+    STYLE_PROP_GLYPH_NAME_3_REV,
+    STYLE_PROP_GLYPH_SHAPE_3_REV,
     STYLE_PROP_GLYPH_ALT_COLOURS,
     STYLE_PROP_GLYPH_THRESHOLD,
     STYLE_PROP_GLYPH_STRAND,
@@ -176,6 +182,7 @@ typedef enum
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
     STYLE_PROP_ALIGNMENT_ALWAYS_GAPPED,
+    STYLE_PROP_ALIGNMENT_UNIQUE,
     STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
     STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN,
     STYLE_PROP_ALIGNMENT_PFETCHABLE,
@@ -184,7 +191,11 @@ typedef enum
     STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR,
+    STYLE_PROP_ALIGNMENT_GAP_COLOURS,
+    STYLE_PROP_ALIGNMENT_COMMON_COLOURS,
+    STYLE_PROP_ALIGNMENT_MIXED_COLOURS,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
+    STYLE_PROP_ALIGNMENT_SQUASH,
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
@@ -275,13 +286,22 @@ typedef enum
 /* developemnt control to allow reconfig to legacy code */
 #define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
 
+
+
+#define ZMAPSTYLE_PROPERTY_FILTER			  "filter"		/*filter column by score */
+
+
 /* glyph properties - can be for mode glyph or as sub-features */
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME             "glyph"
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE            "glyph-shape"
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME_5           "glyph-5"
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5          "glyph-shape-5"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV       "glyph-5-rev"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV      "glyph-shape-5-rev"
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME_3           "glyph-3"
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3          "glyph-shape-3"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV       "glyph-3-rev"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV      "glyph-shape-3-rev"
 
 #define ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS      "glyph-alt-colours"
 #define ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD        "glyph-threshold"
@@ -303,6 +323,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED       "alignment-always-gapped"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNIQUE              "alignment-unique"		/* don't join up */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN          "alignment-join-align"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
@@ -311,7 +332,12 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR   "alignment-unmarked-colinear"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS         "alignment-gap-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS      "alignment-common-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS       "alignment-mixed-colours"
+
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH              "alignment-squash"
 
 
 /* Sequence properties. */
@@ -658,10 +684,12 @@ typedef struct
 typedef struct
 {
       // sub feature glyphs or glyphs for glyph mode
-  GQuark glyph_name,glyph_name_5,glyph_name_3;
+  GQuark glyph_name,glyph_name_5,glyph_name_5_rev,glyph_name_3,glyph_name_3_rev;
   ZMapStyleGlyphShapeStruct glyph;        // single glyph or unspecified 5' or 3' end
   ZMapStyleGlyphShapeStruct glyph5;       // shape for 5' end
   ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
+  ZMapStyleGlyphShapeStruct glyph5rev;    // optional shape for 5' end on reverse strand
+  ZMapStyleGlyphShapeStruct glyph3rev;    // optional shape for 3' end on reverse strand
   ZMapStyleFullColourStruct glyph_alt_colours;
   ZMapStyleGlyphStrand glyph_strand;
   ZMapStyleGlyphAlign glyph_align;
@@ -700,6 +728,13 @@ typedef struct
    unsigned int between_align_error ;
 
    /*! Colours for bars joining up intra/inter alignment gaps. */
+   /* mh17 I'm reusing these for short reads which are gapped alignments sometimes
+    * for when we use the squash option
+    * perfect is for the line in the middle (default is normal fill colour)
+    * colinear is for the common
+    * non colinear is for the grey edges
+    * they have different tags in the style def but referennce the same structs
+    */
    ZMapStyleFullColourStruct perfect ;
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
@@ -711,6 +746,9 @@ typedef struct
    gboolean show_gaps ;                             /* TRUE means gaps within alignment are displayed,
                                                  otherwise alignment is displayed as a single block. */
    gboolean always_gapped;				/* even when not bumped */
+   gboolean unique;					/* don't display joined up */
+   gboolean squash;					/* combine features that have the same gap */
+
 
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
@@ -813,6 +851,9 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   ZMapStyleGraphScale score_scale;       		// log or linear, for collapse option
   gboolean collapse;				/* for duplicated features */
+  /* see also alignment.squash: even better form of collapse for short reads */
+
+  int join_overlap;				/* for amalgamating short reads */
 
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
@@ -844,6 +885,8 @@ typedef struct _zmapFeatureTypeStyleStruct
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
 
   gboolean foo;
+
+  gboolean filter;		/* can filter by score */
 
 #if MH17_NO_DEFERRED
   gboolean deferred;           /*flag for to say if this style is deferred loaded */
@@ -1006,8 +1049,8 @@ void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 
 //ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
 #define zMapStyleGlyphShape(style)   (&style->mode_data.glyph.glyph)
-ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style);
-ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style);
+ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse);
+ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse);
 
 void zMapStyleSetShowGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
 
@@ -1024,6 +1067,8 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 //double zMapStyleGetMinScore(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetMinScore(style)   (style->min_score)
 //gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
+#define zMapStyleIsFilter(style)   (style->filter)
+
 #define zMapStyleGetShowWhenEmpty(style)   (style->show_when_empty)
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
@@ -1140,13 +1185,16 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 //gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsShowGaps(style)   (style->mode_data.alignment.show_gaps)
 #define zMapStyleIsAlwaysGapped(style)   (style->mode_data.alignment.always_gapped)
+#define zMapStyleIsUnique(style)   (style->mode_data.alignment.unique)
 
 #define zMapStyleGetMaskList(style) \
       (style->mode == ZMAPSTYLE_MODE_ALIGNMENT ? style->mode_data.alignment.mask_sets : NULL)
 
 #define zMapStyleGetSummarise(style) (style->summarise)
 #define zMapStyleIsCollapse(style)   (style->collapse)
+#define zMapStyleIsSquash(style)   	 (style->mode_data.alignment.squash)
 
+#define zMapStyleJoinOverlap(style)	 (style->join_overlap)
 
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;

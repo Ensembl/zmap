@@ -233,7 +233,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = zmapWindowItemGetFeature(canvas_item);
+  feature = zmapWindowItemGetFeature((FooCanvasItem *)canvas_item);
   zMapAssert(feature) ;
 
 
@@ -378,6 +378,7 @@ void zmapWindowUnHighlightFocusItems(ZMapWindow window)
 
 
 /*
+
    (TYPE)zmapWindowItemGetFeatureAny(ITEM, STRUCT_TYPE)
 
 #define zmapWindowItemGetFeatureSet(ITEM)   (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_CONTEXT)
@@ -387,20 +388,42 @@ void zmapWindowUnHighlightFocusItems(ZMapWindow window)
 #define zmapWindowItemGetFeature(ITEM)      (ZMapFeature)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_FEATURE)
 #define zmapWindowItemGetFeatureAny(ITEM)   zmapWindowItemGetFeatureAnyType((ITEM), -1)
  */
-#ifdef RDS_IS_MACRO_TOO
+
+
+ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item)
+{
+  ZMapFeatureBlock block = NULL ;
+
+  block = (ZMapFeatureBlock)zmapWindowItemGetFeatureAnyType(item, ZMAPFEATURE_STRUCT_BLOCK) ;
+
+  return block ;
+}
+
+
+ZMapFeature zmapWindowItemGetFeature(FooCanvasItem *item)
+{
+  ZMapFeature feature = NULL ;
+
+  feature = (ZMapFeature)zmapWindowItemGetFeatureAnyType(item, ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  return feature ;
+}
+
+
 ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item)
 {
-  ZMapFeatureAny feature_any;
-  /* -1 means don't check */
-  feature_any = zmapWindowItemGetFeatureAnyType(item, -1);
+  ZMapFeatureAny feature_any = NULL ;
 
-  return feature_any;
+  /* -1 means don't check */
+  feature_any = zmapWindowItemGetFeatureAnyType(item, -1) ;
+
+  return feature_any ;
 }
-#endif
+
 
 ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type)
 {
-  ZMapFeatureAny feature_any = NULL;
+  ZMapFeatureAny feature_any = NULL ;
   ZMapWindowCanvasItem feature_item ;
 
 
@@ -409,7 +432,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
    * function that returns the feature given an item or a subitem... */
   if (ZMAP_IS_CONTAINER_GROUP(item))
     {
-      zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)item, &feature_any);
+      zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)item, &feature_any) ;
     }
   else if ((feature_item = zMapWindowCanvasItemIntervalGetObject(item)))
     {
@@ -417,7 +440,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
     }
   else
     {
-      zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
+      zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item)) ;
     }
 
   if (feature_any && expected_type != -1)
@@ -425,12 +448,12 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
       if (feature_any->struct_type != expected_type)
 	{
 	  zMapLogCritical("Unexpected feature type [%d] (not %d) attached to item [%s]",
-			  feature_any->struct_type, expected_type, G_OBJECT_TYPE_NAME(item));
+			  feature_any->struct_type, expected_type, G_OBJECT_TYPE_NAME(item)) ;
 	  feature_any = NULL;
 	}
     }
 
-  return feature_any;
+  return feature_any ;
 }
 
 
@@ -1014,7 +1037,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
       /* Getting the block struct as well is a bit belt and braces...we could return it but
        * its redundant info. really. */
       if ((block_container = FOO_CANVAS_GROUP(zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK)))
-	  && (block = zmapWindowItemGetFeatureBlock(block_container)))
+	  && (block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)block_container)))
 	{
 	  double offset ;
 

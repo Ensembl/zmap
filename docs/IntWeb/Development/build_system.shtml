@@ -683,7 +683,6 @@ The downloaded file then needs to be gunzip'd and untar'd and then installed:
 > sudo make install
 
 
-
 5) Install libg2
 
 As with libgd this package is not supported by MacPorts and can be downloaded from:
@@ -718,7 +717,13 @@ and that's it.
 
 </pre>
 
-
+<h3>Ubuntu Install</h3>
+<p>We trialed the installation process on a fresh, standard canonical release on a clean pc.  The process is similar to the mac ports install as detailed above, you have to install libgd and libg2.
+libgd also requires libjpeg (dev) to be installed.
+</p>
+<p>
+We also had to install: libgtk-2.0-dev, libglib2.0-dev, libreadline6-dev, and libcurl4-gnutils-dev.
+</p>
 
 <h2>Appendix</h2>
 

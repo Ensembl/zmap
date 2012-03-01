@@ -111,14 +111,6 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *method_2_data ;
-  GHashTable *styles;
-  GList *fetch_methods ;
-} MethodFetchStruct, *MethodFetch ;
-
-
-typedef struct
-{
   char *draw ;
   char *fill ;
   char *border ;
@@ -181,8 +173,6 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 					       GList **feature_methods_out,
 					       GList **required_styles_out,
 					       GHashTable **featureset_2_stylelist_inout) ;
-static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles) ;
-static void loadableCB(gpointer data, gpointer user_data) ;
 static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean find_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
@@ -209,6 +199,11 @@ static ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 					char **end_pos, ZMapColGroupData *col_group_data) ;
 static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in,
 					 char **end_pos, gpointer user_data) ;
+static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
+				      char **end_pos, gpointer user_data) ;
+static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
+				       char **end_pos, ZMapColGroupData *col_group_data) ;
+
 static void addMethodCB(gpointer data, gpointer user_data) ;
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
@@ -219,16 +214,11 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
 
 static char *getAcedbColourSpec(char *acedb_colour_name) ;
 
-static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
-				      char **end_pos, gpointer user_data) ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printCB(gpointer data, gpointer user_data) ;
 static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
-				       char **end_pos, ZMapColGroupData *col_group_data) ;
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
 static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout) ;
 static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info) ;
@@ -243,6 +233,8 @@ static void createSet2StyleList(gpointer data, gpointer user_data) ;
 static void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column) ;
 static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data) ;
 
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles) ;
+static void loadableCB(gpointer data, gpointer user_data) ;
 
 static char *get_url_query_value(char *full_query, char *key) ;
 static gboolean get_url_query_boolean(char *full_query, char *key) ;
@@ -451,6 +443,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     }
 
 
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (server->has_new_tags)
     {
@@ -469,6 +462,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
       server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   server->method_2_data = g_hash_table_new_full(NULL, NULL, NULL, freeDataCB) ;
   server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
@@ -567,7 +562,27 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  /* Use method not zmap_style class. */
 	  all_methods = feature_set_methods ;
 
+
+	  /* CHECK THIS....SHOULD WE ALWAYS DO THIS...??? */
+	  if (sources)
+	    all_methods = sources ;
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 	  g_list_foreach(feature_sets, createSet2StyleList, featureset_2_stylelist) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMap_g_list_quark_print(feature_sets, "features_sets", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
 
 
@@ -1075,32 +1090,6 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 }
 
 
-
-static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles)
-{
-  GList *loadable_methods = NULL ;
-  LoadableStruct loadable_data ;
-
-  loadable_data.methods = NULL ;
-  loadable_data.method_2_data = method_2_data ;
-  loadable_data.styles = styles  ;
-
-  g_list_foreach(all_methods, loadableCB, &loadable_data) ;
-
-  loadable_methods = loadable_data.methods ;
-
-  return loadable_methods ;
-}
-
-
-static void loadableCB(gpointer data, gpointer user_data)
-{
-  Loadable loadable_data = ( Loadable)user_data ;
-
-  loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
-
-  return ;
-}
 
 
 /* Make up a string that contains method names in the correct format for an acedb "Find" command
@@ -4433,6 +4422,33 @@ static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_d
 }
 
 
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles)
+{
+  GList *loadable_methods = NULL ;
+  LoadableStruct loadable_data ;
+
+  loadable_data.methods = NULL ;
+  loadable_data.method_2_data = method_2_data ;
+  loadable_data.styles = styles  ;
+
+  g_list_foreach(all_methods, loadableCB, &loadable_data) ;
+
+  loadable_methods = loadable_data.methods ;
+
+  return loadable_methods ;
+}
+
+
+static void loadableCB(gpointer data, gpointer user_data)
+{
+  Loadable loadable_data = ( Loadable)user_data ;
+
+  loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
+
+  return ;
+}
+
+
 
 /* A GCompareFunc() to compare names in a case independent way in two lists of GQuarks. */
 static gint quarkCaseCmp(gconstpointer a, gconstpointer b)
@@ -4543,8 +4559,14 @@ static void createSet2StyleList(gpointer data, gpointer user_data)
 {
   GQuark feature_set_id = GPOINTER_TO_INT(data) ;
   GHashTable *set_2_styles = (GHashTable *)user_data ;
+  GQuark unique_id ;
 
-  zMap_g_hashlist_insert(set_2_styles, feature_set_id, GINT_TO_POINTER(feature_set_id)) ;
+  unique_id = zMapFeatureSetCreateID((char *)g_quark_to_string(feature_set_id)) ;
+
+  zMap_g_hashlist_insert(set_2_styles, unique_id, GINT_TO_POINTER(unique_id)) ;
 
   return ;
 }
+
+
+

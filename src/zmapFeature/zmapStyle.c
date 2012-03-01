@@ -168,6 +168,7 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "collapse identical features into one", "collapse identical features into one",
             offsetof(zmapFeatureTypeStyleStruct, collapse), 0 },
 
+
     { STYLE_PROP_GFF_SOURCE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_SOURCE,
             "gff source", "GFF Source",
             offsetof(zmapFeatureTypeStyleStruct, gff_source) ,0 },
@@ -208,6 +209,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "as Foo Canvas Items", "use old technology",
             offsetof(zmapFeatureTypeStyleStruct, foo),0 },
 
+    { STYLE_PROP_FILTER, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FILTER,
+            "filter by score", "filter column by score",
+            offsetof(zmapFeatureTypeStyleStruct, filter),0 },
+
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },
@@ -224,6 +229,14 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
              "glyph-type-5", "Type of glyph to show at 5' end.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), ZMAPSTYLE_MODE_GLYPH },
 
+    { STYLE_PROP_GLYPH_NAME_5_REV, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,
+            "glyph-name for 5' end reverse strand", "Glyph name used to reference glyphs config stanza",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5_rev),ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_SHAPE_5_REV, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV,
+             "glyph-type-5-rev", "Type of glyph to show at 5' end on reverse strand.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5rev), ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_NAME_3, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,
             "glyph-name for 3' end", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),ZMAPSTYLE_MODE_GLYPH },
@@ -231,6 +244,14 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_GLYPH_SHAPE_3, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
              "glyph-type-3", "Type of glyph to show at 3' end.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_NAME_3_REV, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,
+            "glyph-name for 3' end reverse strand", "Glyph name used to reference glyphs config stanza",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3_rev),ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_SHAPE_3_REV, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV,
+             "glyph-type-3-rev", "Type of glyph to show at 3' end on reverse strand.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3rev), ZMAPSTYLE_MODE_GLYPH },
 
     { STYLE_PROP_GLYPH_ALT_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,
             "alternate glyph colour", "Colours used to show glyphs when below thrashold.",
@@ -284,6 +305,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_ALIGNMENT_ALWAYS_GAPPED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED,
             "always gapped", "Always Gapped ?",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.always_gapped) ,ZMAPSTYLE_MODE_ALIGNMENT  },
+    { STYLE_PROP_ALIGNMENT_UNIQUE, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_UNIQUE,
+            "unique", "Don't display same name as joined up",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unique) ,ZMAPSTYLE_MODE_ALIGNMENT  },
     { STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
             "alignment between error", "Allowable alignment error between HSP's",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.between_align_error)  ,ZMAPSTYLE_MODE_ALIGNMENT },
@@ -300,17 +324,29 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "perfect alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,
-            "colinear alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
+            "colinear alignment indicator colour", "Colours used to show two alignments have gapped contiguous coords.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,
-            "noncolinear alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
+            "noncolinear alignment indicator colour", "Colours used to show two alignments have overlapping coords.",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR, STYLE_PARAM_TYPE_COLDISP, ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
             "paint colinear lines when unmarked", "paint colinear lines when unmarked ?",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unmarked_colinear), ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_GAP_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS,
+            "gap between spilt read", "Colours used to show gap between two parts of a split read.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_COMMON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS,
+            "common part of squashed split read", "Colours used to show part of a squashed split read that is common to all source features.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_MIXED_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS,
+            "mixed part of squashed split read that", "Colours used to show  part of a squashed split read that is not common to all source features.",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
     { STYLE_PROP_ALIGNMENT_MASK_SETS, STYLE_PARAM_TYPE_QUARK_LIST_ID, ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,
             "mask featureset against others", "mask featureset against others",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_SQUASH, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH,
+            "squash overlapping split reads into one", "squash overlapping split reads into one",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.squash),ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
@@ -1204,12 +1240,15 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
       break;
 
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
+    case STYLE_PROP_ALIGNMENT_GAP_COLOURS:
       full_colour = &(style->mode_data.alignment.perfect) ;
       break;
     case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
-      full_colour = &(style->mode_data.alignment.colinear) ;
+    case STYLE_PROP_ALIGNMENT_COMMON_COLOURS:
+	    full_colour = &(style->mode_data.alignment.colinear) ;
       break;
     case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+    case STYLE_PROP_ALIGNMENT_MIXED_COLOURS:
       full_colour = &(style->mode_data.alignment.noncolinear) ;
       break;
 

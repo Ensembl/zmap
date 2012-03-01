@@ -75,6 +75,10 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
                                            int *start_index_inout,
                                            ZMapGUIMenuItemCallbackFunc callback_func, gpointer callback_data) ;
 
+static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data);
+static gboolean filterSpinButtonCB(GtkWidget *entry, GdkEvent *event, gpointer user_data);
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Will be needed if we go back to complicated align/dna for each block menu system. */
 static void fixSubMenuData(gpointer list_data, gpointer user_data) ;
@@ -83,6 +87,19 @@ static void fixSubMenuData(gpointer list_data, gpointer user_data) ;
 static void seqMenuCB(int menu_item_id, gpointer callback_data) ;
 
 
+
+
+GtkWidget *zmap_new_spin_button (void)
+{
+   GtkWidget *spinner;
+   GtkAdjustment *spinner_adj;
+
+   /* default to integer % */
+   spinner_adj = (GtkAdjustment *) gtk_adjustment_new (0.0, 0.0, 100.0, 1.0, 0.0, 0.0);
+   spinner = gtk_spin_button_new (spinner_adj, 1.0, 0);
+
+   return spinner;
+}
 
 
 
@@ -94,6 +111,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *reload_button, *stop_button,
     *hsplit_button, *vsplit_button,
     *zoomin_button, *zoomout_button,
+    *filter_button,
     *unlock_button, *revcomp_button,
     *unsplit_button, *column_button,
     *frame3_button, *dna_button,
@@ -200,6 +218,19 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
+	/* filter selected column by score */
+  zmap->filter_but = filter_button = zmap_new_spin_button();
+  g_signal_connect(G_OBJECT(filter_button), "value-changed",
+                   G_CALLBACK(filterValueChangedCB), (gpointer)zmap);
+
+  g_signal_connect(G_OBJECT(filter_button), "button-press-event",
+                   G_CALLBACK(filterSpinButtonCB), (gpointer)zmap);
+  g_signal_connect(G_OBJECT(filter_button), "button-release-event",
+                   G_CALLBACK(filterSpinButtonCB), (gpointer)zmap);
+
+
+  gtk_box_pack_start(GTK_BOX(hbox), filter_button, FALSE, FALSE, 0) ;
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -265,6 +296,10 @@ void zmapControlButtonTooltips(ZMap zmap)
 		       "Zoom out 2x (right click gives more zoom options)",
 		       "") ;
 
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->filter_but,
+		       "Filter selected column by score",
+		       "") ;
+
   gtk_tooltips_set_tip(zmap->tooltips, zmap->unlock_but,
 		       "Unlock zoom/scroll from sibling window",
 		       "") ;
@@ -303,15 +338,30 @@ void zmapControlButtonTooltips(ZMap zmap)
 }
 
 
+void filterSetHighlight(ZMap zmap)
+{
+	GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;
+	GdkColor *fill = &white;
+
+	/* highlight if filtering occrured */
+	if(zmap->filter.n_filtered && zmap->filter.window)
+		zMapWindowGetFilteredColour(zmap->filter.window,&fill);
+
+	gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill);
+}
+
 
 
 /* Set button state according to the overall ZMap state and the current view state. */
-void zmapControlWindowSetButtonState(ZMap zmap)
+void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean general, revcomp,  unsplit, unlock, stop, reload, frame3, dna, back ;
+  gboolean filter, general, revcomp,  unsplit, unlock, stop, reload, frame3, dna, back ;
+  ZMapView view = NULL ;
+  ZMapWindow window = NULL ;
+  ZMapViewState view_state ;
 
-  general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
+  filter = general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
 
   switch(zmap->state)
     {
@@ -320,9 +370,6 @@ void zmapControlWindowSetButtonState(ZMap zmap)
       break ;
     case ZMAP_VIEWS:
       {
-	ZMapView view ;
-	ZMapWindow window ;
-	ZMapViewState view_state ;
 
 	zMapAssert(zmap->focus_viewwindow) ;
 
@@ -351,6 +398,11 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	      general = TRUE ;
             frame3 = TRUE;
             dna = TRUE;
+		if(window_filter)
+			zmap->filter = *window_filter; /* struct copy */
+		else
+			zmap->filter.enable = FALSE;
+
 	    /* If we are down to the last view and that view has a single window then
 	     * disable unsplit button, stops user accidentally closing whole window. */
 	    if ((zmapControlNumViews(zmap) > 1) || (zMapViewNumWindows(zmap->focus_viewwindow) > 1))
@@ -383,6 +435,48 @@ void zmapControlWindowSetButtonState(ZMap zmap)
   gtk_widget_set_sensitive(zmap->hsplit_button, general) ;
   gtk_widget_set_sensitive(zmap->vsplit_button, general) ;
   zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
+
+  gtk_widget_set_sensitive(zmap->filter_but, zmap->filter.enable) ;
+
+  {
+//	  GtkEntry *entry = (GtkEntry *) zmap->filter_but;
+	  GtkAdjustment *adj = gtk_spin_button_get_adjustment ((GtkSpinButton *) zmap->filter_but);
+	  double range, step;
+	  double min;
+//	  guint digits = 0;
+
+	  /* this is the only place we set the step value */
+	  /* CanvasFeaturesets remember the current value */
+	  range = zmap->filter.max - zmap->filter.min;
+	  step = 1.0;
+	  while(range / step > 1000.0)
+		step *= 10.0;
+	  while (range / step < 10.0)
+	  {
+		  step /= 10;
+//		  digits++;
+	  }
+
+		/* style min and max relate to display not feature scores, we can filter on score less than style min
+		 * we flag filtering if features are hidden, not if we are on the min score
+		 */
+	  min = 0.0;
+	  if(zmap->filter.min < min)
+		 zmap->filter.min = min;
+
+	  if(zmap->filter.value < min)
+		zmap->filter.value = min;
+	  if(zmap->filter.value > zmap->filter.max)
+		zmap->filter.value = zmap->filter.max;
+
+	  gtk_adjustment_configure(adj,zmap->filter.value, min, zmap->filter.max, step, 0, 0);
+
+//	  if(digits)	/*  seems to be interpreted as a vast number */
+//		gtk_spin_button_set_digits ((GtkSpinButton *) zmap->filter_but, digits);
+
+        filterSetHighlight(zmap);
+  }
+
   gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
   gtk_widget_set_sensitive(zmap->revcomp_but, general) ;
   gtk_widget_set_sensitive(zmap->frame3_but, frame3) ;
@@ -494,6 +588,57 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 
   return handled ;
 }
+
+
+/* handle text input and spin buttons */
+static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
+{
+	ZMap zmap = (ZMap) user_data;
+	double value;
+
+	/* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
+	 * so we don't get inertaction withthe filter score.  It's better this way.
+	 */
+	if(zmap->filter_spin_pressed)
+		return;
+
+	zmap->filter.value = value = gtk_spin_button_get_value(spinbutton);
+	if(zmap->filter.func)
+		zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value);
+
+	filterSetHighlight(zmap);
+}
+
+
+
+/* this does not work */
+static gboolean filterSpinButtonCB(GtkWidget *spin, GdkEvent *event, gpointer user_data)
+{
+  gboolean handled = FALSE ;
+  ZMap zmap = (ZMap) user_data;
+
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+	zmap->filter_spin_pressed = TRUE;
+
+	break;
+
+    case GDK_BUTTON_RELEASE:
+	zmap->filter_spin_pressed = FALSE;
+	filterValueChangedCB((GtkSpinButton *) spin, user_data);
+	break;
+
+    default:
+	handled = FALSE;
+      break;
+    }
+
+  return handled ;
+}
+
+
+
 
 
 static void frame3CB(GtkWidget *wigdet, gpointer cb_data)

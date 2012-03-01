@@ -303,6 +303,20 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
 #endif
 
 
+/* if a featureset has and allocated data free it */
+static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
+void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
+{
+	void (*func) (ZMapWindowFeaturesetItem featureset) = NULL;
+
+	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+		func = _featureset_free_G[featureset->type];
+	if(!func)
+		return;
+
+	func(featureset);
+}
+
 
 
 
@@ -383,6 +397,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int str
 #if CANVAS_FEATURESET_LINK_FEATURE
 	_featureset_link_G[featuretype] = funcs[FUNC_LINK];
 #endif
+	_featureset_free_G[featuretype] = funcs[FUNC_FREE];
+
 	featureset_class_G->struct_size[featuretype] = struct_size;
 }
 
@@ -637,6 +653,33 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 }
 
 
+void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
+{
+	double i2w_dx,i2w_dy;
+	int cx1,cx2,cy1,cy2;
+	FooCanvasItem *foo = (FooCanvasItem *) fi;
+	double x1;
+	double width = fi->width;
+
+	x1 = 0.0;
+	if(fi->bumped)
+		width = fi->bump_width;
+
+	/* trigger a repaint */
+	/* get canvas coords */
+	i2w_dx = i2w_dy = 0.0;
+	foo_canvas_item_i2w (foo, &i2w_dx, &i2w_dy);
+
+	/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
+	foo_canvas_w2c (foo->canvas, x1 + i2w_dx, i2w_dy, &cx1, &cy1);
+	foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
+
+		/* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
+		 * really ought to work out max glyph size or rather have true featrue extent
+		 * NOTE this is only currently used via OTF remove exisitng features
+		 */
+	foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
+}
 
 /* interface design driven by exsiting application code */
 void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
@@ -693,6 +736,9 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
 	}
 }
+
+
+
 
 
 
@@ -899,7 +945,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
  /* by a process of guesswork x,y are world coordinates and cx,cy are canvas (i think) */
  /* No: x,y are parent item local coordinates ie offset within the group
-  * we have a ZMapCanvasItem group with no offset, s we nee to adjust by the x,ypos of that group
+  * we have a ZMapCanvasItem group with no offset, so we need to adjust by the x,ypos of that group
   */
 double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item)
 {
@@ -955,12 +1001,15 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	/* NOTE close_enough is zero */
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1 , y2);
 
+//printf("point %s	%f,%f %d,%d: %p\n",g_quark_to_string(fi->id),x,y,cx,cy,sl);
 	if(!sl)
 		return(0.0);
 
 	for(; sl ; sl = sl->next)
 	{
 		gs = (ZMapWindowCanvasFeature) sl->data;
+
+//printf("gs: %x %f %f\n",gs->flags, gs->y1,gs->y2);
 
 		if(gs->flags & FEATURE_HIDDEN)
 			continue;
@@ -972,6 +1021,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 		{
 			double left,right;
 
+//printf("overlaps y\n");
 			wx = fi->dx + fi->x_off + gs->feature_offset;
 			if(fi->bumped)
 				wx += gs->bump_offset;
@@ -985,6 +1035,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 				best = 0.0;
 				fi->point_feature = gs->feature;
 				*actual_item = item;
+//printf("overlaps x\n");
 
 #warning this could concievably cause a memory fault if we freed save_gs but that seems unlikely if we don-t nove the cursor
       			save_gs = gs;
@@ -1048,6 +1099,7 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 	 * then we can define a feature type specific sort function
 	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
 	 */
+//printf("sort sideways\n");
 	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
 	fi->features_sorted = FALSE;
 
@@ -1093,6 +1145,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 
     if(!fi->features_sorted)
     {
+//printf("sort index\n");
 	    fi->features = g_list_sort(fi->features,zMapFeatureCmp);
 	    fi->features_sorted = TRUE;
     }
@@ -1111,6 +1164,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       double width;
       GList *highlight = NULL;	/* must paint selected on top ie last */
 	gboolean is_line;
+//gboolean debug = FALSE;
 
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
@@ -1168,7 +1222,11 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
 	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
 
+//if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
+
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1, y2);
+//if(debug) printf("draw %s	%f,%f: %p\n",g_quark_to_string(fi->id),y1,y2,sl);
+
 	if(!sl)
 		return;
 
@@ -1187,6 +1245,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		feat = (ZMapWindowCanvasFeature) sl->data;
 //printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
 
+//if(debug) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
 
 		if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
 			break;	/* finished */
@@ -1224,7 +1283,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 		}
 
 		/* clip this one (GDK does that? or is it X?) and paint */
-//printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
+//if(debug) printf("paint %d-%d\n",(int) feat->y1,(int) feat->y2);
 
 		/* set style colours if they changed */
 		zmapWindowCanvasFeaturesetSetColours(fi,feat);
@@ -1352,7 +1411,7 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
  * in which case we destroy the index to force a rebuild: slow but not run very often
  * original foo code actually deleted the features, we will just flag them away.
  * feature homol flags displayed means 'is in foo'
- * so we sould have to post process the featureset->features list
+ * so we could have to post process the featureset->features list
  * to delete then and then rebuild the index (skip list)
  * if the colour is not defined we should not have the show/hide menu item
  */
@@ -1409,6 +1468,10 @@ void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show,
 }
 
 
+static long n_block_alloc = 0;
+static long n_feature_alloc = 0;
+static long n_feature_free = 0;
+
 
 /* allocate a free list for an unknown structure */
 ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type)
@@ -1438,6 +1501,7 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 			feat->feature = NULL;
                   zmapWindowCanvasFeatureFree((gpointer) mem);
             }
+            n_block_alloc++;
       }
       zMapAssert(featureset_class_G->feature_free_list[type]);
 
@@ -1450,6 +1514,7 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 
       feat->type = type;
 
+	n_feature_alloc++;
       return(feat);
 }
 
@@ -1465,6 +1530,8 @@ void zmapWindowCanvasFeatureFree(gpointer thing)
 
       featureset_class_G->feature_free_list[type] =
             g_list_prepend(featureset_class_G->feature_free_list[type], thing);
+
+	n_feature_free++;
 }
 
 
@@ -1665,7 +1732,117 @@ double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, dou
 	return(dx);
 }
 
+double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo)
+{
+	  ZMapWindowFeaturesetItem featureset_item;
 
+	  featureset_item = (ZMapWindowFeaturesetItem) foo;
+	  return featureset_item->filter_value ;
+}
+
+int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo)
+{
+	  ZMapWindowFeaturesetItem featureset_item;
+
+	  featureset_item = (ZMapWindowFeaturesetItem) foo;
+	  return featureset_item->n_filtered ;
+}
+
+int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
+{
+	ZMapWindowFilter filter	= (ZMapWindowFilter) gfilter;
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) filter->featureset;
+	ZMapSkipList sl;
+	int was = fi->n_filtered;
+	double score;
+
+	fi->filter_value = value;
+	fi->n_filtered = 0;
+
+	for(sl = zMapSkipListFirst(fi->display_index); sl; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+		ZMapWindowCanvasFeature f;
+
+		if(feature->left)		/* we do joined up alignments */
+			continue;
+
+		if(! feature->feature->flags.has_score)
+			continue;
+
+
+		/* get score for whole series of alignments */
+		for(f = feature, score = 0.0; f; f = f->right)
+		{
+			double feature_score = f->feature->score;
+			/* NOTE feature->score is normalised, feature->feature->score is what we filter by */
+
+			if(zMapStyleGetScoreMode(f->feature->style) == ZMAPSCORE_PERCENT)
+				feature_score = f->feature->feature.homol.percent_id;
+
+			if(feature_score > score)
+				score = feature_score;
+		}
+
+		/* set flags for whole series based on max score: filter is all below value */
+		for(f = feature; f; f = f->right)
+		{
+			if(score < value)
+			{
+				f->flags |= FEATURE_HIDE_FILTER | FEATURE_HIDDEN;
+				fi->n_filtered++;
+
+				/* NOTE many of these may be FEATURE_SUMMARISED which is not operative during bump
+				 * so setting HIDDEN here must be done for the filtered features only
+				 * Hmmm... not quite sure of the mechanism, but putting this if
+				 * outside the brackets give a glitch on set column focus when bumped (features not painted)
+				 * .... summarised features (FEATURE_SUMMARISED set but not HIDDEN bue to bumping) set to hidden when bumped
+				 */
+			}
+			else
+			{
+				/* reset in case score went down */
+
+				f->flags &= ~FEATURE_HIDE_FILTER;
+				if(!(f->flags & FEATURE_HIDE_REASON))
+					f->flags &= ~FEATURE_HIDDEN;
+				else if(fi->bumped && (f->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED)
+					f->flags &= ~FEATURE_HIDDEN;
+			}
+		}
+	}
+
+	if(fi->n_filtered != was)
+	{
+		/* trigger a re-calc if summarised to ensure the picture is pixel perfect
+		 * NOTE if bumped we don;t calculate so no creeping inefficiency here
+		 */
+		fi->zoom = 0;
+
+
+		if(fi->bumped)
+		{
+			ZMapWindowCompressMode compress_mode;
+
+			if (zmapWindowMarkIsSet(filter->window->mark))
+				compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+			else
+				compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+
+			zmapWindowColumnBumpRange(filter->column, ZMAPBUMP_INVALID, ZMAPWINDOW_COMPRESS_INVALID);
+
+			/* dissapointing: we only need to reposition columns to the right of this one */
+#warning need a better reposition function
+			zmapWindowFullReposition(filter->window) ;
+		}
+		else
+		{
+			zMapWindowCanvasFeaturesetRedraw(fi);
+		}
+	}
+
+	return(fi->n_filtered);
+}
 
 
 /* no return, as all this data in internal to the column featureset item */
@@ -1740,22 +1917,27 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   	/* it's very rare that we add features anyway */
   	/* although we could have several featuresets being loaded into one column */
   	/* whereby this may be more efficient ? */
- #if 1
+#if 1
 	{
 		/* need to recalc bins */
 		/* quick fix FTM, de-calc which requires a re-calc on display */
 		zMapSkipListDestroy(featureset_item->display_index, NULL);
 		featureset_item->display_index = NULL;
-		featureset_item->features_sorted = FALSE;
 	}
+  }
+  /* must set this independantly as empty columns with no index get flagged as sorted */
+  featureset_item->features_sorted = FALSE;
 #else
+// untested code
   	{
   		featureset_item->display_index =
   			zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
 #warning need to fix linked_sideways
   	}
-#endif
   }
+#endif
+
+
   /* NOTE we may not have an index so this flag must be unset seperately */
   /* eg on OTF w/ delete existing selected */
   featureset_item->linked_sideways = FALSE;
@@ -1828,10 +2010,14 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
   /* what's more interesting is why an object has to be killed twice */
 
+
 //  printf("zmap_window_featureset_item_item_destroy %p\n",object);
+
   g_return_if_fail(ZMAP_IS_WINDOW_FEATURESET_ITEM(object));
 
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
+
+  zMapWindowCanvasFeaturesetFree(featureset_item);
 
   if(featureset_item->display_index)
   {
@@ -1865,11 +2051,15 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   	/* removing it the second time will fail gracefully */
   g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id));
 
-//  printf("removing %s\n",g_quark_to_string(featureset->id));
+//  printf("removing %s\n",g_quark_to_string(featureset_item->id));
+
+//printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
+
 
 
   if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
 	(* GTK_OBJECT_CLASS (parent_class_G)->destroy) (GTK_OBJECT(object));
+
 
   return ;
 }

@@ -406,6 +406,16 @@ gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor 
 }
 
 
+gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill)
+{
+	if(window && window->highlights_set.filtered)
+	{
+		*fill = &(window->colour_filtered_column);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 
 
 

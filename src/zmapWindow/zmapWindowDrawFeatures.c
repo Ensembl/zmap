@@ -2573,6 +2573,43 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 		select.type = ZMAPWINDOW_SELECT_SINGLE;
 
+		/* user clicked on column background - get first canvas item and if is a CanvasFeatureset consider enabling filtering by score */
+		{
+			FooCanvasItem *foo;
+
+			select.filter.enable = FALSE;
+
+			foo = zmapWindowContainerGetNthFeatureItem((ZMapWindowContainerGroup) container_set, ZMAPCONTAINER_ITEM_FIRST) ;
+			if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
+			{
+				/* get the canvasFeatureset inside the canvas item */
+				FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
+				ZMapWindowFeaturesetItem fi;
+				ZMapFeatureTypeStyle style;
+				zMapAssert(group && group->item_list);
+
+				fi = (ZMapWindowFeaturesetItem) group->item_list->data;
+
+				style = zMapWindowContainerFeatureSetGetStyle(container_set);
+				if(style)
+				{
+					if ( zMapStyleIsFilter(style) )
+					{
+						select.filter.min = zMapStyleGetMinScore(style);
+						select.filter.max = zMapStyleGetMaxScore(style);
+						select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue((FooCanvasItem *) fi);
+						select.filter.n_filtered = zMapWindowCanvasFeaturesetGetFilterCount((FooCanvasItem *) fi);
+						select.filter.column =  foo;		/* needed for re-bumping */
+						select.filter.featureset = fi;
+						select.filter.enable = TRUE;
+						select.filter.window = window;
+
+						select.filter.func = zMapWindowCanvasFeaturesetFilter;
+					}
+				}
+			}
+		}
+
 		(*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 		if(clipboard_text)
@@ -2899,6 +2936,12 @@ static void setColours(ZMapWindow window)
       {
         gdk_color_parse(colour, &(window->colour_masked_feature_fill)) ;
         window->highlights_set.masked = TRUE ;
+      }
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                               ZMAPSTANZA_WINDOW_FILTERED_COLUMN, &colour))
+      {
+        gdk_color_parse(colour, &(window->colour_filtered_column)) ;
+        window->highlights_set.filtered = TRUE ;
       }
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,

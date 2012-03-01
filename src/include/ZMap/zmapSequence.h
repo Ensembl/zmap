@@ -36,6 +36,10 @@
 #include <ZMap/zmapFeature.h>
 
 
+
+/* This all needs overhauling....it makes life complicated....we should have a union as
+ * some fields are not needed for dna..... */
+
 /*
  * Holds information about any sequence matches found by the match functions.
  * 
@@ -45,13 +49,23 @@
  * match is a normal C string but can be NULL if the actual match is not required. */
 typedef struct
 {
-  ZMapSequenceType match_type ;
+  ZMapSequenceType match_type ;				    /* Match sequence is dna or peptide. */
+
   ZMapStrand strand ;
   ZMapFrame frame ;
+
+  int ref_start ;
+  int ref_end ;
+
+
   int start ;
   int end ;
+
+
+  /* ???????????????????????????????? */
   int screen_start ;
   int screen_end ;
+
   char *match ;
 } ZMapDNAMatchStruct, *ZMapDNAMatch ;
 

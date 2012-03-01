@@ -20,6 +20,7 @@ BASE_DIR=~zmap
 
 
 branch='develop'
+headline='DEVELOP'
 script='development'
 sub_branch=''
 branch_arg=''
@@ -33,12 +34,16 @@ usage="$PROGNAME [ -d -o -p -r <release_sub_branch e.g. Release_0_1_138> ]"
 while getopts ":dopr:" opt ; do
     case $opt in
 	d  ) branch='develop'
+	     headline='DEVELOP'
 	     script='development' ;;
 	o  ) branch='develop'
+	     headline='OVERNIGHT'
 	     script='overnight' ;;
 	p  ) branch='production'
+	     headline='PRODUCTION'
 	     script='production' ;;
 	r  ) branch='release'
+	     headline='RELEASE'
 	     sub_branch="/$OPTARG"
 	     branch_arg="$branch$sub_branch"
 	     script='release' ;;
@@ -58,6 +63,12 @@ done
 #  zmap_message_exit "No blah, blah specifed: $usage"
 #fi
 
+
+# Headline...
+#
+zmap_message_out "-----------------------------------------------"
+zmap_message_out "        ZMap $headline BUILD....."
+zmap_message_out "-----------------------------------------------"
 
 
 build_script="./zmap_build_$script.sh"

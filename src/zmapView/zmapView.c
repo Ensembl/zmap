@@ -2268,6 +2268,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
       view_select.feature_desc   = window_select->feature_desc ;
       view_select.secondary_text = window_select->secondary_text ;
 
+      view_select.filter   = window_select->filter ;
     }
 
 

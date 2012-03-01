@@ -111,100 +111,103 @@ static GList *sortFeatureset(ZMapFeatureSet fset);
  */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 {
-      ZMapMaskFeatureSetDataStruct _data = { NULL };
-      ZMapMaskFeatureSetData data = &_data;
-      GList *fset;
-      ZMapFeatureSource src2src;
-      ZMapFeatureTypeStyle style;
-      GList *masked_by;
+  ZMapMaskFeatureSetDataStruct _data = { NULL };
+  ZMapMaskFeatureSetData data = &_data;
+  GList *fset;
+  ZMapFeatureSource src2src;
+  ZMapFeatureTypeStyle style;
+  GList *masked_by;
 
-      data->view = view;
-      data->perfect = FALSE;		/* original default */
+  data->view = view;
+  data->perfect = FALSE;		/* original default */
 
-            /* this is the featuresets from the context not the display columns */
-      for(fset = new_feature_set_names;fset;fset = fset->next)
-      {
-            src2src = (ZMapFeatureSource) g_hash_table_lookup(view->context_map.source_2_sourcedata,fset->data);
-            if(!src2src)
-            {
-                  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style id for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
-                  continue;
-            }
-            style =  zMapFindStyle(view->context_map.styles,src2src->style_id);
-            if(!style)
-            {
-                  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
-                  continue;
-            }
+  /* this is the featuresets from the context not the display columns */
+  for (fset = new_feature_set_names;fset;fset = fset->next)
+    {
+      src2src = (ZMapFeatureSource) g_hash_table_lookup(view->context_map.source_2_sourcedata,fset->data);
+
+      if (!src2src)
+	{
+	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style id for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
+	  continue;
+	}
+
+      style =  zMapFindStyle(view->context_map.styles,src2src->style_id);
+
+      if (!style)
+	{
+	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
+	  continue;
+	}
 
 
-            if((masked_by = zMapStyleGetMaskList(style)))
-            {
-                  GList *l;
-                  GQuark self = g_quark_from_string("self");
-                  GQuark perfect = g_quark_from_string("perfect");
-                  GQuark imperfect = g_quark_from_string("imperfect");
-//                  GQuark exact = g_quark_from_string("exact");
-                  GQuark set_id = GPOINTER_TO_UINT(fset->data);
-                  gboolean self_only = TRUE;
+      if((masked_by = zMapStyleGetMaskList(style)))
+	{
+	  GList *l;
+	  GQuark self = g_quark_from_string("self");
+	  GQuark perfect = g_quark_from_string("perfect");
+	  GQuark imperfect = g_quark_from_string("imperfect");
+	  //                  GQuark exact = g_quark_from_string("exact");
+	  GQuark set_id = GPOINTER_TO_UINT(fset->data);
+	  gboolean self_only = TRUE;
 
-                  for(l = masked_by;l;l = l->next)
-                  {
-                        set_id = GPOINTER_TO_UINT(l->data);
+	  for(l = masked_by;l;l = l->next)
+	    {
+	      set_id = GPOINTER_TO_UINT(l->data);
 
-				if(set_id == perfect)
-					data->perfect = TRUE;
-				else if(set_id == imperfect)
-					data->perfect = FALSE;
-                        else if(set_id == self)
-                              set_id = GPOINTER_TO_UINT(fset->data);
-                        else
-                              self_only = FALSE;
+	      if(set_id == perfect)
+		data->perfect = TRUE;
+	      else if(set_id == imperfect)
+		data->perfect = FALSE;
+	      else if(set_id == self)
+		set_id = GPOINTER_TO_UINT(fset->data);
+	      else
+		self_only = FALSE;
 
-                        if(!g_list_find(data->masker,GUINT_TO_POINTER(set_id)))
-                              data->masker = g_list_prepend(data->masker,GUINT_TO_POINTER(set_id));
-                  }
-                  if(self_only)     // prioritise these, likely they'll mask others
-                        data->masked = g_list_prepend(data->masked,fset->data);
-                  else
-                        data->masked = g_list_append(data->masked,fset->data);
-            }
-      }
+	      if(!g_list_find(data->masker,GUINT_TO_POINTER(set_id)))
+		data->masker = g_list_prepend(data->masker,GUINT_TO_POINTER(set_id));
+	    }
+	  if(self_only)     // prioritise these, likely they'll mask others
+	    data->masked = g_list_prepend(data->masked,fset->data);
+	  else
+	    data->masked = g_list_append(data->masked,fset->data);
+	}
+    }
 
 #if FILE_DEBUG
-      if(data->masked) PDEBUG("masked = %s\n",zMap_g_list_quark_to_string(data->masked));
-      if(data->masker) PDEBUG("masker = %s\n",zMap_g_list_quark_to_string(data->masker));
+  if(data->masked) PDEBUG("masked = %s\n",zMap_g_list_quark_to_string(data->masked));
+  if(data->masker) PDEBUG("masker = %s\n",zMap_g_list_quark_to_string(data->masker));
 #endif
-      for(fset = data->masked;fset;fset = fset->next)      // mask new featuresets by all
-      {
-            // with pipes we expect 1 featureset at a time but from ACE all 40 or so at once
-            // so we do one ContextExecute for each one
-            // which is OTT but we get thro' the aligns and blocks very quickly
-            // and then the masker featuresets are found in the block's hash table
-            // so really it's quite speedy
+  for(fset = data->masked;fset;fset = fset->next)      // mask new featuresets by all
+    {
+      // with pipes we expect 1 featureset at a time but from ACE all 40 or so at once
+      // so we do one ContextExecute for each one
+      // which is OTT but we get thro' the aligns and blocks very quickly
+      // and then the masker featuresets are found in the block's hash table
+      // so really it's quite speedy
 
-            data->mask_me = GPOINTER_TO_UINT(fset->data);
-            zMapFeatureContextExecute((ZMapFeatureAny) view->features,
-                                   ZMAPFEATURE_STRUCT_BLOCK,
-                                   maskNewFeaturesetByAll,
-                                   (gpointer) data);
-      }
+      data->mask_me = GPOINTER_TO_UINT(fset->data);
+      zMapFeatureContextExecute((ZMapFeatureAny) view->features,
+				ZMAPFEATURE_STRUCT_BLOCK,
+				maskNewFeaturesetByAll,
+				(gpointer) data);
+    }
 
 
-      if(data->masker)                                    // mask old featuresets by new data
-      {
+  if(data->masker)                                    // mask old featuresets by new data
+    {
 #if FILE_DEBUG
-PDEBUG("%s","mask old by new\n");
+      PDEBUG("%s","mask old by new\n");
 #endif
-            zMapFeatureContextExecute((ZMapFeatureAny) view->features,
-                                   ZMAPFEATURE_STRUCT_FEATURESET,
-                                   maskOldFeaturesetByNew,
-                                   (gpointer) data);
-      }
+      zMapFeatureContextExecute((ZMapFeatureAny) view->features,
+				ZMAPFEATURE_STRUCT_FEATURESET,
+				maskOldFeaturesetByNew,
+				(gpointer) data);
+    }
 #if FILE_DEBUG
-PDEBUG("%s","Completed\n");
+  PDEBUG("%s","Completed\n");
 #endif
-      return(data->redisplay);
+  return(data->redisplay);
 }
 
 

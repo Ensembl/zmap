@@ -198,11 +198,18 @@ zMapLogWarning("splice %s",g_quark_to_string(left->unique_id));
 
 static AlignGap align_gap_free_G = NULL;
 
+static long n_block_alloc = 0;
+static long n_gap_alloc = 0;
+static long n_gap_free = 0;
+
+
 
 void align_gap_free(AlignGap ag)
 {
 	ag->next = align_gap_free_G;
 	align_gap_free_G = ag;
+
+	n_gap_free++;
 }
 
 /* simple list structure, avioding extra malloc/free associated with GList code */
@@ -218,13 +225,17 @@ AlignGap align_gap_alloc(void)
 		{
 			align_gap_free(((AlignGap) mem) + i);
 		}
+
+		n_block_alloc++;
 	}
 
 	if(align_gap_free_G)
 	{
 		ag = (AlignGap) align_gap_free_G;
-		memset((gpointer) ag, 0, sizeof(AlignGapStruct));
 		align_gap_free_G = align_gap_free_G->next;
+		memset((gpointer) ag, 0, sizeof(AlignGapStruct));
+
+		n_gap_alloc++;
 	}
 	return ag;
 }
@@ -235,11 +246,16 @@ AlignGap align_gap_alloc(void)
  * So it's a bit slack trusting an external program but ZMap has been doing that for a long time.
  * "roll on CIGAR strings" which prevent this kind of problem
  * NOTE that sorting a GArray might sort the data structures themselves, so schoolboy error kind of slow.
- * If they do need to be sorted then the place in in zmapGFF2Parser.c/loadGaps()
+ * If they do need to be sorted then the place is in zmapGFF2Parser.c/loadGaps()
  *
  * sorting is interesting here as the display optimisation would produce a comppletely wrong picture if it was not done
  *
  * we draw boxes etc at the target coordinates ie on the genomic sequence
+ *
+ * NOTE for short reads we have an option to squash those that have the same gap
+ * (they only have one gap ,except for a few pathological cases)
+ * in this case the first and last blocks are a diff colour, so we flag this if the colour is visible and add another box not a line. Yuk
+ *
  */
 AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 {
@@ -248,15 +264,18 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 	AlignGap last_box = NULL;
 	AlignGap last_ag = NULL;
 	AlignGap display_ag = NULL;
+	GArray *gaps = feature->feature.homol.align;
 
 	ZMapAlignBlock ab;
 	int cy1,cy2,fy1;
+	int n = gaps->len;
+	gboolean edge;
 
 	foo_canvas_w2c (foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
 
-	for(i = 0; i < feature->feature.homol.align->len;i++)
+	for(i = 0; i < n ;i++)
 	{
-		ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+		ab = &g_array_index(gaps, ZMapAlignBlockStruct, i);
 
 		/* get pixel coords of block relative to feature y1, +1 to cover all of last base on cy2 */
 		foo_canvas_w2c (foo->canvas, 0, ab->t1 + offset, NULL, &cy1);
@@ -264,6 +283,23 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 		cy1 -= fy1;
 		cy2 -= fy1;
 
+
+		if(last_box)
+		{
+			if(i == 1 && (feature->flags.squashed_start))
+			{
+				last_box->edge = TRUE;
+				if(last_box->y2 - last_box->y1 > 2)
+					last_box = NULL;	/* force a new box if the colours are visible */
+			}
+			edge = FALSE;
+			if(i == (n-1) && (feature->flags.squashed_end))
+			{
+				if(last_box && last_box->y2 - last_box->y1 > 2)
+					last_box = NULL;	/* force a new box if the colours are visible */
+				edge = TRUE;
+			}
+		}
 		if(last_box)
 		{
 			if(last_box->y2 == cy1 && cy2 != cy1)
@@ -303,12 +339,15 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 			ag->y1 = cy1;
 			ag->y2 = cy2;
 			ag->type = GAP_BOX;
+			ag->edge = edge;
+
 			if(last_ag)
 				last_ag->next = ag;
 			last_box = last_ag = ag;
 			if(!display_ag)
 				display_ag = ag;
 		}
+
 	}
 
 	return display_ag;
@@ -324,6 +363,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	ZMapFeatureTypeStyle homology = NULL,nc_splice = NULL;
 	gulong fill,outline;
 	int colours_set, fill_set, outline_set;
+	gulong edge;
+	gboolean edge_set;
 	double mid_x;
 	double x1,x2;
 
@@ -356,6 +397,13 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 			fill = (fill << 8) | 0xff;	/* convert back to RGBA */
 			fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
 		}
+
+		if(zMapStyleIsSquash(style))		/* diff colours for first and last box */
+		{
+			edge = 0x808080ff;
+			edge_set = TRUE;
+#warning get alignment colour for edge
+		}
 	}
 
 	if(  !(feature->feature->feature.homol.align)  ||
@@ -387,7 +435,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	{
 		AlignGap ag;
 		GdkColor c;
-      	int cx1, cy1, cx2, cy2;
+      		int cx1, cy1, cx2, cy2;
 
 
 		/* create a list of things to draw at this zoom taking onto account bases per pixel */
@@ -487,10 +535,22 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 			/* find and/or allocate glyph structs */
 			if(!feature->left && homology)	/* top end homology incomplete ? */
 			{
-				double score = feature->feature->feature.homol.y1 - 1;
+				/* design by guesswork: this is not well documented */
+				ZMapHomol homol = &feature->feature->feature.homol;
+				double score = homol->y1 - 1;
+				if(feature->feature->strand != homol->strand)
+					score = homol->length - homol->y2;
 
 				if(score)
 					align->glyph5 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 5, score);
+
+#if DEBUG
+char *sig = "";
+if(align->glyph5)
+	sig = g_quark_to_string(zMapWindowCanvasGlyphSignature(homology, feature->feature,5, score));
+
+printf("%s glyph5 %f (%d %d, %d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, 1, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
+#endif
 			}
 
 			if(feature->right && nc_splice)	/* nc-splice ?? */
@@ -510,16 +570,28 @@ zMapLogWarning("set nc splice 5 %s -> %s",g_quark_to_string(feature->right->feat
 
 			if(!feature->right && homology)	/* bottom end homology incomplete ? */
 			{
-				double score = feature->feature->feature.homol.length - feature->feature->feature.homol.y2;
+				/* design by guesswork: this is not well documented */
+				ZMapHomol homol = &feature->feature->feature.homol;
+				double score = homol->length - homol->y2;
+				if(feature->feature->strand != homol->strand)
+					score = homol->y1 - 1;
 
 				if(score)
 					align->glyph3 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 3, score);
+
+#if DEBUG
+char *sig = "";
+if(align->glyph3)
+	sig = g_quark_to_string(zMapWindowCanvasGlyphSignature(homology, feature->feature,3, score));
+
+/printf("%s glyph3 %f (%d %d,%d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, feature->feature->feature.homol.length, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
+#endif
 			}
 
 			align->bump_set = TRUE;
 		}
 
-		if(!feature->left)	/* first feature: draw colinear lines */
+		if(!feature->left && !zMapStyleIsUnique(feature->feature->style))	/* first feature: draw colinear lines */
 		{
 			ZMapWindowCanvasFeature feat;
 
@@ -574,21 +646,25 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
 	*width = feature->width;
 
-	while(first->left)
+	if(!zMapStyleIsUnique(feature->feature->style))
+		/* if not joining up same name features they don't need to go in the same column */
 	{
-		first = first->left;
-		if(first->width > *width)
-		    *width = first->width;
-	}
+		while(first->left)
+		{
+			first = first->left;
+			if(first->width > *width)
+			*width = first->width;
+		}
 
-	while(feature->right)
-	{
-		feature = feature->right;
-		if(feature->width > *width)
-		    *width = feature->width;
-	}
+		while(feature->right)
+		{
+			feature = feature->right;
+			if(feature->width > *width)
+			*width = feature->width;
+		}
 
-	first->y2 = feature->y2;
+		first->y2 = feature->y2;
+	}
 
 	span->x1 = first->y1;
 	span->x2 = first->y2;
@@ -598,7 +674,9 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
 /*
  * if we are displaying a gapped alignment, recalculate this data
- * do this by freeing the existing data, new stuff will be added by the paint fucntion
+ * do this by freeing the existing data, new stuff will be added by the paint function
+ *
+ * NOTE ref to FreeSet() below
  */
 static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset)
 {
@@ -622,8 +700,15 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 		}
 		align->gapped = NULL;
 	}
+
+//printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
 }
 
+static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset)
+{
+	/* frees gapped data _and does not alloc any more_ */
+	zMapWindowCanvasAlignmentZoomSet(featureset);
+}
 
 
 void zMapWindowCanvasAlignmentInit(void)
@@ -636,6 +721,7 @@ void zMapWindowCanvasAlignmentInit(void)
 #if CANVAS_FEATURESET_LINK_FEATURE
 	funcs[FUNC_LINK]   = zMapWindowCanvasAlignmentLinkFeature;
 #endif
+	funcs[FUNC_FREE]   = zMapWindowCanvasAlignmentFreeSet;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
 

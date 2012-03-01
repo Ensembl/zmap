@@ -66,8 +66,6 @@ typedef struct _zmapWindowCanvasFeatureStruct
 	int bump_col;		/* for calculating sub-col before working out width */
 
 	long flags;				/* non standard display option eg selected */
-
-
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
 #define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
 #define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
@@ -76,9 +74,18 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_REASON	0x1e00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
+#define FEATURE_HIDE_REASON	0x3e00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
+
+#if 0
+#define FEATURE_SQUASHED_START	0x10000
+#define FEATURE_SQUASHED_END		0x20000
+#define FEATURE_SQUASHED		0x30000
+
+	GArray *gaps;					/* alternate gaps array for alignments if squashed */
+#endif
 
 	ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 
@@ -95,7 +102,14 @@ typedef struct _pixRect
 
 	ZMapWindowCanvasFeature feature;
 	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
-	int start;				/* we need to remember the real start as we trim the rect from the front */
+//	int start;				/* we need to remember the real start as we trim the rect from the front */
+
+#define PIX_LIST_DEBUG	0
+#if PIX_LIST_DEBUG
+	gboolean alloc;			/* for double alloc/free debug */
+	int which;
+#endif
+
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 
 #define N_PIXRECT_ALLOC		20
@@ -155,7 +169,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   double start,end;
   double longest;			/* feature y-coords extent of biggest feature */
   gboolean overlap;		/* default is to assume features do, some styles imply that they do not (eg coverage/ heatmap) */
-  double bump_overlap;	/* calculated according length of compound features */
+  double bump_overlap;		/* calculated according length of compound features */
 
   gboolean link_sideways;	/* has complex features */
   gboolean linked_sideways;	/* that have been constructed */
@@ -194,8 +208,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   double dx,dy;			  /* canvas offsets as calculated for paint */
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
-  gulong fill_colour;            /* Fill color, RGBA */
-  gulong outline_colour;         /* Outline color, RGBA */
+  gulong fill_colour;           /* Fill color, RGBA */
+  gulong outline_colour;        /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
@@ -206,6 +220,10 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean outline_set;	 	/* Is outline color set? */
 
   ZMapFeature point_feature;	/* set by cursor movement */
+
+  double filter_value;		/* active level, default 0.0 */
+  int n_filtered;
+  gboolean enable_filter;	/* has score in a feature and style allows it */
 
 } zmapWindowFeaturesetItemStruct;
 

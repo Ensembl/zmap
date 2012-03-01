@@ -65,7 +65,7 @@ typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemCla
 
 
 /* enums for function type */
-typedef enum { FUNC_PREPARE, FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
+typedef enum { FUNC_PREPARE, FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_FREE, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
 /* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
 /* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
 
@@ -201,6 +201,13 @@ void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show,
 
 double zMapWindowCanvasFeatureGetWidthFromScore(ZMapFeatureTypeStyle style, double width, double score);
 double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, double score);
+
+
+double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo);
+int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo);
+int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value);
+
+
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */

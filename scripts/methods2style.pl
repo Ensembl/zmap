@@ -184,21 +184,142 @@ use Data::Dumper;
 
         return $txt;
     }
+
+
+    # same as zmap_string but output in .ace format rather than ini-like format 
+    sub Hum::Ace::Method::zmap_string_ace{
+
+        my ($self) = @_;
+
+#        my $txt = qq`Type\n{\n`;
+	my $txt ;
+
+        # in the case of each of the following the arrays are lists of
+        # perl methods avaiable for the method.  These get translated 
+        # to be the correct zmap properties for the type.
+
+
+        foreach my $txtprop(qw(name)){
+
+            my $zmap  = $keyword_convert->{$txtprop} || next;
+
+            my $value = lc($self->$txtprop())    || next;
+            $txt .= qq`ZMap_Style : "$value"\n`;
+
+            if ($self->name =~ m/halfwise/i || $self->name =~ m/genscan/i
+                || $self->name =~ m/retained_intron/i || $self->name =~ m/cds/i
+                || $self->name =~ m/estgene/i || $self->name =~ m/ensembl/i  )
+	      {
+	      $txt .= qq`mode "transcript"\n`;
+	      }
+	    elsif ($self->name =~ m/trembl/i || $self->name =~ m/swissprot/i
+                   || $self->name =~ m/vertebrate_rna/i || $self->name =~ m/refseq/i)
+	      {
+	      $txt .= qq`mode "alignment"\n`;
+	      }
+	    elsif ($self->name =~ m/blast/i)
+	      {
+	      $txt .= qq`mode "alignment"\n`;
+	      }
+	    elsif ($self->name =~ m/blast/i)
+	      {
+	      $txt .= qq`mode "alignment"\n`;
+	      }
+            elsif ($self->name =~ m/ditags/i)
+	      {
+	      $txt .= qq`mode "alignment"\n`;
+	      }
+            elsif ($self->name =~ m/est/i)
+	      {
+	      $txt .= qq`mode "alignment"\n`;
+	      }
+            elsif ($self->name =~ m/coding/i)
+	      {
+	      $txt .= qq`mode "transcript"\n`;
+	      }
+            elsif ($self->name =~ m/curated/i)
+	      {
+	      $txt .= qq`mode "transcript"\n`;
+	      }
+            elsif ($self->name =~ m/transcript/i)
+	      {
+	      $txt .= qq`mode "transcript"\n`;
+	      }
+            else
+	      {
+	      $txt .= qq`mode "basic"\n`;
+	      }
+
+        }
+
+#        foreach my $txtprop(qw(strand_sensitive frame_sensitive show_up_strand)){
+#            my $zmap  = $keyword_convert->{$txtprop} || next;
+#            $txt .= qq`$zmap = true\n`;
+#        }
+
+        foreach my $txtprop(qw(remark)){
+            my $zmap  = $keyword_convert->{$txtprop} || next;
+            my $value = $self->$txtprop()    || next;
+            $txt .= qq`$zmap "$value"\n`;
+        }
+
+        foreach my $txtprop(qw(color cds_color)){
+            my $zmap  = $keyword_convert->{$txtprop} || next;
+            my $value = $colour_convert->{lc($self->$txtprop())}    || next;
+            $txt .= qq`colours normal $zmap "$value"\n`;
+	    $txt .= qq`colours normal border "#000000"\n`;
+        }
+
+        foreach my $numprop(qw(width)){
+            my $zmap  = $keyword_convert->{$numprop} || next;
+            my $value = $self->$numprop()    || next;
+            $txt .= "$zmap " . ($self->$numprop * $ACEDB_MAG_FACTOR) . "\n";
+        }
+
+        foreach my $boolprop(qw(strand_sensitive frame_sensitive show_up_strand)){
+            my $zmap = $boolprop || next;
+#            my $TorF = ($self->$boolprop ? "true" : "false");
+#            $txt .= qq`$zmap = $TorF\n`;
+
+	    if ($self->$boolprop)
+	      {
+	      $txt .= qq`$zmap\n`;
+	      }
+        }
+
+        # Hack, stuff mode in for now...
+        $txt .= qq`bump_initial bump_mode overlap\n`;
+
+#        $txt .= qq`}\n`;
+        $txt .= qq`\n`;
+
+        return $txt;
+    }
 }
 
 
 {
     my $method_file = "methods.ace";
+    my $format = "keyfile";
 
     my $usage = sub { exit(exec('perldoc', $0)) };
 
     GetOptions('file=s' => \$method_file,
+               'format=s' => \$format,
                'help|h' => $usage) || $usage->();
     
     my $collection = Hum::Ace::MethodCollection->new_from_file($method_file);
     foreach my $meth(@{$collection->get_all_Methods}){
 #        print STDERR "Found Method " . $meth->name . "\n";
+      if ($format =~ m/keyfile/i) {
         print $meth->zmap_string;
+      }
+      elsif ($format =~ m/ace/i) {
+        print $meth->zmap_string_ace;
+      }
+      else {
+        print "Error: unrecognised format $format";
+      }
     }
 }
 
@@ -217,9 +338,11 @@ __END__
 
 =head1 USAGE
 
- methods2style.pl -file <methods.ace> -help
+ methods2style.pl -file <methods.ace> [-format keyfile|ace] -help
 
- where <methods.ace> specifies full location of file to read.
+ where <methods.ace> specifies full location of file to read and
+ the -format argument indicates the type of output; 'keyfile' (default)
+ for an ini-style file or 'ace' for a .ace file.
  -help shows this pod.
 
 =cut

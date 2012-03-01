@@ -782,7 +782,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-	if(feature->flags.collapsed)
+	if(feature->flags.collapsed || feature->flags.squashed)
 	{
 		/* collapsed item are not disaplayed as they contain no new information
 		 * but they cam be searched for in the FToI hash

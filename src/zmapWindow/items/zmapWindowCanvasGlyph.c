@@ -78,12 +78,12 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
 GHashTable *glyph_cache_G = NULL;
 
 
-ZMapStyleGlyphShape get_glyph_shape(ZMapFeatureTypeStyle style, int which)
+ZMapStyleGlyphShape get_glyph_shape(ZMapFeatureTypeStyle style, int which, ZMapStrand strand)
 {
 	ZMapStyleGlyphShape shape;
 
-	shape = (which == 5) ? zMapStyleGlyphShape5(style) :
-              (which == 3) ? zMapStyleGlyphShape3(style) :
+	shape = (which == 5) ? zMapStyleGlyphShape5(style, strand == ZMAPSTRAND_REVERSE) :
+              (which == 3) ? zMapStyleGlyphShape3(style, strand == ZMAPSTRAND_REVERSE) :
               (ZMapStyleGlyphShape) zMapStyleGlyphShape(style);
 
 	return shape;	/* may be NULL */
@@ -95,7 +95,7 @@ ZMapStyleGlyphShape get_glyph_shape(ZMapFeatureTypeStyle style, int which)
  * but glyphs are always the same size if this does not relate to feature score
  * so we can cache globally by glyph shape id
  */
-GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which)
+GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score)
 {
 	ZMapStyleGlyphShape shape;
 	char buf[64];	/* will never overflow */
@@ -107,14 +107,14 @@ GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature fe
 	if(style->score_mode != ZMAPSCORE_INVALID && style->score_mode != ZMAPSTYLE_SCORE_ALT)
 		return 0;
 
-	shape = get_glyph_shape(style, which);
+	shape = get_glyph_shape(style, which, feature->strand);
 
 	if(!shape)
 		return 0;
 
 	if(feature->strand == ZMAPSTRAND_REVERSE)
 		strand = '-';
-	if(style->score_mode == ZMAPSTYLE_SCORE_ALT && feature->score < zMapStyleGlyphThreshold(style))
+	if(style->score_mode == ZMAPSTYLE_SCORE_ALT && score < zMapStyleGlyphThreshold(style))
 		alt = 'A';
 
       sprintf(buf,"%s_%s%c%c",g_quark_to_string(style->unique_id),g_quark_to_string(shape->id),strand,alt);
@@ -130,7 +130,7 @@ GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature fe
 /* NOTE this is not called for free standing glyphs */
 ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score)
 {
-	GQuark siggy = zMapWindowCanvasGlyphSignature(style, feature, which);
+	GQuark siggy = zMapWindowCanvasGlyphSignature(style, feature, which, score);
 	ZMapWindowCanvasGlyph glyph = NULL;
 	double col_width;
 
@@ -156,7 +156,7 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 			glyph->which = which;
 			glyph->sub_feature = TRUE;
 
-			glyph->shape = shape = get_glyph_shape(style, glyph->which);
+			glyph->shape = shape = get_glyph_shape(style, glyph->which, feature->strand);
 			if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
 				return NULL;
 
@@ -179,14 +179,14 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 
 
 
-/* set up thecoord array for the paint function
+/* set up the coord array for the paint function
  *
  * fill in coords copied from the shape
  * and adjust height width and origin
  * on paint these get shifted relative to the CanvasFeatureset
  * also cache the colour if score mode is ALT
  */
-/* intitialise a glyph struct to have coord set fo the given style + feature combo
+/* intitialise a glyph struct to have coord set for the given style + feature combo
  * called for both standalone features and sub-feature glyphs
  * NOTE sub-feature glyphs have an uninitialised feature part
  */
@@ -508,7 +508,7 @@ void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 		if (feat->flags.has_boundary)
 			glyph->which = feat->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
 
-		shape = get_glyph_shape(feat->style, glyph->which);
+		shape = get_glyph_shape(feat->style, glyph->which, feature->feature->strand);
 
 		if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
 			return;
