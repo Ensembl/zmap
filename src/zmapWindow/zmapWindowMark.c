@@ -227,6 +227,14 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
   return mark ;
 }
 
+gboolean zMapWindowMarkIsSet(ZMapWindow window)
+{
+	/* scope and header isssues... */
+
+	return zmapWindowMarkIsSet(window->mark);
+}
+
+
 /*!
  * \brief Access to the state of a mark
  *

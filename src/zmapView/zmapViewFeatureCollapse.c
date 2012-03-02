@@ -235,8 +235,8 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		GArray *new_gaps = NULL;	/* to replace original in visible squashed feature */
 		double y1,y2,edge1,edge2;	/* boundaries of visible squashed feature */
 
-		GHashTable *splice_hash;	/* accumulate all splice coordinates */
-		GList  *splice_list;		/* sorted list of splice coordinates */
+//		GHashTable *splice_hash;	/* accumulate all splice coordinates */
+//		GList  *splice_list;		/* sorted list of splice coordinates */
 
 		if(!style)
 			break;

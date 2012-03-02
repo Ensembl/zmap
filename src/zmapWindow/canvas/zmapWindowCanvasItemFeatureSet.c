@@ -89,6 +89,9 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 
 ZMapWindowCanvasItemClass parent_class_G;
 
+static ZMapWindowCanvasFeaturesetItemClass featureset_class_G = NULL;
+
+
 GType zMapWindowCanvasFeaturesetItemGetType(void)
 {
   static GType group_type = 0 ;
@@ -115,6 +118,46 @@ GType zMapWindowCanvasFeaturesetItemGetType(void)
     }
 
   return group_type;
+}
+
+
+/*
+ * return a singleton column wide canvas item
+ * just in case we wanted to overlay two or more line graphs we need to allow for more than one
+ * graph per column, so we specify these by col_id (which includes strand) and featureset_id
+ * we allow for stranded bins, which get fed in via the add function below
+ * we also have to include the window to allow more than one -> not accessable so we use the canvas instead
+ *
+ * we also allow several featuresets to map into the same canvas item via a vitueal featureset (quark)
+ */
+ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
+{
+      ZMapWindowCanvasFeaturesetItem fi = NULL;
+      FooCanvasItem *foo  = NULL,*interval;
+
+            /* class not intialised till we make an item in foo_canvas_item_new() below */
+      if(featureset_class_G && featureset_class_G->featureset_items)
+            foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
+
+	if(foo)
+      {
+            return((ZMapWindowCanvasItem) foo);
+      }
+      else
+      {
+            /* need a wrapper to get ZWCI with a foo_featureset inside it */
+            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
+
+            interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
+
+		zMapWindowFeaturesetItemSetFeaturesetItem(interval, id, start, end, style, strand, frame, index);
+
+            fi = (ZMapWindowCanvasFeaturesetItem) foo;
+            fi->id = id;
+            g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
+
+      }
+      return ((ZMapWindowCanvasItem) foo);
 }
 
 
@@ -155,6 +198,32 @@ void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *
 }
 
 
+
+gboolean zMapWindowCanvasFeaturesetItemBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data)
+{
+      ZMapWindowCanvasFeaturesetItem fs_item;
+	FooCanvasGroup *group;
+	ZMapWindowFeaturesetItem featureset = NULL;
+
+
+      if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+      	return FALSE;
+
+	fs_item = (ZMapWindowCanvasFeaturesetItem) item;
+	group = (FooCanvasGroup *) fs_item;
+
+      if(group->item_list)
+      	featureset = (ZMapWindowFeaturesetItem) group->item_list->data;
+
+	if(!featureset)
+		return FALSE;
+
+	return zMapWindowCanvasFeaturesetBump(featureset, bump_mode, compress, bump_data);
+
+}
+
+
+
 static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetItemClass featureset_class)
 {
   ZMapWindowCanvasItemClass canvas_class ;
@@ -164,6 +233,10 @@ static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetIte
   canvas_class  = (ZMapWindowCanvasItemClass) featureset_class;
 
   parent_class_G = gtk_type_class (zMapWindowCanvasItemGetType());
+
+  featureset_class_G = featureset_class;
+  featureset_class_G->featureset_items = g_hash_table_new(NULL,NULL);
+
 
   gobject_class->set_property = zmap_window_featureset_item_set_property;
   gobject_class->get_property = zmap_window_featureset_item_get_property;
@@ -281,7 +354,7 @@ static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 	if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 	{
 #warning this should be a class function
-		zmapWindowFeaturesetItemSetColour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+		zmapWindowFeaturesetItemSetColour(interval,feature,sub_feature,colour_type,colour_flags,fill,border);
 	}
 #if OLD_FEATURE
 	else
@@ -357,9 +430,15 @@ static void zmap_window_featureset_item_destroy     (GObject *object)
 //	ZMapWindowCanvasFeaturesetItem item = (ZMapWindowCanvasFeaturesetItem) object;
 	ZMapWindowCanvasItem canvas_item;
 	ZMapWindowCanvasItemClass canvas_item_class ;
+	ZMapWindowCanvasFeaturesetItem fi;
 
   	canvas_item = ZMAP_CANVAS_ITEM(object);
   	canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
+
+
+	fi = (ZMapWindowCanvasFeaturesetItem) canvas_item;
+  	/* this can haooen twice: removing it the second time will fail gracefully */
+	g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(fi->id));
 
 	/* canvasitem destroy that calls foo group destroy that calls foo item destroy */
 	/* how efficent! */

@@ -44,6 +44,8 @@
 #include <zmapWindowContainerUtils.h>
 
 
+#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasItemFeatureSet.h>
 
 /* set a KNOWN initial size for the foo_canvas!
  * ... the same size as foo_canvas sets ...
@@ -289,34 +291,14 @@ typedef struct _zmapWindowFeatureStack
 #define ZMAP_WINDOW_MIN_LASSO 20.0
 
 
-/* X Windows has some limits that are part of the protocol, this means they cannot
- * be changed any time soon...they impinge on the canvas which could have a very
- * large windows indeed. Unfortunately X just silently resets the window to size
- * 1 when you try to create larger windows....now read on...
- *
- * The largest X window that can be created has max dimensions of 65535 (i.e. an
- * unsigned short), you can easily test this for a server by creating a window and
- * then querying its size, you should find this is the max. window size you can have.
- *
- * BUT....you can't really make use of a window this size _because_ when positioning
- * anything (other windows, lines etc.), the coordinates are given via _signed_ ints.
- * This means that the maximum position you can specify must in the range -32768
- * to 32767. In a way this makes sense because it means that you can have a window
- * that covers this entire span and so position things anywhere inside it. In a way
- * its completely crap and confusing.......
- *
- * BUT....it means that in the visible window you are limited to the range 0 - 32767.
- * by sticking at 30,000 we allow ourselves a margin for error that should work on any
- * machine.
- *
- */
 
 enum
   {
     ZMAP_WINDOW_TEXT_BORDER = 2,			    /* border above/below dna text. */
     ZMAP_WINDOW_STEP_INCREMENT = 10,                        /* scrollbar stepping increment */
     ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
-    ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
+//    ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
+// see zmapWindow.h
   } ;
 
 enum
@@ -345,16 +327,6 @@ typedef enum
     ZMAPWINDOWCOLUMN_CONFIGURE_ALL_DEFERRED,
   } ZMapWindowColConfigureMode ;
 
-
-/* Controls mode of column compression: this removes or compresses columns to the width required
- * for the features within the whole sequence, the marked area or just the visible window. */
-typedef enum
-  {
-    ZMAPWINDOW_COMPRESS_INVALID,
-    ZMAPWINDOW_COMPRESS_VISIBLE,			    /* Compress for visible window only. */
-    ZMAPWINDOW_COMPRESS_MARK,				    /* Compress for mark region. */
-    ZMAPWINDOW_COMPRESS_ALL				    /* Compress for whole sequence. */
-  } ZMapWindowCompressMode ;
 
 
 
@@ -512,54 +484,8 @@ typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
-typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
-
-typedef enum
-{
-      /* types of groups of features, used to index an array
-       * NOTE: these are in order of priority
-       */
-      WINDOW_FOCUS_GROUP_FOCUS = 0,
-      WINDOW_FOCUS_GROUP_EVIDENCE,
-      WINDOW_FOCUS_GROUP_TEXT,
-
-      /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
-
-	/* window focus has a cache of colours per window
-	 * we can retrieve these by id which does note require out of scope data or headers
-	 */
-      WINDOW_FOCUS_GROUP_MASKED,	/* use to store colours but not set as a focus type */
-      WINDOW_FOCUS_GROUP_FILTERED,
-/* NOTE this must be the first blurred one */
-#define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
-
-      N_FOCUS_GROUPS
-} ZMapWindowFocusType;
 
 
-extern int focus_group_mask[];	/* indexed by ZMapWindowFocusType */
-
-#define WINDOW_FOCUS_GROUP_FOCUSSED 0x07	/* all the focus types */
-#define WINDOW_FOCUS_GROUP_BLURRED	0xf8	/* all the blurred types */
-#define WINDOW_FOCUS_GROUP_BITMASK	0xff	/* all the colour types, focussed and blurred */
-#define WINDOW_FOCUS_DONT_USE	0xff00	/* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
-/* x-ref with zmapWindowCanvasFeatureset_I.h */
-
-#define WINDOW_FOCUS_ID	0xffff0000
-
-/* bitmap return values from the following function, _please_ don't enum them! */
-#define WINDOW_FOCUS_CACHE_FILL 		1
-#define WINDOW_FOCUS_CACHE_OUTLINE		2
-#define WINDOW_FOCUS_CACHE_SELECTED		4
-int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
-
-void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
-
-gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
-gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
-
-
-typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
 typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory ;
 
@@ -906,7 +832,7 @@ void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list,
 char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type,
 			  int *sequence_start_out, int *sequence_end_out) ;
 
-void zmapWindowFullReposition(ZMapWindow window) ;
+
 void zmapWindowResetWidth(ZMapWindow window) ;
 
 double zmapWindowCalcZoomFactor (ZMapWindow window);
@@ -1149,8 +1075,7 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode) ;
-void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
-			       ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
+
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
 void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item);
 void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_parent);

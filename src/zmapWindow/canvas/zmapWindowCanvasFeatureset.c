@@ -66,8 +66,11 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <math.h>
 #include <string.h>
 #include <ZMap/zmapUtilsLog.h>
+#include <ZMap/zmapWindow.h>
+
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasItemFeatureSet_I.h>
+//#include <zmapWindowCanvasItemFeatureSet_I.h>
 #include <zmapWindowCanvasBasic.h>
 #include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasAlignment.h>
@@ -88,8 +91,8 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 
-static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 static FooCanvasItemClass *parent_class_G;
+static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 
 static void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 
@@ -465,31 +468,21 @@ GType zMapWindowFeaturesetItemGetType(void)
  * we allow for stranded bins, which get fed in via the add function below
  * we also have to include the window to allow more than one -> not accessable so we use the canvas instead
  *
- * we also allow several featuresets to map into the same canvas item via a vitueal featureset (quark)
+ * we also allow several featuresets to map into the same canvas item via a virtual featureset (quark)
  */
-ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
+
+/* that was then, now we just set the foo item passed in. */
+
+FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
 {
       ZMapWindowFeaturesetItem di = NULL;
-      FooCanvasItem *foo  = NULL,*interval;
 	zmapWindowCanvasFeatureType type;
 
-            /* class not intialised till we make an item in foo_canvas_item_new() below */
-      if(featureset_class_G && featureset_class_G->featureset_items)
-            foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
-      if(foo)
-      {
-            return((ZMapWindowCanvasItem) foo);
-      }
-      else
-      {
-		int stagger;
+	int stagger;
 
-            /* need a wrapper to get ZWCI with a foo_featureset inside it */
-            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
+	/* NOTE need to combined code from cainating canvas item  at some point */
 
-            interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
-
-            di = (ZMapWindowFeaturesetItem) interval;
+            di = (ZMapWindowFeaturesetItem) foo;
             di->id = id;
             g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
@@ -526,14 +519,14 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
   		di->end = end;
 
 		    /* initialise zoom to prevent double index create on first draw (coverage graphs) */
-		di->zoom = interval->canvas->pixels_per_unit_y;
+		di->zoom = foo->canvas->pixels_per_unit_y;
 		di->bases_per_pixel = 1.0 / di->zoom;
 
 
 		/* set our bounding box in canvas coordinates to be the whole column */
-		foo_canvas_item_request_update (interval);
-      }
-      return ((ZMapWindowCanvasItem) foo);
+		foo_canvas_item_request_update (foo);
+
+      return foo;
 }
 
 
@@ -682,8 +675,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
 }
 
 /* interface design driven by exsiting application code */
-void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
-						      FooCanvasItem         *interval,
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 						      ZMapFeature			feature,
 						      ZMapFeatureSubPartSpan sub_feature,
 						      ZMapStyleColourType    colour_type,
@@ -1824,7 +1816,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 		{
 			ZMapWindowCompressMode compress_mode;
 
-			if (zmapWindowMarkIsSet(filter->window->mark))
+			if (zMapWindowMarkIsSet(filter->window))
 				compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
 			else
 				compress_mode = ZMAPWINDOW_COMPRESS_ALL ;

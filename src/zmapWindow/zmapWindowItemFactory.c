@@ -848,7 +848,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
             /* adds once per canvas+column+style, then returns that repeatedly */
             /* also adds an 'interval' foo canvas item which we need to look up */
-      canvas_item = zMapWindowFeaturesetItemGetFeaturesetItem(parent, run_data->feature_stack->id,
+      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem(parent, run_data->feature_stack->id,
             block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
             run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
 

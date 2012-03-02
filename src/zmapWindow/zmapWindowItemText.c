@@ -324,7 +324,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       trans_id2c = (ID2Canvas)(trans_set->data) ;
 
       trans_item = trans_id2c->item ;
-      
+
       trans_feature = (ZMapFeature)trans_id2c->feature_any ;
       seq = trans_feature->feature.sequence.sequence ;
       len = trans_feature->feature.sequence.length ;
@@ -342,7 +342,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       do
 	{
 	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
-	    
+
 	  if (current_exon->region_type == EXON_CODING)
 	    {
 	      pep_start = current_exon->sequence_span.x1 ;
@@ -356,7 +356,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       do
 	{
 	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
-	    
+
 	  if (current_exon->region_type == EXON_CODING)
 	    {
 	      pep_end = current_exon->sequence_span.x2 ;
@@ -416,7 +416,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 
 
-/* 
+/*
  *                               INTERNALS
  */
 

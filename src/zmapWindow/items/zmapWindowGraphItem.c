@@ -55,8 +55,8 @@ Some of the class function field external calls and pass throught to the relevan
 #include <math.h>
 #include <string.h>
 #include <zmapWindowGraphItem_I.h>
-#include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasItemFeatureSet_I.h>
+#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasItemFeatureSet.h>
 
 
 
@@ -167,7 +167,6 @@ static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x
 {
 	FooCanvasItem *foo;
 	FooCanvasGroup *group;
-	ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
 
 	group = (FooCanvasGroup *) item;
 	if(!group->item_list)
@@ -177,6 +176,11 @@ static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x
 
 	if (g_type_is_a(G_OBJECT_TYPE(foo), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
 	{
+
+#if 0
+// vestigal code, now replaced by canvas featuresets
+		ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
+
 		ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) foo;
 
 		if(di->point_feature)
@@ -184,6 +188,8 @@ static gboolean zmap_window_graph_item_set_feature(FooCanvasItem *item, double x
 			canvas_item->feature = di->point_feature;
 			return TRUE;
 		}
+#endif
+		zMapAssertNotReached();
 	}
 	return FALSE;
 }
@@ -222,7 +228,7 @@ static void zmap_window_graph_item_set_colour(ZMapWindowCanvasItem   item,
 {
 	if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM))
 	{
-		zmapWindowFeaturesetItemSetColour(item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+		zmapWindowFeaturesetItemSetColour(interval,feature,sub_feature,colour_type,colour_flags,fill,border);
 	}
 	else
 	{

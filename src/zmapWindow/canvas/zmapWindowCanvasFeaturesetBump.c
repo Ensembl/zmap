@@ -234,7 +234,7 @@ static BCR bump_overlap(ZMapWindowCanvasFeature feature,BumpFeatureset bump_data
  * simple and complex features have an extent which is used to decide on positioning
  * NOTE a CanvasFeatureSet is a container that may contain multiple types of feature
  */
-gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data)
+gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data)
 {
 	/* COMPRESS_ALL appears to get set but never used
 	 * COMPRESS_MARK removes stuff outside the mark
@@ -263,22 +263,6 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
        * so we need the get the real ZMapWindowFeaturesetItem in the group's item_list
        */
 
-	ZMapWindowFeaturesetItem featureset = NULL;
-      ZMapWindowCanvasFeaturesetItem fs_item;
-	FooCanvasGroup *group;
-
-
-      if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-      	return FALSE;
-
-	fs_item = (ZMapWindowCanvasFeaturesetItem) item;
-	group = (FooCanvasGroup *) fs_item;
-
-      if(group->item_list)
-      	featureset = (ZMapWindowFeaturesetItem) group->item_list->data;
-
-	if(!featureset)
-		return FALSE;
 
 #if MODULE_STATS
 	time = zMapElapsedSeconds;
@@ -513,7 +497,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowCanvasItem item, ZMapStyleBump
 		zMapWarning("Cannot bump - too many features to fit into the window.\nTry setting the mark to a smaller region","");
 
 		/* need to hide summarised features again */
-		zMapWindowCanvasFeaturesetBump(item, ZMAPBUMP_UNBUMP, compress, bump_data);
+		zMapWindowCanvasFeaturesetBump(featureset, ZMAPBUMP_UNBUMP, compress, bump_data);
 
 		return FALSE;
 	}

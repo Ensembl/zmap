@@ -1640,7 +1640,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 		*/
 		container = zmapWindowContainerUtilsGetParentLevel((ZMapWindowContainerGroup)(menu_data->container_set),
 									ZMAPCONTAINER_LEVEL_BLOCK);
-		block = zmapWindowItemGetFeatureBlock(container);
+		block = zmapWindowItemGetFeatureBlock((FooCanvasItem *) container);
 
 			/* can't use 'is_column' here as we may be requesting several */
 		zmapWindowFetchData(menu_data->window, block, req_list, TRUE,FALSE);

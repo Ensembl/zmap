@@ -37,7 +37,8 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowCanvasItem_I.h>
+//#include <zmapWindowCanvasItem_I.h>
+#include <ZMap/zmapWindow.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapSkipList.h>
@@ -120,9 +121,12 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 
 typedef struct _zmapWindowFeaturesetItemClassStruct
 {
-  zmapWindowCanvasItemClass __parent__;
+//  zmapWindowCanvasItemClass __parent__;
+  FooCanvasItemClass __parent__;
 
   GHashTable *featureset_items;         /* singleton canvas items per column, indexed by unique id */
+  /* NOTE duplicated in container canvas item till we get rid of that */
+
   GList *feature_free_list[FEATURE_N_TYPE];
 #define N_FEAT_ALLOC      1000
 	/* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
