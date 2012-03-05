@@ -275,7 +275,7 @@ use Data::Dumper;
         }
 
 #        foreach my $txtprop(qw(strand_sensitive frame_sensitive show_up_strand)){
-            my $zmap  = $keyword_convert_ace->{$txtprop} || next;
+#            my $zmap  = $keyword_convert_ace->{$txtprop} || next;
 #            $txt .= qq`$zmap = true\n`;
 #        }
 
