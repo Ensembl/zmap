@@ -1,28 +1,35 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-################################################################################
-################################################################################
-# Initialise
-################################################################################
-################################################################################
+
 
 # the bootstrap script makes the file zmap_version.m4 and puts zmaps current
-# version in it as the macro ZMAP_VERSION_NUMBER
+# version in it as the macro VERSION_NUMBER
 m4_include([zmap_version.m4])
 
 
 AC_PREREQ(2.61)
+AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap-VERSION_NUMBER], [http://http://www.sanger.ac.uk/resources/software/zmap/])
 
-
-AC_INIT([ZMap],[ZMAP_VERSION_NUMBER],[zmap@sanger.ac.uk])
-
+AC_CONFIG_AUX_DIR([config])
 
 # check we can find the source
 AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 
 # try it....
 AC_CONFIG_MACRO_DIR([m4])
+
+
+# Check if this is a Git repository and, if so, use PACKAGE_VERSION which will
+# include info about the current status in the version info (gets set from
+# VERSION_NUMBER in zmap_version.m4). Otherwise use output
+# of git describe abbreviated to just tag which for us is the version string.
+# 
+if test -d "$srcdir/../.git" 
+then AC_DEFINE([ZMAP_VERSION_NUMBER], [PACKAGE_VERSION], [ZMap package version])
+else AC_DEFINE_UNQUOTED([ZMAP_VERSION_NUMBER], ["`git describe --abbrev=0`"], [ZMap package version])
+fi
+
 
 
 echo "************************************************************"
@@ -182,8 +189,8 @@ AC_SUBST(LDFLAGS)
 
 
 # set up the zmap version, used for naming dist tar file etc etc.
-VERSION=ZMAP_VERSION_NUMBER
-AC_SUBST(VERSION)
+#VERSION=ZMAP_VERSION_NUMBER
+#AC_SUBST(VERSION)
 
 
 
@@ -455,3 +462,26 @@ dotZMap:dotZmap.in
 #
 
 AC_OUTPUT
+
+
+
+
+
+
+echo \
+"-------------------------------------------------
+
+ ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
+
+ Prefix: '${prefix}'
+ Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
+
+ Now type 'make @<:@<target>@:>@'
+   where the optional @<:@<target>@:>@ is:
+     all       - build all binaries (default)
+     install   - build and install everything
+     <program> - build specific program
+"
+
+echo "-------------------------------------------------
+"
