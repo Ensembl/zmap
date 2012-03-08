@@ -242,7 +242,7 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
   zMapAssert(!(window_type == NULL && message == NULL)) ;
 
   title = g_strdup_printf("ZMap (%s)%s%s%s%s",
-			  zMapGetVersionString(),
+			  zMapGetAppVersionString(),
 			  (window_type ? " " : ""),
 			  (window_type ? window_type : ""),
 			  (message ? " - " : ""),

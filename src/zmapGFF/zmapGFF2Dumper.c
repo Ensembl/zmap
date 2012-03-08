@@ -375,7 +375,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, G
 			 "##source-version %s %s\n"
 			 "##date %s\n",
 			 GFF_VERSION,
-			 zMapGetAppName(), zMapGetVersionString(),
+			 zMapGetAppName(), zMapGetAppVersionString(),
 			 time_string) ;
 
   g_free(time_string) ;
