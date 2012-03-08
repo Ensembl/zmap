@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <config.h>
 
 #include <zmapUtils_P.h>
 
@@ -75,44 +76,48 @@ gboolean zmap_development_G = FALSE;    // switch on/off features while testing
 
 
 
-/*!
- * Returns a single number representing the Version/Release/Update of the ZMap code.
- *
- * @param   void  None.
- * @return        The version as an integer.
- *  */
-int zMapGetVersion(void)
-{
-  return ZMAP_MAKE_VERSION_NUMBER(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
-}
 
 
 /*!
- * Returns a string representing the Version/Release/Update of the ZMap code.
+ * Returns a string which is the name of the ZMap application.
  *
  * @param   void  None.
- * @return        The version number as a string.
+ * @return        The applications name as a string.
  *  */
-char *zMapGetVersionString(void)
+char *zMapGetAppName(void)
 {
-  return ZMAP_MAKE_VERSION_STRING(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
+  return ZMAP_TITLE ;
 }
 
-int zMapGetVersionStringLength(void)
+
+/* Returns the Version/Release/Update string, do _not_ free the returned string.
+ * 
+ * The string will be in the form produced by the configure.ac file,
+ * see the version section near the top.
+ */
+char *zMapGetAppVersionString(void)
 {
-  char *version_string = zMapGetVersionString();
-  int l = 0;
+  char *version_string = NULL ;
 
-#define VERSION_STRING_MAX_LENGTH 20
-  for(l = 0; l < VERSION_STRING_MAX_LENGTH; l++, version_string++)
-    {
-      if(!(version_string && version_string[0] != '\0'))
-	break;
-    }
-#undef VERSION_STRING_MAX_LENGTH
+  version_string = ZMAP_VERSION_NUMBER ;
 
-  return l;
+  return version_string ;
 }
+
+
+/*!
+ * Returns a string which is a brief decription of the ZMap application.
+ *
+ * @param   void  None.
+ * @return        The applications description as a string.
+ *  */
+char *zMapGetAppTitle(void)
+{
+  char *title = ZMAP_TITLE " - "ZMAP_VERSION_NUMBER ;
+
+  return title ;
+}
+
 
 /*!
  * Compares version strings in the format "VVVV.RRRR.UUUU", e.g. "4.8.3".
@@ -149,56 +154,6 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
 }
 
 
-/* Get's the development id or the empty string if this is not development code. The development
- * ID will only be set for development branches. */
-char *zMapGetDevelopmentIDString(void)
-{
-  char *dev_string = NULL ;
-
-  dev_string = zmapDevelopmentString() ;
-
-  return dev_string ;
-}
-
-
-/* Returns development ID string if there is one, otherwise the Version/Release/Update string,
- * do _not_ free the returned string.
- */
-char *zMapGetAppVersionString(void)
-{
-  char *version_string = NULL ;
-
-  if (!(version_string = zMapGetDevelopmentIDString()) || !(*version_string))
-    version_string = zMapGetVersionString() ;
-
-  return version_string ;
-}
-
-
-/*!
- * Returns a string which is the name of the ZMap application.
- *
- * @param   void  None.
- * @return        The applications name as a string.
- *  */
-char *zMapGetAppName(void)
-{
-  return ZMAP_TITLE ;
-}
-
-
-/*!
- * Returns a string which is a brief decription of the ZMap application.
- *
- * @param   void  None.
- * @return        The applications description as a string.
- *  */
-char *zMapGetAppTitle(void)
-{
-  return ZMAP_MAKE_TITLE_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
-}
-
-
 /*!
  * Returns a copyright string for the ZMap application.
  *
@@ -211,13 +166,21 @@ char *zMapGetCopyrightString(void)
 }
 
 
-/*!
- * Returns the ZMap website URL.
+/* Returns the Sanger ZMap website URL as a string.
+ *
+ *  */
+char *zMapGetWebSiteString(void)
+{
+  return PACKAGE_URL ;
+}
+
+
+/* Returns the ZMap internal shared website URL.
  *
  * @param void  None.
  * @return      The website as a string.
  *  */
-char *zMapGetWebSiteString(void)
+char *zMapGetDevWebSiteString(void)
 {
   return ZMAP_WEBSITE_STRING() ;
 }
@@ -234,14 +197,13 @@ char *zMapGetCommentsString(void)
   static char *comment_string = NULL ;
 
   if (!comment_string)
-    comment_string = g_strdup_printf("(%s, compiled on %s)\n"
+    comment_string = g_strdup_printf("(compiled on %s)\n"
 				     "\n"
-				     "This application is part of the"
-				     " ZMap genome viewer/annotation package originally written by\n"
-				     "    Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,\n"
-				     "    Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk),\n" 
-				     "    Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n",
-				     zMapGetAppTitle(),
+				     "ZMap is a multi-threaded genome viewer program that can"
+				     " be used stand alone or be driven from an external program"
+				     " to provide a seamless annotation package.\n"
+				     "It is currently used as part of the otterlace package"
+				     " and is being added to the wormbase annotation software.",
 				     zmapCompileString()) ;
 
   return comment_string ;

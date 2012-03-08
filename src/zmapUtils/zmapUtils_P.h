@@ -29,16 +29,14 @@
 #ifndef ZMAP_UTILS_P_H
 #define ZMAP_UTILS_P_H
 
+#include <config.h>
+
 #include <ZMap/zmapUtils.h>
 
 
 /* ZMap version stuff.... */
-#define ZMAP_TITLE "ZMap"
+#define ZMAP_TITLE PACKAGE_NAME
 #define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
-#define ZMAP_VERSION 0
-#define ZMAP_RELEASE 4
-#define ZMAP_UPDATE  0
-
 
 /* Create a copyright string for dialogs etc. */
 #define ZMAP_COPYRIGHT_STRING()                                  \

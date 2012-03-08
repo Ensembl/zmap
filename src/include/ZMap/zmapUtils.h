@@ -172,17 +172,14 @@ gboolean zMapFileEmpty(char *filepath) ;
 
 /* routines to return basic version/information about zmap. */
 char *zMapGetAppName(void) ;
+char *zMapGetAppVersionString(void) ;
 char *zMapGetAppTitle(void) ;
 char *zMapGetCopyrightString(void) ;
 char *zMapGetWebSiteString(void) ;
 char *zMapGetCommentsString(void) ;
 char *zMapGetLicenseString(void) ;
-int zMapGetVersion(void) ;
-char *zMapGetVersionString(void) ;
-int zMapGetVersionStringLength(void);
 gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
-char *zMapGetDevelopmentIDString(void) ;
-char *zMapGetAppVersionString(void) ;
+
 
 gboolean zMapUtilsConfigDebug(void) ;
 
