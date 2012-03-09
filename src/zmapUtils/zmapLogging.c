@@ -135,6 +135,8 @@ static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd);
 /* We only ever have one log so its kept internally here. */
 static ZMapLog log_G = NULL ;
 
+static GTimer *zmap_log_timer_G = NULL;
+
 static gboolean enable_core_dumping_G = TRUE;
 
 void zmapfoo_print_time(char *x, char *y, char *z)
@@ -234,6 +236,7 @@ gboolean zMapLogCreate(char *logname)
     }
   else
     {
+	  zmap_log_timer_G = g_timer_new();
       writeStartOrStopMessage(TRUE) ;
       result = TRUE ;
     }
@@ -303,22 +306,32 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   g_string_append_printf(format_str, "%s[%s:%s:%d]",
 			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
-#if 0
-// this is a mess of incompatable structs....
   /* include a timestamp? */
   if(log->show_time)
   {
+     char tbuf[32];
+#if 0
+// this is a mess of incompatable structs....
         // Glib does not do time!
         // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
       struct timeval time;
       struct timezone tz = {0,0};
-      char tbuf[32];
-
+ 
       gettimeofday(&time,&tz);
       strftime(tbuf,32,"%H:%M:%S",&time);
       g_string_append_printf(format_str, "%s",tbuf);
-  }
+#else
+
+	if(zmap_log_timer_G)
+	{
+		double t = g_timer_elapsed(zmap_log_timer_G,NULL);
+		
+		sprintf(tbuf," %.3fsec",t);		
+        g_string_append_printf(format_str, "%s",tbuf);
+	}
+
 #endif
+  }
 
   /* If code details are wanted then output them in the log. */
   if (log->show_code_details)
