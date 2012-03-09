@@ -657,11 +657,17 @@ fi
 # We need to run bootstrap and  configure to get the make file targets
 # docs and dist.
 
-zmap_message_out "Starting Master build tasks. make docs, dist etc..."
+zmap_message_out "Starting Master build tasks. Create ChangeLog, make docs, dist etc..."
 
 zmap_message_out "Path is" $PATH
 
 zmap_cd $SRC_DIR
+
+
+zmap_message_out "Creating ChangeLog"
+git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' > ChangeLog ||  zmap_message_rm_exit "Failed to create ChangeLog"
+
+
 
 zmap_message_out "Running bootstrap"
 
