@@ -352,7 +352,7 @@ use Data::Dumper;
         }
 
         # Hack, stuff mode in for now...
-        $txt .= qq`bump_initial bump_mode overlap\n`;
+        $txt .= qq`bump_initial bump_mode unbump\n`;
         $txt .= qq`bump_default bump_mode overlap\n`;
 
 #        $txt .= qq`}\n`;
