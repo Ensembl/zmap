@@ -900,7 +900,7 @@ the predefined styles:
 <p>
 ZMap will read either acedb ?Method or ?ZMap_style objects for style information.
 The default is to read ?ZMap_style objects and you should convert to using these instead
-of methods as many features are not available with methods.
+of methods as many features are not available with methods (see <a href="#methods_to_styles">Converting from ?Method to ?ZMap_Style objects</a>).
 </p>
 
 <p>
@@ -958,7 +958,7 @@ be copied and pasted direct into a models.wrm file.
 <!-- replaced this with the text below because the included file has disappeared!!
 <pre class="example"><!--#include virtual="models.wrm.shtml"-></pre> -->
 
-<pre class="example">
+<pre class="example" id="zmap_style_class">
 //=========================================================================================
 // The New ZMap_style Classes
 //
@@ -1491,37 +1491,42 @@ shows which tags ZMap reads.
 
 
 
-<h4>Converting from ?Method to ?ZMap_style objects</h4>
+<h4 id="methods_to_styles">Converting from ?Method to ?ZMap_style objects</h4>
 
 <p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion. The result will
 require hand editting as some fields cannot be determined from the ?Method object,
-e.g. Mode.</p>
+e.g. Mode (although the script makes a best guess for Mode based on the object name).</p>
 
 <pre class="example">
 SYNOPSIS: methods2style.pl -file &lt;methods.ace&gt; -format &lt;format&gt; -help
-
-            where &lt;methods.ace&gt; is the input file and &lt;format&gt; is the output format: either 'keyfile' for an ini-style file (the default) or 'ace' for a .ace file.
-
-e.g.      methods2style.pl -file ./my/methods/file -format ace > ./my_new/styles/file.ace
+    where &lt;methods.ace&gt; is the input file and &lt;format&gt; is the output format:
+    either 'keyfile' for an ini-style file (the default) or 'ace' for a .ace file.
 </pre>
 
 <p>To update an AceDB database to use ZMap styles, the process is as follows:</p>
-<ul>
-  <li>First, backup the models.wrm file and the methods file.
-  <li>Edit the models.wrm file and add the following (as detailed above):
-  <ul>
-    <li>add the Style tag to the ?Method class
-    <li>add the ?ZMap_Style class and its sub-classes
-  </ul>
-  <li>Edit the methods file and add a Style tag to each method. The Style tag value should be the same text as the Method name (including the quotes).  Watch out if scripting this because extra text can appear after the method name (outside the quotes).
-  <li>Run methods2style.pl on the methods file with the <code>-format ace</code> argument and save the output to a file, e.g, zmap_styles.ace.
+<ol>
+  <li>First, make backups of models.wrm and the methods file.
+  <li>Dump the methods into a new file, e.g. methods.ace. This should only contains methods (if it contains other objects, the script may fail; comments should be ok though).
+  <li>Edit the models.wrm file and:
+  <ol>
+    <li>add the Style tag to the ?Method class, as shown <a href="#featureset_method">here</a>
+    <li>add the entire <a href="#zmap_style_class">?ZMap_Style</a> class (including all of its sub-classes)
+  </ol>
+  <li>Run methods2style.pl on the methods file and save the output to an acefile, e.g,<pre>methods2style.pl -file methods.ace -format ace > zmap_styles.ace</pre>
   <li>Do any manual editing of the styles file as necessary.
-  <li>Re-read the models/method/styles in xace:
+  <li>Run methods_add_style_tags.pl on the methods file and save the output to a new file, e.g.<pre>methods_add_style_tags.pl -file methods.ace > methods_new.ace</pre>
+  <li>Re-read everything in xace:
   <ul>
-    <li>Start xace and on the main window and from the "Edit" menu button select the "Read Models and Full Reindex" option. This will produce a warning message about taking a long time, just click "Yes" to continue. There is another warning about "screwing up" the system, just click "Yes". Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code>If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.
-    <li>From the Edit menu select "Read .ace file" and read in both your original methods file and your new styles file.
+    <li>On the main window, right-click "Edit" and select "Read Models and Full Reindex". This will produce a couple of warnings; just click "Yes" to continue. Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code> If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.
+    <li>From the Edit menu select "Read .ace file" and read in your updated methods file and the new styles file.
   </ul>
-</ul>
+</ol>
+
+<p>To use ZMap from xace, you need to add it as a display type. To do this, add the following in displays.wrm. You should then have ZMap as an option from the "Show As.." menu in xace's KeySet window.</p>
+<pre>
+_DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
+	-help ZMap-Feature-map -m ZMap
+</pre>
 
 </fieldset>
 

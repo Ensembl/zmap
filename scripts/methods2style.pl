@@ -1,8 +1,7 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl -w
 
 use strict;
 use warnings;
-use lib '/software/anacode/otter/otter_production_main/PerlModules';
 use Hum::Ace::MethodCollection;
 use Getopt::Long;
 use Data::Dumper;
@@ -399,8 +398,10 @@ __END__
 
 =head1 DESCRIPTION
 
- currently  a simple  script to  parse a  methods.ace file  and output
+ Currently  a simple  script to  parse a  methods.ace file  and output
  (STDOUT) a Style file to be useful for ZMap.
+ Requires the PerlModules directory, which should be distributed along
+ with this script, to be included in your PERL5LIB environment variable.
 
 =head1 USAGE
 
