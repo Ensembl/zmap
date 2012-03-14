@@ -149,6 +149,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 {
   FooCanvasItem __parent__;
 
+  FooCanvasItem *canvas_item;		/* containing ZMapWindowCanvasItem: these are a pain they do nothing and we can't get rid of them yet */
+
   GQuark id;
   ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */
   ZMapFeatureTypeStyle featurestyle; 	/* current cached style for features */

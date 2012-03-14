@@ -66,6 +66,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <math.h>
 #include <string.h>
 #include <ZMap/zmapUtilsLog.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapWindow.h>
 
 #include <zmapWindowCanvasItem.h>
@@ -103,8 +104,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 
 /* this is in parallel with the ZMapStyleMode enum */
 /* beware, traditionally glyphs ended up as basic features */
-/* This is a retro-fit ... i noticed that i'd defien a struct/feature type but not set it
-* as orignally there was only one (blush) -> is that brown bag coding?? */
+/* This is a retro-fit ... i noticed that i'd defined a struct/feature type but not set it as orignally there was only one  */
 static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 {
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
@@ -532,7 +532,7 @@ FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQu
 
 
 
-/* this is a nest of insxestuous functions that all do the same thing
+/* this is a nest of incestuous functions that all do the same thing
  * but at least this way we keep the search criteria in one place not 20
  */
 static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(ZMapWindowFeaturesetItem fi, double y1, double y2)
@@ -730,6 +730,84 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 }
 
 
+/*
+ * return the foo canvas item under the lassoo, and a list of more features if included
+ * we restrict the features to one column as previously multi-select was restricted to one column
+ * the column is defined by the centrre of the lassoo and we include features inside not overlapping
+ * NOTE we implement this for CanvasFeatureset only, not old style foo
+ */
+
+GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
+{
+	double mid_x = (x1 + x2) / 2;
+	GList *l, *lx;
+	ZMapWindowFeaturesetItem fset;
+	ZMapSkipList sl;
+	GList *feature_list = NULL;
+	double width;
+
+	*item = NULL;
+
+	zMap_g_hash_table_get_data(&lx,featureset_class_G->featureset_items);
+
+	for(l = lx;l ;l = l->next)
+	{
+		fset = (ZMapWindowFeaturesetItem) l->data;
+		width = fset->width;
+		if(fset->bumped)
+			width = fset->bump_width;
+		if(fset->dx < mid_x && (fset->dx + width) > mid_x)
+			break;
+	}
+
+	if(lx)
+		g_list_free(lx);
+
+	if(!l || !fset)
+		return(NULL);
+
+	sl = zmap_window_canvas_featureset_find_feature_coords(fset, y1, y2);
+
+	for(;sl ; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature gs;
+		gs = sl->data;
+
+		if(gs->y1 > y2)
+			break;
+
+		/* reject overlaps as we can add to the selection but not subtract from it */
+		if(gs->y1 < y1)
+			continue;
+		if(gs->y2 > y2)
+			continue;
+
+		if(fset->bumped)
+		{
+			double x = fset->dx + gs->bump_offset;
+			if(x < x1)
+				continue;
+			x += gs->width;
+
+			if(x > x2)
+				continue;
+		}
+		/* else just match */
+
+
+		if(!*item)
+		{
+			*item = fset->canvas_item;
+			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item,gs->feature);
+
+		}
+		else
+		{
+			feature_list = g_list_prepend(feature_list,gs->feature);
+		}
+	}
+	return feature_list;
+}
 
 
 

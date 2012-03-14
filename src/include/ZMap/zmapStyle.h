@@ -1046,6 +1046,8 @@ void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 
 #define zMapStyleIsPfetchable(style) (style->mode_data.alignment.pfetchable)
 
+#define zMapStyleBlixemType(style) (style->mode_data.alignment.blixem_type)
+
 //ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
 #define zMapStyleGlyphShape(style)   (&style->mode_data.glyph.glyph)
 ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse);

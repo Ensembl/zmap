@@ -2713,6 +2713,12 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
 	    }
 	}
+	else if(zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+	{
+        menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+
+	}
+
     }
 
   {

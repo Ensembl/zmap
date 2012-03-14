@@ -151,7 +151,9 @@ typedef struct
   ZMapWindowSelectType type;				    /* SINGLE or DOUBLE */
 
   FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
-							       if a column was selected. */
+							          if a column was selected. */
+
+  GList *feature_list;					/* for lassoo multiple select */
 
   gboolean replace_highlight_item ;			    /* TRUE means highlight item replaces
 							       existing highlighted item, FALSE
@@ -450,7 +452,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature) ;
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);

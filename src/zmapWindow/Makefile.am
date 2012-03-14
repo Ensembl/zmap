@@ -66,7 +66,7 @@ zmapWindowZoomControl_P.h \
 zmapWindow_P.h \
 $(NULL)
 
-libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
+libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
 
 libZMapWindowCanvas_la_SOURCES = \
 canvas/zmapWindowCanvasAlignment.c \
@@ -79,6 +79,7 @@ canvas/zmapWindowCanvasFeatureset.c \
 canvas/zmapWindowCanvasFeaturesetBump.c \
 canvas/zmapWindowCanvasFeaturesetSummarise.c \
 canvas/zmapWindowCanvasFeatureset_I.h \
+canvas/zmapWindowCanvasFeatureset.h \
 canvas/zmapWindowCanvasGlyph.c \
 canvas/zmapWindowCanvasGlyph.h \
 canvas/zmapWindowCanvasGlyph_I.h \
@@ -86,6 +87,7 @@ canvas/zmapWindowCanvasGraphItem.c \
 canvas/zmapWindowCanvasGraphItem.h \
 canvas/zmapWindowCanvasGraphItem_I.h \
 canvas/zmapWindowCanvasItemFeatureSet.c \
+canvas/zmapWindowCanvasItemFeatureSet.h \
 canvas/zmapWindowCanvasItemFeatureSet_I.h \
 $(NULL)
 

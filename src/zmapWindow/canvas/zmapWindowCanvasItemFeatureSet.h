@@ -74,6 +74,7 @@ void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *
 gboolean zMapWindowCanvasFeaturesetItemBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data);
 
 
+
 int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo,ZMapFeature feature);
 
 #endif /* ZMAP_WINDOW_CANVAS_FEATURESET_ITEM_H */

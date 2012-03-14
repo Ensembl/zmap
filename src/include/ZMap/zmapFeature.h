@@ -536,6 +536,8 @@ typedef struct
   /* The coords in this array are start/end pairs for sub blocks and start < end always. */
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 
+  char * sequence;					/* sequence if given in GFF */
+
   struct
   {
     /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
@@ -1024,7 +1026,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
-				     gboolean has_local_sequence) ;
+				     gboolean has_local_sequence, char * sequence) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAlignmentString2Gaps(ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,

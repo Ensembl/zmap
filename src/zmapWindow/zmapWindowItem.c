@@ -81,8 +81,7 @@ typedef struct
 
 
 
-static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data,
-							 char **error_out) ;
+//static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out) ;
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 
 static void getVisibleCanvas(ZMapWindow window,
@@ -184,13 +183,13 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
  */
 
 /* Highlight the given feature. */
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature)
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace)
 {
   FooCanvasItem *feature_item ;
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
-    zmapWindowHighlightObject(window, feature_item, TRUE, FALSE) ;
+    zmapWindowHighlightObject(window, feature_item, replace, FALSE) ;
 
   return ;
 }
@@ -207,6 +206,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 }
 
 
+#if MH17_NOT_USED
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select)
 {
   HighlightContextStruct highlight_data = {NULL};
@@ -220,6 +220,7 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
 
   return ;
 }
+#endif
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names)
@@ -995,7 +996,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
 	}
 
-      zmapWindowUpdateInfoPanel(window, modFeature, item, NULL, 0, 0, NULL, TRUE, TRUE) ;
+      zmapWindowUpdateInfoPanel(window, modFeature, NULL, item, NULL, 0, 0, NULL, TRUE, TRUE) ;
     }
   return;
 }
@@ -1321,8 +1322,7 @@ void zmapWindowItemGetVisibleWorld(ZMapWindow window,
 
 
 
-
-
+#if MH17_NOT_USED
 
 static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data,
 							 char **error_out)
@@ -1403,7 +1403,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
 }
 
 
-
+#endif
 
 
 

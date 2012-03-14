@@ -154,6 +154,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 
             fi = (ZMapWindowCanvasFeaturesetItem) foo;
             fi->id = id;
+		((ZMapWindowFeaturesetItem) interval)->canvas_item = foo;
             g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
       }

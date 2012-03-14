@@ -264,10 +264,10 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 *
 		 * visible squashed features have extra gaps data with contiguous regions at start and end (both optional)
 		 * these get displayed in a diff colour
-		 * but to compare gaps arrays for equeality we can only add these on afterwards :-(
+		 * but to compare gaps arrays for equality we can only add these on afterwards :-(
 		 *
 		 * if we want to be flash we could do many of these to have a colour gradient according to populatiom
-		 * NOTE * that would be complicated *
+		 * NOTE * that would be complicated and slow *
 		 *
 		 * NOTE I used some old fashioned coding methodology here,
 		 * The idea is to do just what is required, taking into account
@@ -282,11 +282,14 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 */
 
 		/* NOTE
-		 * adding blocks to eg gaps array turned out to be a nightmnare due to queury coords beign reversed sometimes
-		 * 1-based coords of cours make like tedious too
-		 * mismatches at the start/ end os a read also cause grief
+		 * adding blocks to eg gaps array turned out to be a nightmnare due to query coords beign reversed sometimes
+		 * 1-based coords of course make life tedious too
+		 * mismatches at the start/ end of a read also cause grief
 		 * I'd like to rewrite this :-(
 		 * and will have to to move it to the canvas anyway.
+		 *
+		 * so instead of ading match blocks and adjusting coords we assume full homology and recreate the gaps array from scratch
+		 * not all reads start at 1 or end at the end
 		 */
 
 		/* sort into start, -end coord order */

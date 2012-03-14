@@ -1735,6 +1735,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 
 	  char *local_sequence_str ;
+	  char *seq_str;
 	  gboolean local_sequence = FALSE ;
 
 	  /* I am not sure if we ever have target_phase from GFF output....check this out... */
@@ -1797,13 +1798,26 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      local_sequence = TRUE ;
 	    }
 
+	  if(seq_str = strstr(attributes,"sequence"))
+	  {
+		  char *p;
+
+		  for(seq_str += 8; *seq_str == ' '; seq_str++)
+			continue;
+
+		  for(p = seq_str; *p > ';'; p++)
+			  continue;
+
+		  seq_str = g_strdup_printf("%.*s",p - seq_str, seq_str);
+	  }
+
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,
 					       percent_id,
 					       query_start, query_end,
 					       homol_type, query_length, query_strand, ZMAPPHASE_0,
 					       gaps,
 					       zMapStyleGetWithinAlignError(feature_style),
-					       local_sequence) ;
+					       local_sequence, seq_str) ;
 	}
       else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
 	{

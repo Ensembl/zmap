@@ -1879,20 +1879,26 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       match_name = (char *)g_quark_to_string(feature->original_id) ;
       source_name = (char *)g_quark_to_string(feature->source_id) ;
 
+	seq_str = feature->feature.homol.sequence;
 
-      if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+      if (!seq_str)
+		/* this if could be tidied up, but let's leave existing logic alone
+		 * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
+		 */
 	{
-	  ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+		if((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+		{
+		ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
 
-	  seq_str = sequence->sequence ;
+		seq_str = sequence->sequence ;
+		}
+		else
+		{
+		/* In theory we should be checking for a description for non-local sequences,
+		* see acedb code in doShowAlign...don't know how important this is..... */
+		seq_str = "" ;
+		}
 	}
-      else
-	{
-	  /* In theory we should be checking for a description for non-local sequences,
-	   * see acedb code in doShowAlign...don't know how important this is..... */
-	  seq_str = "" ;
-	}
-
 
 
       /* Phase out stupid curr_channel                    */
@@ -1900,7 +1906,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       /* need to put this choice for seqbl into the exblx routine below... */
       if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
 	{
-	  if (*seq_str)
+	  if (seq_str && *seq_str)
 	    {
 	      curr_channel = blixem_data->seqbl_channel ;
 	    }
@@ -1908,6 +1914,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 	    {
 	      curr_channel = blixem_data->exblx_channel ;
 	    }
+
 
 	  status = formatAlignmentExbl(line,
 				       min, max,
