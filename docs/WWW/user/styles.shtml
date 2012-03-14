@@ -1513,8 +1513,18 @@ SYNOPSIS: methods2style.pl -file &lt;methods.ace&gt; -format &lt;format&gt; -hel
     <li>add the entire <a href="#zmap_style_class">?ZMap_Style</a> class (including all of its sub-classes)
   </ol>
   <li>Run methods2style.pl on the methods file and save the output to an acefile, e.g,<pre>methods2style.pl -file methods.ace -format ace > zmap_styles.ace</pre>
-  <li>Do any manual editing of the styles file as necessary.
+  <li>Do any manual editing of the styles file as necessary:
   <li>Run methods_add_style_tags.pl on the methods file and save the output to a new file, e.g.<pre>methods_add_style_tags.pl -file methods.ace > methods_new.ace</pre>
+  <li>For any methods that you want to be grouped together into the same column, add a <code>Column_parent</code> tag to them in the methods file (make sure the column name is not the same as any existing method name). Also add a new Method object for the parent column if you want to give it a right-priority, e.g.
+  <pre>
+Method : "RNAi_primary" 
+Style "RNAi_primary"
+Group Column_parent "my_new_column"
+...
+
+Method : "my_new_column"
+Right_priority   1.5
+</pre>
   <li>Re-read everything in xace:
   <ul>
     <li>On the main window, right-click "Edit" and select "Read Models and Full Reindex". This will produce a couple of warnings; just click "Yes" to continue. Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code> If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.

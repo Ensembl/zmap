@@ -100,7 +100,7 @@ use Data::Dumper;
     } ;
 
 
-    my $ACEDB_MAG_FACTOR = 8.0 ;
+    my $ACEDB_MAG_FACTOR = 5.0 ;
 
 
 
