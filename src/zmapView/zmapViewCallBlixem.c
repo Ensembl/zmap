@@ -337,7 +337,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 				   int qstart, int qend, ZMapStrand q_strand,
 				   int sstart, int send, ZMapStrand s_strand,
 				   float score, double percent_id,
-				   GArray *gaps, char *sequence, char *description) ;
+				   GArray *gaps, char *sequence, char *description, gboolean pfetchable) ;
 
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
 
@@ -1940,7 +1940,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 				      qstart, qend, feature->strand,
 				      sstart, send, feature->feature.homol.strand,
 				      feature->score, feature->feature.homol.percent_id,
-				      feature->feature.homol.align, seq_str, description) ;
+				      feature->feature.homol.align, seq_str, description, zMapStyleIsPfetchable(feature->style)) ;
 	}
 
       status = printLine(curr_channel, &(blixem_data->errorMsg), line->str) ;
@@ -2049,7 +2049,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 				   int qstart, int qend, ZMapStrand q_strand,
 				   int sstart, int send, ZMapStrand s_strand,
 				   float score, double percent_id,
-				   GArray *gaps, char *sequence, char *description)
+				   GArray *gaps, char *sequence, char *description, gboolean pfetchable)
 {
   gboolean status = TRUE ;
   char *id_str = NULL ;
@@ -2073,7 +2073,8 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
   /* ctg123 . cDNA_match 1050  1500  5.8e-42  +  . ID=match00001;Target=cdna0123 12 462 */
   g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t%f\t%c\t.\t%sTarget=%s %d %d %c",
 		  ref_name, source_name,
-		  (match_seq_type == ZMAPSEQUENCE_DNA ? "nucleotide_match" : "protein_match"),
+			/* for RNAseq need to prevent a wasted pFetch else it runs very slow */
+		  (match_seq_type == ZMAPSEQUENCE_DNA ? (pfetchable ?  "nucleotide_match": "read") : "protein_match"),
 		  qstart, qend,
 		  score,
 		  (q_strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
