@@ -100,8 +100,8 @@ use Data::Dumper;
     } ;
 
 
-    my $ACEDB_MAG_FACTOR = 5.0 ;
-
+    my $ACEDB_MAG_FACTOR = 6.0 ;
+    my $ACEDB_MAG_FACTOR_ALIGN = 16.0 ;
 
 
     sub Hum::Ace::Method::zmap_string{
@@ -217,7 +217,9 @@ use Data::Dumper;
         # For transcript modes, the colours will be for the border, 
         # otherwise they will the fill colour (default).
         my $colour_type = 'fill';
-        
+
+        # use a different magnification factor for alignments
+        my $mag_factor = $ACEDB_MAG_FACTOR;
 
         # in the case of each of the following the arrays are lists of
         # perl methods avaiable for the method.  These get translated 
@@ -256,6 +258,7 @@ use Data::Dumper;
                    $self->name =~ m/est/i)
 	      {
 	      $txt .= qq`mode "alignment"\n`;
+              $mag_factor = $ACEDB_MAG_FACTOR_ALIGN;
 	      }
             elsif ($self->name =~ m/history/i ||
                    $self->name =~ m/jigsaw/i ||
@@ -327,7 +330,7 @@ use Data::Dumper;
         foreach my $numprop(qw(width)){
             my $zmap  = $keyword_convert_ace->{$numprop} || next;
             my $value = $self->$numprop()    || next;
-            $txt .= "$zmap " . ($self->$numprop * $ACEDB_MAG_FACTOR) . "\n";
+            $txt .= "$zmap " . ($self->$numprop * $mag_factor) . "\n";
         }
 
         foreach my $boolprop(qw(score_method)){
@@ -374,18 +377,31 @@ use Data::Dumper;
                'help|h' => $usage) || $usage->();
     
     my $collection = Hum::Ace::MethodCollection->new_from_file($method_file);
+    my $txt;
+
     foreach my $meth(@{$collection->get_all_Methods}){
 #        print STDERR "Found Method " . $meth->name . "\n";
       if ($format =~ m/keyfile/i) {
-        print $meth->zmap_string;
+        $txt .= $meth->zmap_string;
       }
       elsif ($format =~ m/ace/i) {
-        print $meth->zmap_string_ace;
+        $txt .= $meth->zmap_string_ace;
       }
       else {
-        print "Error: unrecognised format $format";
+        $txt = "Error: unrecognised format $format";
+        exit;
       }
-    }
+  }
+
+  if ($format =~ m/ace/i) {
+    # Hack in DNA and 3ft stuff (required so that columns are shown in zmap)
+    $txt .= qq'ZMap_Style : "DNA"\n';
+    $txt .= qq'Sequence\n\n';
+    $txt .= qq'ZMap_Style : "3 Frame"\n\n';
+    $txt .= qq'ZMap_Style : "3 Frame Translation"\n\n';
+  }
+
+  print $txt;
 }
 
 __END__

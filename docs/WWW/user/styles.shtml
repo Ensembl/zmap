@@ -1506,15 +1506,27 @@ SYNOPSIS: methods2style.pl -file &lt;methods.ace&gt; -format &lt;format&gt; -hel
 <p>To update an AceDB database to use ZMap styles, the process is as follows:</p>
 <ol>
   <li>First, make backups of models.wrm and the methods file.
-  <li>Dump the methods into a new file, e.g. methods.ace. This should only contains methods (if it contains other objects, the script may fail; comments should be ok though).
+  <li>Dump the methods into a new file, e.g. methods.ace. This should only contains methods (if it contains other objects, the script may fail).
   <li>Edit the models.wrm file and:
   <ol>
     <li>add the Style tag to the ?Method class, as shown <a href="#featureset_method">here</a>
     <li>add the entire <a href="#zmap_style_class">?ZMap_Style</a> class (including all of its sub-classes)
   </ol>
-  <li>Run methods2style.pl on the methods file and save the output to an acefile, e.g,<pre>methods2style.pl -file methods.ace -format ace > zmap_styles.ace</pre>
-  <li>Do any manual editing of the styles file as necessary:
   <li>Run methods_add_style_tags.pl on the methods file and save the output to a new file, e.g.<pre>methods_add_style_tags.pl -file methods.ace > methods_new.ace</pre>
+  <li>Add the following to the new methods file (to make sure these columns get shown in ZMap):
+  <pre>
+Method : "DNA"
+Style "DNA"
+Remark "Makes sure column is displayed in zmap."
+
+Method : "3 Frame"
+Style "3 Frame"
+Remark "Makes sure column is displayed in zmap."
+
+Method :  "3 Frame Translation"
+Style "3 Frame Translation"
+Remark "Makes sure column is displayed in zmap." 
+</pre>
   <li>For any methods that you want to be grouped together into the same column, add a <code>Column_parent</code> tag to them in the methods file (make sure the column name is not the same as any existing method name). Also add a new Method object for the parent column if you want to give it a right-priority, e.g.
   <pre>
 Method : "RNAi_primary" 
@@ -1525,6 +1537,8 @@ Group Column_parent "my_new_column"
 Method : "my_new_column"
 Right_priority   1.5
 </pre>
+  <li>Run methods2style.pl on the methods file and save the output to an acefile, e.g,<pre>methods2style.pl -file methods.ace -format ace > zmap_styles.ace</pre>
+  <li>Do any manual editing of the styles file as necessary.
   <li>Re-read everything in xace:
   <ul>
     <li>On the main window, right-click "Edit" and select "Read Models and Full Reindex". This will produce a couple of warnings; just click "Yes" to continue. Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code> If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.
