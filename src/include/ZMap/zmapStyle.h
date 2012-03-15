@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 11:32 2011 (edgrif) */
 /*  File: zmapStyle.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -841,16 +840,16 @@ typedef struct _zmapFeatureTypeStyleStruct
   double min_mag ;                                  /*!< Don't display if fewer bases/line */
   double max_mag ;                                  /*!< Don't display if more bases/line */
 
-  double width ;                              /*!< column width */
+  double width ;					    /*!< column width */
 
-  ZMapStyleScoreMode score_mode ;                   /*!< Controls width of features that
-                                                 have scores. */
-  double min_score, max_score ;                           /*!< Min/max for score width calc. */
+  ZMapStyleScoreMode score_mode ;			    /*!< Controls width of features that
+							      have scores. */
+  double min_score, max_score ;				    /*!< Min/max for score width calc. */
 
-  double summarise;         			 /* only display visible features up this zoom level */
+  double summarise;					    /* only display visible features up this zoom level */
 
-  ZMapStyleGraphScale score_scale;       		// log or linear, for collapse option
-  gboolean collapse;				/* for duplicated features */
+  ZMapStyleGraphScale score_scale;			    // log or linear, for collapse option
+  gboolean collapse;					    /* for duplicated features */
   /* see also alignment.squash: even better form of collapse for short reads */
 
   int join_overlap;				/* for amalgamating short reads */
