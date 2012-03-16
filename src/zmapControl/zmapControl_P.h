@@ -181,15 +181,15 @@ void zmapControlButtonTooltips(ZMap zmap) ;
 void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc) ;
 
-ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
 
 void zmapControlClose(ZMap zmap) ;
-void zmapControlRemoveWindow(ZMap zmap) ;
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindowTree destroyed_zmap) ;
 
-ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 int zmapControlNumViews(ZMap zmap) ;
-gboolean zmapControlRemoveView(ZMap zmap, ZMapView view) ;
+void zmapControlRemoveView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmap_inout) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
@@ -206,11 +206,20 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
 void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
 void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
 void zmapControlSignalKill(ZMap zmap) ;
-void zmapControlDoKill(ZMap zmap) ;
+void zmapControlDoKill(ZMap zmap, ZMapViewWindowTree *destroyed_zmaps) ;
 
 void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 
+
+
+/* new remote stuff.... */
+void zmapControlSendViewCreated(ZMap zmap, ZMapView view, ZMapWindow window) ;
+void zmapControlSendViewDeleted(ZMap zmap, ZMapViewWindowTree destroyed_zmaps) ;
+
+
+
+/* old remote stuff.... */
 void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
 gboolean zmapControlRemoteAlertClient(ZMap zmap,
                                       char *action, GArray *xml_events,
@@ -222,6 +231,10 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
 				       ZMapXMLObjTagFunctions start_handlers,
 				       ZMapXMLObjTagFunctions end_handlers,
 				       gpointer *handler_data);
+
+
+
+
 void zmapControlWriteWindowIdFile(Window id, char *window_name);
 
 void zmapControlInfoOverwrite(void *data, int code, char *format, ...);
