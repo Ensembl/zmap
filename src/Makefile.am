@@ -63,40 +63,33 @@ pkgconfig_DATA = zmap.pc
 
 # Libraries (These are libtool convenience libraries)
 
-noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libzmapfoocanvas.la libPFetch.la
-#noinst_LTLIBRARIES = libZMapThr.la libZMapXML.la libZMapApp.la libZMap.la libzmapfoocanvas.la libPFetch.la
+noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la \
+                     libZMapRemoteControl.la libZMapXML.la libzmapfoocanvas.la libPFetch.la
 
-libZMapXML_la_SOURCES = 
-libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
-#libZMapXML_la_LDFLAGS = -all-static
 
-libPFetch_la_SOURCES = 
-libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
-#libPFetch_la_LDFLAGS = -all-static
-
-libzmapfoocanvas_la_SOURCES = 
-libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
+libZMapApp_la_SOURCES =
+libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
+#libZMapApp_la_LDFLAGS = -all-static
 
 
 libZMap_la_SOURCES =
 #libZMap_la_LDFLAGS = -all-static
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
-zmapConfig/libZMapConfig.la   \
+zmapConfig/libZMapConfig.la \
 zmapDAS/libZMapDas.la         \
 zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
 zmapManager/libZMapManager.la \
-zmapRemoteControl/libZMapRemoteControl.la \
 zmapUtils/libZMapUtils.la     \
 zmapView/libZMapView.la       \
 zmapWindow/libZMapWindow.la   \
 $(NULL)
 
-libZMapApp_la_SOURCES =
-libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
-#libZMapApp_la_LDFLAGS = -all-static
+# was in the above... zmapRemoteControl/libZMapRemoteControl.la 
+# this was in the above list:           zmapUtils/libZMapUtils.la
+
 
 libZMapThr_la_SOURCES =
 #libZMapThr_la_LDFLAGS = -all-static
@@ -107,14 +100,39 @@ zmapThreads/libZMapThreads.la \
 $(NULL)
 
 
+libZMapRemoteControl_la_SOURCES = 
+libZMapRemoteControl_la_LIBADD  = zmapRemoteControl/libZMapRemoteControl.la
+#libZMapRemoteControl_la_LDFLAGS = -all-static
+
+libZMapXML_la_SOURCES = 
+libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
+#libZMapXML_la_LDFLAGS = -all-static
+
+# I can't get this to work for the utils progs....
+#libZMapUtils_la_SOURCES = 
+#libZMapUtils_la_LDFLAGS = -all-static
+#libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
+
+
+
+libPFetch_la_SOURCES = 
+libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
+#libPFetch_la_LDFLAGS = -all-static
+
+libzmapfoocanvas_la_SOURCES = 
+libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
+
+
 # Programs we're going to compile.
 
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
 bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
 
 
-# Try Jeremy's new build stuff....
+# I am perturbed by the fact that the x libs are before the gtk libs....
 #
+
+# Search path version.....
 #zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
 #	-L$(top_builddir)/.libs                              \
 #	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
@@ -123,13 +141,18 @@ bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
 #	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
+# Try Jeremy's new build stuff....
 # Give .a files explicitly to ensure we link the right ones.
+#
+# Oh gosh there are ever such a lot circular dependencies here...
+# it all needs a rethink....(see where libZMap gets included...
 #
 zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
 	$(top_builddir)/.libs/libZMap.a                      \
 	$(top_builddir)/.libs/libZMapThr.a                   \
 	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapRemoteControl.a         \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
@@ -137,11 +160,8 @@ zmap_LDADD =                                                 \
 	$(ACECONN_LIBS) $(GTK_LIBS)                          \
 	$(LIBCURL) -lexpat -lg2 -lgd                         \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
-
-
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 zmap_LDFLAGS      = 
-
 # We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(
 zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
