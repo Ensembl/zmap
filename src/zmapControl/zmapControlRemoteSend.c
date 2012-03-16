@@ -36,7 +36,7 @@
 
 
 
-
+/* AS FAR AS I CAN TELL THIS CODE IS NOT USED ANYWHERE...HOW BIZARRE........ */
 
 
 #include <string.h>
