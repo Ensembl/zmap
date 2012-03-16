@@ -30,7 +30,7 @@
  *              are the right protocol version.
  *
  * HISTORY:
- * Last edited: Dec  1 16:01 2011 (edgrif)
+ * Last edited: Feb 22 13:07 2012 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -40,6 +40,7 @@
 
 #include <gtk/gtk.h>
 
+#include <ZMap/zmapEnum.h>
 #include <ZMap/zmapRemoteProtocol.h>
 
 
@@ -50,52 +51,71 @@ typedef struct ZMapRemoteControlStructName *ZMapRemoteControl ;
 
 
 
+/* Using the XXX_LIST macros to declare enums means we get lots of enum functions for free (see zmapEnum.h). */
+
+/* Error code values for Remote Control errors. */
+#define ZMAP_REMOTECONTROL_RC_LIST(_)					                                \
+_(ZMAP_REMOTECONTROL_RC_OK,            , "ok",             "No error.",                             "") \
+_(ZMAP_REMOTECONTROL_RC_TIMED_OUT,     , "timed_out",      "Timed out, peer not replying in time.", "") \
+_(ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,   , "out_of_band",    "Peer is out of synch.",                 "") \
+_(ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD, , "bad_clipboard",  "Clipboard error.",                      "") \
+_(ZMAP_REMOTECONTROL_RC_BAD_STATE,     , "bad_state",      "Internal error, bad state detected.",   "")
+
+ZMAP_DEFINE_ENUM(ZMapRemoteControlRCType, ZMAP_REMOTECONTROL_RC_LIST) ;
+
+
 
 /* 
  *                         Callback definitions.
  */
 
-/* Apps function called when a RemoteControl has sent a request and received the reply
- * and the whole transaction is finished. */
-typedef void (*ZMapRemoteControlReportRequestSentEndFunc)(void *user_data) ;
 
-/* Apps function called when a RemoteControl has received a request and sent the reply
- * and the whole transaction is finished. */
-typedef void (*ZMapRemoteControlReportRequestReceivedEndFunc)(void *user_data) ;
+/* Error Handling: */
 
-/* Apps function for handling errors from remote_control, e.g. timeouts. */
-typedef gboolean (*ZMapRemoteControlErrorHandlerFunc)(ZMapRemoteControl remote_control, void *user_data) ;
+/* Apps callback for handling errors from remote_control, e.g. timeouts. */
+typedef void (*ZMapRemoteControlErrorHandlerFunc)(ZMapRemoteControl remote_control,
+						  ZMapRemoteControlRCType error_type, char *err_msg,
+						  void *user_data) ;
 
-/* Apps function that remote_control should call to report errors. */
+/* Apps callback that remote_control should call to report errors. */
 typedef gboolean (*ZMapRemoteControlErrorReportFunc)(void *user_data, char *err_msg) ;
 
 
 
+/* Receiving requests: */
 
-/* RemoteControl callback, called by app after processing a request to return the reply
- * to remote_control to be sent to the peer. */
-typedef void (*ZMapRemoteControlCallWithReplyFunc)(void *remote_data, char *reply) ;
-
-/* RemoteControl callback, called by app to signal that it has finished processing the reply
- * from a peer. */
-typedef void (*ZMapRemoteControlCallReplyDoneFunc)(void *remote_data) ;
-
+/* RemoteControl callback that app _must_ call after processing a request,
+ * whether there is an error or not, to return the reply/error to remote_control
+ * to be sent to back to the requesting peer. */
+typedef void (*ZMapRemoteControlReturnReplyFunc)(void *return_reply_func_data, char *reply) ;
 
 
 /* App callback, called by remote_control to pass App the request it has received from a peer.
  * Once app has processed the request it should call remote_request_done_func to return the
  * reply to remotecontrol. */
 typedef void (*ZMapRemoteControlRequestHandlerFunc)(ZMapRemoteControl remote_control,
-						    ZMapRemoteControlCallWithReplyFunc remote_request_done_func,
-						    void *remote_request_done_data,
+						    ZMapRemoteControlReturnReplyFunc return_reply_func,
+						    void *return_reply_func_data,
 						    char *request, void *user_data) ;
 
-/* App callback, called by remote_control to pass App the reply to a request App made to its peer.
- * Once App has processed the reply it should call remote_reply_done_func to signal remotecontrol
- * that it's processed the reply. */
+/* Optional app function that RemoteControl calls when peer has signalled
+ * that it has received app's request. Enables app that has serviced the
+ * request to set state/take action once its reply has been received. */
+typedef void (*ZMapRemoteControlReplySentFunc)(void *user_data) ;
+
+
+
+
+/* Sending requests: */
+
+/* Optional app function that RemoteControl will call when peer has signalled
+ * that it has received app's request. Enables app that made the request to
+ * set state/take any action it needs once its request is delivered. */
+typedef void (*ZMapRemoteControlRequestSentFunc)(void *user_data) ;
+
+/* App callback, called by remote_control to pass App the reply to a request app made to its
+ * peer. */
 typedef void (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_control,
-						  ZMapRemoteControlCallReplyDoneFunc remote_reply_done_func,
-						  void *remote_reply_done_data,
 						  char *reply, void *user_data) ;
 
 
@@ -105,32 +125,32 @@ typedef void (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_contr
  *            The RemoteControl interface.
  */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
-					  ZMapRemoteControlReportRequestSentEndFunc req_sent_func,
-					  gpointer req_sent_func_data,
-					  ZMapRemoteControlReportRequestReceivedEndFunc req_received_func,
-					  gpointer req_received_func_data,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_data,
 					  ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
 
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
 				      char *app_str,
-				      ZMapRemoteControlRequestHandlerFunc process_request_func,
-				      gpointer process_request_func_data) ;
-gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control) ;
-
+				      ZMapRemoteControlRequestHandlerFunc request_handler_func,
+				      gpointer request_handler_func_data,
+				      ZMapRemoteControlReplySentFunc reply_sent_func,
+				      gpointer reply_sent_func_data) ;
 gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
 				   char *send_app_name, char *peer_unique_str,
-				   ZMapRemoteControlReplyHandlerFunc process_reply_func,
-				   gpointer process_reply_funcdata) ;
+				   ZMapRemoteControlRequestSentFunc req_sent_func,
+				   gpointer req_sent_func_data,
+				   ZMapRemoteControlReplyHandlerFunc reply_handler_func,
+				   gpointer reply_handler_func_data) ;
+
+gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *peer_xml_request) ;
 
+void zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, gboolean debug_on) ;
 gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_secs) ;
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
 gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
 
-gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
 void zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
 
 
