@@ -1,4 +1,4 @@
-/*  Last edited: Dec 16 11:43 2011 (edgrif) */
+/*  Last edited: Feb 14 21:32 2012 (edgrif) */
 /*  File: zmapControlRemoteReceive.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -43,13 +43,23 @@
 #include <ZMap/zmapRemoteCommand.h>
 #include <zmapControl_P.h>
 
+
+/* IT'S LOOKING LIKE THERE ARE NO COMMANDS AT THE CONTROL LEVEL AT THE MOMENT.... */
+
+
 enum
   {
     ZMAPCONTROL_REMOTE_INVALID,
     /* Add below here... */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* These appear to be totally unknown.....sigh.... */
     ZMAPCONTROL_REMOTE_ZOOM_IN,
     ZMAPCONTROL_REMOTE_ZOOM_OUT,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    /* REGISTER_CLIENT IS NOT NEEDED AND THE OTHER TWO ARE HANDLED AT THE APP LEVEL. */
     ZMAPCONTROL_REMOTE_REGISTER_CLIENT,
     ZMAPCONTROL_REMOTE_NEW_VIEW,
     ZMAPCONTROL_REMOTE_CLOSE_VIEW,
@@ -123,8 +133,14 @@ static gboolean xml_return_true_cb(gpointer user_data,
 
 
 
-static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Not needed at the moment.... */
+static gboolean localProcessRemoteRequest(gpointer local_data,
+					  char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -159,70 +175,27 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
   {NULL, NULL}
 };
 
+
+/* NONE OF THESE LOOK RELEVANT ANY MORE..... */
+
 static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
   {
     NULL,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     "zoom_in", "zoom_out",
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     "register_client",
     "new_view", "close_view",
     NULL
   };
 
 
-
-
-
-
-
-
-
-
-/* New remote code...... */
-
-gboolean zMapControlProcessRemoteRequest(gpointer local_data,
-					 char *command_name, char *request,
-					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
-{
-  gboolean result = FALSE ;
-
-  if (!(result = localProcessRemoteRequest(local_data, command_name, request,
-					   app_reply_func, app_reply_data)))
-    {
-      ZMap zmap = (ZMap)local_data ;
-
-      if (zmap->view_list)
-	{
-	  GList *next_view ;
-
-	  /* Try all the views. */
-	  next_view = g_list_first(zmap->view_list) ;
-	  do
-	    {
-	      ZMapView view = (ZMapView)next_view ;
-
-	      result = zMapViewProcessRemoteRequest(view, command_name, request,
-						    app_reply_func, app_reply_data) ;
-	    }
-	  while ((!result) && (next_view = g_list_next(next_view))) ;
-	}
-    }
-
-  return result ;
-}
-
-
-
-
-
-
-
-
-
-
 /* 
  * 
  * 
- *             OLD CODE......................
+ *             OLD CODE......................WILL BE REMOVED SHORTLY....
  * 
  * 
  */
@@ -252,50 +225,11 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 }
 
 
+
+
 /* ========================= */
 /* ONLY INTERNALS BELOW HERE */
 /* ========================= */
-
-/* THIS FUNCTION COULD CALL THE ONE BELOW IT...... */
-static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
-					  ZMapRemoteAppReturnReplyFunc app_reply_func,
-					  gpointer app_reply_data)
-{
-  gboolean result = FALSE ;
-  ZMap zmap = (ZMap)local_data ;
-  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
-  char *reason = NULL ;
-  ZMapXMLUtilsEventStack reply = NULL ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* DUMMIED FOR NOW.... */
-
-  /* Needs to call execute function below.... */
-
-  if (strcmp(command_name, "XXXX") == 0)
-    {
-      printf("found XXXX\n") ;
-
-      command_rc = REMOTE_COMMAND_RC_OK ;
-      reason = NULL ;
-      reply = "XXXX successful." ;
-      
-      result = TRUE ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  if (result)
-    {
-      (app_reply_func)(command_name, command_rc, reason, reply, app_reply_data) ;
-    }
-
-
-  return result ;
-}
 
 
 
@@ -326,6 +260,8 @@ static char *control_execute_command(char *command_text, gpointer user_data,
 
   zmap->xremote_server = owner;     /* so we can do a delayed reply */
 
+
+
   parser = zMapXMLParserCreate(&input, FALSE, FALSE);
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &control_starts_G[0], &control_ends_G[0]);
@@ -348,6 +284,7 @@ static char *control_execute_command(char *command_text, gpointer user_data,
         case ZMAPCONTROL_REMOTE_CLOSE_VIEW:
           closeView(zmap, &input, &output_data);
           break;
+
         case ZMAPCONTROL_REMOTE_INVALID:
         case ZMAPCONTROL_REMOTE_UNKNOWN:
         default:
@@ -395,34 +332,35 @@ static char *control_execute_command(char *command_text, gpointer user_data,
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data)
 {
   ViewConnectData view_params = &(input_data->view_params);
-  ZMapView view;
+  ZMapViewWindow view_window ;
+  ZMapView view ;
   char *sequence;
   ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
     {
-#warning we need to get dataset (= species) from otterlace with added XML
-//      zMapAssert(zmap->default_sequence);
-	if(!zmap->default_sequence || !zmap->default_sequence->dataset)	/* there has been a major configuration error */
+      /* If this happens there has been a major configuration error */
+      if (!zmap->default_sequence || !zmap->default_sequence->dataset)
 	{
-          	output_data->code = ZMAPXREMOTE_INTERNAL;
-          	g_string_append_printf(output_data->messages,
+	  output_data->code = ZMAPXREMOTE_INTERNAL;
+	  g_string_append_printf(output_data->messages,
                                  "No sequence specified in ZMap config - cannot create view");
-		return;
+	  return;
 	}
-      seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
 
+      seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
       seq_map->sequence = sequence;
       seq_map->start = view_params->start;
       seq_map->end = view_params->end;
 
-      if ((view = zMapAddView(zmap, seq_map)))
+      if ((view_window = zMapAddView(zmap, seq_map))
+	  && (view = zMapViewGetView(view_window)))
         {
           zMapViewReadConfigBuffer(view, view_params->config);
 
           if (!(zmapConnectViewConfig(zmap, view, view_params->config)))
             {
-	      zmapControlRemoveView(zmap, view) ;
+	      zmapControlRemoveView(zmap, view, NULL) ;
 
               output_data->code = ZMAPXREMOTE_UNKNOWNCMD;
               g_string_append_printf(output_data->messages,
@@ -430,19 +368,19 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
             }
           else
             {
-              char *xml = NULL;
+              char *xml = NULL ;
 
-              output_data->code = ZMAPXREMOTE_OK;
-              xml = zMapViewRemoteReceiveAccepts(view);
-              g_string_append(output_data->messages, xml);
-              g_free(xml);
+              output_data->code = ZMAPXREMOTE_OK ;
+
+              xml = zMapViewRemoteReceiveAccepts(view) ;
+              g_string_append(output_data->messages, xml) ;
+              g_free(xml) ;
             }
         }
       else
         {
-          output_data->code = ZMAPXREMOTE_INTERNAL;
-          g_string_append_printf(output_data->messages,
-                                 "failed to create view");
+          output_data->code = ZMAPXREMOTE_INTERNAL ;
+          g_string_append_printf(output_data->messages, "failed to create view") ;
         }
 
     }
@@ -473,7 +411,7 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
     {
       char *xml = NULL;
 
-      zmapControlRemoveView(zmap, view_data.view) ;
+      zmapControlRemoveView(zmap, view_data.view, NULL) ;
 
       /* Is this correct ??? check with Roy..... */
       output_data->code = ZMAPXREMOTE_OK;
