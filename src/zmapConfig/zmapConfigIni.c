@@ -32,13 +32,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>		/* memset */
 #include <glib.h>
+
 #include <zmapConfigIni_P.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
