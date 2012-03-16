@@ -498,8 +498,6 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
   char *new_sequence ;
-  ZMapView view ;
-
   /* these should be passed in ...... */
   int start = 1, end = 0 ;
   
@@ -512,6 +510,8 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   else
     {
       ZMapFeatureSequenceMap seq_map ;
+      ZMapViewWindow view_window ;
+      ZMapView view ;
 
       /* WHAT NEEDS DEFINING AND HOW ???? */
 #warning need dataset defined here as well as start,end
@@ -523,7 +523,8 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
       seq_map->start = start ;
       seq_map->end = end ;
 
-      if ((view = zmapControlAddView(zmap, seq_map)))
+      if ((view_window = zmapControlAddView(zmap, seq_map))
+	  && (view = zMapViewGetView(view_window)))
 	zMapViewConnect(view, NULL) ;				    /* return code ???? */
     }
 
