@@ -57,7 +57,7 @@
 static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 static void destroyZMap(ZMap zmap) ;
 static void killFinal(ZMap *zmap) ;
-static void killViews(ZMap zmap) ;
+static void killViews(ZMap zmap, ZMapViewWindowTree destroyed_zmaps_inout) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static void updateControl(ZMap zmap, ZMapView view) ;
 
@@ -82,25 +82,25 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
 static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
-ZMapViewCallbacksStruct view_cbs_G = {
-  enterCB,
-  leaveCB,
-  dataLoadCB,
-  controlFocusCB,
-  controlSelectCB,
-  controlSplitToPatternCB,
-  controlVisibilityChangeCB,
-  viewStateChangeCB,
-  viewKilledCB,
-  NULL
-} ;
+ZMapViewCallbacksStruct view_cbs_G =
+  {
+    enterCB,
+    leaveCB,
+    dataLoadCB,
+    controlFocusCB,
+    controlSelectCB,
+    controlSplitToPatternCB,
+    controlVisibilityChangeCB,
+    viewStateChangeCB,
+    viewKilledCB,
+    NULL						    /* Filled in by caller for xremote stuff. */
+  } ;
 
 
 
 
 /*
- *  ------------------- External functions -------------------
- *   (includes callbacks)
+ *                         External functions
  */
 
 
@@ -115,10 +115,11 @@ void zMapInit(ZMapCallbacks callbacks)
 {
   zMapAssert(!zmap_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->destroy && callbacks->quit_req) ;
+  zMapAssert(callbacks && callbacks->add &&& callbacks->destroy && callbacks->quit_req) ;
 
   zmap_cbs_G = g_new0(ZMapCallbacksStruct, 1) ;
 
+  zmap_cbs_G->add = callbacks->add ;
   zmap_cbs_G->destroy = callbacks->destroy ;
   zmap_cbs_G->quit_req = callbacks->quit_req ;
 
@@ -143,7 +144,7 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
   /* No callbacks, then no zmap creation. */
   zMapAssert(zmap_cbs_G) ;
 
-  zmap = createZMap(app_data,seq_map) ;
+  zmap = createZMap(app_data, seq_map) ;
 
   /* Make the main/toplevel window for the ZMap. */
   zmapControlWindowCreate(zmap) ;
@@ -184,9 +185,9 @@ int zMapNumViews(ZMap zmap)
 
 
 /* Might rename this to be more meaningful maybe.... */
-ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
-  ZMapView view = NULL ;
+  ZMapViewWindow view_window = NULL ;
 
   zMapAssert(zmap && sequence_map->sequence && *sequence_map->sequence
 	     && (sequence_map->start > 0
@@ -194,12 +195,12 @@ ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
-  if ((view = zmapControlAddView(zmap, sequence_map)))
+  if ((view_window = zmapControlAddView(zmap, sequence_map)))
     {
       zmapControlWindowSetGUIState(zmap) ;
     }
 
-  return view ;
+  return view_window ;
 }
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
@@ -250,17 +251,15 @@ gboolean zMapStopView(ZMap zmap, ZMapView view)
 
 
 
-gboolean zMapDeleteView(ZMap zmap, ZMapView view)
+void zMapDeleteView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmaps_inout)
 {
-  gboolean result = FALSE ;
-
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
 
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  g_return_if_fail((zmap->state != ZMAP_DYING)) ;
 
-  result = zmapControlRemoveView(zmap, view) ;
+  zmapControlRemoveView(zmap, view, destroyed_zmaps_inout) ;
 
-  return result ;
+  return ;
 }
 
 
@@ -280,6 +279,11 @@ gboolean zMapReset(ZMap zmap)
 {
   gboolean result = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* not implemented or needed even ?? */
+
   g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
   if (zmap->state == ZMAP_VIEWS)
@@ -290,6 +294,8 @@ gboolean zMapReset(ZMap zmap)
 
       result = TRUE ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return result ;
 }
@@ -329,13 +335,19 @@ char *zMapGetZMapStatus(ZMap zmap)
 
 /* Called to kill a zmap window and get all associated windows/threads destroyed.
  */
-gboolean zMapDestroy(ZMap zmap)
+void zMapDestroy(ZMap zmap, ZMapViewWindowTree *destroyed_zmaps_inout)
 {
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  ZMapViewWindowTree destroyed_zmaps = NULL ;
 
-  zmapControlDoKill(zmap) ;
+  if (destroyed_zmaps_inout)
+    destroyed_zmaps = *destroyed_zmaps_inout ;
 
-  return TRUE ;
+  zmapControlDoKill(zmap, &destroyed_zmaps) ;
+
+  if (destroyed_zmaps_inout)
+    *destroyed_zmaps_inout = destroyed_zmaps ;
+
+  return ;
 }
 
 
@@ -348,18 +360,19 @@ gboolean zMapDestroy(ZMap zmap)
 
 
 /*
- * These functions are internal to zmapControl.
- *
+ *                Package routines.
  */
 
 
-/* This function encapsulates logic about how to handle closing the last view or the last
+/* Called because of user interaction, this function encapsulates logic
+ * about how to handle closing the last view or the last
  * window in a view, we give the user the choice about whether to do this. */
 void zmapControlClose(ZMap zmap)
 {
   int num_views, num_windows ;
   ZMapViewWindow view_window ;
   ZMapView view ;
+  ZMapViewWindowTree destroyed_zmap = NULL ;
 
   num_views = zmapControlNumViews(zmap) ;
 
@@ -379,7 +392,9 @@ void zmapControlClose(ZMap zmap)
       if (zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
 			    "Closing this window will close this zmap window, "
 			    "do you really want to do this ?"))
-	zmapControlDoKill(zmap) ;
+	{
+	  zmapControlDoKill(zmap, &destroyed_zmap) ;
+	}
     }
   else
     {
@@ -389,12 +404,22 @@ void zmapControlClose(ZMap zmap)
       msg = g_strdup_printf("Closing this window will remove view \"%s\", "
 			    "do you really want to do this ?", name) ;
 
-      if (num_windows > 1
-	  || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
-	zmapControlRemoveWindow(zmap) ;
+      if (num_windows > 1 || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
+	{
+	  destroyed_zmap = g_new0(ZMapViewWindowTreeStruct, 1) ;
+	  destroyed_zmap->parent = zmap ;
+
+	  zmapControlRemoveWindow(zmap, destroyed_zmap) ;
+	}
 
       g_free(name);
       g_free(msg) ;
+    }
+
+  /* If stuff was destroyed then report it....... */
+  if (destroyed_zmap)
+    {
+      zmapControlSendViewDeleted(zmap, destroyed_zmap) ;
     }
 
 
@@ -464,13 +489,15 @@ void zmapControlSignalKill(ZMap zmap)
  * to die, when they die they call our view_detroyed_cb and this will eventually destroy the rest
  * of the ZMap when all the views have gone. At this point we will be able to signal to the
  * layer above us that we have died. */
-void zmapControlDoKill(ZMap zmap)
+void zmapControlDoKill(ZMap zmap, ZMapViewWindowTree *destroyed_zmaps_out)
 {
+
+  /* this should be an assert.....test it before commiting the change.... */
   g_return_if_fail((zmap->state != ZMAP_DYING)) ;
 
 
-  /* set our state to DYING....so we don't respond to anything anymore.... */
-  /* Must set this as this will prevent any further interaction with the ZMap as
+  /* set our state to DYING....so we don't respond to anything anymore....
+   * Must set this as this will prevent any further interaction with the ZMap as
    * a result of both the ZMap window and the threads dying asynchronously.  */
   zmap->state = ZMAP_DYING ;
 
@@ -483,7 +510,19 @@ void zmapControlDoKill(ZMap zmap)
     }
   else
     {
-      killViews(zmap) ;
+      ZMapViewWindowTree destroyed_zmaps = NULL ;
+
+      if (destroyed_zmaps_out)
+	{
+	  destroyed_zmaps = g_new0(ZMapViewWindowTreeStruct, 1) ;
+
+	  destroyed_zmaps->parent = zmap ;
+	}
+
+      killViews(zmap, destroyed_zmaps) ;
+
+      if (destroyed_zmaps_out)
+	*destroyed_zmaps_out = destroyed_zmaps ;
     }
 
   return ;
@@ -547,29 +586,31 @@ void zmapControlResetCB(ZMap zmap)
 
 
 
-ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
-  ZMapView view = NULL ;
+  ZMapViewWindow view_window = NULL ;
 
-  if ((view = zmapControlNewWindow(zmap, sequence_map)))
+  if ((view_window = zmapControlNewWindow(zmap, sequence_map)))
     {
+      ZMapView view ;
+
+      view = zMapViewGetView(view_window) ;
+
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
 
       zmap->state = ZMAP_VIEWS ;
     }
 
-  return view ;
+  return view_window ;
 }
 
 
-gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
+void zmapControlRemoveView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmap_inout)
 {
-  gboolean result = TRUE ;
+  zMapViewDestroy(view, destroyed_zmap_inout) ;
 
-  zMapViewDestroy(view) ;
-
-  return result ;
+  return ;
 }
 
 
@@ -603,6 +644,10 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
 
 
   zmap->view2infopanel = g_hash_table_new_full(NULL, NULL, NULL, infoPanelLabelsHashCB);
+
+
+  /* Is this the place to do this ??? Let's see.... */
+  (*(zmap_cbs_G->add))(zmap, zmap->app_data) ;
 
   return zmap ;
 }
@@ -1062,7 +1107,7 @@ static void killFinal(ZMap *zmap_out)
 }
 
 
-static void killViews(ZMap zmap)
+static void killViews(ZMap zmap, ZMapViewWindowTree destroyed_zmaps_inout)
 {
   GList* list_item ;
 
@@ -1075,7 +1120,7 @@ static void killViews(ZMap zmap)
 
       view = list_item->data ;
 
-      zmapControlRemoveView(zmap, view) ;
+      zmapControlRemoveView(zmap, view, destroyed_zmaps_inout) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
