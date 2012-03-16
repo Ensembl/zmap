@@ -68,16 +68,18 @@
 
 
 
-/* Command attribute and its values. */
+/* Commands, attributes and values. */
 #define ZACP_CMD "command"
 
 #define ZACP_HANDSHAKE     "handshake"
 #define ZACP_PING          "ping"
-#define ZACP_GOODBYE       "goodbye"
-#define ZACP_SHUTDOWN      "shutdown"
 #define ZACP_NEWVIEW       "new_view"
 #define ZACP_ADD_TO_VIEW   "add_to_view"
 #define ZACP_CLOSEVIEW     "close_view"
+#define ZACP_VIEW_CREATED  "view_created"
+#define ZACP_VIEW_DELETED  "view_deleted"
+#define ZACP_GOODBYE       "goodbye"
+#define ZACP_SHUTDOWN      "shutdown"
 
 
 #define ZACP_VIEWID  "view_id"
@@ -89,24 +91,34 @@
 #define ZACP_SEQUENCE_START "start"
 #define ZACP_SEQUENCE_END   "end"
 
-#define ZACP_MESSAGE   "message"
 
-#define ZACP_VIEW   "view"
-
-
-
+#define ZACP_GOODBYE_TYPE "type"
+#define ZACP_CLOSE        "close"
+#define ZACP_EXIT         "exit"
 
 
-/* Results element and attributes. */
+#define ZACP_SHUTDOWN_TAG  "shutdown"
+#define ZACP_SHUTDOWN_TYPE "type"
+#define ZACP_CLEAN         "clean"
+#define ZACP_ABORT         "abort"
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZACP_RESULT "result"
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+/* Command results, elements, attributes and values. */
 
 #define ZACP_RETURN_CODE "return_code"
 #define ZACP_REASON      "reason"
 
+#define ZACP_MESSAGE "message"
+
+#define ZACP_VIEW "view"
+
+
+
+
+/* for the close view we need a "force" option when the close is done from xremote
+   because we don't want the user having to intervene....currently we ask the user if
+   they really want to close the view. */
 
 
 
@@ -121,22 +133,6 @@
  * 
  */
 #define ZACP_ENVELOPE_FORMAT "<" ZACP_TAG " version=\"" ZACP_VERSION "\" type=\"%s\" peer_id=\"%s\" request_id=\"%s\">"
-
-
-/* Request format: */
-
-
-
-
-/* 
- *    Data type descriptors.
- */
-#define ZACP_DATA_TYPE   "ZACP_COMMAND_STR"
-#define ZACP_DATA_FORMAT 8			    /* Bits per unit. */
-
-
-
-
 
 
 
