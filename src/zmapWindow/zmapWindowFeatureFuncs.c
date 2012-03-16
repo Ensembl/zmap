@@ -196,7 +196,11 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 	      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
 
-	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
+//	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
+	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items) ;
+		y1 = zmapWindowItemListStartCoord(focus_items);
+		if(y1)
+			align->cursor_position = y1;
 
 	      g_list_free(focus_items) ;
 	    }

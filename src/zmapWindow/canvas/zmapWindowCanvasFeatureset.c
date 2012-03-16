@@ -773,6 +773,9 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 		ZMapWindowCanvasFeature gs;
 		gs = sl->data;
 
+		if(gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
+			continue;
+
 		if(gs->y1 > y2)
 			break;
 
@@ -1938,6 +1941,13 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   	if(feat->feature->feature.homol.flags.masked)
   		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
   }
+
+	/* NOTE if we configure styles to not load these into the canvas we don't get here */
+  if(feature->flags.collapsed || feature->flags.squashed)
+  {
+	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
+  }
+
 
   feat->y1 = y1;
   feat->y2 = y2;

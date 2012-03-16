@@ -641,6 +641,12 @@ typedef struct ZMapFeatureStruct_
     unsigned int squashed_end: 1 ;		/* alignments only */
   } flags ;
 
+  /*
+   * for RNA seq data:
+   * if population this is a list of underlying features that are hidden from view
+   * else if squashed or collapsed it's the composite feature
+   */
+  gpointer composite;
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */

@@ -76,7 +76,8 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
 #define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
-#define FEATURE_HIDE_REASON	0x3e00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
+#define FEATURE_HIDE_REASON	0x7e00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
 

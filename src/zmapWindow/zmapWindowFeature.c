@@ -992,6 +992,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
+	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(feature->style))
+	  highlight_same_names = FALSE ;
+
 
       if (zMapGUITestModifiers(but_event, control_mask))
 	{

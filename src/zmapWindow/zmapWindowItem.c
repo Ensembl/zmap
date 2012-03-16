@@ -172,6 +172,36 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
 
   return feature_list;
 }
+
+
+/* as above but replaces composite features with the underlying */
+GList *zmapWindowItemListToFeatureListExpanded(GList *item_list)
+{
+  GList *feature_list = NULL;
+  ID2Canvas id2c;
+
+  for(;item_list;item_list = item_list->next)
+  {
+  	id2c = (ID2Canvas) item_list->data;
+  	feature_list = g_list_append(feature_list,(gpointer) id2c->feature_any);
+  }
+
+  return feature_list;
+}
+
+
+int zmapWindowItemListStartCoord(GList *item_list)
+{
+  ID2Canvas id2c;
+  ZMapFeature feature;
+
+  if(!item_list)
+	  return(0);
+
+  id2c = (ID2Canvas) item_list->data;
+  feature = (ZMapFeature) id2c->feature_any;
+  return feature->x1;
+}
 #endif
 
 

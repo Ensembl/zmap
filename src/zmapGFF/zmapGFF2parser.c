@@ -1798,7 +1798,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      local_sequence = TRUE ;
 	    }
 
-	  if(seq_str = strstr(attributes,"sequence"))
+		/* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
+	  if((seq_str = strstr(attributes,"sequence")))
 	  {
 		  char *p;
 

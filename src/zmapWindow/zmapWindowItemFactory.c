@@ -784,7 +784,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
 	if(feature->flags.collapsed || feature->flags.squashed)
 	{
-		/* collapsed item are not disaplayed as they contain no new information
+		/* collapsed item are not displayed as they contain no new information
 		 * but they cam be searched for in the FToI hash
 		 * so return the item that they got collapsed into
 		 * if selected from the search they get assigned to the canvas item
@@ -793,6 +793,11 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
 #warning this works only because short reads are sorted and displayed in order, we do not get new features OTF, other than complete blocks
 #warning window search does not find these features so this is not working
+
+/*
+ * this needs to find the correct CanvasFeatureset item, and composite feature
+ * reads are displayed in randon order as they come from the featureset's hash table
+ */
 
 		/* NOTE on revcomp last item can be freed in whcih case feature may be 0 */
 		if(last_item && last_item->feature && last_item->feature->population)	/* just don't display duplicates */

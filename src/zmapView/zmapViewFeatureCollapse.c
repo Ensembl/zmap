@@ -193,6 +193,84 @@ gint zMapFeatureGapCompare(gconstpointer a, gconstpointer b)
 	return(0);
 }
 
+
+/* simple concensus sequence for a composite feature */
+/* taking the most common base and not translating variable positions */
+/* initially annotators will be warned to check dbSNP or 1000 genomes */
+#warning interim solution for concensus sequence
+void make_concensus_sequence(ZMapFeature composite,GList *fl, int n_feat)
+{
+	int n_seq = composite->x2 - composite->x1 + 1;
+#define N_ALPHABET	5
+	static int *bases = NULL, *bp;
+	static int n_bases = 0;
+	static char index[256] = { 0 };
+	ZMapFeature f;
+	int i, nb;
+	char *seq;
+	char *base = "nacgt";
+
+#if STUPID
+/* will fail if not in set */
+#define BASE(x) (((x | 0x20) - 0x61)>> 1) 	/* map ACGT to 0,2,6,3 then to 0,1,3,2 */
+#endif
+	if(!index['a'])
+	{
+		index['a'] = index['A'] = 1;
+		index['c'] = index['C'] = 2;
+		index['g'] = index['G'] = 3;
+		index['t'] = index['T'] = 4;
+	}
+
+	if(n_bases < n_seq)
+	{
+		if(bases)
+			g_free(bases);
+		n_bases = n_seq + 10;	/* prevent petty re-alloc's */
+		bases = g_malloc(sizeof(int) * n_bases * N_ALPHABET);
+	}
+
+	memset(bases,0,sizeof(int) * n_bases * N_ALPHABET);
+
+//printf("%d bases\n",n_bases);
+
+	for(; n_feat--; fl = fl->prev)
+	{
+		f = (ZMapFeature) fl->data;
+		seq = f->feature.homol.sequence;
+		nb = f->x2 - f->x1 + 1;
+		i = f->x1 - composite->x1;
+//printf("i,nb,n_seq,n_bases: %d %d %d %d\n index:",i,nb,n_seq,n_bases);
+		for(; nb-- ;i++)
+		{
+//printf("%d ",i * N_ALPHABET + index[(int)*seq]);
+			bases[i * N_ALPHABET + index[(int)*seq++]] ++;
+		}
+//printf("\n");
+	}
+
+	/* must not free old sequence as it's copied from a real feature */
+	composite->feature.homol.sequence = seq = g_malloc(n_seq + 1);
+	for(bp = bases, i = 0; i < n_seq; i++)
+	{
+		int base_ind, max, j;
+		base_ind = max = 0;
+
+		for(j = 0;j < N_ALPHABET;j++, bp++)
+		{
+			if(*bp > max)
+			{
+				base_ind = j;
+				max = *bp;
+			}
+		}
+		*seq++ = base[base_ind];
+	}
+	*seq = 0;
+
+}
+
+
 #define SQUASH_DEBUG	0
 // collaspe similar features into one
 static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
@@ -234,11 +312,19 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		int join = 0;
 		GArray *new_gaps = NULL;	/* to replace original in visible squashed feature */
 		double y1,y2,edge1,edge2;	/* boundaries of visible squashed feature */
+		GList *children;
+		ZMapFeature composite = NULL;
+		gboolean squash_this;		/* can only be set to TRUE for alignemnts */
+		gboolean collapse_this;
+		gboolean duplicate;
 
 //		GHashTable *splice_hash;	/* accumulate all splice coordinates */
 //		GList  *splice_list;		/* sorted list of splice coordinates */
 
 		if(!style)
+			break;
+
+		if(zMapStyleGetMode(style) != ZMAPSTYLE_MODE_ALIGNMENT)
 			break;
 
 		squash   = zMapStyleIsSquash(style);
@@ -255,7 +341,8 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 * squash combines features with identical gaps (must be present) and same or varied start and end
 		 * squash can only be set for alignments, collapse can be set for simple features too
 		 * join will amalgamate overlapping ungapped reads between splice coordinates
-		 * and assumes that these have been sorted to appear after gapped ones in the list of features.
+		 * and assumes that these have been sorted to appear after gapped ones in the listprintf("insert composite %s %d %d\n",g_quark_to_string(composite->original_id), composite->flags.collapsed,composite->flags.squashed);
+ of features.
 		 *
 		 * if both are selected then squash overrides collapse, but only for gapped features
 		 * so we only scan the features once
@@ -282,7 +369,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 */
 
 		/* NOTE
-		 * adding blocks to eg gaps array turned out to be a nightmnare due to query coords beign reversed sometimes
+		 * adding blocks to eg gaps array turned out to be a nightmnare due to query coords being reversed sometimes
 		 * 1-based coords of course make life tedious too
 		 * mismatches at the start/ end of a read also cause grief
 		 * I'd like to rewrite this :-(
@@ -300,14 +387,15 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		features = g_list_sort(features,zMapFeatureGapCompare);
 
 
+
 		/* flag unique features as displayed, duplicated as hidden */
 		/* count up how many */
 		for(fl = features; fl; fl = fl->next)
 		{
-			gboolean squash_this = FALSE;		/* can only be set to TRUE for alignemnts */
-			gboolean collapse_this = collapse;
+			squash_this = FALSE;		/* can only be set to TRUE for alignemnts */
+			collapse_this = collapse;
 			/* we only squash or collapse if duplicate is TRUE, how depends on the other flags */
-			gboolean duplicate = TRUE;
+			duplicate = TRUE;
 
 			f = (ZMapFeature) fl->data;
 			if(!feature)
@@ -340,7 +428,7 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 					}
 				}
 
-				if(f->type == ZMAPSTYLE_MODE_ALIGNMENT)
+//				if(f->type == ZMAPSTYLE_MODE_ALIGNMENT)
 				{
 					/* compare gaps array */
 					/* if there are gaps the must be identical */
@@ -405,11 +493,23 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 					}
 
 					/* collapse_this may be true here (gaps or no gaps) */
+					if(!collapse_this && !squash_this)
+						duplicate = FALSE;
 				}
 			}
 
 			if(duplicate)
 			{
+				if(!composite)
+				{
+					composite = g_new0(ZMapFeatureStruct,1);
+					memcpy(composite,feature,sizeof(ZMapFeatureStruct));
+					if(collapse_this)
+						feature->flags.collapsed = TRUE;
+					else
+						feature->flags.squashed = TRUE;
+				}
+
 				if(squash_this)
 				{
 					/* adjust replacement gaps array data */
@@ -420,25 +520,25 @@ printf("squash this: y, f, edge = %.1f,%.1f %d,%d %.1f,%.1f\n",y1,y2,f->x1,f->x2
 					if(f->x1 < y1)
 					{
 						y1 = f->x1;
-						feature->flags.squashed_start = 1;
+						composite->flags.squashed_start = 1;
 					}
 					if(f->x1 > edge1)
 					{
 						edge1 = f->x1;
-						feature->flags.squashed_start = 1;
+						composite->flags.squashed_start = 1;
 					}
 					if(f->x2 > y2)
 					{
 						y2 = f->x2;
-						feature->flags.squashed_end = 1;
+						composite->flags.squashed_end = 1;
 					}
 					if(f->x2 < edge2)
 					{
 						edge2 = f->x2;
-						feature->flags.squashed_end = 1;
+						composite->flags.squashed_end = 1;
 					}
 
-					feature->population++;
+					composite->population++;
 					f->flags.squashed = TRUE;
 				}
 				else if(collapse_this)
@@ -448,7 +548,7 @@ printf("squash this: y, f, edge = %.1f,%.1f %d,%d %.1f,%.1f\n",y1,y2,f->x1,f->x2
 printf("collapse this\n");
 #endif
 					zMapAssert(collapse);
-					feature->population++;
+					composite->population++;
 					f->flags.collapsed = TRUE;
 				}
 				else
@@ -460,7 +560,7 @@ printf("collapse this\n");
 			if(!duplicate || !fl->next)	/* tidy up and get ready to test the next */
 			{
 					/* NOTE squashed is set on the features that are not displayed, nottheo one that is */
-				if(feature && (feature->flags.squashed_start || feature->flags.squashed_end))
+				if(composite && (composite->flags.squashed_start || composite->flags.squashed_end))
 				{
 					int i;
 					ZMapAlignBlock first;
@@ -468,9 +568,10 @@ printf("collapse this\n");
 					int diff;
 
 					zMapAssert(squash && feature->feature.homol.align);
+
 #if SQUASH_DEBUG
 printf("\nsquashing...\n");
-#if SQUASH_DEBUG
+
 { int i;
 ZMapAlignBlock ab;
 GArray *f_gaps = feature->feature.homol.align;
@@ -483,7 +584,6 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 	printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 }
 }
-#endif
 
 #endif
 					/* update the gaps array */
@@ -592,12 +692,9 @@ printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
 						}
 					}
 
-					feature->feature.homol.align = new_gaps;
-
+					composite->feature.homol.align = new_gaps;
 
 					new_gaps = NULL;
-					feature->x1 = y1;
-					feature->x2 = y2;
 
 #if SQUASH_DEBUG
 { int i;
@@ -657,6 +754,46 @@ else
 
 #endif
 				}
+				else if(composite && feature->feature.homol.align)
+				{
+					/* squashed but no variable regions */
+					/* collapsed featrue shav no gaps array */
+
+					/* must copy the GArray as other functions that refer to it by macro move the address
+					 * if we squashed then we already replaced it
+					 */
+					ZMapAlignBlock ab;
+					int i;
+					GArray *ga,*gf;
+
+					gf = feature->feature.homol.align;
+					ga = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), gf->len);
+
+					for(i = 0; i < gf->len; i++)
+					{
+						ab = & g_array_index(gf,ZMapAlignBlockStruct,i);
+						g_array_append_val(ga,*ab);
+					}
+
+					composite->feature.homol.align = ga;
+				}
+
+
+				if(composite)
+				{
+					char buf[256];
+//					sprintf(buf,"%s (%d reads)",g_quark_to_string(feature->unique_id),composite->population);
+					sprintf(buf,"Composite_%d_reads)",composite->population);
+					composite->unique_id = composite->original_id = g_quark_from_string(buf);
+					g_hash_table_insert(feature_set->features, GUINT_TO_POINTER(composite->unique_id), composite);
+
+					composite->x1 = y1;
+					composite->x2 = y2;
+//printf("composite: %d,%d\n",composite->x1,composite->x2);
+					make_concensus_sequence(composite,duplicate ? fl : fl->prev, composite->population);
+				}
+
+				composite = NULL;
 
 				/* set up for next unique feature or series of matches */
 				feature = f;
@@ -667,7 +804,6 @@ else
 					edge1 = y1 = feature->x1;
 					edge2 = y2 = feature->x2;
 				}
-
 			}
 		}
 
