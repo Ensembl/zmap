@@ -65,7 +65,7 @@ static gboolean checkPeerID(char **peer_name_out, char **peer_clipboard_out) ;
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
-static void infoSetCB(void *app_data, void *zmap) ;
+
 
 static void initGnomeGTK(int argc, char *argv[]) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
@@ -73,10 +73,13 @@ static gboolean getConfiguration(ZMapAppContext app_context) ;
 static ZMapAppContext createAppContext(void) ;
 static void destroyAppContext(ZMapAppContext app_context) ;
 
+static void addZMapCB(void *app_data, void *zmap) ;
+static void removeZMapCB(void *app_data, void *zmap) ;
+static void infoSetCB(void *app_data, void *zmap) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+
 void quitReqCB(void *app_data, void *zmap_data_unused) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer data) ;
-static void removeZMapCB(void *app_data, void *zmap) ;
 
 static void appExit(void *user_data) ;
 static gboolean timeoutHandler(gpointer data) ;
@@ -94,7 +97,7 @@ static gboolean pingHandler(gpointer data) ;
 
 
 
-static ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB, NULL} ;
+static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
 
 char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
@@ -388,9 +391,11 @@ void zmapAppExit(ZMapAppContext app_context)
    * for their reply, otherwise we can just get on with it. */
   if (app_context->remote_control)
     {
+      gboolean app_exit = TRUE ;
+
       zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
 
-      zmapAppRemoteControlDisconnect(app_context) ;
+      zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
   else
     {
@@ -514,6 +519,64 @@ static gboolean pingHandler(gpointer data)
 }
 
 
+/* Called when layer below signals that a zmap has been added. */
+void addZMapCB(void *app_data, void *zmap_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)app_data ;
+  ZMap zmap = (ZMap)zmap_data ;
+  GtkTreeIter iter1 ;
+
+  /* Update our list of zmaps.... */
+  gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
+  gtk_tree_store_set (app_context->tree_store_widg, &iter1,
+		      ZMAPID_COLUMN, zMapGetZMapID(zmap),
+		      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+		      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+		      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+		      ZMAPDATA_COLUMN, (gpointer)zmap,
+		      -1);
+
+  return ;
+}
+
+
+
+/* UM...I'M NOT SURE THIS COMMENT IS CORRECT....SHOULD BE CALLED WHEN
+ * USER CLOSES A WINDOW OR QUITS....NEED TO DISTINGUISH WHICH.... */
+/* Called when user clicks the big "Quit" button in the main window.
+ * Called every time a zmap window signals that it has gone. */
+void removeZMapCB(void *app_data, void *zmap_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)app_data ;
+  ZMap zmap = (ZMap)zmap_data ;
+
+  /* This has the potential to remove multiple rows, but currently
+     doesn't as the first found one that matches, gets removed an
+     returns true. See
+     http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
+     for an implementation of mutliple deletes */
+  gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg),
+                         (GtkTreeModelForeachFunc)removeZMapRowForeachFunc,
+                         (gpointer)zmap);
+
+  if (app_context->selected_zmap == zmap)
+    app_context->selected_zmap = NULL ;
+
+
+
+  /* UMMM....THIS EXITING HERE DOESN'T LOOK RIGHT TO ME.......... */
+
+  /* When the last zmap has gone and we are dying then exit. */
+  if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
+    exitApp(app_context) ;
+
+  return ;
+}
+
+
+
+
+
 
 
 /*
@@ -555,31 +618,8 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
-/* Called when user clicks the big "Quit" button in the main window. */
-/* Called every time a zmap window signals that it has gone. */
-void removeZMapCB(void *app_data, void *zmap_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)app_data ;
-  ZMap zmap = (ZMap)zmap_data ;
 
-  /* This has the potential to remove multiple rows, but currently
-     doesn't as the first found one that matches, gets removed an
-     returns true. See
-     http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
-     for an implementation of mutliple deletes */
-  gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg),
-                         (GtkTreeModelForeachFunc)removeZMapRowForeachFunc,
-                         (gpointer)zmap);
 
-  if (app_context->selected_zmap == zmap)
-    app_context->selected_zmap = NULL ;
-
-  /* When the last zmap has gone and we are dying then exit. */
-  if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
-    exitApp(app_context) ;
-
-  return ;
-}
 
 /* A GSourceFunc, called if we take too long to exit, in which case we force the exit. */
 static gboolean timeoutHandler(gpointer data)
