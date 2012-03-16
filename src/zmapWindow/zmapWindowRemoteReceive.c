@@ -96,7 +96,8 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
-gboolean zMapWindowProcessRemoteRequest(ZMapWindow window, char *command_name, char *request,
+gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
+					char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
