@@ -293,6 +293,11 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
 static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords) ;
 static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
+static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
+                                                           gpointer data, gpointer user_data,
+                                                           char **err_out) ;
+static void invokeVisibilityChange(ZMapWindow window) ;
+
 
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -589,78 +594,6 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
     }
 
   return ;
-}
-
-static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
-                                                           gpointer data,
-                                                           gpointer user_data,
-                                                           char **err_out)
-{
-  ZMapWindow window = (ZMapWindow)user_data ;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeature feature;
-  FooCanvasItem *feature_item;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  ZMapStrand column_strand;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-	feature = (ZMapFeature)feature_any;
-
-	/* which column drawn in depends on style. */
-	column_strand = zmapWindowFeatureStrand(window, feature);
-
-#if MH17_FToIHash_does_this_mapping
-      /* if the feature context is from a request from otterlace then
-       * the display column has not been set, we need to lookup
-       */
-  ZMapFeatureSetDesc gffset;
-  ZMapFeatureSet fset;
-
-      fset = (ZMapFeatureSet) (feature_any->parent);
-      if(!fset->column_id)
-      {
-            gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
-            if(gffset)
-                  fset->column_id = gffset->column_id;
-      }
-#endif
-      /* MH17: we get locus features inserted mysteriously if a feature has a locus id
-       * but they don't always appear in zmap in whcih case there is no column id
-       * This is true when otterlace sends a single feature to delete and then we fail to find
-       * the extra locus feature
-       *
-       * regardless of that if we have features that are not displayed due to config this couls also fail
-       * so if not column_id defined log a warnign adn fail silently.
-       *
-       * locus is used in the naviagtor, we hope dealt with via another call.
-       */
-
-	if ( /*fset->column_id && */
-      (feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-							  column_strand,
-							  ZMAPFRAME_NONE,
-							  feature)))
-	  {
-	    zMapWindowFeatureRemove(window, feature_item, feature, FALSE);
-	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-	  }
-	else
-	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
-
-	break;
-      }
-    default:
-      /* nothing to do for most of it while we only have single blocks and aligns... */
-      break;
-    }
-
-  return status;
 }
 
 void zMapWindowUnDisplayData(ZMapWindow window,
@@ -1946,9 +1879,40 @@ void zMapWindowSiblingWasRemoved(ZMapWindow window)
 
 
 
+void zMapWindowStateRecord(ZMapWindow window)
+{
+  ZMapWindowState state ;
+
+  if ((state = zmapWindowStateCreate()))
+    {
+      zmapWindowStateSaveZoom(state, zMapWindowGetZoomFactor(window));
+      zmapWindowStateSaveMark(state, window);
+      zmapWindowStateSavePosition(state, window);
+
+      if(!zmapWindowStateQueueStore(window, state, TRUE))
+	{
+	  zmapWindowStateDestroy(state);
+	}
+      else
+	{
+	  invokeVisibilityChange(window);
+	}
+    }
+
+  return ;
+}
+
+
+
+
+
+
+
+
+
 
 /*
- *  ------------------- Internal functions -------------------
+ *                       Internal routines
  */
 
 static void panedResizeCB(gpointer data, gpointer userdata)
@@ -2197,6 +2161,79 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 }
 
 
+static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
+                                                           gpointer data,
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeature feature;
+  FooCanvasItem *feature_item;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapStrand column_strand;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	feature = (ZMapFeature)feature_any;
+
+	/* which column drawn in depends on style. */
+	column_strand = zmapWindowFeatureStrand(window, feature);
+
+#if MH17_FToIHash_does_this_mapping
+      /* if the feature context is from a request from otterlace then
+       * the display column has not been set, we need to lookup
+       */
+  ZMapFeatureSetDesc gffset;
+  ZMapFeatureSet fset;
+
+      fset = (ZMapFeatureSet) (feature_any->parent);
+      if(!fset->column_id)
+      {
+            gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
+            if(gffset)
+                  fset->column_id = gffset->column_id;
+      }
+#endif
+      /* MH17: we get locus features inserted mysteriously if a feature has a locus id
+       * but they don't always appear in zmap in whcih case there is no column id
+       * This is true when otterlace sends a single feature to delete and then we fail to find
+       * the extra locus feature
+       *
+       * regardless of that if we have features that are not displayed due to config this couls also fail
+       * so if not column_id defined log a warnign adn fail silently.
+       *
+       * locus is used in the naviagtor, we hope dealt with via another call.
+       */
+
+	if ( /*fset->column_id && */
+      (feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+							  column_strand,
+							  ZMAPFRAME_NONE,
+							  feature)))
+	  {
+	    zMapWindowFeatureRemove(window, feature_item, feature, FALSE);
+	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+	  }
+	else
+	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+
+	break;
+      }
+    default:
+      /* nothing to do for most of it while we only have single blocks and aligns... */
+      break;
+    }
+
+  return status;
+}
+
+
 static void invokeVisibilityChange(ZMapWindow window)
 {
   ZMapWindowVisibilityChangeStruct change = {};
@@ -2213,28 +2250,6 @@ static void invokeVisibilityChange(ZMapWindow window)
 
   return ;
 }
-
-void zMapWindowStateRecord(ZMapWindow window)
-{
-  ZMapWindowState state;
-
-  if((state = zmapWindowStateCreate()))
-    {
-      zmapWindowStateSaveZoom(state, zMapWindowGetZoomFactor(window));
-      zmapWindowStateSaveMark(state, window);
-      zmapWindowStateSavePosition(state, window);
-
-      if(!zmapWindowStateQueueStore(window, state, TRUE))
-	zmapWindowStateDestroy(state);
-      else
-	{
-	  invokeVisibilityChange(window);
-	}
-    }
-
-  return ;
-}
-
 
 /* Zooming the canvas window in or out.
  * Note that zooming is only in the Y axis, the X axis is not zoomed at all as we don't need
@@ -4235,7 +4250,7 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
     {
       fetch_data->start = block->block_to_sequence.block.x1 ;
       fetch_data->end   = block->block_to_sequence.block.x2 ;
-//zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+      //zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
 
     }
   else if (zmapWindowMarkIsSet(window->mark) &&
@@ -4243,7 +4258,7 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
     {
       fetch_data->start = start;
       fetch_data->end   = end;
-//zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+      //zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
     }
   else
     load = FALSE;
@@ -4258,12 +4273,12 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
 	{
 
 #warning need to optimise requests so as to not req data we already have
-/* for the moment just re-request */
-/*
-ideally we should optimise the requests to only cover empty regions
-but we need to cater for repeat loaded features anyway at the edges
-so just request whatever region is requested regardless
-*/
+	  /* for the moment just re-request */
+	  /*
+	    ideally we should optimise the requests to only cover empty regions
+	    but we need to cater for repeat loaded features anyway at the edges
+	    so just request whatever region is requested regardless
+	  */
 	}
     }
 
@@ -4273,53 +4288,53 @@ so just request whatever region is requested regardless
       GList * fset_list = NULL;
       GList *col_list;
 
-	if(is_column)	/* user requests a column */
+      if(is_column)	/* user requests a column */
 	{
-      	for(col_list = featureset_name_list;col_list;col_list = col_list->next)
-            	fset_list = g_list_concat(
-            	/* must copy as this is a static list */
-            	g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),TRUE)),
-            	 fset_list);
+	  for(col_list = featureset_name_list;col_list;col_list = col_list->next)
+	    fset_list = g_list_concat(
+				      /* must copy as this is a static list */
+				      g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),TRUE)),
+				      fset_list);
 	}
-	else			/* zmap requests data via column menu */
+      else			/* zmap requests data via column menu */
 	{
-		fset_list = featureset_name_list;
+	  fset_list = featureset_name_list;
 	}
 
-	/* mh17 NOTE
-	 *
-	 * this block copied to zmapWindowMenus.c/add_column_featuresets()
-	 */
-	/* expand any virtual featursets into real ones */
-	{
+      /* mh17 NOTE
+       *
+       * this block copied to zmapWindowMenus.c/add_column_featuresets()
+       */
+      /* expand any virtual featursets into real ones */
+      {
       	GList *virtual;
 
       	for(virtual = fset_list;virtual; virtual = virtual->next)
-      	{
-      		GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
+	  {
+	    GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
 
-      		if(real)
-      		{
-      			GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
-      			GList *l = virtual;
+	    if(real)
+	      {
+		GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
+		GList *l = virtual;
 
-      			copy->prev = virtual->prev;
-      			if(copy->prev)
-      				copy->prev->next = copy;
-      			else
-      				fset_list = copy;
+		copy->prev = virtual->prev;
+		if(copy->prev)
+		  copy->prev->next = copy;
+		else
+		  fset_list = copy;
 
-      			copy = g_list_last(copy);
-      			copy->next = virtual->next;
-      			if(copy->next)
-      				copy->next->prev = copy;
+		copy = g_list_last(copy);
+		copy->next = virtual->next;
+		if(copy->next)
+		  copy->next->prev = copy;
 
-      			virtual = copy;
+		virtual = copy;
 
-				g_list_free_1(l);
-      		}
-      	}
-	}
+		g_list_free_1(l);
+	      }
+	  }
+      }
 
 
       fetch_data->feature_set_ids = fset_list;
