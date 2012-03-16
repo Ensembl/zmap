@@ -22,7 +22,6 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
-name
  *
  * Description: Splits the zmap window to show either the same view twice
  *              or two different views.
@@ -35,13 +34,9 @@ name
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
-#include <zmapControl_P.h>
 #include <ZMap/zmapUtilsDebug.h>
+#include <zmapControl_P.h>
+
 
 
 /* Used to record which child we are of a pane widget. */
@@ -82,11 +77,10 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 
 /* New func for brand new view windows.... */
-ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
-  ZMapView zmap_view = NULL ;
+  ZMapViewWindow view_window = NULL ;
   GtkWidget *curr_container, *view_container ;
-  ZMapViewWindow view_window ;
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
   GtkWidget *xremote_widget, *parent ;
@@ -128,13 +122,9 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
     {
       ZMapInfoPanelLabels labels;
       GtkWidget *infopanel;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* For each new view stick an event box in between parent and the child (i.e. the view)
-       * this will be used to send/receive xremote commands. */
-      xremote_widget = addXremoteWidget(view_container) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      ZMapView view ;
 
-      zmap_view = zMapViewGetView(view_window) ;
+      view = zMapViewGetView(view_window) ;
 
       labels = g_new0(ZMapInfoPanelLabelsStruct, 1);
 
@@ -144,16 +134,9 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       gtk_signal_connect(GTK_OBJECT(labels->hbox), "destroy",
 			 GTK_SIGNAL_FUNC(labelDestroyCB), (gpointer)labels) ;
 
-
-
-      g_hash_table_insert(zmap->view2infopanel, zmap_view, labels);
+      g_hash_table_insert(zmap->view2infopanel, view, labels);
 
       gtk_box_pack_end(GTK_BOX(zmap->info_panel_vbox), infopanel, FALSE, FALSE, 0);
-
-      /* Add view to the xremote widget so it can be recovered later. */
-      /* no need for this call ...
-       * g_object_set_data(G_OBJECT(xremote_widget), VIEW_XREMOTE_WIDGET, zmap_view) ;
-       */
 
       zMapViewSetupNavigator(view_window, zmap->nav_canvas) ;
 
@@ -172,7 +155,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       zmapControlWindowSetGUIState(zmap) ;
     }
 
-  return zmap_view ;
+  return view_window ;
 }
 
 ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
@@ -260,6 +243,9 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
   zmapControlWindowSetGUIState(zmap) ;
 
+  /* If there's a remote peer we need to tell them a window's been created.... */
+  zmapControlSendViewCreated(zmap, zMapViewGetView(view_window), zMapViewGetWindow(view_window)) ;
+
   return ;
 }
 
@@ -281,7 +267,7 @@ int zmapControlNumViews(ZMap zmap)
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
  * be other views that have windows that can be focussed on. */
-void zmapControlRemoveWindow(ZMap zmap)
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindowTree destroyed_zmap)
 {
   GtkWidget *close_container ;
   ZMapViewWindow view_window, remaining_view ;
@@ -310,8 +296,25 @@ void zmapControlRemoveWindow(ZMap zmap)
   /* Make sure we reset focus because we are removing the view it points to ! */
   zmap->focus_viewwindow = NULL ;
 
+
   if (num_windows > 1)
     {
+      /* Record view and window deleted if required. */
+      if (destroyed_zmap)
+	{
+	  ZMapViewWindowTree destroyed_view, destroyed_window ;
+
+	  destroyed_view = g_new0(ZMapViewWindowTreeStruct, 1) ;
+	  destroyed_view->parent = view ;
+
+	  destroyed_zmap->children = g_list_append(destroyed_zmap->children, destroyed_view) ;
+
+	  destroyed_window = g_new0(ZMapViewWindowTreeStruct, 1) ;
+	  destroyed_window->parent = zMapViewGetWindow(view_window) ;
+
+	  destroyed_view->children = g_list_append(destroyed_view->children, destroyed_window) ;
+	}
+
       zMapViewRemoveWindow(view_window) ;
     }
   else
@@ -321,7 +324,7 @@ void zmapControlRemoveWindow(ZMap zmap)
        * is closed. */
       removeXremoteWidget(close_container) ;
 
-      zMapDeleteView(zmap, view) ;
+      zMapDeleteView(zmap, view, destroyed_zmap) ;
     }
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
