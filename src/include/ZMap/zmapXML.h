@@ -163,11 +163,14 @@ typedef enum
     ZMAPXML_EVENT_DATA_INVALID
   } ZMapXMLWriterEventDataType;
 
+
+
 typedef struct _ZMapXMLUtilsEventStackStruct
 {
   ZMapXMLWriterEventType event_type;
   char *name;
   ZMapXMLWriterEventDataType data_type;
+
   union
   {
     int     i ;
@@ -177,6 +180,7 @@ typedef struct _ZMapXMLUtilsEventStackStruct
   } value ;
 
 } ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
+
 
 typedef struct _ZMapXMLWriterEventStruct
 {
@@ -190,6 +194,7 @@ typedef struct _ZMapXMLWriterEventStruct
     {
       GQuark name;
       ZMapXMLWriterEventDataType data;
+
       union
       {
         int    integer ;
