@@ -36,7 +36,7 @@
  *
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Feb  8 21:31 2012 (edgrif)
+ * Last edited: Feb 29 15:55 2012 (edgrif)
  * Created: Mon Nov  1 10:32:56 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -51,30 +51,24 @@
 
 
 
-static void ourRequestEndedCB(void *user_data) ;
-static void theirRequestEndedCB(void *user_data) ;
-static gboolean errorHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
+
+static void errorHandlerCB(ZMapRemoteControl remote_control,
+			   ZMapRemoteControlRCType error_type, char *err_msg,
+			   void *user_data) ;
 
 static void requestHandlerCB(ZMapRemoteControl remote_control,
-			     ZMapRemoteControlCallWithReplyFunc remote_reply_func, void *remote_reply_data,
+			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
 			     char *request, void *user_data) ;
-static void replyHandlerCB(ZMapRemoteControl remote_control,
-			   ZMapRemoteControlCallReplyDoneFunc remote_reply_func, void *remote_reply_data,
-			   char *reply, void *user_data) ;
+static void replySentCB(void *user_data) ;
+
+static void requestSentCB(void *user_data) ;
+static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data) ;
+
 
 static void handleZMapRepliesCB(char *command, RemoteCommandRCType result, char *reason,
 				ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
 static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_body, gpointer app_request_data,
 				 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GArray *createRequestEnvelope(ZMapAppRemote remote, char *unique_id, char *command) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 
 
 
@@ -108,8 +102,6 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
   app_id = zMapGetAppName() ;
   if ((remote_control = zMapRemoteControlCreate(app_id,
-						ourRequestEndedCB, app_context,
-						theirRequestEndedCB, app_context,
 						errorHandlerCB, app_context,
 						NULL, NULL)))
     {
@@ -130,8 +122,6 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
       /* set no timeout for now... */
       zMapRemoteControlSetTimeout(remote->remote_controller, 0) ;
-
-      remote->view2zmap = g_hash_table_new(NULL, NULL) ;
 
       app_context->remote_control = remote ;
 
@@ -158,11 +148,13 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
   if (result)
     result = zMapRemoteControlReceiveInit(remote->remote_controller,
 					  remote->app_unique_id,
-					  requestHandlerCB, app_context) ;
+					  requestHandlerCB, app_context,
+					  replySentCB, app_context) ;
 
   if (result)
     result = zMapRemoteControlSendInit(remote->remote_controller,
 				       remote->peer_name, remote->peer_clipboard,
+				       requestSentCB, app_context,
 				       replyHandlerCB, app_context) ;
 
   if (result)
@@ -193,8 +185,6 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
 
   zMapRemoteControlDestroy(remote->remote_controller) ;
 
-  g_hash_table_destroy(remote->view2zmap) ;
-
   g_free(app_context->remote_control) ;
   app_context->remote_control = NULL ;
 
@@ -221,8 +211,8 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
  * Called by ZMapRemoteControl: receives all requests sent to zmap by a peer.
  */
 static void requestHandlerCB(ZMapRemoteControl remote_control,
-			     ZMapRemoteControlCallWithReplyFunc remotecontrol_request_done_func,
-			     void *remotecontrol_request_done_data,
+			     ZMapRemoteControlReturnReplyFunc return_reply_func,
+			     void *return_reply_func_data,
 			     char *request, void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
@@ -241,8 +231,10 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   else
     {
       /* Cache these, must be called from handleZMapRepliesCB() */
-      remote->remotecontrol_request_done_func = remotecontrol_request_done_func ;
-      remote->remotecontrol_request_done_data = remotecontrol_request_done_data ;
+      remote->return_reply_func = return_reply_func ;
+      remote->return_reply_func_data = return_reply_func_data ;
+
+
 
       /* Call the command processing code....if it succeeds we don't need to do anything, we will
        * be called back. */
@@ -258,19 +250,48 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
 }
 
 
+/* Called by remote control when peer has signalled that it has received reply,
+ * i.e. the transaction has ended. */
+static void replySentCB(void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  
+  zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
+
+
+  /* Need to return to waiting here..... */
+  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
+    zMapLogCritical("%s", "Cannot set remote controller to wait for requests.") ;
+
+  return ;
+}
+
+
+
+/* Called by remote control when peer has signalled that it has received request. */
+static void requestSentCB(void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+
+
+  return ;
+}
+
 
 /* 
  * Called by ZMapRemoteControl: Receives all replies sent to zmap by a peer.
  */
-static void replyHandlerCB(ZMapRemoteControl remote_control,
-			   ZMapRemoteControlCallReplyDoneFunc remote_reply_done_func,
-			   void *remote_reply_done_data,
-			   char *reply, void *user_data)
+static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMapAppRemote remote = app_context->remote_control ;
   gboolean result ;
   char *error_out = NULL ;
+
+
+  /* Again.....is this a good idea....the app callback needs to be called whatever happens
+   * to reset state...fine to log a bad message but we still need to call the app func. */
 
   if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller, remote->curr_request, reply, &error_out)))
     {
@@ -281,20 +302,61 @@ static void replyHandlerCB(ZMapRemoteControl remote_control,
     }
   else
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       remote->reply_done_func = remote_reply_done_func ;
       remote->reply_done_data = remote_reply_done_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      /* Call the command processing code....if it succeeds we don't need to do anything, we will
-       * be called back. */
-      if (!(result = zmapAppProcessAnyReply(app_context, reply)))
-	{
-	  /* report error.... */
-	}
+
+      /* Call the command processing code, there's no return code here because only the function
+       * ultimately handling the problem knows how to handle the error. */
+      zmapAppProcessAnyReply(app_context, reply) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I THINK NOW THAT WE SHOULD NOT BE DOING THIS..... */
 
       /* We could just call back to remotecontrol from here....alternative is pass functions
        * right down to reply handler....and have them call back to appcommand level and then
        * app command level calls back here...needed if asynch....  */
       (remote_reply_done_func)(remote_reply_done_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+
+  /* I think this is the place to go back to waiting again.... */
+  if (!zMapRemoteControlReceiveWaitForRequest(remote->remote_controller))
+    zMapLogCritical("%s", "Cannot set remote object to waiting for new request.") ;
+
+
+  return ;
+}
+
+
+
+
+/* 
+ *         Called by ZMapRemoteControl: Receives all errors (e.g. timeouts).
+ */
+static void errorHandlerCB(ZMapRemoteControl remote_control,
+			   ZMapRemoteControlRCType error_type, char *err_msg,
+			   void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+
+  /* ok...what do we need to do here....... */
+
+
+  /* Probably we need to call the level that made the original command request ?? */
+
+  /* and go back to waiting for a request...... */
+  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
+    {
+      zMapLogCritical("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
+      zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
     }
 
 
@@ -303,49 +365,12 @@ static void replyHandlerCB(ZMapRemoteControl remote_control,
 }
 
 
-/* Called by RemoteControl when a request we sent has been replied to by the peer
- * and the transaction is ended. */
-static void ourRequestEndedCB(void *user_data)
-{
 
 
 
-  return ;
-}
-
-
-
-/* Called by RemoteControl when our peer sent a request and our reply has been sent
- * and the transaction is ended. */
-static void theirRequestEndedCB(void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-  
-  zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
-
-
-  return ;
-}
-
-
-/* 
- *         Called by ZMapRemoteControl: Receives all errors (e.g. timeouts).
+/*
+ *        Functions called by ZMap sub-components, e.g. Control, View, Window
  */
-static gboolean errorHandlerCB(ZMapRemoteControl remote_control, void *user_data)
-{
-  gboolean result = FALSE ;
-
-
-
-
-  return result ;
-}
-
-
-
-/*        Functions called by ZMap sub-components, e.g. Control, View, Window   */
-
 
 
 /* Called by any component of ZMap (e.g. control, view etc) which has processed a command
@@ -380,7 +405,7 @@ static void handleZMapRepliesCB(char *command, RemoteCommandRCType command_rc, c
     }
 
   /* Must ALWAYS call back to ZMapRemoteControl to return reply to peer. */
-  (remote->remotecontrol_request_done_func)(remote->remotecontrol_request_done_data, full_reply) ;
+  (remote->return_reply_func)(remote->return_reply_func_data, full_reply) ;
 
   return ;
 }
@@ -431,6 +456,4 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
 
   return ;
 }
-
-
 
