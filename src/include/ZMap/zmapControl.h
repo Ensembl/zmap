@@ -1,4 +1,4 @@
-/*  Last edited: Dec 16 11:43 2011 (edgrif) */
+/*  Last edited: Feb 14 20:26 2012 (edgrif) */
 /*  File: zmapControl.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -21,7 +21,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
  *
  * Description: Interface for creating, controlling and destroying ZMaps.
  *
@@ -52,6 +53,8 @@ typedef void (*ZMapCallbackFunc)(ZMap zmap, void *app_data) ;
  * to a ZMap. */
 typedef struct _ZMapCallbacksStruct
 {
+  ZMapCallbackFunc add ;				    /* Reports that zmap has been
+							       created. */
   ZMapCallbackFunc destroy ;				    /* Reports that this zmap instance has
 							       been destroyed. */
   ZMapCallbackFunc quit_req ;				    /* Requests application
@@ -65,18 +68,18 @@ typedef struct _ZMapCallbacksStruct
 void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 int zMapNumViews(ZMap zmap) ;
-ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
-gboolean zMapDeleteView(ZMap zmap, ZMapView view) ;
+void zMapDeleteView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmaps_inout) ;
 gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
-gboolean zMapDestroy(ZMap zmap) ;
+void zMapDestroy(ZMap zmap, ZMapViewWindowTree *destroyed_zmaps_inout) ;
 gboolean zMapControlProcessRemoteRequest(gpointer local_data,
-					 char *command_name, char *request,
+					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
