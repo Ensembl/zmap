@@ -29,7 +29,7 @@
  *
  * Exported functions: See ZMap/zmapRemoteCommand.h
  * HISTORY:
- * Last edited: Feb  8 21:03 2012 (edgrif)
+ * Last edited: Feb 14 15:39 2012 (edgrif)
  * Created: Mon Dec 19 10:21:32 2011 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -43,6 +43,7 @@
 #include <ZMap/zmapRemoteProtocol.h>
 #include <ZMap/zmapRemoteCommand.h>
 #include <zmapRemoteControl_P.h>
+
 
 
 typedef enum {ENVELOPE_REQUEST, ENVELOPE_REPLY} EnvelopeType ;
@@ -235,19 +236,16 @@ GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
 }
 
 
-/* Make a zmap xml reply envelope:
+/* Given the original request xml string, make a valid xml reply envelope
+ * for that reply (as an xml stack):
  * 
- * <ZMap version="n.n" type="reply" app_id="xxxx" clipboard_id="xxxxx" request_id="yyy">
+ * <ZMap version="n.n" type="reply" app_id="xxxx" clipboard_id="yyyy" request_id="zzzz">
  *   <reply command="something_command">
  *   </reply>
  * </zmap>
  * 
- * Add further content using XXXXzMapXMLUtilsAddStackToEventsArrayMiddle()
- * 
- * BUT NOTE, it's much safer to use zMapRemoteControlCreateReplyFromRequest()
- * as it will automatically make sure that the reply envelope
- * is correct for the given request.
- * 
+ * Add further content using zMapRemoteCommandRequestAddBody()
+ *
  *  */
 GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
 						char *xml_request,
@@ -324,6 +322,54 @@ char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **err_msg_out)
     }
 
   return xml_string ;
+}
+
+
+/* Given an element only will produce:
+ * 
+ *  <element/>
+ * 
+ * or with an attribute and attribute_value:
+ * 
+ * <element attribute="attribute_value"/>
+ * 
+ * The intention is to provide a quick way to make this element without
+ * the need for allocation/free. The stack is "read-only", if you need
+ * to alter it then you need to take a copy of it.
+ * 
+ * The element, attribute and attribute_value you supply need to be around until the xml
+ * has been made.
+ *  */
+ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attribute, char *attribute_value)
+{
+  static ZMapXMLUtilsEventStackStruct
+    stack[] =
+      {
+	{ZMAPXML_NULL_EVENT, NULL, ZMAPXML_EVENT_DATA_NONE,  {0}},
+	{ZMAPXML_NULL_EVENT, NULL, ZMAPXML_EVENT_DATA_NONE, {0}},
+	{ZMAPXML_NULL_EVENT, NULL, ZMAPXML_EVENT_DATA_NONE,  {0}},
+	{ZMAPXML_NULL_EVENT}
+      } ;
+  int stack_index = 0 ;
+
+  stack[stack_index].event_type = ZMAPXML_START_ELEMENT_EVENT ;
+  stack[stack_index].name = element ;
+  stack_index++ ;
+
+  if (attribute)
+    {
+      stack[stack_index].event_type = ZMAPXML_ATTRIBUTE_EVENT ;
+      stack[stack_index].name = attribute ;
+      stack[stack_index].data_type = ZMAPXML_EVENT_DATA_QUARK ;
+      stack[stack_index].value.q = g_quark_from_string(attribute_value) ;
+
+      stack_index++ ;
+    }
+
+  stack[stack_index].event_type = ZMAPXML_END_ELEMENT_EVENT ;
+  stack[stack_index].name = element ;
+
+  return &(stack[0]) ;
 }
 
 
@@ -579,6 +625,14 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 }
 
 
+/* Returns the attribute value in:
+ * 
+ * <element attribute="attribute_value">
+ * 
+ * Returns TRUE if attribute found, returns FALSE and an error otherwise,
+ * error should be g_free'd when finished with.
+ * 
+ *  */
 gboolean zMapRemoteCommandGetAttribute(char *message,
 				       char *element, char *attribute, char **attribute_value_out,
 				       char **error_out)
@@ -598,7 +652,13 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
 
   if (!(result = zMapXMLParserParseBuffer(parser, message, strlen(message))))
     {
-      *error_out = zMapXMLParserLastErrorMsg(parser) ;
+      *error_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+    }
+  else if (!(attribute_data.attribute_value))
+    {
+      *error_out = g_strdup_printf("%s not found in %s.", attribute, message) ;
+
+      result = FALSE ;
     }
   else
     {
@@ -970,7 +1030,11 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
   if (!result)
     {
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   validate_data->valid = result ;
@@ -1005,7 +1069,11 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement request_
   if (!result)
     {
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   validate_data->valid = result ;
@@ -1050,7 +1118,11 @@ static gboolean xml_request_attrs_cb(gpointer user_data, ZMapXMLElement request_
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1065,7 +1137,11 @@ static gboolean xml_request_attrs_cb(gpointer user_data, ZMapXMLElement request_
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1080,7 +1156,11 @@ static gboolean xml_request_attrs_cb(gpointer user_data, ZMapXMLElement request_
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1095,7 +1175,11 @@ static gboolean xml_request_attrs_cb(gpointer user_data, ZMapXMLElement request_
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1110,7 +1194,11 @@ static gboolean xml_request_attrs_cb(gpointer user_data, ZMapXMLElement request_
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1170,7 +1258,11 @@ static gboolean xml_reply_attrs_cb(gpointer user_data, ZMapXMLElement request_el
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1185,7 +1277,11 @@ static gboolean xml_reply_attrs_cb(gpointer user_data, ZMapXMLElement request_el
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
@@ -1204,7 +1300,11 @@ static gboolean xml_reply_attrs_cb(gpointer user_data, ZMapXMLElement request_el
 	  else
 	    {
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      result = FALSE ;
 	    }
@@ -1238,7 +1338,11 @@ static gboolean xml_reply_body_cb(gpointer user_data, ZMapXMLElement request_ele
 	      err_msg = g_strdup("no reply body.") ;
 
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      result = FALSE ;
 	    }
@@ -1265,7 +1369,11 @@ static gboolean xmlGetAttrCB(gpointer user_data, ZMapXMLElement request_element,
       else
 	{
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  g_free(err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  result = FALSE ;
 	}
