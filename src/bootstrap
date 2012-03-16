@@ -61,6 +61,7 @@ fi
 
 # Off we go......
 #
+zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "bootstrap starting...."
 
 
@@ -110,12 +111,11 @@ fi
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
 zmap_message_out "-------------------------------------------------------------------"
 autoreconf $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
-zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "Finished running autoreconf for bootstrap"
-
 
 # finished !
+zmap_message_out "-------------------------------------------------------------------"
+zmap_message_out "Finished running autoreconf for bootstrap"
 zmap_message_out "bootstrap finished...."
-
+zmap_message_out "-------------------------------------------------------------------"
 
 exit $RC
