@@ -301,7 +301,8 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
-gboolean zMapViewProcessRemoteRequest(ZMapView view, char *command_name, char *request,
+gboolean zMapViewProcessRemoteRequest(ZMapView view,
+				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
@@ -318,7 +319,7 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view, char *command_name, char *r
 
 	  view_window = list_item->data ;
 
-	  result = zMapWindowProcessRemoteRequest(view_window->window, command_name, request,
+	  result = zMapWindowProcessRemoteRequest(view_window->window, command_name, view_id, request,
 						  app_reply_func, app_reply_data) ;
 	}
       while ((!result) && (list_item = g_list_next(list_item))) ;
