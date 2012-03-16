@@ -21,9 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
-name
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -33,12 +31,8 @@ name
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <glib.h>
+
 #include <ZMap/zmapUtils.h>
 #include <zmapConfigDir_P.h>
 #include <zmapConfigIni_P.h>
