@@ -5,10 +5,10 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapRemoteControl.la
 
-libZMapRemoteControl_la_SOURCES = zmapRemoteControl_.h \
-zmapRemoteControl.c \
+libZMapRemoteControl_la_SOURCES = remotetest/remotecontroltest.c \
 zmapRemoteCommand.c \
-remotetest/remotecontroltest.c \
+zmapRemoteControl.c \
+ zmapRemoteControl_P.h \
 $(NULL)
 
 libZMapRemoteControl_la_CFLAGS = $(INCLUDE_COMMON)
