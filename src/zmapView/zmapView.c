@@ -152,7 +152,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   gint start,gint end,
 					   gboolean terminate);
 static void destroyConnection(ZMapView view, ZMapViewConnection view_conn) ;
-static void killGUI(ZMapView zmap_view) ;
+static void killGUI(ZMapView zmap_view, ZMapViewWindowTree destroyed_view_inout) ;
 static void killConnections(ZMapView zmap_view) ;
 
 static void resetWindows(ZMapView zmap_view) ;
@@ -161,10 +161,9 @@ static void displayDataWindows(ZMapView zmap_view,
                                ZMapFeatureContext new_features, GHashTable *new_styles,
                                gboolean undisplay,GList *masked;
                                ) ;
-static void killAllWindows(ZMapView zmap_view) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
-static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
+static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_view_inout) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
@@ -1082,7 +1081,7 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
     {
       if (g_list_length(zmap_view->window_list) > 1)
 	{
-	  destroyWindow(zmap_view, view_window) ;
+	  destroyWindow(zmap_view, view_window, NULL) ;
 	}
     }
 
@@ -1633,45 +1632,48 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
  * this call just signals everything to die, its the checkConnections() routine
  * that really clears up and when everything has died signals the caller via the
  * callback routine that they supplied when the view was created.
- *
- * NOTE: if the function returns FALSE it means the view has signalled its threads
- * and is waiting for them to die, the caller should thus wait until view signals
- * via the killedcallback that the view has really died before doing final clear up.
- *
- * If the function returns TRUE it means that the view has been killed immediately
- * because it had no threads so the caller can clear up immediately.
  */
-void zMapViewDestroy(ZMapView zmap_view)
+void zMapViewDestroy(ZMapView view, ZMapViewWindowTree destroyed_zmap_inout)
 {
 
-  if (zmap_view->state != ZMAPVIEW_DYING)
+  if (view->state != ZMAPVIEW_DYING)
     {
-      zmapViewBusy(zmap_view, TRUE) ;
+      ZMapViewWindowTree destroyed_view = NULL ;
+
+      zmapViewBusy(view, TRUE) ;
+
+      if (destroyed_zmap_inout)
+	{
+	  destroyed_view = g_new0(ZMapViewWindowTreeStruct, 1) ;
+	  destroyed_view->parent = view ;
+
+	  destroyed_zmap_inout->children = g_list_append(destroyed_zmap_inout->children, destroyed_view) ;
+	}
 
       /* All states have GUI components which need to be destroyed. */
-      killGUI(zmap_view) ;
+      killGUI(view, destroyed_view) ;
 
-      if (zmap_view->state <= ZMAPVIEW_MAPPED)
+      if (view->state <= ZMAPVIEW_MAPPED)
 	{
 	  /* For init we simply need to signal to our parent layer that we have died,
 	   * we will then be cleaned up immediately. */
 
-	  zmap_view->state = ZMAPVIEW_DYING ;
+	  view->state = ZMAPVIEW_DYING ;
 	}
       else
 	{
 	  /* for other states there are threads to kill so they must be cleaned
 	   * up asynchronously. */
 
-	  if (zmap_view->state != ZMAPVIEW_RESETTING)
+	  if (view->state != ZMAPVIEW_RESETTING)
 	    {
 	      /* If we are resetting then the connections have already being killed. */
-	      killConnections(zmap_view) ;
+	      killConnections(view) ;
 	    }
 
 	  /* Must set this as this will prevent any further interaction with the ZMap as
 	   * a result of both the ZMap window and the threads dying asynchronously.  */
-	  zmap_view->state = ZMAPVIEW_DYING ;
+	  view->state = ZMAPVIEW_DYING ;
 	}
     }
 
@@ -2475,7 +2477,7 @@ static void killAllSpawned(ZMapView zmap_view)
 
 /* Should only do this after the window and all threads have gone as this is our only handle
  * to these resources. The lists of windows and thread connections are dealt with somewhat
- * asynchronously by killAllWindows() & checkConnections() */
+ * asynchronously by killGUI() & checkConnections() */
 static void destroyZMapView(ZMapView *zmap_view_out)
 {
   ZMapView zmap_view = *zmap_view_out ;
@@ -2600,13 +2602,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	{
 	  ZMapViewConnection view_con ;
 	  ZMapThread thread ;
+	  ConnectionData cd;	 
 	  ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
 	  gboolean thread_has_died = FALSE ;
 	  gboolean steps_finished = FALSE ;
 	  gboolean is_continue = FALSE;
-	  ConnectionData cd;
 	  LoadFeaturesDataStruct lfd;
 
 	  view_con = list_item->data ;
@@ -2674,7 +2676,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  {
 		    ZMapServerReqAny req_any ;
 		    ZMapViewConnectionRequest request ;
-		    ZMapViewConnectionStep step ;
+		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
 
 		    view_con->curr_request = ZMAPTHREAD_REQUEST_WAIT ;
@@ -2852,6 +2854,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      ZMapViewConnectionStep step;
 
 	      is_continue = FALSE;
+
 	      if(view_con->step_list)
 		{
 		  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
@@ -3556,16 +3559,17 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
 
 
 
-
-
-
-
-/* Calls the control window callback to remove any reference to the zmap and then destroys
- * the actual zmap itself.
- *  */
-static void killGUI(ZMapView zmap_view)
+/* Kill all the windows... */
+static void killGUI(ZMapView view, ZMapViewWindowTree destroyed_view)
 {
-  killAllWindows(zmap_view) ;
+  while (view->window_list)
+    {
+      ZMapViewWindow view_window ;
+
+      view_window = view->window_list->data ;
+
+      destroyWindow(view, view_window, destroyed_view) ;
+    }
 
   return ;
 }
@@ -3922,24 +3926,6 @@ static void loaded_dataCB(ZMapWindow window, void *caller_data, void *window_dat
 }
 
 
-/* Kill all the windows... */
-static void killAllWindows(ZMapView zmap_view)
-{
-
-  while (zmap_view->window_list)
-    {
-      ZMapViewWindow view_window ;
-
-      view_window = zmap_view->window_list->data ;
-
-      destroyWindow(zmap_view, view_window) ;
-    }
-
-
-  return ;
-}
-
-
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window)
 {
   ZMapViewWindow view_window ;
@@ -3952,8 +3938,18 @@ static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window)
 }
 
 
-static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
+static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_view_inout)
 {
+  if (destroyed_view_inout)
+    {
+      ZMapViewWindowTree destroyed_window ;
+
+      destroyed_window = g_new0(ZMapViewWindowTreeStruct, 1) ;
+      destroyed_window->parent = view_window->window ;
+
+      destroyed_view_inout->children = g_list_append(destroyed_view_inout->children, destroyed_window) ;
+    }
+
   zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
 
   zMapWindowDestroy(view_window->window) ;
@@ -4748,8 +4744,12 @@ static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg)
   thread_id = zMapThreadGetThreadID(thread) ;
   full_msg = g_strdup_printf(format_str, thread_id, msg ? msg : "") ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapDebug("%s", full_msg) ;
-//  zMapLogWarning("%s",full_msg);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  zMapLogWarning("%s",full_msg);
 
   g_free(full_msg) ;
   g_free(thread_id) ;
@@ -4798,7 +4798,10 @@ static gboolean checkContinue(ZMapView zmap_view)
 
 	zmap_view->state = ZMAPVIEW_DYING ;
 
-	killGUI(zmap_view) ;
+
+	/* OK...WE MAY NEED TO SIGNAL THAT VIEWS HAVE DIED HERE..... */
+	/* Do we need to return what's been killed here ???? */
+	killGUI(zmap_view, NULL) ;
 
 	destroy_data = g_new(ZMapViewCallbackDestroyDataStruct, 1) ; /* Caller must free. */
 	destroy_data->xwid = zmap_view->xwid ;
@@ -4869,6 +4872,8 @@ static gboolean checkContinue(ZMapView zmap_view)
     }
 
 //if(!connections) printf("checkContinue returns FALSE\n");
+
+
   return connections ;
 }
 
