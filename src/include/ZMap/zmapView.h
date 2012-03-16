@@ -1,4 +1,4 @@
-/*  Last edited: Feb  8 20:50 2012 (edgrif) */
+/*  Last edited: Feb 14 20:30 2012 (edgrif) */
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -242,7 +242,8 @@ int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
-gboolean zMapViewProcessRemoteRequest(ZMapView user_data, char *command_name, char *request,
+gboolean zMapViewProcessRemoteRequest(ZMapView user_data,
+				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
@@ -253,7 +254,7 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 
 char *zMapViewRemoteReceiveAccepts(ZMapView view);
 
-void zMapViewDestroy(ZMapView zmap_view) ;
+void zMapViewDestroy(ZMapView zmap_view, ZMapViewWindowTree destroyed_zmap_inout) ;
 
 
 
