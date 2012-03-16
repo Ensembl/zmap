@@ -1,3 +1,4 @@
+/*  Last edited: Feb 14 16:33 2012 (edgrif) */
 /*  File: zmapappconnect.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -115,6 +116,9 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
   return frame ;
 }
 
+
+/* Moving code to manager so need to somehow make sure that we signal app back so it
+ * can update it's display...... */
 
 /* Make a new zmap, if sequence is unspecified then the zmap will be blank and view
  * will not be set. */
