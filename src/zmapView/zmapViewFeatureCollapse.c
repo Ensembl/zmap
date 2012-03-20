@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:   collapse duplicated short reads features subject to configuration
- *                NOTE see Design_notes/notes/BAN.shtml
+ *                NOTE see Design_notes/notes/BAM.shtml
  *                sets flags in the context per feature to say  collapsed or not
  *
  *-------------------------------------------------------------------
@@ -198,7 +198,16 @@ gint zMapFeatureGapCompare(gconstpointer a, gconstpointer b)
 /* taking the most common base and not translating variable positions */
 /* initially annotators will be warned to check dbSNP or 1000 genomes */
 #warning interim solution for concensus sequence
-void make_concensus_sequence(ZMapFeature composite,GList *fl, int n_feat)
+
+# if 0
+Some data from GFF:
+
+chr17-03	Tier1_K562_cell_longPolyA_rep2	similarity	27047872	27047911	.	+	.	Class "Sequence" ; Name "SINATRA_0006:5:34:19391:19990#0" ; Align 5 44 + ; Length 76 ; percentID 100 ; sequence CCGGCCAAAGAGCCTCGGAAGAGCGCTCCCAGGAGCAAAAAGTCTGACCACTAGGCTACCGTAACGATTCCGCTGA
+
+So i guess this means that the match starts on the 5th base in the sequence at genomic coordinate 27047872
+#endif
+
+void make_concensus_sequence(ZMapFeature composite,GList *fl, int n_feat, ZMapFeatureSet fs)
 {
 	int n_seq = composite->x2 - composite->x1 + 1;
 #define N_ALPHABET	5
@@ -209,6 +218,16 @@ void make_concensus_sequence(ZMapFeature composite,GList *fl, int n_feat)
 	int i, nb;
 	char *seq;
 	char *base = "nacgt";
+
+
+	if(composite->feature.homol.align)
+	{
+		/* no sequence in the gap so dionlt need as much space */
+		ZMapAlignBlock ab;
+		i = composite->feature.homol.align->len - 1;
+		ab = & g_array_index(composite->feature.homol.align,ZMapAlignBlockStruct,i);
+		n_seq = ab->q2 + 1;
+	}
 
 #if STUPID
 /* will fail if not in set */
@@ -232,25 +251,19 @@ void make_concensus_sequence(ZMapFeature composite,GList *fl, int n_feat)
 
 	memset(bases,0,sizeof(int) * n_bases * N_ALPHABET);
 
-//printf("%d bases\n",n_bases);
-
 	for(; n_feat--; fl = fl->prev)
 	{
 		f = (ZMapFeature) fl->data;
-		seq = f->feature.homol.sequence;
-		nb = f->x2 - f->x1 + 1;
+		seq = f->feature.homol.sequence + f->feature.homol.y1 - 1;	/* skip un-matching sequence */
 		i = f->x1 - composite->x1;
-//printf("i,nb,n_seq,n_bases: %d %d %d %d\n index:",i,nb,n_seq,n_bases);
-		for(; nb-- ;i++)
+		for(; i < n_seq && *seq; i++)
 		{
-//printf("%d ",i * N_ALPHABET + index[(int)*seq]);
 			bases[i * N_ALPHABET + index[(int)*seq++]] ++;
 		}
-//printf("\n");
 	}
 
 	/* must not free old sequence as it's copied from a real feature */
-	composite->feature.homol.sequence = seq = g_malloc(n_seq + 1);
+	composite->feature.homol.sequence = seq = g_malloc(n_seq + 10);
 	for(bp = bases, i = 0; i < n_seq; i++)
 	{
 		int base_ind, max, j;
@@ -330,7 +343,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		squash   = zMapStyleIsSquash(style);
 		join 	   =  zMapStyleJoinOverlap(style);
 		if(!join)
-			collapse = zMapStyleIsCollapse(style);	/* collaspe is like join_overlap = feature length */
+			collapse = zMapStyleIsCollapse(style);	/* collaspe is like join_overlap == feature length */
 
 		if(!collapse && !squash && !join)
 			break;
@@ -341,35 +354,24 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 * squash combines features with identical gaps (must be present) and same or varied start and end
 		 * squash can only be set for alignments, collapse can be set for simple features too
 		 * join will amalgamate overlapping ungapped reads between splice coordinates
-		 * and assumes that these have been sorted to appear after gapped ones in the listprintf("insert composite %s %d %d\n",g_quark_to_string(composite->original_id), composite->flags.collapsed,composite->flags.squashed);
- of features.
+		 * and assumes that these have been sorted to appear after gapped ones in the list of features.
 		 *
 		 * if both are selected then squash overrides collapse, but only for gapped features
 		 * so we only scan the features once
 		 *
 		 * squashed and collapsed features are flagged as such and the visible one has a population count
+		 * (the visible one is a new feature added by this code)
 		 *
 		 * visible squashed features have extra gaps data with contiguous regions at start and end (both optional)
-		 * these get displayed in a diff colour
-		 * but to compare gaps arrays for equality we can only add these on afterwards :-(
-		 *
 		 * if we want to be flash we could do many of these to have a colour gradient according to populatiom
 		 * NOTE * that would be complicated and slow *
 		 *
-		 * NOTE I used some old fashioned coding methodology here,
-		 * The idea is to do just what is required, taking into account
-		 * squash and/or collapse feature types and gaps array status,
-		 * while doing a single _linear_ scan and not flapping about.
-		 * So that requires careful thought....
-		 *
-		 * There is no assumption that all features are of the same type
-		 * Take great care to be aware of all cases if you modify this.
-		 * Quite a few statements rely on implied status of some flags or data.
+		 * NOTE Quite a few statements rely on implied status of some flags or data.
 		 * I've added some Asserts for documentation purpose *and* some helpful comments
 		 */
 
 		/* NOTE
-		 * adding blocks to eg gaps array turned out to be a nightmnare due to query coords being reversed sometimes
+		 * adding blocks to the gaps array turned out to be a nightmnare due to query coords being reversed sometimes
 		 * 1-based coords of course make life tedious too
 		 * mismatches at the start/ end of a read also cause grief
 		 * I'd like to rewrite this :-(
@@ -378,6 +380,8 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 		 * so instead of ading match blocks and adjusting coords we assume full homology and recreate the gaps array from scratch
 		 * not all reads start at 1 or end at the end
 		 */
+
+		/* NOTE initially i'd adjusted one feature in situ bbut not this code added a new one for composite features */
 
 		/* sort into start, -end coord order */
 		/* sort by first gap, if no gaps sort by x1,x2: we get two groups of features */
@@ -502,6 +506,8 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 			{
 				if(!composite)
 				{
+//					zMapAssert(collapse_this || squash_this);
+
 					composite = g_new0(ZMapFeatureStruct,1);
 					memcpy(composite,feature,sizeof(ZMapFeatureStruct));
 					if(collapse_this)
@@ -547,7 +553,6 @@ printf("squash this: y, f, edge = %.1f,%.1f %d,%d %.1f,%.1f\n",y1,y2,f->x1,f->x2
 #if SQUASH_DEBUG
 printf("collapse this\n");
 #endif
-					zMapAssert(collapse);
 					composite->population++;
 					f->flags.collapsed = TRUE;
 				}
@@ -757,7 +762,7 @@ else
 				else if(composite && feature->feature.homol.align)
 				{
 					/* squashed but no variable regions */
-					/* collapsed featrue shav no gaps array */
+					/* collapsed features have no gaps array */
 
 					/* must copy the GArray as other functions that refer to it by macro move the address
 					 * if we squashed then we already replaced it
@@ -782,15 +787,17 @@ else
 				if(composite)
 				{
 					char buf[256];
-//					sprintf(buf,"%s (%d reads)",g_quark_to_string(feature->unique_id),composite->population);
-					sprintf(buf,"Composite_%d_reads)",composite->population);
-					composite->unique_id = composite->original_id = g_quark_from_string(buf);
+					sprintf(buf,"Composite_%d_reads_%s",composite->population,g_quark_to_string(feature->unique_id));
+					composite->original_id = composite->unique_id = g_quark_from_string(buf);
 					g_hash_table_insert(feature_set->features, GUINT_TO_POINTER(composite->unique_id), composite);
 
 					composite->x1 = y1;
 					composite->x2 = y2;
+
+					composite->url = NULL;	/* in case it gets freed */
 //printf("composite: %d,%d\n",composite->x1,composite->x2);
-					make_concensus_sequence(composite,duplicate ? fl : fl->prev, composite->population);
+					make_concensus_sequence(composite,duplicate ? fl : fl->prev, composite->population, feature_set);
+//if(composite->feature.homol.sequence) composite->feature.homol.sequence = g_strdup(composite->feature.homol.sequence);
 				}
 
 				composite = NULL;

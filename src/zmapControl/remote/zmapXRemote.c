@@ -132,7 +132,7 @@ static char *trap_txt_G = NULL ;
 
 
 
-/* 
+/*
  *                 External routines
  */
 
@@ -709,7 +709,13 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
 
   if (timeout_timer)
+  {
+	elapsed = g_timer_elapsed(timeout_timer, &ignore);
+	if(elapsed > 0.1)
+		zMapLogWarning("XRemote took %.3f seconds",elapsed);
+
     g_timer_destroy(timeout_timer) ;
+  }
 
 
   XSelectInput(object->display, object->window_id, 0);
@@ -1054,7 +1060,7 @@ static Bool process_property_notify(ZMapXRemoteObj object,
 		else
 		  {
 		    *response = commandResult ;
-		    
+
 		    REMOTELOGMSG(Warning,"Received at window '0x%lx' on atom '%s': '%s'",
 				 object->window_id, atom_name, *response) ;
 
@@ -1367,8 +1373,8 @@ static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString(ZMapXRemoteObj objec
 
 
 
-/* 
- * 
+/*
+ *
  * If FALSE returned then error_out is always filled to give reason for failure.
  *  */
 static gboolean zmapXRemoteGetPropertyFullString(Display *display,

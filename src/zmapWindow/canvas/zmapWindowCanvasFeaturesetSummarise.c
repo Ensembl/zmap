@@ -56,7 +56,7 @@
       we assume this has been done and the features are fed in in order
       this is essential for efficiency
 
-  - need a list of rectanges held in the window which holds the
+  - need a list of rectangles held in the window which holds the
     current 2D covered region, trimmed as it goes out of scope.
 
   - we also assume that the rectangles are left justified (as they are by the calling code)
