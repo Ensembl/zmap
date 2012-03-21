@@ -707,7 +707,8 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
  DONE:
 
-
+#if 0
+/* breaks otterlace */
   if (timeout_timer)
   {
 	elapsed = g_timer_elapsed(timeout_timer, &ignore);
@@ -716,7 +717,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
     g_timer_destroy(timeout_timer) ;
   }
-
+#endif
 
   XSelectInput(object->display, object->window_id, 0);
 
