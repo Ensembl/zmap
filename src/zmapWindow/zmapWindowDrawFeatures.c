@@ -861,7 +861,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
-
+printf("Processed %d features",featureset_data.feature_count);
   {
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
   zMapStopTimer("DrawFeatureSet",str);
@@ -2330,6 +2330,8 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
+
+
 /* Called to draw each individual feature. */
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 {
@@ -2347,7 +2349,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style ;
 
 #if MH17_REVCOMP_DEBUG > 1
-  zMapLogWarning("ProcessFeature %d-%d ",feature->x1,feature->x2);
+  zMapLogWarning("ProcessFeature %s %d-%d",g_quark_to_string(feature->original_id), feature->x1,feature->x2);
 #endif
 
   style = feature->style;

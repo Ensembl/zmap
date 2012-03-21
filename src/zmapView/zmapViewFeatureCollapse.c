@@ -402,6 +402,8 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 			duplicate = TRUE;
 
 			f = (ZMapFeature) fl->data;
+			f->population = 1;
+
 			if(!feature)
 				duplicate = FALSE;
 
@@ -431,75 +433,76 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 						duplicate = FALSE;
 					}
 				}
+			}
 
 //				if(f->type == ZMAPSTYLE_MODE_ALIGNMENT)
+			if(duplicate)
+			{
+				/* compare gaps array */
+				/* if there are gaps the must be identical */
+				/* collapse is ok without gaps */
+
+				GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
+
+				/* test gaps equal for both squash and collapse */
+				if(g1 && g2)
 				{
-					/* compare gaps array */
-					/* if there are gaps the must be identical */
-					/* collapse is ok without gaps */
-
-					GArray *g1 = feature->feature.homol.align, *g2 = f->feature.homol.align;
-
-					/* test gaps equal for both squash and collapse */
-					if(g1 && g2)
+					/* if there are gaps they must be identical */
+					if(g1->len != g2->len)
 					{
-						/* if there are gaps they must be identical */
-						if(g1->len != g2->len)
-						{
-							duplicate = FALSE;
-						}
-						else
-						{
-							int i;
-							ZMapAlignBlock a1, a2;
-							/* the AlignBlocks are the matches
-							 * we want to compare the gaps between
-							 * there is almost always exactly two matches
-							 * so let's just plod through it
-							 */
+						duplicate = FALSE;
+					}
+					else
+					{
+						int i;
+						ZMapAlignBlock a1, a2;
+						/* the AlignBlocks are the matches
+							* we want to compare the gaps between
+							* there is almost always exactly two matches
+							* so let's just plod through it
+							*/
 
-							/* NOTE must test target not query as query will be diff */
+						/* NOTE must test target not query as query will be diff */
 
-							for(i = 0;i < g1->len; i++)
+						for(i = 0;i < g1->len; i++)
+						{
+							a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
+							a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
+
+							if(i)
 							{
-								a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
-								a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
-
-								if(i)
+								if(a1->t1 != a2->t1)
 								{
-									if(a1->t1 != a2->t1)
-									{
-										duplicate = FALSE;
-										break;
-									}
-								}
-								if(i < g1->len -1)
-								{
-									if(a1->t2 != a2->t2)
-									{
-										duplicate = FALSE;
-										break;
-									}
-
+									duplicate = FALSE;
+									break;
 								}
 							}
-						}
-						if(duplicate && squash)		/* has prioriy over collapse */
-						{
-							squash_this = TRUE;	/* only place this gets set */
-						}
-					}
-					else if(g1 || g2)
-					{
-						/* if there are no gaps then both must be ungapped for collapse */
-						/* squash requires gaps */
-						duplicate = FALSE;
-					}
+							if(i < g1->len -1)
+							{
+								if(a1->t2 != a2->t2)
+								{
+									duplicate = FALSE;
+									break;
+								}
 
-					/* collapse_this may be true here (gaps or no gaps) */
-					if(!collapse_this && !squash_this)
-						duplicate = FALSE;
+							}
+						}
+					}
+					if(duplicate && squash)		/* has prioriy over collapse */
+					{
+						squash_this = TRUE;	/* only place this gets set */
+					}
 				}
+				else if(g1 || g2)
+				{
+					/* if there are no gaps then both must be ungapped for collapse */
+					/* squash requires gaps */
+					duplicate = FALSE;
+				}
+
+				/* collapse_this may be true here (gaps or no gaps) */
+				if(!collapse_this && !squash_this)
+					duplicate = FALSE;
 			}
 
 			if(duplicate)
@@ -514,6 +517,8 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 						feature->flags.collapsed = TRUE;
 					else
 						feature->flags.squashed = TRUE;
+
+					feature->composite = composite;
 				}
 
 				if(squash_this)
@@ -787,15 +792,20 @@ else
 				if(composite)
 				{
 					char buf[256];
-					sprintf(buf,"Composite_%d_reads_%s",composite->population,g_quark_to_string(feature->unique_id));
-					composite->original_id = composite->unique_id = g_quark_from_string(buf);
+					sprintf(buf,"%d_reads_%s",composite->population,g_quark_to_string(feature->unique_id));
+					composite->unique_id = g_quark_from_string(buf);
+					sprintf(buf,"Composite_%d_reads",composite->population);
+					composite->original_id = g_quark_from_string(buf);
+
 					g_hash_table_insert(feature_set->features, GUINT_TO_POINTER(composite->unique_id), composite);
 
 					composite->x1 = y1;
 					composite->x2 = y2;
 
 					composite->url = NULL;	/* in case it gets freed */
-//printf("composite: %d,%d\n",composite->x1,composite->x2);
+#if SQUASH_DEBUG
+printf("composite: %s %d,%d\n", g_quark_to_string(composite->original_id),composite->x1,composite->x2);
+#endif
 					make_concensus_sequence(composite,duplicate ? fl : fl->prev, composite->population, feature_set);
 //if(composite->feature.homol.sequence) composite->feature.homol.sequence = g_strdup(composite->feature.homol.sequence);
 				}
@@ -804,9 +814,8 @@ else
 
 				/* set up for next unique feature or series of matches */
 				feature = f;
-				feature->population = 1;
 
-				if(squash)
+//				if(squash)	 y1,y2 needed for collapse too
 				{
 					edge1 = y1 = feature->x1;
 					edge2 = y2 = feature->x2;
