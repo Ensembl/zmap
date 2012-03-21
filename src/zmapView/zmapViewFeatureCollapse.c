@@ -518,8 +518,10 @@ if (f_gaps) for(i = 0;i < f_gaps->len; i++)
 					else
 						feature->flags.squashed = TRUE;
 
-					feature->composite = composite;
+					composite->composite = g_list_prepend(NULL, feature);
 				}
+				/* save list of source features for blixem */
+				composite->composite = g_list_prepend(composite->composite,f);
 
 				if(squash_this)
 				{
@@ -560,10 +562,6 @@ printf("collapse this\n");
 #endif
 					composite->population++;
 					f->flags.collapsed = TRUE;
-				}
-				else
-				{
-					duplicate = FALSE;
 				}
 			}
 

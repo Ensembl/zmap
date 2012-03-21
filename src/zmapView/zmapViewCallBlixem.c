@@ -1464,7 +1464,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 
       blixem_data->align_list = NULL ;
 
-      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES)
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

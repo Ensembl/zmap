@@ -113,7 +113,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       zMapMessage("%s", msg) ;
     }
-  else if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES && !(item_in_focus_col && focus_item))
+  else if ((requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES || requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
+		&& !(item_in_focus_col && focus_item))
     {
       /* User wants to blixem "selected" features but there aren't any in the item's column. */
 
@@ -197,7 +198,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 	      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
 
 //	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
-	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items) ;
+	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items,requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
 		y1 = zmapWindowItemListStartCoord(focus_items);
 		if(y1)
 			align->cursor_position = y1;

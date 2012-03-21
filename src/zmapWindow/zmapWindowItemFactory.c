@@ -782,28 +782,6 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-	if(feature->flags.collapsed || feature->flags.squashed)
-	{
-		/* collapsed item are not displayed as they contain no new information
-		 * but they cam be searched for in the FToI hash
-		 * so return the item that they got collapsed into
-		 * if selected from the search they get assigned to the canvas item
-		 * and the population copied in.
-		 */
-
-#warning this works only because short reads are sorted and displayed in order, we do not get new features OTF, other than complete blocks
-#warning window search does not find these features so this is not working
-
-/*
- * this needs to find the correct CanvasFeatureset item, and composite feature
- * reads are displayed in randon order as they come from the featureset's hash table
- */
-
-		/* NOTE on revcomp last item can be freed in whcih case feature may be 0 */
-		if(last_item && last_item->feature && last_item->feature->population)	/* just don't display duplicates */
-			return((FooCanvasItem *)last_item);
-		return(NULL);
-	}
 
 //       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
       /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
@@ -858,6 +836,21 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
             run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
 
       zMapAssert(canvas_item);
+
+	if(feature->flags.collapsed || feature->flags.squashed)
+	{
+		/* collapsed items are not displayed as they contain no new information
+		 * but they cam be searched for in the FToI hash
+		 * so return the item that they got collapsed into
+		 * if selected from the search they get assigned to the canvas item
+		 * and the population copied in.
+		 *
+		 * NOTE calling code will need to set the feature in the hash as the composite feature
+#warning need to set composite feature in lookup code
+		 */
+		return (FooCanvasItem *) canvas_item;
+	}
+
 
 /* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
  * so I changed FToIAddfeature to take the feature explicitly

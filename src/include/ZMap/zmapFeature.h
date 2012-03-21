@@ -643,10 +643,9 @@ typedef struct ZMapFeatureStruct_
 
   /*
    * for RNA seq data:
-   * if population this is a list of underlying features that are hidden from view
-   * else if squashed or collapsed it's the composite feature
+   * for composite features this is a list of underlying features that are hidden from view
    */
-  gpointer composite;
+  GList *composite;
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */

@@ -1310,7 +1310,7 @@ void zmapWindowReFocusHighlights(ZMapWindow window);
 
 
 GList *zmapWindowItemListToFeatureList(GList *item_list);
-GList *zmapWindowItemListToFeatureListExpanded(GList *item_list);
+GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand);
 int zmapWindowItemListStartCoord(GList *item_list);
 
 
