@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 
-# the bootstrap script makes the file zmap_version.m4 and puts zmaps current
-# version in it as the macro VERSION_NUMBER
+# the bootstrap script makes the file zmap_version.m4 and puts zmap's current
+# version in it as the macro VERSION_NUMBER which is used in ac_init below.
 m4_include([zmap_version.m4])
 
 
@@ -441,6 +441,7 @@ zmapGFF/Makefile
 zmapMake/Makefile
 zmapManager/Makefile
 zmapRemoteControl/Makefile
+zmapRemoteControl/remotetest/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile
