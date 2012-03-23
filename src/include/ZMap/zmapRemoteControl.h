@@ -151,7 +151,7 @@ gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
 gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
 
-void zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
+gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
 
 
 #endif /* ZMAP_REMOTE_CONTROL_H */
