@@ -872,7 +872,7 @@ static void checkForCmdLineVersionArg(int argc, char *argv[])
 
   if (show_version)
     {
-      printf("%s - %s\n", zMapGetAppName(), zMapGetVersionString()) ;
+      printf("%s - %s\n", zMapGetAppName(), zMapGetAppVersionString()) ;
 
       exit(EXIT_SUCCESS) ;
     }
