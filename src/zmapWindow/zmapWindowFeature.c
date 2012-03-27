@@ -931,6 +931,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    }
 	  else
 	    {
+
+
 	      event_handled = handleButton(but_event, window, item, feature) ;
 	    }
 

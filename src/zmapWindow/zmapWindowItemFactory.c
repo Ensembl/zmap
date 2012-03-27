@@ -777,7 +777,6 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
-  ZMapWindowCanvasItem last_item = (ZMapWindowCanvasItem) run_data->canvas_item;
 
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
@@ -837,7 +836,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
       zMapAssert(canvas_item);
 
-	if(feature->flags.collapsed || feature->flags.squashed)
+	if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
 	{
 		/* collapsed items are not displayed as they contain no new information
 		 * but they cam be searched for in the FToI hash

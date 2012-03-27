@@ -639,6 +639,7 @@ typedef struct ZMapFeatureStruct_
     unsigned int squashed: 1 ;		/* alignments only */
     unsigned int squashed_start: 1 ;	/* alignments only */
     unsigned int squashed_end: 1 ;		/* alignments only */
+    unsigned int joined: 1;			/* alignments only */
   } flags ;
 
   /*

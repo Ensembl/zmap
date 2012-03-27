@@ -1943,7 +1943,7 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   }
 
 	/* NOTE if we configure styles to not load these into the canvas we don't get here */
-  if(feature->flags.collapsed || feature->flags.squashed)
+  if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
   {
 	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
   }

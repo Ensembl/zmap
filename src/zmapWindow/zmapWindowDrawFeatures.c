@@ -861,7 +861,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
-printf("Processed %d features",featureset_data.feature_count);
+
   {
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
   zMapStopTimer("DrawFeatureSet",str);

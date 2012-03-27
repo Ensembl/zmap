@@ -195,6 +195,9 @@ typedef enum
     STYLE_PROP_ALIGNMENT_MIXED_COLOURS,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
     STYLE_PROP_ALIGNMENT_SQUASH,
+    STYLE_PROP_ALIGNMENT_JOIN_OVERLAP,
+    STYLE_PROP_ALIGNMENT_JOIN_THRESHOLD,
+    STYLE_PROP_ALIGNMENT_JOIN_MAX,
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
@@ -337,6 +340,9 @@ typedef enum
 
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH              "alignment-squash"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_OVERLAP        "alignment-join-overlap"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_THRESHOLD      "alignment-join-threshold"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX            "alignment-join-max"
 
 
 /* Sequence properties. */
@@ -748,6 +754,9 @@ typedef struct
    gboolean unique;					/* don't display joined up */
    gboolean squash;					/* combine features that have the same gap */
 
+   int join_overlap;				/* for amalgamating short reads */
+   int join_max;					/* how many */
+
 
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
@@ -851,8 +860,6 @@ typedef struct _zmapFeatureTypeStyleStruct
   ZMapStyleGraphScale score_scale;			    // log or linear, for collapse option
   gboolean collapse;					    /* for duplicated features */
   /* see also alignment.squash: even better form of collapse for short reads */
-
-  int join_overlap;				/* for amalgamating short reads */
 
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
@@ -1195,7 +1202,9 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleIsCollapse(style)   (style->collapse)
 #define zMapStyleIsSquash(style)   	 (style->mode_data.alignment.squash)
 
-#define zMapStyleJoinOverlap(style)	 (style->join_overlap)
+#define zMapStyleJoinOverlap(style)	 (style->mode_data.alignment.join_overlap)
+#define zMapStyleJoinThreshold(style)	 (style->mode_data.alignment.join_threshold)
+#define zMapStyleJoinMax(style)	 (style->mode_data.alignment.join_max)
 
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
