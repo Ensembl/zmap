@@ -336,15 +336,22 @@ void zMapGUIShowAbout(void)
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
+
+  char *comment_str ;
+
+  comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
+
   gtk_show_about_dialog(NULL,
 			"authors", authors,
-			"comments", zMapGetCommentsString(),
+			"comments", comment_str,
 			"copyright", zMapGetCopyrightString(),
 			"license", zMapGetLicenseString(),
 			"program-name", zMapGetAppName(),
 			"version", zMapGetAppVersionString(),
 			"website", zMapGetWebSiteString(),
 			NULL) ;
+
+  g_free(comment_str) ;
 
   return ;
 }

@@ -179,7 +179,7 @@ char *zMapGetWebSiteString(void) ;
 char *zMapGetCommentsString(void) ;
 char *zMapGetLicenseString(void) ;
 gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
-
+char *zMapGetCompileString(void) ;
 
 gboolean zMapUtilsConfigDebug(void) ;
 
