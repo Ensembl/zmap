@@ -800,7 +800,7 @@ alignment-align-gaps = true
 
 <br/>
 <fieldset>
-<legend>Predefined Styles</legend>
+<legend id="predefined_styles">Predefined Styles</legend>
 
 <p>There are a number of predefined styles for common features such as DNA sequence display. These
 features have reserved names which should not be used for other sorts of features. The feature set
@@ -896,23 +896,47 @@ the predefined styles:
 <fieldset>
 <legend id="acedb_styles">ZMap Styles and Acedb</legend>
 
+<p>When using ZMap from xace, the zmap styles file can be specified by setting the ZMAP_STYLES_FILE environment variable.</p>
 
-<p>
-ZMap will read either acedb ?Method or ?ZMap_style objects for style information.
-The default is to read ?ZMap_style objects and you should convert to using these instead
-of methods as many features are not available with methods (see <a href="#methods_to_styles">Converting from ?Method to ?ZMap_Style objects</a>).
+<p>Alternatively, <a href="#zmap_style_objects">?ZMap_Style</a> objects or <a href="#acedb_method_objects">?Method</a> objects can be used to specify the styles.</p>
+
+<p>A script is available to do a first-pass conversion to create a styles file for an acedb database. This will require some hand editing but is a good start:</p>
+
+<ol>
+  <li>Export methods from the database into a file, say methods.ace.
+  <li>Run the methods2style.pl script on the file and output the results to a new ini file, e.g. <pre>methods2style.pl -file methods.ace > styles.ini</pre>
+  <li>Add any <a href="#predefined_styles">predefined styles</a> into your styles.ini file, e.g.:
+  <pre>
+[3 Frame]
+
+[3 Frame Translation]
+colours=selected fill green
+
+[DNA]
+colours=selected fill green
+</pre>
+  <li>Set the <code>ZMAP_STYLES_FILE</code> environment variable to the path of your styles file.
+  <li><p>To use ZMap from xace, you need to add it as a display type. To do this, add the following in displays.wrm. You should then have ZMap as an option from the "Show As.." menu in xace's KeySet window.</p>
+<pre>
+_DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
+	-help ZMap-Feature-map -m ZMap
+</pre>
+</ol>
+
 </p>
 
+
 <p>
-The relationship between features and ?Method objects is different according to
-whether you are using ?ZMap_style objects or ?Method objects to specify styles. The
-following sections describe how to use each one. Support for ?Method object styles
-will be maintained to allow immediate usage of acedb databases without the need to convert
-to styles.
-</p>
+</fieldset>
 
 
-<h4>Using ?ZMap_style objects for Styles</h4>
+<br/>
+<fieldset>
+<legend id="zmap_style_objects">Using ?ZMap_style objects in Acedb</legend>
+
+<p>As an alternative to using a styles file, styles can be specified in the database using the ?ZMap_Style class.</p>
+
+<p>The rules for using the ?ZMap_Style class are as follows:</p>
 
 <ul>
   <li>The semantics of the ?Method class are changed: all features must reference a ?Method object
@@ -1214,7 +1238,6 @@ GFF	 Source "BLASTN_TC1"
 
 
 
-
 <h4>The ?Method Class</h4>
 
 <p>
@@ -1427,70 +1450,6 @@ administrator to add these methods in advance. A simple way to do this is as fol
 </ol>
 
 
-
-
-
-
-<h4>Using ?Method objects for styles (deprecated)</h4>
-
-<p>Rules for using ?Method objects:</p>
-
-<ul>
-  <li><p>ZMap must be instructed to look for ?Method objects rather than ?ZMap_style objects
-      by specifying the "use_methods" tag in the configuration file "source" stanza:</p>
-
-      <pre class="example">
-      [source]
-
-      use_methods = true
-      </pre>
-
-  <li><p>ZMap will only read a subset of the ?Method object display and processing tags (see below)
-      to create styles for feature display.</p>
-</ul>
-
-
-<p> Using ?Method objects means that both feature display and feature retrieval is completely controlled by the
-?Method object. There is no separation of these two, the ?Method is both the feature set and
-it's display/processing. The ?Method object tags will not be extended so only a subset of ZMap
-display features can be used. Use of ?Method objects should be seen as a "quick and easy" way of display
-which will duplicate most of the acedb FMap display but that is all. The following extract from the ?Method class
-shows which tags ZMap reads.
-</p>
-
-
-<pre class="example">
-// Method:
-//
-// These are the only tags read by ZMap.
-//
-//
-?Method	Remark ?Text #Evidence
-        //
-        // the Display information controls how the column looks.
-	Display Control UNIQUE No_display                   // never display features
-                               Init_hidden          // initially hide features
- 		Colour #Colour
- 		CDS_colour #Colour
-		Frame_sensitive             // Is feature read frame dependent ?
-		Strand_sensitive Show_up_strand #Colour
-		Score	Score_by_offset	// has priority over width, for Jean
-			Score_by_histogram UNIQUE Float	// baseline value
-			Score_bounds UNIQUE Float UNIQUE Float
-		Overlap_mode UNIQUE	Overlap		  // draw on top - default
-					Bumpable	  // bump to avoid overlap
-			     		Cluster		  // one column per homol target
-		Width UNIQUE Float
-		Max_mag UNIQUE Float	// don't show if more bases per line
-		Min_mag UNIQUE Float	// don't show if fewer bases per line
-		Gapped         // draw sequences or homols with gaps
-		Join_blocks    // link up all blocks of a single feature with lines
-	GFF	GFF_source UNIQUE Text
-		GFF_feature UNIQUE Text
-</pre>
-
-
-
 <h4 id="methods_to_styles">Converting from ?Method to ?ZMap_style objects</h4>
 
 <p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion. The result will
@@ -1551,6 +1510,76 @@ Right_priority   1.5
 _DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
 	-help ZMap-Feature-map -m ZMap
 </pre>
+
+
+<p>
+</fieldset>
+
+
+
+
+<br/>
+<fieldset>
+<legend id="acedb_method_objects">Using ?Method objects for styles (deprecated)</legend>
+
+<p>Many features are not available when using ?Method objects for styles, so it is recommended to use a <a href="#acedb_styles">styles file</a> or <a href="#zmap_style_objects">?ZMap_Style objects</a> instead. Support for ?Method object styles will be maintained to allow immediate usage of acedb databases without the need to convert to styles.</p>
+
+<p>Rules for using ?Method objects:</p>
+
+<ul>
+  <li><p>ZMap must be instructed to look for ?Method objects rather than ?ZMap_style objects
+      by specifying the "use_methods" tag in the configuration file "source" stanza:</p>
+
+      <pre class="example">
+      [source]
+
+      use_methods = true
+      </pre>
+
+  <li><p>ZMap will only read a subset of the ?Method object display and processing tags (see below)
+      to create styles for feature display.</p>
+</ul>
+
+
+<p> Using ?Method objects means that both feature display and feature retrieval is completely controlled by the
+?Method object. There is no separation of these two, the ?Method is both the feature set and
+it's display/processing. The ?Method object tags will not be extended so only a subset of ZMap
+display features can be used. Use of ?Method objects should be seen as a "quick and easy" way of display
+which will duplicate most of the acedb FMap display but that is all. The following extract from the ?Method class
+shows which tags ZMap reads.
+</p>
+
+
+<pre class="example">
+// Method:
+//
+// These are the only tags read by ZMap.
+//
+//
+?Method	Remark ?Text #Evidence
+        //
+        // the Display information controls how the column looks.
+	Display Control UNIQUE No_display                   // never display features
+                               Init_hidden          // initially hide features
+ 		Colour #Colour
+ 		CDS_colour #Colour
+		Frame_sensitive             // Is feature read frame dependent ?
+		Strand_sensitive Show_up_strand #Colour
+		Score	Score_by_offset	// has priority over width, for Jean
+			Score_by_histogram UNIQUE Float	// baseline value
+			Score_bounds UNIQUE Float UNIQUE Float
+		Overlap_mode UNIQUE	Overlap		  // draw on top - default
+					Bumpable	  // bump to avoid overlap
+			     		Cluster		  // one column per homol target
+		Width UNIQUE Float
+		Max_mag UNIQUE Float	// don't show if more bases per line
+		Min_mag UNIQUE Float	// don't show if fewer bases per line
+		Gapped         // draw sequences or homols with gaps
+		Join_blocks    // link up all blocks of a single feature with lines
+	GFF	GFF_source UNIQUE Text
+		GFF_feature UNIQUE Text
+</pre>
+
 
 </fieldset>
 
