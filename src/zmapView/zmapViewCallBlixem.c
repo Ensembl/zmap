@@ -993,11 +993,13 @@ static gboolean setBlixemScope(blixemData blixem_data)
 	{
 	  blixem_data->scope_min = blixem_data->mark_start ;
 	  blixem_data->scope_max = blixem_data->mark_end ;
+//zMapLogWarning("is mark: scope is %d %d", blixem_data->scope_min, blixem_data->scope_max);
 	}
       else
 	{
 	  blixem_data->scope_min = blixem_data->position - scope_range ;
 	  blixem_data->scope_max = blixem_data->position + scope_range ;
+//zMapLogWarning("position: scope is %d %d", blixem_data->scope_min, blixem_data->scope_max);
 	}
 
       /* Clamp to block, needed if user runs blixem near to either end of sequence. */
@@ -1007,6 +1009,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
       if (blixem_data->scope_max > blixem_data->block->block_to_sequence.block.x2)
 	blixem_data->scope_max = blixem_data->block->block_to_sequence.block.x2 ;
 
+//zMapLogWarning("block: scope is %d %d", blixem_data->scope_min, blixem_data->scope_max);
 
       /* Set min/max range for blixem features. */
       blixem_data->features_min = blixem_data->scope_min ;
@@ -1026,6 +1029,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
       if (blixem_data->features_max > blixem_data->scope_max)
 	blixem_data->features_max = blixem_data->scope_max ;
 
+//zMapLogWarning("features is %d %d", blixem_data->features_min, blixem_data->features_max);
 
       /* Now clamp window start/end to scope start/end. */
       if (blixem_data->window_start < blixem_data->scope_min)
@@ -1033,6 +1037,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
 
       if (blixem_data->window_end > blixem_data->scope_max)
 	blixem_data->window_end = blixem_data->scope_max ;
+//zMapLogWarning("window is %d %d", blixem_data->window_start, blixem_data->window_end);
     }
 
   if (status)
@@ -1656,7 +1661,7 @@ static void processSetList(gpointer data, gpointer user_data)
 
   if (feature_set)
     {
-printf("do blixem set %s\n",g_quark_to_string(canon_id));
+//printf("do blixem set %s\n",g_quark_to_string(canon_id));
       g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data);
     }
 #if MH17_NOT_NEEDED_NOW
@@ -1666,7 +1671,7 @@ we add featuresets not columns
   GList *column_2_featureset;
 
       /* assuming a mis-config treat the set id as a column id */
-printf("do blixem column %s\n",g_quark_to_string(canon_id));
+//printf("do blixem column %s\n",g_quark_to_string(canon_id));
       column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
 
       if (!column_2_featureset)
@@ -2992,6 +2997,8 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 	  if (blixem_data->view->revcomped_features)
 	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
+//zMapLogWarning("FastA %d,%d (scope is %d %d",start, end, blixem_data->scope_min, blixem_data->scope_max);
 
 	  /* Write header as:   ">seq_name start end" so file is self describing, note that
 	   * start/end are ref sequence coords (e.g. chromosome), not local zmap display coords. */

@@ -158,9 +158,9 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       /* Work out where we are.... */
       if (feature && y_pos == 0.0)
-	y_pos = (double)((feature->x1 + feature->x2) / 2) ;
-      zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
-      align->cursor_position = y1 ;
+		y_pos = (double)((feature->x1 + feature->x2) / 2) ;
+	zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
+	align->cursor_position = y1 ;
 
 
       align->window_start = window_start ;
@@ -199,9 +199,11 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 //	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
 	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items,requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
-		y1 = zmapWindowItemListStartCoord(focus_items);
-		if(y1)
-			align->cursor_position = y1;
+// this apparently causes all kind of problems
+// i added it becaus soemone told me the cursor position was wrong
+//		y1 = zmapWindowItemListStartCoord(focus_items);
+//		if(y1)
+//			align->cursor_position = y1;
 
 	      g_list_free(focus_items) ;
 	    }
