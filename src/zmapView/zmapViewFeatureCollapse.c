@@ -81,7 +81,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
 
 static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash, gboolean collapse, int join);
 static gboolean canSquash(ZMapFeature first, ZMapFeature current);
-static void makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_list, double y1, double y2, double edge1, double edge2);
+static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_list, double y1, double y2, double edge1, double edge2);
 static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list);
 static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list, gboolean collapse, int join);
 static void storeSpliceCoords(ZMapFeature feature, GList **splice_list);
@@ -438,9 +438,10 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
 
 
 
-static void makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_list, double y1, double y2, double edge1, double edge2)
+static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_list, double y1, double y2, double edge1, double edge2)
 {
 	GArray *new_gaps;
+	int q_len;
 
 		/* NOTE squashed is set on the features that are not displayed, nottheo one that is */
 	if(composite->flags.squashed_start || composite->flags.squashed_end)
@@ -574,6 +575,7 @@ printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
 				ab->q2 = q++;
 			}
 		}
+		q_len = q - 1;
 
 		composite->feature.homol.align = new_gaps;
 
@@ -657,12 +659,16 @@ printf("\n");
 			ab = & g_array_index(gf,ZMapAlignBlockStruct,i);
 			g_array_append_val(ga,*ab);
 		}
+		q_len = ab->q2;
+
 
 		composite->feature.homol.align = ga;
 	}
 
 		/* store the splice coordinates, using feature as we don't want to include start and end regions */
 	storeSpliceCoords(feature, splice_list);
+
+	return q_len;
 }
 
 
@@ -702,7 +708,7 @@ printf("gap %d add splice b %d\n",i,ab->t1);
 
 
 /* add any kind of compressed feature to the set's hash table */
-void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature, int y1, int y2)
+void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
 {
 	char buf[256];
 
@@ -715,6 +721,9 @@ void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature fe
 
 	composite->x1 = y1;
 	composite->x2 = y2;
+
+	composite->feature.homol.y1 = 1;
+	composite->feature.homol.y2 = len + 1;
 
 	composite->url = NULL;	/* in case it gets freed */
 #if SQUASH_DEBUG
@@ -837,8 +846,8 @@ printf("squash this: y, f, edge = %.1f,%.1f %d,%d %.1f,%.1f\n",y1,y2,f->x1,f->x2
 		{
 			if(composite)
 			{
-				makeGaps(composite, feature, splice_list, y1, y2, edge1, edge2);
-				addCompositeFeature(hash, composite, feature, y1, y2);
+				int len = makeGaps(composite, feature, splice_list, y1, y2, edge1, edge2);
+				addCompositeFeature(hash, composite, feature, y1, y2, len);
 			}
 			else
 			{
@@ -1051,7 +1060,7 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 		if(!duplicate || !next_f)	/* finished comperssing this feature: tidy up and get ready to test the next */
 		{
 			if(composite)
-				addCompositeFeature(hash, composite, feature, y1, y2);
+				addCompositeFeature(hash, composite, feature, y1, y2, y2 - y1);
 
 			composite = NULL;
 
