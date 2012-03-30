@@ -66,8 +66,12 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <math.h>
 #include <string.h>
 #include <ZMap/zmapUtilsLog.h>
+#include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapWindow.h>
+
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasItemFeatureSet_I.h>
+//#include <zmapWindowCanvasItemFeatureSet_I.h>
 #include <zmapWindowCanvasBasic.h>
 #include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasAlignment.h>
@@ -88,8 +92,8 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 
-static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 static FooCanvasItemClass *parent_class_G;
+static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 
 static void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 
@@ -100,8 +104,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 
 /* this is in parallel with the ZMapStyleMode enum */
 /* beware, traditionally glyphs ended up as basic features */
-/* This is a retro-fit ... i noticed that i'd defien a struct/feature type but not set it
-* as orignally there was only one (blush) -> is that brown bag coding?? */
+/* This is a retro-fit ... i noticed that i'd defined a struct/feature type but not set it as orignally there was only one  */
 static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 {
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
@@ -465,31 +468,21 @@ GType zMapWindowFeaturesetItemGetType(void)
  * we allow for stranded bins, which get fed in via the add function below
  * we also have to include the window to allow more than one -> not accessable so we use the canvas instead
  *
- * we also allow several featuresets to map into the same canvas item via a vitueal featureset (quark)
+ * we also allow several featuresets to map into the same canvas item via a virtual featureset (quark)
  */
-ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
+
+/* that was then, now we just set the foo item passed in. */
+
+FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
 {
       ZMapWindowFeaturesetItem di = NULL;
-      FooCanvasItem *foo  = NULL,*interval;
 	zmapWindowCanvasFeatureType type;
 
-            /* class not intialised till we make an item in foo_canvas_item_new() below */
-      if(featureset_class_G && featureset_class_G->featureset_items)
-            foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
-      if(foo)
-      {
-            return((ZMapWindowCanvasItem) foo);
-      }
-      else
-      {
-		int stagger;
+	int stagger;
 
-            /* need a wrapper to get ZWCI with a foo_featureset inside it */
-            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
+	/* NOTE need to combined code from cainating canvas item  at some point */
 
-            interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
-
-            di = (ZMapWindowFeaturesetItem) interval;
+            di = (ZMapWindowFeaturesetItem) foo;
             di->id = id;
             g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
@@ -526,20 +519,20 @@ ZMapWindowCanvasItem zMapWindowFeaturesetItemGetFeaturesetItem(FooCanvasGroup *p
   		di->end = end;
 
 		    /* initialise zoom to prevent double index create on first draw (coverage graphs) */
-		di->zoom = interval->canvas->pixels_per_unit_y;
+		di->zoom = foo->canvas->pixels_per_unit_y;
 		di->bases_per_pixel = 1.0 / di->zoom;
 
 
 		/* set our bounding box in canvas coordinates to be the whole column */
-		foo_canvas_item_request_update (interval);
-      }
-      return ((ZMapWindowCanvasItem) foo);
+		foo_canvas_item_request_update (foo);
+
+      return foo;
 }
 
 
 
 
-/* this is a nest of insxestuous functions that all do the same thing
+/* this is a nest of incestuous functions that all do the same thing
  * but at least this way we keep the search criteria in one place not 20
  */
 static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(ZMapWindowFeaturesetItem fi, double y1, double y2)
@@ -682,8 +675,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
 }
 
 /* interface design driven by exsiting application code */
-void zmapWindowFeaturesetItemSetColour(ZMapWindowCanvasItem   item,
-						      FooCanvasItem         *interval,
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 						      ZMapFeature			feature,
 						      ZMapFeatureSubPartSpan sub_feature,
 						      ZMapStyleColourType    colour_type,
@@ -738,6 +730,87 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 }
 
 
+/*
+ * return the foo canvas item under the lassoo, and a list of more features if included
+ * we restrict the features to one column as previously multi-select was restricted to one column
+ * the column is defined by the centrre of the lassoo and we include features inside not overlapping
+ * NOTE we implement this for CanvasFeatureset only, not old style foo
+ */
+
+GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
+{
+	double mid_x = (x1 + x2) / 2;
+	GList *l, *lx;
+	ZMapWindowFeaturesetItem fset;
+	ZMapSkipList sl;
+	GList *feature_list = NULL;
+	double width;
+
+	*item = NULL;
+
+	zMap_g_hash_table_get_data(&lx,featureset_class_G->featureset_items);
+
+	for(l = lx;l ;l = l->next)
+	{
+		fset = (ZMapWindowFeaturesetItem) l->data;
+		width = fset->width;
+		if(fset->bumped)
+			width = fset->bump_width;
+		if(fset->dx < mid_x && (fset->dx + width) > mid_x)
+			break;
+	}
+
+	if(lx)
+		g_list_free(lx);
+
+	if(!l || !fset)
+		return(NULL);
+
+	sl = zmap_window_canvas_featureset_find_feature_coords(fset, y1, y2);
+
+	for(;sl ; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature gs;
+		gs = sl->data;
+
+		if(gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
+			continue;
+
+		if(gs->y1 > y2)
+			break;
+
+		/* reject overlaps as we can add to the selection but not subtract from it */
+		if(gs->y1 < y1)
+			continue;
+		if(gs->y2 > y2)
+			continue;
+
+		if(fset->bumped)
+		{
+			double x = fset->dx + gs->bump_offset;
+			if(x < x1)
+				continue;
+			x += gs->width;
+
+			if(x > x2)
+				continue;
+		}
+		/* else just match */
+
+
+		if(!*item)
+		{
+			*item = fset->canvas_item;
+			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item,gs->feature);
+
+		}
+		else
+		{
+			feature_list = g_list_prepend(feature_list,gs->feature);
+		}
+	}
+	return feature_list;
+}
 
 
 
@@ -1824,7 +1897,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 		{
 			ZMapWindowCompressMode compress_mode;
 
-			if (zmapWindowMarkIsSet(filter->window->mark))
+			if (zMapWindowMarkIsSet(filter->window))
 				compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
 			else
 				compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
@@ -1868,6 +1941,13 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   	if(feat->feature->feature.homol.flags.masked)
   		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
   }
+
+	/* NOTE if we configure styles to not load these into the canvas we don't get here */
+  if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
+  {
+	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
+  }
+
 
   feat->y1 = y1;
   feat->y2 = y2;

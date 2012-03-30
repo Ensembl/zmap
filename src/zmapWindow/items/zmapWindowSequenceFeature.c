@@ -759,7 +759,7 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 						     ZMAP_FLOAT_AXIS_Y,
 						     G_PARAM_READWRITE));
 
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  PROP_TEXT_CHANGED,
 				  g_param_spec_boolean(PROP_TEXT_CHANGED_STR, "text changed",
 						       "Text has changed so do a redisplay.",

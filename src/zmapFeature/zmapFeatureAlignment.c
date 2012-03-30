@@ -106,7 +106,8 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
-				     gboolean has_local_sequence)
+				     gboolean has_local_sequence, char *sequence)
+				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
   gboolean result = TRUE ;
 
@@ -138,6 +139,8 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.y2 = query_end ;
   feature->feature.homol.length = query_length ;
   feature->feature.homol.flags.has_sequence = has_local_sequence ;
+  feature->feature.homol.sequence = sequence ;
+
 
   if (gaps)
     {

@@ -184,7 +184,8 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
-       zmapWindowUpdateInfoPanel(window, feature, feature_item, NULL, 0, 0,  0, 0,
+
+       zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
 				NULL, TRUE, FALSE) ;
       result = TRUE ;
     }
@@ -930,6 +931,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    }
 	  else
 	    {
+
+
 	      event_handled = handleButton(but_event, window, item, feature) ;
 	    }
 
@@ -991,6 +994,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
+	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(feature->style))
+	  highlight_same_names = FALSE ;
+
 
       if (zMapGUITestModifiers(but_event, control_mask))
 	{
@@ -1049,7 +1055,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, highlight_item, sub_feature, 0, 0,  0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, 0, 0,  0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 
@@ -1160,6 +1166,11 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
 	}
     }
+  else if(zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+  {
+        menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
+
+  }
 
       /* get BAM/ short reads data */
   {
@@ -1308,6 +1319,9 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 
   return menu ;
 }
+
+
+
 
 
 
@@ -1722,7 +1736,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
     }
 
   /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
 
   return FALSE ;
 }

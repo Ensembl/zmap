@@ -347,6 +347,15 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_ALIGNMENT_SQUASH, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH,
             "squash overlapping split reads into one", "squash overlapping split reads into one",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.squash),ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_JOIN_OVERLAP, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_OVERLAP,
+            "join overlapping reads into one", "join overlapping reads into one",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_JOIN_THRESHOLD, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_THRESHOLD,
+            "allow bases around splice junction when joining", "allow bases around splice junction when joining",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_JOIN_MAX, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX,
+            "join overlapping reads into one", "join overlapping reads into one",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_max),ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,

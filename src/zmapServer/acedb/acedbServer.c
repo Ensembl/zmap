@@ -3774,6 +3774,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 
       /* OTHER SCORE STUFF MUST BE SET HERE.... */
+      if (score_by_width)
+	g_object_set(G_OBJECT(style),
+		     ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
+		     NULL) ;
 
       /* Note that we require bounds to be set for graphing.... */
       if (score_set)

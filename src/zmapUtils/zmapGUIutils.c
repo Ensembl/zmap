@@ -242,7 +242,7 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
   zMapAssert(!(window_type == NULL && message == NULL)) ;
 
   title = g_strdup_printf("ZMap (%s)%s%s%s%s",
-			  zMapGetVersionString(),
+			  zMapGetAppVersionString(),
 			  (window_type ? " " : ""),
 			  (window_type ? window_type : ""),
 			  (message ? " - " : ""),
@@ -336,15 +336,22 @@ void zMapGUIShowAbout(void)
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
+
+  char *comment_str ;
+
+  comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
+
   gtk_show_about_dialog(NULL,
 			"authors", authors,
-			"comments", zMapGetCommentsString(),
+			"comments", comment_str,
 			"copyright", zMapGetCopyrightString(),
 			"license", zMapGetLicenseString(),
 			"program-name", zMapGetAppName(),
 			"version", zMapGetAppVersionString(),
 			"website", zMapGetWebSiteString(),
 			NULL) ;
+
+  g_free(comment_str) ;
 
   return ;
 }

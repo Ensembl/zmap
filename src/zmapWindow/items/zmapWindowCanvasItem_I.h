@@ -36,7 +36,11 @@
 #include <ZMap/zmapBase.h>
 #include <zmapWindowAllBase.h>
 #include <zmapWindowCanvasItem.h>
-#include <zmapWindow_P.h>				    /* Why do we need this, can we remove it ? */
+#include <zmapWindow_P.h>			/* Why do we need this, can we remove it ? */
+//#include <ZMap/zmapWindow.h>			/* Why do we need this, can we remove it ? */
+							/* it's for long items */
+
+
 
 
 

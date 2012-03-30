@@ -49,7 +49,9 @@
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowFeatures.h>
+#include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindow_P.h>
+
 
 //#include <ZMap/zmapGFF.h>     // for featureset structs
 
@@ -785,7 +787,7 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
+      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
 
       if (state_saves_position)
 	{
@@ -1406,10 +1408,13 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
  * from the caller. handle_button() is the only place where sub_item data is displayed
  * as full item is not used then i'm removing it
  *
+ * NOTE if feature =List is not null them it is a list of many features selected by the lasoo
+ * item is the first one and fulfils previous functinality
+ * feature_list is freed by this function
  */
 void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                ZMapFeature feature_arg,
-			       FooCanvasItem *item,   ZMapFeatureSubPartSpan sub_feature,
+			       GList *feature_list, FooCanvasItem *item,   ZMapFeatureSubPartSpan sub_feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
@@ -1742,6 +1747,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
 	select.highlight_item = item ;
+	select.feature_list = feature_list;
 
 
       select.replace_highlight_item = replace_highlight_item ;
@@ -1843,6 +1849,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
 
   g_free(select.secondary_text) ;
+
+  if(feature_list)
+	  g_list_free(feature_list);
 
   return ;
 }
@@ -3552,13 +3561,39 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
         if (dragging)
           {
+	      GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
+		/* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
+
             foo_canvas_item_hide(window->rubberband);
 
 	    /* mouse must still be within window to zoom, outside means user is cancelling motion,
 	     * and motion must be more than 10 pixels in either direction to zoom. */
 	    if (in_window)
 	      {
-		if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
+			gboolean ctrl = zMapGUITestModifiers(but_event, control_mask);
+			gboolean shift = zMapGUITestModifiers(but_event, shift_mask);
+
+		if(shift || ctrl)
+		  {
+			/* make a list of the foo canvas items */
+			GList *feature_list;
+			FooCanvasItem *item;
+			double rootx1, rootx2, rooty1, rooty2 ;
+
+
+			      /* Get size of item and convert to world coords. */
+			foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+			foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+			foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+
+			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+
+			/* this is how features get highlit */
+			if(item)
+				zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE) ;
+
+		  }
+		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
 		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
 		  {
 		    /* User has moved pointer quite a lot between press and release so zoom
@@ -3574,13 +3609,20 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		     * lasso an area so pass event on and destroy rubberband object. */
 
 		    /* Must get rid of rubberband item as it is not needed. */
-		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
-		    window->rubberband = NULL ;
+// mh17: was this a memory leak from the other bits of the if ???
+//		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+//		    window->rubberband = NULL ;
 
 		    event_handled = FALSE ;
 		  }
 	      }
 
+		    /* Must get rid of rubberband item as it is not needed. */
+	    if(window->rubberband)
+	    {
+		gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+		window->rubberband = NULL ;
+	    }
 	    dragging = FALSE ;
           }
         else if (guide)
@@ -5050,8 +5092,9 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
       feature = zmapWindowItemGetFeature(focus_item);
 
+
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, focus_item, NULL, 0, 0, 0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, NULL, focus_item, NULL, 0, 0, 0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 

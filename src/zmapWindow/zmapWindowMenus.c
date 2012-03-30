@@ -79,6 +79,7 @@ enum
     BLIX_INVALID,
     BLIX_NONE,		/* Blixem on column with no aligns. */
     BLIX_SELECTED,	/* Blixem all matches for selected features in this column. */
+    BLIX_EXPANDED,	/* selected features expanded into hidden underlying data */
     BLIX_SET,		/* Blixem all matches for all features in this column. */
     BLIX_MULTI_SETS,	/* Blixem all matches for all features in the list of columns in the blixem config file. */
     BLIX_SEQ_COVERAGE,	/* Blixem a coverage column from the mark: find the real data column */
@@ -1255,6 +1256,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - all matches for selected features",
        BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - all matches for selected features, expanded",
+       BLIX_EXPANDED, blixemMenuCB, NULL, "<shift>X"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
     } ;
 
@@ -1640,7 +1643,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 		*/
 		container = zmapWindowContainerUtilsGetParentLevel((ZMapWindowContainerGroup)(menu_data->container_set),
 									ZMAPCONTAINER_LEVEL_BLOCK);
-		block = zmapWindowItemGetFeatureBlock(container);
+		block = zmapWindowItemGetFeatureBlock((FooCanvasItem *) container);
 
 			/* can't use 'is_column' here as we may be requesting several */
 		zmapWindowFetchData(menu_data->window, block, req_list, TRUE,FALSE);
@@ -1667,6 +1670,9 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
     case BLIX_SELECTED:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
+      break;
+    case BLIX_EXPANDED:
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_EXPANDED ;
       break;
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;

@@ -1137,7 +1137,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 
   style_list = g_hash_table_new(NULL,NULL);
 
-  /* 3 Frame - meta mode controlling whether we do 3 frame display or not. */
+  /* 3 Frame
+   * A meta mode controlling whether we do 3 frame display or not. */
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FRAME, ZMAP_FIXED_STYLE_3FRAME_TEXT) ;
   g_object_set(G_OBJECT(curr),
 	       ZMAPSTYLE_PROPERTY_MODE,              ZMAPSTYLE_MODE_META,
@@ -1148,8 +1149,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr) ;
 
 
-  /* 3 Frame Translation */
-  /* The translation width is the width for the whole column if
+  /* 3 Frame Translation 
+   * The translation width is the width for the whole column if
    * all three frames are displayed in one column.  When displayed
    * in the frame specfic mode the width of each of the columns
    * will be a third of this whole column value.  This is contrary

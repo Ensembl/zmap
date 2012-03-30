@@ -37,7 +37,8 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowCanvasItem_I.h>
+//#include <zmapWindowCanvasItem_I.h>
+#include <ZMap/zmapWindow.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapSkipList.h>
@@ -75,7 +76,8 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
 #define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
-#define FEATURE_HIDE_REASON	0x3e00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
+#define FEATURE_HIDE_REASON	0x7e00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
 
@@ -120,9 +122,12 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 
 typedef struct _zmapWindowFeaturesetItemClassStruct
 {
-  zmapWindowCanvasItemClass __parent__;
+//  zmapWindowCanvasItemClass __parent__;
+  FooCanvasItemClass __parent__;
 
   GHashTable *featureset_items;         /* singleton canvas items per column, indexed by unique id */
+  /* NOTE duplicated in container canvas item till we get rid of that */
+
   GList *feature_free_list[FEATURE_N_TYPE];
 #define N_FEAT_ALLOC      1000
 	/* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
@@ -144,6 +149,8 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
 typedef struct _zmapWindowFeaturesetItemStruct
 {
   FooCanvasItem __parent__;
+
+  FooCanvasItem *canvas_item;		/* containing ZMapWindowCanvasItem: these are a pain they do nothing and we can't get rid of them yet */
 
   GQuark id;
   ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */

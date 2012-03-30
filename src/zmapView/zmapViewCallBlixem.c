@@ -337,7 +337,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 				   int qstart, int qend, ZMapStrand q_strand,
 				   int sstart, int send, ZMapStrand s_strand,
 				   float score, double percent_id,
-				   GArray *gaps, char *sequence, char *description) ;
+				   GArray *gaps, char *sequence, char *description, gboolean pfetchable) ;
 
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
 
@@ -993,11 +993,13 @@ static gboolean setBlixemScope(blixemData blixem_data)
 	{
 	  blixem_data->scope_min = blixem_data->mark_start ;
 	  blixem_data->scope_max = blixem_data->mark_end ;
+//zMapLogWarning("is mark: scope is %d %d", blixem_data->scope_min, blixem_data->scope_max);
 	}
       else
 	{
 	  blixem_data->scope_min = blixem_data->position - scope_range ;
 	  blixem_data->scope_max = blixem_data->position + scope_range ;
+//zMapLogWarning("position: scope is %d %d", blixem_data->scope_min, blixem_data->scope_max);
 	}
 
       /* Clamp to block, needed if user runs blixem near to either end of sequence. */
@@ -1007,6 +1009,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
       if (blixem_data->scope_max > blixem_data->block->block_to_sequence.block.x2)
 	blixem_data->scope_max = blixem_data->block->block_to_sequence.block.x2 ;
 
+//zMapLogWarning("block: scope is %d %d", blixem_data->scope_min, blixem_data->scope_max);
 
       /* Set min/max range for blixem features. */
       blixem_data->features_min = blixem_data->scope_min ;
@@ -1026,6 +1029,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
       if (blixem_data->features_max > blixem_data->scope_max)
 	blixem_data->features_max = blixem_data->scope_max ;
 
+//zMapLogWarning("features is %d %d", blixem_data->features_min, blixem_data->features_max);
 
       /* Now clamp window start/end to scope start/end. */
       if (blixem_data->window_start < blixem_data->scope_min)
@@ -1033,6 +1037,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
 
       if (blixem_data->window_end > blixem_data->scope_max)
 	blixem_data->window_end = blixem_data->scope_max ;
+//zMapLogWarning("window is %d %d", blixem_data->window_start, blixem_data->window_end);
     }
 
   if (status)
@@ -1464,7 +1469,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 
       blixem_data->align_list = NULL ;
 
-      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES)
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1472,7 +1477,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  /* mmmm tricky.....should all features be highlighted...mmmmmm */
-	  if (g_list_length(blixem_data->features) > 1)
+	  if (g_list_length(blixem_data->features) > 1 || zMapStyleIsUnique(feature_set->style))
 	    {
 	      blixem_data->align_list = blixem_data->features ;
 	    }
@@ -1656,7 +1661,7 @@ static void processSetList(gpointer data, gpointer user_data)
 
   if (feature_set)
     {
-printf("do blixem set %s\n",g_quark_to_string(canon_id));
+//printf("do blixem set %s\n",g_quark_to_string(canon_id));
       g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data);
     }
 #if MH17_NOT_NEEDED_NOW
@@ -1666,7 +1671,7 @@ we add featuresets not columns
   GList *column_2_featureset;
 
       /* assuming a mis-config treat the set id as a column id */
-printf("do blixem column %s\n",g_quark_to_string(canon_id));
+//printf("do blixem column %s\n",g_quark_to_string(canon_id));
       column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
 
       if (!column_2_featureset)
@@ -1879,20 +1884,26 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       match_name = (char *)g_quark_to_string(feature->original_id) ;
       source_name = (char *)g_quark_to_string(feature->source_id) ;
 
+	seq_str = feature->feature.homol.sequence;
 
-      if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+      if (!seq_str)
+		/* this if could be tidied up, but let's leave existing logic alone
+		 * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
+		 */
 	{
-	  ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+		if((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+		{
+		ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
 
-	  seq_str = sequence->sequence ;
+		seq_str = sequence->sequence ;
+		}
+		else
+		{
+		/* In theory we should be checking for a description for non-local sequences,
+		* see acedb code in doShowAlign...don't know how important this is..... */
+		seq_str = "" ;
+		}
 	}
-      else
-	{
-	  /* In theory we should be checking for a description for non-local sequences,
-	   * see acedb code in doShowAlign...don't know how important this is..... */
-	  seq_str = "" ;
-	}
-
 
 
       /* Phase out stupid curr_channel                    */
@@ -1900,7 +1911,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       /* need to put this choice for seqbl into the exblx routine below... */
       if (blixem_data->file_format == BLX_FILE_FORMAT_EXBLX)
 	{
-	  if (*seq_str)
+	  if (seq_str && *seq_str)
 	    {
 	      curr_channel = blixem_data->seqbl_channel ;
 	    }
@@ -1908,6 +1919,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 	    {
 	      curr_channel = blixem_data->exblx_channel ;
 	    }
+
 
 	  status = formatAlignmentExbl(line,
 				       min, max,
@@ -1933,7 +1945,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 				      qstart, qend, feature->strand,
 				      sstart, send, feature->feature.homol.strand,
 				      feature->score, feature->feature.homol.percent_id,
-				      feature->feature.homol.align, seq_str, description) ;
+				      feature->feature.homol.align, seq_str, description, zMapStyleIsPfetchable(feature->style)) ;
 	}
 
       status = printLine(curr_channel, &(blixem_data->errorMsg), line->str) ;
@@ -2042,7 +2054,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 				   int qstart, int qend, ZMapStrand q_strand,
 				   int sstart, int send, ZMapStrand s_strand,
 				   float score, double percent_id,
-				   GArray *gaps, char *sequence, char *description)
+				   GArray *gaps, char *sequence, char *description, gboolean pfetchable)
 {
   gboolean status = TRUE ;
   char *id_str = NULL ;
@@ -2066,7 +2078,8 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
   /* ctg123 . cDNA_match 1050  1500  5.8e-42  +  . ID=match00001;Target=cdna0123 12 462 */
   g_string_printf(line, "%s\t%s\t%s\t%d\t%d\t%f\t%c\t.\t%sTarget=%s %d %d %c",
 		  ref_name, source_name,
-		  (match_seq_type == ZMAPSEQUENCE_DNA ? "nucleotide_match" : "protein_match"),
+			/* for RNAseq need to prevent a wasted pFetch else it runs very slow */
+		  (match_seq_type == ZMAPSEQUENCE_DNA ? (pfetchable ?  "nucleotide_match": "read") : "protein_match"),
 		  qstart, qend,
 		  score,
 		  (q_strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
@@ -2984,6 +2997,8 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 	  if (blixem_data->view->revcomped_features)
 	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+
+//zMapLogWarning("FastA %d,%d (scope is %d %d",start, end, blixem_data->scope_min, blixem_data->scope_max);
 
 	  /* Write header as:   ">seq_name start end" so file is self describing, note that
 	   * start/end are ref sequence coords (e.g. chromosome), not local zmap display coords. */

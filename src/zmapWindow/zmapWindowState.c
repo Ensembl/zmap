@@ -654,7 +654,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	     strand ?? or maybe not...actually we should be checking if something is visible !!!! */
 
 	  /* Blank the info panel if we can't find the feature. */
-	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
+	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
 
 
 	  zMapLogWarning("%s", "Failed to find serialized focus item.");
@@ -670,7 +670,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	  feature = zMapWindowCanvasItemGetFeature(focus_item) ;
 
 	  /* Pass information about the object clicked on back to the application. */
-	  zmapWindowUpdateInfoPanel(window, feature, sub_item, NULL, 0, 0, 0, 0,
+	  zmapWindowUpdateInfoPanel(window, feature, NULL, sub_item, NULL, 0, 0, 0, 0,
 				    NULL, replace_highlight, highlight_same_names) ;
 	}
     }

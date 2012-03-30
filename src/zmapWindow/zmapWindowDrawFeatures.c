@@ -2330,6 +2330,8 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
+
+
 /* Called to draw each individual feature. */
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 {
@@ -2347,7 +2349,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style ;
 
 #if MH17_REVCOMP_DEBUG > 1
-  zMapLogWarning("ProcessFeature %d-%d ",feature->x1,feature->x2);
+  zMapLogWarning("ProcessFeature %s %d-%d",g_quark_to_string(feature->original_id), feature->x1,feature->x2);
 #endif
 
   style = feature->style;
@@ -2713,6 +2715,12 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
 	    }
 	}
+	else if(zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+	{
+        menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+
+	}
+
     }
 
   {

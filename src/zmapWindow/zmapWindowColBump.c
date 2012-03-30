@@ -41,7 +41,7 @@
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowCanvas.h>
-#include <zmapWindowCanvasFeatureset.h>
+
 
 
 typedef struct
@@ -443,7 +443,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		for(l = column_features->item_list;l;l = l->next)
       	{
       		/* cast to int because of headers catch22 knottiness */
-			if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+			if(!zMapWindowCanvasFeaturesetItemBump(l->data, bump_mode, (int) compress_mode, &bump_data))
 			    ok = FALSE;
       	}
 

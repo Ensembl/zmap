@@ -3,10 +3,10 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = .
 
-noinst_LTLIBRARIES = libZMapWindow.la libZMapWindowGUI.la libZMapWindowItems.la
+noinst_LTLIBRARIES = libZMapWindow.la libZMapWindowGUI.la libZMapWindowItems.la libZMapWindowCanvas.la
 
 libZMapWindow_la_SOURCES =
-libZMapWindow_la_LIBADD  = libZMapWindowGUI.la libZMapWindowItems.la
+libZMapWindow_la_LIBADD  = libZMapWindowGUI.la libZMapWindowItems.la libZMapWindowCanvas.la
 libZMapWindow_la_LDFLAGS = -all-static
 
 libZMapWindowGUI_la_SOURCES = \
@@ -66,7 +66,30 @@ zmapWindowZoomControl_P.h \
 zmapWindow_P.h \
 $(NULL)
 
-libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
+libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
+
+libZMapWindowCanvas_la_SOURCES = \
+canvas/zmapWindowCanvasAlignment.c \
+canvas/zmapWindowCanvasAlignment.h \
+canvas/zmapWindowCanvasAlignment_I.h \
+canvas/zmapWindowCanvasBasic.c \
+canvas/zmapWindowCanvasBasic.h \
+canvas/zmapWindowCanvasBasic_I.h \
+canvas/zmapWindowCanvasFeatureset.c \
+canvas/zmapWindowCanvasFeaturesetBump.c \
+canvas/zmapWindowCanvasFeaturesetSummarise.c \
+canvas/zmapWindowCanvasFeatureset_I.h \
+canvas/zmapWindowCanvasFeatureset.h \
+canvas/zmapWindowCanvasGlyph.c \
+canvas/zmapWindowCanvasGlyph.h \
+canvas/zmapWindowCanvasGlyph_I.h \
+canvas/zmapWindowCanvasGraphItem.c \
+canvas/zmapWindowCanvasGraphItem.h \
+canvas/zmapWindowCanvasGraphItem_I.h \
+canvas/zmapWindowCanvasItemFeatureSet.c \
+canvas/zmapWindowCanvasItemFeatureSet.h \
+canvas/zmapWindowCanvasItemFeatureSet_I.h \
+$(NULL)
 
 
 libZMapWindowItems_la_SOURCES = \
@@ -83,28 +106,8 @@ items/zmapWindowBasicFeature.h \
 items/zmapWindowBasicFeature_I.h \
 items/zmapWindowCanvas.c \
 items/zmapWindowCanvas.h \
-items/zmapWindowCanvasAlignment.c \
-items/zmapWindowCanvasAlignment.h \
-items/zmapWindowCanvasAlignment_I.h \
-items/zmapWindowCanvasBasic.c \
-items/zmapWindowCanvasBasic.h \
-items/zmapWindowCanvasBasic_I.h \
-items/zmapWindowCanvasFeatureset.c \
-items/zmapWindowCanvasFeatureset.h \
-items/zmapWindowCanvasFeaturesetBump.c \
-items/zmapWindowCanvasFeaturesetSummarise.c \
-items/zmapWindowCanvasFeatureset_I.h \
-items/zmapWindowCanvasGlyph.c \
-items/zmapWindowCanvasGlyph.h \
-items/zmapWindowCanvasGlyph_I.h \
-items/zmapWindowCanvasGraphItem.c \
-items/zmapWindowCanvasGraphItem.h \
-items/zmapWindowCanvasGraphItem_I.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
-items/zmapWindowCanvasItemFeatureSet.c \
-items/zmapWindowCanvasItemFeatureSet.h \
-items/zmapWindowCanvasItemFeatureSet_I.h \
 items/zmapWindowCanvasItem_I.h \
 items/zmapWindowCanvas_I.h \
 items/zmapWindowContainerAlignment.c \
@@ -164,10 +167,8 @@ items/zmapWindowTranscriptFeature.h \
 items/zmapWindowTranscriptFeature_I.h \
 $(NULL)
 
-
 # We need the top_builddir to find the generated marshal code
-libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils \
--I$(top_srcdir)/zmapWindow/items
+libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
 
 libZMapWindowItems_la_DEPENDENCIES = $(nodist_libZMapWindowItems_la_SOURCES)
 
@@ -180,6 +181,13 @@ $(srcdir)/items/zmapWindowTextItemCMarshal.c \
 $(srcdir)/items/zmapWindowSequenceFeatureCMarshal.h \
 $(srcdir)/items/zmapWindowSequenceFeatureCMarshal.c \
 $(NULL)
+
+
+
+libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$(top_srcdir)/zmapWindow/canvas -I$(top_srcdir)/zmapWindow/items
+
+libZMapWindowCanvas_la_DEPENDENCIES = $(nodist_libZMapWindowCanvas_la_SOURCES)
+
 
 nodist_libZMapWindowItems_la_SOURCES = $(libZMapWindowItems_la_extra_sources)
 

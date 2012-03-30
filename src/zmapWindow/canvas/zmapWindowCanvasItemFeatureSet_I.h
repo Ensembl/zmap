@@ -60,6 +60,8 @@ typedef struct _zmapWindowCanvasFeaturesetItemClassStruct
                   GdkColor              *border_gdk) ;
 
 
+  GHashTable *featureset_items;
+
 } zmapWindowCanvasFeaturesetItemClassStruct;
 
 
@@ -71,6 +73,8 @@ typedef struct _zmapWindowCanvasFeaturesetItemClassStruct
 typedef struct _zmapWindowCanvasFeaturesetItemStruct
 {
   zmapWindowCanvasItem __parent__;
+
+  GQuark id;
 
 
 } zmapWindowCanvasFeaturesetItemStruct;

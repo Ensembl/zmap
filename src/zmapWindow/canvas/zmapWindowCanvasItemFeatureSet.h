@@ -66,7 +66,14 @@ typedef struct _zmapWindowCanvasFeaturesetItemClassStruct  zmapWindowCanvasFeatu
 /* Public funcs */
 GType zMapWindowCanvasFeaturesetItemGetType(void);
 
+ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
+
+
 void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2);
+
+gboolean zMapWindowCanvasFeaturesetItemBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data);
+
+
 
 int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo,ZMapFeature feature);
 

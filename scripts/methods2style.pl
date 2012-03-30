@@ -1,8 +1,7 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl -w
 
 use strict;
 use warnings;
-use lib '/software/anacode/otter/otter_production_main/PerlModules';
 use Hum::Ace::MethodCollection;
 use Getopt::Long;
 use Data::Dumper;
@@ -13,13 +12,46 @@ use Data::Dumper;
         name           => 'name',
         width          => 'width',
 	remark         => 'description',
-        show_up_strand => 'show_reverse_strand',
-        frame_sensitive => 'frame_specific',
-        strand_sensitive => 'strand_specific',
+        show_up_strand => 'show-reverse-strand',
+        frame_sensitive => 'frame-specific',
+        strand_sensitive => 'strand-specific',
         bumpable       => 'overlap',
-        color          => 'fill',
-        cds_color      => '',
+        color          => 'colours',
+        cds_color      => 'transcript-cds-colours',
+        no_display     => 'never-display',
+        score_method   => 'score-mode',
+        score_bounds   => 'score_bounds',
+        score_max      => 'max-score',
+        score_min       => 'min-score',
+#        show_text      => '',
+#        coding         => '',
+#        non_coding     => '',
+#        mutable        => '',
+#        right_priority => '',
+#        zone_number    => '',
+#        has_parent     => '',
+#        max_mag        => '',
+#        score_by_width => '',
+#        score_bounds   => '',
+#        column_name    => '',
+#        blixem_n       => '',
+#        blixem_x       => '',
+#        gapped         => '',
+    };
+
+    my $keyword_convert_ace = { 
+        name           => 'name',
+        width          => 'width',
+	remark         => 'description',
+        show_up_strand => 'show_up_strand',
+        frame_sensitive => 'frame_sensitive',
+        strand_sensitive => 'strand_sensitive',
+        bumpable       => 'overlap',
+        color          => 'colours',
+        cds_color      => 'transcript cds_colour',
         no_display     => 'never_display',
+        score_method   => 'score_style',
+        score_bounds   => 'score_bounds',
 #        show_text      => '',
 #        coding         => '',
 #        non_coding     => '',
@@ -72,8 +104,8 @@ use Data::Dumper;
     } ;
 
 
-    my $ACEDB_MAG_FACTOR = 8.0 ;
-
+    my $ACEDB_MAG_FACTOR = 6.0 ;
+    my $ACEDB_MAG_FACTOR_ALIGN = 16.0 ;
 
 
     sub Hum::Ace::Method::zmap_string{
@@ -82,6 +114,13 @@ use Data::Dumper;
 
 #        my $txt = qq`Type\n{\n`;
 	my $txt ;
+
+        # For transcript modes, the colours will be for the border, 
+        # otherwise they will the fill colour (default).
+        my $colour_type = 'fill';
+
+        # use a different magnification factor for alignments
+        my $mag_factor = $ACEDB_MAG_FACTOR;
 
         # in the case of each of the following the arrays are lists of
         # perl methods avaiable for the method.  These get translated 
@@ -95,50 +134,41 @@ use Data::Dumper;
             my $value = lc($self->$txtprop())    || next;
             $txt .= qq`[$value]\n`;
 
-            if ($self->name =~ m/halfwise/i || $self->name =~ m/genscan/i
-                || $self->name =~ m/retained_intron/i || $self->name =~ m/cds/i
-                || $self->name =~ m/estgene/i || $self->name =~ m/ensembl/i  )
+            # Determine the mode from the name.
+            if ($self->name =~ m/halfwise/i ||
+                $self->name =~ m/genscan/i ||
+                $self->name =~ m/retained_intron/i ||
+                $self->name =~ m/cds/i ||
+                $self->name =~ m/estgene/i ||
+                $self->name =~ m/ensembl/i  ||
+                $self->name =~ m/coding/i ||
+                $self->name =~ m/curated/i ||
+                $self->name =~ m/transcript/i ||
+                $self->name =~ m/history/i ||
+                $self->name =~ m/jigsaw/i ||
+                $self->name =~ m/rnaseq.hillier/i ||
+                $self->name =~ m/mgene/i ||
+                $self->name =~ m/genefinder/i ||
+                $self->name =~ m/pseudogene/i)
 	      {
-	      $txt .= qq`mode = transcript\n`;
+	      $txt .= qq`mode=transcript\n`;
+              $colour_type = 'border';
 	      }
-	    elsif ($self->name =~ m/trembl/i || $self->name =~ m/swissprot/i
-                   || $self->name =~ m/vertebrate_rna/i || $self->name =~ m/refseq/i)
+	    elsif ($self->name =~ m/trembl/i ||
+                   $self->name =~ m/swissprot/i ||
+                   $self->name =~ m/vertebrate_rna/i || 
+                   $self->name =~ m/refseq/i ||
+                   $self->name =~ m/blast/i ||
+                   $self->name =~ m/ditags/i ||
+                   $self->name =~ m/est/i)
 	      {
-	      $txt .= qq`mode = alignment\n`;
-	      }
-	    elsif ($self->name =~ m/blast/i)
-	      {
-	      $txt .= qq`mode = alignment\n`;
-	      }
-	    elsif ($self->name =~ m/blast/i)
-	      {
-	      $txt .= qq`mode = alignment\n`;
-	      }
-            elsif ($self->name =~ m/ditags/i)
-	      {
-	      $txt .= qq`mode = alignment\n`;
-	      }
-            elsif ($self->name =~ m/est/i)
-	      {
-	      $txt .= qq`mode = alignment\n`;
-	      }
-            elsif ($self->name =~ m/coding/i)
-	      {
-	      $txt .= qq`mode = transcript\n`;
-	      }
-            elsif ($self->name =~ m/curated/i)
-	      {
-	      $txt .= qq`mode = transcript\n`;
-	      }
-            elsif ($self->name =~ m/transcript/i)
-	      {
-	      $txt .= qq`mode = transcript\n`;
+	      $txt .= qq`mode=alignment\n`;
+              $mag_factor = $ACEDB_MAG_FACTOR_ALIGN;
 	      }
             else
 	      {
-	      $txt .= qq`mode = basic\n`;
+	      $txt .= qq`mode=basic\n`;
 	      }
-
         }
 
 #        foreach my $txtprop(qw(strand_sensitive frame_sensitive show_up_strand)){
@@ -149,35 +179,97 @@ use Data::Dumper;
         foreach my $txtprop(qw(remark)){
             my $zmap  = $keyword_convert->{$txtprop} || next;
             my $value = $self->$txtprop()    || next;
-            $txt .= qq`$zmap = $value\n`;
+            $txt .= qq`$zmap="$value"\n`;
         }
 
-        foreach my $txtprop(qw(color cds_color)){
-            my $zmap  = $keyword_convert->{$txtprop} || next;
-            my $value = $colour_convert->{lc($self->$txtprop())}    || next;
-            $txt .= qq`$zmap = $value\n`;
-	    $txt .= qq`border = #000000\n`;
+        foreach my $txtprop(qw(color cds_color)) {
+            my $zmap  = $keyword_convert->{$txtprop};
+            my $index = $self->$txtprop();
+            my $value;
+
+            if ($index) {
+                $value = $colour_convert->{lc($index)};
+            }
+
+            # Put all values on the same line, separated by semi colons
+            if ($zmap && ($value || $txtprop =~ m/^color/i)) {
+                $txt .= qq'$zmap=';
+            }
+
+            if ($zmap && $value) {
+                $txt .= qq`normal $colour_type $value ; `;
+
+                # if setting the border colour, set the same border colour
+                # when selected, and set the fill to white.
+                if ($colour_type =~ m/border/i){
+                  $txt .= qq`selected border $value ; `;
+                  $txt .= qq'normal fill #ffffff ; ';
+                }
+            }
+
+            if ($txtprop =~ m/^color/i && (!$value || $colour_type !~ m/border/i)){
+                # Set a default black border for any features that don't have it set
+                $txt .= qq'normal border #000000 ; ';
+                $txt .= qq'selected border #000000 ; ';
+            }
+                
+            # specify the fill colour when the feature is selected
+            # to do: what should selection colour be? I've hard-coded 
+            # values for now (light yellow). Note: only specify the
+            # selection colour for "cds_color" if the value exists 
+            # otherwise it is n/a, but for the general color property
+            # we must always set it.
+	    if ($txtprop =~ m/^color/i){
+		$txt .= qq`selected fill #ffddcc ; `; 
+	    }
+            elsif ($value) {
+                $txt .= qq`selected fill #ffddcc ; `; 
+            }
+
+            if ($zmap && ($value || $txtprop =~ m/^color/i)) {
+                $txt .= qq'\n';
+              }
         }
 
         foreach my $numprop(qw(width)){
             my $zmap  = $keyword_convert->{$numprop} || next;
             my $value = $self->$numprop()    || next;
-            $txt .= "$zmap = " . ($self->$numprop * $ACEDB_MAG_FACTOR) . "\n";
+            $txt .= "$zmap=" . ($self->$numprop * $mag_factor) . "\n";
+        }
+
+        foreach my $boolprop(qw(score_method)){
+            my $zmap = $keyword_convert->{$boolprop} || next;
+            my $value = $self->$boolprop() || next;
+            $txt .= "$zmap=$value\n";
+        }
+
+        foreach my $arrprop(qw(score_bounds)){
+            my $zmap = $keyword_convert->{$arrprop} || next;
+            if (my @values = $self->$arrprop()){
+                $txt .= "min-score=$values[0]\n";
+                $txt .= "max-score=$values[1]\n";
+            }
         }
 
         foreach my $boolprop(qw(strand_sensitive frame_sensitive show_up_strand)){
             my $zmap = $keyword_convert->{$boolprop} || next;
-#            my $TorF = ($self->$boolprop ? "true" : "false");
-#            $txt .= qq`$zmap = $TorF\n`;
+            my $TorF = ($self->$boolprop ? "true" : "false");
+            
+            if ($zmap =~ m/strand-specific/i) {
+                $txt .= qq'$zmap=true\n';
+            }
+            else {
+                $txt .= qq`$zmap=$TorF\n`;
+            }
 
-	    if ($self->$boolprop)
-	      {
-	      $txt .= qq`$zmap = true\n`;
-	      }
+            if ($zmap =~ m/frame-specific/i && $self->$boolprop) {
+                $txt .= qq'frame-mode=always\n';
+            }
         }
 
         # Hack, stuff mode in for now...
-        $txt .= qq`overlap = complete\n`;
+        $txt .= qq`bump-mode=unbump\n`;
+        $txt .= qq`default-bump-mode=overlap\n`;
 
 #        $txt .= qq`}\n`;
         $txt .= qq`\n`;
@@ -194,6 +286,13 @@ use Data::Dumper;
 #        my $txt = qq`Type\n{\n`;
 	my $txt ;
 
+        # For transcript modes, the colours will be for the border, 
+        # otherwise they will the fill colour (default).
+        my $colour_type = 'fill';
+
+        # use a different magnification factor for alignments
+        my $mag_factor = $ACEDB_MAG_FACTOR;
+
         # in the case of each of the following the arrays are lists of
         # perl methods avaiable for the method.  These get translated 
         # to be the correct zmap properties for the type.
@@ -201,49 +300,42 @@ use Data::Dumper;
 
         foreach my $txtprop(qw(name)){
 
-            my $zmap  = $keyword_convert->{$txtprop} || next;
+            my $zmap  = $keyword_convert_ace->{$txtprop} || next;
 
             my $value = lc($self->$txtprop())    || next;
             $txt .= qq`ZMap_Style : "$value"\n`;
 
-            if ($self->name =~ m/halfwise/i || $self->name =~ m/genscan/i
-                || $self->name =~ m/retained_intron/i || $self->name =~ m/cds/i
-                || $self->name =~ m/estgene/i || $self->name =~ m/ensembl/i  )
+
+            # Determine the mode from the name.
+            if ($self->name =~ m/halfwise/i ||
+                $self->name =~ m/genscan/i ||
+                $self->name =~ m/retained_intron/i ||
+                $self->name =~ m/cds/i ||
+                $self->name =~ m/estgene/i ||
+                $self->name =~ m/ensembl/i  ||
+                $self->name =~ m/coding/i ||
+                $self->name =~ m/curated/i ||
+                $self->name =~ m/transcript/i ||
+                $self->name =~ m/history/i ||
+                $self->name =~ m/jigsaw/i ||
+                $self->name =~ m/rnaseq/i ||
+                $self->name =~ m/mgene/i ||
+                $self->name =~ m/genefinder/i ||
+                $self->name =~ m/pseudogene/i)
 	      {
 	      $txt .= qq`mode "transcript"\n`;
+              $colour_type = 'border';
 	      }
-	    elsif ($self->name =~ m/trembl/i || $self->name =~ m/swissprot/i
-                   || $self->name =~ m/vertebrate_rna/i || $self->name =~ m/refseq/i)
+	    elsif ($self->name =~ m/trembl/i ||
+                   $self->name =~ m/swissprot/i ||
+                   $self->name =~ m/vertebrate_rna/i || 
+                   $self->name =~ m/refseq/i ||
+                   $self->name =~ m/blast/i ||
+                   $self->name =~ m/ditags/i ||
+                   $self->name =~ m/est/i)
 	      {
 	      $txt .= qq`mode "alignment"\n`;
-	      }
-	    elsif ($self->name =~ m/blast/i)
-	      {
-	      $txt .= qq`mode "alignment"\n`;
-	      }
-	    elsif ($self->name =~ m/blast/i)
-	      {
-	      $txt .= qq`mode "alignment"\n`;
-	      }
-            elsif ($self->name =~ m/ditags/i)
-	      {
-	      $txt .= qq`mode "alignment"\n`;
-	      }
-            elsif ($self->name =~ m/est/i)
-	      {
-	      $txt .= qq`mode "alignment"\n`;
-	      }
-            elsif ($self->name =~ m/coding/i)
-	      {
-	      $txt .= qq`mode "transcript"\n`;
-	      }
-            elsif ($self->name =~ m/curated/i)
-	      {
-	      $txt .= qq`mode "transcript"\n`;
-	      }
-            elsif ($self->name =~ m/transcript/i)
-	      {
-	      $txt .= qq`mode "transcript"\n`;
+              $mag_factor = $ACEDB_MAG_FACTOR_ALIGN;
 	      }
             else
 	      {
@@ -253,42 +345,86 @@ use Data::Dumper;
         }
 
 #        foreach my $txtprop(qw(strand_sensitive frame_sensitive show_up_strand)){
-#            my $zmap  = $keyword_convert->{$txtprop} || next;
+#            my $zmap  = $keyword_convert_ace->{$txtprop} || next;
 #            $txt .= qq`$zmap = true\n`;
 #        }
 
         foreach my $txtprop(qw(remark)){
-            my $zmap  = $keyword_convert->{$txtprop} || next;
+            my $zmap  = $keyword_convert_ace->{$txtprop} || next;
             my $value = $self->$txtprop()    || next;
             $txt .= qq`$zmap "$value"\n`;
         }
 
-        foreach my $txtprop(qw(color cds_color)){
-            my $zmap  = $keyword_convert->{$txtprop} || next;
-            my $value = $colour_convert->{lc($self->$txtprop())}    || next;
-            $txt .= qq`colours normal $zmap "$value"\n`;
-	    $txt .= qq`colours normal border "#000000"\n`;
+        foreach my $txtprop(qw(color cds_color)) {
+            my $zmap  = $keyword_convert_ace->{$txtprop};
+            my $index = $self->$txtprop();
+            my $value;
+
+            if ($index) {
+                $value = $colour_convert->{lc($index)};
+            }
+
+            if ($zmap && $value) {
+                $txt .= qq`$zmap normal $colour_type "$value"\n`;
+
+                # if setting the border colour, set the same border colour
+                # when selected, and set the fill to white.
+                if ($colour_type =~ m/border/i){
+                  $txt .= qq`$zmap selected border "$value"\n`;
+                  $txt .= qq'$zmap normal fill "#ffffff"\n';
+                }
+            }
+
+            if ($txtprop =~ m/^color/i && (!$value || $colour_type !~ m/border/i)){
+                # Set a default black border for any features that don't have it set
+              $txt .= qq'$zmap normal border "#000000"\n';
+              $txt .= qq'$zmap selected border "#000000"\n';
+            }
+                
+            # specify the fill colour when the feature is selected
+            # to do: what should selection colour be? I've hard-coded 
+            # values for now (light yellow). Note: only specify the
+            # selection colour for "cds_color" if the value exists 
+            # otherwise it is n/a, but for the general color property
+            # we must always set it.
+	    if ($txtprop =~ m/^color/i){
+		$txt .= qq`$zmap selected fill "#ffddcc"\n`; 
+	    }
+            elsif ($value) {
+                $txt .= qq`$zmap selected fill "#ffddcc"\n`; 
+            }
         }
 
         foreach my $numprop(qw(width)){
-            my $zmap  = $keyword_convert->{$numprop} || next;
+            my $zmap  = $keyword_convert_ace->{$numprop} || next;
             my $value = $self->$numprop()    || next;
-            $txt .= "$zmap " . ($self->$numprop * $ACEDB_MAG_FACTOR) . "\n";
+            $txt .= "$zmap " . ($self->$numprop * $mag_factor) . "\n";
+        }
+
+        foreach my $boolprop(qw(score_method)){
+            my $zmap = $keyword_convert_ace->{$boolprop} || next;
+            my $value = $self->$boolprop() || next;
+            $txt .= "$zmap score_by_width\n";
+        }
+
+        foreach my $arrprop(qw(score_bounds)){
+            my $zmap = $keyword_convert_ace->{$arrprop} || next;
+            if (my @values = $self->$arrprop()){
+                $txt .= "$zmap @values\n";
+            }
         }
 
         foreach my $boolprop(qw(strand_sensitive frame_sensitive show_up_strand)){
-            my $zmap = $boolprop || next;
-#            my $TorF = ($self->$boolprop ? "true" : "false");
-#            $txt .= qq`$zmap = $TorF\n`;
+            my $zmap = $keyword_convert_ace->{$boolprop} || next;
 
-	    if ($self->$boolprop)
-	      {
-	      $txt .= qq`$zmap\n`;
-	      }
+	    if ($self->$boolprop){
+	        $txt .= qq`$zmap\n`;
+	    }
         }
 
         # Hack, stuff mode in for now...
-        $txt .= qq`bump_initial bump_mode overlap\n`;
+        $txt .= qq`bump_initial bump_mode unbump\n`;
+        $txt .= qq`bump_default bump_mode overlap\n`;
 
 #        $txt .= qq`}\n`;
         $txt .= qq`\n`;
@@ -309,18 +445,31 @@ use Data::Dumper;
                'help|h' => $usage) || $usage->();
     
     my $collection = Hum::Ace::MethodCollection->new_from_file($method_file);
+    my $txt;
+
     foreach my $meth(@{$collection->get_all_Methods}){
 #        print STDERR "Found Method " . $meth->name . "\n";
       if ($format =~ m/keyfile/i) {
-        print $meth->zmap_string;
+        $txt .= $meth->zmap_string;
       }
       elsif ($format =~ m/ace/i) {
-        print $meth->zmap_string_ace;
+        $txt .= $meth->zmap_string_ace;
       }
       else {
-        print "Error: unrecognised format $format";
+        $txt = "Error: unrecognised format $format";
+        exit;
       }
-    }
+  }
+
+  if ($format =~ m/ace/i) {
+    # Hack in DNA and 3ft stuff (required so that columns are shown in zmap)
+    $txt .= qq'ZMap_Style : "DNA"\n';
+    $txt .= qq'Sequence\n\n';
+    $txt .= qq'ZMap_Style : "3 Frame"\n\n';
+    $txt .= qq'ZMap_Style : "3 Frame Translation"\n\n';
+  }
+
+  print $txt;
 }
 
 __END__
@@ -333,8 +482,10 @@ __END__
 
 =head1 DESCRIPTION
 
- currently  a simple  script to  parse a  methods.ace file  and output
+ Currently  a simple  script to  parse a  methods.ace file  and output
  (STDOUT) a Style file to be useful for ZMap.
+ Requires the PerlModules directory, which should be distributed along
+ with this script, to be included in your PERL5LIB environment variable.
 
 =head1 USAGE
 

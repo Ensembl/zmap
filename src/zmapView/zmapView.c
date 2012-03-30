@@ -2253,13 +2253,29 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	    {
 	      ZMapViewWindow view_window ;
 	      FooCanvasItem *item ;
+		GList *l;
 
 	      view_window = list_item->data ;
 
+
 		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
-		    zMapWindowHighlightObject(view_window->window, item,
+		{
+			zMapWindowHighlightObject(view_window->window, item,
 					  window_select->replace_highlight_item,
 					  window_select->highlight_same_names) ;
+		}
+
+
+		for(l = window_select->feature_list;l; l = l->next)
+		{
+			ZMapFeature feature = (ZMapFeature) l->data;
+
+			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+			 * NOTE: can have several featuresets in one column
+			 * feature_list inlcudes the second and subsequent features found, the first is given explicitly
+			 */
+			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
+		}
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
 	}
