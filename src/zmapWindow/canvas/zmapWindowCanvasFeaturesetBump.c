@@ -314,7 +314,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	case ZMAPBUMP_NAME_COLINEAR:
 	case ZMAPBUMP_NAME_BEST_ENDS:
 		/* for alignments these all map to overlap, the alignments code shows the decorations regardless */
-		/* but for historical accuray we use bump all which display each composite feature in its own column */
+		/* but for historical accuray we use bump all which displays each composite feature in its own column */
 		if(bump_mode != ZMAPBUMP_OVERLAP)
 			bump_mode = ZMAPBUMP_ALL;
 		/* fall through */

@@ -199,11 +199,6 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 //	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
 	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items,requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
-// this apparently causes all kind of problems
-// i added it becaus soemone told me the cursor position was wrong
-//		y1 = zmapWindowItemListStartCoord(focus_items);
-//		if(y1)
-//			align->cursor_position = y1;
 
 	      g_list_free(focus_items) ;
 	    }

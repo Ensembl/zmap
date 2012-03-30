@@ -1175,6 +1175,12 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 
 
 
+/* return a hash table of GArray * of GdkColor indexed by the GQuark of the name */
+GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
+{
+}
+
+
 gboolean zMapConfigLegacyStyles(void)
 {
   ZMapConfigIniContext context;

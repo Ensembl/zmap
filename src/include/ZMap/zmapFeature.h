@@ -603,6 +603,8 @@ typedef struct
 
 
 
+
+
 /* The Feature structure itsself. Describes a single feature, the feature may be compound
  * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
@@ -646,7 +648,8 @@ typedef struct ZMapFeatureStruct_
    * for RNA seq data:
    * for composite features this is a list of underlying features that are hidden from view
    */
-  GList *composite;
+  GList *children;
+  struct ZMapFeatureStruct_ *composite;	/* daddy feature that gets displayed */
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */

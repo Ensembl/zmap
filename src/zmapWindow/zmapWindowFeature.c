@@ -76,6 +76,9 @@ enum
     ITEM_MENU_SHOW_TRANSCRIPT,
     ITEM_MENU_ADD_TRANSCRIPT,
 
+    ITEM_MENU_EXPAND,
+    ITEM_MENU_COMPRESS,
+
     ITEM_MENU_ITEMS
   };
 
@@ -1236,8 +1239,11 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
       {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
+      /* extra items need for code below */
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
 
@@ -1269,7 +1275,24 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
                   menu[i].type = ZMAPGUI_MENU_NORMAL;
                   menu[i].name = "Highlight Transcript (add more)";
                   menu[i].id = ITEM_MENU_ADD_TRANSCRIPT;
+			i++;
+
+			if(md->feature->children)
+			{
+				menu[i].type = ZMAPGUI_MENU_NORMAL;
+				menu[i].name = "Expand Feature";
+				menu[i].id = ITEM_MENU_EXPAND;
+				i++;
+			}
+			else if(md->feature->composite)
+			{
+				menu[i].type = ZMAPGUI_MENU_NORMAL;
+				menu[i].name = "Compress Features";
+				menu[i].id = ITEM_MENU_COMPRESS;
+				i++;
+			}
             }
+
       }
       else
       {
@@ -1564,6 +1587,19 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	break;
       }
+
+	case ITEM_MENU_EXPAND:
+	{
+		zMapWarning("expand not implemented yet","");
+	}
+	break;
+
+	case ITEM_MENU_COMPRESS:
+	{
+		zMapWarning("compress not implemented yet","");
+	}
+	break;
+
 
 #ifdef RDS_DONT_INCLUDE
     case 101:

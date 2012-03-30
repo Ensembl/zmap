@@ -235,7 +235,7 @@ int makeConcensusSequence(ZMapFeature composite)
 
 	memset(bases,0,sizeof(int) * n_bases * N_ALPHABET);
 
-	for(fl = composite->composite; fl ; fl = fl->next)
+	for(fl = composite->children; fl ; fl = fl->next)
 	{
 		f = (ZMapFeature) fl->data;
 		seq = f->feature.homol.sequence + f->feature.homol.y1 - 1;	/* skip un-matching sequence */
@@ -663,6 +663,7 @@ printf("\n");
 		q_len = ab->q2;
 
 
+
 		composite->feature.homol.align = ga;
 	}
 
@@ -710,6 +711,7 @@ printf("gap %d add splice b %d\n",i,ab->t1);
 
 /* add any kind of compressed feature to the set's hash table */
 void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
+
 {
 	char buf[256];
 
@@ -788,7 +790,8 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 
 			feature->flags.squashed = TRUE;
 
-			composite->composite = g_list_prepend(NULL, feature);
+			composite->children = g_list_prepend(NULL, feature);
+			feature->composite = composite;
 		}
 
 		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
@@ -800,8 +803,9 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 		if(squash_this && composite)
 		{
 			/* save list of source features for blixem */
-			composite->composite = g_list_prepend(composite->composite,f);
+			composite->children = g_list_prepend(composite->children,f);
 			composite->population++;
+			f->composite = composite;
 		}
 
 
@@ -1037,7 +1041,8 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 			else if(join_this)
 				feature->flags.joined = TRUE;
 
-			composite->composite = g_list_prepend(NULL, feature);
+			composite->children = g_list_prepend(NULL, feature);
+			feature->composite = composite;
 		}
 
 		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
@@ -1049,8 +1054,9 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 		if(duplicate && composite)
 		{
 			/* save list of source features for blixem */
-			composite->composite = g_list_prepend(composite->composite,f);
+			composite->children = g_list_prepend(composite->children,f);
 			composite->population++;
+			f->composite = composite;
 		}
 
 

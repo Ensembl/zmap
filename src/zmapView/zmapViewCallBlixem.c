@@ -1477,6 +1477,8 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  /* mmmm tricky.....should all features be highlighted...mmmmmm */
+
+	  /* mh17: BAM compressed features can get the same names, we don't want to fetch others in */
 	  if (g_list_length(blixem_data->features) > 1 || zMapStyleIsUnique(feature_set->style))
 	    {
 	      blixem_data->align_list = blixem_data->features ;
