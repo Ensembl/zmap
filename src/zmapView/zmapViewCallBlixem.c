@@ -1477,7 +1477,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  /* mmmm tricky.....should all features be highlighted...mmmmmm */
-	  if (g_list_length(blixem_data->features) > 1)
+	  if (g_list_length(blixem_data->features) > 1 || zMapStyleIsUnique(feature_set->style))
 	    {
 	      blixem_data->align_list = blixem_data->features ;
 	    }
