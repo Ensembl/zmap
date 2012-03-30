@@ -1590,6 +1590,15 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	case ITEM_MENU_EXPAND:
 	{
+/*
+		zMapWindowFeatureExpand(mneu_data->window, menu_data->feature, menu_data->container_set);
+		each feature needs to go through the item factory eg via ProcessFeature() in zmapWindowDrawfeatures.c
+		currently the item factory drops features that have been squashed so we need some other flag or interface
+		canvas featureset code can also process these flags
+
+		we can hide the compressed feature while expanded stuff is added
+		and unhide it when expanded featues are removed
+*/
 		zMapWarning("expand not implemented yet","");
 	}
 	break;
