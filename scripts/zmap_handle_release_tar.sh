@@ -112,7 +112,7 @@ zmap_untar_file $TAR_FILE $RELEASE_LOCATION
 #ZMAP_RELEASE_VERSION=$($SCRIPT_DIR/versioner \
 #    -path $SCRIPT_DIR/../ \
 #    -show -V -quiet) || zmap_message_exit "Failed to get zmap version"
-ZMAP_RELEASE_VERSION=$($SCRIPT_DIR/git_version.sh -a
+ZMAP_RELEASE_VERSION=$($SCRIPT_DIR/git_version.sh -a)
 
 
 
