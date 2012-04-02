@@ -1143,13 +1143,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     {
-#if REMOVED_RT_226682
-/* none of these features can be fetched, so blixem is pointless
-   theory is, someone requested this option....
-   See also DrawFeatures.c/zmapMakeColumnMenu()
-*/
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
-#endif
     }
   else if (zMapStyleIsPfetchable(feature->style))
     {
@@ -1166,17 +1160,18 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
 	}
     }
-  else if(zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
-  {
-        menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
+  else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+    {
+      menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
+    }
 
-  }
 
-      /* get BAM/ short reads data */
+  /* get BAM/ short reads data */
   {
-  ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
-      /* list all short reads data, temp access till we get wiggle plots running */
-  if(seq_menus)
+    /* list all short reads data, temp access till we get wiggle plots running */
+    ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
+
+    if (seq_menus)
       menu_sets = g_list_append(menu_sets, seq_menus);
   }
 
