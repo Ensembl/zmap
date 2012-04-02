@@ -95,7 +95,7 @@ if [ -n "$git_version" ] ; then
     # problems with using the string in filenames etc.
     git_branch=$(echo $git_branch | sed -e 's/\//_/g')
 
-    echo "found git branch....$git_branch"
+    #echo "found git branch....$git_branch"
 
     echo -n "$git_branch-"
   fi
