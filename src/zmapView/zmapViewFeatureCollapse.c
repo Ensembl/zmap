@@ -191,7 +191,7 @@ So i guess this means that the match starts on the 5th base in the sequence at g
 #endif
 
 
-void makeConcensusSequence(ZMapFeature composite)
+int makeConcensusSequence(ZMapFeature composite)
 {
 	int n_seq = composite->x2 - composite->x1 + 1;
 #define N_ALPHABET	5
@@ -247,7 +247,7 @@ void makeConcensusSequence(ZMapFeature composite)
 	}
 
 	/* must not free old sequence as it's copied from a real feature */
-	composite->feature.homol.sequence = seq = g_malloc(n_seq + 10);
+	composite->feature.homol.sequence = seq = g_malloc(n_seq + 1);
 	for(bp = bases, i = 0; i < n_seq; i++)
 	{
 		int base_ind, max, j;
@@ -265,6 +265,7 @@ void makeConcensusSequence(ZMapFeature composite)
 	}
 	*seq = 0;
 
+	return(seq - composite->feature.homol.sequence);
 }
 
 
@@ -729,7 +730,13 @@ void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature fe
 #if SQUASH_DEBUG
 printf("composite: %s %d,%d (%d %d %d)\n", g_quark_to_string(composite->original_id),composite->x1,composite->x2, composite->flags.joined,composite->flags.squashed,composite->flags.collapsed);
 #endif
-	makeConcensusSequence(composite);
+	composite->feature.homol.length = makeConcensusSequence(composite);
+
+if(composite->feature.homol.length != strlen(composite->feature.homol.sequence))
+	printf("seq lengths differ: %d, %d\n",composite->feature.homol.length,strlen(composite->feature.homol.sequence));
+zMapAssert(composite->feature.homol.length == strlen(composite->feature.homol.sequence));
+
+
 }
 
 

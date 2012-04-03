@@ -1353,6 +1353,43 @@ static gboolean loadGapString(ZMapGFFParser parser,
  #endif
 
 
+
+/*
+ * we can get tags in quoted strings, and maybe ';' too
+ * i'm assuming that quotes cannot appear in quoted strings even with '\'
+ */
+
+ char *find_tag(char * str, char *tag)
+ {
+	char *p = str;
+	int len = strlen(tag);
+	int n_quote;
+
+	while(*p)
+	{
+		if(!g_ascii_strncasecmp(p,tag,len))
+		{
+			p += len;
+			while(*p == ' ' || *p == '\t')
+				p++;
+			return(p);
+		}
+
+		for(n_quote = 0;*p;p++)
+		{
+			if(*p == '"')
+				n_quote++;
+			if(*p == ';' && !(n_quote & 1))
+				break;
+		}
+		while(*p == ';' || *p == ' ' || *p == '\t')
+			p++;
+
+	}
+	return(NULL);
+ }
+
+
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
@@ -1738,7 +1775,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  char *seq_str;
 	  gboolean local_sequence = FALSE ;
 
-	  /* I am not sure if we ever have target_phase from GFF output....check this out... */
+	  /* I am not sure if we ever have target_phase from GFF output....check this out... "*/
 	  if (zMapStyleIsParseGaps(feature_style))
 	    {
 	      static char *gaps_tag = ZMAPSTYLE_ALIGNMENT_GAPS " " ;
@@ -1799,17 +1836,16 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	    }
 
 		/* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
-	  if((seq_str = strstr(attributes,"sequence")))
+	  if((seq_str = find_tag(attributes,"sequence")))
 	  {
 		  char *p;
-
-		  for(seq_str += 8; *seq_str == ' '; seq_str++)
-			continue;
 
 		  for(p = seq_str; *p > ';'; p++)
 			  continue;
 
 		  seq_str = g_strdup_printf("%.*s",p - seq_str, seq_str);
+		  for(p = seq_str; *p > ';'; )
+			  *p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
 	  }
 
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,

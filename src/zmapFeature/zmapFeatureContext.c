@@ -1041,6 +1041,15 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
         }
 
       zMapFeatureSortGaps(feature->feature.homol.align) ;
+
+	if(feature->feature.homol.sequence && *feature->feature.homol.sequence)	/* eg if provided in GFF (BAM) */
+	{
+if(feature->feature.homol.length != strlen(feature->feature.homol.sequence))
+	printf("%s: seq lengths differ: %d, %d\n",g_quark_to_string(feature->original_id), feature->feature.homol.length, strlen(feature->feature.homol.sequence));
+zMapAssert(feature->feature.homol.length == strlen(feature->feature.homol.sequence));
+
+	    zMapDNAReverseComplement(feature->feature.homol.sequence, feature->feature.homol.length) ;
+	}
     }
   else if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
