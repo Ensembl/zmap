@@ -1906,6 +1906,10 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 		seq_str = "" ;
 		}
 	}
+else
+{
+	zMapWarning("seq_str = %s", seq_str);
+}
 
 
       /* Phase out stupid curr_channel                    */
