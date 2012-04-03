@@ -288,14 +288,14 @@ printf("-> %d\n",i);
 		*seq++ = base[base_ind];
 	}
 	*seq = 0;
-<<<<<<< HEAD
 
-	return(seq - composite->feature.homol.sequence);
-=======
 #if SQUASH_DEBUG_CONC
 printf("c %s\n",composite->feature.homol.sequence);
 #endif
->>>>>>> interim to merge hotfix
+
+
+	return(seq - composite->feature.homol.sequence);
+
 }
 
 
