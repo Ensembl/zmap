@@ -62,7 +62,6 @@ typedef struct _zmapWindowCanvasFeatureStruct
 	/* ideally these could be ints but the canvas works with doubles */
 	double width;
 	double bump_offset;	/* for X coord  (left hand side of sub column */
-	double feature_offset;	/* for X coord (LHS of column to LHS of feature */
 
 	int bump_col;		/* for calculating sub-col before working out width */
 

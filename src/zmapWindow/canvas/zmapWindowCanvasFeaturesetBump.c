@@ -468,10 +468,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 			if(!(feature->flags & FEATURE_HIDDEN))
 			{
 				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
-				feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col)));
+				feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col))) ;
 //printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
-				/* features are displayed relative to the centre of the column when unbumped
-				 * so we have to offset the feature as if that is the case
+				/*
+				 * features are displayed relative to the centre of the column when unbumped
+				 * so we have to offset the feature as if that is still the case
 				 */
 //zMapLogWarning("bump: feature of %d = %f",feature->bump_col,feature->bump_offset);
 

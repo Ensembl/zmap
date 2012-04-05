@@ -75,8 +75,6 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	}
 
 	x1 = featureset->width / 2 - feature->width / 2;
-	feature->feature_offset = x1;
-
 	if(featureset->bumped)
 		x1 += feature->bump_offset;
 

@@ -1029,6 +1029,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 //      double dx,dy;
       double y1,y2;
 //      FooCanvasGroup *group;
+	double x_off;
 
       /* optimise repeat calls: the foo canvas does 6 calls for a click event (3 down 3 up)
        * and if we are zoomed into a bumped peptide alignment column that means looking at a lot of features
@@ -1070,6 +1071,8 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 	y2 = y + item->canvas->close_enough;
 
 
+	x_off = fi->dx + fi->x_off + fi->width / 2;
+
 	/* NOTE there is a flake in world coords at low zoom */
 	/* NOTE close_enough is zero */
 	sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1 , y2);
@@ -1095,7 +1098,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 			double left,right;
 
 //printf("overlaps y\n");
-			wx = fi->dx + fi->x_off + gs->feature_offset;
+			wx = x_off - gs->width / 2;
 			if(fi->bumped)
 				wx += gs->bump_offset;
 
