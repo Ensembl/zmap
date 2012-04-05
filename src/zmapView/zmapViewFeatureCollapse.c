@@ -44,9 +44,9 @@
 
 #define PDEBUG          zMapLogWarning
 
-#define SQUASH_DEBUG	1
+#define SQUASH_DEBUG	0
 
-#define SQUASH_DEBUG_CONC	1
+#define SQUASH_DEBUG_CONC	0
 /*
  * NOTE:
  * joined reads may appear shorter due to mnmatech regions at the end of the 76 bases

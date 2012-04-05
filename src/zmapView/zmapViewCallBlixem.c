@@ -99,6 +99,8 @@ enum
     BLX_ARGV_DATASET,           /* --dataset=thing */
     BLX_ARGV_COVERAGE,		  /* --show-coverage */
     BLX_ARGV_SQUASH,		  /* --squash_matches */
+    BLX_ARGV_SORT,			  /* --sort-mode=p etc */
+
     BLX_ARGV_ARGC               /* argc ;) */
   } ;
 
@@ -160,6 +162,7 @@ typedef struct BlixemDataStruct
 
   gboolean negate_coords ;				    /* Show rev strand coords as same as
 							       forward strand but with a leading '-'. */
+  gboolean isSeq;
 
   int            homol_max;				    /* score cutoff point */
 
@@ -504,6 +507,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
 			    int window_start, int window_end,
 			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
+			    gboolean isSeq,
 			    GList *features, ZMapFeatureSet feature_set,
 			    GList *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit)
@@ -527,6 +531,8 @@ gboolean zmapViewCallBlixem(ZMapView view,
       blixem_data.source = source;
 
       blixem_data.sequence_map = view->view_sequence;
+
+	blixem_data.isSeq = isSeq;
     }
 
 
@@ -1351,14 +1357,15 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   }
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ || blixem_data->isSeq)
   {
   	paramString[BLX_ARGV_COVERAGE - missed] = g_strdup("--show-coverage");
   	paramString[BLX_ARGV_SQUASH - missed] = g_strdup("--squash-matches");
+  	paramString[BLX_ARGV_SORT - missed] = g_strdup("--sort-mode=p");
   }
   else
   {
-  	missed += 2;
+  	missed += 3;
   }
 
 
@@ -1906,11 +1913,6 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 		seq_str = "" ;
 		}
 	}
-else
-{
-	zMapWarning("seq_str = %s", seq_str);
-}
-
 
       /* Phase out stupid curr_channel                    */
 

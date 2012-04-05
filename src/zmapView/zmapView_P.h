@@ -346,6 +346,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    int window_start, int window_end,
 			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
+			    gboolean isSeq,
 			    GList *features, ZMapFeatureSet feature_set,
 			    GList *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit) ;

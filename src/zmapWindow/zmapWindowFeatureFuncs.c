@@ -189,6 +189,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 	  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
 
+	  align->isSeq = zMapFeatureIsSeqFeatureSet(window->context_map,feature_set->unique_id);
+
 	  /* If user clicked on features then make a list of them (may only be one), otherwise
 	   * we need to use the feature set. */
 	  if (selected_features == TRUE)

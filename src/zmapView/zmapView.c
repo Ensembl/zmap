@@ -3546,6 +3546,7 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
 				       align->window_start, align->window_end,
 				       align->mark_start, align->mark_end,
 				       align->homol_set,
+					 align->isSeq,
 				       align->features, align->feature_set, NULL, get_sequence->sequences,
 				       &blixem_pid, &(zmap_view->kill_blixems))))
 	zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
@@ -4337,6 +4338,7 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 				       align_cmd->window_start, align_cmd->window_end,
 				       align_cmd->mark_start, align_cmd->mark_end,
 				       align_cmd->homol_set,
+					 align_cmd->isSeq,
 				       align_cmd->features, align_cmd->feature_set, align_cmd->source, NULL,
 				       &blixem_pid, &(view->kill_blixems))))
 	view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;

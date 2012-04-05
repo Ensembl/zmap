@@ -275,6 +275,8 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
 
   GList *source;                                     /* a list of featureset names */
 
+  gboolean isSeq;
+
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
 
