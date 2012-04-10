@@ -204,6 +204,9 @@ int makeConcensusSequence(ZMapFeature composite)
 	char *base = "nacgt";
 	GList *fl;
 
+	if(!composite->feature.homol.sequence)	/* probably no features have sequence */
+		return(0);
+
 	if(composite->feature.homol.align)
 	{
 		/* no sequence in the gap so dionlt need as much space */
@@ -238,6 +241,8 @@ int makeConcensusSequence(ZMapFeature composite)
 	for(fl = composite->composite; fl ; fl = fl->next)
 	{
 		f = (ZMapFeature) fl->data;
+		if(!f->feature.homol.sequence)	/* some features have sequence but not this ome */
+			continue;
 		seq = f->feature.homol.sequence + f->feature.homol.y1 - 1;	/* skip un-matching sequence */
 		i = f->x1 - composite->x1;
 		for(; i < n_seq && *seq; i++)
@@ -732,11 +737,12 @@ printf("composite: %s %d,%d (%d %d %d)\n", g_quark_to_string(composite->original
 #endif
 	composite->feature.homol.length = makeConcensusSequence(composite);
 
+#if SQUASH_DEBUG
 if(composite->feature.homol.length != strlen(composite->feature.homol.sequence))
 	printf("seq lengths differ: %d, %d\n",composite->feature.homol.length,strlen(composite->feature.homol.sequence));
-zMapAssert(composite->feature.homol.length == strlen(composite->feature.homol.sequence));
-
-
+#endif
+	if(composite->feature.homol.sequence)
+		zMapAssert(composite->feature.homol.length == strlen(composite->feature.homol.sequence));
 }
 
 
