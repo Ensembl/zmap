@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:29 2011 (edgrif) */
+/*  Last edited: Apr 13 09:30 2012 (edgrif) */
 /*  File: zmapWindowDump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,7 +22,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Contains functions to output window contents in various
  *              formats (postscript, PNG etc.) to a file, i.e. a screen "dump".
@@ -34,8 +34,14 @@
 #include <ZMap/zmap.h>
 
 
-
-
+/* 
+ * THIS CODE IS ESSENTIALLY COMMENTED OUT BECAUSE THE g2 LIBRARY CALLS
+ * ARE BEING REPLACED WITH THE GtkPrint FUNCTIONS.
+ * 
+ * OPTIONS THAT CALL THIS CODE WILL BE NO-OPS.....
+ * 
+ * 
+ */
 
 
 
@@ -57,9 +63,13 @@
 #include <string.h>
 #include <math.h>
 #include <glib.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <g2.h>
 #include <g2_PS.h>
 #include <g2_gd.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
@@ -289,7 +299,11 @@ printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts-
 	  break ;
 	}
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g2_set_font_size(dump_opts->g2_id,30.0);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* Could turn off autoflush here for performance, see how it goes....see p.16 in docs... */
 
@@ -297,7 +311,11 @@ printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts-
                                  ZMAPCONTAINER_LEVEL_FEATURESET,
                                  dumpCB, dump_opts);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g2_close(dump_opts->g2_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       g_hash_table_destroy(dump_opts->ink_colours) ;
 
@@ -518,7 +536,11 @@ static int openPS(DumpOptions dump_opts)
   x2 = dump_opts->x2 ;
   y2 = dump_opts->y2 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g2_id = g2_open_PS(dump_opts->filename, g2_A4, g2_PS_port) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   x_origin = x1 ;
   y_origin = y1 ;
@@ -575,9 +597,13 @@ static int openEPSF(DumpOptions dump_opts)
 
   scale2Canvas(dump_opts, &canvas_width, &canvas_height, &x_origin, &y_origin, &x_mul, &y_mul) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g2_id = g2_open_EPSF_CLIP(dump_opts->filename, canvas_width, canvas_height) ;
 
   g2_set_coordinate_system(dump_opts->g2_id, x_origin, y_origin, x_mul, y_mul) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return g2_id ;
 }
@@ -589,6 +615,8 @@ static int openEPSF(DumpOptions dump_opts)
 static int setScalingPS(DumpOptions dump_opts)
 {
   int g2_id = 0 ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   enum g2_PS_orientation orientation ;
   double a4_width = 595.0, a4_height = 842.0 ;
   double pixels_per_unit_x;
@@ -691,6 +719,7 @@ static int setScalingPS(DumpOptions dump_opts)
   x_origin = y_origin = 0.0;
 
   g2_set_coordinate_system(g2_id, x_origin, y_origin, x_mul, y_mul) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return g2_id ;
 }
@@ -708,6 +737,8 @@ static int openGD(DumpOptions dump_opts)
   double x_origin, y_origin ;
   double x_mul, y_mul ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   scale2Canvas(dump_opts, &canvas_width, &canvas_height, &x_origin, &y_origin, &x_mul, &y_mul) ;
 
   if (dump_opts->format == DUMP_PNG)
@@ -716,6 +747,8 @@ static int openGD(DumpOptions dump_opts)
     g2_id = g2_open_gd(dump_opts->filename, canvas_width, canvas_height, g2_gd_jpeg) ;
 
   g2_set_coordinate_system(dump_opts->g2_id, x_origin, y_origin, x_mul, y_mul) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return g2_id ;
 }
@@ -915,8 +948,10 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
   double canvas_to_g2_y;
   int start,end;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if(!glyph->num_points)
     return;
+
 
   // get glyph coords as points array in g2 coords
   {
@@ -1049,6 +1084,8 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
       g_warning("Unknown Glyph Style");
       break;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -1063,6 +1100,8 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = FOO_CANVAS_ITEM(data);
   DumpOptions cb_data = (DumpOptions)user_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if(zmapWindowIsLongItem(item))
     {
       // have to paint these anyway if clipped
@@ -1222,6 +1261,8 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	  zMapAssertNotReached() ;
 	}
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -1236,6 +1277,8 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
   int outline_colour ;
   gboolean fill_set;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   x1 = re_item->x1 ;
   y1 = re_item->y1 ;
   x2 = re_item->x2 ;
@@ -1281,6 +1324,8 @@ are x1,y1 and x2,y2 inverted sometimes? this code expands the boxes!
       g2_pen(cb_data->g2_id, outline_colour) ;
       g2_rectangle(cb_data->g2_id, x1, y1, x2, y2) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -1298,6 +1343,8 @@ static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colo
 {
   int ink ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!(ink = GPOINTER_TO_UINT(g_hash_table_lookup(ink_colours, GUINT_TO_POINTER(composite_colour)))))
     {
       double red = 0.0, green = 0.0, blue = 0.0 ;
@@ -1310,6 +1357,8 @@ static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colo
 			  GUINT_TO_POINTER(ink)) ;
 
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ink ;
 }
