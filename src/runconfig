@@ -29,26 +29,6 @@ opsys=`uname`
 
 case $opsys in
 
-  OSF1 )
-    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/bin
-    PATH="$locals:/usr/local/gtk2/bin:$PATH"
-    export PATH
-
-    # NOTE that currently the LDFLAGS stuff does not get through the configure step
-    # and so does not work....not sure why....
-    popt=/nfs/team71/acedb/zmap/prefix/ALPHA
-    CC_args='CC=cc'
-
-    # N.B. level5 messages just produces too much output for everyday use....
-    CFLAGS_args="CFLAGS=-I$popt/include -msg_enable level4"
-    LDFLAGS_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
-
-    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/lib/pkgconfig
-    PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
-    export PKG_CONFIG_PATH
-    zmap_message_exit "No longer a supported operating system."
-    ;;
-
   Linux )
 
     case `uname -m` in

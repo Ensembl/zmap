@@ -132,7 +132,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libPFetch.a                    \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(ACECONN_LIBS) $(GTK_LIBS)                          \
-	$(LIBCURL) -lexpat -lg2 -lgd                         \
+	$(LIBCURL) -lexpat                                   \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
