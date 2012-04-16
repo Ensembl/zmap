@@ -108,7 +108,16 @@ void zmapWindowFeaturesetItemSetColour(   FooCanvasItem         *interval,
 
 gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style);
 
-void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show);
+typedef enum
+{
+	ZMWCF_HIDE_INVALID,
+	ZMWCF_HIDE_USER,			/* user hides feature */
+	ZMWCF_HIDE_EXPAND			/* user expands/ contracts feature */
+
+} ZMapWindowCanvasFeaturesetHideType;
+
+void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show, ZMapWindowCanvasFeaturesetHideType how);
+
 
 
 guint32 zMap_gdk_color_to_rgba(GdkColor *color);

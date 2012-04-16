@@ -693,6 +693,8 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
 
+  feature_stack->filter = FALSE;
+
   if(feature && feature->style)	/* chicken */
     {
       if(zMapStyleIsStrandSpecific(feature->style))
@@ -838,6 +840,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL,frame);
 
+  featureset_data.feature_stack.filter = TRUE;
 
 //  if(zMapStyleDensity(feature_set->style))
 /* now works with any CanvasFeatureset */

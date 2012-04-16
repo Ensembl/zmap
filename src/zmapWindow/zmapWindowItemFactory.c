@@ -836,7 +836,13 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
       zMapAssert(canvas_item);
 
-	if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
+	/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
+	 * so I changed FToIAddfeature to take the feature explicitly
+	 * setting the feature here every time also fixes the problem but by fluke
+	 */
+     	canvas_item->feature = feature;
+
+	if(run_data->feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
 	{
 		/* collapsed items are not displayed as they contain no new information
 		 * but they cam be searched for in the FToI hash
@@ -847,16 +853,11 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 		 * NOTE calling code will need to set the feature in the hash as the composite feature
 #warning need to set composite feature in lookup code
 		 */
+
 		return (FooCanvasItem *) canvas_item;
 	}
 
 
-/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
- * so I changed FToIAddfeature to take the feature explicitly
- * setting the feature here every time also fixes the problem but by fluke
- */
-//      if(!canvas_item->feature)
-      	canvas_item->feature = feature;     /* must have one */
 
 
 	/* now we are outisde the normal ZMapWindowCanvasItem dogma */

@@ -250,6 +250,7 @@ typedef struct _zmapWindowFeatureStack
       int set_index;	/* used by density plots for stagger */
       ZMapStrand strand;
       ZMapFrame frame;
+	gboolean filter;	/* don't add to camvas if hidden */
 } ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 

@@ -536,5 +536,4 @@ void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
 
-
 #endif /* !ZMAP_WINDOW_H */

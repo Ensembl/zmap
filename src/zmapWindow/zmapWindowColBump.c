@@ -448,7 +448,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       	}
 
       	/* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
-		 * in practice w/ heatmaps there will always be room and w/ other featrues only 1 CanavsFeatureset
+		 * in practice w/ heatmaps there will always be room and w/ other features only 1 CanavsFeatureset
 		 */
       	if(ok)
 		  zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);

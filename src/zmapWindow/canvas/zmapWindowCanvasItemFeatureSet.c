@@ -334,7 +334,7 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 		ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
 		/* find the feature struct and set a flag */
 #warning this should be a class function
-		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show);
+		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show, ZMWCF_HIDE_USER);
 
 	}
 	return FALSE;

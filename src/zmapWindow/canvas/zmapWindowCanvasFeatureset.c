@@ -414,6 +414,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int str
  * rather tediously that means we have to include headers for each type
  * In terms of OO 'classiness' we regard CanvasFeatureSet as the big daddy that has a few dependant children
  * they dont get to evolve unknown to thier parent.
+ *
+ * NOTE these functions could be called from the application, before starting the window/ camvas, which would allow extendablilty
  */
 void featureset_init_funcs(void)
 {
@@ -639,7 +641,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 	foo_canvas_w2c (foo->canvas, x1 + gs->width + i2w_dx, gs->y2 - fi->start + i2w_dy, &cx2, &cy2);
 
 		/* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
-		 * really ought to work out max glyph size or rather have true featrue extent
+		 * really ought to work out max glyph size or rather have true feature extent
 		 * NOTE this is only currently used via OTF remove exisitng features
 		 */
 	foo_canvas_request_redraw (foo->canvas, cx1, cy1-8, cx2 + 1, cy2 + 8);
@@ -711,20 +713,39 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
  * and could do other things if appropriate if we include some other flags
  * current best guess is that this is not best practice: eg summarise is an internal function and does not need an external interface
  */
-void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show)
+void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show, ZMapWindowCanvasFeaturesetHideType how)
 {
 	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
 	ZMapWindowCanvasFeature gs;
+
+//printf("show hide %s %d %d\n",g_quark_to_string(feature->original_id),show,how);
 
 	gs = zmap_window_canvas_featureset_find_feature(fi,feature);
 
 	if(gs)
 	{
 		if(show)
+		{
+			/* due to calling code these flgs are not operated correctly, so always show */
 			gs->flags &= ~FEATURE_HIDDEN & ~FEATURE_HIDE_REASON;
+		}
 		else
-			gs->flags |= FEATURE_HIDDEN | FEATURE_USER_HIDE;
+		{
+			switch(how)
+			{
+			case ZMWCF_HIDE_USER:
+				gs->flags |= FEATURE_HIDDEN | FEATURE_USER_HIDE;
+				break;
 
+			case ZMWCF_HIDE_EXPAND:
+			/* NOTE as expanded features get deleted if unbumped we can be fairly slack not testing for other flags */
+				gs->flags |= FEATURE_HIDDEN | FEATURE_HIDE_EXPAND;
+				break;
+			default:
+				break;
+			}
+		}
+//printf("gs->flags: %lx\n", gs->flags);
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
 	}
 }
@@ -733,7 +754,7 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 /*
  * return the foo canvas item under the lassoo, and a list of more features if included
  * we restrict the features to one column as previously multi-select was restricted to one column
- * the column is defined by the centrre of the lassoo and we include features inside not overlapping
+ * the column is defined by the centre of the lassoo and we include features inside not overlapping
  * NOTE we implement this for CanvasFeatureset only, not old style foo
  */
 
@@ -1159,6 +1180,7 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
  * do we have to do the same w/ transcripts? watch this space:
  *
  */
+#warning revisit this when transcripts are implemented: call from zmapView code
 void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 {
 	GList *l;
@@ -1929,6 +1951,8 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   ZMapWindowFeaturesetItem featureset_item;
   zmapWindowCanvasFeatureType type = FEATURE_INVALID;
 
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny) feature));
+
   if(style)
   	type = feature_types[zMapStyleGetMode(feature->style)];
   if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
@@ -1945,16 +1969,8 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
   }
 
-	/* NOTE if we configure styles to not load these into the canvas we don't get here */
-  if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
-  {
-	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
-  }
-
-
   feat->y1 = y1;
   feat->y2 = y2;
-
 
   feat->width = featureset_item->width;
 
@@ -1988,7 +2004,8 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 	featureset_item->longest = y2 - y1;
 
 	  /* even if they come in order we still have to sort them to be sure so just add to the front */
-  featureset_item->features = g_list_prepend(featureset_item->features,feat);
+	  /* NOTE we asign the from pointer here: not just more efficient if we have eg 60k features but essential to prepend */
+  feat->from = featureset_item->features = g_list_prepend(featureset_item->features,feat);
   featureset_item->n_features++;
 
 //  printf("add item %s/%s @%p: %ld/%d\n",g_quark_to_string(featureset_item->id),g_quark_to_string(feature->unique_id),feature, featureset_item->n_features, g_list_length(featureset_item->features));
@@ -2038,13 +2055,37 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 	we don't delete elsewhere, execpt for legacy gapped alignments, so this works ok by fluke
 
 	this function's a bit horrid: when we find the feature to delete we have to look it up in the index to repaint
-	we really need a coplumn refresh
+	we really need a column refresh
 
 	we really need to rethink this: deleting was not considered
 */
+#warning need to revist this code and make it more efficient
+// ideas:
+// use a skip list exclusively ??
+// use features list for loading, convert to skip list and remove features
+// can add new features via list and add to skip list (extract skip list, add to features , sort and re-create skip list
+
+/* NOTE Here we improve the efficiency of deleting a feature with some rubbish code
+ * we add a pointer to a feature's list mode in the fi->features list
+ * which allows us to delete that feature from the list without searching for it
+ * this is building rubbish on top of rubbish: really we should loose the features list
+ * and _only_ store references to features in the skip list
+ * there's reasons why not:
+ * - haven't implemented add/delete in zmapSkipList.c, which requires fiddly code to prevent degeneracy.
+ *   (Initially not implemented as not used, but now needed).
+ * - graph density items recalculate bins and have a sperate list of features that get indexed -> we shoudl do this using another skip list
+ * - sometimes we may wish to sort differently, having a diff list to sort helps... we can use glib functions.
+ * So to implement this quickly i added an extra pointer in the CanvasFeature struct.
+ *
+ * unfortunately glib sorts by creating new list nodes (i infer) so that the from pointer is invalid
+ *
+ */
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
 {
 	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
+
+
+#if 1 // ORIGINAL_SLOW_VERSION
 	GList *l;
 	ZMapWindowCanvasFeature feat;
 
@@ -2066,6 +2107,40 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 		}
 	}
 
+	/* NOTE we may not have an index so this flag must be unset seperately */
+	fi->linked_sideways = FALSE;  /* See code below: this was slack */
+
+
+#else
+
+	ZMapWindowCanvasFeature gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+
+	if(gs)
+	{
+		GList *link = gs->from;
+		/* glib  g_list_sort() invalidates these adresses -> preserves the data but not the list elements */
+
+		zMapAssert(link);
+		zmap_window_canvas_featureset_expose_feature(fi, gs);
+
+		if(fi->linked_sideways)
+		{
+			if(gs->left)
+				gs->left->right = gs->right;
+			if(gs->right)
+				gs->right->left = gs->left;
+		}
+
+		zmapWindowCanvasFeatureFree(gs);
+		fi->features = g_list_delete_link(fi->features,link);
+		fi->n_features--;
+	}
+#endif
+
+	/* not strictly necessary to re-sort as the order is the same
+	 * but we avoid the index becoming degenerate but doing this
+	 * better to implement zmapSkipListRemove() properly
+	 */
 	if(fi->display_index)
 	{
 		/* need to recalc bins */
@@ -2074,8 +2149,6 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 		fi->display_index = NULL;
 		/* is still sorted if it was before */
 	}
-	/* NOTE we may not have an index so this flag must be unset seperately */
-	fi->linked_sideways = FALSE;
 
 	return fi->n_features;
 }

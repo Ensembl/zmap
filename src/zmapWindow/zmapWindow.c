@@ -3586,6 +3586,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 			foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
 			foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
+				/* only finds features in a canvas featureset, old foo gives nothing */
 			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
 
 			/* this is how features get highlit */
