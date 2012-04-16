@@ -1,3 +1,4 @@
+/*  Last edited: Apr 13 09:13 2012 (edgrif) */
 /*  File: zmapConfigLoader.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1178,6 +1179,7 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 /* return a hash table of GArray * of GdkColor indexed by the GQuark of the name */
 GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 {
+  return NULL ;
 }
 
 
