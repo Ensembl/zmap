@@ -319,6 +319,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER   "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
 
 /* alignment properties */

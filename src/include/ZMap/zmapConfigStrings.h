@@ -899,6 +899,10 @@
 
 #define ZMAPSTANZA_GLYPH_CONFIG           "glyphs"
 
+#define ZMAPSTANZA_HEATMAP_CONFIG           "heatmaps"
+#define MAX_HEAT_COLOUR				16	/* more than conceivable, only 8 colours in a rainbow */
+
+
 #define ZMAPSTANZA_COLUMN_CONFIG              "columns"
 #define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
 #define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"

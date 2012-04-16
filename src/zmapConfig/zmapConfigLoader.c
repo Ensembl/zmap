@@ -1157,16 +1157,19 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
             {
                   q = g_quark_from_string(*keys);
                   shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
-                  glyph_shape = zMapStyleGetGlyphShape(shape,q);
+			if(!shape)
+				continue;
+			glyph_shape = zMapStyleGetGlyphShape(shape,q);
 
-                  if(!glyph_shape)
-                    {
-                        zMapLogWarning("Glyph shape %s: syntax error in %s",*keys,shape);
-                    }
-                  else
-                    {
-                        g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
-                    }
+			if(!glyph_shape)
+			{
+				zMapLogWarning("Glyph shape %s: syntax error in %s",*keys,shape);
+			}
+			else
+			{
+				g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
+			}
+			g_free(shape);
             }
       }
 
@@ -1175,10 +1178,54 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 
 
 
-/* return a hash table of GArray * of GdkColor indexed by the GQuark of the name */
+/* return a hash table of GArray of GdkColor indexed by the GQuark of the name */
+/* (there are limits to honw many colours we can use and GArrays are tedious) */
 GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 {
-	return NULL;
+      GHashTable *hash = NULL;
+      GKeyFile *gkf;
+      gchar ** keys = NULL;
+      gsize len;
+      GQuark name;
+	char *colours, *p,*q;
+	GArray *col_array;
+	GdkColor col;
+
+      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_HEATMAP_CONFIG,&gkf))
+      {
+            hash = g_hash_table_new(NULL,NULL);
+
+            keys = g_key_file_get_keys(gkf,ZMAPSTANZA_HEATMAP_CONFIG,&len,NULL);
+
+            for(;len--;keys++)
+            {
+                  name = g_quark_from_string(*keys);
+                  colours = g_key_file_get_string(gkf,ZMAPSTANZA_HEATMAP_CONFIG,*keys,NULL);
+			if(!colours)
+				continue;
+
+			col_array = g_array_sized_new(FALSE,FALSE,sizeof(GdkColor),8);
+
+			for(p = colours; *p; p = q)
+			{
+				for(q = p; *q && *q != ';'; q++)
+					continue;
+				if(*q)
+					*q++ = 0;
+				else
+					*q = 0;
+
+				gdk_color_parse(p,&col);
+				g_array_append_val(col_array,col);
+			}
+
+                  g_hash_table_insert(hash,GUINT_TO_POINTER(name),col_array);
+
+			g_free(colours);
+            }
+      }
+
+      return(hash);
 }
 
 
