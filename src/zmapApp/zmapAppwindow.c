@@ -758,41 +758,41 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-            /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
+      /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
       app_context->default_sequence = (ZMapFeatureSequenceMap) g_new0(ZMapFeatureSequenceMapStruct,1);
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_DATASET, &tmp_string))
-      {
-                  /* if not supplied meeds to appear in all the pipe script URLs */
-            app_context->default_sequence->dataset = tmp_string;
-      }
+					ZMAPSTANZA_APP_DATASET, &tmp_string))
+	{
+	  /* if not supplied meeds to appear in all the pipe script URLs */
+	  app_context->default_sequence->dataset = tmp_string;
+	}
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
-      {
-            ZMapFeatureSequenceMap s = app_context->default_sequence;
+	{
+	  ZMapFeatureSequenceMap s = app_context->default_sequence;
 
-	      s->sequence = tmp_string;
-            s->start = 1;
-            if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_START, &s->start))
+	  s->sequence = tmp_string;
+	  s->start = 1;
+	  if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_START, &s->start))
             {
-                  zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_END, &s->end);
+	      zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_END, &s->end);
 
-                  /* possibly worth checking csname and csver at some point */
-                  tmp_string = NULL;
-                  zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_CSNAME,&tmp_string);
-                  zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
+	      /* possibly worth checking csname and csver at some point */
+	      tmp_string = NULL;
+	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
+	      zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
             }
-            else
+	  else
             {
-                  /* (don't) try to get chromo coords from seq name */
+	      /* (don't) try to get chromo coords from seq name */
             }
 
-      }
+	}
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
