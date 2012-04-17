@@ -131,6 +131,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
     }
   else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
 	   || g_ascii_strcasecmp(feature_type, "assembly_path") == 0
+	   || g_ascii_strcasecmp(feature_type, "gene") == 0
 	   || g_ascii_strcasecmp(feature_type, "oligo") == 0
 	   || g_ascii_strcasecmp(feature_type, "PCR_product") == 0
 	   || g_ascii_strcasecmp(feature_type, "RNAi_reagent") == 0
