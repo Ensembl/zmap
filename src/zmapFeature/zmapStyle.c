@@ -1157,13 +1157,7 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
       switch (style->mode)
       {
       case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      case ZMAPSTYLE_MODE_PEP_SEQUENCE:
-      case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       case ZMAPSTYLE_MODE_SEQUENCE:
-
       case ZMAPSTYLE_MODE_TEXT:
         {
           if (!(style->colours.normal.fields_set.fill))
@@ -1200,8 +1194,9 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
                     zMapStyleMerge(style,s_3frame);
                 }
             }
+
+	  break;
         }
-        break;
       default:
         {
           if (!(style->colours.normal.fields_set.fill) && !(style->colours.normal.fields_set.border))
@@ -1983,6 +1978,7 @@ static void zmap_bin_to_hex(gchar *dest,guchar *src, int len)
   *dest = 0;
 }
 
+
 static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style,
 						      ZMapStyleParam param,
 						      const GValue *value,
@@ -2028,9 +2024,12 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       zmapStyleSetIsSet(style,STYLE_PROP_MODE);
     }
 
-  if(param->mode && style->mode != param->mode)
+  if (param->mode && style->mode != param->mode)
     {
-      zMapLogWarning("Set style mode specific paramter %s ignored as mode is %s",param->name,zMapStyleMode2ExactStr(style->mode));
+      zMapLogWarning("Style %s: set style mode specific paramter %s ignored as mode is %s",
+		     g_quark_to_string(style->original_id),
+		     param->name, zMapStyleMode2ExactStr(style->mode)) ;
+
       return;
     }
 
