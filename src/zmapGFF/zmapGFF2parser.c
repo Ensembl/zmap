@@ -905,8 +905,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		    }
 		  if(parser->features_start == 1 && parser->features_end == 0)
 		    {
-		    	/* mh17 else if we read a file://  with no seq sopecified it fails */
-		      parser->features_start = start ;
+		      /* mh17 else if we read a file://  with no seq sopecified it fails */
+			parser->features_start = start ;
 		      parser->features_end = end ;
 		    }
 
@@ -1406,7 +1406,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
-/*  GQuark column_id = 0;*/
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
@@ -1435,7 +1434,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
 					      GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
-	//                                    GINT_TO_POINTER(g_quark_from_string(source)))))
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
