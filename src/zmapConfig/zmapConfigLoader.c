@@ -34,14 +34,10 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
 //#include <unistd.h>
 #include <glib.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapStyle.h>
 #include <zmapConfigIni_P.h>
@@ -1231,22 +1227,23 @@ GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 
 gboolean zMapConfigLegacyStyles(void)
 {
-  ZMapConfigIniContext context;
   static gboolean result = FALSE;
+  ZMapConfigIniContext context;
   static int got = 0;
 
-      // this needs to be once only as it gets called when drawing glyphs
-  if(!got)
-  {
-    got = 1;
-    if((context = zMapConfigIniContextProvide()))
+  // this needs to be once only as it gets called when drawing glyphs
+  if (!got)
     {
-      zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                               ZMAPSTANZA_APP_LEGACY_STYLES, &result);
-      zMapConfigIniContextDestroy(context);
+      got = TRUE ;
+      if ((context = zMapConfigIniContextProvide()))
+	{
+	  zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_LEGACY_STYLES, &result);
+	  zMapConfigIniContextDestroy(context);
+	}
     }
-  }
-  return(result);
+
+  return(result) ;
 }
 
 
@@ -1274,6 +1271,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_DATA,         G_TYPE_STRING, NULL, FALSE },
 //    { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_STYLE_FROM_METHOD,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_NAVIGATOR_SETS,  G_TYPE_STRING, NULL, FALSE },
