@@ -65,7 +65,7 @@ typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemCla
 
 
 /* enums for function type */
-typedef enum { FUNC_PREPARE, FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_FREE, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
+typedef enum { FUNC_PREPARE, FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_FREE, FUNC_ADD,  FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
 /* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
 /* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
 
@@ -94,7 +94,10 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type);
 void zmapWindowCanvasFeatureFree(gpointer thing);
 
-void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2);
+void zMapWindowFeaturesetSetFeatureWidth(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasFeature feat);
+int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
+
+ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item, ZMapFeature feature, double y1, double y2);
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 
 
@@ -135,7 +138,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
  *
  * NOTE x1 and x2 passed as args as normal features are centred but graphs maybe not
  */
-#define zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, x1,x2, drawable,fill_set,outline_set,fill,outline)\
+#define zMapCanvasFeaturesetDrawBoxMacro(featureset, x1,x2, y1,y2,  drawable,fill_set,outline_set,fill,outline)\
 {\
 	FooCanvasItem *item = (FooCanvasItem *) featureset;\
 	GdkColor c;\
@@ -143,8 +146,8 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
 \
 		/* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */\
 		/* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */\
-	foo_canvas_w2c (item->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1);\
-	foo_canvas_w2c (item->canvas, x2, feature->feature->x2 - featureset->start + featureset->dy + 1, &cx2, &cy2);\
+	foo_canvas_w2c (item->canvas, x1, y1 - featureset->start + featureset->dy, &cx1, &cy1);\
+	foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);\
       						/* + 1 to draw to the end of the last base */\
 \
 		/* NOTE that the gdk_draw_rectangle interface is a bit esoteric\

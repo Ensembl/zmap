@@ -81,7 +81,7 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	x1 += featureset->dx;
 	x2 = x1 + feature->width;
 
-	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,x1,x2, drawable, fill_set,outline_set,fill,outline);
+	zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->y1, feature->y2, drawable, fill_set,outline_set,fill,outline);
 }
 
 

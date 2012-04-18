@@ -76,6 +76,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasAlignment.h>
 #include <zmapWindowCanvasGraphItem.h>
+#include <zmapWindowCanvasTranscript.h>
 
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
@@ -110,7 +111,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
 	FEATURE_BASIC, 		/* ZMAPSTYLE_MODE_BASIC */
 	FEATURE_ALIGN,		/* ZMAPSTYLE_MODE_ALIGNMENT */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TRANSCRIPT */
+	FEATURE_TRANSCRIPT,	/* ZMAPSTYLE_MODE_TRANSCRIPT */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_SEQUENCE */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TEXT */
@@ -293,20 +294,46 @@ static gpointer _featureset_link_G[FEATURE_N_TYPE] = { 0 };
 int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
 {
 	int (*func) (ZMapWindowCanvasFeature feature);
+	zmapWindowCanvasFeatureType type;
 
 	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
-		return FALSE;
+		return 0;
+
+	type = feature_types[feature->type];
 
 	func = _featureset_link_G[feature->type];
 	if(!func)
-		return FALSE;
+		return 0;
 
 	return func(feature);
 }
 #endif
 
 
-/* if a featureset has and allocated data free it */
+
+static gpointer _featureset_add_G[FEATURE_N_TYPE] = { 0 };
+int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+{
+	int (*func) (ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
+	ZMapWindowCanvasFeature feat;
+//	zmapWindowCanvasFeatureType type;
+
+	if(!feature)
+		return 0;
+
+//	type = feature_types[zMapStyleGetMode(feature->style)];
+
+	func = _featureset_add_G[featureset->type];
+	if(func)
+		return func(featureset, feature, y1, y2);
+
+	feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+	zMapWindowFeaturesetSetFeatureWidth(featureset,feat);
+	return(1);
+}
+
+
+/* if a featureset has any allocated data free it */
 static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
 void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 {
@@ -390,17 +417,18 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int struct_size)
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int struct_size)
 {
 	_featureset_prepare_G[featuretype] = funcs[FUNC_PREPARE];
-	_featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
-	_featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
-	_featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
-	_featureset_zoom_G[featuretype] = funcs[FUNC_ZOOM];
+	_featureset_paint_G[featuretype]   = funcs[FUNC_PAINT];
+	_featureset_flush_G[featuretype]   = funcs[FUNC_FLUSH];
+	_featureset_extent_G[featuretype]  = funcs[FUNC_EXTENT];
+	_featureset_zoom_G[featuretype]    = funcs[FUNC_ZOOM];
 #if CANVAS_FEATURESET_LINK_FEATURE
-	_featureset_link_G[featuretype] = funcs[FUNC_LINK];
+	_featureset_link_G[featuretype]    = funcs[FUNC_LINK];
 #endif
-	_featureset_free_G[featuretype] = funcs[FUNC_FREE];
+	_featureset_free_G[featuretype]    = funcs[FUNC_FREE];
+	_featureset_add_G[featuretype]     = funcs[FUNC_ADD];
 
 	featureset_class_G->struct_size[featuretype] = struct_size;
 }
@@ -426,6 +454,7 @@ void featureset_init_funcs(void)
 	zMapWindowCanvasGlyphInit();
 	zMapWindowCanvasAlignmentInit();
 	zMapWindowCanvasGraphInit();
+	zMapWindowCanvasTranscriptInit();
 
 	/* if you add a new one then update feature_types[N_STYLE_MODE] below */
 }
@@ -1943,12 +1972,45 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 }
 
 
-/* no return, as all this data in internal to the column featureset item */
-void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, double y1, double y2)
+void zMapWindowFeaturesetSetFeatureWidth(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasFeature feat)
+{
+	ZMapFeature feature = feat->feature;
+	ZMapFeatureTypeStyle style = feature->style;
+
+	feat->width = featureset_item->width;
+
+	if(feature->population)	/* collapsed duplicated features, takes precedence over score */
+	{
+		double score = (double) feature->population;
+
+		feat->score = zMapWindowCanvasFeatureGetNormalisedScore(style, score);
+
+		if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
+			feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, score);
+	}
+	else if(feature->flags.has_score)
+	{
+		if(featureset_item->style->mode == ZMAPSTYLE_MODE_GRAPH)
+		{
+			feat->score = zMapWindowCanvasFeatureGetNormalisedScore(style, feature->score);
+			feat->width = featureset_item->width * feat->score;
+		}
+		else
+		{
+			if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
+				feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->score);
+			else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
+				feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->feature.homol.percent_id);
+		}
+	}
+}
+
+
+
+ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item, ZMapFeature feature, double y1, double y2)
 {
   ZMapWindowCanvasFeature feat;
   ZMapFeatureTypeStyle style = feature->style;
-  ZMapWindowFeaturesetItem featureset_item;
   zmapWindowCanvasFeatureType type = FEATURE_INVALID;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny) feature));
@@ -1956,49 +2018,14 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   if(style)
   	type = feature_types[zMapStyleGetMode(feature->style)];
   if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
-  	return;
-
-  featureset_item = (ZMapWindowFeaturesetItem) foo;
+  	return NULL;
 
   feat = zmapWindowCanvasFeatureAlloc(type);
   feat->feature = feature;
   feat->type = type;
-  if(type == FEATURE_ALIGN)
-  {
-  	if(feat->feature->feature.homol.flags.masked)
-  		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
-  }
 
   feat->y1 = y1;
   feat->y2 = y2;
-
-  feat->width = featureset_item->width;
-
-  if(feature->population)	/* collapsed duplicated features, takes precedence over score */
-  {
-	double score = (double) feature->population;
-
-	feat->score = zMapWindowCanvasFeatureGetNormalisedScore(style, score);
-
-	if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
-		feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, score);
-  }
-  else if(feature->flags.has_score)
-  {
-	if(featureset_item->style->mode == ZMAPSTYLE_MODE_GRAPH)
-	{
-		feat->score = zMapWindowCanvasFeatureGetNormalisedScore(style, feature->score);
-		feat->width = featureset_item->width * feat->score;
-	}
-	else
-	{
-		if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
-			feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->score);
-		else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
-			feat->width = zMapWindowCanvasFeatureGetWidthFromScore(style, featureset_item->width, feature->feature.homol.percent_id);
-	}
-  }
-
 
   if(y2 - y1 > featureset_item->longest)
 	featureset_item->longest = y2 - y1;
@@ -2037,10 +2064,7 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   }
 #endif
 
-
-  /* NOTE we may not have an index so this flag must be unset seperately */
-  /* eg on OTF w/ delete existing selected */
-  featureset_item->linked_sideways = FALSE;
+  return feat;
 }
 
 

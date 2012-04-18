@@ -427,7 +427,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		x1 += featureset->dx;
 		x2 = x1 + feature->width;
 
-		zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, x1,x2, drawable, fill_set,outline_set,fill,outline)
+		zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->y1, feature->y2, drawable, fill_set,outline_set,fill,outline);
 	}
 	else	/* draw gapped boxes */
 	{
@@ -702,6 +702,27 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 //printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
 }
 
+static void zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+{
+	ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+
+	zMapWindowFeaturesetSetFeatureWidth(featureset, feat);
+
+  	if(feat->feature->feature.homol.flags.masked)
+  		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
+
+	/* NOTE if we configure styles to not load these into the canvas we don't get here */
+	if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
+	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
+
+	/* NOTE we may not have an index so this flag must be unset seperately */
+	/* eg on OTF w/ delete existing selected */
+	if(featureset->link_sideways)
+		featureset->linked_sideways = FALSE;
+
+}
+
+
 static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset)
 {
 	/* frees gapped data _and does not alloc any more_ */
@@ -721,8 +742,9 @@ void zMapWindowCanvasAlignmentInit(void)
 #endif
 	funcs[FUNC_FREE]   = zMapWindowCanvasAlignmentFreeSet;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
+	funcs[FUNC_ADD]    = zMapWindowCanvasAlignmentAddFeature;
 
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
 }
 
 

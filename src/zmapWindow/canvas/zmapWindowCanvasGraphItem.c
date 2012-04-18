@@ -26,11 +26,6 @@
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jun  3 09:51 2009 (rds)
- * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.14 2011-03-14 11:35:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -223,7 +218,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 	if(draw_box)
 	{
-		zMapCanvasFeaturesetDrawBoxMacro(featureset, feature, x1,x2, drawable, fill_set, outline_set, fill, outline);
+		zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->y1, feature->y2, drawable, fill_set,outline_set,fill,outline);
 	}
 }
 

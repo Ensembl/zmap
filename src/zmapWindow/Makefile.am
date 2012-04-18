@@ -89,6 +89,9 @@ canvas/zmapWindowCanvasGraphItem_I.h \
 canvas/zmapWindowCanvasItemFeatureSet.c \
 canvas/zmapWindowCanvasItemFeatureSet.h \
 canvas/zmapWindowCanvasItemFeatureSet_I.h \
+canvas/zmapWindowCanvasTranscript.c \
+canvas/zmapWindowCanvasTranscript.h \
+canvas/zmapWindowCanvasTranscript_I.h \
 $(NULL)
 
 
