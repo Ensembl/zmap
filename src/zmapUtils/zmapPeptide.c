@@ -878,7 +878,7 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
   /* agh...I have to copy the dna now...sigh... */
   if((dna = g_strndup((dna_in + from), length)))
     {
-      dnaEncodeString(dna) ;
+      zMapDNAEncodeString(dna) ;
 
       dna_array = g_array_new(TRUE, FALSE, sizeof(char)) ;
 
