@@ -183,6 +183,9 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean link_sideways;	/* has complex features */
   gboolean linked_sideways;	/* that have been constructed */
 
+  gboolean highlight_sideways;/* temp bodge to allow old code to drive this */
+					/* transcripts do alignments don't they get highlit by calling code */
+
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
 					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
 					 * but we need to sort features so GList is more convenient */

@@ -128,7 +128,6 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
 	/* for H or V lines we can clip easily */
-#warning when transcripts are implemented we need to intersect the visible region
 
 	if(cy1 > featureset->clip_y2)
 		return;
@@ -139,14 +138,41 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 	if(cx2 < featureset->clip_x1)
 		return;
 
-	if(cx1 < featureset->clip_x1)
-		cx1 = featureset->clip_x1;
-	if(cy1 < featureset->clip_y1)
-		cy1 = featureset->clip_y1;
-	if(cx2 > featureset->clip_x2)
-		cx2 = featureset->clip_x2;
-	if(cy2 > featureset->clip_y2)
-		cy2 = featureset->clip_y2;
+	if(cx1 == cx2)	/* is vertical */
+	{
+#if 0
+/*
+	the problem is long vertical lines that wrap round
+	we don't draw big horizontal ones
+*/
+		if(cx1 < featureset->clip_x1)
+			cx1 = featureset->clip_x1;
+		if(cx2 > featureset->clip_x2)
+			cx2 = featureset->clip_x2;
+#endif
+		if(cy1 < featureset->clip_y1)
+			cy1 = featureset->clip_y1;
+		if(cy2 > featureset->clip_y2)
+			cy2 = featureset->clip_y2 ;
+	}
+	else
+	{
+		gint dx = cx2 - cx1;
+		gint dy = cy2 - cy1;
+
+		if(cy1 < featureset->clip_y1)
+		{
+			cx1 += dx * (featureset->clip_y1 - cy1) / dy;
+			cy1 = featureset->clip_y1;
+
+		}
+		if(cy2 > featureset->clip_y2)
+		{
+			cx2 -= dx * (cy2 - featureset->clip_y2) / dy;
+			cy2 = featureset->clip_y2;
+		}
+
+	}
 
 	gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
 }
@@ -347,6 +373,20 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 	func(featureset);
 }
 
+/* if a featureset has any allocated data free it */
+static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
+ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
+{
+	ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
+	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+
+	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+		func = _featureset_subpart_G[featureset->type];
+	if(!func)
+		return NULL;
+
+	return func(foo, feature, x, y);
+}
 
 
 
@@ -424,11 +464,9 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int st
 	_featureset_flush_G[featuretype]   = funcs[FUNC_FLUSH];
 	_featureset_extent_G[featuretype]  = funcs[FUNC_EXTENT];
 	_featureset_zoom_G[featuretype]    = funcs[FUNC_ZOOM];
-#if CANVAS_FEATURESET_LINK_FEATURE
-	_featureset_link_G[featuretype]    = funcs[FUNC_LINK];
-#endif
 	_featureset_free_G[featuretype]    = funcs[FUNC_FREE];
 	_featureset_add_G[featuretype]     = funcs[FUNC_ADD];
+	_featureset_subpart_G[featuretype] = funcs[FUNC_SUBPART];
 
 	featureset_class_G->struct_size[featuretype] = struct_size;
 }
@@ -533,6 +571,10 @@ FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQu
 		if(type == FEATURE_ALIGN)
 		{
 			di->link_sideways = TRUE;
+		}
+		if(type == FEATURE_TRANSCRIPT)
+		{
+			di->highlight_sideways = TRUE;
 		}
 		else if(type == FEATURE_GRAPH && zMapStyleDensity(style))
 		{
@@ -718,8 +760,16 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 	ZMapWindowCanvasFeature gs;
 
 	gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+	if(!gs)
+		return;
 
-	if(gs)
+	if(fi->highlight_sideways)	/* ie transcripts as composite features */
+	{
+		while(gs->left)
+			gs = gs->left;
+	}
+
+	while(gs)
 	{
 		/* set the focus flags (on or off) */
 		/* zmapWindowFocus.c maintans these and we set/clear then all at once */
@@ -733,7 +783,11 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 			(gs->flags & FEATURE_FOCUS_BLURRED);
 
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
-		return;
+
+		if(!fi->highlight_sideways)		/* only doing the selected one */
+			return;
+
+		gs = gs->right;
 	}
 }
 
@@ -963,67 +1017,6 @@ static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItem
 }
 
 
-/* replaces a g_object_get_data() call and returns a static data struct */
-/* only used by the status bar if you click on a sub-feature */
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
-{
-	static ZMapFeatureSubPartSpanStruct sub_part;
-	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
-
-	switch(feature->type)
-	{
-	case ZMAPSTYLE_MODE_ALIGNMENT:
-		{
-			ZMapAlignBlock ab;
-			int i;
-
-			/* find the gap or match if we are bumped */
-			if(!fi->bumped)
-				return NULL;
-			if(!feature->feature.homol.align)	/* is un-gapped */
-				return NULL;
-
-			/* get sequence coords for x,y,  well y at least */
-			/* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
-
-
-			/* we refer to the actual feature gaps data not the display data
-			* as that may be compressed and does not contain sequence info
-			* return the type index and target start and end
-			*/
-			for(i = 0; i < feature->feature.homol.align->len;i++)
-			{
-				ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-				/* in the original foo based code
-				 * match n corresponds to the match block indexed from 1
-				 * gap n corresponds to the following match block
-				 */
-
-				sub_part.index = i + 1;
-				sub_part.start = ab->t1;
-				sub_part.end = ab->t2;
-
-				if(y >= ab->t1 && y <= ab->t2)
-				{
-					sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
-					return &sub_part;
-				}
-				if(y < ab->t1)
-				{
-					sub_part.start = sub_part.end + 1;
-					sub_part.end = ab->t1 -1;
-					sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
-					return &sub_part;
-				}
-			}
-		}
-		break;
-
-	default:
-		break;
-	}
-	return NULL;
-}
 
 
 
@@ -1201,72 +1194,11 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
 }
 
 
-/* a slightly ad-hoc function
- * really the feature context should specify complex features
- * but for historical reasons alignments come disconnected
- * and we have to join them up by inference (same name)
- * we may have several context featuresets but by convention all these have features with different names
- * do we have to do the same w/ transcripts? watch this space:
- *
- */
-#warning revisit this when transcripts are implemented: call from zmapView code
-void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
-{
-	GList *l;
-	ZMapWindowCanvasFeature left,right;		/* feat -ures */
-#if !CANVAS_FEATURESET_LINK_FEATURE
-	GQuark name = 0;
-#endif
-
-	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
-	/* sort by name and start coord */
-	/* link same name features with ascending query start coord */
-
-	/* if we ever need to link by something other than same name
-	 * then we can define a feature type specific sort function
-	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
-	 */
-//printf("sort sideways\n");
-	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
-	fi->features_sorted = FALSE;
-
-#if CANVAS_FEATURESET_LINK_FEATURE
-	zMapWindowCanvasFeaturesetLinkFeature(NULL);	/* clear out static data */
-#endif
-
-	for(l = fi->features;l;l = l->next)
-	{
-		right = (ZMapWindowCanvasFeature) l->data;
-		right->left = right->right = NULL;		/* we can re-calculate so must zero */
-
-zMapAssert(right != left);
-
-#if CANVAS_FEATURESET_LINK_FEATURE
-		if(zMapWindowCanvasFeaturesetLinkFeature(right))
-#else
-		if(name == right->feature->original_id)
-#endif
-		{
-			right->left = left;
-			left->right = right;
-		}
-		left = right;
-#if !CANVAS_FEATURESET_LINK_FEATURE
-		name = left->feature->original_id;
-#endif
-
-	}
-
-	fi->linked_sideways = TRUE;
-}
 
 
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 {
     GList *features;
-
-    if(fi->link_sideways && !fi->linked_sideways)
-    	zmap_window_featureset_item_link_sideways(fi);
 
     features = fi->display;		/* NOTE: is always sorted */
 
@@ -1281,6 +1213,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 
     fi->display_index = zMapSkipListCreate(features, NULL);
 }
+
 
 
 void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose)
@@ -1311,7 +1244,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 		fi->clip_x1 = rect.x - 1;
 		fi->clip_y1 = rect.y - 1;
-		fi->clip_x2 =rect.x + rect.width + 1;
+		fi->clip_x2 = rect.x + rect.width + 1;
 		fi->clip_y2 = rect.y + rect.height + 1;
 	}
 
@@ -1346,8 +1279,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	fi->dx = fi->dy = 0.0;		/* this gets the offset of the parent of this item */
       foo_canvas_item_i2w (item, &fi->dx, &fi->dy);
 
-	foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
-	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
+	foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
+	foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
 //if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
 
@@ -2147,7 +2080,7 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 		zMapAssert(link);
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
 
-		if(fi->linked_sideways)
+//		if(fi->linked_sideways)
 		{
 			if(gs->left)
 				gs->left->right = gs->right;

@@ -60,15 +60,15 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	 * as we can have several styles in a column
 	 * but they are cached by the calling function
 	 * and also the window focus code
+	 * however, as we have CDS colours diff from non-CDS and possibly diff style in one column
+	 * this is likely ineffective, but as the number of features is small we don't care so much
 	 */
 
-	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);		/* non cds colours */
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
 	x1 = featureset->width / 2 - feature->width / 2;
-	feature->feature_offset = x1;
-
 	if(featureset->bumped)
 		x1 += feature->bump_offset;
 
@@ -91,6 +91,38 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 			zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2, drawable, fill_set,outline_set,fill,outline);
 			y2 = transcript->cds_end;
 		}
+	}
+
+	/* get cds colours if in CDS */
+	if(transcript->flags.cds && transcript->cds_start <= y1 && transcript->cds_end >= y2)
+	{
+		ZMapStyleColourType ct;
+		GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
+
+		ct = feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
+		zMapStyleGetColours(feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
+
+		if(gdk_fill)
+		{
+			gulong fill_colour;
+
+			fill_set = TRUE;
+			fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
+			fill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
+		}
+		if(gdk_outline)
+		{
+			gulong outline_colour;
+
+			outline_set = TRUE;
+			outline_colour = zMap_gdk_color_to_rgba(gdk_outline);
+			outline = foo_canvas_get_color_pixel(foo->canvas, outline_colour);
+		}
+	}
+
+
+	if(tr->sub_type == TRANSCRIPT_EXON)
+	{
 		zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline);
 	}
 	else if (outline_set && tr->sub_type == TRANSCRIPT_INTRON)
@@ -110,15 +142,6 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 }
 
 
-#if 0
-	    /* cds will default to normal colours if its own colours are not set. */
-	    zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				&xon_fill, &xon_draw, &xon_border);
-
-	if ((sub_feature->subpart == ZMAPFEATURE_SUBPART_EXON_CDS) &&
-	    !(zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, colour_type,
-				  &xon_fill, &xon_draw, &xon_border)))
-#endif
 
 
 static void zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
@@ -196,6 +219,60 @@ zmapWindowFeature.c
 #endif
 
 
+static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanvasItem *foo, ZMapFeature feature, double x,double y)
+{
+	static ZMapFeatureSubPartSpanStruct sub_part;
+
+	/* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
+#warning revisit this when canvas items are simplified
+	/* and then we find the transcript data in the feature context which has a list of exaond and introms */
+	/* or we could find the exons/introns in the canvas and process those */
+
+	ZMapSpan exon,intron;
+	int ni = 0, ne = 0, i;
+	GArray *introns,*exons;
+	ZMapTranscript tr = &feature->feature.transcript;
+
+	introns = tr->introns;
+	exons = tr->exons;
+	if(introns)
+		ni = introns->len;
+	if(exons)
+		ne = exons->len;
+
+	for(i = 0; i < ne; i++)
+	{
+		exon = &g_array_index(exons,ZMapSpanStruct,i);
+		if(exon->x1 <= y && exon->x2 >= y)
+		{
+			sub_part.index = i + 1;
+			sub_part.start = exon->x1;
+			sub_part.end = exon->x2;
+			sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
+			if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
+				sub_part.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+			return &sub_part;
+		}
+
+		if(i < ni)
+		{
+			intron = &g_array_index(introns,ZMapSpanStruct,i);
+			if(intron->x1 <= y && intron->x2 >= y)
+			{
+				sub_part.index = i + 1;
+				sub_part.start = intron->x1;
+				sub_part.end = intron->x2;
+				sub_part.subpart = ZMAPFEATURE_SUBPART_INTRON;
+				if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
+					sub_part.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+				return &sub_part;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 
 void zMapWindowCanvasTranscriptInit(void)
 {
@@ -203,6 +280,8 @@ void zMapWindowCanvasTranscriptInit(void)
 
 	funcs[FUNC_PAINT] = zMapWindowCanvasTranscriptPaintFeature;
 	funcs[FUNC_ADD]   = zMapWindowCanvasTranscriptAddFeature;
+	funcs[FUNC_SUBPART] = zmapWindowCanvasTranscriptGetSubPartSpan;
+
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct));
 }
