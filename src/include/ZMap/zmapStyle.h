@@ -479,7 +479,15 @@ _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleSubFeature, ZMAP_STYLE_SUB_FEATURE_LIST);
 
-#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"       // to match what was set up in acedb
+
+/* Splice markers replicate the acedb fmap display of splice sites found by the
+ * Phil Green genefinder code. */
+#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"
+
+#define ZMAPSTYLE_SPLICE_GLYPH_LEN 10
+#define ZMAPSTYLE_SPLICE_GLYPH_3   "<0,0 ; 8,0 ; 8,-8>"
+#define ZMAPSTYLE_SPLICE_GLYPH_5   "<0,0 ; 8,0 ; 8,8>"
+
 
 /*
  * specifies strand specific processing
