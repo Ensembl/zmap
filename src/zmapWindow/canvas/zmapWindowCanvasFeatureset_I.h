@@ -36,6 +36,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+
 #include <libzmapfoocanvas/libfoocanvas.h>
 //#include <zmapWindowCanvasItem_I.h>
 #include <ZMap/zmapWindow.h>
@@ -237,7 +238,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 } zmapWindowFeaturesetItemStruct;
 
 
-
+void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */
