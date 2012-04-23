@@ -1079,7 +1079,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 
 
   /* If line_length increases then increase the length of the buffers that receive text so that
-   * they cannot overflow and redo the format string. */
+   * they cannot overflow and redo format string to read in more chars. */
   if (!line_length)
     line_length = strlen(line) ;
 
@@ -1101,6 +1101,12 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   phase_str = (char *)(parser->buffers[GFF_BUF_PHASE]) ;
   attributes = (char *)(parser->buffers[GFF_BUF_ATTRIBUTES]) ;
   comments = (char *)(parser->buffers[GFF_BUF_COMMENTS]) ;	/* this is not used */
+
+
+  /* Note that because attributes and comments are optional we reset them to be sure we don't
+   * get text from a previous line. */
+  memset(attributes, (int)'\0', parser->buffer_length) ;
+  memset(comments, (int)'\0', parser->buffer_length) ;
 
 
   /* Parse a GFF line. */
@@ -1632,7 +1638,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      name_find = NAME_USE_GIVEN_OR_NAME ;
 	}
     }
-
+  else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
+	   && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+    {
+      /* Genefinder features, we use the ontology as the name.... */
+      name_string = g_strdup(ontology) ;
+    }
 
   /* Was there a url for the feature ? */
   url = getURL(attributes) ;
@@ -2183,19 +2194,18 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 		}
 	    }
 	}
-      else if (feature_type == ZMAPSTYLE_MODE_BASIC
-	       && (g_str_has_prefix(source, "GF_")
-		   || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+      else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
+	       && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
 	{
 	  /* Genefinder features, we use the source field as the name.... */
 
 	  has_name = FALSE ;				    /* is this correct ??? */
 
-	  *feature_name = g_strdup(source) ;
+	  *feature_name = g_strdup(given_name) ;
 	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						   start, end, query_start, query_end) ;
 	}
-      else /* if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT) */
+      else
 	{
 	  has_name = FALSE ;
 
