@@ -1627,67 +1627,80 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 // only do this if [ZMap] legacy_styles=TRUE
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 {
-      static ZMapFeatureTypeStyle s_homology = NULL;
-      static ZMapFeatureTypeStyle s_3frame = NULL;
-      static int got = 0;
-      char *hn;
+  static ZMapFeatureTypeStyle s_homology = NULL;
+  static ZMapFeatureTypeStyle s_3frame = NULL;
+  static int got = 0;
+  char *hn;
 
-      hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
+  hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
 
-      if(!got)
-      {
-            got = 1;
+  if(!got)
+    {
+      got = 1;
 
-            if(zMapConfigLegacyStyles())  // called here as we want to do it only once
-            {
-                  s_homology = zMapStyleCreate(hn, "homology - legacy style");
+      if(zMapConfigLegacyStyles())  // called here as we want to do it only once
+	{
+	  s_homology = zMapStyleCreate(hn, "homology - legacy style");
 
-                  g_object_set(G_OBJECT(s_homology),
-                        ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
+	  g_object_set(G_OBJECT(s_homology),
+		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn_tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>",g_quark_from_string("dn-tri")),
-                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
-                        ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
-                        ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
-                        ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
-                        NULL);
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
+		       zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-tri",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
+		       zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>", g_quark_from_string("dn-tri")),
+		       ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
+		       ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
+		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
+		       ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
+		       NULL);
 
-                  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"3-Frame - legacy style");
+	  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"3-Frame - legacy style");
 
-                  g_object_set(G_OBJECT(s_3frame),
-                        ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
-                        // these have been swapped from the original
-                        // GeneFinder uses 5' and 3' as Intron-centric
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>",g_quark_from_string("up-hook")),
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>",g_quark_from_string("dn_hook")),
 
-                        ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
-                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
+	  /* The default shapes are |_ and same thing upside down, the arms are 10 pixels long.
+	   * The horizontal line is drawn between the two bases that flank the splice. */
+	  g_object_set(G_OBJECT(s_3frame),
+		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
-                        ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
-                        ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,TRUE,                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "up-hook",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
+		       zMapStyleGetGlyphShape(ZMAPSTYLE_SPLICE_GLYPH_3, g_quark_from_string("up-hook")),
 
-                        ZMAPSTYLE_PROPERTY_WIDTH,30.0,
-                        ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,
-                        ZMAPSTYLE_PROPERTY_MAX_SCORE,4.0,
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "dn-hook",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
+		       zMapStyleGetGlyphShape(ZMAPSTYLE_SPLICE_GLYPH_5, g_quark_from_string("dn-hook")),
 
-                        ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
-                        ZMAPSTYLE_PROPERTY_FRAME0_COLOURS, "normal fill red; normal border red",
-                        ZMAPSTYLE_PROPERTY_FRAME1_COLOURS, "normal fill green; normal border green",
-                        ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, "normal fill blue; normal border blue",
-                        NULL);
-            }
-      }
-      if(!strcmp(name,hn))
-            return(s_homology);
-      if(!strcmp(name,ZMAPSTYLE_LEGACY_3FRAME))
-            return(s_3frame);
-      return(NULL);
+		       ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
+		       ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
+		       ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
+		       ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,TRUE,
+                       ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
+
+		       ZMAPSTYLE_PROPERTY_WIDTH, 60.0,
+		       ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,
+		       ZMAPSTYLE_PROPERTY_MAX_SCORE,4.0,
+
+		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
+		       ZMAPSTYLE_PROPERTY_FRAME0_COLOURS,
+		       "normal fill blue; normal border blue; selected fill pink; selected border black",
+		       ZMAPSTYLE_PROPERTY_FRAME1_COLOURS,
+		       "normal fill green; normal border green; selected fill pink; selected border black",
+		       ZMAPSTYLE_PROPERTY_FRAME2_COLOURS,
+		       "normal fill red; normal border red; selected fill pink; selected border black",
+		       NULL);
+	}
+    }
+
+  if(!strcmp(name,hn))
+    return(s_homology);
+
+  if(!strcmp(name,ZMAPSTYLE_LEGACY_3FRAME))
+    return(s_3frame);
+
+  return(NULL);
 }
 
 
