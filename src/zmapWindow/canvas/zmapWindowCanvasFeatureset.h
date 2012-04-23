@@ -65,9 +65,22 @@ typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemCla
 
 
 /* enums for function type */
-typedef enum { FUNC_PREPARE, FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_LINK, FUNC_COLOUR, FUNC_STYLE, FUNC_ZOOM, FUNC_INDEX, FUNC_FREE, FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
+typedef enum { FUNC_PREPARE, FUNC_PAINT,
+	       FUNC_FLUSH, FUNC_EXTENT,
+	       FUNC_LINK, FUNC_COLOUR,
+	       FUNC_STYLE, FUNC_ZOOM,
+	       FUNC_INDEX, FUNC_FREE,
+	       FUNC_POINT,
+	       FUNC_N_FUNC } zmapWindowCanvasFeatureFunc;
 /* NOTE FUNC_EXTENT initially coded as zMapFeatureGetExtent() */
 /* NOTE FUNC_COLOUR initially hard coded by CanvasFeatureset */
+
+
+/* Typedefs for per feature type function implementations (there should be others here.... */
+
+typedef double (ZMapWindowFeatureItemPointFunc)(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+						double x, double y, double x_off, int cx, int cy) ;
+
 
 /* enums for feature function lookup  (feature types) */
 /* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
