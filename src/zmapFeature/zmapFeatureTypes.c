@@ -499,34 +499,34 @@ GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
 
 
 
+/* Splice marker features for displaying splice junctions (e.g. results of gene finder programs). */
 ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
+  ZMapStyleGlyphShape shape ;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
-	shape = &style->mode_data.glyph.glyph5;
-
-  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5_REV))
-		shape = &style->mode_data.glyph.glyph5rev;
+  if (zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5))
+    shape = &style->mode_data.glyph.glyph5 ;
+  else if (reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5_REV))
+    shape = &style->mode_data.glyph.glyph5rev ;
+  else
+    shape = &style->mode_data.glyph.glyph ;
 
   return(shape);
 }
-
 
 ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
+  ZMapStyleGlyphShape shape ;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
-	shape = &style->mode_data.glyph.glyph3;
-
-  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
-		shape = &style->mode_data.glyph.glyph3rev;
+  if (zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
+    shape = &style->mode_data.glyph.glyph3;
+  else if (reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
+    shape = &style->mode_data.glyph.glyph3rev;
+  else
+    shape = &style->mode_data.glyph.glyph;
 
   return(shape);
 }
-
-//---------------------------------
 
 
 
