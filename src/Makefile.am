@@ -142,9 +142,9 @@ bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
 zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
 	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapAppServices.a           \
 	$(top_builddir)/.libs/libZMapThr.a                   \
 	$(top_builddir)/.libs/libZMapXML.a                   \
-	$(top_builddir)/.libs/libZMapAppServices.a           \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
