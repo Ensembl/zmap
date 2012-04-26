@@ -1,4 +1,3 @@
-/*  Last edited: Jul  7 10:18 2011 (edgrif) */
 /*  File: zmapLogging.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -23,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Log functions for zmap app. Allows start/stop, switching
  *              on/off. Currently there is just one global log for the
@@ -62,7 +61,6 @@
 #include <ZMap/zmapUtils.h>
 
 
-#define ZMAPLOG_FILENAME "zmap.log"
 #define ZMAPLOG_MAX_TRACE_SIZE 50
 
 
@@ -79,6 +77,7 @@ typedef struct
   GIOChannel* logfile ;
 
 } zmapLogHandlerStruct, *zmapLogHandler ;
+
 
 
 /* State for the logger as a whole. */
@@ -113,7 +112,11 @@ static ZMapLog createLog(void) ;
 static void destroyLog(ZMapLog log) ;
 
 static gboolean configureLog(ZMapLog log) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean getLogConf(ZMapLog log) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean startLogging(ZMapLog log) ;
 static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers) ;
@@ -128,8 +131,12 @@ static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
 		       gpointer user_data) ;
 static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-                   gpointer user_data);
-static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd);
+		       gpointer user_data);
+static gboolean backtrace2fd(unsigned int remove, int fd);
+static void logTime(int what, int how) ;
+
+
+
 
 
 /* We only ever have one log so its kept internally here. */
@@ -139,66 +146,15 @@ static GTimer *zmap_log_timer_G = NULL;
 
 static gboolean enable_core_dumping_G = TRUE;
 
-void zmapfoo_print_time(char *x, char *y, char *z)
-{
-      zMapPrintTime(x,y,z);   /* is a macro */
-}
 
 
-void zMapLogTime(int what, int how, long data, char *string)
-{
-	static double times[N_TIMES];
-	static double when[N_TIMES];
-	double x,e;
 
-	/* these mirror the #defines in zmapUtilsDebug.h */
-	char *which[] = { "none", "foo-expose", "foo-update", "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 };
-
-	if(!zmap_timing_G)
-		return;
-
-	e = zMap_elapsed();
-
-	switch(how)
-	{
-	case TIMER_CLEAR:
-		times[what] = 0;
-		zMapLogMessage("Timed: %s %s (%ld) Clear",which[what],string,data);
-		break;
-	case TIMER_START:
-		when[what] = e;
-		zMapLogMessage("Timed: %s %s (l%d) Start  %.3f",which[what],string,data,e);
-		break;
-	case TIMER_STOP:
-		x = e - when[what];
-		times[what] += x;
-		zMapLogMessage("Timed: %s %s (%ld) Stop %.3f = %.3f",which[what],string,data,x,times[what]);
-		break;
-	case TIMER_ELAPSED:
-		zMapLogMessage("Timed: %s %s (%ld) Elasped %.3f",which[what],string,data,e);
-		break;
-	}
-}
-
-void zmap_foo_log_time(int what, int how)
-{
-	int stuff[] = { TIMER_EXPOSE, TIMER_UPDATE, TIMER_DRAW };
-		/* indexed by what */
-		/* foo canvas does not have our defines */
-	if(what >= 0 && what < 3)
-	{
-		what = stuff[what];
-		zMapLogTime(what,how,0,"");
-	}
-}
 
 /* This function is NOT thread safe, you should not call this from individual threads. The log
  * package expects you to call this outside of threads then you should be safe to use the log
  * routines inside threads.
  * Note that the package expects the caller to have called  g_thread_init() before calling this
  * function. */
-
-
 gboolean zMapLogCreate(char *logname)
 {
   gboolean result = FALSE ;
@@ -206,37 +162,37 @@ gboolean zMapLogCreate(char *logname)
 
   zMapAssert(!log) ;
 
-  zMapUtilsConfigDebug();
-
-
 #if 0		// log timing stats from foo
 		// have to take this out to get xremote to compile for perl
 		// should be ok when we get the new xremote
-  if(zmap_timing_G)
-  {
-	extern void (*foo_timer)(int,int);
+  if (zmap_timing_G)
+    {
+      extern void (*foo_timer)(int,int);
 
-	foo_timer = zmap_foo_log_time;
-  }
+      foo_timer = logTime;
+    }
 
-  if(zmap_debug_G)
-  {
-	extern void (*foo_log_stack)(void);
+  if (zmap_debug_G)
+    {
+      extern void (*foo_log_stack)(void);
 
-	foo_log_stack = zMapPrintStack;
-  }
+      foo_log_stack = zMapPrintStack;
+    }
 #endif
 
   log_G = log = createLog() ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!configureLog(log))
     {
       destroyLog(log) ;
       log_G = log = NULL ;
     }
   else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     {
-	  zmap_log_timer_G = g_timer_new();
+      zmap_log_timer_G = g_timer_new();
       writeStartOrStopMessage(TRUE) ;
       result = TRUE ;
     }
@@ -244,6 +200,39 @@ gboolean zMapLogCreate(char *logname)
   return result ;
 }
 
+
+
+/* Configure the log. */
+gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
+			  gboolean show_code_details, gboolean show_time,
+			  gboolean catch_glib, gboolean echo_glib,
+			  char *logfile_path)
+{
+  gboolean result = FALSE ;
+  ZMapLog log = log_G ;
+
+  /* Log at all ? */
+  log->logging = logging ;
+
+  /* logging to file ? */
+  log->log_to_file = log_to_file ;
+
+  /* How much detail to show in log records ? */
+  log->show_code_details = show_code_details ;
+
+  log->show_time = show_time ;
+
+  /* glib error message handling, catch GLib errors, else they stay on stdout */
+  log->catch_glib = catch_glib ;
+  log->echo_glib = echo_glib ;
+
+  /* user specified dir, default to config dir */
+  log->active_handler.log_path = logfile_path ;
+
+  result = configureLog(log) ;
+
+  return result ;
+}
 
 
 /* The log and Start and Stop routines write out a record to the log to show start and stop
@@ -265,6 +254,46 @@ gboolean zMapLogStart()
   return result ;
 }
 
+
+
+void zMapLogTime(int what, int how, long data, char *string)
+{
+  static double times[N_TIMES];
+  static double when[N_TIMES];
+  double x,e;
+
+  /* THERE IS A WHOLE ENUMS MECHANISM TO AVOID HAVING TO DO THIS....SEE zmapEnum.h */
+  /* these mirror the #defines in zmapUtilsDebug.h */
+  char *which[] = { "none", "foo-expose", "foo-update",
+		    "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 } ;
+
+  if (zmap_timing_G)
+    {
+      e = zMap_elapsed();
+
+      switch(how)
+	{
+	case TIMER_CLEAR:
+	  times[what] = 0;
+	  zMapLogMessage("Timed: %s %s (%ld) Clear",which[what],string,data);
+	  break;
+	case TIMER_START:
+	  when[what] = e;
+	  zMapLogMessage("Timed: %s %s (l%d) Start  %.3f",which[what],string,data,e);
+	  break;
+	case TIMER_STOP:
+	  x = e - when[what];
+	  times[what] += x;
+	  zMapLogMessage("Timed: %s %s (%ld) Stop %.3f = %.3f",which[what],string,data,x,times[what]);
+	  break;
+	case TIMER_ELAPSED:
+	  zMapLogMessage("Timed: %s %s (%ld) Elasped %.3f",which[what],string,data,e);
+	  break;
+	}
+    }
+
+  return ;
+}
 
 int zMapLogFileSize(void)
 {
@@ -307,13 +336,13 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
   /* include a timestamp? */
-  if(log->show_time)
-  {
-     char tbuf[32];
+  if (log->show_time)
+    {
+      char tbuf[32];
 #if 0
-// this is a mess of incompatable structs....
-        // Glib does not do time!
-        // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
+      // this is a mess of incompatable structs....
+      // Glib does not do time!
+      // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
       struct timeval time;
       struct timezone tz = {0,0};
  
@@ -322,16 +351,16 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       g_string_append_printf(format_str, "%s",tbuf);
 #else
 
-	if(zmap_log_timer_G)
+      if (zmap_log_timer_G)
 	{
-		double t = g_timer_elapsed(zmap_log_timer_G,NULL);
+	  double t = g_timer_elapsed(zmap_log_timer_G,NULL);
 		
-		sprintf(tbuf," %.3fsec",t);		
-        g_string_append_printf(format_str, "%s",tbuf);
+	  sprintf(tbuf," %.3fsec",t);		
+	  g_string_append_printf(format_str, "%s",tbuf);
 	}
 
 #endif
-  }
+    }
 
   /* If code details are wanted then output them in the log. */
   if (log->show_code_details)
@@ -378,28 +407,28 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
   g_string_free(format_str, TRUE) ;
 
- return ;
+  return ;
 }
 
 /* Given access to gnu glibc with backtrace and backtrace_symbols_fd
  * this function will log the current stack to the log file. An
  * example of the output is
 
-./zmap(zMapLogStack+0x10d)[0x808226e]
-./zmap[0x807600a]
-./zmap(zMapFeatureContextExecuteComplete+0xa2)[0x8075752]
-./zmap[0x80a282e]
-./zmap(zmapWindowDrawFeatures+0x536)[0x80a1bb2]
-./zmap[0x8090db2]
-/software/acedb/lib/libgtk-x11-2.0.so.0[0x40173ff0]
-/software/acedb/lib/libgobject-2.0.so.0(g_closure_invoke+0xd5)[0x406de6f5]
-/software/acedb/lib/libgobject-2.0.so.0[0x406f099f]
-/software/acedb/lib/libgobject-2.0.so.0(g_signal_emit_valist+0x52c)[0x406ef85c]
-/software/acedb/lib/libgobject-2.0.so.0(g_signal_emit+0x26)[0x406efcf6]
-/software/acedb/lib/libgtk-x11-2.0.so.0[0x402958a7]
-/software/acedb/lib/libgtk-x11-2.0.so.0(gtk_main_do_event+0x2ba)[0x401719ba]
+ ./zmap(zMapLogStack+0x10d)[0x808226e]
+ ./zmap[0x807600a]
+ ./zmap(zMapFeatureContextExecuteComplete+0xa2)[0x8075752]
+ ./zmap[0x80a282e]
+ ./zmap(zmapWindowDrawFeatures+0x536)[0x80a1bb2]
+ ./zmap[0x8090db2]
+ /software/acedb/lib/libgtk-x11-2.0.so.0[0x40173ff0]
+ /software/acedb/lib/libgobject-2.0.so.0(g_closure_invoke+0xd5)[0x406de6f5]
+ /software/acedb/lib/libgobject-2.0.so.0[0x406f099f]
+ /software/acedb/lib/libgobject-2.0.so.0(g_signal_emit_valist+0x52c)[0x406ef85c]
+ /software/acedb/lib/libgobject-2.0.so.0(g_signal_emit+0x26)[0x406efcf6]
+ /software/acedb/lib/libgtk-x11-2.0.so.0[0x402958a7]
+ /software/acedb/lib/libgtk-x11-2.0.so.0(gtk_main_do_event+0x2ba)[0x401719ba]
 
- */
+*/
 
 void zMapLogStack(void)
 {
@@ -409,47 +438,49 @@ void zMapLogStack(void)
 
   zMapAssert(log);
 
-/* we get recurstion aborts */
-/*  zMapLogMessage("%s (static symbol names _not_ available):", "Logging Stack");*/
+  /* we get recurstion aborts */
+  /*  zMapLogMessage("%s (static symbol names _not_ available):", "Logging Stack");*/
 
   g_mutex_lock(log->log_lock);
 
   zMapAssert(log->logging);
 
-  if(log->active_handler.logfile &&
+  if (log->active_handler.logfile &&
      (log_fd = g_io_channel_unix_get_fd(log->active_handler.logfile)))
     {
-      logged = zmap_backtrace_to_fd(1, log_fd);
+      logged = backtrace2fd(1, log_fd);
     }
 
   g_mutex_unlock(log->log_lock);
 
-/*  if(!logged)
-    zMapLogWarning("Failed to log stack trace to fd %d. "
-		   "Check availability of function backtrace()",
-		   log_fd);
-*/
+  /*  if (!logged)
+      zMapLogWarning("Failed to log stack trace to fd %d. "
+      "Check availability of function backtrace()",
+      log_fd);
+  */
   return ;
 }
+
+
 
 /* As zMapLogStack(), but to stderr instead. */
 void zMapPrintStack(void)
 {
-  zmap_backtrace_to_fd(1, STDERR_FILENO);
+  backtrace2fd(1, STDERR_FILENO);
   return ;
 }
 
 static void signal_write(int fd, char *buffer, int size, gboolean *result_in_out)
 {
-  if(result_in_out && (*result_in_out == TRUE))
+  if (result_in_out && (*result_in_out == TRUE))
     {
       ssize_t expected = size, actual = 0;
-      if((write(fd, (void *)NULL, 0)) == 0)
+      if ((write(fd, (void *)NULL, 0)) == 0)
 	{
 	  actual = write(fd, (void *)buffer, size);
-	  if(actual == 0 || actual == -1)
+	  if (actual == 0 || actual == -1)
 	    *result_in_out = FALSE;
-	  else if(actual == expected)
+	  else if (actual == expected)
 	    *result_in_out = TRUE;
 	}
       else
@@ -500,11 +531,11 @@ void zMapSignalHandler(int sig_no)
       signal_write(STDERR_FILENO, zMapGetAppVersionString(), strlen(zMapGetAppVersionString()), &write_result);
       signal_write(STDERR_FILENO, " ===\nStack:\n", 12, &write_result);
       /*                           123456789012345678901234567890123456789012345678901234567890 */
-      if(!zmap_backtrace_to_fd(0, STDERR_FILENO))
+      if (!backtrace2fd(0, STDERR_FILENO))
 	signal_write(STDERR_FILENO, "*** no backtrace() available ***\n", 33, &write_result);
 
       /* If we exit, no core file is dumped. */
-      if(!enable_core_dumping_G)
+      if (!enable_core_dumping_G)
 	_exit(EXIT_FAILURE);
       break;
     default:
@@ -652,9 +683,9 @@ static gboolean startLogging(ZMapLog log)
 							    log->active_handler.log_cb,
 							    (gpointer)log) ;
 
-            /* try to get the glib critical errors handled */
-            if(log->catch_glib)
-              g_log_set_default_handler(glibLogger, (gpointer) log);
+	      /* try to get the glib critical errors handled */
+	      if (log->catch_glib)
+		g_log_set_default_handler(glibLogger, (gpointer) log);
 	      result = TRUE ;
 	    }
 	}
@@ -681,9 +712,9 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
 	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->active_handler.cb_id) ;
 	  log->active_handler.cb_id = 0 ;
 
-            /* try to get the glib critical errors handled */
-        if(log->catch_glib)
-          g_log_set_default_handler(g_log_default_handler, NULL);
+	  /* try to get the glib critical errors handled */
+	  if (log->catch_glib)
+	    g_log_set_default_handler(g_log_default_handler, NULL);
 
 	  /* Need to close the log file here. */
 	  if (!closeLogFile(log))
@@ -695,20 +726,20 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
        * nothing, hence logging stops. If we want to stop all our logging then we do not install
        * our null handler. */
       if (!remove_all_handlers)
-      {
-      	log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
-							G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-							| G_LOG_FLAG_RECURSION,
-							log->inactive_handler.log_cb,
-							(gpointer)log) ;
+	{
+	  log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
+							  G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+							  | G_LOG_FLAG_RECURSION,
+							  log->inactive_handler.log_cb,
+							  (gpointer)log) ;
 
-            /* try to get the glib critical errors handled */
-            if(log->catch_glib)
-                  g_log_set_default_handler(g_log_default_handler, NULL);
-      }
+	  /* try to get the glib critical errors handled */
+	  if (log->catch_glib)
+	    g_log_set_default_handler(g_log_default_handler, NULL);
+	}
 
       if (result)
-	      log->logging = FALSE ;
+	log->logging = FALSE ;
     }
   else
     {
@@ -716,10 +747,10 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
 	{
 	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
 	  log->inactive_handler.cb_id = 0 ;
-            /* try to get the glib critical errors handled */
+	  /* try to get the glib critical errors handled */
 
-        if(log->catch_glib)
-          g_log_set_default_handler(g_log_default_handler, NULL);
+	  if (log->catch_glib)
+	    g_log_set_default_handler(g_log_default_handler, NULL);
 
 	}
     }
@@ -734,8 +765,12 @@ static gboolean configureLog(ZMapLog log)
 {
   gboolean result = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if ((result = getLogConf(log)))
     {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       /* This seems stupid, but the start/stopLogging routines need logging to be in the
        * opposite state so we negate the current logging state before calling them,
        * only pertains to initialisation. */
@@ -757,104 +792,14 @@ static gboolean configureLog(ZMapLog log)
 
 	  result = startLogging(log) ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return result ;
 }
-
-
-/* Read logging information from the configuration, note that we read _only_ the first
- * logging stanza found in the configuration, subsequent ones are not read. */
-static gboolean getLogConf(ZMapLog log)
-{
-  gboolean result = FALSE ;
-  ZMapConfigIniContext context ;
-
-  if((context = zMapConfigIniContextProvide()))
-    {
-      gboolean tmp_bool = FALSE;
-      char *tmp_string = NULL;
-      char *full_dir, *log_name;
-
-      /* logging at all */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
-	log->logging = tmp_bool;
-      else
-	log->logging = TRUE;
-
-      /* logging to the file */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_FILE, &tmp_bool))
-	log->log_to_file = tmp_bool;
-      else
-	log->log_to_file = TRUE;
-
-      /* how much detail to show...code... */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
-	log->show_code_details = tmp_bool;
-      else
-	log->show_code_details = TRUE;
-
-      /* how much detail to show...time... */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
-      log->show_time = tmp_bool;
-      else
-      log->show_time = TRUE;
-
-      /* catch GLib errors, else they stay on stdout */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
-      log->catch_glib = tmp_bool;
-      else
-      log->catch_glib = TRUE;
-      /* catch GLib errors, else they stay on stdout */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_CONFIG,
-                              ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
-      log->echo_glib = tmp_bool;
-      else
-      log->echo_glib = TRUE;
-
-      /* user specified dir, default to config dir */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
-	full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
-      else
-	full_dir = g_strdup(zMapConfigDirGetDir()) ;
-
-      /* user specified file, default to zmap.log */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_FILENAME, &tmp_string))
-	log_name = tmp_string;
-      else
-	log_name = g_strdup(ZMAPLOG_FILENAME) ;
-
-      log->active_handler.log_path = zMapGetFile(full_dir, log_name, TRUE) ;
-
-      /* all our strings need freeing */
-      g_free(log_name) ;
-      g_free(full_dir) ;
-
-      /* config context needs freeing */
-      zMapConfigIniContextDestroy(context);
-
-      /* everything was ok */
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
 
 
 static gboolean openLogFile(ZMapLog log)
@@ -975,18 +920,19 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 
 
 static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-                   gpointer user_data)
+		       gpointer user_data)
 {
-      log_G->active_handler.log_cb(log_domain,log_level,message,user_data);
-      if(log_G->echo_glib)
-            printf("**** %s ****\n",message);
+  log_G->active_handler.log_cb(log_domain,log_level,message,user_data);
+  if (log_G->echo_glib)
+    printf("**** %s ****\n",message);
 
-      if(log_level <= G_LOG_LEVEL_WARNING)
-            zMapLogStack();   /* we really do want to know where these come from */
+  if (log_level <= G_LOG_LEVEL_WARNING)
+    zMapLogStack();   /* we really do want to know where these come from */
 
+  return ;
 }
 
-static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd)
+static gboolean backtrace2fd(unsigned int remove, int fd)
 {
 #ifdef HAVE_GNUC_BACKTRACE
   void *stack[ZMAPLOG_MAX_TRACE_SIZE];
@@ -1001,13 +947,13 @@ static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd)
   traced = TRUE;
   size   = backtrace(stack, ZMAPLOG_MAX_TRACE_SIZE);
   /* remove requested number of members of stack */
-  if(size > remove)
+  if (size > remove)
     {
       size  -= remove;
       first += remove;
     }
   /* remove this function from the stack. */
-  if(size > 1)
+  if (size > 1)
     {
       size--;
       first++;
@@ -1016,5 +962,21 @@ static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd)
 #endif /* HAVE_GNUC_BACKTRACE */
 
   return traced;
+}
+
+
+static void logTime(int what, int how)
+{
+  int stuff[] = { TIMER_EXPOSE, TIMER_UPDATE, TIMER_DRAW };
+
+  /* indexed by what */
+  /* foo canvas does not have our defines */
+  if (what >= 0 && what < 3)
+    {
+      what = stuff[what];
+      zMapLogTime(what,how,0,"");
+    }
+
+  return ;
 }
 
