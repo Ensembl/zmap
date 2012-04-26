@@ -1684,12 +1684,16 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 		       ZMAPSTYLE_PROPERTY_MAX_SCORE,4.0,
 
 		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
+
 		       ZMAPSTYLE_PROPERTY_FRAME0_COLOURS,
-		       "normal fill blue; normal border blue; selected fill pink; selected border black",
+		       "normal fill blue; normal border blue; selected fill pink; selected border pink",
 		       ZMAPSTYLE_PROPERTY_FRAME1_COLOURS,
-		       "normal fill green; normal border green; selected fill pink; selected border black",
+		       "normal fill green; normal border green; selected fill pink; selected border pink",
 		       ZMAPSTYLE_PROPERTY_FRAME2_COLOURS,
-		       "normal fill red; normal border red; selected fill pink; selected border black",
+		       "normal fill red; normal border red; selected fill pink; selected border pink",
+
+
+
 		       NULL);
 	}
     }
