@@ -79,7 +79,8 @@ typedef enum { FUNC_PREPARE, FUNC_PAINT,
 /* Typedefs for per feature type function implementations (there should be others here.... */
 
 typedef double (ZMapWindowFeatureItemPointFunc)(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
-						double x, double y, double x_off, int cx, int cy) ;
+						double item_x, double item_y, int cx, int cy,
+						double local_x, double local_y, double x_off) ;
 
 
 /* enums for feature function lookup  (feature types) */
