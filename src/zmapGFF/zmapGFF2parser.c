@@ -1621,29 +1621,41 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  return result ;
 	}
     }
-  else if (feature_type == ZMAPSTYLE_MODE_BASIC)
+  else if (feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
     {
-      if (g_ascii_strcasecmp(source, "ensembl_variation") == 0)
+      if (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0))
 	{
-	  /* For variation we need to parse the SO type and string out of the Name attribute. */
-	  if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
+	  /* Genefinder features, we use the ontology as the name.... */
+	  name_string = g_strdup(ontology) ;
+	}
+      else
+	{
+	  if (g_ascii_strcasecmp(source, "ensembl_variation") == 0)
 	    {
-	      *err_text = g_strdup_printf("feature ignored, could not parse variation string");
+	      /* For variation we need to parse the SO type and string out of the Name attribute. */
+	      if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
+		{
+		  *err_text = g_strdup_printf("feature ignored, could not parse variation string");
 
-	      return result ;
+		  return result ;
+		}
+	    }
+	  else
+	    {
+	      name_find = NAME_USE_GIVEN_OR_NAME ;
 	    }
 	}
-	else
-      {
-	      name_find = NAME_USE_GIVEN_OR_NAME ;
-	}
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
 	   && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
     {
       /* Genefinder features, we use the ontology as the name.... */
       name_string = g_strdup(ontology) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Was there a url for the feature ? */
   url = getURL(attributes) ;
@@ -2084,6 +2096,11 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct....errr...shouldn't that already have been done ???? */
 
+
+  if ((g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+    printf("found it\n") ;
+
+
   /* REVISIT THESE TWO, NAME_USE_SOURCE ISN'T EVEN USED ANYWHERE..... */
   if (name_find == NAME_USE_SEQUENCE)
     {
@@ -2128,7 +2145,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    }
 	}
     }
-  else if(name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
+  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
     {
       char *tag_pos ;
 
