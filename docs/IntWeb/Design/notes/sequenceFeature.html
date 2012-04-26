@@ -1,0 +1,100 @@
+<h2>Sequence Features</h2>
+
+<h3>A Brief Description</h3>
+<p>Sequence features are DNA or Peptide sequences that are displayed as bases or residues in text format.  They cover the whole loaded sequence and at low zoom only a small number of bases can be displayed accross the column.  Sequence features (indirectly) limit the zoom level in the window as we wish to avoid displaying one base in more space than is required for the text font (but note that peptide displays may have gaps between residues).
+</p>
+<p> It is possible to select a sequence feature by region or feature - this implies that the feature is partially highlit, which is a departure from the norm for other types of feature.
+</p>
+
+<h3>Existing Code and Interface</h3>
+<p>
+Existing code has:
+<pre>
+zmapWindowTextFeature,c		small, simple text feature eg locus name
+zmapWindowTextItem,c		used by sequence feature
+zmapWindowSequenceFeature.c	column wide sequence data that gets redispayed on zoom.
+</pre>
+Note that here we are not concerned with zmapWindowTextFeature, although implementation may reveal that it may be advantageous to combine the two.  Other than the DNA and 3-frame columns, we also have 'Show Translation in ZMap', which displays a short peptide sequence on demand.
+</p>
+<p>In the ZMapWindowCanvasItem universe, a sequence feature is a ZmapWindowCanvasItem (a Foo CanvasGroup) and a text feature is a derived FooCanvasItem.  Each line of text in the column is a FooCanvasItem, and whenever the zoom level changes the foo canvas items have to be refreshed (replaced?). Whether or not the whole sequence in the scroll window is displayed seems likely but not yet clear.
+</p>
+
+<p>Highlighting is beleived to be done by displaying a polygon behind the relevant text.  There may be several of these and colours may vary. Note that the polygon equates to a series of rectangles, one on each line of the display.
+</p>
+
+<p>There is a fairly elaborate system of callbacks that is used to add highlights and alter zoom - this is assumed to be required by the need to delete and add FooCanvasItems to perform these functions.
+</p>
+
+<h3>Proposed Implementation</h3>
+<h4>Basic display of text</h4>
+<p>A single CanvasSequence feature will be added to a column and this will handle the entire sequence for the region in question (although note that the DNA sequence is actually stored upstrean in the block feature).  In a similar way to graph items and heatmaps, by convention only one such feature will appear in the column, although there is the option to include (eg) 3 frames of peptide sequence in a single column with each one offset to display them side by side, as for heatmaps.
+</p>
+<p>Displaying text will be done OTF - if the zoom changes then the SequenceFeature will recalculate the column width and the coordinates of displayable text (as a start coordinate and display parameters), and how many characters to display.  The actual displayed text  will be assembled into a temporary buffer at drawing time by calculating an offset from the start coordinate related to display coordinates (zoom and scroll).  Peptide residues will be calculated OTF.   Note that the zoom code called by the window will bias any user zoom request such that each line of the sequence feature has a whole number of bases, and we can assume this to be the case.
+</p>
+<p> A simple approach to text display will be adopted and hopefully this can be done via the GDK interface to pango in a few short function calls.
+</p>
+<h4>Highlighting</h4>
+<p>This must be driven by calling code. Each region of the sequence to be highlit will be specifed by a function call or data structure (eg GList) containg coordinates, length? and colour.
+</p>
+<p>This data will be stored by the CanvasSequence feature and if present each expose will result in the background being drawn first.
+</p>
+<p>As only one feature or region may be highlit at a time (corresponding to the hot focus item), even if several are selected, then removing a highlight will be a simple process of deleting the list.
+</p>
+
+<h4>Interface to calling code</h4>
+<p>The function drawFullColumnTextFeature() will be subverted to call the canvas featureset code instead of the previous implementation unless the style option:
+<pre>
+foo=true
+</pre>
+has been set.  This will handlle all the basic display function automatically.
+</p>
+<p>Highlights will be via code in the existing zmapWindowSeqDisp.c, which ultimately calls three public functions in zmapWindowSequenceFeature.c:
+<pre>
+zMapWindowSequenceFeatureSelectByFeature()
+zMapWindowSequenceFeatureSelectByRegion()
+zMapWindowSequenceDeSelect()
+</pre>
+These functions are outside of the CanvasFeatureset (and ZMapWindowCanvasItem) interface but can easily be added to the existing core function:
+<pre>
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
+						      ZMapFeature			feature,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+							int colour_flags,
+						      GdkColor              *default_fill,
+                                          GdkColor              *default_border)
+</pre>
+which can be ammended for the demands of sequence features.  Note that there is no explicit 'unset colour' but this can be implemented by passing NULL as the sub-feature argument or ZMAPSTYLE_COLOURTYPE_INVALID as the colour-type.
+</p>
+<h4>Background Colour</h4>
+<p>The 3-Frame display has different background for each frame and this will be set by the set colour function as above if passed the argument ZMAPSTYLE_COLOURTYPE_NORMAL.  Highlights must be given with ZMAPSTYLE_COLOURTYPE_SELECTED.
+</p>
+
+<h4>Show translation in ZMap</h4>
+<p>This will be implemented by setting a flag to only display the highlit regions,  and to show filler characters as required.
+</p>
+
+<h4>Effort required</h4>
+<p>The major unknown is the effort required to operate pango, however there is experience in the team that can be drawn on.
+Some quite fiddly calculations with coordinates are required.  In very rough terms the basic code should be achievable within a week, and then we need to allow careful testing.
+</p>
+<p>Specifically:
+<ul>
+<li>Implement skeleton CanvasSequence module and integrate into the ItemFactory and SeqDisp.c
+<li>Handle zoom - calculate offsets and column width, reposition columns.
+<li>Implement the draw function, interface to GDK/pango
+<li>Implement the SetColour function (skeleton)
+<li>Add highlights and background colour to the draw code
+<li>Careful testing of coordinates and displayed bases and residues
+<li>Show translation in ZMap
+<li>Select by mouse callback
+</ul>
+Which should come to maybe a week for coding and similar for testing and debgging.
+</p>
+
+<h4>Implementaion: interim feedback (after 2 days)</h4>
+<p>Display off DNA has been implemented to the point of demonstrating that pango can be used to paint single lines fo etxt on demand and also that background highlights work.  This includes the first three items above, but not thet aht ecode is still open and will crash on feature select.
+</p>
+<p>The original ZMapWindowCanvasItem code subverts the structure of the canvas design bu providing interfaces for highlight outside the usual places, and these is also some special fucntions added to capturee the mouse.  Both of these issues can be resolved a) by using the SetColour fucntion as desinged and b) by adding code to the existing mouse handling functions.
+</p>
+
