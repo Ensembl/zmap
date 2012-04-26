@@ -39,6 +39,18 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph_I.h>
 
+
+
+
+/* Splice features replicate the splice features of acedb fmap which are used
+ * to display the results of the Phil Green gene finder program. */
+#define isSpliceFeature(FEATURE)					\
+  ((FEATURE)->flags.has_boundary						\
+   && ((FEATURE)->boundary_type == ZMAPBOUNDARY_5_SPLICE			\
+       || (FEATURE)->boundary_type == ZMAPBOUNDARY_3_SPLICE))
+
+
+
 /*
  * Drawing glyphs is dissapointingly complex
  * they are pixel based (same size always)
@@ -64,7 +76,8 @@ static void calcSplicePos(ZMapFeature feature, ZMapFeatureTypeStyle style, doubl
 			  double *origin_out, double *width_out, double *height_out) ;
 
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
-			 double x, double y, double x_off, int cx, int cy) ;
+			 double item_x, double item_y, int cx, int cy,
+			 double x, double y, double x_off) ;
 
 
 
@@ -200,7 +213,7 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 /* the interface for free-standing glyphs, called via CanvasFeatureset virtual functions  */
 /* must calculate the shape coords etc on first paint */
 void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-				       GdkDrawable *drawable,GdkEventExpose *expose)
+				       GdkDrawable *drawable, GdkEventExpose *expose)
 {
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph) feature;
   ZMapFeature feat = feature->feature;
@@ -209,11 +222,11 @@ void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
   double y1;
   double col_width;
 
-  if(!glyph->coords_set)
+  if (!glyph->coords_set)
     {
       /* for stand-alone glyphs which will be unset ie zero */
       /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
-      if (feat->flags.has_boundary)
+      if (isSpliceFeature(feat))
 	glyph->which = feat->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
 
       shape = get_glyph_shape(feat->style, glyph->which, feature->feature->strand) ;
@@ -260,11 +273,12 @@ void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable)
 {
-  double y1;
-
   /* !glyph  likely to happen frequently....why ?? */
+
   if (glyph)
     {
+      double y1;
+
       y1 = glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1;
       //zMapLogWarning("paint glyph %f,%f %d, %s",feature->y1,feature->y2, glyph->which,g_quark_to_string(glyph->sig));
 
@@ -361,8 +375,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
   /* We need splice markers to behave in a particular way for wormbase, I've added this function
    * to get the positions so it doesn't interfer with the general workings of glyphs. */
-  if (feature->flags.has_boundary
-      && (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE || feature->boundary_type == ZMAPBOUNDARY_3_SPLICE))
+  if (isSpliceFeature(feature))
     {
       calcSplicePos(feature, style, col_width, score,
 		    &origin, &width, &height) ;
@@ -561,15 +574,15 @@ static void glyph_set_coords(ZMapWindowCanvasGlyph glyph)
 
 
 
-
-static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count,int cx, int cy)
+/* oh gosh...what do 'points' end up measuring ?????? */
+static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count, int cx, int cy)
 {
   int i;
 
-  for(i = 0; i < count; i++, points++, coords++)
+  for (i = 0; i < count; i++, points++, coords++)
     {
-      points->x = coords->x + cx;
-      points->y = coords->y + cy;
+      points->x = coords->x + cx ;
+      points->y = coords->y + cy ;
     }
 
   return ;
@@ -582,12 +595,13 @@ static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count,int cx
 /* handle sub feature and free standing glyphs */
 /* calls above fucntion and also ...PaintAlignment() */
 static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset,
-						   ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph,
+						   ZMapWindowCanvasFeature canvas_feature, ZMapWindowCanvasGlyph glyph,
 						   double y1, GdkDrawable *drawable)
 {
   gulong fill,outline;
   GdkColor c;
   FooCanvasItem *item = (FooCanvasItem *)featureset;
+  ZMapFeature feature = canvas_feature->feature;
   int cx1, cy1;
   int colours_set, fill_set = 0, outline_set = 0;
   double x1;
@@ -597,21 +611,21 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
 
   x1 = featureset->dx;
   if(featureset->bumped)
-    x1 += feature->bump_offset;
+    x1 += canvas_feature->bump_offset;
 
   y1 += featureset->dy - featureset->start;
 
   /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-  foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
+  foo_canvas_w2c(item->canvas, x1, y1, &cx1, &cy1);
   glyph_to_canvas(glyph->points, glyph->coords, glyph->shape->n_coords, cx1, cy1);
 
 
   /* we have pre-calculated pixel colours */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, canvas_feature, &fill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-  if(glyph->use_glyph_colours)
+  if (glyph->use_glyph_colours)
     {
       fill_set = glyph->area_set;
       fill = glyph->area_pixel;
@@ -619,14 +633,31 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
       outline = glyph->line_pixel;
     }
 
-  if(fill_set)
+
+  if (isSpliceFeature(feature))
+    gdk_gc_set_line_attributes(featureset->gc,
+			       3,
+			       GDK_LINE_SOLID,
+			       GDK_CAP_BUTT,
+			       GDK_JOIN_MITER) ;
+  else
+    gdk_gc_set_line_attributes(featureset->gc,
+			       1,
+			       GDK_LINE_SOLID,
+			       GDK_CAP_BUTT,
+			       GDK_JOIN_ROUND) ;
+
+
+
+  /* um, how does this work...both fill and outline are set as foreground..... */
+  if (fill_set)
     {
       c.pixel = fill;
       gdk_gc_set_foreground (featureset->gc, &c);
       zmap_window_canvas_glyph_draw(featureset, glyph, drawable, TRUE);
     }
 
-  if(outline_set)
+  if (outline_set)
     {
       c.pixel = outline;
       gdk_gc_set_foreground (featureset->gc, &c);
@@ -642,11 +673,14 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
 {
   int start,end;
 
-  switch(glyph->shape->type)
+  switch (glyph->shape->type)
     {
     case GLYPH_DRAW_LINES:
-      gdk_draw_lines (drawable, featureset->gc, glyph->points, glyph->shape->n_coords);
-      break;
+      {
+	gdk_draw_lines (drawable, featureset->gc, glyph->points, glyph->shape->n_coords);
+
+	break;
+      }
     case GLYPH_DRAW_BROKEN:
       /*
        * in the shape structure the array of coords has invalid values at the break
@@ -701,39 +735,38 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
  * Other glyphs: checks if point is within x,y and feature width.
  * 
  */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			 double x, double y, double x_off, int cx, int cy)
 {
   double best = 1.0e36 ;
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph)gs ;
   ZMapFeature feature = gs->feature ;
-  double can_start, can_end ;
+  double can_start_x, can_end_x, can_start_y, can_end_y ;
 
 
   /* Get feature extent on display. */
-  if (feature->flags.has_boundary
-      && (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE || feature->boundary_type == ZMAPBOUNDARY_3_SPLICE))
+  if (isSpliceFeature(feature))
     {
-      int i, min, max, curr_y ;
+      int i, min_x, max_x, min_y, max_y, curr_x, curr_y ;
       FooCanvasItem *foo = (FooCanvasItem *)fi ;
       
-      /* dummy code.... */
-      if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
-	can_start = can_end = feature->x2 ;
-      else
-	can_start = can_end = feature->x1 ;
-
-
-
       /* Oh gosh...we actually want the pixel extent of the glyph.... */
-      for (i = 0, min = G_MAXINT, max = 0 ; i < glyph->shape->n_coords ; i++)
+      for (i = 0, min_x = G_MAXINT, max_x = 0, min_y = G_MAXINT, max_y = 0 ; i < glyph->shape->n_coords ; i++)
 	{
+	  curr_x = glyph->points[i].x ;
 	  curr_y = glyph->points[i].y ;
 
-	  if (min > curr_y)
-	    min = curr_y ;
-	  if (max < curr_y)
-	    max = curr_y ;
+	  if (min_x > curr_x)
+	    min_x = curr_x ;
+	  if (max_x < curr_x)
+	    max_x = curr_x ;
+
+	  if (min_y > curr_y)
+	    min_y = curr_y ;
+	  if (max_y < curr_y)
+	    max_y = curr_y ;
 	}
 
 
@@ -742,27 +775,26 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
       can_end = (double)max ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-      foo_canvas_c2w(foo->canvas, min, max, &can_start, &can_end) ;
+      foo_canvas_c2w(foo->canvas, min_x, min_y, &can_start_x, &can_start_y) ;
+      foo_canvas_c2w(foo->canvas, max_x, max_y, &can_end_x, &can_end_y) ;
 
 
     }
   else
     {
-      can_start = feature->x1 ;
-      can_end = feature->x2 ;
-      zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
+      can_start_y = feature->x1 ;
+      can_end_y = feature->x2 ;
+      zmapWindowFeaturesetS2Ccoords(&can_start_y, &can_end_y) ;
     }
 
 
 
-  if (can_start <= y && can_end >= y)			    /* overlaps cursor */
+  if (can_start_y <= y && can_end_y >= y)			    /* overlaps cursor */
     {
       double wx ;
       double left, right ;
 
-      if (feature->flags.has_boundary
-	  && (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE || feature->boundary_type == ZMAPBOUNDARY_3_SPLICE))
+      if (isSpliceFeature(feature))
 	{
 	  wx = fi->dx + glyph->origin ;
 	}
@@ -774,8 +806,7 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
       if (fi->bumped)
 	wx += gs->bump_offset ;
 
-      if (feature->flags.has_boundary
-	  && (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE || feature->boundary_type == ZMAPBOUNDARY_3_SPLICE))
+      if (isSpliceFeature(feature))
 	{
 	  double glyph_len = ZMAPSTYLE_SPLICE_GLYPH_LEN ;
 
@@ -805,6 +836,51 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 	{
 	  best = 0.0;
 	}
+    }
+
+  return best ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+			 double item_x, double item_y, int cx, int cy,
+			 double local_x, double local_y, double x_off)
+{
+  double best = 1.0e36 ;
+  ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph)gs ;
+  ZMapFeature feature = gs->feature ;
+  double can_start_x, can_end_x, can_start_y, can_end_y ;
+  int i, min_x, max_x, min_y, max_y, curr_x, curr_y ;
+  FooCanvasItem *foo = (FooCanvasItem *)fi ;
+
+
+  /* Get feature extent on display. */
+  for (i = 0, min_x = G_MAXINT, max_x = 0, min_y = G_MAXINT, max_y = 0 ; i < glyph->shape->n_coords ; i++)
+    {
+      curr_x = glyph->points[i].x ;
+      curr_y = glyph->points[i].y ;
+
+      if (min_x > curr_x)
+	min_x = curr_x ;
+      if (max_x < curr_x)
+	max_x = curr_x ;
+
+      if (min_y > curr_y)
+	min_y = curr_y ;
+      if (max_y < curr_y)
+	max_y = curr_y ;
+    }
+
+  foo_canvas_c2w(foo->canvas, min_x, min_y, &can_start_x, &can_start_y) ;
+  foo_canvas_c2w(foo->canvas, max_x, max_y, &can_end_x, &can_end_y) ;
+
+  if (can_start_x < local_x && can_end_x > local_x
+      && can_start_y < local_y && can_end_y > local_y)			    /* overlaps cursor */
+    {
+      best = 0.0;
     }
 
   return best ;
