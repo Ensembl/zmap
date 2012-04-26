@@ -72,7 +72,7 @@ typedef enum { FUNC_PREPARE, FUNC_PAINT, FUNC_FLUSH, FUNC_EXTENT, FUNC_COLOUR, F
 /* enums for feature function lookup  (feature types) */
 /* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
 /* see  zMapWindowFeaturesetAddItem() */
-typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_GRAPH, FEATURE_TRANSCRIPT, FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
+typedef enum { FEATURE_INVALID, FEATURE_BASIC, FEATURE_GLYPH, FEATURE_ALIGN, FEATURE_GRAPH, FEATURE_TRANSCRIPT, FEATURE_SEQUENCE,  FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
 
 
 /* Public funcs */

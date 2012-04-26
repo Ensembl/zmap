@@ -1,5 +1,5 @@
 
-/*  File: zmapWindowCanvasTranscript.h
+/*  File: zmapWindowCanvasTranscript.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -34,4 +34,4 @@
 #include <ZMap/zmap.h>
 
 
-void zMapWindowCanvasTranscriptInit(void);
+void zMapWindowCanvasSequenceInit(void);

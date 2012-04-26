@@ -1058,9 +1058,21 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	  window->multi_select = FALSE ;
 	}
 
-      /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, 0, 0,  0, 0,
+	{
+		/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
+		/* using a CanvasFeatureset we get here, first off kust pass a single coord through so it does not crash */
+		/* InfoPanel has two sets of coords, but they appear the same in totalview */
+		/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
+
+		int start = 0, end = 0;
+
+		start = sub_feature->start;
+		end = sub_feature->end;
+
+		/* Pass information about the object clicked on back to the application. */
+		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
 				NULL, replace_highlight, highlight_same_names) ;
+	}
     }
 
 

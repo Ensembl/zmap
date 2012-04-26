@@ -92,6 +92,9 @@ canvas/zmapWindowCanvasItemFeatureSet_I.h \
 canvas/zmapWindowCanvasTranscript.c \
 canvas/zmapWindowCanvasTranscript.h \
 canvas/zmapWindowCanvasTranscript_I.h \
+canvas/zmapWindowCanvasSequence.c \
+canvas/zmapWindowCanvasSequence.h \
+canvas/zmapWindowCanvasSequence_I.h \
 $(NULL)
 
 

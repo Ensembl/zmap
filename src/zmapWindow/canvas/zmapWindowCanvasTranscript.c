@@ -200,24 +200,6 @@ static void zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featur
 
 
 
-#if 0
-zmapWindowFeature.c
-	handleButton() ->
-      sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
-
-	(eventually)
-
-  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
-  	{
-  		/* returns a static dara structure */
-  		*sub_feature_out =
-  			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
-  	}
-  	else
-  		*sub_feature_out = g_object_get_data(G_OBJECT(matching_interval), ITEM_SUBFEATURE_DATA);
-
-#endif
-
 
 static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanvasItem *foo, ZMapFeature feature, double x,double y)
 {

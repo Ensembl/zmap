@@ -1,5 +1,5 @@
 
-/*  File: zmapWindowCanvasTranscript.h
+/*  File: zmapWindowCanvasSequence_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,11 +27,62 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem transcript features
+ * implements callback functions for FeaturesetItem sequence features
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
 
-void zMapWindowCanvasTranscriptInit(void);
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasSequence.h>
+
+#define MAX_SEQ_TEXT	32	/* it's nominally 20 i think */
+
+
+
+typedef enum
+{
+	SEQUENCE_INVALID,
+	SEQUENCE_DNA,
+	SEQUENCE_PEPTIDE
+
+} ZMapWindowCanvasSequenceType;
+
+
+typedef struct
+{
+	long start,end;
+	gulong colour;
+
+} zmapSequenceHighlightStruct, *ZMapSequenceHighlight;
+
+
+typedef struct _zmapWindowCanvasSequenceStruct
+{
+	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+
+	/* this->feature->feature.sequence has the useful info, see zmapFeature.h/ZMapSequenceStruct_ */
+
+	PangoRenderer *pango_renderer;	/* we use one per column to draw each line seperatly */
+	PangoContext *pango_context;
+	PangoLayout *pango_layout;
+
+	gulong background;
+	GList *highlight;		/* of ZMapSequenceHighlight */
+
+	int text_height, text_width;	/* in pixels, use PANGO_PIXELS() to round */
+
+	char *text;			/* a buffer for one line */
+	int n_text;
+
+	long start;			/* first coord, normally equals featureset start but for show translation in zmap not so */
+	long row_size;		/* no of bases between rows */
+	int  row_disp; 		/* no to dosplay in each row */
+	int  n_bases;		/* actual bases excluding ... */
+	char *truncated;		/* show ... if we run out of space */
+
+
+} zmapWindowCanvasSequenceStruct, *ZMapWindowCanvasSequence;
+
+

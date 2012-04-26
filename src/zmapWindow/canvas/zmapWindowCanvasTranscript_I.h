@@ -1,5 +1,5 @@
 
-/*  File: zmapWindowCanvasTranscript.c
+/*  File: zmapWindowCanvasTranscript_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -57,4 +57,3 @@ typedef struct _zmapWindowCanvasTranscriptStruct
 } zmapWindowCanvasTranscriptStruct, *ZMapWindowCanvasTranscript;
 
 
-/* possibly add exon and intron structs for the above */

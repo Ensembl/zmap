@@ -77,6 +77,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasAlignment.h>
 #include <zmapWindowCanvasGraphItem.h>
 #include <zmapWindowCanvasTranscript.h>
+#include <zmapWindowCanvasSequence.h>
 
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
@@ -112,7 +113,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_BASIC, 		/* ZMAPSTYLE_MODE_BASIC */
 	FEATURE_ALIGN,		/* ZMAPSTYLE_MODE_ALIGNMENT */
 	FEATURE_TRANSCRIPT,	/* ZMAPSTYLE_MODE_TRANSCRIPT */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_SEQUENCE */
+	FEATURE_SEQUENCE,		/* ZMAPSTYLE_MODE_SEQUENCE */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TEXT */
 	FEATURE_GRAPH,		/* ZMAPSTYLE_MODE_GRAPH */
@@ -160,6 +161,7 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 		gint dx = cx2 - cx1;
 		gint dy = cy2 - cy1;
 
+#warning somehow this clips the top right of lines like this: / when scrolling to the left
 		if(cy1 < featureset->clip_y1)
 		{
 			cx1 += dx * (featureset->clip_y1 - cy1) / dy;
@@ -313,6 +315,74 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
 }
 
 
+static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
+/* interface design driven by exsiting (ZMapCanvasItem/Foo) application code
+ *
+ * for normal faatures we only set the colour flags
+ * for sequence  features we actually supply colours
+ */
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
+						      ZMapFeature			feature,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+							int colour_flags,
+						      GdkColor              *default_fill,
+                                          GdkColor              *default_border)
+{
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) interval;
+	ZMapWindowCanvasFeature gs;
+
+	void (*func) (FooCanvasItem         *interval,
+						      ZMapFeature			feature,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+							int colour_flags,
+						      GdkColor              *default_fill,
+                                          GdkColor              *default_border);
+
+	func = _featureset_colour_G[fi->type];
+
+	if(func)
+	{
+		func(interval, feature, sub_feature, colour_type, colour_flags, default_fill, default_border);
+	}
+	else
+	{
+
+		gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+		if(!gs)
+			return;
+
+		if(fi->highlight_sideways)	/* ie transcripts as composite features */
+		{
+			while(gs->left)
+				gs = gs->left;
+		}
+
+		while(gs)
+		{
+			/* set the focus flags (on or off) */
+			/* zmapWindowFocus.c maintans these and we set/clear then all at once */
+			/* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
+			* colour flags has a window id set into it
+			*/
+
+			/* these flags are very fiddly: handle with care */
+			gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
+				((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
+				(gs->flags & FEATURE_FOCUS_BLURRED);
+
+			zmap_window_canvas_featureset_expose_feature(fi, gs);
+
+			if(!fi->highlight_sideways)		/* only doing the selected one */
+				return;
+
+			gs = gs->right;
+		}
+	}
+}
+
+
 #if CANVAS_FEATURESET_LINK_FEATURE
 /* link same name features in a feature type specific way */
 /* must accept NULL as meaning clear local data */
@@ -463,6 +533,7 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int st
 	_featureset_paint_G[featuretype]   = funcs[FUNC_PAINT];
 	_featureset_flush_G[featuretype]   = funcs[FUNC_FLUSH];
 	_featureset_extent_G[featuretype]  = funcs[FUNC_EXTENT];
+	_featureset_colour_G[featuretype]  = funcs[FUNC_COLOUR];
 	_featureset_zoom_G[featuretype]    = funcs[FUNC_ZOOM];
 	_featureset_free_G[featuretype]    = funcs[FUNC_FREE];
 	_featureset_add_G[featuretype]     = funcs[FUNC_ADD];
@@ -493,6 +564,7 @@ void featureset_init_funcs(void)
 	zMapWindowCanvasAlignmentInit();
 	zMapWindowCanvasGraphInit();
 	zMapWindowCanvasTranscriptInit();
+	zMapWindowCanvasSequenceInit();
 
 	/* if you add a new one then update feature_types[N_STYLE_MODE] below */
 }
@@ -747,49 +819,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
 	foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
 }
 
-/* interface design driven by exsiting application code */
-void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
-						      ZMapFeature			feature,
-						      ZMapFeatureSubPartSpan sub_feature,
-						      ZMapStyleColourType    colour_type,
-							int colour_flags,
-						      GdkColor              *default_fill,
-                                          GdkColor              *default_border)
-{
-	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) interval;
-	ZMapWindowCanvasFeature gs;
 
-	gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-	if(!gs)
-		return;
-
-	if(fi->highlight_sideways)	/* ie transcripts as composite features */
-	{
-		while(gs->left)
-			gs = gs->left;
-	}
-
-	while(gs)
-	{
-		/* set the focus flags (on or off) */
-		/* zmapWindowFocus.c maintans these and we set/clear then all at once */
-		/* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
-		 * colour flags has a window id set into it
-		 */
-
-		/* these flags are very fiddly: handle with care */
-		gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
-			((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
-			(gs->flags & FEATURE_FOCUS_BLURRED);
-
-		zmap_window_canvas_featureset_expose_feature(fi, gs);
-
-		if(!fi->highlight_sideways)		/* only doing the selected one */
-			return;
-
-		gs = gs->right;
-	}
-}
 
 
 /* NOTE this function interfaces to user show/hide via zmapWindow/unhideItemsCB() and zmapWindowFocus/hideFocusItemsCB()
@@ -804,8 +834,16 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 //printf("show hide %s %d %d\n",g_quark_to_string(feature->original_id),show,how);
 
 	gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+	if(!gs)
+		return;
 
-	if(gs)
+	if(fi->highlight_sideways)	/* ie transcripts as composite features */
+	{
+		while(gs->left)
+			gs = gs->left;
+	}
+
+	while(gs)
 	{
 		if(show)
 		{
@@ -830,6 +868,11 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 		}
 //printf("gs->flags: %lx\n", gs->flags);
 		zmap_window_canvas_featureset_expose_feature(fi, gs);
+
+		if(!fi->highlight_sideways)		/* only doing the selected one */
+			return;
+
+		gs = gs->right;
 	}
 }
 
@@ -2168,6 +2211,11 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 
 //printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
 
+  if(featureset_item->gc)
+  {
+	  g_object_unref(featureset_item->gc);
+	  featureset_item->gc = NULL;
+  }
 
 
   if (GTK_OBJECT_CLASS (parent_class_G)->destroy)

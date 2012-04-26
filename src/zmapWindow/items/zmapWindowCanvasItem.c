@@ -745,7 +745,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   {
   	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
   	{
-  		/* returns a static dara structure */
+  		/* returns a static data structure */
   		*sub_feature_out =
   			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
   	}
@@ -761,7 +761,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 /* for composite items (eg ZMapWindowGraphDensity)
  * set the pointed at feature to be the one nearest to cursor
  * We need this to stabilise the feature while processing a mouse click (item/feature select)
- * point used to set this bu the cursor is still moving while we trundle thro the code
+ * point used to set this but the cursor is still moving while we trundle thro the code
  * causing the feature to change with unpredictable results
  * write up in density.html when i get round to correcting it.
  */

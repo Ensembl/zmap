@@ -189,6 +189,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
 					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
 					 * but we need to sort features so GList is more convenient */
+
   long n_features;
   gboolean features_sorted;	/* by start coord */
 

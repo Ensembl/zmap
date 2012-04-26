@@ -1787,9 +1787,16 @@ static FooCanvasItem *drawSequenceFeature(RunSet run_data,  ZMapFeature feature,
 			  style) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  item = drawFullColumnTextFeature(run_data, feature, feature_offset,
-				   x1, y1, x2, y2, style) ;
 
+  if(!zMapStyleIsFoo(style))
+  {
+	item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
+
+	item = drawFullColumnTextFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style) ;
+  }
   return item ;
 }
 
