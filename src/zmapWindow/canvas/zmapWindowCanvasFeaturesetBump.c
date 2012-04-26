@@ -346,6 +346,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
 			/* just redisplays using normal coords */
+			/* in case of mangled alingments must reset the first exom
+			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
+			 * which extends the feature to catch colinear lines off screen
+			 */
+			feature->y2 = feature->feature->x2;
 
 			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
 				feature->flags |= FEATURE_HIDDEN;
