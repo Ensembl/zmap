@@ -671,14 +671,15 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
   /* Construct a list of possible fonts to use, they must be fixed width but take care
    * altering this list as some fixed width fonts seem to come back as variable width ! */
-  fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
+
+  fixed_font_list = g_list_append(fixed_font_list, ZMAP_ZOOM_FONT_FAMILY) ;
   fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
 
 
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
    * so that a sensible amount of text is displayed. */
   if (!zMapGUIGetFixedWidthFont(view,
-				fixed_font_list, 10, PANGO_WEIGHT_NORMAL,
+				fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
 				&font, &font_desc))
     {
       zMapGUIShowMsg(ZMAP_MSG_WARNING, "Could not get fixed width font, "

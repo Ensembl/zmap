@@ -509,7 +509,7 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
   */
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
-                               g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
+                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &font, &font_desc))
     printf("Couldn't get fixed width font\n");
   else

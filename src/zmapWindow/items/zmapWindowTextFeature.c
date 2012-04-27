@@ -412,7 +412,7 @@ static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem
   char *font_name = "Lucida Console";
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  char *font_name = "monotype" ;
+  char *font_name = ZMAP_ZOOM_FONT_FAMILY ;
 
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text)->get_style)(text)))

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -38,8 +38,6 @@
 
 
 
-#define ZMAP_ZOOM_FONT_FAMILY "Monospace"
-#define ZMAP_ZOOM_FONT_SIZE (10)
 
 /* This is the same as MAX_TEXT_COLUMN_WIDTH in zmapDraw_P.h This
  * isn't good, but there's must more to do to make it part of the
@@ -68,7 +66,7 @@ typedef struct _ZMapWindowZoomControlStruct
   double pix2mmx ;					    /* Convert pixels -> screen mm. */
 
   double max_window_size;
-  int border;                  
+  int border;
 
   PangoFontDescription *font_desc;
   PangoFont *font; /* This needs to be a fixed

@@ -414,6 +414,7 @@ gboolean zMapWindowIsLocked(ZMapWindow window) ;
 void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in the same view
 							       has a child removed */
 
+
 PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
                                                           double *width_out,
                                                           double *height_out);

@@ -43,6 +43,98 @@
 #include <zmapWindowCanvasSequence_I.h>
 
 
+/* font finding code derived from some by Gemma Barson */
+
+/* Tries to return a fixed font from the list given in pref_families, returns
+ * the font family name if it succeeded in finding a matching font, NULL otherwise.
+ * The list of preferred fonts is treated with most preferred first and least
+ * preferred last.  The function will attempt to return the most preferred font
+ * it finds.
+ *
+ * @param widget         Needed to get a context, ideally should be the widget you want to
+ *                       either set a font in or find out about a font for.
+ * @param pref_families  List of font families (as text strings).
+ * @return               font family name if font found, NULL otherwise.
+ */
+static const char *findFixedWidthFontFamily(PangoContext *context)
+{
+  /* Find all the font families available */
+  PangoFontFamily **families;
+  gint n_families;
+  pango_context_list_families(context, &families, &n_families) ;
+
+  /* Loop through the available font families looking for one in our preferred list */
+  gboolean found_most_preferred = FALSE;
+  gint most_preferred = 0x7fff;	/* we can't possibly have that many fonts in our preferred list!" */
+  char * preferred_fonts[] = 		/* in order of preference */
+  {
+	"fixed",
+	"Monospace",
+	"Courier",
+	"Courier new",
+	"Courier 10 pitch",
+	"Lucida console",
+	"monaco",
+	"Bitstream vera sans mono",
+	"deja vu sans mono",
+	"Lucida sans typewriter",
+	"Andale mono",
+//	"profont",
+//	"proggy",
+//	"droid sans mono",
+//	"consolas",
+//	"inconsolata",
+	NULL
+  };
+  static const char *fixed_font = NULL;
+
+  PangoFontFamily *match_family = NULL;
+  gint family;
+
+  if(!fixed_font)
+  {
+	for (family = 0 ; (family < n_families && !found_most_preferred) ; family++)
+	{
+		const gchar *name = pango_font_family_get_name(families[family]) ;
+		gint current = 1;
+		char **pref;
+		/* Look for this font family in our list of preferred families */
+
+		for(pref = preferred_fonts, current = 0; *pref; pref++, current++)
+		{
+			char *pref_font = *pref;
+
+			if (g_ascii_strncasecmp(name, pref_font, strlen(pref_font)) == 0
+#if GLIB_MAJOR_VERSION >= 1 && GLIB_MINOR_VERSION >= 4
+				&& pango_font_family_is_monospace(families[family])
+#endif
+				)
+			{
+				/* We prefer ones nearer the start of the list */
+				if(current <= most_preferred)
+				{
+					most_preferred = current;
+					match_family = families[family];
+
+					if(!most_preferred)
+					found_most_preferred = TRUE;
+				}
+
+				break;
+			}
+		}
+	}
+
+	if (match_family)
+		fixed_font = pango_font_family_get_name(match_family);
+  }
+
+  return fixed_font;
+}
+
+
+
+
 
 static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -52,10 +144,12 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	 */
 
 	FooCanvasItem *foo = (FooCanvasItem *) featureset;
-	double y1, y2, y;
+	double y1, y2;
 	ZMapSequence sequence = &feature->feature->feature.sequence;
 	ZMapWindowCanvasSequence seq = (ZMapWindowCanvasSequence) feature;
 	int cx,cy;
+	long seq_y1, seq_y2, y;
+	const char *font;
 
 	/* lazy evaluation of pango renderer */
 	if(!seq->pango_renderer)
@@ -76,7 +170,9 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		seq->pango_context = gdk_pango_context_get_for_screen (screen);
 		seq->pango_layout = pango_layout_new (seq->pango_context);
 
-		desc = pango_font_description_from_string ("monotype");
+		font = findFixedWidthFontFamily(seq->pango_context);
+		desc = pango_font_description_from_string (ZMAP_ZOOM_FONT_FAMILY);
+		pango_font_description_set_size (desc,ZMAP_ZOOM_FONT_SIZE * PANGO_SCALE);
 		pango_layout_set_font_description (seq->pango_layout, desc);
 		pango_font_description_free (desc);
 
@@ -109,8 +205,8 @@ printf("text size: %d,%d\n",seq->text_height, seq->text_width);
 
 		long n_bases = featureset->end - featureset->start + 1;
 		long pixels = n_bases * featureset->zoom;
-		int width = (int) zMapStyleGetWidth(featureset->style);
-		int n_disp = width / seq->text_width;
+		int width = (int) zMapStyleGetWidth(featureset->style);	/* characters not pixels */
+		int n_disp = width; 	// if pixels divide by seq->text_width;
 		long n_rows = pixels / seq->text_height;
 
 		seq->row_size = n_bases / n_rows;		/* zoom is pixels per unit y */
@@ -151,29 +247,39 @@ printf("n_bases: %ld %ld, %d %d %ld = %ld\n",n_bases, pixels, width, n_disp, n_r
 
 printf("paint from %.1f to %.1f\n",y1,y2);
 
-	for( y = y1 - (((int) y1) % seq->row_size); y < y2; y += seq->row_size)
+	/* bias coordinates to stable ones */
+	seq_y1 = y1;
+	seq_y2 = y2;
+
+	if(y1 < seq->start)
+		y1 = seq->start;
+
+	y = y1 - seq->start;
+	y -= ((long) y) % seq->row_size;
+
+	for(; y < y2; y += seq->row_size)
 	{
 		char *p,*q;
 		int i;
 
-		if(y < featureset->start || y > y2)
+		if(y < seq->start || y > y2)
 			continue;
 
-		p = sequence->sequence + (int) (y - featureset->start);
+		p = sequence->sequence + (int) (y - seq->start);
 		q = seq->text;
 		for(i = 0;i < seq->n_bases; i++)
-			*q++ = *p++ & 0x5f;
+			*q++ = *p++;	// & 0x5f; original code did this lower cased, peptide are upper
 		strcpy(q,seq->truncated);
 
-printf("dna %s at %.1f, %.1f (%.1f)\n",  seq->text, featureset->dx, y + featureset->dy, y);
 
-
-#warning probably need to factor in spacing and offset vertically
-		pango_layout_set_text (seq->pango_layout, seq->text, -1);	 // seq->row_size);
+		pango_layout_set_text (seq->pango_layout, seq->text, seq->row_disp);
 
 		/* need to get pixel cooprdinates for pamgo */
 		foo_canvas_w2c (foo->canvas, featureset->dx, y + featureset->dy, &cx, &cy);
-if(seq->text[0] == 'C')		/* test underlay colour */
+
+printf("dna %s at %ld, canvas %.1f, %.1f = %d, %d \n",  seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
+
+if(seq->text[0] == 'c')		/* test underlay colour */
 {
 	GdkColor c;
 
@@ -195,7 +301,7 @@ static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset)
 	ZMapSkipList sl;
 
 	/* calculate bases per line */
-	printf("sequence zoom (%.5f)\n", featureset->zoom);	/* is pixels per unit y */
+//	printf("sequence zoom (%.5f)\n", featureset->zoom);	/* is pixels per unit y */
 
 	/* ummmm..... previous implemmentation is quite complex, let-s just do it from scratch */
 

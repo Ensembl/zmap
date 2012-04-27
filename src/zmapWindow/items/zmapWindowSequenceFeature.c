@@ -650,7 +650,7 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
   FooCanvasItem *item = NULL;
   ZMapFeatureTypeStyle style;
   ZMapFeature feature;
-  char *font_name = "monospace" ;
+  char *font_name = ZMAP_ZOOM_FONT_FAMILY ;
 
 
 
