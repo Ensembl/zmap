@@ -1632,6 +1632,18 @@ static unsigned char zmap_crosshair_mask_bits[] = {
    0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
 
+  /* My colour cross cursor. */
+#define zmap_colour_cross_shape_x_hot 7
+#define zmap_colour_cross_shape_y_hot 7
+static unsigned char zmap_colour_cross_shape_bits[] = {
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0xff, 0xff, 0xff, 0xff, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01};
+static unsigned char zmap_colour_cross_mask_bits[] = {
+   0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02,
+   0x7f, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x7f, 0xfe, 0x40, 0x02, 0x40, 0x02,
+   0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02};
+
 /* My circle cursor. */
 #define zmap_circle_shape_x_hot 7
 #define zmap_circle_shape_y_hot 7
@@ -1668,15 +1680,25 @@ static unsigned char zmap_noentry_mask_bits[] = {
  GdkColor *fg, *bg ;
 
 
- if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
+ if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_COLOUR_CROSS) == 0)
+   {
+     shape_data = (gchar *)zmap_colour_cross_shape_bits ;
+     mask_data = (gchar *)zmap_colour_cross_mask_bits ;
+     hot_x = zmap_colour_cross_shape_x_hot ;
+     hot_y = zmap_colour_cross_shape_y_hot ;
+     fg = &red ;
+     bg = &blue ;
+
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
    {
      shape_data = (gchar *)zmap_cross_shape_bits ;
      mask_data = (gchar *)zmap_cross_mask_bits ;
      hot_x = zmap_cross_shape_x_hot ;
      hot_y = zmap_cross_shape_y_hot ;
-     fg = &red ;
-     bg = &blue ;
-
+     fg = &black ;
+     bg = &white ;
      found_cursor = TRUE ;
    }
  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSSHAIR) == 0)
