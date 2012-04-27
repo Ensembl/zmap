@@ -504,7 +504,7 @@ ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean re
 {
   ZMapStyleGlyphShape shape ;
 
-  if (zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5))
+  if (!reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5))
     shape = &style->mode_data.glyph.glyph5 ;
   else if (reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5_REV))
     shape = &style->mode_data.glyph.glyph5rev ;
@@ -518,7 +518,7 @@ ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean re
 {
   ZMapStyleGlyphShape shape ;
 
-  if (zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
+  if (!reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
     shape = &style->mode_data.glyph.glyph3;
   else if (reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
     shape = &style->mode_data.glyph.glyph3rev;
@@ -527,8 +527,6 @@ ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean re
 
   return(shape);
 }
-
-
 
 
 
