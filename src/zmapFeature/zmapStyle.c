@@ -1640,6 +1640,7 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 
       if(zMapConfigLegacyStyles())  // called here as we want to do it only once
 	{
+	  /* Triangle markers at start/end of incomplete homology features. */
 	  s_homology = zMapStyleCreate(hn, "homology - legacy style");
 
 	  g_object_set(G_OBJECT(s_homology),
@@ -1657,11 +1658,11 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 		       ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
 		       NULL);
 
-	  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"3-Frame - legacy style");
-
-
-	  /* The default shapes are |_ and same thing upside down, the arms are 10 pixels long.
+	  /* Markers for splice features, produced by genefinders.
+	   * The default shapes are |_ and same thing upside down, the arms are 10 pixels long.
 	   * The horizontal line is drawn between the two bases that flank the splice. */
+	  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"Splice Markers - legacy style for gene finder features");
+
 	  g_object_set(G_OBJECT(s_3frame),
 		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
@@ -1679,22 +1680,20 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 		       ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,TRUE,
                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
 
+		       /* sets horizontal scale of splices. */
 		       ZMAPSTYLE_PROPERTY_WIDTH, 60.0,
-		       ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,
-		       ZMAPSTYLE_PROPERTY_MAX_SCORE,4.0,
+		       ZMAPSTYLE_PROPERTY_MIN_SCORE, -2.0,
+		       ZMAPSTYLE_PROPERTY_MAX_SCORE, 4.0,
 
+		       /* Frame specific colouring and default fill colour on selection. */
 		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
-
 		       ZMAPSTYLE_PROPERTY_FRAME0_COLOURS,
-		       "normal fill blue; normal border blue; selected fill pink; selected border pink",
+		       "normal fill blue; normal border blue; selected fill pink",
 		       ZMAPSTYLE_PROPERTY_FRAME1_COLOURS,
-		       "normal fill green; normal border green; selected fill pink; selected border pink",
+		       "normal fill green; normal border green; selected fill pink",
 		       ZMAPSTYLE_PROPERTY_FRAME2_COLOURS,
-		       "normal fill red; normal border red; selected fill pink; selected border pink",
-
-
-
-		       NULL);
+		       "normal fill red; normal border red; selected fill pink",
+		       NULL) ;
 	}
     }
 
