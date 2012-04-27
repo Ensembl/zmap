@@ -205,12 +205,12 @@ typedef struct _zmapWindowFeaturesetItemStruct
   int set_index;			/* for staggered columns (heatmaps) */
   double x_off;
 
-      /* graphics context for all contained features
-       * each one has its own colours that we set on draw (eg for heatmaps)
-       * foo_canvas_rect also has stipples but we don't use then ATM
-       * it also pretends to do alpha but 'X doesn't do it'
-       * crib foo-canvas-rect-elipse.c for inspiration
-       */
+  /* graphics context for all contained features
+   * each one has its own colours that we set on draw (eg for heatmaps)
+   * foo_canvas_rect also has stipples but we don't use then ATM
+   * it also pretends to do alpha but 'X doesn't do it'
+   * crib foo-canvas-rect-elipse.c for inspiration
+   */
   GdkGC *gc;             	  /* GC for graphics output */
 
   gint clip_y1,clip_y2,clip_x1,clip_x2;		/* visble scroll region plus one pixel all round */
