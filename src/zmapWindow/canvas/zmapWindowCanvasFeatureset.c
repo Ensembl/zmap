@@ -2150,10 +2150,6 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
 
   feat = zmapWindowCanvasFeatureAlloc(type);
 
-  if (!feature)
-    printf("found no feature\n") ;
-
-
   feat->feature = feature;
   feat->type = type;
   if(type == FEATURE_ALIGN)
