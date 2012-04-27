@@ -77,6 +77,9 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasAlignment.h>
 #include <zmapWindowCanvasGraphItem.h>
 
+
+typedef gint (FeatureCmpFunc)(gconstpointer a, gconstpointer b) ;
+
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
 
@@ -92,6 +95,7 @@ static double defaultPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature 
 			   double local_x, double local_y, double x_off) ;
 
 gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
+gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 
@@ -101,7 +105,11 @@ static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 static void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 
 static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowFeaturesetItem fi,ZMapFeature feature);
-static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWindowFeaturesetItem fi,ZMapFeature feature);
+static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWindowFeaturesetItem fi,
+									  ZMapFeature feature);
+static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmpFunc compare_func,
+								      ZMapWindowFeaturesetItem fi,
+								      double y1, double y2) ;
 void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs);
 
 
@@ -581,10 +589,15 @@ FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQu
 /* this is a nest of incestuous functions that all do the same thing
  * but at least this way we keep the search criteria in one place not 20
  */
-static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(ZMapWindowFeaturesetItem fi, double y1, double y2)
+static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmpFunc compare_func,
+								      ZMapWindowFeaturesetItem fi,
+								      double y1, double y2)
 {
   ZMapSkipList sl;
   zmapWindowCanvasFeatureStruct search;
+
+  if (!compare_func)
+    compare_func = zMapFeatureCmp ;
 
   search.y1 = y1;
   search.y2 = y2;
@@ -600,7 +613,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(ZMapWindow
 	search.y1 = fi->start;
     }
 
-  sl =  zMapSkipListFind(fi->display_index, zMapFeatureCmp, &search);
+  sl =  zMapSkipListFind(fi->display_index, compare_func, &search) ;
   //	if(sl->prev)
   //		sl = sl->prev;	/* in case of not exact match when rebinned... done by SkipListFind */
 
@@ -613,7 +626,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowF
   ZMapWindowCanvasFeature gs;
   ZMapSkipList sl;
 
-  sl = zmap_window_canvas_featureset_find_feature_coords(fi,feature->x1,feature->x2);
+  sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fi, feature->x1, feature->x2);
 
   /* find the feature's feature struct but return the skip list */
 
@@ -627,7 +640,8 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowF
       if(gs->y1 > feature->x2)
 	return NULL;
 
-      /* don't we know we have a feature and item that both exist? There must have been a reason for this w/ DensityItems */
+      /* don't we know we have a feature and item that both exist?
+	 There must have been a reason for this w/ DensityItems */
 #if 1 // NEVER_REBINNED
       if(gs->feature == feature)
 #else
@@ -831,7 +845,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
   if(!l || !fset)
     return(NULL);
 
-  sl = zmap_window_canvas_featureset_find_feature_coords(fset, y1, y2);
+  sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fset, y1, y2);
 
   for(;sl ; sl = sl->next)
     {
@@ -940,7 +954,8 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
       di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
     }
 
-  foo_canvas_item_request_update ((FooCanvasItem *) di);
+  foo_canvas_item_request_update ((FooCanvasItem *)di);
+
   return TRUE;
 }
 
@@ -1152,7 +1167,7 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
 
       /* NOTE there is a flake in world coords at low zoom */
       /* NOTE close_enough is zero */
-      sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1 , y2);
+      sl = zmap_window_canvas_featureset_find_feature_coords(zMapFeatureFullCmp, fi, y1 , y2) ;
 
       //printf("point %s	%f,%f %d,%d: %p\n",g_quark_to_string(fi->id),x,y,cx,cy,sl);
       if (!sl)
@@ -1167,8 +1182,14 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
 	  if(gs->flags & FEATURE_HIDDEN)
 	    continue;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* A hack ? */
+
 	  if (gs->y1 > y2)
 	    break;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  if ((best = point_func(fi, gs, item_x, item_y, cx, cy, local_x, local_y, x_off)) < 1.0e36)
 	    {
@@ -1409,7 +1430,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
   //if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
 
-  sl = zmap_window_canvas_featureset_find_feature_coords(fi, y1, y2);
+  sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fi, y1, y2);
   //if(debug) printf("draw %s	%f,%f: %p\n",g_quark_to_string(fi->id),y1,y2,sl);
 
   if(!sl)
@@ -1561,7 +1582,9 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 
 /* called by item drawing code, we cache style colours hoping it will run faster */
 /* see also zmap_window_canvas_alignment_get_colours() */
-int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel)
+int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
+					 ZMapWindowCanvasFeature feature,
+					 gulong *fill_pixel, gulong *outline_pixel)
 {
   int ret = 0;
 
@@ -1749,7 +1772,85 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
     return(-1);
   if(feata->feature->original_id > featb->feature->original_id)
     return(1);
+
   return(zMapFeatureCmp(a,b));
+}
+
+
+
+/* Fuller version of zMapFeatureCmp() which handles special glyph code where
+ * positions to be compared can be greater than the feature coords.
+ * 
+ * NOTE that featb is a 'dummy' just used for coords.
+ *  */
+gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
+{
+  ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a ;
+  ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b ;
+
+  /* we can get NULLs due to GLib being silly */
+  /* this code is pedantic, but I prefer stable sorting */
+  if(!featb)
+    {
+      if(!feata)
+	return(0);
+      return(1);
+    }
+  else if(!feata)
+    {
+      return(-1);
+    }
+  else
+    {
+      ZMapFeature feature = feata->feature ;
+      int real_start, real_end ;
+
+      real_start = feata->y1 ;
+      real_end = feata->y2 ;
+
+      if (feata->type == FEATURE_GLYPH && feature->flags.has_boundary)
+	{
+	  if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
+	    {
+	      real_start = feata->y1 + 0.5 ;
+	      real_end = feata->y2 + 2 ;
+	    }
+	  else if (feature->boundary_type == ZMAPBOUNDARY_3_SPLICE)
+	    {
+	      real_start = feata->y1 - 2 ;
+	      real_end = feata->y2 - 0.5 ;
+	    }
+
+
+	  /* Look for dummy to be completey inside.... */
+	  if (real_start <= featb->y1 && real_end >= featb->y2)
+	    return(0);
+	  
+	  if(real_start < featb->y1)
+	    return(-1);
+	  if(real_start > featb->y1)
+	    return(1);
+	  if(real_end > featb->y2)
+	    return(-1);
+	  if(real_end < featb->y2)
+	    return(1);
+	}
+      else
+	{
+	  if(real_start < featb->y1)
+	    return(-1);
+	  if(real_start > featb->y1)
+	    return(1);
+
+	  if(real_end > featb->y2)
+	    return(-1);
+
+	  if(real_end < featb->y2)
+	    return(1);
+	}
+    }
+
+  return(0);
 }
 
 
@@ -2048,6 +2149,11 @@ void zMapWindowFeaturesetAddFeature(FooCanvasItem *foo, ZMapFeature feature, dou
   featureset_item = (ZMapWindowFeaturesetItem) foo;
 
   feat = zmapWindowCanvasFeatureAlloc(type);
+
+  if (!feature)
+    printf("found no feature\n") ;
+
+
   feat->feature = feature;
   feat->type = type;
   if(type == FEATURE_ALIGN)
