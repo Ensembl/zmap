@@ -179,31 +179,29 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 
   if(!glyph)
     {
+      FooCanvasItem *foo = (FooCanvasItem *) featureset;
+      ZMapStyleGlyphShape shape;
+
       glyph = g_new0(zmapWindowCanvasGlyphStruct,1);		/* OK efficient if we really do cache these */
 
-      if(glyph)
+
+      /* calulate shape when created and cached */
+
+      glyph->which = which;
+      glyph->sub_feature = TRUE;
+
+      glyph->shape = shape = get_glyph_shape(style, glyph->which, feature->strand) ;
+      if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
+	return NULL;
+
+      col_width = zMapStyleGetWidth(featureset->style);
+      zmap_window_canvas_set_glyph(foo, glyph, style, feature, col_width, score);
+
+      if(siggy)
 	{
-	  FooCanvasItem *foo = (FooCanvasItem *) featureset;
-	  ZMapStyleGlyphShape shape;
-
-	  /* calulate shape when created and cached */
-
-	  glyph->which = which;
-	  glyph->sub_feature = TRUE;
-
-	  glyph->shape = shape = get_glyph_shape(style, glyph->which, feature->strand) ;
-	  if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
-	    return NULL;
-
-	  col_width = zMapStyleGetWidth(featureset->style);
-	  zmap_window_canvas_set_glyph(foo, glyph, style, feature, col_width, score);
-
-	  if(siggy)
-	    {
-	      g_hash_table_insert(glyph_cache_G,GUINT_TO_POINTER(siggy),glyph);
-	      glyph->sig = siggy;
-	      //zMapLogWarning("created glyph %s\n",g_quark_to_string(siggy));
-	    }
+	  g_hash_table_insert(glyph_cache_G,GUINT_TO_POINTER(siggy),glyph);
+	  glyph->sig = siggy;
+	  //zMapLogWarning("created glyph %s\n",g_quark_to_string(siggy));
 	}
     }
 
@@ -470,10 +468,10 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 /* Calculate the position of splice markers so that the horizontal bit of the marker is where
  * the splice is and the vertical bit indicates a 5'(down) or 3'(up) marker. */
 static void calcSplicePos(ZMapFeature feature, ZMapFeatureTypeStyle style, double col_width, double score,
-			  double *origin_out, double *width_out, double *height_out)
+			  double *feature_origin_out, double *feature_width_out, double *feature_height_out)
 {
   double min_score, max_score ;
-  double origin, fac ;
+  double origin, feature_origin, fac ;
   double width = 1.0, height = 1.0;        // these are ratios not pixels
   double x ;
   double glyph_len = ZMAPSTYLE_SPLICE_GLYPH_LEN ;
@@ -496,29 +494,52 @@ static void calcSplicePos(ZMapFeature feature, ZMapFeatureTypeStyle style, doubl
   else 
     x = fac * (score - min_score) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Needs changing to include direction of splice marker..... */
   if (x > origin + fudge_factor || x < origin - fudge_factor) 
     width = fabs(origin - fabs(x)) ;
   else
     width = origin - fudge_factor ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  width = fabs(origin - fabs(x)) ;
+
+  if (width < fudge_factor)
+    {
+      if (score < 0)
+	{
+	  feature_origin = origin + (fudge_factor - width) ;
+	}
+      else
+	{
+	  feature_origin = origin - (fudge_factor - width) ;
+	}
+
+      width = fudge_factor ;
+    }
+  else
+    {
+      feature_origin = origin  ;
+    }
+
 
   /* width is in column units (pixels), glyph pixel height is ZMAPSTYLE_SPLICE_GLYPH_LEN pixels
    * so to convert to a width proportional to height divide by ZMAPSTYLE_SPLICE_GLYPH_LEN. */
   width = width / glyph_len ;
 
-  /* Splice markers for negative scores are drawn the opposite way round. */
+  /* Return left, right and height. */
   if (score < 0)
     {
-      *width_out = -width ;
-      *height_out = height ;
+      /* Splice markers for negative scores are drawn the opposite way round. */
+      *feature_width_out = -width ;
+      *feature_height_out = height ;
     }
   else
     {
-      *width_out = width ;
-      *height_out = height ;
+      *feature_width_out = width ;
+      *feature_height_out = height ;
     }
-
-  *origin_out = origin ;
+  *feature_origin_out = feature_origin ;
 
   return ;
 }
@@ -812,45 +833,51 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   FooCanvasItem *foo = (FooCanvasItem *)fi ;
 
 
-  /* Get feature extent on display. */
-  for (i = 0, min_x = G_MAXINT, max_x = 0, min_y = G_MAXINT, max_y = 0 ; i < glyph->shape->n_coords ; i++)
+  /* Glyphs only have shape when drawn (I think...) so it's possible when looking for nearby
+   * glyphs for the point operation to be looking at glyphs that haven't been drawn and
+   * do not have a shape. */
+  if (glyph->shape)
     {
-      curr_x = glyph->points[i].x ;
-      curr_y = glyph->points[i].y ;
+      /* Get feature extent on display. */
+      for (i = 0, min_x = G_MAXINT, max_x = 0, min_y = G_MAXINT, max_y = 0 ; i < glyph->shape->n_coords ; i++)
+	{
+	  curr_x = glyph->points[i].x ;
+	  curr_y = glyph->points[i].y ;
 
-      if (min_x > curr_x)
-	min_x = curr_x ;
-      if (max_x < curr_x)
-	max_x = curr_x ;
+	  if (min_x > curr_x)
+	    min_x = curr_x ;
+	  if (max_x < curr_x)
+	    max_x = curr_x ;
 
-      if (min_y > curr_y)
-	min_y = curr_y ;
-      if (max_y < curr_y)
-	max_y = curr_y ;
-    }
+	  if (min_y > curr_y)
+	    min_y = curr_y ;
+	  if (max_y < curr_y)
+	    max_y = curr_y ;
+	}
 
 
-  foo_canvas_c2w(foo->canvas, min_x, min_y, &can_start_x, &can_start_y) ;
-  foo_canvas_c2w(foo->canvas, max_x, max_y, &can_end_x, &can_end_y) ;
+      foo_canvas_c2w(foo->canvas, min_x, min_y, &can_start_x, &can_start_y) ;
+      foo_canvas_c2w(foo->canvas, max_x, max_y, &can_end_x, &can_end_y) ;
 
-  world_start_x = can_start_x ;
-  world_end_x = can_end_x ;
-  world_start_y = can_start_y ;
-  world_end_y = can_end_y ;
+      world_start_x = can_start_x ;
+      world_end_x = can_end_x ;
+      world_start_y = can_start_y ;
+      world_end_y = can_end_y ;
 
-  foo_canvas_item_i2w(foo, &world_start_x, &world_start_y) ;
-  foo_canvas_item_i2w(foo, &world_end_x, &world_end_y) ;
+      foo_canvas_item_i2w(foo, &world_start_x, &world_start_y) ;
+      foo_canvas_item_i2w(foo, &world_end_x, &world_end_y) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g\tCanvas start/end: %g, %g\tWorld start/end: %g, %g\n",
-	 item_x, item_y, cx, cy, local_x, local_y,
-	 can_start_y, can_end_y, world_start_y, world_end_y) ;
+      printf("Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g\tCanvas start/end: %g, %g\tWorld start/end: %g, %g\n",
+	     item_x, item_y, cx, cy, local_x, local_y,
+	     can_start_y, can_end_y, world_start_y, world_end_y) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (can_start_x < local_x && can_end_x > local_x
-      && can_start_y < local_y && can_end_y > local_y)			    /* overlaps cursor */
-    {
-      best = 0.0;
+      if (can_start_x < local_x && can_end_x > local_x
+	  && can_start_y < local_y && can_end_y > local_y)			    /* overlaps cursor */
+	{
+	  best = 0.0;
+	}
     }
 
   return best ;
