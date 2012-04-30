@@ -54,21 +54,21 @@
 
 typedef struct _zmapWindowCanvasFeatureStruct
 {
-	zmapWindowCanvasFeatureType type;
-      ZMapFeature feature;
-	GList *from;		/* the list node that holds the feature */
-	/* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
+  zmapWindowCanvasFeatureType type;
+  ZMapFeature feature;
+  GList *from;		/* the list node that holds the feature */
+  /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
-      double y1, y2;    	/* top, bottom of item (box or line) */
-	double score;		/* determines feature width */
+  double y1, y2;    	/* top, bottom of item (box or line) */
+  double score;		/* determines feature width */
 
-	/* ideally these could be ints but the canvas works with doubles */
-	double width;
-	double bump_offset;	/* for X coord  (left hand side of sub column */
+  /* ideally these could be ints but the canvas works with doubles */
+  double width;
+  double bump_offset;	/* for X coord  (left hand side of sub column */
 
-	int bump_col;		/* for calculating sub-col before working out width */
+  int bump_col;		/* for calculating sub-col before working out width */
 
-	long flags;				/* non standard display option eg selected */
+  long flags;				/* non standard display option eg selected */
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
 #define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
 #define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
@@ -89,10 +89,10 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_SQUASHED_END		0x20000
 #define FEATURE_SQUASHED		0x30000
 
-	GArray *gaps;					/* alternate gaps array for alignments if squashed */
+  GArray *gaps;					/* alternate gaps array for alignments if squashed */
 #endif
 
-	ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
+  ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 
 } zmapWindowCanvasFeatureStruct;
 
@@ -101,23 +101,25 @@ typedef struct _zmapWindowCanvasFeatureStruct
 /* used for featureset summarise to prevent display of invisible features */
 typedef struct _pixRect
 {
-	struct _pixRect *next,*prev;	/* avoid alloc and free overhead of GList
-						 * we only expect relatively few of these but a high turnover
-						 */
+  struct _pixRect *next,*prev;	/* avoid alloc and free overhead of GList
+				 * we only expect relatively few of these but a high turnover
+				 */
 
-	ZMapWindowCanvasFeature feature;
-	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
-//	int start;				/* we need to remember the real start as we trim the rect from the front */
+  ZMapWindowCanvasFeature feature;
+  int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
+  //	int start;				/* we need to remember the real start as we trim the rect from the front */
 
 #define PIX_LIST_DEBUG	0
 #if PIX_LIST_DEBUG
-	gboolean alloc;			/* for double alloc/free debug */
-	int which;
+  gboolean alloc;			/* for double alloc/free debug */
+  int which;
 #endif
 
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 
+
 #define N_PIXRECT_ALLOC		20
+
 
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
