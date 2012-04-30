@@ -47,7 +47,6 @@
 
 typedef struct _zmapWindowCanvasGlyphStruct
 {
-
   zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
   double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
