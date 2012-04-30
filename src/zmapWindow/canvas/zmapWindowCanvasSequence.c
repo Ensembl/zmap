@@ -43,7 +43,10 @@
 #include <zmapWindowCanvasSequence_I.h>
 
 
+
+#if 0
 /* font finding code derived from some by Gemma Barson */
+/* erm... there is an almost identical fucntion in zmapGUIUtils.c which we should use */
 
 /* Tries to return a fixed font from the list given in pref_families, returns
  * the font family name if it succeeded in finding a matching font, NULL otherwise.
@@ -68,17 +71,20 @@ static const char *findFixedWidthFontFamily(PangoContext *context)
   gint most_preferred = 0x7fff;	/* we can't possibly have that many fonts in our preferred list!" */
   char * preferred_fonts[] = 		/* in order of preference */
   {
-	"fixed",
-	"Monospace",
-	"Courier",
-	"Courier new",
-	"Courier 10 pitch",
-	"Lucida console",
-	"monaco",
-	"Bitstream vera sans mono",
-	"deja vu sans mono",
-	"Lucida sans typewriter",
-	"Andale mono",
+	  ZMAP_ZOOM_FONT_FAMILY,
+//	"fixed",
+//	"Monospace",
+//	"Courier",
+//	"Courier new",
+//	"Courier 10 pitch",
+//	"Lucida console",
+//	"monaco",
+//	"Bitstream vera sans mono",
+//	"deja vu sans mono",
+//	"Lucida sans typewriter",
+//	"Andale mono",
+
+// Gemm has these commented out
 //	"profont",
 //	"proggy",
 //	"droid sans mono",
@@ -132,7 +138,7 @@ static const char *findFixedWidthFontFamily(PangoContext *context)
   return fixed_font;
 }
 
-
+#endif
 
 
 
@@ -148,8 +154,9 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	ZMapSequence sequence = &feature->feature->feature.sequence;
 	ZMapWindowCanvasSequence seq = (ZMapWindowCanvasSequence) feature;
 	int cx,cy;
-	long seq_y1, seq_y2, y;
-	const char *font;
+	long seq_y1, seq_y2, y, off;
+	int nb;
+//	const char *font;
 
 	/* lazy evaluation of pango renderer */
 	if(!seq->pango_renderer)
@@ -170,8 +177,23 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		seq->pango_context = gdk_pango_context_get_for_screen (screen);
 		seq->pango_layout = pango_layout_new (seq->pango_context);
 
-		font = findFixedWidthFontFamily(seq->pango_context);
+//		font = findFixedWidthFontFamily(seq->pango_context);
 		desc = pango_font_description_from_string (ZMAP_ZOOM_FONT_FAMILY);
+#warning mod this function and call from both places
+#if 0
+		/* this must be identical to the one get by the ZoomControl */
+		if(zMapGUIGetFixedWidthFont(view,
+				fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+				NULL,desc))
+		{
+		}
+		else
+		{
+			/* if this fails then we get a proportional font and someone will notice */
+			zmapLogWarning("Paint sequence cannot get fixed font","");
+		}
+#endif
+
 		pango_font_description_set_size (desc,ZMAP_ZOOM_FONT_SIZE * PANGO_SCALE);
 		pango_layout_set_font_description (seq->pango_layout, desc);
 		pango_font_description_free (desc);
@@ -185,9 +207,11 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango_renderer), PANGO_RENDER_PART_FOREGROUND, draw );
 
-printf("text size: %d,%d\n",seq->text_height, seq->text_width);
+//printf("text size: %d,%d\n",seq->text_height, seq->text_width);
 	}
 
+	seq->start = featureset->start;
+	seq->end = featureset->end;
 
 	if(!seq->row_size)			/* have just zoomed */
 	{
@@ -203,13 +227,22 @@ printf("text size: %d,%d\n",seq->text_height, seq->text_width);
 		 * or set the feature on add
 		 */
 
-		long n_bases = featureset->end - featureset->start + 1;
-		long pixels = n_bases * featureset->zoom;
+		/* integer overflow? 20MB x 20pixels = 400M px which is ok in a long */
+		long n_bases = seq->end - seq->start + 1;
+		long pixels = n_bases * featureset->zoom + seq->text_height - 1;	/* zoom is pixels per unit y; + fiddle factor for integer divide */
 		int width = (int) zMapStyleGetWidth(featureset->style);	/* characters not pixels */
-		int n_disp = width; 	// if pixels divide by seq->text_width;
-		long n_rows = pixels / seq->text_height;
+		int n_disp = width; 		// if pixels, divide by seq->text_width;
+		long n_rows;
 
-		seq->row_size = n_bases / n_rows;		/* zoom is pixels per unit y */
+
+		seq->spacing = seq->text_height + ZMAP_WINDOW_TEXT_BORDER;	/* NB: BORDER is 0 */
+		n_rows = pixels / seq->spacing;
+		seq->row_size = n_bases / n_rows;
+		if(n_bases % n_rows)	/* avoid dangling bases at the end */
+			seq->row_size++;
+
+		n_rows = n_bases / seq->row_size;
+		seq->spacing = pixels / n_rows;
 
 		if(seq->row_size <= n_disp)
 		{
@@ -226,7 +259,7 @@ printf("text size: %d,%d\n",seq->text_height, seq->text_width);
 		featureset->width = n_disp * seq->text_width;
 		/* do we need a reposition? */
 
-printf("n_bases: %ld %ld, %d %d %ld = %ld\n",n_bases, pixels, width, n_disp, n_rows, seq->row_size);
+//printf("n_bases: %ld %.5f %ld, %d %d %ld = %ld %ld\n",n_bases, featureset->zoom, pixels, width, n_disp, n_rows, seq->row_size, seq->spacing);
 	}
 
 		/* allocate space for the text */
@@ -245,39 +278,51 @@ printf("n_bases: %ld %ld, %d %d %ld = %ld\n",n_bases, pixels, width, n_disp, n_r
 	/* find and draw all the sequence data within */
 	/* we act dumb and just display each row complete, let X do the clipping */
 
-printf("paint from %.1f to %.1f\n",y1,y2);
+//printf("paint from %.1f to %.1f\n",y1,y2);
 
-	/* bias coordinates to stable ones */
-	seq_y1 = y1;
-	seq_y2 = y2;
 
-	if(y1 < seq->start)
-		y1 = seq->start;
+	/* bias coordinates to stable ones , find the first seq coord in this row */
+	seq_y1 = (long) y1 - featureset->dy;
+	seq_y2 = (long) y2 - featureset->dy;
 
-	y = y1 - seq->start;
-	y -= ((long) y) % seq->row_size;
+	if(seq_y1 < 0)
+		seq_y1 = 0;
 
-	for(; y < y2; y += seq->row_size)
+	y = seq_y1;
+	y -=  y % seq->row_size;				/* sequence offset from start, 0 based */
+
+	off = (seq->spacing - seq->text_height) / 2;		/* vertical padding if relevant */
+
+	for(; y < seq_y2 && y < sequence->length; y += seq->row_size)
 	{
 		char *p,*q;
 		int i;
 
-		if(y < seq->start || y > y2)
-			continue;
 
-		p = sequence->sequence + (int) (y - seq->start);
+//printf("y,off, seq: %ld %ld (%ld %ld) start,end %ld %ld\n",y, off, seq_y1,seq_y2,seq->start, seq->end);
+
+		p = sequence->sequence + y;
 		q = seq->text;
-		for(i = 0;i < seq->n_bases; i++)
-			*q++ = *p++;	// & 0x5f; original code did this lower cased, peptide are upper
-		strcpy(q,seq->truncated);
+
+		nb = seq->n_bases;
+		if(sequence->length - y < nb)
+			nb = sequence->length - y;
+
+		for(i = 0;i < nb; i++)
+			*q++ = *p++;	// & 0x5f; original code did this lower cased, peptides are upper
+
+		strcpy(q,seq->truncated);	/* may just be a null */
+		while (*q)
+			q++;
 
 
-		pango_layout_set_text (seq->pango_layout, seq->text, seq->row_disp);
+		pango_layout_set_text (seq->pango_layout, seq->text, q - seq->text);	/* be careful of last short row */
 
-		/* need to get pixel cooprdinates for pamgo */
+		/* need to get pixel coordinates for pamgo */
 		foo_canvas_w2c (foo->canvas, featureset->dx, y + featureset->dy, &cx, &cy);
 
-printf("dna %s at %ld, canvas %.1f, %.1f = %d, %d \n",  seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
+//printf("dna %s at %ld, canvas %.1f, %.1f = %d, %d \n",  seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
+
 
 if(seq->text[0] == 'c')		/* test underlay colour */
 {
@@ -286,10 +331,10 @@ if(seq->text[0] == 'c')		/* test underlay colour */
 	c.pixel = 0xff00;
 	gdk_gc_set_foreground (featureset->gc, &c);
 
-	gdk_draw_rectangle (drawable, featureset->gc, TRUE, cx, cy, seq->text_width * seq->row_disp, seq->text_height);
+	gdk_draw_rectangle (drawable, featureset->gc, TRUE, cx, cy, seq->text_width * seq->row_disp, seq->spacing);
 }
 
-		pango_renderer_draw_layout (seq->pango_renderer, seq->pango_layout,  cx * PANGO_SCALE ,  cy * PANGO_SCALE);
+		pango_renderer_draw_layout (seq->pango_renderer, seq->pango_layout,  cx * PANGO_SCALE ,  (cy + off) * PANGO_SCALE);
 	}
 }
 

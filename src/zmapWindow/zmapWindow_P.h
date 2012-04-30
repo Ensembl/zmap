@@ -293,9 +293,11 @@ typedef struct _zmapWindowFeatureStack
 
 
 
+/* mh17: erm.... why aren't these #defines ?? */
 enum
   {
-    ZMAP_WINDOW_TEXT_BORDER = 2,			    /* border above/below dna text. */
+//     ZMAP_WINDOW_TEXT_BORDER = 2, 			/* border above/below dna text.  */
+// see zmapWindow.h
     ZMAP_WINDOW_STEP_INCREMENT = 10,                        /* scrollbar stepping increment */
     ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
 //    ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */

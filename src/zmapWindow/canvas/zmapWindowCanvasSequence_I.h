@@ -77,9 +77,11 @@ typedef struct _zmapWindowCanvasSequenceStruct
 	int n_text;
 
 	long start;			/* first coord, normally equals featureset start but for show translation in zmap not so */
+	long end;
 	long row_size;		/* no of bases between rows */
-	int  row_disp; 		/* no to dosplay in each row */
-	int  n_bases;		/* actual bases excluding ... */
+	long row_disp; 		/* no to dosplay in each row */
+	long n_bases;		/* actual bases excluding ... */
+	long spacing;		/* between rows */
 	char *truncated;		/* show ... if we run out of space */
 
 

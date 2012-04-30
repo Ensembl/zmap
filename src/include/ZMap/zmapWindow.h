@@ -68,6 +68,7 @@
  *
  */
 
+#define ZMAP_WINDOW_TEXT_BORDER 	0				/* for DNA */
 #define ZMAP_WINDOW_MAX_WINDOW 	30000			    /* Largest canvas window. */
 
 
