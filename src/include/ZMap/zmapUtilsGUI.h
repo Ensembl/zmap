@@ -71,6 +71,7 @@ typedef enum
 #define ZMAPGUI_CURSOR_PREFIX         "zmap_"
 #define ZMAPGUI_CURSOR_COLOUR_CROSS   "zmap_colour_cross"
 #define ZMAPGUI_CURSOR_CROSS          "zmap_cross"
+#define ZMAPGUI_THINCURSOR_CROSS      "zmap_thincross"
 #define ZMAPGUI_CURSOR_CROSSHAIR      "zmap_crosshair"
 #define ZMAPGUI_CURSOR_CIRCLE         "zmap_circle"
 #define ZMAPGUI_CURSOR_NOENTRY        "zmap_noentry"
