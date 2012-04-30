@@ -1681,7 +1681,7 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
 
 		       /* sets horizontal scale of splices. */
-		       ZMAPSTYLE_PROPERTY_WIDTH, 60.0,
+		       ZMAPSTYLE_PROPERTY_WIDTH, 100.0,
 		       ZMAPSTYLE_PROPERTY_MIN_SCORE, -2.0,
 		       ZMAPSTYLE_PROPERTY_MAX_SCORE, 4.0,
 
