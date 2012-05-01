@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 14:33 2011 (edgrif) */
 /*  File: zmapWindowItem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -186,11 +186,11 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
   	id2c = (ID2Canvas) item_list->data;
 	feature = (ZMapFeature) id2c->feature_any;
 
-	if(expand && feature->composite)
+	if(expand && feature->children)
 	{
 		GList * l;
 
-		for(l = feature->composite; l; l = l->next)
+		for(l = feature->children; l; l = l->next)
 		{
 			feature_list = g_list_prepend(feature_list,(gpointer) l->data);
 		}

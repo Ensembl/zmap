@@ -1,7 +1,7 @@
 /*  Last edited: Jul 12 08:24 2011 (edgrif) */
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -99,6 +99,8 @@ enum
     BLX_ARGV_DATASET,           /* --dataset=thing */
     BLX_ARGV_COVERAGE,		  /* --show-coverage */
     BLX_ARGV_SQUASH,		  /* --squash_matches */
+    BLX_ARGV_SORT,			  /* --sort-mode=p etc */
+
     BLX_ARGV_ARGC               /* argc ;) */
   } ;
 
@@ -160,6 +162,7 @@ typedef struct BlixemDataStruct
 
   gboolean negate_coords ;				    /* Show rev strand coords as same as
 							       forward strand but with a leading '-'. */
+  gboolean isSeq;
 
   int            homol_max;				    /* score cutoff point */
 
@@ -504,6 +507,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
 			    int window_start, int window_end,
 			    int mark_start, int mark_end,
 			    ZMapWindowAlignSetType align_set,
+			    gboolean isSeq,
 			    GList *features, ZMapFeatureSet feature_set,
 			    GList *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit)
@@ -527,6 +531,8 @@ gboolean zmapViewCallBlixem(ZMapView view,
       blixem_data.source = source;
 
       blixem_data.sequence_map = view->view_sequence;
+
+	blixem_data.isSeq = isSeq;
     }
 
 
@@ -1351,14 +1357,15 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   }
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ || blixem_data->isSeq)
   {
   	paramString[BLX_ARGV_COVERAGE - missed] = g_strdup("--show-coverage");
   	paramString[BLX_ARGV_SQUASH - missed] = g_strdup("--squash-matches");
+  	paramString[BLX_ARGV_SORT - missed] = g_strdup("--sort-mode=p");
   }
   else
   {
-  	missed += 2;
+  	missed += 3;
   }
 
 
@@ -1477,6 +1484,8 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  /* mmmm tricky.....should all features be highlighted...mmmmmm */
+
+	  /* mh17: BAM compressed features can get the same names, we don't want to fetch others in */
 	  if (g_list_length(blixem_data->features) > 1 || zMapStyleIsUnique(feature_set->style))
 	    {
 	      blixem_data->align_list = blixem_data->features ;
@@ -1904,7 +1913,6 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 		seq_str = "" ;
 		}
 	}
-
 
       /* Phase out stupid curr_channel                    */
 

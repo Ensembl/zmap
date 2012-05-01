@@ -1,6 +1,6 @@
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -693,6 +693,8 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
 
+  feature_stack->filter = FALSE;
+
   if(feature && feature->style)	/* chicken */
     {
       if(zMapStyleIsStrandSpecific(feature->style))
@@ -838,6 +840,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL,frame);
 
+  featureset_data.feature_stack.filter = TRUE;
 
 //  if(zMapStyleDensity(feature_set->style))
 /* now works with any CanvasFeatureset */

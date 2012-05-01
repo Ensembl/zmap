@@ -1,6 +1,6 @@
 /*  File: zmapConfigLoader.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1173,6 +1173,13 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
       return(hash);
 }
 
+
+
+/* return a hash table of GArray * of GdkColor indexed by the GQuark of the name */
+GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
+{
+	return NULL;
+}
 
 
 gboolean zMapConfigLegacyStyles(void)

@@ -1,7 +1,7 @@
 /*  Last edited: Jul 11 15:42 2011 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -3546,6 +3546,7 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
 				       align->window_start, align->window_end,
 				       align->mark_start, align->mark_end,
 				       align->homol_set,
+					 align->isSeq,
 				       align->features, align->feature_set, NULL, get_sequence->sequences,
 				       &blixem_pid, &(zmap_view->kill_blixems))))
 	zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
@@ -4337,6 +4338,7 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 				       align_cmd->window_start, align_cmd->window_end,
 				       align_cmd->mark_start, align_cmd->mark_end,
 				       align_cmd->homol_set,
+					 align_cmd->isSeq,
 				       align_cmd->features, align_cmd->feature_set, align_cmd->source, NULL,
 				       &blixem_pid, &(view->kill_blixems))))
 	view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;

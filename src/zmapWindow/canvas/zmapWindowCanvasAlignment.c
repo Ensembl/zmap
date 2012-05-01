@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasAlignment.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can refeaturesetstribute it and/or
  * mofeaturesetfy it under the terms of the GNU General Public License
@@ -421,8 +421,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		/* we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be */
 
 		x1 = featureset->width / 2 - feature->width / 2;
-		feature->feature_offset = x1;
-
 		if(featureset->bumped)
 			x1 += feature->bump_offset;
 

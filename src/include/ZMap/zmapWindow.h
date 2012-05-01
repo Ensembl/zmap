@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 15:01 2011 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -275,6 +275,8 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
 
   GList *source;                                     /* a list of featureset names */
 
+  gboolean isSeq;
+
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
 
@@ -533,6 +535,5 @@ void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
-
 
 #endif /* !ZMAP_WINDOW_H */

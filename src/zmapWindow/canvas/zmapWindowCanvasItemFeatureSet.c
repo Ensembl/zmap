@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetItem.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -334,7 +334,7 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 		ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
 		/* find the feature struct and set a flag */
 #warning this should be a class function
-		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show);
+		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show, ZMWCF_HIDE_USER);
 
 	}
 	return FALSE;

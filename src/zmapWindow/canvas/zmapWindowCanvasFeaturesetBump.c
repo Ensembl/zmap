@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetBump.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -262,7 +262,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
        * which are ZMapWindowCanvasItems which are FooCanvasGroups
        * so we need the get the real ZMapWindowFeaturesetItem in the group's item_list
        */
-
+//printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 
 #if MODULE_STATS
 	time = zMapElapsedSeconds;
@@ -314,7 +314,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	case ZMAPBUMP_NAME_COLINEAR:
 	case ZMAPBUMP_NAME_BEST_ENDS:
 		/* for alignments these all map to overlap, the alignments code shows the decorations regardless */
-		/* but for historical accuray we use bump all which display each composite feature in its own column */
+		/* but for historical accuray we use bump all which displays each composite feature in its own column */
 		if(bump_mode != ZMAPBUMP_OVERLAP)
 			bump_mode = ZMAPBUMP_ALL;
 		/* fall through */
@@ -332,7 +332,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
 	/* in case we get a bump before a paint eg in initial display */
 	if(!featureset->display_index || (featureset->link_sideways && !featureset->linked_sideways))
-	  zMapWindowCanvasFeaturesetIndex(featureset);
+		zMapWindowCanvasFeaturesetIndex(featureset);
 
 
 	/* process all features */
@@ -342,9 +342,15 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
 		double extra;
 
+//printf("bump feature %s %lx\n", g_quark_to_string(feature->feature->original_id),feature->flags);
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
 			/* just redisplays using normal coords */
+			/* in case of mangled alingments must reset the first exom
+			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
+			 * which extends the feature to catch colinear lines off screen
+			 */
+			feature->y2 = feature->feature->x2;
 
 			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
 				feature->flags |= FEATURE_HIDDEN;
@@ -457,7 +463,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		{
 			g_hash_table_insert(sub_col_offset_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
 			featureset->bump_width += width + bump_data->spacing;
-//zMapLogWarning("bump: offset of %d = %f (%f)",featureset->bump_width, width, bump_data->spacing);
+//printf("bump: offset of %f = %f (%f)\n",featureset->bump_width, width, bump_data->spacing);
 
 		}
 
@@ -468,12 +474,13 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 			if(!(feature->flags & FEATURE_HIDDEN))
 			{
 				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
-				feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col)));
+				feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col))) ;
 //printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
-				/* features are displayed relative to the centre of the column when unbumped
-				 * so we have to offset the feature as if that is the case
+				/*
+				 * features are displayed relative to the centre of the column when unbumped
+				 * so we have to offset the feature as if that is still the case
 				 */
-//zMapLogWarning("bump: feature of %d = %f",feature->bump_col,feature->bump_offset);
+//printf("bump: feature off %d = %f\n", feature->bump_col,feature->bump_offset);
 
 				feature->bump_offset -= (featureset->width - width) / 2;
 
@@ -515,7 +522,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
  * so we keep a pos_list of features per sub-column
  * which get trimmed as the start coordinate increases
  * that way we know that we are unlikely to reach O(n**2)
- * :-( tests reval O(n**2) / 3
+ * :-( tests reveal O(n**2) / 3
  * obvious worst case is one feature per column
  * it ought to be possible to do this more efficiently
  */
@@ -587,6 +594,8 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
 
 	/* store the column for later calculation of the offset */
   feature->bump_col = (double) new_range->column;
+
+//printf("bumped feature %s to column %d\n",g_quark_to_string(feature->feature->unique_id),feature->bump_col);
 
 	/* get the max width of a feature in each column */
 	/* totally yuk casting here but bear with me */

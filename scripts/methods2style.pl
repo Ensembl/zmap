@@ -146,9 +146,13 @@ use Data::Dumper;
                 $self->name =~ m/transcript/i ||
                 $self->name =~ m/history/i ||
                 $self->name =~ m/jigsaw/i ||
-                $self->name =~ m/rnaseq.hillier/i ||
+                $self->name =~ m/rnaseq/i ||
                 $self->name =~ m/mgene/i ||
                 $self->name =~ m/genefinder/i ||
+                $self->name =~ m/fgenesh/i ||
+                $self->name =~ m/genblastg/i ||
+                $self->name =~ m/twinscan/i ||
+                $self->name =~ m/three_prime_utr/i ||
                 $self->name =~ m/pseudogene/i)
 	      {
 	      $txt .= qq`mode=transcript\n`;
@@ -321,6 +325,10 @@ use Data::Dumper;
                 $self->name =~ m/rnaseq/i ||
                 $self->name =~ m/mgene/i ||
                 $self->name =~ m/genefinder/i ||
+                $self->name =~ m/fgenesh/i ||
+                $self->name =~ m/genblastg/i ||
+                $self->name =~ m/twinscan/i ||
+                $self->name =~ m/three_prime_utr/i ||
                 $self->name =~ m/pseudogene/i)
 	      {
 	      $txt .= qq`mode "transcript"\n`;

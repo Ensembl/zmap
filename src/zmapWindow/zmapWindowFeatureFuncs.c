@@ -1,7 +1,7 @@
 /*  Last edited: Jul 12 08:51 2011 (edgrif) */
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -189,6 +189,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 	  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
 
+	  align->isSeq = zMapFeatureIsSeqFeatureSet(window->context_map,align->feature_set->unique_id);
+
 	  /* If user clicked on features then make a list of them (may only be one), otherwise
 	   * we need to use the feature set. */
 	  if (selected_features == TRUE)
@@ -199,11 +201,6 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 //	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
 	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items,requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
-// this apparently causes all kind of problems
-// i added it becaus soemone told me the cursor position was wrong
-//		y1 = zmapWindowItemListStartCoord(focus_items);
-//		if(y1)
-//			align->cursor_position = y1;
 
 	      g_list_free(focus_items) ;
 	    }

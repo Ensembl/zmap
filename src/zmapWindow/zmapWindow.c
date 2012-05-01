@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 16:06 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -3586,6 +3586,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 			foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
 			foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
+				/* only finds features in a canvas featureset, old foo gives nothing */
 			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
 
 			/* this is how features get highlit */

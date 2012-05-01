@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 11:17 2011 (edgrif) */
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -603,6 +603,8 @@ typedef struct
 
 
 
+
+
 /* The Feature structure itsself. Describes a single feature, the feature may be compound
  * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
@@ -646,7 +648,8 @@ typedef struct ZMapFeatureStruct_
    * for RNA seq data:
    * for composite features this is a list of underlying features that are hidden from view
    */
-  GList *composite;
+  GList *children;
+  struct ZMapFeatureStruct_ *composite;	/* daddy feature that gets displayed */
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */

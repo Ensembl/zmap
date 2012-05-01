@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeaturesetSummarise.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -414,6 +414,7 @@ summarise 0x82c72a8_solexa_introns_+0 (0.401186): 2393+485/1111 = 1097)
 
 NOTE solexa/ zebrafish is a much more varied dataset than encode and includes about a dozen featuresets
 The list size is a bit dissappointing: it starts to look quadratic
+(but see comment about the bug a few lines above)
 
 ENCODE includes a lot of ungapped features which helps matters somewhat
 */

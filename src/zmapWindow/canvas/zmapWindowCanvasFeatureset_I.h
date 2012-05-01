@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeatureset_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -55,6 +55,8 @@ typedef struct _zmapWindowCanvasFeatureStruct
 {
 	zmapWindowCanvasFeatureType type;
       ZMapFeature feature;
+	GList *from;		/* the list node that holds the feature */
+	/* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
       double y1, y2;    	/* top, bottom of item (box or line) */
 	double score;		/* determines feature width */
@@ -62,7 +64,6 @@ typedef struct _zmapWindowCanvasFeatureStruct
 	/* ideally these could be ints but the canvas works with doubles */
 	double width;
 	double bump_offset;	/* for X coord  (left hand side of sub column */
-	double feature_offset;	/* for X coord (LHS of column to LHS of feature */
 
 	int bump_col;		/* for calculating sub-col before working out width */
 
@@ -77,7 +78,8 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
 #define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
 #define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
-#define FEATURE_HIDE_REASON	0x7e00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
+#define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
 

@@ -1,6 +1,6 @@
 /*  File: zmapViewFeatureCollapse.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,6 +45,13 @@
 #define PDEBUG          zMapLogWarning
 
 #define SQUASH_DEBUG	0
+
+#define SQUASH_DEBUG_CONC	0
+/*
+ * NOTE:
+ * joined reads may appear shorter due to mnmatech regions at the end of the 76 bases
+ * even tho' the legnth is 76 the alignment may be much shorter
+ */
 
 
 
@@ -107,6 +114,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
 	ZMapFeature featb = (ZMapFeature) b;	/* these must be alignments */
 	GArray *g1,*g2;
 	ZMapAlignBlock a1, a2;
+	int ng1 = 0, ng2 = 0;
 
 		/* this compare function is horrid! */
 		/* good job we only do this once per featureset */
@@ -131,42 +139,45 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
 	/* as the align block struct holds the matches the gap is between then :-o */
 	g1 = feata->feature.homol.align;
 	g2 = featb->feature.homol.align;
+	if(g1)
+		ng1 = g1->len;
+	if(g2)
+		ng2 = g2->len;
 
-	if(!g2)
+	if(ng1 < ng2)	/* only compare gaps if there are the same number */
+		return 1;
+	if(ng1 > ng2)
+		return -1;
+
+	if(ng1 && ng2)
 	{
-		if(!g1)
-		{
-			if(feata->x1 < featb->x1)
-				return(-1);
-			if(feata->x1 > featb->x1)
-				return(1);
+		a1 = &g_array_index(g1, ZMapAlignBlockStruct, 0);
+		a2 = &g_array_index(g2, ZMapAlignBlockStruct, 0);
 
-			if(feata->x2 < featb->x2)
-				return(-1);
-			if(feata->x2 > featb->x2)
-				return(1);
+		if(a1->t2 < a2->t2)
+			return(1);
+		if(a1->t2 > a2->t2)
+			return(-1);
 
-			return(0);
-		}
-		return(-1);
+		a1 = &g_array_index(g1, ZMapAlignBlockStruct, 1);
+		a2 = &g_array_index(g2, ZMapAlignBlockStruct, 1);
+		if(a1->t1 < a2->t1)
+			return(-1);
+		if(a1->t1 > a2->t1)
+			return(1);
 	}
-	if(!g1)
-		return(1);
+	else
+	{
+		if(feata->x1 < featb->x1)
+			return(-1);
+		if(feata->x1 > featb->x1)
+			return(1);
 
-	a1 = &g_array_index(g1, ZMapAlignBlockStruct, 0);
-	a2 = &g_array_index(g2, ZMapAlignBlockStruct, 0);
-
-	if(a1->t2 < a2->t2)
-		return(-1);
-	if(a1->t2 > a2->t2)
-		return(1);
-
-	a1 = &g_array_index(g1, ZMapAlignBlockStruct, 1);
-	a2 = &g_array_index(g2, ZMapAlignBlockStruct, 1);
-	if(a1->t1 < a2->t1)
-		return(-1);
-	if(a1->t1 > a2->t1)
-		return(1);
+		if(feata->x2 < featb->x2)
+			return(-1);
+		if(feata->x2 > featb->x2)
+			return(1);
+	}
 
 	return(0);
 }
@@ -204,6 +215,11 @@ int makeConcensusSequence(ZMapFeature composite)
 	char *base = "nacgt";
 	GList *fl;
 
+
+#if SQUASH_DEBUG
+printf("setting seq_len to %d\n",n_seq);
+#endif
+
 	if(!composite->feature.homol.sequence)	/* probably no features have sequence */
 		return(0);
 
@@ -213,6 +229,9 @@ int makeConcensusSequence(ZMapFeature composite)
 		ZMapAlignBlock ab;
 		i = composite->feature.homol.align->len - 1;
 		ab = & g_array_index(composite->feature.homol.align,ZMapAlignBlockStruct,i);
+#if SQUASH_DEBUG_CONC
+printf("setting seq_len: was %d now %d, (%d)\n",n_seq,ab->q2 + 1,i);
+#endif
 		n_seq = ab->q2 + 1;
 	}
 
@@ -238,17 +257,23 @@ int makeConcensusSequence(ZMapFeature composite)
 
 	memset(bases,0,sizeof(int) * n_bases * N_ALPHABET);
 
-	for(fl = composite->composite; fl ; fl = fl->next)
+	for(fl = composite->children; fl ; fl = fl->next)
 	{
 		f = (ZMapFeature) fl->data;
 		if(!f->feature.homol.sequence)	/* some features have sequence but not this ome */
 			continue;
 		seq = f->feature.homol.sequence + f->feature.homol.y1 - 1;	/* skip un-matching sequence */
 		i = f->x1 - composite->x1;
+#if SQUASH_DEBUG_CONC
+printf("s %*s%s ",i,"",seq);
+#endif
 		for(; i < n_seq && *seq; i++)
 		{
 			bases[i * N_ALPHABET + index[(int)*seq++]] ++;
 		}
+#if SQUASH_DEBUG_CONC
+printf("-> %d\n",i);
+#endif
 	}
 
 	/* must not free old sequence as it's copied from a real feature */
@@ -270,7 +295,13 @@ int makeConcensusSequence(ZMapFeature composite)
 	}
 	*seq = 0;
 
+#if SQUASH_DEBUG_CONC
+printf("c %s\n",composite->feature.homol.sequence);
+#endif
+
+
 	return(seq - composite->feature.homol.sequence);
+
 }
 
 
@@ -479,7 +510,7 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 		/* update the gaps array */
 
 		/* NOTE we add an alternate gaps array to the feature
-			* to preserve the origonal we need to add a new composite feature
+			* to preserve the original we need to add a new composite feature
 			* so we could display the real features w/ a diff style
 			* beware interactions with canvasAlignment.c where y2 gets changed to paint homology lines
 			* but as we don't do this with style alignment-unique it should be ok.
@@ -494,7 +525,7 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 		GArray *f_gaps = feature->feature.homol.align;
 		ZMapAlignBlock ab;
 		int extra1, extra2;	/* added to the ends */
-		int diff1, diff2;		/* featrue shrinks by this much as the edge approaches the gap */
+		int diff1, diff2;		/* feature shrinks by this much as the edge approaches the gap */
 		int q = 1;
 
 		/* NOTE almost always there will be exactly two items but this works for all cases */
@@ -668,6 +699,7 @@ printf("\n");
 		q_len = ab->q2;
 
 
+
 		composite->feature.homol.align = ga;
 	}
 
@@ -715,6 +747,7 @@ printf("gap %d add splice b %d\n",i,ab->t1);
 
 /* add any kind of compressed feature to the set's hash table */
 void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
+
 {
 	char buf[256];
 
@@ -794,7 +827,8 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 
 			feature->flags.squashed = TRUE;
 
-			composite->composite = g_list_prepend(NULL, feature);
+			composite->children = g_list_prepend(NULL, feature);
+			feature->composite = composite;
 		}
 
 		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
@@ -806,8 +840,9 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 		if(squash_this && composite)
 		{
 			/* save list of source features for blixem */
-			composite->composite = g_list_prepend(composite->composite,f);
+			composite->children = g_list_prepend(composite->children,f);
 			composite->population++;
+			f->composite = composite;
 		}
 
 
@@ -815,9 +850,6 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 		{
 			/* adjust replacement gaps array data */
 			/* as the gaps are identical these values are outside any gapped region */
-#if SQUASH_DEBUG
-printf("squash this: y, f, edge = %.1f,%.1f %d,%d %.1f,%.1f\n",y1,y2,f->x1,f->x2,edge1,edge2);
-#endif
 			if(f->x1 < y1)
 			{
 				y1 = f->x1;
@@ -838,6 +870,9 @@ printf("squash this: y, f, edge = %.1f,%.1f %d,%d %.1f,%.1f\n",y1,y2,f->x1,f->x2
 				edge2 = f->x2;
 				composite->flags.squashed_end = 1;
 			}
+#if SQUASH_DEBUG
+printf("squash this: y, f, edge = %.1f,%.1f (%.1f) %d,%d  %.1f,%.1f\n",y1,y2, y2 - y1, f->x1,f->x2,edge1,edge2);
+#endif
 
 			f->flags.squashed = TRUE;
 		}
@@ -1043,7 +1078,8 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 			else if(join_this)
 				feature->flags.joined = TRUE;
 
-			composite->composite = g_list_prepend(NULL, feature);
+			composite->children = g_list_prepend(NULL, feature);
+			feature->composite = composite;
 		}
 
 		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
@@ -1055,8 +1091,9 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 		if(duplicate && composite)
 		{
 			/* save list of source features for blixem */
-			composite->composite = g_list_prepend(composite->composite,f);
+			composite->children = g_list_prepend(composite->children,f);
 			composite->population++;
+			f->composite = composite;
 		}
 
 

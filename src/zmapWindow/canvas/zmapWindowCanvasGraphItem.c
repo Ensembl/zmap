@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasGraphItem.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2011 Genome Research Ltd.
+ *  Copyright (c) 2006-2012 Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -104,7 +104,6 @@ void zMapWindowCanvasGraphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMap
 	{
 		/* this is probable a paint in the middle of the window */
 		/* and the line has been drawn previously, we need to paint over it exactly */
-		feature->feature_offset = 0;
 		x2 = featureset->style->mode_data.graph.baseline + feature->width;
 		y2 = (feature->y2 + feature->y1 + 1) / 2;
 		foo_canvas_w2c (item->canvas, x2 + featureset->dx + featureset->x_off, y2 - featureset->start + featureset->dy, &cx2, &cy2);
@@ -173,7 +172,6 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 		}
 
 
-		feature->feature_offset = 0;
 		x2 = featureset->style->mode_data.graph.baseline + feature->width;
 		y2 = (feature->y2 + feature->y1 + 1) / 2;
 		foo_canvas_w2c (item->canvas, x2 + featureset->dx + featureset->x_off, y2 - featureset->start + featureset->dy, &cx2, &cy2);
@@ -191,7 +189,6 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 	case ZMAPSTYLE_GRAPH_HEATMAP:
 		/* colour between fill and outline according to score */
-		feature->feature_offset = 0;
 		x1 = featureset->dx + featureset->x_off;
 		x2 = x1 + featureset->width;
 
@@ -205,7 +202,6 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 	default:
 	case ZMAPSTYLE_GRAPH_HISTOGRAM:
 		x1 = featureset->dx + featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
-		feature->feature_offset = 0;
 		x2 = x1 + feature->width;
 
 		/* If the baseline is not zero then we can end up with x2 being less than x1

@@ -1,6 +1,6 @@
 /*  File: zmapWindowItemHash.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -347,7 +347,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 
 	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_group) ;
 // MH17: despite looking as if this is set up we still get an assert
-// i suspect this assert was added recently and now prevents the navigator pfrom being displayed
+// i suspect this assert was added recently and now prevents the navigator from being displayed
 //	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
@@ -433,20 +433,34 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
                                                    GUINT_TO_POINTER(set_id))))
     {
+          ID2Canvas ID2C ;
+	    /* mh17: changed insert to replace to allow bumping of compressed features
+	     * if compressed, underlying data points to the compressed feature
+	     * if not they are on display
+	     */
+#if 0
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
         {
-          ID2Canvas ID2C ;
+	     ID2C = g_new0(ID2CanvasStruct, 1) ;
+           ID2C->item = feature_item ;
+           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+           ID2C->feature_any = (ZMapFeatureAny) feature ;
 
-          ID2C = g_new0(ID2CanvasStruct, 1) ;
+          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+        }
+#else
+	    ID2C = g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id));
+	    if(!ID2C)
+	    {
+		    ID2C = g_new0(ID2CanvasStruct, 1) ;
+		    g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+	    }
+
           ID2C->item = feature_item ;
           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
           ID2C->feature_any = (ZMapFeatureAny) feature ;
-
-          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
-	  }
-
-      result = TRUE ;
-
+#endif
+	    result = TRUE ;
     }
   return result ;
 }
