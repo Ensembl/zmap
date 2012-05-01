@@ -92,9 +92,12 @@ Some quite fiddly calculations with coordinates are required.  In very rough ter
 Which should come to maybe a week for coding and similar for testing and debgging.
 </p>
 
-<h4>Implementaion: interim feedback (after 2 days)</h4>
-<p>Display off DNA has been implemented to the point of demonstrating that pango can be used to paint single lines fo etxt on demand and also that background highlights work.  This includes the first three items above, but not thet aht ecode is still open and will crash on feature select.
+<h4>Implementation: interim feedback (after 2 days)</h4>
+<p>Display of DNA has been implemented to the point of demonstrating that pango can be used to paint single lines of text on demand and also that background highlights work.  This includes the first three items above, but note that the code is still open and will crash on feature select.
 </p>
-<p>The original ZMapWindowCanvasItem code subverts the structure of the canvas design bu providing interfaces for highlight outside the usual places, and these is also some special fucntions added to capturee the mouse.  Both of these issues can be resolved a) by using the SetColour fucntion as desinged and b) by adding code to the existing mouse handling functions.
+<p>The original ZMapWindowCanvasItem code subverts the structure of the canvas desing by providing interfaces for highlight outside the usual places, and there are also some special functions added to capture the mouse.  Both of these issues can be resolved a) by using the SetColour fucntion as designed and b) by adding code to the existing mouse handling functions.
+</p>
+
+<p>At high zoom we get a consistent sequence of bases that agrees with the old software, but note that there is some rounding diffference between old and new on 2nd and subsequent rows at low zoom.
 </p>
 
