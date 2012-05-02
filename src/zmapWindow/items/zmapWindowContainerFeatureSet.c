@@ -1042,7 +1042,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 
 					if(!delete)
 						{
-						zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature,
+						zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature, NULL,
 							ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
 							0,	// will zap focus
 							fill,outline);

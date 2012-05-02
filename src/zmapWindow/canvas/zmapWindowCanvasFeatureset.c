@@ -341,18 +341,30 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
                                           GdkColor              *default_border);
 
 	func = _featureset_colour_G[fi->type];
+	gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+	if(!gs)
+		return;
 
 	if(func)
 	{
+		zmapWindowCanvasFeatureStruct dummy;
+
 		func(interval, feature, sub_feature, colour_type, colour_flags, default_fill, default_border);
+
+		dummy.width = gs->width;
+		dummy.y1 = gs->y1;
+		dummy.y2 = gs->y2;
+		if(sub_feature && sub_feature->subpart != ZMAPFEATURE_SUBPART_INVALID)
+		{
+			dummy.y1 = sub_feature->start;
+			dummy.y2 = sub_feature->end;
+		}
+		dummy.bump_offset = gs->bump_offset;
+
+		zmap_window_canvas_featureset_expose_feature(fi, &dummy);
 	}
 	else
 	{
-
-		gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-		if(!gs)
-			return;
-
 		if(fi->highlight_sideways)	/* ie transcripts as composite features */
 		{
 			while(gs->left)
@@ -660,6 +672,9 @@ FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQu
 		}
 
 		di->width = zMapStyleGetWidth(di->style);
+		if(zMapStyleGetMode(di->style) == ZMAPSTYLE_MODE_SEQUENCE)
+			di->width *= 10;
+
   		di->start = start;
   		di->end = end;
 
@@ -2174,6 +2189,13 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
 
   zMapWindowCanvasFeaturesetFree(featureset_item);
+
+  if(featureset_item->gc)	/* the featureset code does this but we do it here to have controlover the sequence of events */
+  {
+	g_object_unref(featureset_item->gc);
+	featureset_item->gc = NULL;
+  }
+
 
   if(featureset_item->display_index)
   {

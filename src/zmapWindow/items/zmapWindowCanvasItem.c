@@ -69,6 +69,7 @@ typedef struct
 {
   ZMapWindowCanvasItem parent;
   ZMapFeature          feature;
+  ZMapFeatureSubPartSpan sub_feature;
   ZMapStyleColourType  style_colour_type;
   int 			colour_flags;
   GdkColor            *default_fill_colour;
@@ -891,7 +892,7 @@ gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidd
 
 /* If item is the parent item then the whole feature is coloured, otherwise just the sub-item
  * is coloured... */
-void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature feature,
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
                                   GdkColor *default_fill_colour,
@@ -934,6 +935,7 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature fea
 
   interval_data.parent = canvas_item ;
   interval_data.feature = feature; // zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
+  interval_data.sub_feature = sub_feature;
   interval_data.style_colour_type = colour_type ;
   interval_data.colour_flags = colour_flags;
   interval_data.default_fill_colour = default_fill_colour ;
@@ -1807,7 +1809,13 @@ static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_d
       ZMapFeatureSubPartSpanStruct local_struct;
       ZMapFeatureSubPartSpan sub_feature = NULL;
 
-      if(!(sub_feature = g_object_get_data(G_OBJECT(interval), ITEM_SUBFEATURE_DATA)))
+
+	/* new interface via calling stack */
+	sub_feature = interval_data->sub_feature;
+
+	/* if not provided (eg via window focus) the revert to the old */
+	/* i'd rather get rid of these lurking pointers but I'm doing somehting else ATM */
+	if(!sub_feature && !(sub_feature = g_object_get_data(G_OBJECT(interval), ITEM_SUBFEATURE_DATA)))
 	{
 	  sub_feature = &local_struct;
 	  sub_feature->subpart = ZMAPFEATURE_SUBPART_INVALID;

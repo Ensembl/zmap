@@ -976,16 +976,16 @@ void zmapWindowHighlightSequenceItems(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
 				       ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
 				       gboolean centre_on_region) ;
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 				      FooCanvasItem *any_item, ZMapFrame required_frame,
 				      ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 					       FooCanvasItem *item,
 					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 						  FooCanvasItem *item,
 						  ZMapFrame required_frame,
 						  ZMapSequenceType coords_type,

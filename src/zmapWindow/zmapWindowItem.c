@@ -343,10 +343,10 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
-      zmapWindowItemHighlightDNARegion(window, TRUE, item,
+      zmapWindowItemHighlightDNARegion(window, TRUE,!highlight_same_names, item,
 				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
 
-      zmapWindowItemHighlightTranslationRegions(window, TRUE, item,
+      zmapWindowItemHighlightTranslationRegions(window, TRUE, !highlight_same_names, item,
 						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
@@ -356,13 +356,13 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       /* Not completely happy with this...seems a bit hacky, try it and if users want to do
        * translations non-transcripts then I'll change it. */
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
-	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, item,
+	zmapWindowItemHighlightShowTranslationRegion(window, TRUE,!highlight_same_names, item,
 						     ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
       else
 	zmapWindowItemUnHighlightShowTranslations(window, item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, item,
+      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, !highlight_same_names, item,
 						   ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 

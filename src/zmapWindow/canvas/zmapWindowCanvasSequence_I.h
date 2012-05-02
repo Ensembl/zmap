@@ -82,7 +82,10 @@ typedef struct _zmapWindowCanvasSequenceStruct
 	long row_disp; 		/* no to dosplay in each row */
 	long n_bases;		/* actual bases excluding ... */
 	long spacing;		/* between rows */
+	long offset;		/* to centre rows in spacing */
 	char *truncated;		/* show ... if we run out of space */
+
+	gboolean background_set;
 
 
 } zmapWindowCanvasSequenceStruct, *ZMapWindowCanvasSequence;

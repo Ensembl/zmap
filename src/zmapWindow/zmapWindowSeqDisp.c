@@ -49,23 +49,24 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 				   ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
 				   gboolean centre_on_region) ;
 
-static void handleHightlightDNA(gboolean on, gboolean item_highlight,
+static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean sub_feature,
 				ZMapWindow window, FooCanvasItem *item,
 				ZMapFrame required_frame,
 				ZMapSequenceType coords_type, int region_start, int region_end) ;
 
 static void highlightTranslationRegion(ZMapWindow window,
-				       gboolean highlight, gboolean item_highlight,
+				       gboolean highlight, gboolean item_highlight, gboolean sub_feature,
 				       FooCanvasItem *item,
 				       char *required_col, ZMapFrame required_frame,
 				       ZMapSequenceType coords_type, int region_start, int region_end) ;
+
 static void unHighlightTranslation(ZMapWindow window, FooCanvasItem *item,
 				   char *required_col, ZMapFrame required_frame) ;
-static void handleHighlightTranslation(gboolean highlight,  gboolean item_highlight,
+static void handleHighlightTranslation(gboolean highlight,  gboolean item_highlight, gboolean sub_feature,
 				       ZMapWindow window, FooCanvasItem *item,
 				       char *required_col, ZMapFrame required_frame,
 				       ZMapSequenceType coords_type, int region_start, int region_end) ;
-static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight,
+static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
 					  FooCanvasItem *translation_item, FooCanvasItem *item,
 					  gboolean cds_only, ZMapSequenceType coords_type,
 					  int region_start, int region_end) ;
@@ -170,7 +171,7 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 }
 
 
-
+#if NOT_CALLED
 
 /*
  * Sequence highlighting functions, these feel like they should be in the
@@ -196,7 +197,7 @@ void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-
+#endif
 
 
 
@@ -213,11 +214,11 @@ void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block
 
 /* highlights the dna given any foocanvasitem (with a feature) and a start and end
  * This _only_ highlights in the current window! */
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 				      FooCanvasItem *item, ZMapFrame required_frame,
 				      ZMapSequenceType coords_type, int region_start, int region_end)
 {
-  handleHightlightDNA(TRUE, item_highlight, window, item, required_frame,
+  handleHightlightDNA(TRUE, item_highlight, sub_feature, window, item, required_frame,
 		      coords_type, region_start, region_end) ;
 
   return ;
@@ -226,7 +227,7 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight
 
 void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item)
 {
-  handleHightlightDNA(FALSE, FALSE, window, item, ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, 0, 0) ;
+  handleHightlightDNA(FALSE, FALSE, FALSE, window, item, ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, 0, 0) ;
 
   return ;
 }
@@ -237,7 +238,7 @@ void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item)
  * (in dna or pep coords). Note any existing highlight is removed. If required_frame
  * is set to ZMAPFRAME_NONE then highlighting is in all 3 cols otherwise only in the
  * frame column given. */
-void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 					       FooCanvasItem *item,
 					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type,
@@ -255,7 +256,7 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 	highlight = FALSE ;
 
       highlightTranslationRegion(window,
-				 highlight, item_highlight, item, 
+				 highlight, item_highlight, sub_feature,  item,
 				 ZMAP_FIXED_STYLE_3FT_NAME, frame,
 				 coords_type, region_start, region_end) ;
     }
@@ -279,13 +280,13 @@ void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *ite
 
 /* This function highlights the translation for a feature from region_start to region_end
  * (in dna or pep coords). Note any existing highlight is removed. */
-void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 						  FooCanvasItem *item,
 						  ZMapFrame required_frame,
 						  ZMapSequenceType coords_type,
 						  int region_start, int region_end)
 {
-  highlightTranslationRegion(window, TRUE, item_highlight,
+  highlightTranslationRegion(window, TRUE, item_highlight, sub_feature,
 			     item, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, required_frame,
 			     coords_type, region_start, region_end) ;
   return ;
@@ -416,7 +417,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
       dna_start = start ;
       dna_end = end ;
 
-      zmapWindowItemHighlightDNARegion(window, FALSE, item, required_frame, seq_type, dna_start, dna_end) ;
+      zmapWindowItemHighlightDNARegion(window, FALSE, FALSE,  item, required_frame, seq_type, dna_start, dna_end) ;
 
       if (centre_on_region)
 	{
@@ -450,13 +451,13 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 
 	  if (seq_type == ZMAPSEQUENCE_DNA)
 	    {
-	      highlightTranslationRegion(window, TRUE, FALSE,
+	      highlightTranslationRegion(window, TRUE, FALSE, FALSE,
 					 item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
 	    }
 	  else
 	    {
 	      if (frame_num == required_frame)
-		highlightTranslationRegion(window, TRUE, FALSE, item,
+		highlightTranslationRegion(window, TRUE, FALSE, FALSE, item,
 					   ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
 	      else
 		unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num) ;
@@ -473,19 +474,96 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 
 
 
+gboolean zMapWindowSeqDispDeSelect(ZMapWindowSequenceFeature sequence_feature)
+{
+	ZMapWindowCanvasItem canvas_item = ZMAP_CANVAS_ITEM(sequence_feature) ;
+	ZMapFeature feature = zMapWindowCanvasItemGetFeature((FooCanvasItem * )canvas_item);
+
+	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
+	{
+		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, NULL,
+					    ZMAPSTYLE_COLOURTYPE_INVALID,  0,NULL,NULL);
+	}
+	else
+	{
+		zMapWindowSequenceDeSelect(sequence_feature) ;
+	}
+	return TRUE;
+}
 
 
 
+/* Highlight sequence in sequence_feature corresponding to seed_feature. */
+gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
+						  FooCanvasItem *item, ZMapFeature seed_feature,
+						  gboolean cds_only, gboolean sub_feature)
+{
+	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
+	{
+		ZMapFeature feature = zMapWindowCanvasItemGetFeature((FooCanvasItem *) sequence_feature);
+
+		/* previous code did this as part of the select operation
+		 * inside the TextItem inside the sequnece feature
+		 */
+		zMapWindowSeqDispDeSelect(sequence_feature) ;
+
+		switch(seed_feature->type)
+		{
+		case ZMAPSTYLE_MODE_TRANSCRIPT:
+		{
+		}
+
+		default:		/* whole feature in red */
+		{
+			ZMapFeatureSubPartSpanStruct sub_feature;
+			GdkColor *fill;
+
+			sub_feature.start = seed_feature->x1 ;
+			sub_feature.end   = seed_feature->x2 ;
+
+			zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+
+			zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &sub_feature,
+					    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+
+		}
+		}
+	}
+	else
+	{
+		zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, seed_feature, cds_only, sub_feature );
+	}
+	return TRUE;
+}
+
+gboolean zMapWindowSeqDispSelectByRegion(ZMapWindowSequenceFeature sequence_feature,
+						 ZMapSequenceType coord_type, int region_start, int region_end)
+{
+	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
+	{
+		/* previous code did this as part of the select operation
+		 * inside the TextItem inside the sequnece feature
+		 */
+		zMapWindowSeqDispDeSelect(sequence_feature) ;
+
+		zMapWarning("sel by region","");
+	}
+	else
+	{
+	      zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coord_type, region_start, region_end) ;
+	}
+	return TRUE;
+}
 
 
-static void handleHightlightDNA(gboolean on, gboolean item_highlight,
+static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean sub_feature,
 				ZMapWindow window, FooCanvasItem *item, ZMapFrame required_frame,
 				ZMapSequenceType coords_type, int region_start, int region_end)
 {
   FooCanvasItem *dna_item ;
 
   if ((dna_item = zmapWindowItemGetDNATextItem(window, item))
-      && ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) && item != dna_item)
+      && (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) || ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM (dna_item)) && item != dna_item)
     {
       ZMapWindowSequenceFeature sequence_feature ;
       ZMapFeature feature ;
@@ -497,16 +575,16 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight,
 	{
 	  if (item_highlight && (feature = zmapWindowItemGetFeature(item)))
 	    {
-	      zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, feature, FALSE) ;
+	      zMapWindowSeqDispSelectByFeature(sequence_feature, item, feature, FALSE, sub_feature) ;
 	    }
 	  else
 	    {
-	      zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
+	      zMapWindowSeqDispSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
 	    }
 	}
       else
 	{
-	  zMapWindowSequenceDeSelect(sequence_feature) ;
+	  zMapWindowSeqDispDeSelect(sequence_feature) ;
 	}
     }
 
@@ -518,11 +596,11 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight,
  * feature), frame and a start and end (protein seq coords) */
 /* This _only_ highlights in the current window! */
 static void highlightTranslationRegion(ZMapWindow window,
-				       gboolean highlight, gboolean item_highlight, FooCanvasItem *item,
+				       gboolean highlight, gboolean item_highlight, gboolean sub_feature, FooCanvasItem *item,
 				       char *required_col, ZMapFrame required_frame,
 				       ZMapSequenceType coords_type, int region_start, int region_end)
 {
-  handleHighlightTranslation(highlight, item_highlight, window, item,
+  handleHighlightTranslation(highlight, item_highlight, sub_feature, window, item,
 			     required_col, required_frame, coords_type, region_start, region_end) ;
 
   return ;
@@ -532,13 +610,13 @@ static void highlightTranslationRegion(ZMapWindow window,
 static void unHighlightTranslation(ZMapWindow window, FooCanvasItem *item,
 				   char *required_col, ZMapFrame required_frame)
 {
-  handleHighlightTranslation(FALSE, FALSE, window, item, required_col, required_frame, ZMAPSEQUENCE_NONE, 0, 0) ;
+  handleHighlightTranslation(FALSE, FALSE, FALSE,  window, item, required_col, required_frame, ZMAPSEQUENCE_NONE, 0, 0) ;
 
   return ;
 }
 
 
-static void handleHighlightTranslation(gboolean highlight, gboolean item_highlight,
+static void handleHighlightTranslation(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
 				       ZMapWindow window, FooCanvasItem *item,
 				       char *required_col, ZMapFrame required_frame,
 				       ZMapSequenceType coords_type, int region_start, int region_end)
@@ -558,7 +636,7 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 	  if (g_ascii_strcasecmp(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, required_col) == 0)
 	    cds_only = TRUE ;
 
-	  handleHighlightTranslationSeq(highlight, item_highlight,
+	  handleHighlightTranslationSeq(highlight, item_highlight, sub_feature,
 					translation_item, item,
 					cds_only, coords_type, region_start, region_end) ;
 	}
@@ -568,7 +646,7 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 }
 
 
-static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight,
+static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
 					  FooCanvasItem *translation_item, FooCanvasItem *item,
 					  gboolean cds_only, ZMapSequenceType coords_type,
 					  int region_start, int region_end)
@@ -582,16 +660,16 @@ static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_high
     {
       if (item_highlight && (feature = zmapWindowItemGetFeature(item)))
 	{
-	  zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, feature, cds_only) ;
+	  zMapWindowSeqDispSelectByFeature(sequence_feature, item, feature, cds_only, sub_feature) ;
 	}
       else
 	{
-	  zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
+	  zMapWindowSeqDispSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
 	}
     }
   else
     {
-      zMapWindowSequenceDeSelect(sequence_feature) ;
+      zMapWindowSeqDispDeSelect(sequence_feature) ;
     }
 
   return ;

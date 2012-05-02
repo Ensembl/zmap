@@ -1036,13 +1036,13 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
              border = &(window->colour_evidence_border);
            }
       }
-      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border);
+      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border);
       foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(item->item)) ;
 
     }
   else
     {
-      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, ZMAPSTYLE_COLOURTYPE_NORMAL, 0, NULL,NULL);
+      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_NORMAL, 0, NULL,NULL);
       /* foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;*/
 
       /* this is a pain: to keep ordering stable we have to put the focus item back where it was

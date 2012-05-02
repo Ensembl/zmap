@@ -132,7 +132,7 @@ ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
 
 gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden);
 
-void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature,
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
 					    GdkColor *default_fill_colour,

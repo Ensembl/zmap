@@ -1060,14 +1060,17 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	{
 		/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
-		/* using a CanvasFeatureset we get here, first off kust pass a single coord through so it does not crash */
+		/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
 		/* InfoPanel has two sets of coords, but they appear the same in totalview */
 		/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
 
-		int start = 0, end = 0;
+		int start = feature->x1, end = feature->x2;
 
-		start = sub_feature->start;
-		end = sub_feature->end;
+		if(sub_feature)
+		{
+			start = sub_feature->start;
+			end = sub_feature->end;
+		}
 
 		/* Pass information about the object clicked on back to the application. */
 		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
@@ -1863,17 +1866,17 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
 
   if (feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
     {
-      zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
+      zmapWindowItemHighlightTranslationRegions(window, FALSE, FALSE,  item,
 						ZMAPFRAME_NONE,
 						feature->feature.sequence.type,
 						start, end) ;
     }
   else
     {
-      zmapWindowItemHighlightDNARegion(window, FALSE, item, feature->feature.sequence.frame,
+      zmapWindowItemHighlightDNARegion(window, FALSE, FALSE, item, feature->feature.sequence.frame,
 				       feature->feature.sequence.type, start, end) ;
 
-      zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
+      zmapWindowItemHighlightTranslationRegions(window, FALSE, FALSE, item,
 						feature->feature.sequence.frame,
 						feature->feature.sequence.type,
 						start, end) ;

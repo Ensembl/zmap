@@ -150,7 +150,7 @@ GType zMapWindowSequenceFeatureGetType(void)
 /* Highlight sequence in sequence_feature corresponding to seed_feature. */
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
 						  FooCanvasItem *item, ZMapFeature seed_feature,
-						  gboolean cds_only)
+						  gboolean cds_only, gboolean sub_part)
 {
   gboolean result = TRUE ;
   FooCanvasGroup *sequence_group;
@@ -158,7 +158,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
-  gboolean sub_part ;
+//  gboolean sub_part ;
 
 
   sequence_group = FOO_CANVAS_GROUP(sequence_feature) ;
@@ -168,7 +168,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
   block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK)) ;
 
   /* Is the given item a sub-part of a feature or the whole feature ? */
-  sub_part = zMapWindowCanvasItemIsSubPart(item) ;
+//  sub_part = zMapWindowCanvasItemIsSubPart(item) ;
 
 
   if ((list = sequence_group->item_list))
