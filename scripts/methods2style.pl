@@ -133,25 +133,25 @@ use Data::Dumper;
             my $value = lc($self->$txtprop())    || next;
 
             # Determine the mode from the name.
-            if ($self->name =~ m/halfwise/i ||
-                $self->name =~ m/genscan/i ||
-                $self->name =~ m/retained_intron/i ||
+            if ($self->name =~ m/^halfwise$/i ||
+                $self->name =~ m/^genscan$/i ||
+                $self->name =~ m/^retained_intron$/i ||
                 $self->name =~ m/cds/i ||
-                $self->name =~ m/estgene/i ||
-                $self->name =~ m/ensembl/i  ||
-                $self->name =~ m/coding/i ||
-                $self->name =~ m/curated/i ||
+                $self->name =~ m/^estgene$/i ||
+                $self->name =~ m/^ensembl$/i  ||
+                $self->name =~ m/^coding$/i ||
+                $self->name =~ m/^curated$/i ||
                 $self->name =~ m/transcript/i ||
                 $self->name =~ m/history/i ||
-                $self->name =~ m/jigsaw/i ||
-                $self->name =~ m/rnaseq\./i ||
-                $self->name =~ m/rnaseq_hillier/i ||
-                $self->name =~ m/mgene/i ||
-                $self->name =~ m/genefinder/i ||
-                $self->name =~ m/fgenesh/i ||
-                $self->name =~ m/genblastg/i ||
-                $self->name =~ m/twinscan/i ||
-                $self->name =~ m/three_prime_utr/i ||
+                $self->name =~ m/^jigsaw$/i ||
+                $self->name =~ m/^rnaseq\..*$/i ||
+                $self->name =~ m/^rnaseq_hillier\..*$/i ||
+                $self->name =~ m/^mgene$/i ||
+                $self->name =~ m/^genefinder$/i ||
+                $self->name =~ m/^fgenesh$/i ||
+                $self->name =~ m/^genblastg$/i ||
+                $self->name =~ m/^twinscan$/i ||
+                $self->name =~ m/^three_prime_utr$/i ||
                 $self->name =~ m/pseudogene/i)
 	      {
                 $txt .= qq`[$value]\n`;
@@ -170,26 +170,26 @@ use Data::Dumper;
                 $txt .= qq`mode=alignment\n`;
                 $mag_factor = $ACEDB_MAG_FACTOR_ALIGN;
 	      }
-            elsif ($self->name =~ m/gf_splice/i ||
-                   $self->name =~ m/root/i ||
-                   $self->name =~ m/feat/i ||
-                   $self->name =~ m/DNA/i ||
-                   $self->name =~ m/Show Translation/i ||
-                   $self->name =~ m/3 Frame/i ||
-                   $self->name =~ m/3 Frame Translation/i ||
-                   $self->name =~ m/gene_finder_feat/i ||
-                   $self->name =~ m/GeneFinderFeatures/i ||
-                   $self->name =~ m/ATG/i ||
-                   $self->name =~ m/GF_ATG/i ||
-                   $self->name =~ m/GF_coding_seg/i ||
-                   $self->name =~ m/hexExon/i ||
-                   $self->name =~ m/hexExon_span/i ||
-                   $self->name =~ m/hexIntron/i ||
-                   $self->name =~ m/heatmap/i ||
-                   $self->name =~ m/histogram/i ||
-                   $self->name =~ m/homology-glyph/i ||
-                   $self->name =~ m/line/i ||
-                   $self->name =~ m/nc-splice-glyph/i)
+            elsif ($self->name =~ m/^gf_splice$/i ||
+                   $self->name =~ m/^root$/i ||
+                   $self->name =~ m/^feat$/i ||
+                   $self->name =~ m/^DNA$/i ||
+                   $self->name =~ m/^Show Translation$/i ||
+                   $self->name =~ m/^3 Frame$/i ||
+                   $self->name =~ m/^3 Frame Translation$/i ||
+                   $self->name =~ m/^gene_finder_feat$/i ||
+                   $self->name =~ m/^GeneFinderFeatures$/i ||
+                   $self->name =~ m/^ATG$/i ||
+                   $self->name =~ m/^GF_ATG$/i ||
+                   $self->name =~ m/^GF_coding_seg$/i ||
+                   $self->name =~ m/^hexExon$/i ||
+                   $self->name =~ m/^hexExon_span$/i ||
+                   $self->name =~ m/^hexIntron$/i ||
+                   $self->name =~ m/^heatmap$/i ||
+                   $self->name =~ m/^histogram$/i ||
+                   $self->name =~ m/^homology-glyph$/i ||
+                   $self->name =~ m/^line$/i ||
+                   $self->name =~ m/^nc-splice-glyph$/i)
               {
                 return $txt; # inclued in hard-coded styles; nothing to do
               }
