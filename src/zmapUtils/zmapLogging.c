@@ -193,13 +193,34 @@ gboolean zMapLogCreate(char *logname)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     {
       zmap_log_timer_G = g_timer_new();
-      writeStartOrStopMessage(TRUE) ;
       result = TRUE ;
     }
 
   return result ;
 }
 
+
+void zMapWriteStartMsg(void)
+{
+  ZMapLog log = log_G ;
+
+  zMapAssert(log) ;
+
+  writeStartOrStopMessage(TRUE) ;
+
+  return ;
+}
+
+void zMapWriteStopMsg(void)
+{
+  ZMapLog log = log_G ;
+
+  zMapAssert(log) ;
+
+  writeStartOrStopMessage(FALSE) ;
+
+  return ;
+}
 
 
 /* Configure the log. */
@@ -572,8 +593,6 @@ void zMapLogDestroy(void)
   ZMapLog log = log_G ;
 
   zMapAssert(log) ;
-
-  writeStartOrStopMessage(FALSE) ;
 
   g_mutex_lock(log->log_lock) ;
 

@@ -169,6 +169,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
       exit(EXIT_FAILURE) ;
     }
+  else
+    {
+      zMapWriteStartMsg() ;
+    }
 
   getConfiguration(app_context) ;
 
@@ -526,7 +530,7 @@ static void finalCleanUp(ZMapAppContext app_context)
   else
     zMapLogMessage("%s", exit_msg) ;
 
-  /* Logs the "session closed" message. */
+  zMapWriteStopMsg() ;
   zMapLogDestroy() ;
 
   doTheExit(exit_rc) ;

@@ -157,11 +157,14 @@ gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
 			  gboolean show_code_details, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
 			  char *logfile_path) ;
+void zMapWriteStartMsg(void) ;
+void zMapWriteStopMsg(void) ;
 gboolean zMapLogStart(void) ;
 int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
-void zMapLogDestroy(void) ;
 void zMapLogStack(void);
+void zMapLogDestroy(void) ;
+
 void zMapPrintStack(void);
 void zMapSignalHandler(int sig_no);
 
