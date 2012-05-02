@@ -4085,7 +4085,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       featureset_names = new_features->req_feature_set_names;
     }
 
-  if (1)
+  if (0)
     {
       char *x = g_strdup_printf("justMergeContext req=%d, %d featuresets after processing\n",
 				request_as_columns, g_list_length(new_features->req_feature_set_names));
@@ -4125,7 +4125,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       /*      zMapLogMessage("%s", "Context merge succeeded.") ;*/
       merge_result = TRUE ;
 
-      if(1)
+      if(0)
 	{
 	  char *x = g_strdup_printf("justMerge req=%d, diff has %d featuresets after merging: ", request_as_columns,g_list_length(diff_context->src_feature_set_names));
 	  GList *l;

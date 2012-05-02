@@ -2096,11 +2096,6 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct....errr...shouldn't that already have been done ???? */
 
-
-  if ((g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
-    printf("found it\n") ;
-
-
   /* REVISIT THESE TWO, NAME_USE_SOURCE ISN'T EVEN USED ANYWHERE..... */
   if (name_find == NAME_USE_SEQUENCE)
     {
