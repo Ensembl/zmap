@@ -1019,6 +1019,8 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
+gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
+
 
 //unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetWithinAlignError(style)   (style->mode_data.alignment.between_align_error)

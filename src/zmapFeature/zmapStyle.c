@@ -1180,7 +1180,7 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
             // So for backwards compatability if [ZMap] legacy_styles=true
             // we add in glyphs to the style
 
-          if(style->unique_id == g_quark_from_string("gf_splice"))   // as in acedbServer.c styles dump
+          if (zMapStyleIsSpliceStyle(style))
             {
               if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE) &&
                   (!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3) ||
@@ -1213,6 +1213,16 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
     }
 
   return result ;
+}
+
+/* Does style represent the splice style used in acedb to represent gene finder output. */
+gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style)
+{
+  gboolean is_splice = FALSE ;
+
+  is_splice = (style->unique_id == g_quark_from_string(ZMAPSTYLE_LEGACY_3FRAME)) ;
+
+  return is_splice ;
 }
 
 
