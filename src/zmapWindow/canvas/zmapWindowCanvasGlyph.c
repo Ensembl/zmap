@@ -42,14 +42,9 @@
 
 
 
-/* Splice features replicate the splice features of acedb fmap which are used
- * to display the results of the Phil Green gene finder program. */
-#define isSpliceFeature(FEATURE)					\
-  ((FEATURE)->flags.has_boundary						\
-   && ((FEATURE)->boundary_type == ZMAPBOUNDARY_5_SPLICE			\
-       || (FEATURE)->boundary_type == ZMAPBOUNDARY_3_SPLICE))
 
 
+/* glyph line widths. */
 enum {DEFAULT_LINE_WIDTH = 1, SPLICE_LINE_WIDTH = 3} ;
 
 
@@ -75,14 +70,17 @@ static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count,int cx
 static void zmap_window_canvas_glyph_draw (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill);
 static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, double y1, GdkDrawable *drawable);
 
-static void calcSplicePos(ZMapFeature feature, ZMapFeatureTypeStyle style, double col_width, double score,
+static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature feature,
+			  ZMapFeatureTypeStyle style, double score,
 			  double *origin_out, double *width_out, double *height_out) ;
 
+static void glyphColumnInit(ZMapWindowFeaturesetItem featureset) ;
+static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable, GdkEventExpose *expose) ;
+static void glyphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			 double item_x, double item_y, int cx, int cy,
 			 double x, double y, double x_off) ;
-
-
+static void glyphColumnFree(ZMapWindowFeaturesetItem featureset) ;
 
 
 /*
@@ -113,8 +111,12 @@ void zMapWindowCanvasGlyphInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
 
+  funcs[FUNC_SET_INIT] = glyphColumnInit ;
+  funcs[FUNC_SET_PAINT] = glyphSetPaint ;
+  funcs[FUNC_ZOOM] = glyphZoom ;
   funcs[FUNC_PAINT] = zMapWindowCanvasGlyphPaintFeature ;
   funcs[FUNC_POINT] = glyphPoint ;
+  funcs[FUNC_FREE] = glyphColumnFree ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, sizeof(zmapWindowCanvasGlyphStruct));
 
@@ -153,7 +155,6 @@ GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature fe
   sprintf(buf,"%s_%s%c%c",g_quark_to_string(style->unique_id),g_quark_to_string(shape->id),strand,alt);
 
   return g_quark_from_string(buf);
-
 }
 
 
@@ -227,7 +228,7 @@ void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
     {
       /* for stand-alone glyphs which will be unset ie zero */
       /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
-      if (isSpliceFeature(feat))
+      if (zMapStyleIsSpliceStyle(feat->style))
 	glyph->which = feat->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
 
       shape = get_glyph_shape(feat->style, glyph->which, feature->feature->strand) ;
@@ -327,6 +328,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 					     ZMapFeatureTypeStyle style, ZMapFeature feature,
 					     double col_width, double score)
 {
+  ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem)foo ;
   ZMapStyleScoreMode score_mode = ZMAPSCORE_INVALID;
   double width = 1.0, height = 1.0;        // these are ratios not pixels
   double min = 0.0,max = 0.0,range;
@@ -380,9 +382,9 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
   /* We need splice markers to behave in a particular way for wormbase, I've added this function
    * to get the positions so it doesn't interfer with the general workings of glyphs. */
-  if (isSpliceFeature(feature))
+  if (zMapStyleIsSpliceStyle(feature->style))
     {
-      calcSplicePos(feature, style, col_width, score, &origin, &width, &height) ;
+      calcSplicePos(featureset, feature, style, score, &origin, &width, &height) ;
     }
   else
     {
@@ -467,65 +469,50 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
 /* Calculate the position of splice markers so that the horizontal bit of the marker is where
  * the splice is and the vertical bit indicates a 5'(down) or 3'(up) marker. */
-static void calcSplicePos(ZMapFeature feature, ZMapFeatureTypeStyle style, double col_width, double score,
+static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, ZMapFeatureTypeStyle style,
+			  double score,
 			  double *feature_origin_out, double *feature_width_out, double *feature_height_out)
 {
   double min_score, max_score ;
-  double origin, feature_origin, fac ;
+  double feature_origin ;
   double width = 1.0, height = 1.0;        // these are ratios not pixels
   double x ;
-  double glyph_len = ZMAPSTYLE_SPLICE_GLYPH_LEN ;
-  double fudge_factor = col_width / glyph_len ;
+  GlyphSpliceColumnData splice_data = (GlyphSpliceColumnData)(featureset->per_column_data) ;
 
   min_score = zMapStyleGetMinScore(style);
   max_score = zMapStyleGetMaxScore(style);
 
-  if (min_score < 0 && 0 < max_score)
-    origin = col_width * (-(min_score) / (max_score - min_score)) ;
-  else
-    origin = 0 ;
-
-  fac = col_width / (max_score - min_score) ;
-
   if (score <= min_score) 
     x = 0 ;
   else if (score >= max_score) 
-    x = col_width ;
+    x = splice_data->col_width ;
   else 
-    x = fac * (score - min_score) ;
+    x = splice_data->scale_factor * (score - min_score) ;
 
+  width = fabs(splice_data->origin - fabs(x)) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Needs changing to include direction of splice marker..... */
-  if (x > origin + fudge_factor || x < origin - fudge_factor) 
-    width = fabs(origin - fabs(x)) ;
-  else
-    width = origin - fudge_factor ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  width = fabs(origin - fabs(x)) ;
-
-  if (width < fudge_factor)
+  if (width < splice_data->min_size)
     {
       if (score < 0)
 	{
-	  feature_origin = origin + (fudge_factor - width) ;
+	  feature_origin = splice_data->origin + (splice_data->min_size - width) ;
 	}
       else
 	{
-	  feature_origin = origin - (fudge_factor - width) ;
+	  feature_origin = splice_data->origin - (splice_data->min_size - width) ;
 	}
 
-      width = fudge_factor ;
+      width = splice_data->min_size ;
     }
   else
     {
-      feature_origin = origin  ;
+      feature_origin = splice_data->origin  ;
     }
 
 
   /* width is in column units (pixels), glyph pixel height is ZMAPSTYLE_SPLICE_GLYPH_LEN pixels
    * so to convert to a width proportional to height divide by ZMAPSTYLE_SPLICE_GLYPH_LEN. */
-  width = width / glyph_len ;
+  width = width / splice_data->glyph_len ;
 
   /* Return left, right and height. */
   if (score < 0)
@@ -613,6 +600,124 @@ static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count, int c
 
 
 
+/* Init the glyph column. */
+static void glyphColumnInit(ZMapWindowFeaturesetItem featureset)
+{
+  gboolean dummy_splice = TRUE ;
+
+  /* Once again we need to know if this is splice markers...find out how to do this... */
+  if (dummy_splice)
+    {
+      GlyphSpliceColumnData splice_data ;
+      double min_score, max_score ;
+
+      splice_data = g_new0(GlyphSpliceColumnDataStruct, 1) ;
+
+      splice_data->glyph_len = ZMAPSTYLE_SPLICE_GLYPH_LEN ;
+
+      splice_data->col_width = zMapStyleGetWidth(featureset->style) ;
+
+      splice_data->min_size = splice_data->col_width / splice_data->glyph_len ;
+
+      min_score = zMapStyleGetMinScore(featureset->style) ;
+      max_score = zMapStyleGetMaxScore(featureset->style) ;
+
+      splice_data->scale_factor = splice_data->col_width / (max_score - min_score) ;
+
+      if (min_score < 0 && 0 < max_score)
+	splice_data->origin = splice_data->col_width * (-(min_score) / (max_score - min_score)) ;
+      else
+	splice_data->origin = 0 ;
+
+
+      featureset->per_column_data = splice_data ;
+    }
+
+  return ;
+}
+
+
+
+/* Paint 'column' level features. */
+static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable, GdkEventExpose *expose)
+{
+
+  if (zMapStyleIsSpliceStyle(featureset->style))
+    {
+      FooCanvasItem *item = (FooCanvasItem *)&(featureset->__parent__) ;
+      GlyphSpliceColumnData splice_data = (GlyphSpliceColumnData)(featureset->per_column_data) ;
+      double x1, x2, y1, y2 ;
+
+
+      if (!(splice_data->colours_set))
+	{
+	  if (!(splice_data->colours_set
+		= zMapGUIGetColour(GTK_WIDGET(item->canvas), ZERO_LINE_COLOUR, &(splice_data->zero_line_colour)))
+	      || !(splice_data->colours_set
+		   = zMapGUIGetColour(GTK_WIDGET(item->canvas), OTHER_LINE_COLOUR, &(splice_data->other_line_colour))))
+	    zMapLogCritical("%s", "Cannot create colours for splice display.") ;
+	}
+
+      if (splice_data->colours_set)
+	{
+	  gdk_gc_set_line_attributes(featureset->gc,
+				     DEFAULT_LINE_WIDTH,
+				     GDK_LINE_SOLID,
+				     GDK_CAP_BUTT,
+				     GDK_JOIN_ROUND) ;
+
+	  /* Draw zero line. */
+	  gdk_gc_set_foreground(featureset->gc, &(splice_data->zero_line_colour)) ;
+
+	  x1 = (item->x1 + splice_data->origin) ;
+	  x2 = (item->x1 + splice_data->origin) ;
+	  y1 = item->y1 ;
+	  y2 = item->y2 ;
+	  zMap_draw_line(drawable, featureset, x1, y1, x2, y2) ;
+
+	  /* Draw 50% & 75% lines. */
+	  gdk_gc_set_foreground(featureset->gc, &(splice_data->other_line_colour)) ;
+
+	  x1 = (item->x1 + (splice_data->col_width * 0.5)) ;
+	  x2 = (item->x1 + (splice_data->col_width * 0.5)) ;
+	  y1 = item->y1 ;
+	  y2 = item->y2 ;
+	  zMap_draw_line(drawable, featureset, x1, y1, x2, y2) ;
+
+	  x1 = (item->x1 + (splice_data->col_width * 0.75)) ;
+	  x2 = (item->x1 + (splice_data->col_width * 0.75)) ;
+	  y1 = item->y1 ;
+	  y2 = item->y2 ;
+	  zMap_draw_line(drawable, featureset, x1, y1, x2, y2) ;
+	}
+
+    }
+
+  return ;
+}
+
+
+
+static void glyphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
+{
+  /* Not sure if I will need this later so left in for now. */
+
+  return ;
+}
+
+
+/* Free the glyph column. */
+static void glyphColumnFree(ZMapWindowFeaturesetItem featureset)
+{
+  g_free(featureset->per_column_data) ;
+  featureset->per_column_data = NULL ;
+
+  return ;
+}
+
+    
+
+
 
 // x-ref with zmapWindowDump.c/dumpGlyph()
 /* handle sub feature and free standing glyphs */
@@ -657,7 +762,7 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
     }
 
 
-  if (isSpliceFeature(feature))
+  if (zMapStyleIsSpliceStyle(feature->style))
     gdk_gc_set_line_attributes(featureset->gc,
 			       SPLICE_LINE_WIDTH,
 			       GDK_LINE_SOLID,
@@ -694,7 +799,7 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
   int start,end ;
 
   /* Note that sub feature glyphs do not cache the feature. */
-  if ((glyph->feature.feature) && isSpliceFeature(glyph->feature.feature))
+  if ((glyph->feature.feature) && zMapStyleIsSpliceStyle(glyph->feature.feature->style))
     {
       GdkColor c;
       gulong fill_pixel, outline_pixel ;
@@ -867,11 +972,16 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
       foo_canvas_item_i2w(foo, &world_start_x, &world_start_y) ;
       foo_canvas_item_i2w(foo, &world_end_x, &world_end_y) ;
 
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g\tCanvas start/end: %g, %g\tWorld start/end: %g, %g\n",
+      printf("Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g"
+	     "\tCanvas x_start/x_end y_start/y_end: %g,%g %g,%g"
+	     "\tWorld: x_start/x_end y_start/y_end: %g,%g %g,%g\n",
 	     item_x, item_y, cx, cy, local_x, local_y,
-	     can_start_y, can_end_y, world_start_y, world_end_y) ;
+	     can_start_x, can_end_x, can_start_y, can_end_y,
+	     world_start_x, world_end_x, world_start_y, world_end_y) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       if (can_start_x < local_x && can_end_x > local_x
 	  && can_start_y < local_y && can_end_y > local_y)			    /* overlaps cursor */
