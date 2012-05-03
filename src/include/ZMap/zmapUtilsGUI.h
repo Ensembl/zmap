@@ -447,6 +447,9 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 				  PangoFont **font_out, PangoFontDescription **desc_out) ;
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
+
+gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout) ;
+
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 
 GdkCursor *zMapGUIGetCursor(char *cursor_name) ;
