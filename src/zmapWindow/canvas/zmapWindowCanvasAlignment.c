@@ -397,7 +397,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
 	{
 	  fill = (fill << 8) | 0xff;	/* convert back to RGBA */
-	  fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+	  fill = foo_canvas_get_color_pixel(foo->canvas,
+					    zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
 	}
 
       if(zMapStyleIsSquash(style))		/* diff colours for first and last box */
