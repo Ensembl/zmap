@@ -37,7 +37,40 @@
 #include <zmapWindowCanvasGlyph.h>
 
 
-/* NOTE
+
+
+/* 
+ * Data common to particular types of glyph, stored using the per_column_data pointer
+ * in zmapWindowFeaturesetItemStruct.
+ */
+
+/* Splice marker column data. */
+typedef struct GlyphSpliceColumnDataStructName
+{
+
+  double glyph_len ;					    /* Standard glyph size, all scaled from this. */
+  double col_width ;
+  double min_size ;					    /* Min. size for glyph so it's easily clickable. */
+  double scale_factor ;					    /* Scaling factor for glyphs. */
+
+
+  double origin ;					    /* score == 0 position across column. */
+
+
+  gboolean colours_set ;
+  GdkColor zero_line_colour ;
+  GdkColor other_line_colour ;
+
+} GlyphSpliceColumnDataStruct, *GlyphSpliceColumnData ;
+
+#define ZERO_LINE_COLOUR   "dark slate grey"
+#define OTHER_LINE_COLOUR  "light grey"
+
+
+
+/* Per glyph data.
+ * 
+ * NOTE
  * Glyphs are quite complex and we create an array of points for display
  * that are interpreted according to the glyph type.
  * As the CanvasFeatureset code is generic we start with a feature pointer
@@ -49,11 +82,12 @@ typedef struct _zmapWindowCanvasGlyphStruct
 {
   zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-  double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
-  double origin;		/* relative to the centre of the column */
-
   int which;			/* generic or 5' or 3' ? */
   GQuark sig;			/* signature: for debugging */
+
+  /* Used for all glyphs except splices. */
+  double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
+  double origin;		/* relative to the centre of the column */
 
   ZMapStyleGlyphShape shape;			/* pointer to relevant style shape struct */
   GdkPoint coords[GLYPH_SHAPE_MAX_COORD]; 	/* derived from style->shape struct but adjusted for scale etc */
@@ -70,3 +104,7 @@ typedef struct _zmapWindowCanvasGlyphStruct
 
 
 } zmapWindowCanvasGlyphStruct;
+
+
+
+
