@@ -158,13 +158,20 @@ typedef struct _zmapWindowFeaturesetItemStruct
   FooCanvasItem *canvas_item;		/* containing ZMapWindowCanvasItem: these are a pain they do nothing and we can't get rid of them yet */
 
   GQuark id;
-  ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */
-  ZMapFeatureTypeStyle featurestyle; 	/* current cached style for features */
+  ZMapFeatureTypeStyle style;				    /* column style: NB could have several
+							       featuresets mapped into this by virtualisation */
+  ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
 
   zmapWindowCanvasFeatureType type;
 
   ZMapStrand strand;
   ZMapFrame frame;
+
+
+  /* Points to data that is needed on a per column basis and is assigned by the functions
+   * that handle that data. */
+  gpointer per_column_data ;
+
 
 
   double zoom;			/* current units per pixel */
