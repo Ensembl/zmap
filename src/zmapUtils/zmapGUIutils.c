@@ -788,6 +788,30 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
 
 
 
+/* Takes a colour spec in the standard string form given for X11 in the file rgb.txt, parses it
+ * and allocates it in the colormap returning the colour description in colour_inout
+ * (the contents of which are overwritten).
+ * 
+ * Returns TRUE if all worked, FALSE otherwise. */
+gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout)
+{
+  gboolean result = FALSE ;
+  GdkColormap *colourmap ;
+
+  if ((result = gdk_color_parse(colour_spec, colour_inout)))
+    {
+      colourmap = gtk_widget_get_colormap(widget) ;
+
+      gdk_rgb_find_color(colourmap, colour_inout) ;
+    }
+
+  return result ;
+}
+
+
+
+
+
 /*!
  * Tries to return a fixed font from the list given in pref_families, returns
  * TRUE if it succeeded in finding a matching font, FALSE otherwise.
