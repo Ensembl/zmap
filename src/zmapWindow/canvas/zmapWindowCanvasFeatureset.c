@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -89,6 +89,8 @@ static double  zmap_window_featureset_item_item_point (FooCanvasItem *item, doub
 static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
 static void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 static void zmap_window_featureset_item_item_destroy     (GObject *object);
+static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem featureset,
+						      GdkDrawable *drawable, GdkEventExpose *expose) ;
 
 static double defaultPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			   double item_x, double item_y, int cx, int cy,
@@ -134,7 +136,10 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 
 
 
+/* Tables of function pointers for individual feature types, only required ones have to be provided. */
+static gpointer _featureset_set_init_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_prepare_G[FEATURE_N_TYPE] = { 0 };
+static gpointer _featureset_set_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_flush_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_extent_G[FEATURE_N_TYPE] = { 0 };
@@ -147,8 +152,11 @@ static gpointer _featureset_point_G[FEATURE_N_TYPE] = { 0 };
 
 
 
+
+
+
 /* clip to expose region */
-/* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
+/* erm,,, clip to visible scroll region: else rectangles would get extra edges */
 void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
   /* for H or V lines we can clip easily */
@@ -240,18 +248,16 @@ void zMapWindowCanvasFeaturesetPaintPrepare(ZMapWindowFeaturesetItem featureset,
 					    ZMapWindowCanvasFeature feature,
 					    GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  void (*func) (ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
+  void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+		GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
-  if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
-    func = _featureset_prepare_G[featureset->type];
-
-  if(!func)
-    return;
-
-  func(featureset, feature, drawable, expose);
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      && (func = _featureset_prepare_G[featureset->type]))
+    func(featureset, feature, drawable, expose);
 
   return ;
 }
+
 
 
 /* paint one feature, all context needed is in the FeaturesetItem */
@@ -260,12 +266,11 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 {
   void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
-  if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
-    func = _featureset_paint_G[featureset->type];
-  if(!func)
-    return;
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      && (func = _featureset_paint_G[featureset->type]))
+    func(featureset, feature, drawable, expose) ;
 
-  func(featureset, feature, drawable, expose);
+  return ;
 }
 
 
@@ -276,12 +281,11 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZM
 {
   void (*func) (ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
-  if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
-    func = _featureset_flush_G[featureset->type];
-  if(!func)
-    return;
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      && (func = _featureset_flush_G[featureset->type]))
+    func(featureset, feature, drawable, expose);
 
-  func(featureset, feature, drawable, expose);
+  return;
 }
 
 
@@ -333,17 +337,16 @@ int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
 #endif
 
 
-/* if a featureset has and allocated data free it */
+/* if a featureset has any allocated data free it */
 void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 {
-  void (*func) (ZMapWindowFeaturesetItem featureset) = NULL;
+  ZMapWindowFeatureFreeFunc func ;
 
-  if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
-    func = _featureset_free_G[featureset->type];
-  if(!func)
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      && (func = _featureset_free_G[featureset->type]))
+    func(featureset) ;
+
     return;
-
-  func(featureset);
 }
 
 
@@ -356,55 +359,54 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
  * NOTE this is also called on the first paint to create the index
  * it must create the index if it's not there and this may be done by class Zoom functions
  */
-void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
+void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
-  int (*func) (ZMapWindowFeaturesetItem featureset);
   ZMapSkipList sl;
   long trigger = (long) zMapStyleGetSummarise(featureset->style);
   PixRect pix = NULL;
 
-  if(!featureset)
-    return;
-
-  if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+  if (featureset)
     {
-      func = _featureset_zoom_G[featureset->type];
+      ZMapWindowFeatureItemZoomFunc func ;
 
-      /* zoom can (re)create the index eg ig graphs density stuff gets re-binned */
-      if(func)
-	func(featureset);
-    }
-
-  if(!featureset->display_index)
-    zMapWindowCanvasFeaturesetIndex(featureset);
-
-
-  /* column summarise: after creating the index work out which features are visible and hide the rest */
-  /* set for basic features and alignments */
-  /* this could be moved to the class functions but as it's used more generally not worth it */
-
-  if(!featureset->bumped && !featureset->re_bin && trigger && featureset->n_features >= trigger)
-    {
-      /*
-	on min zoom we have nominally 1000 pixels so if we have 1000 features we should get some overlap
-	depends on the sequence length, longer sequence means more overlap (and likely more features
-	but simple no of features is easy to work with.
-	if we used 100 features out of sheer exuberance
-	then the chance of wasted CPU is small as the data is small
-	at high zoom we still do it as overlap is still overlap (eg w/ high coverage BAM regions)
-      */
-
-      /* NOTE: for faster code just process features overlapping the visible scroll region */
-      /* however on current volumes (< 200k normally) it makes little difference */
-      for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+      if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+	  && (func = _featureset_zoom_G[featureset->type]))
 	{
-	  ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;
-
-	  pix = zmapWindowCanvasFeaturesetSummarise(pix,featureset,feature);
+	  /* zoom can (re)create the index eg ig graphs density stuff gets re-binned */
+	  func(featureset, drawable) ;
 	}
 
-      /* clear up */
-      zmapWindowCanvasFeaturesetSummariseFree(featureset, pix);
+      if(!featureset->display_index)
+	zMapWindowCanvasFeaturesetIndex(featureset);
+
+
+      /* column summarise: after creating the index work out which features are visible and hide the rest */
+      /* set for basic features and alignments */
+      /* this could be moved to the class functions but as it's used more generally not worth it */
+
+      if(!featureset->bumped && !featureset->re_bin && trigger && featureset->n_features >= trigger)
+	{
+	  /*
+	    on min zoom we have nominally 1000 pixels so if we have 1000 features we should get some overlap
+	    depends on the sequence length, longer sequence means more overlap (and likely more features
+	    but simple no of features is easy to work with.
+	    if we used 100 features out of sheer exuberance
+	    then the chance of wasted CPU is small as the data is small
+	    at high zoom we still do it as overlap is still overlap (eg w/ high coverage BAM regions)
+	  */
+
+	  /* NOTE: for faster code just process features overlapping the visible scroll region */
+	  /* however on current volumes (< 200k normally) it makes little difference */
+	  for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+	    {
+	      ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;
+
+	      pix = zmapWindowCanvasFeaturesetSummarise(pix,featureset,feature);
+	    }
+
+	  /* clear up */
+	  zmapWindowCanvasFeaturesetSummariseFree(featureset, pix);
+	}
     }
 
   return;
@@ -416,7 +418,9 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset)
 
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int struct_size)
 {
+  _featureset_set_init_G[featuretype] = funcs[FUNC_SET_INIT];
   _featureset_prepare_G[featuretype] = funcs[FUNC_PREPARE];
+  _featureset_set_paint_G[featuretype] = funcs[FUNC_SET_PAINT];
   _featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
   _featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
   _featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
@@ -428,6 +432,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int str
   _featureset_point_G[featuretype] = funcs[FUNC_POINT];
 
   featureset_class_G->struct_size[featuretype] = struct_size;
+
+  return ;
 }
 
 
@@ -480,6 +486,8 @@ void featureset_init_funcs(void)
   zMapWindowCanvasGraphInit();
 
   /* if you add a new one then update feature_types[N_STYLE_MODE] below */
+
+  return ;
 }
 
 
@@ -527,54 +535,69 @@ GType zMapWindowFeaturesetItemGetType(void)
 
 /* that was then, now we just set the foo item passed in. */
 
-FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
+FooCanvasItem *zMapWindowFeaturesetItemSetInit(FooCanvasItem *foo,
+					       GQuark id, int start, int end,
+					       ZMapFeatureTypeStyle style,
+					       ZMapStrand strand, ZMapFrame frame, int index)
 {
-  ZMapWindowFeaturesetItem di = NULL;
+  ZMapWindowFeaturesetItem featureset = NULL;
   zmapWindowCanvasFeatureType type;
-
   int stagger;
+  ZMapWindowFeatureItemSetInitFunc func ;
+
+
+  /* THIS IS WHERE I NEED TO DO THE GLYPH INITING...STICK IN A NEW CALL BACK..... */
+
 
   /* NOTE need to combined code from cainating canvas item  at some point */
 
-  di = (ZMapWindowFeaturesetItem) foo;
-  di->id = id;
+  featureset = (ZMapWindowFeaturesetItem)foo ;
+  featureset->id = id;
   g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
   /* we record strand and frame for display colours
    * the features get added to the appropriate column depending on strand, frame
    * so we get the right featureset item foo item implicitly
    */
-  di->strand = strand;
-  di->frame = frame;
-  di->style = style;
+  featureset->strand = strand;
+  featureset->frame = frame;
+  featureset->style = style;
 
-  di->overlap = TRUE;
+  featureset->overlap = TRUE;
 
   /* column type, style is a combination of all context featureset styles in the column */
   /* main use is for graph density items */
-  di->type = type = feature_types[zMapStyleGetMode(di->style)];
+  featureset->type = type = feature_types[zMapStyleGetMode(featureset->style)];
+
+
+  /* Maybe these should be subsumed into the feature_set_int_G mechanism..... */
   if(type == FEATURE_ALIGN)
     {
-      di->link_sideways = TRUE;
+      featureset->link_sideways = TRUE;
     }
   else if(type == FEATURE_GRAPH && zMapStyleDensity(style))
     {
-      di->overlap = FALSE;
-      di->re_bin = TRUE;
+      featureset->overlap = FALSE;
+      featureset->re_bin = TRUE;
 
       /* this was originally invented for heatmaps & it would be better as generic, but that's another job */
       stagger = zMapStyleDensityStagger(style);
-      di->set_index = index;
-      di->x_off = stagger * di->set_index;
+      featureset->set_index = index;
+      featureset->x_off = stagger * featureset->set_index;
     }
 
-  di->width = zMapStyleGetWidth(di->style);
-  di->start = start;
-  di->end = end;
+  featureset->width = zMapStyleGetWidth(featureset->style);
+  featureset->start = start;
+  featureset->end = end;
 
   /* initialise zoom to prevent double index create on first draw (coverage graphs) */
-  di->zoom = foo->canvas->pixels_per_unit_y;
-  di->bases_per_pixel = 1.0 / di->zoom;
+  featureset->zoom = foo->canvas->pixels_per_unit_y;
+  featureset->bases_per_pixel = 1.0 / featureset->zoom;
+
+  /* feature type specific code. */
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      && (func = _featureset_set_init_G[featureset->type]))
+    func(featureset) ;
 
 
   /* set our bounding box in canvas coordinates to be the whole column */
@@ -1056,11 +1079,28 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 }
 
 
-
-static void zmap_window_featureset_item_item_init (ZMapWindowFeaturesetItem featureset)
+/* Called for each new featureset (== column ??). */
+static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featureset)
 {
+
   return ;
 }
+
+
+
+/* paint set-level features, e.g. graph base lines etc. */
+static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem featureset,
+						      GdkDrawable *drawable, GdkEventExpose *expose)
+{
+  ZMapWindowFeatureItemSetPaintFunc func ;
+
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      &&(func = _featureset_set_paint_G[featureset->type]))
+    func(featureset, drawable, expose) ;
+
+  return ;
+}
+
 
 static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
@@ -1105,7 +1145,7 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
 					       FooCanvasItem **actual_item)
 {
   double best = 1.0e36 ;				    /* Default value from foocanvas code. */
-  ZMapWindowFeatureItemPointFunc *point_func ;
+  ZMapWindowFeatureItemPointFunc point_func ;
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
   ZMapWindowCanvasFeature gs;
   ZMapSkipList sl;
@@ -1401,8 +1441,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     {
       fi->zoom = item->canvas->pixels_per_unit_y;
       fi->bases_per_pixel = 1.0 / fi->zoom;
-      zMapWindowCanvasFeaturesetZoom(fi);
-    }
+      zMapWindowCanvasFeaturesetZoom(fi, drawable) ;
+    } 
 
   if(!fi->display_index)
     return; 		/* could be an empty column or a mistake */
@@ -1427,6 +1467,12 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
   foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
+
+
+
+  /* ok...this looks like the place to do feature specific painting..... */
+  zMapWindowCanvasFeaturesetSetPaintFeature(fi, drawable, expose) ;
+
 
   //if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
 
