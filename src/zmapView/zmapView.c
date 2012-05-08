@@ -516,11 +516,20 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
             ZMapConfigSource src;
             src = (ZMapConfigSource) sources->data;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    /* THIS CODE CAUSES A PROBLEM IN THE FEATURESET/STYLE MAPPING IF ACEDB IS INCLUDED,
+	     * LEAVE THIS HERE UNTIL FURTHER TESTING DONE WITH WORM STUFF.... */
             if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
 		&& g_ascii_strncasecmp(src->url,"file", 4) != 0
 		&& g_ascii_strncasecmp(src->url,"acedb", 5) != 0)
 	      continue;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+            if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
+		&& g_ascii_strncasecmp(src->url,"file", 4) != 0)
+	      continue;
+
+
+
 
             featuresets = zMapConfigString2QuarkList(src->featuresets,FALSE) ;
 	    // MH17: need to add server name as default featureset
