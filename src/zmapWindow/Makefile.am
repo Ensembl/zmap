@@ -51,6 +51,7 @@ zmapWindowOverlays.c \
 zmapWindowOverlays.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
+zmapWindowRemoteControl.c \
 zmapWindowRemoteReceive.c \
 zmapWindowRuler.c \
 zmapWindowSearch.c \
