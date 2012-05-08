@@ -1,4 +1,4 @@
-/*  Last edited: Feb 14 20:24 2012 (edgrif) */
+/*  Last edited: Apr 11 10:43 2012 (edgrif) */
 /*  File: zmapAppRemote.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -103,6 +103,7 @@ typedef struct ZMapViewWindowTreeStructName
  * to any error from this callback, it just returns the result which is then
  * returned to the peer program. */
 typedef void (*ZMapRemoteAppReturnReplyFunc)(char *command,
+					     gboolean abort,
 					     RemoteCommandRCType command_rc,
 					     char *reason,
 					     ZMapXMLUtilsEventStack reply,
@@ -111,7 +112,10 @@ typedef void (*ZMapRemoteAppReturnReplyFunc)(char *command,
 /* All sub-systems must provide a function with this prototype to respond to requests.
  * When they have processed the request their reply _MUST_ be returned by calling
  * the app_reply_func and returning the command_rc, reason or reply and app_reply_data
- * as per the ZMapRemoteAppReturnReplyFunc prototype. */
+ * as per the ZMapRemoteAppReturnReplyFunc prototype.
+ * 
+ * Note that the local_data pointer will be a ZMapView, ZMapWindow etc depending
+ * on the sub-system. */
 typedef void (*ZMapRemoteAppProcessRequestFunc)(gpointer local_data,
 						char *command_name,
 						ZMapAppRemoteViewID view_id,
