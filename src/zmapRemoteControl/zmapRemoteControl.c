@@ -1,4 +1,4 @@
-/*  Last edited: Feb 29 15:45 2012 (edgrif) */
+/*  Last edited: Apr 11 09:37 2012 (edgrif) */
 /*  File: zmapRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2010: Genome Research Ltd.
@@ -149,7 +149,7 @@ static void receiveRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSel
 						 guint info, gpointer user_data) ;
 static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointer user_data_or_owner) ;
 static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData *selection_data, gpointer data) ;
-static void receiveAppCB(void *remote_data, char *reply) ;
+static void receiveAppCB(void *remote_data, gboolean abort, char *reply) ;
 static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
 				       guint info, gpointer user_data) ;
 static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpointer user_data) ;
@@ -275,7 +275,11 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
       remote_control->request_id = g_string_new("") ;
 
       /* Set a default timeout of 0.5 seconds, probably reasonable. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       remote_control->timeout_ms = DEFAULT_TIMEOUT ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      remote_control->timeout_ms = NULL_TIMEOUT ;
 
       remote_control->app_error_func = error_func ;
       remote_control->app_error_func_data = error_func_data ;
@@ -1009,8 +1013,11 @@ static void receiveRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSel
  * A ZMapRemoteControlCallWithReplyFunc() which is called by the application when it has 
  * finished processing the request and is returning its reply. This may happen synchronously
  * or asynchronously.
+ * 
+ * If abort is TRUE this signals an unrecoverable error (perhaps the request
+ * was in the wrong format completely) and the transaction must be aborted.
  */
-static void receiveAppCB(void *remote_data, char *reply)
+static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)remote_data ;
   RemoteReceive receive ;
@@ -1019,6 +1026,9 @@ static void receiveAppCB(void *remote_data, char *reply)
 
   DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
 
+
+  /* STICK IN ABORT STUFF HERE....NEED TO CALL ERROR HANDLER.... */
+
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (remote_control->state != REMOTE_STATE_SERVER_PROCESS_REQ)
@@ -1026,6 +1036,12 @@ static void receiveAppCB(void *remote_data, char *reply)
 	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_PROCESS_REQ,
 				"%s",
 				"Expected to be waiting for request.") ;
+	}
+      else if (abort)
+	{
+	  CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_APP_ABORT,
+			   "%s",
+			   "App has aborted transaction, see log file. \"%s\".") ;
 	}
       else
 	{
