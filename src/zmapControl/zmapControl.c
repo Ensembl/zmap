@@ -151,6 +151,9 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
 
   zmap->state = ZMAP_INIT ;
 
+  if (zmap_cbs_G->remote_request_func)
+    zmap->remote_control = TRUE ;
+
   zmapControlWindowSetGUIState(zmap) ;
 
   return zmap ;
