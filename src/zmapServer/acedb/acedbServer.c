@@ -592,6 +592,16 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	}
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMap_g_list_quark_print(all_methods, "all_methods", FALSE) ;
+      fflush(stdout) ;
+      zMap_g_list_quark_print(feature_sets, "feature_sets", FALSE) ;
+      fflush(stdout) ;
+      zMap_g_list_quark_print(required_styles, "required_styles", FALSE) ;
+      fflush(stdout) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
       if (result != ZMAP_SERVERRESPONSE_REQFAIL)
 	{
 	  server->all_methods = all_methods ;
