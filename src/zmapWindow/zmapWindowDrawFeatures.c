@@ -1360,7 +1360,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
   if(!f_col)
     {
-      zMapLogWarning("No column defined for featureset %s", g_quark_to_string(feature_set_id));
+      zMapLogWarning("No column defined for featureset \"%s\"", g_quark_to_string(feature_set_id));
       return NULL;
     }
   zMapAssert(f_col && f_col->style);
@@ -1914,7 +1914,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	  }
 	if(!style)
 	  {
-            zMapLogCritical("no column style for featureset %s\n",g_quark_to_string(feature_set->unique_id));
+            zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
             break;
 	  }
 	canvas_data->style = style;
