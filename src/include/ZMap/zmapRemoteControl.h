@@ -30,7 +30,7 @@
  *              are the right protocol version.
  *
  * HISTORY:
- * Last edited: Feb 22 13:07 2012 (edgrif)
+ * Last edited: Apr 11 09:39 2012 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -57,6 +57,7 @@ typedef struct ZMapRemoteControlStructName *ZMapRemoteControl ;
 #define ZMAP_REMOTECONTROL_RC_LIST(_)					                                \
 _(ZMAP_REMOTECONTROL_RC_OK,            , "ok",             "No error.",                             "") \
 _(ZMAP_REMOTECONTROL_RC_TIMED_OUT,     , "timed_out",      "Timed out, peer not replying in time.", "") \
+_(ZMAP_REMOTECONTROL_RC_APP_ABORT,     , "app_abort",      "Application has aborted transaction.",  "") \
 _(ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,   , "out_of_band",    "Peer is out of synch.",                 "") \
 _(ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD, , "bad_clipboard",  "Clipboard error.",                      "") \
 _(ZMAP_REMOTECONTROL_RC_BAD_STATE,     , "bad_state",      "Internal error, bad state detected.",   "")
@@ -86,8 +87,10 @@ typedef gboolean (*ZMapRemoteControlErrorReportFunc)(void *user_data, char *err_
 
 /* RemoteControl callback that app _must_ call after processing a request,
  * whether there is an error or not, to return the reply/error to remote_control
- * to be sent to back to the requesting peer. */
-typedef void (*ZMapRemoteControlReturnReplyFunc)(void *return_reply_func_data, char *reply) ;
+ * to be sent to back to the requesting peer. If abort is TRUE then reply must be NULL
+ * and remotecontrol will abort the transaction. */
+typedef void (*ZMapRemoteControlReturnReplyFunc)(void *return_reply_func_data,
+						 gboolean abort, char *reply) ;
 
 
 /* App callback, called by remote_control to pass App the request it has received from a peer.
