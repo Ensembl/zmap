@@ -342,18 +342,18 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   zMapAssert(callbacks
 	     && callbacks->enter && callbacks->leave
 	     && callbacks->scroll && callbacks->focus && callbacks->select
-             && callbacks->splitToPattern
+             && callbacks->setZoomStatus && callbacks->splitToPattern
 	     && callbacks->visibilityChange
-             && callbacks->drawn_data) ;
+             && callbacks->command && callbacks->drawn_data) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
-  window_cbs_G->enter   = callbacks->enter ;
-  window_cbs_G->leave   = callbacks->leave ;
-  window_cbs_G->scroll  = callbacks->scroll ;
-  window_cbs_G->focus   = callbacks->focus ;
-  window_cbs_G->select  = callbacks->select ;
-  window_cbs_G->setZoomStatus  = callbacks->setZoomStatus;
+  window_cbs_G->enter = callbacks->enter ;
+  window_cbs_G->leave = callbacks->leave ;
+  window_cbs_G->scroll = callbacks->scroll ;
+  window_cbs_G->focus = callbacks->focus ;
+  window_cbs_G->select = callbacks->select ;
+  window_cbs_G->setZoomStatus = callbacks->setZoomStatus;
   window_cbs_G->splitToPattern = callbacks->splitToPattern;
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
   window_cbs_G->command = callbacks->command ;
@@ -512,6 +512,8 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Tells zmapwindow that there is an external client that can be queried. */
 gboolean zMapWindowXRemoteRegister(ZMapWindow window)
 {
@@ -521,6 +523,8 @@ gboolean zMapWindowXRemoteRegister(ZMapWindow window)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* This routine is called by the code in zmapView.c that manages the slave threads.
@@ -1964,6 +1968,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   window->caller_cbs = window_cbs_G ;
 
+  /* If a remote_request_func was registered then we know a remote client was registered. */
+  if (window->caller_cbs->remote_request_func)
+    window->xremote_client = TRUE ;
+
   window->sequence = sequence;
 
 
@@ -2100,10 +2108,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
 
   gtk_widget_show_all(window->parent_widget) ;
-
-#if MH17_NOT_USED_MOVED_TO_VIEW
-  zMapWindowSetupXRemote(window, window->toplevel);
-#endif
 
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because
