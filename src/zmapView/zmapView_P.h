@@ -206,9 +206,13 @@ typedef struct _ZMapViewStruct
 
   gboolean busy ;					    /* Records when we are busy so can
 							       block user interaction. */
-  gboolean thread_fail_silent;                /* don't report failures on screen */
-  gboolean serial_load;                   /* load pipe servers in series on startup */
+  gboolean thread_fail_silent;				    /* don't report failures on screen */
+  gboolean serial_load;					    /* load pipe servers in series on startup */
 
+
+  gboolean remote_control ;
+
+  /* Is any of this needed ???? */
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
 							       running zmap. */
