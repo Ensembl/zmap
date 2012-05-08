@@ -107,25 +107,25 @@ typedef struct ZMapWindowFeatureShowStruct_
 
   ZMapGuiNotebook feature_book ;
 
-      /*
-       * MH17: re-using code, this is a bit of a hack
-       * as this code was written to drive a dialog not to extract data from XML
-       * it's here as a prototype and only handle half of the task
-       * which is evidence from transcript
-       * we also want transcript from evidence
-       * however this will allow demonstration of highlighting and also display in a new column
-       *
-       * the feature_details XML contains a list of evidence features
-       * and the code in tbis file uses a series of tag handler callbacks to take the
-       * data and construct a GTK notebook full of widgets
-       * some of the XML fields are compound which is a bit of a shame, XML was created to not do that
-       *
-       * rather than duplicating code I've added an option to accumulate the data wanted
-       * in parallel with creating the notebook. If not set then existing code will be unaffected
-       * this list should be freed by the caller if it is not null. It only affects this file.
-       *
-       * as the tag handlers assume the are making a notebook, we have to do this and free it afterwards
-       */
+  /*
+   * MH17: re-using code, this is a bit of a hack
+   * as this code was written to drive a dialog not to extract data from XML
+   * it's here as a prototype and only handle half of the task
+   * which is evidence from transcript
+   * we also want transcript from evidence
+   * however this will allow demonstration of highlighting and also display in a new column
+   *
+   * the feature_details XML contains a list of evidence features
+   * and the code in tbis file uses a series of tag handler callbacks to take the
+   * data and construct a GTK notebook full of widgets
+   * some of the XML fields are compound which is a bit of a shame, XML was created to not do that
+   *
+   * rather than duplicating code I've added an option to accumulate the data wanted
+   * in parallel with creating the notebook. If not set then existing code will be unaffected
+   * this list should be freed by the caller if it is not null. It only affects this file.
+   *
+   * as the tag handlers assume the are making a notebook, we have to do this and free it afterwards
+   */
 
   gboolean get_evidence;
 #define WANT_EVIDENCE   1     /* constructing the list */
@@ -193,11 +193,11 @@ static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element
 static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
 				     ZMapXMLParser parser) ;
 static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				  ZMapXMLParser parser) ;
 static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element,
 					ZMapXMLParser parser) ;
 static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				       ZMapXMLParser parser) ;
 static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
@@ -205,19 +205,19 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
                                 ZMapXMLParser parser) ;
 static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				    ZMapXMLParser parser) ;
 static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				    ZMapXMLParser parser) ;
 static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element,
 				   ZMapXMLParser parser) ;
 static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				ZMapXMLParser parser) ;
 static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element,
                                       ZMapXMLParser parser) ;
 static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				     ZMapXMLParser parser) ;
 static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser) ;
+				    ZMapXMLParser parser) ;
 static void printWarning(char *element, char *handler) ;
 
 
@@ -307,6 +307,10 @@ static ZMapXMLObjTagFunctionsStruct ends[] =
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Never called......delete ?? */
+
 /* Create a feature display window, this function _always_ creates a new window. */
 ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
@@ -316,6 +320,8 @@ ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanv
 
   return show ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Displays a feature in a window, will reuse an existing window if it can, otherwise
@@ -643,38 +649,53 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
     }
 
 
-  /* If we have an external program driving us then ask it for any extra information.
-   * This will come as xml which we decode via the callbacks listed in the following structs.
-   * If that fails then we may have extra stuff to add anyway. */
-  if ((show->zmapWindow->xremote_client))
-    {
-      show->xml_parsing_status = TRUE ;
-      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
-      show->xml_curr_chapter = NULL ;
-      show->xml_curr_page = NULL ;
 
-      if ((externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-								(ZMapFeatureAny)feature,
-								"feature_details",
-								show->item,
-								starts, ends, show))
-	  == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-	{
-	  extras_notebook = show->xml_curr_notebook ;
-	}
+  /*  OK THIS BIT NEEDS TO BE DONE FIRST AND THE REST DOWN FROM A CALLBACK IF THERE IS REMOTE
+    STUFF.....
+
+    something like
+
+    if (remote)
+      remotefunc(shofunc, args....)
       else
-	{
-	  /* Temp code...as we don't know for sure that remote client supports feature_details... */
-	  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-	    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
-			" only incomplete feature details will be displayed",
-			g_quark_to_string(feature->original_id)) ;
+	showfunc(args)
+  */
 
-	  /* Clear up any half finished stuff from failed remote call. */
-	  if (show->xml_curr_chapter)
-	    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
-	}
-    }
+	  /* If we have an external program driving us then ask it for any extra information.
+	   * This will come as xml which we decode via the callbacks listed in the following structs.
+	   * If that fails then we may have extra stuff to add anyway. */
+	  if ((show->zmapWindow->xremote_client))
+	    {
+	      show->xml_parsing_status = TRUE ;
+	      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+	      show->xml_curr_chapter = NULL ;
+	      show->xml_curr_page = NULL ;
+
+	      if ((externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
+									(ZMapFeatureAny)feature,
+									"feature_details",
+									show->item,
+									starts, ends, show))
+		  == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+		{
+		  extras_notebook = show->xml_curr_notebook ;
+		}
+	      else
+		{
+		  /* Temp code...as we don't know for sure that remote client supports feature_details... */
+		  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+		    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
+				" only incomplete feature details will be displayed",
+				g_quark_to_string(feature->original_id)) ;
+
+		  /* Clear up any half finished stuff from failed remote call. */
+		  if (show->xml_curr_chapter)
+		    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
+		}
+	    }
+
+
+
 
   if (!(show->zmapWindow->xremote_client) || externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
@@ -710,7 +731,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
  * but as we don't display a window we don't care
  */
 
-GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
+GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
 {
   ZMapWindowFeatureShow show;
   GList *evidence;
@@ -953,7 +974,7 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
 }
 
 static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser)
+				    ZMapXMLParser parser)
 {
   printWarning("response", "end") ;
 
@@ -997,7 +1018,7 @@ static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element
 }
 
 static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser)
+				    ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
@@ -1035,7 +1056,7 @@ static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
           if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
             {
               chapter_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
- 	      }
+	    }
 
           show->xml_curr_chapter = zMapGUINotebookCreateChapter(show->xml_curr_notebook, chapter_name, NULL) ;
         }
@@ -1095,7 +1116,7 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser)
+				ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
@@ -1133,7 +1154,7 @@ static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement eleme
               subsection_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
             }
 
- 	      show->xml_curr_subsection = zMapGUINotebookCreateSubsection(show->xml_curr_page, subsection_name) ;
+	  show->xml_curr_subsection = zMapGUINotebookCreateSubsection(show->xml_curr_page, subsection_name) ;
         }
     }
 
@@ -1157,7 +1178,7 @@ static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element
 
 
 static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser)
+				       ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
@@ -1185,7 +1206,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
       if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
 	{
 	  paragraph_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
-        if(show->get_evidence && !g_ascii_strcasecmp(paragraph_name,"Evidence"))
+	  if(show->get_evidence && !g_ascii_strcasecmp(paragraph_name,"Evidence"))
             show->get_evidence = GOT_EVIDENCE;
 	}
 
@@ -1230,7 +1251,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		{
 		  char *columns, *target ;
 		  gboolean found = TRUE ;
-              int col_ind = 0;
+		  int col_ind = 0;
 
 		  target = columns = zMapXMLUtilsUnescapeStrdup(zMapXMLAttributeValueToStr(attr) );
 
@@ -1249,11 +1270,11 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 			  headers = g_list_append(headers,
 						  GINT_TO_POINTER(g_quark_from_string(new_col))) ;
 			  target = NULL ;
-                    if(show->get_evidence && !g_ascii_strcasecmp(new_col,"Accession.SV"))
-                    {
-                        show->evidence_column = col_ind;
-                    }
-                    col_ind++;
+			  if(show->get_evidence && !g_ascii_strcasecmp(new_col,"Accession.SV"))
+			    {
+			      show->evidence_column = col_ind;
+			    }
+			  col_ind++;
 			}
 		      else
 			found = FALSE ;
@@ -1290,7 +1311,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-			g_free(columns);
+		  g_free(columns);
 		}
 
 	      if (status)
@@ -1329,7 +1350,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
 		      types = column_data ;
 
-			g_free(columns);
+		      g_free(columns);
 		    }
 		}
 	    }
@@ -1337,7 +1358,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
       if (status)
 	{
-            show->xml_curr_paragraph = zMapGUINotebookCreateParagraph(show->xml_curr_subsection,
+	  show->xml_curr_paragraph = zMapGUINotebookCreateParagraph(show->xml_curr_subsection,
 								    paragraph_name,
 								    type, headers, types) ;
 	}
@@ -1347,7 +1368,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 }
 
 static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
-                                      ZMapXMLParser parser)
+				     ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
@@ -1450,12 +1471,12 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
       GList *type ;
       if (show->xml_curr_type != ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND)
 	{
-            show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
+	  show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
 								  show->xml_curr_tagvalue_name, show->xml_curr_type,
 								  "string", content,
 								  NULL) ;
 
-            show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(content)));
+	  show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(content)));
 	}
       else if((type = g_list_first(show->xml_curr_paragraph->compound_types)))
 	{
@@ -1463,7 +1484,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 	  char * columns = zMapXMLUtilsUnescapeStrdup(content);
 	  char *target = columns ;
 	  GList *column_data = NULL ;
-        int col_ind = 0;
+	  int col_ind = 0;
 
 	  /* Make a list of the names of the columns. */
 
@@ -1532,18 +1553,18 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 		      if (new_col && *new_col)
 			{
 			  column_data = g_list_append(column_data, g_strdup(new_col)) ;
-                    if(show->get_evidence == GOT_EVIDENCE && col_ind == show->evidence_column)
-                    {
+			  if(show->get_evidence == GOT_EVIDENCE && col_ind == show->evidence_column)
+			    {
 #if MH17_FEATURES_HAVE_PREFIXES
-/*
- * feature prefixes are not desired but got added back on due to some otterlace inconsistency thing
- */
-                        char *p = g_strstr_len(new_col,-1,":");
-                        if(p) /* strip data type off the front */
-                              new_col = p + 1;
+			      /*
+			       * feature prefixes are not desired but got added back on due to some otterlace inconsistency thing
+			       */
+			      char *p = g_strstr_len(new_col,-1,":");
+			      if(p) /* strip data type off the front */
+				new_col = p + 1;
 #endif
-                        show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(new_col)));
-                    }
+			      show->evidence = g_list_prepend(show->evidence, GUINT_TO_POINTER(g_quark_from_string(new_col)));
+			    }
 			  status = TRUE ;
 			}
 		      else
@@ -1552,7 +1573,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 			}
 		    }
 
-              col_ind++;
+		  col_ind++;
 		  type = g_list_next(type) ;
 
 		  target = NULL ;
@@ -1562,11 +1583,11 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 
 	    } while (found) ;
 
-      show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
+	  show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
 								  show->xml_curr_tagvalue_name, show->xml_curr_type,
 								  "compound", column_data,
 								  NULL) ;
-	g_free(columns);
+	  g_free(columns);
 	}
     }
   else
@@ -1669,7 +1690,7 @@ static void getAllMatches(ZMapWindow window,
 static void addTagValue(gpointer data, gpointer user_data)
 {
   ID2Canvas id2c = (ID2Canvas) data;
-//  FooCanvasItem *item = (FooCanvasItem *) id2c->item ;
+  //  FooCanvasItem *item = (FooCanvasItem *) id2c->item ;
 #warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
 
   AddPara para_data = (AddPara)user_data ;
@@ -1678,7 +1699,7 @@ static void addTagValue(gpointer data, gpointer user_data)
   GList *column_data = NULL ;
   ZMapGuiNotebookTagValue tagvalue ;
   int tmp = 0 ;
-//  char *clone_id,
+  //  char *clone_id,
   char *strand ;
   int display_start, display_end ;
 
