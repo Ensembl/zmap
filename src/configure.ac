@@ -32,19 +32,23 @@ fi
 
 
 
-echo "************************************************************"
-echo "* Welcome to ./configure for $PACKAGE_STRING"
-echo "* Cmd: $0 $@"
-echo "* Environment:"
-echo "*   LDFLAGS          : $LDFLAGS"
-echo "*   CFLAGS           : $CFLAGS"
-echo "*   CC               : $CC"
-echo "*   PATH             : $PATH"
-echo "*   PACKAGE_CFG      : $PKG_CONFIG"
-echo "*   PACKAGE_CFG_PATH : $PKG_CONFIG_PATH"
-echo "*   LD_LIBRARY_PATH  : $LD_LIBRARY_PATH"
-echo "* continuing..."
-echo "*"
+echo \
+"---------------------------------------------------------------------
+ Welcome to ./configure for $PACKAGE_STRING
+ Cmd: $0 $@
+ Environment:
+   LDFLAGS          : $LDFLAGS
+   CFLAGS           : $CFLAGS
+   CC               : $CC
+   PATH             : $PATH
+   PACKAGE_CFG      : $PKG_CONFIG
+   PACKAGE_CFG_PATH : $PKG_CONFIG_PATH
+   LD_LIBRARY_PATH  : $LD_LIBRARY_PATH
+ continuing...
+"
+echo "---------------------------------------------------------------------
+"
+
 
 
 # what are we building on?
@@ -474,7 +478,7 @@ AC_OUTPUT
 
 
 echo \
-"-------------------------------------------------
+"---------------------------------------------------------------------
 
  ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
 
@@ -488,5 +492,5 @@ echo \
      <program> - build specific program
 "
 
-echo "-------------------------------------------------
+echo "---------------------------------------------------------------------
 "
