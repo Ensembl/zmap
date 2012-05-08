@@ -366,6 +366,8 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
 GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
 						      char *element_name, ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
+char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out) ;
+
 
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 
