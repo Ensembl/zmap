@@ -258,15 +258,19 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer)
 /* Event processing code.  FIFO logic, processed in exactly the same order as created... */
 ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events)
 {
-  int event_count = 0, i = 0;
-  ZMapXMLWriterEvent event = NULL;
-  ZMapXMLWriterErrorCode status = ZMAPXMLWRITER_OK;
-  event_count = events->len;
+  int event_count = 0, i = 0 ;
+  ZMapXMLWriterEvent event = NULL ;
+  ZMapXMLWriterErrorCode status = ZMAPXMLWRITER_OK ;
+  static gboolean debug = FALSE ;
 
-  for(i = 0; ((status == ZMAPXMLWRITER_OK) && (i < event_count)); i++)
+
+  for (i = 0, event_count = events->len ; ((status == ZMAPXMLWRITER_OK) && (i < event_count)) ; i++)
     {
       char *first = NULL, *second = NULL;
       event = &(g_array_index(events, ZMapXMLWriterEventStruct, i));
+
+      zMapDebugPrint(debug, "element: %s, attribute: %s",
+		     g_quark_to_string(event->data.name), g_quark_to_string(event->data.comp.name)) ;
 
       switch(event->type)
         {
