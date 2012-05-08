@@ -1,4 +1,4 @@
-/*  Last edited: Feb 14 13:29 2012 (edgrif) */
+/*  Last edited: Apr 11 10:02 2012 (edgrif) */
 /*  File: zmapRemoteCommand.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2010: Genome Research Ltd.
@@ -69,13 +69,18 @@ GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control
 						RemoteCommandRCType return_code, char *reason,
 						ZMapXMLUtilsEventStack reply,
 						char **error_out) ;
+GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote_control,
+							char *xml_request,
+							RemoteCommandRCType return_code, char *reason,
+							ZMapXMLUtilsEventStack reply,
+							char **error_out) ;
 ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attribute, char *attribute_value) ;
 ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(char *message) ;
 GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
 				 ZMapXMLUtilsEventStack request_body) ;
 char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **error_out) ;
 
-
+gboolean zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_control, char *xml_request, char **error_out) ;
 gboolean zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control, char *request, char **error_out) ;
 gboolean zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
 					char *original_request, char *reply, char **error_out) ;
