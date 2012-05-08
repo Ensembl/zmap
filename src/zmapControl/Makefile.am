@@ -8,7 +8,7 @@ noinst_LTLIBRARIES = libZMapControl.la
 libZMapControl_la_SOURCES = zmapControl.c \
 zmapControlNavigator.c \
 zmapControlPreferences.c \
-zmapControlRemote.c \
+zmapControlRemoteControl.c \
 zmapControlRemoteReceive.c \
 zmapControlRemoteSend.c \
 zmapControlViews.c \
