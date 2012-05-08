@@ -78,7 +78,7 @@ char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 void zMapDestroy(ZMap zmap, ZMapViewWindowTree *destroyed_zmaps_inout) ;
-gboolean zMapControlProcessRemoteRequest(gpointer local_data,
+gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 void zMapAddClient(ZMap zmap, void *client);
