@@ -28,7 +28,7 @@
  *
  * Exported functions: none
  * HISTORY:
- * Last edited: Feb 29 16:56 2012 (edgrif)
+ * Last edited: Apr 11 09:39 2012 (edgrif)
  * Created: Tue Oct 26 15:56:03 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -126,16 +126,19 @@ enum
   {
     XREMOTE_PING,
     XREMOTE_NEW_VIEW,
-    XREMOTE_CLOSE_VIEW,
     XREMOTE_ADD_VIEW,
+    XREMOTE_CLOSE_VIEW,
+    XREMOTE_ZOOM_TO,
+    XREMOTE_GET_MARK,
+    XREMOTE_SHUTDOWN,
+    XREMOTE_ABORT,
+
+    /* Not done yet.... */
     XREMOTE_REGISTER_CLIENT,
     XREMOTE_ZOOMIN,
     XREMOTE_ZOOMOUT,
     XREMOTE_CREATE,
     XREMOTE_DELETE,
-    XREMOTE_ZOOMTO,
-    XREMOTE_SHUTDOWN,
-    XREMOTE_ABORT
   };
 
 
@@ -429,21 +432,28 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/File/Quit",               "<control>Q", menuQuitCB, 0,                  NULL,       NULL},
     {"/_Commands",               NULL,         NULL,       0,                  "<Branch>", NULL},
     {"/Commands/ping",           NULL,         cmdCB,      XREMOTE_PING,       NULL,       NULL},
+
     {"/Commands/new_view",       NULL,         cmdCB,      XREMOTE_NEW_VIEW,   NULL,       NULL},
     {"/Commands/add_to_view",    NULL,         cmdCB,      XREMOTE_ADD_VIEW,   NULL,       NULL},
     {"/Commands/close_view",     NULL,         cmdCB,      XREMOTE_CLOSE_VIEW, NULL,       NULL},
+
+    {"/Commands/zoom_to",        NULL,         cmdCB,      XREMOTE_ZOOM_TO,    NULL,       NULL},
+    {"/Commands/get_mark",       NULL,         cmdCB,      XREMOTE_GET_MARK,   NULL,       NULL},
+
+    {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
+    {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
+
     {"/Commands/shutdown",       NULL,         cmdCB,      XREMOTE_SHUTDOWN,   NULL,       NULL},
     {"/Commands/abort",          NULL,         cmdCB,      XREMOTE_ABORT,      NULL,       NULL},
 
 
-    {"/Commands/register client",     NULL,         cmdCB,      XREMOTE_REGISTER_CLIENT,   NULL,       NULL}
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     {"/Commands/Zoom In",        NULL,         cmdCB,      XREMOTE_ZOOMIN,   NULL,       NULL},
     {"/Commands/Zoom Out",       NULL,         cmdCB,      XREMOTE_ZOOMOUT,  NULL,       NULL},
-    {"/Commands/zoom_to",   NULL,         cmdCB,      XREMOTE_ZOOMTO,   NULL,       NULL},
-    {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
-    {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
+
+    {"/Commands/register client",     NULL,         cmdCB,      XREMOTE_REGISTER_CLIENT,   NULL,       NULL}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -955,7 +965,7 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
    * and data to be called from a callback for an asynch. request.
    * 
    * For now we just call straight back for testing.... */
-  (remote_reply_func)(remote_reply_data, full_reply) ;
+  (remote_reply_func)(remote_reply_data, FALSE, full_reply) ;
 
 
   zMapDebugPrint(debug_G, "%s", "Exit...") ;
@@ -1320,7 +1330,7 @@ static char *makeReply(RemoteData remote_data, char *request, ZMapXMLUtilsEventS
   xml_stack = zMapRemoteCommandCreateReplyFromRequest(remote_data->remote_cntl,
 						      request, remote_data->reply_rc, NULL, raw_reply, &err_msg) ;
 
-  full_reply = zMapRemoteCommandStack2XML(xml_stack, &err_msg) ;
+  full_reply = zMapXMLUtilsStack2XML(xml_stack, &err_msg) ;
 
 
 
@@ -1402,14 +1412,14 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 
     align_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "align", ZMAPXML_EVENT_DATA_NONE,  {0}},
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "name",  ZMAPXML_EVENT_DATA_QUARK, {0}},
+		     {ZMAPXML_END_ELEMENT_EVENT,   "align",   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		     {0}},
-    align_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "align",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		   {0}},
+
     block_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "block", ZMAPXML_EVENT_DATA_NONE,  {0}},
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "name",  ZMAPXML_EVENT_DATA_QUARK, {0}},
+		     {ZMAPXML_END_ELEMENT_EVENT,   "block",   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		     {0}},
-    block_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "block",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		   {0}},
+
     feature[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
@@ -1425,6 +1435,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 		 {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
+
     sequence[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,  ZMAPXML_EVENT_DATA_STRING,  {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_START, ZMAPXML_EVENT_DATA_INTEGER, {0}},
@@ -1473,7 +1484,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
   GArray *request_stack ;
   char *request ;
   char *err_msg = NULL ;
-
+  char *next_element ;
 
   action = &(req_start[1].value.q) ;
 
@@ -1517,7 +1528,6 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
     case XREMOTE_CLOSE_VIEW:
       {
 	*action = g_quark_from_string(ZACP_CLOSEVIEW) ;
-
 	command = ZACP_CLOSEVIEW ;
 
 	if (g_list_length(remote_data->views) == 1)
@@ -1527,6 +1537,26 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 
 	break;
       }
+
+    case XREMOTE_ZOOM_TO:
+      {
+	*action = g_quark_from_string(ZACP_ZOOM_TO) ;
+	command = ZACP_ZOOM_TO ;
+
+	data_ptr = &feature[0];
+	do_feature_xml = TRUE ;
+
+	break;
+      }
+
+    case XREMOTE_GET_MARK:
+      {
+	*action = g_quark_from_string(ZACP_GET_MARK) ;
+	command = ZACP_GET_MARK ;
+
+	break;
+      }
+
     case XREMOTE_SHUTDOWN:
     case XREMOTE_ABORT:
       {
@@ -1546,38 +1576,17 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 	break;
       }
 
-    case XREMOTE_REGISTER_CLIENT:
-      {
-	char *client_id ;
-
-	*action  = g_quark_from_string("register_client") ;
-
-	data_ptr = &client[0] ;
-
-	client_id = remote_data->window_id ;
-	client[1].value.s = g_strdup(client_id) ;
-	client[2].value.s = g_strdup(ZMAP_CLIENT_REQUEST_ATOM_NAME) ;
-	client[3].value.s = g_strdup(ZMAP_CLIENT_RESPONSE_ATOM_NAME) ;
-
-	break;
-      }
-
-    case XREMOTE_ZOOMTO:
-      *action  = g_quark_from_string("zoom_to") ;
-
-      data_ptr = &feature[0];
-
-      do_feature_xml = TRUE ;
-      break;
     case XREMOTE_DELETE:
-      *action  = g_quark_from_string("delete_feature") ;
+      *action = g_quark_from_string(ZACP_DELETE_FEATURE) ;
+      command = ZACP_DELETE_FEATURE ;
 
       data_ptr = &feature[0];
 
       do_feature_xml = TRUE ;
       break;
     case XREMOTE_CREATE:
-      *action  = g_quark_from_string("create_feature") ;
+      *action  = g_quark_from_string(ZACP_CREATE_FEATURE) ;
+      command = ZACP_CREATE_FEATURE ;
 
       data_ptr = &feature[0];
 
@@ -1646,11 +1655,27 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
   /* Create the xml request and display it in our request window. */
   request_stack = zMapRemoteCommandCreateRequest(remote_data->remote_cntl, command, view_id, -1) ;
 
+  /* how to do this ??? */
+  if (do_feature_xml)
+    {
+      next_element = ZACP_BLOCK ;
+
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    ZACP_REQUEST, &align_start[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    ZACP_ALIGN, &block_start[0]) ;
+    }
+  else
+    {
+      next_element = ZACP_REQUEST ;
+    }
+
   if (data_ptr)
     request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								  ZACP_REQUEST, data_ptr) ;
+								  next_element, data_ptr) ;
 
-  request = zMapRemoteCommandStack2XML(request_stack, &err_msg) ;
+
+  request = zMapXMLUtilsStack2XML(request_stack, &err_msg) ;
 
   gtk_text_buffer_set_text(remote_data->our_req.request_text_buffer, request, -1) ;
   gtk_text_buffer_set_text(remote_data->our_req.response_text_buffer, "", -1) ;
