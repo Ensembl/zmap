@@ -80,7 +80,10 @@ typedef struct _ZMapStruct
   void            *app_data ;				    /* Data passed back to all callbacks
 							       registered for this ZMap. */
 
+  gboolean remote_control ;
+
   ZMapFeatureSequenceMap default_sequence;             /* piinter to app_context default_sequence */
+
 
   /* Widget stuff for the Zmap. */
   GtkTooltips     *tooltips ;
@@ -147,8 +150,12 @@ typedef struct _ZMapStruct
                                          * and a message as info for the
                                          * remote control simple IPC stuff */
 
+
+  /* Old stuff...??? */
   ZMapXRemoteObj xremote_client;
   ZMapXRemoteObj xremote_server;          /* that we reply to */
+
+
 
   gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 
