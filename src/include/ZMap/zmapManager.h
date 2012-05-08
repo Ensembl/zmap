@@ -79,7 +79,7 @@ void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
-gboolean zMapManagerProcessRemoteRequest(gpointer local_data,
+gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 void zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
