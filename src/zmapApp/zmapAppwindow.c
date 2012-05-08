@@ -122,6 +122,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   int sleep_seconds = 0 ;
   ZMapFeatureSequenceMap seq_map;
   char *window_title ;
+  gboolean remote_control = FALSE ;
+
 
   /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
 
@@ -164,13 +166,23 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* app_data->app_context = */
   app_context = createAppContext() ;
 
-  /* Check for peer program id and set up various bits for remote control if there is one. */
-  if (checkPeerID(&peer_name, &peer_clipboard))
+
+  if (!checkPeerID(&peer_name, &peer_clipboard))
     {
-      /* Set App level callback to receive requests from zmap sub-systems to be forwarded
-       * to our peer. */
-      app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
+      /* obscure...only an error if just one is specified... */
+      if (!(!peer_name && !peer_clipboard))
+	zMapLogWarning("No %s name for remote connection specified so remote interface cannot be created.",
+		       (!peer_name ? "peer" : "clipboard")) ;
     }
+  else
+    {
+      /* set up the remote_request_func, subsystems check for this routine to determine
+       * if they should make/service xremote calls. */
+      app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
+
+      remote_control = TRUE ;
+    }
+
 
   /* Init manager, must happen just once in application. */
   zMapManagerInit(&app_window_cbs_G) ;
@@ -233,11 +245,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
-  if (!peer_name)
-    {
-      zMapLogWarning("%s", "No peer for remote connection specified so remote interface cannot be created.") ;
-    }
-  else
+  if (remote_control)
     {
       if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard))
 	{
@@ -936,17 +944,13 @@ static gboolean checkPeerID(char **peer_name_out, char **peer_clipboard_out)
   ZMapCmdLineArgsType name_value = {FALSE}, clipboard_value = {FALSE} ;
 
   if (zMapCmdLineArgsValue(ZMAPARG_PEER_NAME, &name_value))
-    {
-      *peer_name_out = name_value.s ;
-      result = TRUE ;
-    }
+    *peer_name_out = name_value.s ;
 
   if (zMapCmdLineArgsValue(ZMAPARG_PEER_CLIPBOARD, &clipboard_value))
-    {
-      *peer_clipboard_out = clipboard_value.s ;
-      result = TRUE ;
-    }
+    *peer_clipboard_out = clipboard_value.s ;
 
+  if (*peer_name_out && *peer_clipboard_out)
+    result = TRUE ;
 
   return result ;
 }
