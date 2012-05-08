@@ -178,10 +178,16 @@ typedef struct
 
   ZMapWindowFilterStruct filter;
 
+
+
+  /* Old xremote stuff.... */
+
   /* For Xremote XML actions/events. */
   ZMapXRemoteSendCommandError remote_result ;
 
   ZMapXMLHandlerStruct xml_handler ;
+
+
 
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
