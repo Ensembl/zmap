@@ -1,3 +1,4 @@
+/*  Last edited: Apr 11 10:51 2012 (edgrif) */
 /*  File: zmapManager.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -78,9 +79,9 @@ static void destroyedCB(ZMap zmap, void *cb_data) ;
 static void quitReqCB(ZMap zmap, void *cb_data) ;
 
 
-static gboolean localProcessRemoteRequest(gpointer local_data,
-					  char *command_name, ZMapAppRemoteViewID view_id, char *request,
-					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+static void localProcessRemoteRequest(ZMapManager manager,
+				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -196,6 +197,9 @@ ZMapManager zMapManagerCreate(void *gui_data)
   manager->zmap_list = NULL ;
 
   manager->gui_data = gui_data ;
+
+  if (manager_cbs_G->remote_request_func)
+    manager->remote_control = TRUE ;
 
   return manager ;
 }
@@ -320,33 +324,40 @@ gboolean zMapManagerRaise(ZMap zmap)
   return result ;
 }
 
-gboolean zMapManagerProcessRemoteRequest(gpointer local_data,
+gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
 
-  if (!(result = localProcessRemoteRequest(local_data, command_name, view_id, request,
-					   app_reply_func, app_reply_data)))
+  if (strcmp(command_name, ZACP_NEWVIEW) == 0
+      || strcmp(command_name, ZACP_ADD_TO_VIEW) == 0
+      || strcmp(command_name, ZACP_CLOSEVIEW) == 0)
     {
-      ZMapManager zmaps = (ZMapManager)local_data ;
+      localProcessRemoteRequest(manager, command_name, view_id, request,
+				app_reply_func, app_reply_data) ;
 
-      if (zmaps->zmap_list)
+      result = TRUE ;
+    }
+  else if (manager->zmap_list)
+    {
+      GList *next_zmap ;
+
+      /* Look for the right zmap. */
+      next_zmap = g_list_first(manager->zmap_list) ;
+      do
 	{
-	  GList *next_zmap ;
+	  ZMap zmap = (ZMap)(next_zmap->data) ;
 
-	  /* Try all the zmaps. */
-	  next_zmap = g_list_first(zmaps->zmap_list) ;
-	  do
+	  if (zmap == view_id->zmap)
 	    {
-	      ZMap zmap = (ZMap)(next_zmap->data) ;
-
 	      result = zMapControlProcessRemoteRequest(zmap,
 						       command_name, view_id, request,
 						       app_reply_func, app_reply_data) ;
+	      break ;
 	    }
-	  while (!result && (next_zmap = g_list_next(next_zmap))) ;
 	}
+      while ((next_zmap = g_list_next(next_zmap))) ;
     }
 
   return result ;
@@ -449,31 +460,20 @@ static void quitReqCB(ZMap zmap, void *cb_data)
 
 
 
-/* This is where we process a command or return FALSE to say that we don't know the command. */
-static gboolean localProcessRemoteRequest(gpointer local_data,
-					  char *command_name, ZMapAppRemoteViewID view_id, char *request,
-					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+/* This is where we process a command. */
+static void localProcessRemoteRequest(ZMapManager manager,
+				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
-  gboolean result = FALSE ;
-  ZMapManager manager = (ZMapManager)local_data ;
+  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
+  char *reason = NULL ;
+  ZMapXMLUtilsEventStack reply = NULL ;
 
-  if (strcmp(command_name, ZACP_NEWVIEW) == 0
-      || strcmp(command_name, ZACP_ADD_TO_VIEW) == 0
-      || strcmp(command_name, ZACP_CLOSEVIEW) == 0)
-    {
-      RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
-      char *reason = NULL ;
-      ZMapXMLUtilsEventStack reply = NULL ;
+  processRequest(manager, command_name, view_id, request, &command_rc, &reason, &reply) ;
 
-      processRequest(manager, command_name, view_id, request, &command_rc, &reason, &reply) ;
-
-      (app_reply_func)(command_name, command_rc, reason, reply, app_reply_data) ;
+  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
       
-      result = TRUE ;
-    }
-
-
-  return result ;
+  return ;
 }
 
 
