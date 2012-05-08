@@ -384,6 +384,9 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   zmap_view = createZMapView(xremote_widget, view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
 
+  if (view_cbs_G->remote_request_func)
+    zmap_view->remote_control = TRUE ;
+
   zmap_view->state = ZMAPVIEW_INIT ;
 
   view_window = addWindow(zmap_view, view_container) ;
