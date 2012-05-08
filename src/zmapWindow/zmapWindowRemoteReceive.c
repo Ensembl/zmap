@@ -1,4 +1,3 @@
-/*  Last edited: Dec 16 12:18 2011 (edgrif) */
 /*  File: zmapWindowRemoteReceive.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -30,6 +29,10 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
+
+
+/* THIS FILE IS BECOMING REDUNDANT....AND BEING REPLACED BY zmapWindowRemoteControl.c */
+
 
 
 #include <ZMap/zmap.h>
@@ -91,24 +94,6 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 
   return xml;
 }
-
-
-
-
-/* See if view can process the command, if not then try all the windows to see if one can process the request. */
-gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
-					char *command_name, ZMapAppRemoteViewID view_id, char *request,
-					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
-{
-  gboolean result = FALSE ;
-
-
-  /* dummied for now.... */
-
-
-  return result ;
-}
-
 
 
 
@@ -226,18 +211,6 @@ static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
 
     {NULL, NULL}
   };
-
-
-
-
-
-
-/* 
- * OLD CODE...
- * 
- * 
- *  */
-
 
 
 
