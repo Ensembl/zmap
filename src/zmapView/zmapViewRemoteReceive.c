@@ -1,4 +1,3 @@
-/*  Last edited: Dec 16 12:15 2011 (edgrif) */
 /*  File: zmapViewRemoteRequests.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -32,6 +31,10 @@
  *
  *-------------------------------------------------------------------
  */
+
+/* THIS WHOLE FILE WILL BECOME REDUNDANT ONCE THE NEW XREMOTE IS THERE........ */
+
+
 
 #include <ZMap/zmap.h>
 
@@ -191,15 +194,16 @@ static void findUniqueCB(gpointer data, gpointer user_data) ;
 static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void setWindowXremote(ZMapView view) ;
 static void setXremoteCB(gpointer list_data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData input_data) ;
 
-
-
-static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
-					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 
 
@@ -220,17 +224,24 @@ static ActionDescriptorStruct action_table_G[] =
     {ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE, FALSE, TRUE},
     {ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE, FALSE, TRUE},
     {ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE, FALSE, TRUE},
-    {ZMAPVIEW_REMOTE_ZOOM_TO, FALSE, TRUE},
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    {ZMAPVIEW_REMOTE_ZOOM_TO, FALSE, TRUE},
     {ZMAPVIEW_REMOTE_GET_MARK, FALSE, FALSE},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     {ZMAPVIEW_REMOTE_GET_FEATURE_NAMES, FALSE, TRUE},
 
     {ZMAPVIEW_REMOTE_LOAD_FEATURES, TRUE, FALSE},
+
+
+
     {ZMAPVIEW_REMOTE_REGISTER_CLIENT, FALSE, FALSE},
 
     {ZMAPVIEW_REMOTE_LIST_WINDOWS, FALSE, FALSE},
     {ZMAPVIEW_REMOTE_NEW_WINDOW, FALSE, FALSE},
+
     {ZMAPVIEW_REMOTE_DUMP_CONTEXT, FALSE, FALSE},
 
     {ZMAPVIEW_REMOTE_INVALID, FALSE, FALSE}
@@ -268,15 +279,31 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
   {
   NULL,
+
+  /* create and delete must go at this level, code "replace" at the same time. find could
+   * be at the window level but it might as well be here I guess...but hang on... */
   "find_feature", "create_feature", "delete_feature",
 
+
+  /* I don't know why these are this level..this seems really suspect...they are clearly
+   * window level... */
   "single_select", "multiple_select", "unselect",
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Moved to zmapwindow where they belong.... */
+
   "zoom_to",
+  "get_mark", 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  "get_mark", "get_feature_names", "load_features",
+  "get_feature_names", "load_features",
 
-  "register_client", "list_windows", "new_window",
+
+  /* register must now be redundant, list_windows should go probably... */
+  "register_client", "list_windows",
+
+  /* Not executed at this level now.... */
+  "new_window",
 
   "export_context",
   NULL
@@ -290,57 +317,6 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 /*
  *                         External routines.
  */
-
-
-
-/* 
- * NEW CODE......
- * 
- *  */
-
-
-
-/* See if view can process the command, if not then try all the windows to see if one can process the request. */
-gboolean zMapViewProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
-{
-  gboolean result = FALSE ;
-
-  if (!(result = localProcessRemoteRequest(view, command_name, request,
-					   app_reply_func, app_reply_data)))
-    {
-      GList* list_item ;
-
-      list_item = g_list_first(view->window_list) ;
-      do
-	{
-	  ZMapViewWindow view_window ;
-
-	  view_window = list_item->data ;
-
-	  result = zMapWindowProcessRemoteRequest(view_window->window, command_name, view_id, request,
-						  app_reply_func, app_reply_data) ;
-	}
-      while ((!result) && (list_item = g_list_next(list_item))) ;
-    }
-
-  return result ;
-}
-
-
-
-
-
-
-
-/* 
- * 
- *       OLD CODE.....
- * 
- * 
- *  */
-
 
 
 
@@ -376,53 +352,6 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view)
 /*
  *                       Internal functions.
  */
-
-
-
-/* THIS FUNCTION COULD CALL THE ONE BELOW IT...... */
-static gboolean localProcessRemoteRequest(gpointer local_data, char *command_name, char *request,
-					  ZMapRemoteAppReturnReplyFunc app_reply_func,
-					  gpointer app_reply_data)
-{
-  gboolean result = FALSE ;
-  ZMapView view = (ZMapView)local_data ;
-  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
-  char *reason  = NULL ;
-  ZMapXMLUtilsEventStack reply = NULL ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* Dummied for now.... */
-
-  /* Need to insert all the command handling code here. */
-
-  if (strcmp(command_name, "handshake") == 0)
-    {
-      printf("found handshake\n") ;
-
-      command_rc = REMOTE_COMMAND_RC_OK ;
-      reason = NULL ;
-      reply = "handshake successful." ;
-      
-      result = TRUE ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  if (result)
-    {
-      (app_reply_func)(command_name, command_rc, reason, reply, app_reply_data) ;
-    }
-
-
-
-  return result ;
-}
-
-
 
 
 
@@ -493,137 +422,6 @@ static char *view_execute_command(char *command_text, gpointer user_data,
 }
 
 
-static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData input)
-{
-  gboolean result = FALSE ;
-  RequestData input_data = input->user_data ;
-  ZMapView view = input_data->view ;
-  char *response = NULL ;
-
-  input_data->code = 0 ;
-
-
-  /* We need to set the window somehow....   */
-
-  switch (input->common.action)
-    {
-    case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
-      createClient(view, input);
-      break;
-
-    case ZMAPVIEW_REMOTE_ZOOM_TO:
-      zoomWindowToFeature(view, input_data);
-      break;
-
-    case ZMAPVIEW_REMOTE_GET_MARK:
-      reportWindowMark(view, input_data);
-      break;
-
-    case ZMAPVIEW_REMOTE_GET_FEATURE_NAMES:
-      getFeatureNames(view, input_data) ;
-      break ;
-
-    case ZMAPVIEW_REMOTE_LOAD_FEATURES:
-      loadFeatures(view, input_data) ;
-      break ;
-
-    case ZMAPVIEW_REMOTE_FIND_FEATURE:
-      break ;
-
-    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
-      {
-	eraseFeatures(view, input_data) ;
-	break ;
-      }
-
-    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
-      {
-	/* why is context only sanity checked for this operation and not for others...???? */
-
-	if (sanityCheckContext(view, input_data))
-	  {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    ZMapFeatureAny feature ;
-
-	    if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
-								    input_data.feature)))
-	      {
-		g_string_append_printf(output_data.messages,
-				       "Feature \"%s\" already exists in view",
-				       g_quark_to_string(input_data.feature->original_id)) ;
-		output_data.code = ZMAPXREMOTE_FAILED ;
-	      }
-	    else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	      if (drawNewFeatures(view, input_data)
-		  && (view->xremote_widget && input_data->edit_context))
-		{
-		  /* slice the input_data into the post_data to make the view_post_execute happy. */
-		  PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
-
-		  post_data->action       = input->common.action;
-		  post_data->edit_context = input_data->edit_context;
-
-		  g_object_set_data(G_OBJECT(view->xremote_widget),
-				    VIEW_POST_EXECUTE_DATA,
-				    post_data);
-		}
-
-	    input_data->edit_context = NULL;
-	  }
-	break;
-      }
-    case ZMAPVIEW_REMOTE_LIST_WINDOWS:
-      {
-	getChildWindowXID(view, input_data);
-	break;
-      }
-    case ZMAPVIEW_REMOTE_DUMP_CONTEXT:
-      {
-	viewDumpContextToFile(view, input_data);
-	break;
-      }
-
-      /* errrrrrr....what's going on here...... */
-    case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
-    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
-    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
-    case ZMAPVIEW_REMOTE_NEW_WINDOW:
-      //newWindowForView(view, input, &output_data);
-      //break;
-    case ZMAPVIEW_REMOTE_INVALID:
-    case ZMAPVIEW_REMOTE_UNKNOWN:
-    default:
-      g_string_append_printf(input_data->messages, "%s", "Unknown command") ;
-      input_data->code = ZMAPXREMOTE_UNKNOWNCMD ;
-      break;
-    }
-
-
-  if (input_data->edit_context && !ZMAPVIEW_REMOTE_DELETE_FEATURE)
-    zMapFeatureContextDestroy(input_data->edit_context, TRUE) ;
-
-
-  if (input_data->code == ZMAPXREMOTE_OK)
-    {
-      result = TRUE ;
-    }
-  else
-    {
-      result = FALSE ;
-
-      zMapXMLParserRaiseParsingError(parser, response) ;
-    }
-
-
-
-  return result ;
-}
-
-
-
-
 static char *view_post_execute(char *command_text, gpointer user_data,
 			       ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner)
 {
@@ -663,342 +461,6 @@ static char *view_post_execute(char *command_text, gpointer user_data,
 
   return response ;
 }
-
-
-
-
-static void createClient(ZMapView view, ZMapXRemoteParseCommandData input)
-{
-  ZMapXRemoteObj client;
-  ClientParameters client_params = &(input->common.client_params);
-  RequestData input_data = input->user_data ;
-  char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
-  int created, exists;
-
-  if (!(view->xremote_client) && (client = zMapXRemoteNew(GDK_DISPLAY())) != NULL)
-    {
-      zMapXRemoteInitClient(client, client_params->xid) ;
-      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request)) ;
-      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(client_params->response)) ;
-
-      view->xremote_client = client ;
-
-      /* We need to tell any windows we have that there is now an external client. */
-      setWindowXremote(view) ;
-
-      created = 1 ;
-      exists = 0 ;
-    }
-  else if (view->xremote_client)
-    {
-      created = 0;
-      exists  = 1;
-    }
-  else
-    {
-      created = exists = 0;
-    }
-
-  g_string_append_printf(input_data->messages, format_response,
-			 zMapXRemoteWidgetGetXID(view->xremote_widget), created, exists);
-
-  input_data->code = ZMAPXREMOTE_OK;
-
-  return;
-}
-
-static void getChildWindowXID(ZMapView view, RequestData input_data)
-{
-
-  if(view->state < ZMAPVIEW_LOADED)
-    {
-      input_data->code = ZMAPXREMOTE_PRECOND;
-      g_string_append_printf(input_data->messages, "%s",
-                             "view isn't loaded yet");
-    }
-  else
-    {
-      GList *list_item;
-
-      list_item = g_list_first(view->window_list);
-
-      do
-        {
-          ZMapViewWindow view_window;
-          ZMapWindow window;
-          char *client_xml = NULL;
-
-          view_window = (ZMapViewWindow)list_item->data;
-          window      = zMapViewGetWindow(view_window);
-          client_xml  = zMapWindowRemoteReceiveAccepts(window);
-
-          g_string_append_printf(input_data->messages,
-                                 "%s", client_xml);
-          if(client_xml)
-            g_free(client_xml);
-        }
-      while((list_item = g_list_next(list_item))) ;
-
-      input_data->code = ZMAPXREMOTE_OK;
-    }
-
-  return ;
-}
-
-static void viewDumpContextToFile(ZMapView view, RequestData input_data)
-{
-  GIOChannel *file = NULL;
-  GError *error = NULL;
-  char *filepath = NULL;
-
-  filepath = input_data->filename;
-
-  if(!(file = g_io_channel_new_file(filepath, "w", &error)))
-    {
-      input_data->code = ZMAPXREMOTE_UNAVAILABLE;
-      input_data->handled = FALSE;
-      if(error)
-	g_string_append(input_data->messages, error->message);
-    }
-  else
-    {
-      char *format = NULL;
-      gboolean result = FALSE;
-
-      format = input_data->format;
-
-      if(format && g_ascii_strcasecmp(format, "gff") == 0)
-	result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
-#ifdef STYLES_PRINT_TO_FILE
-      else if(format && g_ascii_strcasecmp(format, "test-style") == 0)
-	zMapFeatureTypePrintAll(view->features->styles, __FILE__);
-#endif /* STYLES_PRINT_TO_FILE */
-      else
-	result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
-
-      if(!result)
-	{
-	  input_data->code    = ZMAPXREMOTE_INTERNAL;
-	  input_data->handled = FALSE;
-	  if(error)
-	    g_string_append(input_data->messages, error->message);
-	}
-      else
-	{
-	  input_data->code    = ZMAPXREMOTE_OK;
-	  input_data->handled = TRUE;
-	}
-    }
-
-  return ;
-}
-
-static gboolean sanityCheckContext(ZMapView view, RequestData input_data)
-{
-  gboolean features_are_sane = TRUE ;
-  ZMapXRemoteStatus save_code ;
-
-  save_code = input_data->code ;
-  input_data->code = 0 ;
-
-  zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            sanity_check_context,
-                            input_data) ;
-
-  if (input_data->code != 0)
-    features_are_sane = FALSE ;
-  else
-    input_data->code = save_code ;
-
-  return features_are_sane ;
-}
-
-
-
-static void eraseFeatures(ZMapView view, RequestData input_data)
-{
-  zmapViewEraseFromContext(view, input_data->edit_context);
-
-  zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            mark_matching_invalid,
-                            &(input_data->feature_list));
-
-  input_data->code = 0;
-
-  if (g_list_length(input_data->feature_list))
-    g_list_foreach(input_data->feature_list, delete_failed_make_message, input_data);
-
-  /* if delete_failed_make_message didn't change the code then all is ok */
-  if (input_data->code == 0)
-    input_data->code = ZMAPXREMOTE_OK;
-
-  input_data->handled = TRUE;
-
-  return ;
-}
-
-static gboolean drawNewFeatures(ZMapView view, RequestData input_data)
-{
-  gboolean result = FALSE ;
-
-  if (!(input_data->edit_context = zmapViewMergeInContext(view, input_data->edit_context)))
-    {
-      g_string_append(input_data->messages, "Merge of new feature into View feature context failed") ;
-      input_data->code = ZMAPXREMOTE_FAILED ;
-    }
-  else
-    {
-      zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
-				ZMAPFEATURE_STRUCT_FEATURE,
-				delete_from_list,
-				&(input_data->feature_list));
-
-      zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
-				ZMAPFEATURE_STRUCT_FEATURE,
-				mark_matching_invalid,
-				&(input_data->feature_list));
-
-      input_data->code = 0;
-
-      if (g_list_length(input_data->feature_list))
-	g_list_foreach(input_data->feature_list, draw_failed_make_message, input_data);
-
-      if (input_data->code == 0)
-	input_data->code = ZMAPXREMOTE_OK ;
-
-      input_data->handled = TRUE ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-static void draw_failed_make_message(gpointer list_data, gpointer user_data)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)list_data;
-  RequestData request_data = (RequestData)user_data;
-
-
-
-  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
-    {
-      request_data->code = ZMAPXREMOTE_CONFLICT; /* possibly the wrong code */
-
-      g_string_append_printf(request_data->messages,
-			     "Failed to draw feature '%s' [%s]. Feature already exists.\n",
-			     (char *)g_quark_to_string(feature_any->original_id),
-			     (char *)g_quark_to_string(feature_any->unique_id));
-    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I DON'T GET THIS, IF THE STRUCT IS VALID SURELY THE FEATURE GOT DRAWN ?? */
-
-  else
-    {
-      g_string_append_printf(request_data->messages,
-			     "Failed to draw feature '%s' [%s]. Unknown reason.\n",
-			     (char *)g_quark_to_string(feature_any->original_id),
-			     (char *)g_quark_to_string(feature_any->unique_id));
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-
-static void delete_failed_make_message(gpointer list_data, gpointer user_data)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)list_data;
-  RequestData request_data = (RequestData)user_data;
-
-  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
-    {
-      request_data->code = ZMAPXREMOTE_CONFLICT; /* possibly the wrong code */
-
-      g_string_append_printf(request_data->messages,
-                             "Failed to delete feature '%s' [%s].\n",
-                             (char *)g_quark_to_string(feature_any->original_id),
-                             (char *)g_quark_to_string(feature_any->unique_id));
-    }
-
-  return ;
-}
-
-static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data)
-{
-  gint match = -1;
-  ZMapFeatureAny a = (ZMapFeatureAny)list_data, b = (ZMapFeatureAny)user_data ;
-
-  match = !(a->unique_id == b->unique_id);
-
-  return match;
-}
-
-static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
-                                                        gpointer data,
-                                                        gpointer user_data,
-                                                        char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **list = (GList **)user_data, *match;
-
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
-        {
-          *list = g_list_remove(*list, match->data);
-        }
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
-}
-
-static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **list = (GList **)user_data, *match;
-
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
-        {
-          any = (ZMapFeatureAny)(match->data);
-          any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
-        }
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
-}
-
-static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
-                                                            gpointer data,
-                                                            gpointer user_data,
-                                                            char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  RequestData input_data = (RequestData)user_data;
-  char *reason = NULL;
-
-  if (!zMapFeatureAnyIsSane(any, &reason))
-    {
-      input_data->code = ZMAPXREMOTE_BADREQUEST;
-      input_data->messages = g_string_append(input_data->messages, reason) ;
-
-      if (reason)
-	g_free(reason);
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK ;
-}
-
 
 
 
@@ -2092,6 +1554,475 @@ static gboolean xml_return_true_cb(gpointer user_data,
 
 
 
+
+static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData input)
+{
+  gboolean result = FALSE ;
+  RequestData input_data = input->user_data ;
+  ZMapView view = input_data->view ;
+  char *response = NULL ;
+
+  input_data->code = 0 ;
+
+
+  /* We need to set the window somehow....   */
+
+  switch (input->common.action)
+    {
+    case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
+      createClient(view, input);
+      break;
+
+    case ZMAPVIEW_REMOTE_ZOOM_TO:
+      zoomWindowToFeature(view, input_data);
+      break;
+
+    case ZMAPVIEW_REMOTE_GET_MARK:
+      reportWindowMark(view, input_data);
+      break;
+
+    case ZMAPVIEW_REMOTE_GET_FEATURE_NAMES:
+      getFeatureNames(view, input_data) ;
+      break ;
+
+    case ZMAPVIEW_REMOTE_LOAD_FEATURES:
+      loadFeatures(view, input_data) ;
+      break ;
+
+    case ZMAPVIEW_REMOTE_FIND_FEATURE:
+      break ;
+
+    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
+      {
+	eraseFeatures(view, input_data) ;
+	break ;
+      }
+
+    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+      {
+	/* why is context only sanity checked for this operation and not for others...???? */
+
+	if (sanityCheckContext(view, input_data))
+	  {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    ZMapFeatureAny feature ;
+
+	    if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
+								    input_data.feature)))
+	      {
+		g_string_append_printf(output_data.messages,
+				       "Feature \"%s\" already exists in view",
+				       g_quark_to_string(input_data.feature->original_id)) ;
+		output_data.code = ZMAPXREMOTE_FAILED ;
+	      }
+	    else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	      if (drawNewFeatures(view, input_data)
+		  && (view->xremote_widget && input_data->edit_context))
+		{
+		  /* slice the input_data into the post_data to make the view_post_execute happy. */
+		  PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
+
+		  post_data->action       = input->common.action;
+		  post_data->edit_context = input_data->edit_context;
+
+		  g_object_set_data(G_OBJECT(view->xremote_widget),
+				    VIEW_POST_EXECUTE_DATA,
+				    post_data);
+		}
+
+	    input_data->edit_context = NULL;
+	  }
+	break;
+      }
+    case ZMAPVIEW_REMOTE_LIST_WINDOWS:
+      {
+	getChildWindowXID(view, input_data);
+	break;
+      }
+    case ZMAPVIEW_REMOTE_DUMP_CONTEXT:
+      {
+	viewDumpContextToFile(view, input_data);
+	break;
+      }
+
+      /* errrrrrr....what's going on here...... */
+    case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
+    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
+    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
+    case ZMAPVIEW_REMOTE_NEW_WINDOW:
+      //newWindowForView(view, input, &output_data);
+      //break;
+    case ZMAPVIEW_REMOTE_INVALID:
+    case ZMAPVIEW_REMOTE_UNKNOWN:
+    default:
+      g_string_append_printf(input_data->messages, "%s", "Unknown command") ;
+      input_data->code = ZMAPXREMOTE_UNKNOWNCMD ;
+      break;
+    }
+
+
+  if (input_data->edit_context && !ZMAPVIEW_REMOTE_DELETE_FEATURE)
+    zMapFeatureContextDestroy(input_data->edit_context, TRUE) ;
+
+
+  if (input_data->code == ZMAPXREMOTE_OK)
+    {
+      result = TRUE ;
+    }
+  else
+    {
+      result = FALSE ;
+
+      zMapXMLParserRaiseParsingError(parser, response) ;
+    }
+
+
+
+  return result ;
+}
+
+
+
+
+static void createClient(ZMapView view, ZMapXRemoteParseCommandData input)
+{
+  ZMapXRemoteObj client;
+  ClientParameters client_params = &(input->common.client_params);
+  RequestData input_data = input->user_data ;
+  char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
+  int created, exists;
+
+  if (!(view->xremote_client) && (client = zMapXRemoteNew(GDK_DISPLAY())) != NULL)
+    {
+      zMapXRemoteInitClient(client, client_params->xid) ;
+      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request)) ;
+      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(client_params->response)) ;
+
+      view->xremote_client = client ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* We need to tell any windows we have that there is now an external client. */
+      setWindowXremote(view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      created = 1 ;
+      exists = 0 ;
+    }
+  else if (view->xremote_client)
+    {
+      created = 0;
+      exists  = 1;
+    }
+  else
+    {
+      created = exists = 0;
+    }
+
+  g_string_append_printf(input_data->messages, format_response,
+			 zMapXRemoteWidgetGetXID(view->xremote_widget), created, exists);
+
+  input_data->code = ZMAPXREMOTE_OK;
+
+  return;
+}
+
+static void getChildWindowXID(ZMapView view, RequestData input_data)
+{
+
+  if(view->state < ZMAPVIEW_LOADED)
+    {
+      input_data->code = ZMAPXREMOTE_PRECOND;
+      g_string_append_printf(input_data->messages, "%s",
+                             "view isn't loaded yet");
+    }
+  else
+    {
+      GList *list_item;
+
+      list_item = g_list_first(view->window_list);
+
+      do
+        {
+          ZMapViewWindow view_window;
+          ZMapWindow window;
+          char *client_xml = NULL;
+
+          view_window = (ZMapViewWindow)list_item->data;
+          window      = zMapViewGetWindow(view_window);
+          client_xml  = zMapWindowRemoteReceiveAccepts(window);
+
+          g_string_append_printf(input_data->messages,
+                                 "%s", client_xml);
+          if(client_xml)
+            g_free(client_xml);
+        }
+      while((list_item = g_list_next(list_item))) ;
+
+      input_data->code = ZMAPXREMOTE_OK;
+    }
+
+  return ;
+}
+
+static void viewDumpContextToFile(ZMapView view, RequestData input_data)
+{
+  GIOChannel *file = NULL;
+  GError *error = NULL;
+  char *filepath = NULL;
+
+  filepath = input_data->filename;
+
+  if(!(file = g_io_channel_new_file(filepath, "w", &error)))
+    {
+      input_data->code = ZMAPXREMOTE_UNAVAILABLE;
+      input_data->handled = FALSE;
+      if(error)
+	g_string_append(input_data->messages, error->message);
+    }
+  else
+    {
+      char *format = NULL;
+      gboolean result = FALSE;
+
+      format = input_data->format;
+
+      if(format && g_ascii_strcasecmp(format, "gff") == 0)
+	result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
+#ifdef STYLES_PRINT_TO_FILE
+      else if(format && g_ascii_strcasecmp(format, "test-style") == 0)
+	zMapFeatureTypePrintAll(view->features->styles, __FILE__);
+#endif /* STYLES_PRINT_TO_FILE */
+      else
+	result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
+
+      if(!result)
+	{
+	  input_data->code    = ZMAPXREMOTE_INTERNAL;
+	  input_data->handled = FALSE;
+	  if(error)
+	    g_string_append(input_data->messages, error->message);
+	}
+      else
+	{
+	  input_data->code    = ZMAPXREMOTE_OK;
+	  input_data->handled = TRUE;
+	}
+    }
+
+  return ;
+}
+
+static gboolean sanityCheckContext(ZMapView view, RequestData input_data)
+{
+  gboolean features_are_sane = TRUE ;
+  ZMapXRemoteStatus save_code ;
+
+  save_code = input_data->code ;
+  input_data->code = 0 ;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            sanity_check_context,
+                            input_data) ;
+
+  if (input_data->code != 0)
+    features_are_sane = FALSE ;
+  else
+    input_data->code = save_code ;
+
+  return features_are_sane ;
+}
+
+
+
+static void eraseFeatures(ZMapView view, RequestData input_data)
+{
+  zmapViewEraseFromContext(view, input_data->edit_context);
+
+  zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            mark_matching_invalid,
+                            &(input_data->feature_list));
+
+  input_data->code = 0;
+
+  if (g_list_length(input_data->feature_list))
+    g_list_foreach(input_data->feature_list, delete_failed_make_message, input_data);
+
+  /* if delete_failed_make_message didn't change the code then all is ok */
+  if (input_data->code == 0)
+    input_data->code = ZMAPXREMOTE_OK;
+
+  input_data->handled = TRUE;
+
+  return ;
+}
+
+static gboolean drawNewFeatures(ZMapView view, RequestData input_data)
+{
+  gboolean result = FALSE ;
+
+  if (!(input_data->edit_context = zmapViewMergeInContext(view, input_data->edit_context)))
+    {
+      g_string_append(input_data->messages, "Merge of new feature into View feature context failed") ;
+      input_data->code = ZMAPXREMOTE_FAILED ;
+    }
+  else
+    {
+      zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
+				ZMAPFEATURE_STRUCT_FEATURE,
+				delete_from_list,
+				&(input_data->feature_list));
+
+      zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
+				ZMAPFEATURE_STRUCT_FEATURE,
+				mark_matching_invalid,
+				&(input_data->feature_list));
+
+      input_data->code = 0;
+
+      if (g_list_length(input_data->feature_list))
+	g_list_foreach(input_data->feature_list, draw_failed_make_message, input_data);
+
+      if (input_data->code == 0)
+	input_data->code = ZMAPXREMOTE_OK ;
+
+      input_data->handled = TRUE ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+static void draw_failed_make_message(gpointer list_data, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)list_data;
+  RequestData request_data = (RequestData)user_data;
+
+
+
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
+    {
+      request_data->code = ZMAPXREMOTE_CONFLICT; /* possibly the wrong code */
+
+      g_string_append_printf(request_data->messages,
+			     "Failed to draw feature '%s' [%s]. Feature already exists.\n",
+			     (char *)g_quark_to_string(feature_any->original_id),
+			     (char *)g_quark_to_string(feature_any->unique_id));
+    }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I DON'T GET THIS, IF THE STRUCT IS VALID SURELY THE FEATURE GOT DRAWN ?? */
+
+  else
+    {
+      g_string_append_printf(request_data->messages,
+			     "Failed to draw feature '%s' [%s]. Unknown reason.\n",
+			     (char *)g_quark_to_string(feature_any->original_id),
+			     (char *)g_quark_to_string(feature_any->unique_id));
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
+static void delete_failed_make_message(gpointer list_data, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)list_data;
+  RequestData request_data = (RequestData)user_data;
+
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
+    {
+      request_data->code = ZMAPXREMOTE_CONFLICT; /* possibly the wrong code */
+
+      g_string_append_printf(request_data->messages,
+                             "Failed to delete feature '%s' [%s].\n",
+                             (char *)g_quark_to_string(feature_any->original_id),
+                             (char *)g_quark_to_string(feature_any->unique_id));
+    }
+
+  return ;
+}
+
+static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data)
+{
+  gint match = -1;
+  ZMapFeatureAny a = (ZMapFeatureAny)list_data, b = (ZMapFeatureAny)user_data ;
+
+  match = !(a->unique_id == b->unique_id);
+
+  return match;
+}
+
+static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
+                                                        gpointer data,
+                                                        gpointer user_data,
+                                                        char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  GList **list = (GList **)user_data, *match;
+
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
+        {
+          *list = g_list_remove(*list, match->data);
+        }
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  GList **list = (GList **)user_data, *match;
+
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
+        {
+          any = (ZMapFeatureAny)(match->data);
+          any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
+        }
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
+                                                            gpointer data,
+                                                            gpointer user_data,
+                                                            char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  RequestData input_data = (RequestData)user_data;
+  char *reason = NULL;
+
+  if (!zMapFeatureAnyIsSane(any, &reason))
+    {
+      input_data->code = ZMAPXREMOTE_BADREQUEST;
+      input_data->messages = g_string_append(input_data->messages, reason) ;
+
+      if (reason)
+	g_free(reason);
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK ;
+}
+
+
 static void zoomWindowToFeature(ZMapView view, RequestData input_data)
 {
   GList *list;
@@ -2357,6 +2288,8 @@ static void copyAddFeature(gpointer key, gpointer value, gpointer user_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* run through windows registering that there is a remote client with each. */
 static void setWindowXremote(ZMapView view)
 {
@@ -2364,7 +2297,11 @@ static void setWindowXremote(ZMapView view)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void setXremoteCB(gpointer list_data, gpointer user_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)list_data ;
@@ -2374,5 +2311,7 @@ static void setXremoteCB(gpointer list_data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
