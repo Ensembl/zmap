@@ -73,11 +73,25 @@
 
 #define ZACP_HANDSHAKE     "handshake"
 #define ZACP_PING          "ping"
+
 #define ZACP_NEWVIEW       "new_view"
 #define ZACP_ADD_TO_VIEW   "add_to_view"
 #define ZACP_CLOSEVIEW     "close_view"
 #define ZACP_VIEW_CREATED  "view_created"
 #define ZACP_VIEW_DELETED  "view_deleted"
+
+#define ZACP_ZOOM_TO       "zoom_to"
+#define ZACP_GET_MARK      "get_mark"
+
+#define ZACP_GET_FEATURE_NAMES  "get_feature_names"
+#define ZACP_LOAD_FEATURES      "load_features"
+#define ZACP_DUMP_FEATURES      "export_context"
+
+#define ZACP_FIND_FEATURE     "find_feature"
+#define ZACP_CREATE_FEATURE   "create_feature"
+#define ZACP_DELETE_FEATURE   "delete_feature"
+
+
 #define ZACP_GOODBYE       "goodbye"
 #define ZACP_SHUTDOWN      "shutdown"
 
@@ -113,7 +127,21 @@
 
 #define ZACP_VIEW "view"
 
+#define ZACP_MARK   "mark"
+#define ZACP_START  "start"
+#define ZACP_END    "end"
 
+#define ZACP_ALIGN      "align"
+#define ZACP_BLOCK      "block"
+#define ZACP_FEATURESET "featureset"
+#define ZACP_FEATURE    "feature"
+
+
+#define ZACP_SCORE           "score"
+#define ZACP_START_NOT_FOUND "start_not_found"
+#define ZACP_END_NOT_FOUND   "end_not_found"
+#define ZACP_LOCUS           "locus"
+#define ZACP_
 
 
 /* for the close view we need a "force" option when the close is done from xremote
