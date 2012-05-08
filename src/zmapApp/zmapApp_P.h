@@ -176,6 +176,7 @@ typedef struct _ZMapAppContextStruct
 
 
   /* The new xremote. */
+
   ZMapAppRemote remote_control ;
 
 
@@ -239,8 +240,8 @@ gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app_exit) ;
 gboolean zmapAppRemoteControlPing(ZMapAppContext app_context) ;
 void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppCBFunc exit_routine) ;
-gboolean zmapAppProcessAnyRequest(ZMapAppContext app_context, char *request,
-				  ZMapRemoteAppReturnReplyFunc replyHandlerFunc) ;
+void zmapAppProcessAnyRequest(ZMapAppContext app_context, char *request,
+			      ZMapRemoteAppReturnReplyFunc replyHandlerFunc) ;
 void zmapAppProcessAnyReply(ZMapAppContext app_context, char *reply) ;
 void zmapAppRemoteControlOurRequestEndedCB(void *user_data) ;
 void zmapAppRemoteControlTheirRequestEndedCB(void *user_data) ;
