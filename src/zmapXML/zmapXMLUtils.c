@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapRemoteCommand.h>
 #include <zmapXML_P.h>
 
 
@@ -116,7 +117,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
   int insert_pos ;
   int i ;
   gboolean found_element ;
-
+  static gboolean debug = FALSE ;
 
 
   /* Find first position in the array after the named element _and_ that elements attributes.  */
@@ -125,6 +126,9 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
       ZMapXMLWriterEvent event ;
 
       event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
+
+      zMapDebugPrint(debug, "element: %s, attribute: %s",
+		     g_quark_to_string(event->data.name), g_quark_to_string(event->data.comp.name)) ;
 
       if (event->type == ZMAPXML_START_ELEMENT_EVENT
 	  && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
@@ -156,6 +160,18 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
 	}
     }
 
+
+  if (debug)
+    {
+      char *request ;
+      char *err_msg = NULL ;
+
+      request = zMapXMLUtilsStack2XML(result, &err_msg) ;
+
+      zMapDebugPrint(debug, "%s", request) ;
+    }
+
+
   return result ;
 }
 
@@ -177,6 +193,28 @@ GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsE
     }
 
   return events_array;
+}
+
+
+/* Take a stack of xml parts and convert to the string containing the xml. */
+char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out)
+{
+  char *xml_string = NULL ;
+  ZMapXMLWriter writer ;
+
+  if ((writer = zMapXMLWriterCreate(NULL, NULL)))
+    {
+      ZMapXMLWriterErrorCode xml_status ;
+
+      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack)) != ZMAPXMLWRITER_OK)
+        *err_msg_out = g_strdup(zMapXMLWriterErrorMsg(writer)) ;
+      else
+	xml_string = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
+
+      zMapXMLWriterDestroy(writer) ;
+    }
+
+  return xml_string ;
 }
 
 
