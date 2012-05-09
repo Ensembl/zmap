@@ -68,23 +68,13 @@ noinst_LTLIBRARIES = libZMapApp.la libZMapAppServices.la libZMap.la libZMapThr.l
                      libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
                      libzmapfoocanvas.la libPFetch.la
 
-libZMapXML_la_SOURCES = 
-libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
-
-libZMapUtils_la_SOURCES = 
-libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
-
-libZMapAppServices_la_SOURCES = 
-libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
-
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
 
-# try moving server stuff to here....
 libZMap_la_SOURCES =
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
-zmapConfig/libZMapConfig.la \
+zmapConfig/libZMapConfig.la   \
 zmapDAS/libZMapDas.la         \
 zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
@@ -96,36 +86,25 @@ zmapServer/libZMapServer.la   \
 zmapServer/libZMapServers.la  \
 $(NULL)
 
+libZMapAppServices_la_SOURCES = 
+libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
+
 libZMapThr_la_SOURCES =
 libZMapThr_la_LIBADD  =       \
 zmapThreads/libZMapThreads.la \
 $(NULL)
 
-libPFetch_la_SOURCES = 
-libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
-
-libzmapfoocanvas_la_SOURCES = 
-libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
-
-
 libZMapRemoteControl_la_SOURCES = 
 libZMapRemoteControl_la_LIBADD  = zmapRemoteControl/libZMapRemoteControl.la
-#libZMapRemoteControl_la_LDFLAGS = -all-static
 
 libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
-#libZMapXML_la_LDFLAGS = -all-static
 
-# I can't get this to work for the utils progs....
-#libZMapUtils_la_SOURCES = 
-#libZMapUtils_la_LDFLAGS = -all-static
-#libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
-
-
+libZMapUtils_la_SOURCES = 
+libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
 
 libPFetch_la_SOURCES = 
 libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
-#libPFetch_la_LDFLAGS = -all-static
 
 libzmapfoocanvas_la_SOURCES = 
 libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
