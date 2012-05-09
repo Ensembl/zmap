@@ -430,6 +430,7 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  result = FALSE ;
 	}
     }
@@ -477,6 +478,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  result = FALSE ;
 	}
       else if (!(request_data->orig_block
@@ -489,6 +491,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  result = FALSE ;
 	}
       else
@@ -542,6 +545,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  result = FALSE ;
 	}
       else
@@ -553,6 +557,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
     {
       /* If no featureset was specified then it's a serious error and we can't carry on. */
       zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for featureset.") ;
+
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       result = FALSE ;
     }
 
@@ -572,6 +578,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  result = FALSE ;
 	}
       else
@@ -595,6 +602,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	      g_free(err_msg) ;
 
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      result = FALSE ;
 	    }
 	}
@@ -622,108 +630,122 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   zMap_g_hash_table_print(request_data->orig_feature_set->features, "gquark") ;
   fflush(stdout) ;
 
-  /* Must have following attributes for all feature level operations. */
-  if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
+  /* Must have following attributes for all feature-based operations. */
+  if (strcmp(request_data->command_name, ZACP_ZOOM_TO) == 0)
     {
-      feature_name_id = zMapXMLAttributeGetValue(attr) ;
-      feature_name = (char *)g_quark_to_string(feature_name_id) ;
-    }
-  else
-    {
-      zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for feature.") ;
-      result = FALSE ;
-    }
-
-
-  if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
-    {
-      start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-		     (char **)NULL, 10);
-    }
-  else
-    {
-      zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for feature.");
-      result = FALSE ;
-    }
-
-  if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
-    {
-      end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-		   (char **)NULL, 10);
-    }
-  else
-    {
-      zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for feature.");
-      result = FALSE ;
-    }
-
-  if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
-    {
-      zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-			      &(strand));
-    }
-  else
-    {
-      zMapXMLParserRaiseParsingError(parser, "\"strand\" is a required attribute for feature.");
-      result = FALSE ;
-    }
-
-
-  /* Check if feature exists, for some commands it must do, for others it must not. */
-  if (result)
-    {
-      /* Need the style to get hold of the feature mode, better would be for
-       * xml to contain SO term ?? Maybe not....not sure. */
-      mode = zMapStyleGetMode(request_data->style) ;
-
-      feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
-
-
-      feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
-
-      if (!feature)
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
 	{
-	  /* If we _don't_ find the feature then it's a serious error for these commands. */
-	  char *err_msg ;
-
-	  err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
-				    feature_name, g_quark_to_string(feature_unique_id),
-				    zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
-
-	  result = FALSE ;
-	}
-    }
-
-
-  /* Now do something... */
-  if (result)
-    {
-      ZMapFeature feature ;
-      ZMapStyleMode mode ;
-
-      /* Need the style to get hold of the feature mode, better would be for
-       * xml to contain SO term ?? Maybe not....not sure. */
-      mode = zMapStyleGetMode(request_data->style) ;
-
-      /* should be removed.... */
-      feature_unique_id = zMapFeatureCreateID(mode,
-					      feature_name,
-					      strand,
-					      start, end, 0, 0) ;
-      
-      /* We don't need a list here...simplify this too.... */
-      if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
-	{
-	  request_data->feature = feature ;
+	  feature_name_id = zMapXMLAttributeGetValue(attr) ;
+	  feature_name = (char *)g_quark_to_string(feature_name_id) ;
 	}
       else
 	{
-	  zMapXMLParserRaiseParsingError(parser, "Cannot find feature in zmap.") ;
+	  zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for feature.") ;
+
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  result = FALSE ;
 	}
+
+
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
+	{
+	  start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+			 (char **)NULL, 10);
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for feature.");
+
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  result = FALSE ;
+	}
+
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
+	{
+	  end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+		       (char **)NULL, 10);
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for feature.");
+
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  result = FALSE ;
+	}
+
+      if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
+	{
+	  zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+				  &(strand));
+	}
+      else
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"strand\" is a required attribute for feature.");
+
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  result = FALSE ;
+	}
+
+
+      /* Check if feature exists, for some commands it must do, for others it must not. */
+      if (result)
+	{
+	  /* Need the style to get hold of the feature mode, better would be for
+	   * xml to contain SO term ?? Maybe not....not sure. */
+	  mode = zMapStyleGetMode(request_data->style) ;
+
+	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
+
+
+	  feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
+
+	  if (!feature)
+	    {
+	      /* If we _don't_ find the feature then it's a serious error for these commands. */
+	      char *err_msg ;
+
+	      err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
+					feature_name, g_quark_to_string(feature_unique_id),
+					zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
+	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
+	      g_free(err_msg) ;
+
+	      request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+	      result = FALSE ;
+	    }
+	}
+
+      /* Now do something... */
+      if (result)
+	{
+	  ZMapFeature feature ;
+	  ZMapStyleMode mode ;
+
+	  /* Need the style to get hold of the feature mode, better would be for
+	   * xml to contain SO term ?? Maybe not....not sure. */
+	  mode = zMapStyleGetMode(request_data->style) ;
+
+	  /* should be removed.... */
+	  feature_unique_id = zMapFeatureCreateID(mode,
+						  feature_name,
+						  strand,
+						  start, end, 0, 0) ;
+      
+	  /* We don't need a list here...simplify this too.... */
+	  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
+	    {
+	      request_data->feature = feature ;
+	    }
+	  else
+	    {
+	      zMapXMLParserRaiseParsingError(parser, "Cannot find feature in zmap.") ;
+
+	      request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+	      result = FALSE ;
+	    }
+	}
     }
+
 
   return result ;
 }
