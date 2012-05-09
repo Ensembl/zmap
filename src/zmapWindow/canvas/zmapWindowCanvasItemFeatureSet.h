@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetItem.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -72,6 +72,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 void zMapWindowCanvasFeaturesetItemGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2);
 
 gboolean zMapWindowCanvasFeaturesetItemBump(ZMapWindowCanvasItem item, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data);
+
 
 
 int zMapWindowCanvasFeaturesetItemRemoveFeature(FooCanvasItem *foo,ZMapFeature feature);

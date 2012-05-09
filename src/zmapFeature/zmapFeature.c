@@ -1,7 +1,7 @@
 /*  Last edited: Jul 12 10:55 2011 (edgrif) */
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -725,9 +725,7 @@ gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession)
 }
 
 
-/*!
- * Adds homology data to a feature which may be empty or may already have partial features.
- *  */
+/* Adds splice data for splice features, usually from gene finder output. */
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 {
   gboolean result = TRUE ;

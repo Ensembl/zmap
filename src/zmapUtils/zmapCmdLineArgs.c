@@ -1,6 +1,6 @@
 /*  File: zmapCmdLineArgs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -294,12 +294,13 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
 
   g_option_context_add_main_entries(context, main_entries, NULL);
 
-  g_string_append_printf(a_summary, "%s", ZMAP_DESCRIPTION);
+  g_string_append_printf(a_summary, "%s %s %s", zMapGetAppName(), zMapGetAppVersionString(), zMapGetCompileString()) ;
+  g_string_append_printf(a_summary, "\n\n%s", ZMAP_DESCRIPTION);
 
   g_option_context_set_summary(context, a_summary->str);
 
   g_string_append_printf(a_description,
-			 "---\n%s\n%s\n\n%s\n\n%s\n",
+			 "\n%s\n%s\n\n%s\n\n%s\n",
 			 zMapGetCommentsString(),
 			 ZMAP_WEBSITE_STRING(),
 			 ZMAP_COPYRIGHT_STRING(),

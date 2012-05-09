@@ -58,21 +58,30 @@ pkgconfig_DATA = zmap.pc
 ################################################################################
 ################################################################################
 
-# I've commented out all the -all-static stuff because I think I've done it a
-# better way by disabling libtool building of shared libs in configure.ac
 
-# Libraries (These are libtool convenience libraries)
+#
+# Libraries: code is compiled into a series of libXXX.a files, in some cases
+# some of these are further combined into 'parent' libXXX.a files.
+#
 
-noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la \
-                     libZMapRemoteControl.la libZMapXML.la libzmapfoocanvas.la libPFetch.la
+noinst_LTLIBRARIES = libZMapApp.la libZMapAppServices.la libZMap.la libZMapThr.la \
+                     libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
+                     libzmapfoocanvas.la libPFetch.la
+
+libZMapXML_la_SOURCES = 
+libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
+
+libZMapUtils_la_SOURCES = 
+libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
+
+libZMapAppServices_la_SOURCES = 
+libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
 
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
-#libZMapApp_la_LDFLAGS = -all-static
 
-
+# try moving server stuff to here....
 libZMap_la_SOURCES =
-#libZMap_la_LDFLAGS = -all-static
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
 zmapConfig/libZMapConfig.la \
@@ -81,22 +90,22 @@ zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
 zmapManager/libZMapManager.la \
-zmapUtils/libZMapUtils.la     \
 zmapView/libZMapView.la       \
 zmapWindow/libZMapWindow.la   \
-$(NULL)
-
-# was in the above... zmapRemoteControl/libZMapRemoteControl.la 
-# this was in the above list:           zmapUtils/libZMapUtils.la
-
-
-libZMapThr_la_SOURCES =
-#libZMapThr_la_LDFLAGS = -all-static
-libZMapThr_la_LIBADD  =       \
 zmapServer/libZMapServer.la   \
 zmapServer/libZMapServers.la  \
+$(NULL)
+
+libZMapThr_la_SOURCES =
+libZMapThr_la_LIBADD  =       \
 zmapThreads/libZMapThreads.la \
 $(NULL)
+
+libPFetch_la_SOURCES = 
+libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
+
+libzmapfoocanvas_la_SOURCES = 
+libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 
 
 libZMapRemoteControl_la_SOURCES = 
@@ -143,16 +152,29 @@ bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
 # Try Jeremy's new build stuff....
 # Give .a files explicitly to ensure we link the right ones.
 #
-# Oh gosh there are ever such a lot circular dependencies here...
-# it all needs a rethink....(see where libZMap gets included...
-#
+#zmap_LDADD =                                                 \
+#	$(top_builddir)/.libs/libZMapApp.a                   \
+#	$(top_builddir)/.libs/libZMap.a                      \
+#	$(top_builddir)/.libs/libZMapThr.a                   \
+#	$(top_builddir)/.libs/libZMap.a                      \
+#	$(top_builddir)/.libs/libZMapXML.a                   \
+#	$(top_builddir)/.libs/libZMapAppServices.a           \
+#	$(top_builddir)/.libs/libZMapUtils.a                 \
+#	$(top_builddir)/.libs/libzmapfoocanvas.a             \
+#	$(top_builddir)/.libs/libPFetch.a                    \
+#        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
+#	$(ACECONN_LIBS) $(GTK_LIBS)                          \
+#	$(LIBCURL) -lexpat -lg2 -lgd                         \
+#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+
 zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
 	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapAppServices.a           \
 	$(top_builddir)/.libs/libZMapThr.a                   \
-	$(top_builddir)/.libs/libZMap.a                      \
 	$(top_builddir)/.libs/libZMapRemoteControl.a         \
 	$(top_builddir)/.libs/libZMapXML.a                   \
+	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
@@ -252,15 +274,15 @@ $(NULL)
 ################################################################################
 
 
-#------------ start of version file targets ------------------------
+#------------ start of compiledate file targets ------------------------
 
-# This is the code that gets built by the build-version-file target. We create
+# This is the code that gets built by the build-compiledate-file target. We create
 # this code dynamically because we don't want it in our code repository because
 # it will change with every build.
 #
-ZMAP_VERSION_FILE = zmapVersion.c
-ZMAP_VERSION_PATH = zmapUtils/$(ZMAP_VERSION_FILE)
-ZMAP_VERSION_FILE_CODE =                            \
+ZMAP_COMPILEDATE_FILE = zmapCompileDate.c
+ZMAP_COMPILEDATE_PATH = zmapUtils/$(ZMAP_COMPILEDATE_FILE)
+ZMAP_COMPILEDATE_FILE_CODE =                            \
                                                     \
 char *zmapCompileString(void)                       \
 {                                                   \
@@ -268,21 +290,22 @@ char *zmapCompileString(void)                       \
 }                        
 
 
-# Here's the target that creates the file containing the ZMAP_VERSION_FILE_CODE.
-# By making build-version-file depend on the empty forcemake target it gets
+# Here's the target that creates the file containing the ZMAP_COMPILEDATE_FILE_CODE.
+# By making build-compiledate-file depend on the empty forcemake target it gets
 # remade every time.
 #
 forcemake:
 
-build-version-file: forcemake
+build-compiledate-file: forcemake
 	if test -f $(top_srcdir)/runconfig ; then \
-	echo "/* Do not Edit - generated by makefile target $@ */" > $(top_srcdir)/$(ZMAP_VERSION_PATH) ; \
-	echo "#include <zmapUtils_P.h>" >> $(top_srcdir)/$(ZMAP_VERSION_PATH) ; \
-	echo "$(ZMAP_VERSION_FILE_CODE)" >> $(top_srcdir)/$(ZMAP_VERSION_PATH) ; \
-	echo "created build version file....." ; fi
+	echo "creating compiledate file....." ; \
+	echo "/* Do not Edit - generated by makefile target $@ */" > $(top_srcdir)/$(ZMAP_COMPILEDATE_PATH) ; \
+	echo "#include <zmapUtils_P.h>" >> $(top_srcdir)/$(ZMAP_COMPILEDATE_PATH) ; \
+	echo "$(ZMAP_COMPILEDATE_FILE_CODE)" >> $(top_srcdir)/$(ZMAP_COMPILEDATE_PATH) ; \
+	echo "created compiledate file....." ; fi
 
 
-# This is the way we ensure that build-version-file is included in the automake
+# This is the way we ensure that build-compiledate-file is included in the automake
 # generated 'all' and 'dist' targets.
 #
 # This isn't pretty but I have not found a better way to _prepend_ our target to
@@ -290,23 +313,23 @@ build-version-file: forcemake
 # (e.g. all-local) to do this because they are run _after_ all the other stuff.
 #
 # I have simply copied these targets from the Makefile generated by automake for
-# our build and added in our build-version-file target. Because these come after
+# our build and added in our build-compiledate-file target. Because these come after
 # automake's versions of the targets in the Makefile, make overwrites automake's
 # versions with our versions...and gives a warning that it is doing this. Not
 # pretty but it seems to work. Surely there is a more elegant way.....
 #
-all: config.h build-version-file
+all: config.h build-compiledate-file
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 # This doesn't work because the original "all" target also has to have a double colon...sigh
-#all:: build-version-file
+#all:: build-compiledate-file
 
-dist dist-all: build-version-file distdir
+dist dist-all: build-compiledate-file distdir
 	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__remove_distdir)
 
 
-#------------ end of version file targets --------------------------
+#------------ end of compiledate file targets --------------------------
 
 
 # Our additions to some standard targets. (the XXX-local targets are

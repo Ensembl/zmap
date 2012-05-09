@@ -464,7 +464,28 @@ the properties themselves.
      <tr>
       <td>alignment-squash</td>
       <td>boolean</td>
-      <td>(for Short-Reads data).  Where reads are split due to splicing these may be combined into one feature in display if the gap is identical. Data ate either end is shown as mixed (not all features are included) and common (region covers all features).
+      <td>(for Short-Reads data).  Where reads are split due to splicing these may be combined into one feature in display if the gap is identical. Data at either end is shown as mixed (not all features are included) and common (region covers all features).
+      </td>
+    </tr>
+
+     <tr>
+      <td>alignment-join-overlap</td>
+      <td>integer</td>
+      <td>(for Short-Reads data).  Where reads are not split due to splicing these may be combined into one feature in display if they overlalp by the given number of bases. This overrides the collapse setting if configured.  This is only allowed between splice coordinates, and nominally is intended to show exons/
+      </td>
+    </tr>
+
+     <tr>
+      <td>alignment-join-max</td>
+      <td>integer</td>
+      <td>(for Short-Reads data).  If reads are joined then this sets a limit for composite features and this forces several to be created in high volume regions. It is recommended that this corresponds to max-score.
+      </td>
+    </tr>
+
+     <tr>
+      <td>alignment-join-threshold</td>
+      <td>integer</td>
+      <td>(for Short-Reads data).  If reads are joined then this sets a limit for overlapping a splice junction - it's possible to have extra bases beyong a splice junction by accident.
       </td>
     </tr>
 
@@ -800,7 +821,7 @@ alignment-align-gaps = true
 
 <br/>
 <fieldset>
-<legend>Predefined Styles</legend>
+<legend id="predefined_styles">Predefined Styles</legend>
 
 <p>There are a number of predefined styles for common features such as DNA sequence display. These
 features have reserved names which should not be used for other sorts of features. The feature set
@@ -896,23 +917,81 @@ the predefined styles:
 <fieldset>
 <legend id="acedb_styles">ZMap Styles and Acedb</legend>
 
+<p>When using ZMap from xace, the zmap styles file can be specified by setting the ZMAP_STYLES_FILE environment variable.</p>
 
-<p>
-ZMap will read either acedb ?Method or ?ZMap_style objects for style information.
-The default is to read ?ZMap_style objects and you should convert to using these instead
-of methods as many features are not available with methods (see <a href="#methods_to_styles">Converting from ?Method to ?ZMap_Style objects</a>).
+<p>Alternatively, <a href="#zmap_style_objects">?ZMap_Style</a> objects or <a href="#acedb_method_objects">?Method</a> objects can be used to specify the styles.</p>
+
+<p>A script is available to do a first-pass conversion to create a styles file for an acedb database. This will require some hand editing but is a good start:</p>
+
+<ol>
+  <li>Export methods from the database into a file, say methods.ace.
+  <li>Run the methods2style.pl script on the file and output the results to a new ini file, e.g. <pre>methods2style.pl -file methods.ace > styles.ini</pre>
+  <li>Set the <code>ZMAP_STYLES_FILE</code> environment variable to the path of your styles file.
+  <li><p>To use ZMap from xace, you need to add it as a display type. To do this, add the following in displays.wrm. You should then have ZMap as an option from the "Show As.." menu in xace's KeySet window.</p>
+<pre>
+_DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
+	-help ZMap-Feature-map -m ZMap
+</pre>
+  <li>Add the following methods to your database. These are required in order for the predefined styles and Genefinder features to be displayed in ZMap.
+  <pre>
+//
+// Methods that the database administrator should add so that
+// these features get displayed in zmap.
+//
+// It's not clear what we should do about the Right_priority
+// settings, e.g. Right_priority	 8.0
+//
+
+
+Method : "DNA"
+
+Method : "Show Translation"
+
+Method : "3 Frame"
+
+Method : "3 Frame Translation"
+
+Method : "GeneFinderFeatures"
+
+Method : "ATG"
+
+Method : "GF_ATG"
+Score_bounds	 0.000000 3.000000
+
+Method : "GF_coding_seg"
+Score_bounds	 2.000000 8.000000
+Score_by_width	
+
+Method : "GF_splice"
+Score_bounds	 -2.000000 4.000000
+Score_by_width	
+
+Method : "hexExon"
+Score_bounds	 10.000000 100.000000
+Score_by_width	
+
+Method : "hexExon_span"
+
+Method : "hexIntron"
+Score_bounds	 10.000000 100.000000
+Score_by_width	
+</pre>
+</ol>
+
 </p>
 
+
 <p>
-The relationship between features and ?Method objects is different according to
-whether you are using ?ZMap_style objects or ?Method objects to specify styles. The
-following sections describe how to use each one. Support for ?Method object styles
-will be maintained to allow immediate usage of acedb databases without the need to convert
-to styles.
-</p>
+</fieldset>
 
 
-<h4>Using ?ZMap_style objects for Styles</h4>
+<br/>
+<fieldset>
+<legend id="zmap_style_objects">Using ?ZMap_style objects in Acedb</legend>
+
+<p>As an alternative to using a styles file, styles can be specified in the database using the ?ZMap_Style class.</p>
+
+<p>The rules for using the ?ZMap_Style class are as follows:</p>
 
 <ul>
   <li>The semantics of the ?Method class are changed: all features must reference a ?Method object
@@ -1214,7 +1293,6 @@ GFF	 Source "BLASTN_TC1"
 
 
 
-
 <h4>The ?Method Class</h4>
 
 <p>
@@ -1427,11 +1505,79 @@ administrator to add these methods in advance. A simple way to do this is as fol
 </ol>
 
 
+<h4 id="methods_to_styles">Converting from ?Method to ?ZMap_style objects</h4>
+
+<p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion. The result will
+require hand editting as some fields cannot be determined from the ?Method object,
+e.g. Mode (although the script makes a best guess for Mode based on the object name).</p>
+
+<pre class="example">
+SYNOPSIS: methods2style.pl -file &lt;methods.ace&gt; -format &lt;format&gt; -help
+    where &lt;methods.ace&gt; is the input file and &lt;format&gt; is the output format:
+    either 'keyfile' for an ini-style file (the default) or 'ace' for a .ace file.
+</pre>
+
+<p>To update an AceDB database to use ZMap styles, the process is as follows:</p>
+<ol>
+  <li>First, make backups of models.wrm and the methods file.
+  <li>Dump the methods into a new file, e.g. methods.ace. This should only contains methods (if it contains other objects, the script may fail).
+  <li>Edit the models.wrm file and:
+  <ol>
+    <li>add the Style tag to the ?Method class, as shown <a href="#featureset_method">here</a>
+    <li>add the entire <a href="#zmap_style_class">?ZMap_Style</a> class (including all of its sub-classes)
+  </ol>
+  <li>Run methods_add_style_tags.pl on the methods file and save the output to a new file, e.g.<pre>methods_add_style_tags.pl -file methods.ace > methods_new.ace</pre>
+  <li>Add the following to the new methods file (to make sure these columns get shown in ZMap):
+  <pre>
+Method : "DNA"
+Style "DNA"
+Remark "Makes sure column is displayed in zmap."
+
+Method : "3 Frame"
+Style "3 Frame"
+Remark "Makes sure column is displayed in zmap."
+
+Method :  "3 Frame Translation"
+Style "3 Frame Translation"
+Remark "Makes sure column is displayed in zmap."
+</pre>
+  <li>For any methods that you want to be grouped together into the same column, add a <code>Column_parent</code> tag to them in the methods file (make sure the column name is not the same as any existing method name). Also add a new Method object for the parent column if you want to give it a right-priority, e.g.
+  <pre>
+Method : "RNAi_primary"
+Style "RNAi_primary"
+Group Column_parent "my_new_column"
+...
+
+Method : "my_new_column"
+Right_priority   1.5
+</pre>
+  <li>Run methods2style.pl on the methods file and save the output to an acefile, e.g,<pre>methods2style.pl -file methods.ace -format ace > zmap_styles.ace</pre>
+  <li>Do any manual editing of the styles file as necessary.
+  <li>Re-read everything in xace:
+  <ul>
+    <li>On the main window, right-click "Edit" and select "Read Models and Full Reindex". This will produce a couple of warnings; just click "Yes" to continue. Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code> If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.
+    <li>From the Edit menu select "Read .ace file" and read in your updated methods file and the new styles file.
+  </ul>
+</ol>
+
+<p>To use ZMap from xace, you need to add it as a display type. To do this, add the following in displays.wrm. You should then have ZMap as an option from the "Show As.." menu in xace's KeySet window.</p>
+<pre>
+_DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
+	-help ZMap-Feature-map -m ZMap
+</pre>
+
+
+<p>
+</fieldset>
 
 
 
 
-<h4>Using ?Method objects for styles (deprecated)</h4>
+<br/>
+<fieldset>
+<legend id="acedb_method_objects">Using ?Method objects for styles (deprecated)</legend>
+
+<p>Many features are not available when using ?Method objects for styles, so it is recommended to use a <a href="#acedb_styles">styles file</a> or <a href="#zmap_style_objects">?ZMap_Style objects</a> instead. Support for ?Method object styles will be maintained to allow immediate usage of acedb databases without the need to convert to styles.</p>
 
 <p>Rules for using ?Method objects:</p>
 
@@ -1489,68 +1635,6 @@ shows which tags ZMap reads.
 		GFF_feature UNIQUE Text
 </pre>
 
-
-
-<h4 id="methods_to_styles">Converting from ?Method to ?ZMap_style objects</h4>
-
-<p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion. The result will
-require hand editting as some fields cannot be determined from the ?Method object,
-e.g. Mode (although the script makes a best guess for Mode based on the object name).</p>
-
-<pre class="example">
-SYNOPSIS: methods2style.pl -file &lt;methods.ace&gt; -format &lt;format&gt; -help
-    where &lt;methods.ace&gt; is the input file and &lt;format&gt; is the output format:
-    either 'keyfile' for an ini-style file (the default) or 'ace' for a .ace file.
-</pre>
-
-<p>To update an AceDB database to use ZMap styles, the process is as follows:</p>
-<ol>
-  <li>First, make backups of models.wrm and the methods file.
-  <li>Dump the methods into a new file, e.g. methods.ace. This should only contains methods (if it contains other objects, the script may fail).
-  <li>Edit the models.wrm file and:
-  <ol>
-    <li>add the Style tag to the ?Method class, as shown <a href="#featureset_method">here</a>
-    <li>add the entire <a href="#zmap_style_class">?ZMap_Style</a> class (including all of its sub-classes)
-  </ol>
-  <li>Run methods_add_style_tags.pl on the methods file and save the output to a new file, e.g.<pre>methods_add_style_tags.pl -file methods.ace > methods_new.ace</pre>
-  <li>Add the following to the new methods file (to make sure these columns get shown in ZMap):
-  <pre>
-Method : "DNA"
-Style "DNA"
-Remark "Makes sure column is displayed in zmap."
-
-Method : "3 Frame"
-Style "3 Frame"
-Remark "Makes sure column is displayed in zmap."
-
-Method :  "3 Frame Translation"
-Style "3 Frame Translation"
-Remark "Makes sure column is displayed in zmap." 
-</pre>
-  <li>For any methods that you want to be grouped together into the same column, add a <code>Column_parent</code> tag to them in the methods file (make sure the column name is not the same as any existing method name). Also add a new Method object for the parent column if you want to give it a right-priority, e.g.
-  <pre>
-Method : "RNAi_primary" 
-Style "RNAi_primary"
-Group Column_parent "my_new_column"
-...
-
-Method : "my_new_column"
-Right_priority   1.5
-</pre>
-  <li>Run methods2style.pl on the methods file and save the output to an acefile, e.g,<pre>methods2style.pl -file methods.ace -format ace > zmap_styles.ace</pre>
-  <li>Do any manual editing of the styles file as necessary.
-  <li>Re-read everything in xace:
-  <ul>
-    <li>On the main window, right-click "Edit" and select "Read Models and Full Reindex". This will produce a couple of warnings; just click "Yes" to continue. Xace should then do a reindex and you will know if it worked because the only message you will get is one about <code>"Indexed NN tags in NN objects etc etc".</code> If you then click on the "Other class" menu button in the main window you should now be able to see the ZMap_style class in the list.
-    <li>From the Edit menu select "Read .ace file" and read in your updated methods file and the new styles file.
-  </ul>
-</ol>
-
-<p>To use ZMap from xace, you need to add it as a display type. To do this, add the following in displays.wrm. You should then have ZMap as an option from the "Show As.." menu in xace's KeySet window.</p>
-<pre>
-_DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
-	-help ZMap-Feature-map -m ZMap
-</pre>
 
 </fieldset>
 

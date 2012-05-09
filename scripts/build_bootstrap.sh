@@ -401,23 +401,36 @@ zmap_message_out "All hosts alive."
 #    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
 
 # so try this.....
+#if [ -n "$GIT_VERSION_INFO" ] ; then
+#
+#    zmap_message_out "Collecting GIT describe info....for zmap version string"
+#
+#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
+#
+#    ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
+#
+#else
+#
+#    zmap_message_out "Fetching ZMap Version using versioner script....for zmap version string"
+#
+#    ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
+#	-path $CHECKOUT_BASE/ \
+#	-show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
+#
+#fi
+
 if [ -n "$GIT_VERSION_INFO" ] ; then
-
-    zmap_message_out "Collecting GIT describe info....for zmap version string"
-
-    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
-
-    ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
-
+  GIT_FLAG=''
 else
-
-    zmap_message_out "Fetching ZMap Version using versioner script....for zmap version string"
-
-    ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
-	-path $CHECKOUT_BASE/ \
-	-show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
-
+  GIT_FLAG='-a'
 fi
+
+zmap_message_out "Collecting GIT info....for zmap version string"
+
+GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh $GIT_FLAG`
+
+ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
+
 
 zmap_message_out "Set zmap version to $ZMAP_RELEASE_VERSION."
 
@@ -490,23 +503,23 @@ EOF
 fi
 
 
-
+# SURELY THIS IS ALL REDUNDANT NOW WE USE git.........
 # If requested, tag cvs to 'freeze' the code.
 # Logic is: To tag using  the version _in_  cvs. This would  have been
 # incremented the last time this script was run!
 #
-if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    zmap_message_out "Fetching cvs tag using versioner script"
-    cvs_tag=$($SCRIPTS_DIR/versioner \
-	-path $CHECKOUT_BASE/ \
-	-show -quiet) || zmap_message_exit "Failed to get zmap version"
-
-    zmap_message_out "Tagging cvs using versioner script"
-
-    zmap_message_out "Will use cvs tag $cvs_tag"
-
-    $SCRIPTS_DIR/versioner -tag -path $CHECKOUT_BASE || zmap_message_exit "Failed to cvs tag zmap"
-fi
+#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+#    zmap_message_out "Fetching cvs tag using versioner script"
+#    cvs_tag=$($SCRIPTS_DIR/versioner \
+#	-path $CHECKOUT_BASE/ \
+#	-show -quiet) || zmap_message_exit "Failed to get zmap version"
+#
+#    zmap_message_out "Tagging cvs using versioner script"
+#
+#    zmap_message_out "Will use cvs tag $cvs_tag"
+#
+#    $SCRIPTS_DIR/versioner -tag -path $CHECKOUT_BASE || zmap_message_exit "Failed to cvs tag zmap"
+#fi
 
 
 
@@ -712,20 +725,21 @@ if [ "x$ZMAP_MASTER_BUILD_DIST" == "x$ZMAP_TRUE" ]; then
 fi
 
 
+# ALL REDUNDANT NOW WE DON'T HAVE A VERSION IN THE CODE.
 # version inc...
-if [ "x$ZMAP_MASTER_INC_REL_VERSION" == "x$ZMAP_TRUE" ]; then
-
-    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -release -cvs || \
-	zmap_message_rm_exit "Failed to update release version in cvs"
-    zmap_message_out "ZMap Version - release number incremented."
-
-elif [ "x$ZMAP_MASTER_INC_UPDATE_VERSION" == "x$ZMAP_TRUE" ]; then
-
-    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -update -cvs || \
-	zmap_message_rm_exit "Failed to update update version in cvs"
-    zmap_message_out "ZMap Version - update number incremented."
-
-fi
+#if [ "x$ZMAP_MASTER_INC_REL_VERSION" == "x$ZMAP_TRUE" ]; then
+#
+#    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -release -cvs || \
+#	zmap_message_rm_exit "Failed to update release version in cvs"
+#    zmap_message_out "ZMap Version - release number incremented."
+#
+#elif [ "x$ZMAP_MASTER_INC_UPDATE_VERSION" == "x$ZMAP_TRUE" ]; then
+#
+#    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -update -cvs || \
+#	zmap_message_rm_exit "Failed to update update version in cvs"
+#    zmap_message_out "ZMap Version - update number incremented."
+#
+#fi
 
 
 zmap_cd $save_root
@@ -808,7 +822,8 @@ if [ -d $RELEASE_LOCATION ]; then
 	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [1] *** "
 	zmap_message_out "Binary reports version=$bin_version"
 
-	bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap !!')
+	# Not sure now why we did this...but not needed now...
+	#bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap !!')
 
 	if [ "x$bin_version" != "x$ZMAP_RELEASE_VERSION" ]; then
 	    zmap_message_err "*** WARNING: Executable reports _different_ version to Source Code! ***"

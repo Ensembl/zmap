@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetItem.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -132,32 +132,34 @@ GType zMapWindowCanvasFeaturesetItemGetType(void)
  */
 ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
 {
-      ZMapWindowCanvasFeaturesetItem fi = NULL;
-      FooCanvasItem *foo  = NULL,*interval;
+  ZMapWindowCanvasFeaturesetItem fi = NULL;
+  FooCanvasItem *foo  = NULL,*interval;
 
-            /* class not intialised till we make an item in foo_canvas_item_new() below */
-      if(featureset_class_G && featureset_class_G->featureset_items)
-            foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
+  /* class not intialised till we make an item in foo_canvas_item_new() below */
+  if(featureset_class_G && featureset_class_G->featureset_items)
+    foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
 
-	if(foo)
-      {
-            return((ZMapWindowCanvasItem) foo);
-      }
-      else
-      {
-            /* need a wrapper to get ZWCI with a foo_featureset inside it */
-            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
+  if(foo)
+    {
+      return((ZMapWindowCanvasItem) foo);
+    }
+  else
+    {
+      /* need a wrapper to get ZWCI with a foo_featureset inside it */
+      foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
 
-            interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
+      interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
 
-		zMapWindowFeaturesetItemSetFeaturesetItem(interval, id, start, end, style, strand, frame, index);
+      zMapWindowFeaturesetItemSetInit(interval, id, start, end, style, strand, frame, index);
 
-            fi = (ZMapWindowCanvasFeaturesetItem) foo;
-            fi->id = id;
-            g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
+      fi = (ZMapWindowCanvasFeaturesetItem) foo;
+      fi->id = id;
+      ((ZMapWindowFeaturesetItem) interval)->canvas_item = foo;
+      g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
-      }
-      return ((ZMapWindowCanvasItem) foo);
+    }
+
+  return ((ZMapWindowCanvasItem) foo);
 }
 
 
@@ -333,7 +335,7 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 		ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) item;
 		/* find the feature struct and set a flag */
 #warning this should be a class function
-		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show);
+		zmapWindowFeaturesetItemShowHide(foo,canvas_item->feature,show, ZMWCF_HIDE_USER);
 
 	}
 	return FALSE;

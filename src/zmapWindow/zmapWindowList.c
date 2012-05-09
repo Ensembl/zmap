@@ -1,6 +1,6 @@
 /*  File: zmapWindowList.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -767,7 +767,8 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 	      zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
 
         zMapWindowHighlightObject(window, item, TRUE, TRUE) ;
-        zmapWindowUpdateInfoPanel(window, feature, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE);
+
+        zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE);
     }
   }
 

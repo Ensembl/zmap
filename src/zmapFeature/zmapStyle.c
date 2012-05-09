@@ -1,7 +1,7 @@
 /*  File: zmapStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  and formerly Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -347,6 +347,15 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_ALIGNMENT_SQUASH, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH,
             "squash overlapping split reads into one", "squash overlapping split reads into one",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.squash),ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_JOIN_OVERLAP, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_OVERLAP,
+            "join overlapping reads into one", "join overlapping reads into one",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_JOIN_THRESHOLD, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_THRESHOLD,
+            "allow bases around splice junction when joining", "allow bases around splice junction when joining",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT },
+    { STYLE_PROP_ALIGNMENT_JOIN_MAX, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX,
+            "join overlapping reads into one", "join overlapping reads into one",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_max),ZMAPSTYLE_MODE_ALIGNMENT },
 
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
@@ -1148,13 +1157,7 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
       switch (style->mode)
       {
       case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      case ZMAPSTYLE_MODE_PEP_SEQUENCE:
-      case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       case ZMAPSTYLE_MODE_SEQUENCE:
-
       case ZMAPSTYLE_MODE_TEXT:
         {
           if (!(style->colours.normal.fields_set.fill))
@@ -1177,7 +1180,7 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
             // So for backwards compatability if [ZMap] legacy_styles=true
             // we add in glyphs to the style
 
-          if(style->unique_id == g_quark_from_string("gf_splice"))   // as in acedbServer.c styles dump
+          if (zMapStyleIsSpliceStyle(style))
             {
               if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE) &&
                   (!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3) ||
@@ -1191,8 +1194,9 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
                     zMapStyleMerge(style,s_3frame);
                 }
             }
+
+	  break;
         }
-        break;
       default:
         {
           if (!(style->colours.normal.fields_set.fill) && !(style->colours.normal.fields_set.border))
@@ -1209,6 +1213,16 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
     }
 
   return result ;
+}
+
+/* Does style represent the splice style used in acedb to represent gene finder output. */
+gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style)
+{
+  gboolean is_splice = FALSE ;
+
+  is_splice = (style->unique_id == g_quark_from_string(ZMAPSTYLE_LEGACY_3FRAME)) ;
+
+  return is_splice ;
 }
 
 
@@ -1623,67 +1637,83 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 // only do this if [ZMap] legacy_styles=TRUE
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 {
-      static ZMapFeatureTypeStyle s_homology = NULL;
-      static ZMapFeatureTypeStyle s_3frame = NULL;
-      static int got = 0;
-      char *hn;
+  static ZMapFeatureTypeStyle s_homology = NULL;
+  static ZMapFeatureTypeStyle s_3frame = NULL;
+  static int got = 0;
+  char *hn;
 
-      hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
+  hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
 
-      if(!got)
-      {
-            got = 1;
+  if(!got)
+    {
+      got = 1;
 
-            if(zMapConfigLegacyStyles())  // called here as we want to do it only once
-            {
-                  s_homology = zMapStyleCreate(hn, "homology - legacy style");
+      if(zMapConfigLegacyStyles())  // called here as we want to do it only once
+	{
+	  /* Triangle markers at start/end of incomplete homology features. */
+	  s_homology = zMapStyleCreate(hn, "homology - legacy style");
 
-                  g_object_set(G_OBJECT(s_homology),
-                        ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
+	  g_object_set(G_OBJECT(s_homology),
+		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn_tri",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>",g_quark_from_string("dn-tri")),
-                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
-                        ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
-                        ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
-                        ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
-                        NULL);
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
+		       zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-tri",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
+		       zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>", g_quark_from_string("dn-tri")),
+		       ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
+		       ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
+		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
+		       ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
+		       NULL);
 
-                  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"3-Frame - legacy style");
+	  /* Markers for splice features, produced by genefinders.
+	   * The default shapes are |_ and same thing upside down, the arms are 10 pixels long.
+	   * The horizontal line is drawn between the two bases that flank the splice. */
+	  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"Splice Markers - legacy style for gene finder features");
 
-                  g_object_set(G_OBJECT(s_3frame),
-                        ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
-                        // these have been swapped from the original
-                        // GeneFinder uses 5' and 3' as Intron-centric
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>",g_quark_from_string("up-hook")),
-                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-hook",
-                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>",g_quark_from_string("dn_hook")),
+	  g_object_set(G_OBJECT(s_3frame),
+		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
 
-                        ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
-                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "up-hook",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
+		       zMapStyleGetGlyphShape(ZMAPSTYLE_SPLICE_GLYPH_3, g_quark_from_string("up-hook")),
 
-                        ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
-                        ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,TRUE,                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
+		       ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "dn-hook",
+		       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
+		       zMapStyleGetGlyphShape(ZMAPSTYLE_SPLICE_GLYPH_5, g_quark_from_string("dn-hook")),
 
-                        ZMAPSTYLE_PROPERTY_WIDTH,30.0,
-                        ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,
-                        ZMAPSTYLE_PROPERTY_MAX_SCORE,4.0,
+		       ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
+		       ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
+		       ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
+		       ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,TRUE,
+                       ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
 
-                        ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
-                        ZMAPSTYLE_PROPERTY_FRAME0_COLOURS, "normal fill red; normal border red",
-                        ZMAPSTYLE_PROPERTY_FRAME1_COLOURS, "normal fill green; normal border green",
-                        ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, "normal fill blue; normal border blue",
-                        NULL);
-            }
-      }
-      if(!strcmp(name,hn))
-            return(s_homology);
-      if(!strcmp(name,ZMAPSTYLE_LEGACY_3FRAME))
-            return(s_3frame);
-      return(NULL);
+		       /* sets horizontal scale of splices. */
+		       ZMAPSTYLE_PROPERTY_WIDTH, 100.0,
+		       ZMAPSTYLE_PROPERTY_MIN_SCORE, -2.0,
+		       ZMAPSTYLE_PROPERTY_MAX_SCORE, 4.0,
+
+		       /* Frame specific colouring and default fill colour on selection. */
+		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
+		       ZMAPSTYLE_PROPERTY_FRAME0_COLOURS,
+		       "normal fill blue; normal border blue; selected fill pink",
+		       ZMAPSTYLE_PROPERTY_FRAME1_COLOURS,
+		       "normal fill green; normal border green; selected fill pink",
+		       ZMAPSTYLE_PROPERTY_FRAME2_COLOURS,
+		       "normal fill red; normal border red; selected fill pink",
+		       NULL) ;
+	}
+    }
+
+  if(!strcmp(name,hn))
+    return(s_homology);
+
+  if(!strcmp(name,ZMAPSTYLE_LEGACY_3FRAME))
+    return(s_3frame);
+
+  return(NULL);
 }
 
 
@@ -1974,6 +2004,7 @@ static void zmap_bin_to_hex(gchar *dest,guchar *src, int len)
   *dest = 0;
 }
 
+
 static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style,
 						      ZMapStyleParam param,
 						      const GValue *value,
@@ -2019,9 +2050,12 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       zmapStyleSetIsSet(style,STYLE_PROP_MODE);
     }
 
-  if(param->mode && style->mode != param->mode)
+  if (param->mode && style->mode != param->mode)
     {
-      zMapLogWarning("Set style mode specific paramter %s ignored as mode is %s",param->name,zMapStyleMode2ExactStr(style->mode));
+      zMapLogWarning("Style %s: set style mode specific paramter %s ignored as mode is %s",
+		     g_quark_to_string(style->original_id),
+		     param->name, zMapStyleMode2ExactStr(style->mode)) ;
+
       return;
     }
 

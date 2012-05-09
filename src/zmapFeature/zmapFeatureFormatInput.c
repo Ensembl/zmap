@@ -1,6 +1,6 @@
 /*  File: zmapFeatureFormatInput.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -131,6 +131,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
     }
   else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
 	   || g_ascii_strcasecmp(feature_type, "assembly_path") == 0
+	   || g_ascii_strcasecmp(feature_type, "gene") == 0
 	   || g_ascii_strcasecmp(feature_type, "oligo") == 0
 	   || g_ascii_strcasecmp(feature_type, "PCR_product") == 0
 	   || g_ascii_strcasecmp(feature_type, "RNAi_reagent") == 0

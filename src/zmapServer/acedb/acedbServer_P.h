@@ -1,6 +1,6 @@
 /*  File: acedbServer_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *-------------------------------------------------------------------
@@ -79,6 +79,10 @@ typedef struct _AcedbServerStruct
 							       seqget/seqfeatures calls. */
 
   gboolean has_new_tags ;				    /* TRUE => use new column tags/zmap style objects. */
+
+  gboolean stylename_from_methodname ;			    /* TRUE => match each method with a
+							       style of the same name without
+							       looking for a style tag in the method. */
 
   GHashTable *method_2_data ;				    /* Records data for each method
 							       (NULL if acedb_styles == FALSE). */

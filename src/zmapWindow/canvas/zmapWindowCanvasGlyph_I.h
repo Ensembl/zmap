@@ -1,7 +1,6 @@
-
 /*  File: zmapWindowCanvasGlyph.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -37,7 +36,41 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-/* NOTE
+
+
+
+/* 
+ * Data common to particular types of glyph, stored using the per_column_data pointer
+ * in zmapWindowFeaturesetItemStruct.
+ */
+
+/* Splice marker column data. */
+typedef struct GlyphSpliceColumnDataStructName
+{
+
+  double glyph_len ;					    /* Standard glyph size, all scaled from this. */
+  double col_width ;
+  double min_size ;					    /* Min. size for glyph so it's easily clickable. */
+  double scale_factor ;					    /* Scaling factor for glyphs. */
+
+
+  double origin ;					    /* score == 0 position across column. */
+
+
+  gboolean colours_set ;
+  GdkColor zero_line_colour ;
+  GdkColor other_line_colour ;
+
+} GlyphSpliceColumnDataStruct, *GlyphSpliceColumnData ;
+
+#define ZERO_LINE_COLOUR   "dark slate grey"
+#define OTHER_LINE_COLOUR  "light grey"
+
+
+
+/* Per glyph data.
+ * 
+ * NOTE
  * Glyphs are quite complex and we create an array of points for display
  * that are interpreted according to the glyph type.
  * As the CanvasFeatureset code is generic we start with a feature pointer
@@ -47,27 +80,31 @@
 
 typedef struct _zmapWindowCanvasGlyphStruct
 {
+  zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+  int which;			/* generic or 5' or 3' ? */
+  GQuark sig;			/* signature: for debugging */
 
-	double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
-	double origin;		/* relative to the centre of the column */
+  /* Used for all glyphs except splices. */
+  double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
+  double origin;		/* relative to the centre of the column */
 
-	int which;			/* generic or 5' or 3' ? */
-	GQuark sig;			/* signature: for debugging */
+  ZMapStyleGlyphShape shape;			/* pointer to relevant style shape struct */
+  GdkPoint coords[GLYPH_SHAPE_MAX_COORD]; 	/* derived from style->shape struct but adjusted for scale etc */
+  GdkPoint points[GLYPH_SHAPE_MAX_COORD];	/* offset to the canvas for gdk_draw */
 
-	ZMapStyleGlyphShape shape;			/* pointer to relevant style shape struct */
-	GdkPoint coords[GLYPH_SHAPE_MAX_COORD]; 	/* derived from style->shape struct but adjusted for scale etc */
-	GdkPoint points[GLYPH_SHAPE_MAX_COORD];	/* offset to the canvas for gdk_draw */
+  gulong line_pixel;	/* non selected colours */
+  gulong area_pixel;
+  gboolean line_set;
+  gboolean area_set;
 
-	gulong line_pixel;	/* non selected colours */
-	gulong area_pixel;
-	gboolean line_set;
-	gboolean area_set;
-
-	gboolean coords_set;
-	gboolean use_glyph_colours;		/* only set if threshold ALT colour selected */
-	gboolean sub_feature;			/* or free standing? */
+  gboolean coords_set;
+  gboolean use_glyph_colours;		/* only set if threshold ALT colour selected */
+  gboolean sub_feature;			/* or free standing? */
 
 
 } zmapWindowCanvasGlyphStruct;
+
+
+
+

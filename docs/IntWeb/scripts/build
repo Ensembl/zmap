@@ -2,17 +2,17 @@
 # rebuild all pages
 # must be run from ZMap/docs/Intweb directory
 
-docgen *.html
+./scripts/docgen *.html
 cd Design
-docgen *.html
+../scripts/docgen *.html
 cd modules
-docgen *.html
+../../scripts/docgen *.html
 cd ../misc
-docgen *.html
+../../scripts/docgen *.html
 cd ../notes
-docgen *.html
+../../scripts/docgen *.html
 cd ../../Development
-docgen *.html
+../scripts/docgen *.html
 
 
 echo "need to update this for other directories eg foocanvas"

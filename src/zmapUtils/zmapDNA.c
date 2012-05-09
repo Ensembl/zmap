@@ -1,6 +1,6 @@
 /*  File: zmapDNA.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,9 +54,7 @@
 
 
 
-// mh17: moved DNA encoding here from zmapPeptide.c, seems more logical really
-
- /* I have added a '-' to ASCII position 45 for '-' which is used to pad incomplete
+/* I have added a '-' to ASCII position 45 for '-' which is used to pad incomplete
  * sequences. If you don't have this then on encountering a '-' the code will
  * insert a NULL char which terminates the sequence as C string !
  *
@@ -64,7 +62,7 @@
  * that uses it....why it does that is an acedb mystery... */
 
 
-char dnaEncodeChar[0x80] =
+static char dnaEncodeChar[0x80] =
 {
   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -77,8 +75,9 @@ char dnaEncodeChar[0x80] =
   0,   0,  R_,  S_,  T_,  U_,  V_,  W_,  X_,  Y_,   0,   0,   0,   0,   0,   0,
 } ;
 
+
 /* 1<<4 = 16, not big enough for the 45th element in dnaDecodeString() */
-char dnaDecodeChar[1<<6] = { 0 };
+static char dnaDecodeChar[1<<6] = { 0 };
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Copied from acedb code.....We'll need this some time I guess..... */
@@ -119,7 +118,7 @@ static void dnaDecodeString(char *cp)
 
 /* This is not ideal, the acedb code works on encoded strings so we have to convert the
  * dna to this format before translating it. */
-void dnaEncodeString(char *cp)
+void zMapDNAEncodeString(char *cp)
 {
   --cp ;
   while(*++cp)
@@ -277,7 +276,7 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
   char * tx_query;
 
   tx_query = g_strdup(query);
-  dnaEncodeString(tx_query);
+  zMapDNAEncodeString(tx_query);
 
   /* Return the actual match string ? */
   if (return_matches)

@@ -1,6 +1,6 @@
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -693,6 +693,8 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
 
+  feature_stack->filter = FALSE;
+
   if(feature && feature->style)	/* chicken */
     {
       if(zMapStyleIsStrandSpecific(feature->style))
@@ -838,6 +840,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL,frame);
 
+  featureset_data.feature_stack.filter = TRUE;
 
 //  if(zMapStyleDensity(feature_set->style))
 /* now works with any CanvasFeatureset */
@@ -1357,7 +1360,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
   if(!f_col)
     {
-      zMapLogWarning("No column defined for featureset %s", g_quark_to_string(feature_set_id));
+      zMapLogWarning("No column defined for featureset \"%s\"", g_quark_to_string(feature_set_id));
       return NULL;
     }
   zMapAssert(f_col && f_col->style);
@@ -1911,7 +1914,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	  }
 	if(!style)
 	  {
-            zMapLogCritical("no column style for featureset %s\n",g_quark_to_string(feature_set->unique_id));
+            zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
             break;
 	  }
 	canvas_data->style = style;
@@ -2012,6 +2015,8 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
 
   frame_specific = zMapStyleIsFrameSpecific(style);
   zMapStyleGetStrandAttrs(style,NULL,NULL,&frame_mode);
+
+  printf("%s\n", zMapStyleGetName(style)) ;
 
   if (frame_specific)
     {
@@ -2330,6 +2335,8 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
+
+
 /* Called to draw each individual feature. */
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 {
@@ -2347,7 +2354,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style ;
 
 #if MH17_REVCOMP_DEBUG > 1
-  zMapLogWarning("ProcessFeature %d-%d ",feature->x1,feature->x2);
+  zMapLogWarning("ProcessFeature %s %d-%d",g_quark_to_string(feature->original_id), feature->x1,feature->x2);
 #endif
 
   style = feature->style;
@@ -2690,13 +2697,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
     {
       if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-#if REMOVED_RT_226682
-/* none of these features can be fetched, so blixem is pointless
-   theory is, someone requested this option....
-   see also Windowfeature.c/zmapMakeItemMenu()
-*/
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
-#endif
 	}
       else if (zMapStyleIsPfetchable(feature->style))
 	{
@@ -2713,12 +2714,18 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
 	    }
 	}
+      else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+	{
+	  menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+
+	}
+
     }
 
   {
-  ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, cbdata);
-      /* list all short reads data, temp access till we get wiggle plots running */
-  if(seq_menus)
+    ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, cbdata);
+    /* list all short reads data, temp access till we get wiggle plots running */
+    if (seq_menus)
       menu_sets = g_list_append(menu_sets, seq_menus);
   }
 

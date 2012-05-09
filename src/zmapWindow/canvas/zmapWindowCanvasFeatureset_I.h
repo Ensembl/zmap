@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeatureset_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,6 +36,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+
 #include <libzmapfoocanvas/libfoocanvas.h>
 //#include <zmapWindowCanvasItem_I.h>
 #include <ZMap/zmapWindow.h>
@@ -53,20 +54,21 @@
 
 typedef struct _zmapWindowCanvasFeatureStruct
 {
-	zmapWindowCanvasFeatureType type;
-      ZMapFeature feature;
+  zmapWindowCanvasFeatureType type;
+  ZMapFeature feature;
+  GList *from;		/* the list node that holds the feature */
+  /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
-      double y1, y2;    	/* top, bottom of item (box or line) */
-	double score;		/* determines feature width */
+  double y1, y2;    	/* top, bottom of item (box or line) */
+  double score;		/* determines feature width */
 
-	/* ideally these could be ints but the canvas works with doubles */
-	double width;
-	double bump_offset;	/* for X coord  (left hand side of sub column */
-	double feature_offset;	/* for X coord (LHS of column to LHS of feature */
+  /* ideally these could be ints but the canvas works with doubles */
+  double width;
+  double bump_offset;	/* for X coord  (left hand side of sub column */
 
-	int bump_col;		/* for calculating sub-col before working out width */
+  int bump_col;		/* for calculating sub-col before working out width */
 
-	long flags;				/* non standard display option eg selected */
+  long flags;				/* non standard display option eg selected */
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
 #define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
 #define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
@@ -76,7 +78,9 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
 #define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
-#define FEATURE_HIDE_REASON	0x3e00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
+#define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
+#define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
 
@@ -85,10 +89,10 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_SQUASHED_END		0x20000
 #define FEATURE_SQUASHED		0x30000
 
-	GArray *gaps;					/* alternate gaps array for alignments if squashed */
+  GArray *gaps;					/* alternate gaps array for alignments if squashed */
 #endif
 
-	ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
+  ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 
 } zmapWindowCanvasFeatureStruct;
 
@@ -97,23 +101,25 @@ typedef struct _zmapWindowCanvasFeatureStruct
 /* used for featureset summarise to prevent display of invisible features */
 typedef struct _pixRect
 {
-	struct _pixRect *next,*prev;	/* avoid alloc and free overhead of GList
-						 * we only expect relatively few of these but a high turnover
-						 */
+  struct _pixRect *next,*prev;	/* avoid alloc and free overhead of GList
+				 * we only expect relatively few of these but a high turnover
+				 */
 
-	ZMapWindowCanvasFeature feature;
-	int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
-//	int start;				/* we need to remember the real start as we trim the rect from the front */
+  ZMapWindowCanvasFeature feature;
+  int y1,x2,y2;			/* we only need x2 as features are aligned centrally or to the left */
+  //	int start;				/* we need to remember the real start as we trim the rect from the front */
 
 #define PIX_LIST_DEBUG	0
 #if PIX_LIST_DEBUG
-	gboolean alloc;			/* for double alloc/free debug */
-	int which;
+  gboolean alloc;			/* for double alloc/free debug */
+  int which;
 #endif
 
 } pixRect, *PixRect;    		/* think of a name not used elsewhere */
 
+
 #define N_PIXRECT_ALLOC		20
+
 
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
@@ -149,14 +155,23 @@ typedef struct _zmapWindowFeaturesetItemStruct
 {
   FooCanvasItem __parent__;
 
+  FooCanvasItem *canvas_item;		/* containing ZMapWindowCanvasItem: these are a pain they do nothing and we can't get rid of them yet */
+
   GQuark id;
-  ZMapFeatureTypeStyle style;			/* column style: NB could have several featuresets mapped into this by virtualisation */
-  ZMapFeatureTypeStyle featurestyle; 	/* current cached style for features */
+  ZMapFeatureTypeStyle style;				    /* column style: NB could have several
+							       featuresets mapped into this by virtualisation */
+  ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
 
   zmapWindowCanvasFeatureType type;
 
   ZMapStrand strand;
   ZMapFrame frame;
+
+
+  /* Points to data that is needed on a per column basis and is assigned by the functions
+   * that handle that data. */
+  gpointer per_column_data ;
+
 
 
   double zoom;			/* current units per pixel */
@@ -199,12 +214,12 @@ typedef struct _zmapWindowFeaturesetItemStruct
   int set_index;			/* for staggered columns (heatmaps) */
   double x_off;
 
-      /* graphics context for all contained features
-       * each one has its own colours that we set on draw (eg for heatmaps)
-       * foo_canvas_rect also has stipples but we don't use then ATM
-       * it also pretends to do alpha but 'X doesn't do it'
-       * crib foo-canvas-rect-elipse.c for inspiration
-       */
+  /* graphics context for all contained features
+   * each one has its own colours that we set on draw (eg for heatmaps)
+   * foo_canvas_rect also has stipples but we don't use then ATM
+   * it also pretends to do alpha but 'X doesn't do it'
+   * crib foo-canvas-rect-elipse.c for inspiration
+   */
   GdkGC *gc;             	  /* GC for graphics output */
 
   gint clip_y1,clip_y2,clip_x1,clip_x2;		/* visble scroll region plus one pixel all round */
@@ -232,7 +247,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 } zmapWindowFeaturesetItemStruct;
 
 
-
+void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

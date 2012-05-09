@@ -143,23 +143,23 @@ The following stanzas are supported by ZMap:
 </p>
 
 <ul>
-  <li><b><a href="user_doc/configuration.shtml#app">ZMap</a> -</b>
+  <li><b><a href="#app">ZMap</a> -</b>
       main configuration stanza controlling the zmap application.
-  <li><b><a href="user_doc/configuration.shtml#source">(source)</a> -</b>
+  <li><b><a href="#source">(source)</a> -</b>
       stanza(s) specifying data sources from which to load a feature view.
-  <li><b><a href="user_doc/configuration.shtml#featuresets">Columns</a> -</b>
+  <li><b><a href="#featuresets">Columns</a> -</b>
       stanza specifying how to map data sources into a feature column.
-  <li><b><a href="user_doc/configuration.shtml#featuresetstyle">Featureset-style</a> -</b>
+  <li><b><a href="#featuresetstyle">Featureset-style</a> -</b>
       stanza specifying which style to use to dispaly a featureset.
-  <li><b><a href="user_doc/configuration.shtml#window">Window</a> -</b>
+  <li><b><a href="#window">Window</a> -</b>
       stanza controlling the ZMap feature display window.
-  <li><b><a href="user_doc/configuration.shtml#blixem">Blixem</a> -</b>
+  <li><b><a href="#blixem">Blixem</a> -</b>
       stanza specifying parameters for running the blixem sequence viewer.
-  <li><b><a href="user_doc/configuration.shtml#logging">Logging</a> -</b>
+  <li><b><a href="#logging">Logging</a> -</b>
       stanza controlling zmap logging facility.
-  <li><b><a href="user_doc/configuration.shtml#debug">Debug</a> -</b>
+  <li><b><a href="#debug">Debug</a> -</b>
       stanza controlling zmap debugging output.
-  <li><b><a href="user_doc/configuration.shtml#style">(style)</a> -</b>
+  <li><b><a href="#style">(style)</a> -</b>
       stanza(s) specifying styles with which to display features.
 </ul>
 
@@ -394,15 +394,17 @@ A line based glyph becomes a filled shape if the first and last coordinates are 
 </fieldset>
 
 <a name="window"></a>
-<fieldset><legend>ZMap Feature Window Options</legend>
+<fieldset><legend>ZMapWindow Options</legend>
 The ZMap feature window is where sequence features are displayed,
 various aspects of it can be configured from colours to performance
 factors.<p>
+
 </p><table border="1" cellpadding="3" cellspacing="3">
 <tbody><tr>
 <th>Stanza </th><th colspan="3" align="center&gt;">"ZMapWindow"  </th></tr>
 <tr>
 <th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+
 <tr>
 <th>"canvas_maxsize" </th><td>Integer </td><td>30000 </td><td>Set the
 maximum vertical extent of the feature window. Setting a smaller size
@@ -410,8 +412,31 @@ will result in faster display as less data gets mapped as you zoom in
 but will mean you have less data to scroll over. The default is to
 create close to the maximum window size possible, this is 32k for X
 Windows. </td></tr>
+
 <tr>
 <th>"canvas-maxbases" </th><td>Integer </td><td>0 </td><td>Set the vertical extent of the feature window using dna bases. Is just an alternative method of setting "canvas-maxsize".  </td></tr>
+
+<tr>
+  <th>"cursor" </th>
+  <td>string </td><td>user-defined</td>
+  <td><p>cursor =  [ zmap_xxxx | standard X cursor name ]</p>
+
+
+      <p>The standard X cursors are the ones that we all know and love and have been in X
+      Windows forever, they have names like "crosshair", "pirate" and so on. Custom zmap
+      cursors all have the prefix "zmap_" in their names, the currently available ones are:</p>
+
+      <pre>
+      zmap_cross        thick crosshair
+      zmap_circle       circular cursor
+      zmap_crosshair    thin crosshair
+
+      e.g.
+      [ZMapWindow]
+      cursor = zmap_crosshair </pre>
+  </td>
+</tr>
+
 <tr>
 <th>"keep-empty-columns" </th><td>Boolean </td><td>false </td><td>Some
 requested feature sets may not contain any features, by default these

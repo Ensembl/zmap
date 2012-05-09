@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -75,6 +75,9 @@ enum
     ITEM_MENU_ADD_EVIDENCE,
     ITEM_MENU_SHOW_TRANSCRIPT,
     ITEM_MENU_ADD_TRANSCRIPT,
+
+    ITEM_MENU_EXPAND,
+    ITEM_MENU_CONTRACT,
 
     ITEM_MENU_ITEMS
   };
@@ -184,7 +187,8 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
-       zmapWindowUpdateInfoPanel(window, feature, feature_item, NULL, 0, 0,  0, 0,
+
+       zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
 				NULL, TRUE, FALSE) ;
       result = TRUE ;
     }
@@ -341,6 +345,9 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
  * a feature currently.
  *
  * Returns FALSE if the feature does not exist. */
+
+/* NOTE only called from legacy bump code if alignments have foo=true in style */
+
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 					FooCanvasItem *curr_feature_item,
 					ZMapFeature new_feature,
@@ -387,12 +394,12 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 
 /* Remove an existing feature from the displayed feature context.
  *
- * NOTE IF YOU EVERY CHANGE THIS FUNCTION OR CALL IT TO REMOVE A WHOLE FEATURESET
- * refer to the comment above zmapWindowCanvasfeatureset.c/zMapWindowFeaturesetItemGetRemoveFeature()
+ * NOTE IF YOU EVER CHANGE THIS FUNCTION OR CALL IT TO REMOVE A WHOLE FEATURESET
+ * refer to the comment above zmapWindowCanvasfeatureset.c/zMapWindowFeaturesetItemRemoveFeature()
  * and write a new function to delete the whole set
  *
  * Returns FALSE if the feature does not exist. */
-#warning possible quadratic search time implied here
+
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature)
 {
   ZMapWindowContainerFeatureSet container_set;
@@ -404,7 +411,6 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
   container_set = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(feature_item) ;
-
 
   /* Need to delete the feature from the feature set and from the hash and destroy the
    * canvas item....NOTE this is very order dependent. */
@@ -431,12 +437,12 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             }
 
 
-zMapLogWarning("OTF: remove %s",g_quark_to_string(feature->unique_id));
+//zMapLogWarning("OTF: remove %s",g_quark_to_string(feature->unique_id));
 	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(feature_item))
 	  {
 		  if(!zMapWindowCanvasFeaturesetItemRemoveFeature(feature_item,feature))
 		  {
-zMapLogWarning("OTF: destroy feature item","");
+//zMapLogWarning("OTF: destroy feature item","");
 			/* destroy the canvas item...this will invoke canvasItemDestroyCB() */
 // don't destroy it as the process fails obscurely, leave an empty container
 //			gtk_object_destroy(GTK_OBJECT(feature_item)) ;
@@ -460,7 +466,6 @@ zMapLogWarning("OTF: destroy feature item","");
           result = TRUE ;
         }
     }
-
 
 
   return result ;
@@ -930,6 +935,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    }
 	  else
 	    {
+
+
 	      event_handled = handleButton(but_event, window, item, feature) ;
 	    }
 
@@ -991,6 +998,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
+	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(feature->style))
+	  highlight_same_names = FALSE ;
+
 
       if (zMapGUITestModifiers(but_event, control_mask))
 	{
@@ -1049,7 +1059,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
       /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, highlight_item, sub_feature, 0, 0,  0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, 0, 0,  0, 0,
 				NULL, replace_highlight, highlight_same_names) ;
     }
 
@@ -1137,13 +1147,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     {
-#if REMOVED_RT_226682
-/* none of these features can be fetched, so blixem is pointless
-   theory is, someone requested this option....
-   See also DrawFeatures.c/zmapMakeColumnMenu()
-*/
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
-#endif
     }
   else if (zMapStyleIsPfetchable(feature->style))
     {
@@ -1160,12 +1164,18 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
 	}
     }
+  else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+    {
+      menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
+    }
 
-      /* get BAM/ short reads data */
+
+  /* get BAM/ short reads data */
   {
-  ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
-      /* list all short reads data, temp access till we get wiggle plots running */
-  if(seq_menus)
+    /* list all short reads data, temp access till we get wiggle plots running */
+    ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, menu_data);
+
+    if (seq_menus)
       menu_sets = g_list_append(menu_sets, seq_menus);
   }
 
@@ -1230,8 +1240,11 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
       {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
+      /* extra items need for code below */
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
 
@@ -1263,7 +1276,25 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
                   menu[i].type = ZMAPGUI_MENU_NORMAL;
                   menu[i].name = "Highlight Transcript (add more)";
                   menu[i].id = ITEM_MENU_ADD_TRANSCRIPT;
-            }
+			i++;
+
+			if(md->feature->children)
+			{
+				menu[i].type = ZMAPGUI_MENU_NORMAL;
+				menu[i].name = "Expand Feature";
+				menu[i].id = ITEM_MENU_EXPAND;
+				i++;
+			}
+			else if(md->feature->composite)
+			{
+				menu[i].type = ZMAPGUI_MENU_NORMAL;
+				menu[i].name = "Contract Features";
+				menu[i].id = ITEM_MENU_CONTRACT;
+				i++;
+			}
+			menu[i].type = ZMAPGUI_MENU_NONE;
+		}
+
       }
       else
       {
@@ -1311,6 +1342,9 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 
 
 
+
+
+
 static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data)
@@ -1350,6 +1384,102 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
   return menu ;
 }
 
+
+
+/*
+ * if a feature is compressed then replace it with the underlying data
+ *
+ * NOTE: ZMapWindowCanvasFeatureset only
+ * can't return a feature as there will be many
+ *
+ * NOTE: un-bumping and re-bumping should show the same picture _this must be stable_
+ * and this can be done by detecting the same bump mode and using the previous bump offset coordinates
+ * however if we selected an altername bump mode we would have to compress the expanded features
+ * so we do that anyway: it's reasonable to expect a fresh bump to put all features in the same state
+ * this can be changed if bump to diff mode clears up expanded features
+ * NOTE: we also have to take care of some now quite complex HIDE_REASON flag status
+ * see zmapWindowCanvasFeatureset.c/zmapWindowFeaturesetItemShowHide()
+ */
+
+void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature, ZMapWindowContainerFeatureSet container_set)
+{
+	GList *l;
+	ZMapWindowFeatureStackStruct feature_stack = { NULL };
+	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
+	ZMapStyleBumpMode curr_bump_mode ;
+
+//printf("\n\nexpand %s\n",g_quark_to_string(feature->original_id));
+	if(feature->population < 2)	/* should not happen */
+		return;
+
+	/* hide the compressed feature */
+	zMapWindowCanvasItemShowHide(item, FALSE);
+
+	/* draw all its children  */
+	zmapGetFeatureStack(&feature_stack, NULL, feature, container_set->frame);
+
+	for(l = feature->children; l; l = l->next)
+	{
+		/* (mh17) NOTE we have to be careful that these features end up in the same (singleton) CanvasFeatureset else they overlap on bump */
+		feature_stack.feature = (ZMapFeature) l->data;
+		item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style, (FooCanvasGroup *) container_set, &feature_stack);
+//printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
+		zMapWindowCanvasItemShowHide(item, TRUE);
+	}
+
+
+	/* bump all features to the right of the original right of the composite */
+
+	curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_set) ;
+	if(curr_bump_mode != ZMAPBUMP_UNBUMP)
+	{
+		zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), ZMAPBUMP_UNBUMP) ;
+		zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), curr_bump_mode ) ;
+
+		/* redraw this col and ones to the right */
+		zmapWindowFullReposition(window) ;	/* yuk */
+	}
+}
+
+
+void zmapWindowFeatureContract(ZMapWindow window,  FooCanvasItem *foo, ZMapFeature feature, ZMapWindowContainerFeatureSet container_set)
+{
+	/* find the daddy feature and un-hide it */
+	ZMapFeature daddy = feature->composite;
+	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
+	GList *l;
+	ZMapStyleBumpMode curr_bump_mode ;
+
+	if(!daddy || !ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
+	{
+		zMapLogWarning("compress called for invalid type of foo canvas item", "");
+		return;
+	}
+//printf("\n\ncontract %s\n",g_quark_to_string(daddy->original_id));
+
+	zMapWindowCanvasItemSetFeaturePointer (item, daddy);
+	zMapWindowCanvasItemShowHide(item, TRUE);
+
+	/* find all the child features and delete them. */
+
+	for(l = daddy->children; l; l = l->next)
+	{
+		zMapWindowFeatureRemove(window, foo, (ZMapFeature) l->data, FALSE);
+	}
+
+
+	/* de-bump all features to the right of the original right of the last one */
+	/* redraw this col and ones to the right */
+	curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_set) ;
+	if(curr_bump_mode != ZMAPBUMP_UNBUMP)
+	{
+		zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), ZMAPBUMP_UNBUMP) ;
+		zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), curr_bump_mode ) ;
+
+		/* redraw this col and ones to the right */
+		zmapWindowFullReposition(window) ;	/* yuk */
+	}
+}
 
 
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
@@ -1427,6 +1557,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case ITEM_MENU_MARK_ITEM:
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
+
       break ;
     case ITEM_MENU_SEARCH:
       zmapWindowCreateSearchWindow(menu_data->window,
@@ -1474,6 +1605,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	break;
       }
+
     case ITEM_MENU_SHOW_EVIDENCE:
     case ITEM_MENU_ADD_EVIDENCE:
     case ITEM_MENU_SHOW_TRANSCRIPT:       /* XML formats are different for evidence and transcripts */
@@ -1526,6 +1658,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
                              feature_search_id,
                              NULL,NULL);
 
+
                   /* zMapLogWarning("evidence %s returns %d features\n", feature_name, g_list_length(items_free));*/
                   g_free(feature_name);
 
@@ -1555,6 +1688,19 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	break;
       }
+
+	case ITEM_MENU_EXPAND:
+	{
+		zmapWindowFeatureExpand(menu_data->window, menu_data->item, menu_data->feature, menu_data->container_set);
+	}
+	break;
+
+	case ITEM_MENU_CONTRACT:
+	{
+		zmapWindowFeatureContract(menu_data->window, menu_data->item, menu_data->feature, menu_data->container_set);
+	}
+	break;
+
 
 #ifdef RDS_DONT_INCLUDE
     case 101:
@@ -1722,7 +1868,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
     }
 
   /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
 
   return FALSE ;
 }
@@ -1859,6 +2005,8 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   zmapGetFeatureStack(&feature_stack,NULL,feature, zmapWindowFeatureFrame(feature));
 
   /* This function will add the new feature to the hash. */
+  /* NOTE now not called as alingments are in CanvasFeatureset s */
+  /* check for feature_stack->filter if you revive this */
   new_feature = zmapWindowFeatureDraw(window, style, FOO_CANVAS_GROUP(feature_group), &feature_stack) ;
 
   if (bump_col)

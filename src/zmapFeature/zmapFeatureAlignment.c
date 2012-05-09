@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 11:17 2011 (edgrif) */
 /*  File: zmapFeatureAlignment.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -106,7 +106,8 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
-				     gboolean has_local_sequence)
+				     gboolean has_local_sequence, char *sequence)
+				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
   gboolean result = TRUE ;
 
@@ -138,6 +139,8 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.y2 = query_end ;
   feature->feature.homol.length = query_length ;
   feature->feature.homol.flags.has_sequence = has_local_sequence ;
+  feature->feature.homol.sequence = sequence ;
+
 
   if (gaps)
     {

@@ -396,6 +396,7 @@ AC_SUBST(ZMAPSTYLESFILE)
 
 # THE zmap* source directories
 ZMAP_SRC_DIRS="zmapApp \
+zmapAppServices \
 zmapConfig \
 zmapControl \
 zmapControl/remote \
@@ -433,6 +434,7 @@ AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 AC_CONFIG_FILES([Makefile
 zmapApp/Makefile
+zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
 zmapControl/remote/Makefile

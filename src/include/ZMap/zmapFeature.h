@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 11:17 2011 (edgrif) */
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -535,6 +535,8 @@ typedef struct
   /* The coords in this array are start/end pairs for sub blocks and start < end always. */
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 
+  char * sequence;					/* sequence if given in GFF */
+
   struct
   {
     /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
@@ -600,6 +602,8 @@ typedef struct
 
 
 
+
+
 /* The Feature structure itsself. Describes a single feature, the feature may be compound
  * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
@@ -636,8 +640,15 @@ typedef struct ZMapFeatureStruct_
     unsigned int squashed: 1 ;		/* alignments only */
     unsigned int squashed_start: 1 ;	/* alignments only */
     unsigned int squashed_end: 1 ;		/* alignments only */
+    unsigned int joined: 1;			/* alignments only */
   } flags ;
 
+  /*
+   * for RNA seq data:
+   * for composite features this is a list of underlying features that are hidden from view
+   */
+  GList *children;
+  struct ZMapFeatureStruct_ *composite;	/* daddy feature that gets displayed */
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
@@ -1023,7 +1034,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
-				     gboolean has_local_sequence) ;
+				     gboolean has_local_sequence, char * sequence) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAlignmentString2Gaps(ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,

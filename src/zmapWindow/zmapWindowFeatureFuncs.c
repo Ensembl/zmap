@@ -1,7 +1,7 @@
 /*  Last edited: Jul 12 08:51 2011 (edgrif) */
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -113,7 +113,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       zMapMessage("%s", msg) ;
     }
-  else if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES && !(item_in_focus_col && focus_item))
+  else if ((requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES || requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
+		&& !(item_in_focus_col && focus_item))
     {
       /* User wants to blixem "selected" features but there aren't any in the item's column. */
 
@@ -157,9 +158,9 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       /* Work out where we are.... */
       if (feature && y_pos == 0.0)
-	y_pos = (double)((feature->x1 + feature->x2) / 2) ;
-      zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
-      align->cursor_position = y1 ;
+		y_pos = (double)((feature->x1 + feature->x2) / 2) ;
+	zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
+	align->cursor_position = y1 ;
 
 
       align->window_start = window_start ;
@@ -188,6 +189,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 	  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
 
+	  align->isSeq = zMapFeatureIsSeqFeatureSet(window->context_map,align->feature_set->unique_id);
+
 	  /* If user clicked on features then make a list of them (may only be one), otherwise
 	   * we need to use the feature set. */
 	  if (selected_features == TRUE)
@@ -196,7 +199,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
 	      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
 
-	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
+//	      align->features = zmapWindowItemListToFeatureList(focus_items) ;
+	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items,requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
 
 	      g_list_free(focus_items) ;
 	    }

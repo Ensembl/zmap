@@ -13,6 +13,7 @@ zmapBase.c \
 zmapBase_I.h \
 zmapCmdLineArgs.c \
 zmapCmdLineArgs_P.h \
+zmapCompileDate.c \
 zmapCoords.c \
 zmapDNA.c \
 zmapFASTA.c \

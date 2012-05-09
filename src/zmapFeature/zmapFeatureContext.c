@@ -1,6 +1,6 @@
 /*  File: zmapFeatureContext.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1041,6 +1041,15 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
         }
 
       zMapFeatureSortGaps(feature->feature.homol.align) ;
+
+	if(feature->feature.homol.sequence && *feature->feature.homol.sequence)	/* eg if provided in GFF (BAM) */
+	{
+if(feature->feature.homol.length != strlen(feature->feature.homol.sequence))
+	printf("%s: seq lengths differ: %d, %d\n",g_quark_to_string(feature->original_id), feature->feature.homol.length, strlen(feature->feature.homol.sequence));
+zMapAssert(feature->feature.homol.length == strlen(feature->feature.homol.sequence));
+
+	    zMapDNAReverseComplement(feature->feature.homol.sequence, feature->feature.homol.length) ;
+	}
     }
   else if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {

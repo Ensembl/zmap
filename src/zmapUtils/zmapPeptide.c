@@ -1,6 +1,6 @@
 /*  File: zmapPeptide.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -878,7 +878,7 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
   /* agh...I have to copy the dna now...sigh... */
   if((dna = g_strndup((dna_in + from), length)))
     {
-      dnaEncodeString(dna) ;
+      zMapDNAEncodeString(dna) ;
 
       dna_array = g_array_new(TRUE, FALSE, sizeof(char)) ;
 

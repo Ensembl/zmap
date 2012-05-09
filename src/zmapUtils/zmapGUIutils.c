@@ -1,7 +1,7 @@
 /*  Last edited: Nov  3 11:55 2011 (edgrif) */
 /*  File: zmapGUIutils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -522,15 +522,22 @@ void zMapGUIShowAbout(void)
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
+
+  char *comment_str ;
+
+  comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
+
   gtk_show_about_dialog(NULL,
 			"authors", authors,
-			"comments", zMapGetCommentsString(),
+			"comments", comment_str,
 			"copyright", zMapGetCopyrightString(),
 			"license", zMapGetLicenseString(),
 			"program-name", zMapGetAppName(),
 			"version", zMapGetAppVersionString(),
 			"website", zMapGetWebSiteString(),
 			NULL) ;
+
+  g_free(comment_str) ;
 
   return ;
 }
@@ -964,6 +971,30 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
 
   return file;
 }
+
+
+
+/* Takes a colour spec in the standard string form given for X11 in the file rgb.txt, parses it
+ * and allocates it in the colormap returning the colour description in colour_inout
+ * (the contents of which are overwritten).
+ * 
+ * Returns TRUE if all worked, FALSE otherwise. */
+gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout)
+{
+  gboolean result = FALSE ;
+  GdkColormap *colourmap ;
+
+  if ((result = gdk_color_parse(colour_spec, colour_inout)))
+    {
+      colourmap = gtk_widget_get_colormap(widget) ;
+
+      gdk_rgb_find_color(colourmap, colour_inout) ;
+    }
+
+  return result ;
+}
+
+
 
 
 
@@ -1791,13 +1822,25 @@ static GdkCursor *makeCustomCursor(char *cursor_name)
 #define zmap_cross_shape_x_hot 7
 #define zmap_cross_shape_y_hot 7
 static unsigned char zmap_cross_shape_bits[] = {
-   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
-   0x00, 0x00, 0x3f, 0x7e, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
-   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
-static unsigned char zmap_cross_mask_bits[] = {
    0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
-   0x3f, 0x7e, 0x3f, 0x7e, 0x3f, 0x7e, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
-   0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0x00, 0x00};
+   0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
+   0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01};
+static unsigned char zmap_cross_mask_bits[] = {
+   0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xff, 0x7f,
+   0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xe0, 0x03, 0xe0, 0x03,
+   0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03};
+
+/* Thin cross. */
+#define zmap_thincross_shape_x_hot 7
+#define zmap_thincross_shape_y_hot 7
+static unsigned char zmap_thincross_shape_bits[] = {
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x7f, 0xfe, 0x7f, 0xfe, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01};
+static unsigned char zmap_thincross_mask_bits[] = {
+   0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03,
+   0xff, 0xff, 0x7f, 0xfe, 0x7f, 0xfe, 0xff, 0xff, 0xc0, 0x03, 0xc0, 0x03,
+   0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03};
 
   /* My crosshair cursor. */
 #define zmap_crosshair_shape_x_hot 7
@@ -1810,6 +1853,18 @@ static unsigned char zmap_crosshair_mask_bits[] = {
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
    0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
+
+  /* My colour cross cursor. */
+#define zmap_colour_cross_shape_x_hot 7
+#define zmap_colour_cross_shape_y_hot 7
+static unsigned char zmap_colour_cross_shape_bits[] = {
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0xff, 0xff, 0xff, 0xff, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01};
+static unsigned char zmap_colour_cross_mask_bits[] = {
+   0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02,
+   0x7f, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x7f, 0xfe, 0x40, 0x02, 0x40, 0x02,
+   0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02};
 
 /* My circle cursor. */
 #define zmap_circle_shape_x_hot 7
@@ -1847,15 +1902,35 @@ static unsigned char zmap_noentry_mask_bits[] = {
  GdkColor *fg, *bg ;
 
 
- if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
+ if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_COLOUR_CROSS) == 0)
+   {
+     shape_data = (gchar *)zmap_colour_cross_shape_bits ;
+     mask_data = (gchar *)zmap_colour_cross_mask_bits ;
+     hot_x = zmap_colour_cross_shape_x_hot ;
+     hot_y = zmap_colour_cross_shape_y_hot ;
+     fg = &red ;
+     bg = &blue ;
+
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
    {
      shape_data = (gchar *)zmap_cross_shape_bits ;
      mask_data = (gchar *)zmap_cross_mask_bits ;
      hot_x = zmap_cross_shape_x_hot ;
      hot_y = zmap_cross_shape_y_hot ;
-     fg = &red ;
-     bg = &blue ;
-
+     fg = &black ;
+     bg = &white ;
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_THINCURSOR_CROSS) == 0)
+   {
+     shape_data = (gchar *)zmap_thincross_shape_bits ;
+     mask_data = (gchar *)zmap_thincross_mask_bits ;
+     hot_x = zmap_thincross_shape_x_hot ;
+     hot_y = zmap_thincross_shape_y_hot ;
+     fg = &black ;
+     bg = &white ;
      found_cursor = TRUE ;
    }
  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSSHAIR) == 0)

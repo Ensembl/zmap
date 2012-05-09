@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 14:30 2011 (edgrif) */
 /*  File: zmapWindow_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -250,6 +250,7 @@ typedef struct _zmapWindowFeatureStack
       int set_index;	/* used by density plots for stagger */
       ZMapStrand strand;
       ZMapFrame frame;
+	gboolean filter;	/* don't add to camvas if hidden */
 } ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 
@@ -1061,7 +1062,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       gboolean isExon);
 
 void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       FooCanvasItem *item, ZMapFeatureSubPartSpan sub_feature,
+			       GList *feature_list, FooCanvasItem *item,  ZMapFeatureSubPartSpan sub_feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
@@ -1310,6 +1311,9 @@ void zmapWindowReFocusHighlights(ZMapWindow window);
 
 
 GList *zmapWindowItemListToFeatureList(GList *item_list);
+GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand);
+int zmapWindowItemListStartCoord(GList *item_list);
+
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;

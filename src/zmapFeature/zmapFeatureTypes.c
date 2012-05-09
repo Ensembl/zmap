@@ -1,6 +1,6 @@
 /*  File: zmapFeatureTypes.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -499,36 +499,34 @@ GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
 
 
 
+/* Splice marker features for displaying splice junctions (e.g. results of gene finder programs). */
 ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
+  ZMapStyleGlyphShape shape ;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
-	shape = &style->mode_data.glyph.glyph5;
-
-  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5_REV))
-		shape = &style->mode_data.glyph.glyph5rev;
+  if (!reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5))
+    shape = &style->mode_data.glyph.glyph5 ;
+  else if (reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5_REV))
+    shape = &style->mode_data.glyph.glyph5rev ;
+  else
+    shape = &style->mode_data.glyph.glyph ;
 
   return(shape);
 }
-
 
 ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
+  ZMapStyleGlyphShape shape ;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
-	shape = &style->mode_data.glyph.glyph3;
-
-  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
-		shape = &style->mode_data.glyph.glyph3rev;
+  if (!reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
+    shape = &style->mode_data.glyph.glyph3;
+  else if (reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
+    shape = &style->mode_data.glyph.glyph3rev;
+  else
+    shape = &style->mode_data.glyph.glyph;
 
   return(shape);
 }
-
-//---------------------------------
-
-
 
 
 
@@ -1137,7 +1135,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 
   style_list = g_hash_table_new(NULL,NULL);
 
-  /* 3 Frame - meta mode controlling whether we do 3 frame display or not. */
+  /* 3 Frame
+   * A meta mode controlling whether we do 3 frame display or not. */
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FRAME, ZMAP_FIXED_STYLE_3FRAME_TEXT) ;
   g_object_set(G_OBJECT(curr),
 	       ZMAPSTYLE_PROPERTY_MODE,              ZMAPSTYLE_MODE_META,
@@ -1148,8 +1147,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr) ;
 
 
-  /* 3 Frame Translation */
-  /* The translation width is the width for the whole column if
+  /* 3 Frame Translation 
+   * The translation width is the width for the whole column if
    * all three frames are displayed in one column.  When displayed
    * in the frame specfic mode the width of each of the columns
    * will be a third of this whole column value.  This is contrary

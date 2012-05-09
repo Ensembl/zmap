@@ -1,7 +1,7 @@
 /*  Last edited: Feb 14 20:31 2012 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -160,7 +160,9 @@ typedef struct
   ZMapWindowSelectType type;				    /* SINGLE or DOUBLE */
 
   FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
-							       if a column was selected. */
+							          if a column was selected. */
+
+  GList *feature_list;					/* for lassoo multiple select */
 
   gboolean replace_highlight_item ;			    /* TRUE means highlight item replaces
 							       existing highlighted item, FALSE
@@ -252,6 +254,7 @@ typedef enum
     ZMAPWINDOW_ALIGNCMD_INVALID,
     ZMAPWINDOW_ALIGNCMD_NONE,
     ZMAPWINDOW_ALIGNCMD_FEATURES,
+    ZMAPWINDOW_ALIGNCMD_EXPANDED,
     ZMAPWINDOW_ALIGNCMD_SET,
     ZMAPWINDOW_ALIGNCMD_MULTISET,
     ZMAPWINDOW_ALIGNCMD_SEQ
@@ -286,6 +289,8 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
   ZMapFeatureSet feature_set ;
 
   GList *source;                                     /* a list of featureset names */
+
+  gboolean isSeq;
 
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
@@ -473,7 +478,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature) ;
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
@@ -553,6 +558,5 @@ void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
-
 
 #endif /* !ZMAP_WINDOW_H */

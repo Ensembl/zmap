@@ -1,7 +1,7 @@
 /*  Last edited: Nov  3 11:28 2011 (edgrif) */
 /*  File: zmapUtilsGUI.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -69,11 +69,13 @@ typedef enum
 
 
 /* ZMap custom cursors that can be returned by zMapGUIGetCursor(), they must all have the "zmap_" prefix. */
-#define ZMAPGUI_CURSOR_PREFIX    "zmap_"
-#define ZMAPGUI_CURSOR_CROSS     "zmap_cross"
-#define ZMAPGUI_CURSOR_CROSSHAIR "zmap_crosshair"
-#define ZMAPGUI_CURSOR_CIRCLE    "zmap_circle"
-#define ZMAPGUI_CURSOR_NOENTRY   "zmap_noentry"
+#define ZMAPGUI_CURSOR_PREFIX         "zmap_"
+#define ZMAPGUI_CURSOR_COLOUR_CROSS   "zmap_colour_cross"
+#define ZMAPGUI_CURSOR_CROSS          "zmap_cross"
+#define ZMAPGUI_THINCURSOR_CROSS      "zmap_thincross"
+#define ZMAPGUI_CURSOR_CROSSHAIR      "zmap_crosshair"
+#define ZMAPGUI_CURSOR_CIRCLE         "zmap_circle"
+#define ZMAPGUI_CURSOR_NOENTRY        "zmap_noentry"
 
 
 
@@ -447,6 +449,9 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 				  PangoFont **font_out, PangoFontDescription **desc_out) ;
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
+
+gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout) ;
+
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 
 GdkCursor *zMapGUIGetCursor(char *cursor_name) ;

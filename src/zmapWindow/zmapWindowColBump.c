@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 14:29 2011 (edgrif) */
 /*  File: zmapWindowColBump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -448,7 +448,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       	}
 
       	/* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
-		 * in practice w/ heatmaps there will always be room and w/ other featrues only 1 CanavsFeatureset
+		 * in practice w/ heatmaps there will always be room and w/ other features only 1 CanavsFeatureset
 		 */
       	if(ok)
 		  zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);

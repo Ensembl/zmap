@@ -1,6 +1,6 @@
 /*  File: zmapUtils.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -160,11 +160,18 @@ typedef struct
 
 
 gboolean zMapLogCreate(char *logname) ;
+gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
+			  gboolean show_code_details, gboolean show_time,
+			  gboolean catch_glib, gboolean echo_glib,
+			  char *logfile_path) ;
+void zMapWriteStartMsg(void) ;
+void zMapWriteStopMsg(void) ;
 gboolean zMapLogStart(void) ;
 int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
-void zMapLogDestroy(void) ;
 void zMapLogStack(void);
+void zMapLogDestroy(void) ;
+
 void zMapPrintStack(void);
 void zMapSignalHandler(int sig_no);
 
@@ -186,7 +193,7 @@ char *zMapGetWebSiteString(void) ;
 char *zMapGetCommentsString(void) ;
 char *zMapGetLicenseString(void) ;
 gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
-
+char *zMapGetCompileString(void) ;
 
 gboolean zMapUtilsConfigDebug(void) ;
 

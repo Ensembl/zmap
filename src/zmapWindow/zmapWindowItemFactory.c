@@ -1,6 +1,6 @@
  /*  File: zmapWindowItemFactory.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -777,28 +777,10 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
-  ZMapWindowCanvasItem last_item = (ZMapWindowCanvasItem) run_data->canvas_item;
 
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
       ZMapFeatureBlock block = run_data->feature_stack->block;
 
-	if(feature->flags.collapsed || feature->flags.squashed)
-	{
-		/* collapsed item are not disaplayed as they contain no new information
-		 * but they cam be searched for in the FToI hash
-		 * so return the item that they got collapsed into
-		 * if selected from the search they get assigned to the canvas item
-		 * and the population copied in.
-		 */
-
-#warning this works only because short reads are sorted and displayed in order, we do not get new features OTF, other than complete blocks
-#warning window search does not find these features so this is not working
-
-		/* NOTE on revcomp last item can be freed in whcih case feature may be 0 */
-		if(last_item && last_item->feature && last_item->feature->population)	/* just don't display duplicates */
-			return((FooCanvasItem *)last_item);
-		return(NULL);
-	}
 
 //       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
       /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
@@ -854,12 +836,28 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
       zMapAssert(canvas_item);
 
-/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
- * so I changed FToIAddfeature to take the feature explicitly
- * setting the feature here every time also fixes the problem but by fluke
- */
-//      if(!canvas_item->feature)
-      	canvas_item->feature = feature;     /* must have one */
+	/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
+	 * so I changed FToIAddfeature to take the feature explicitly
+	 * setting the feature here every time also fixes the problem but by fluke
+	 */
+     	canvas_item->feature = feature;
+
+	if(run_data->feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
+	{
+		/* collapsed items are not displayed as they contain no new information
+		 * but they cam be searched for in the FToI hash
+		 * so return the item that they got collapsed into
+		 * if selected from the search they get assigned to the canvas item
+		 * and the population copied in.
+		 *
+		 * NOTE calling code will need to set the feature in the hash as the composite feature
+#warning need to set composite feature in lookup code
+		 */
+
+		return (FooCanvasItem *) canvas_item;
+	}
+
+
 
 
 	/* now we are outisde the normal ZMapWindowCanvasItem dogma */

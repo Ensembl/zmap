@@ -1,7 +1,7 @@
 /*  Last edited: Feb 14 21:32 2012 (edgrif) */
 /*  File: zmapControlRemoteReceive.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

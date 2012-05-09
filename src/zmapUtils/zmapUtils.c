@@ -1,7 +1,7 @@
 /*  Last edited: Oct 28 13:51 2011 (edgrif) */
 /*  File: zmapUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -203,17 +203,13 @@ char *zMapGetDevWebSiteString(void)
  *  */
 char *zMapGetCommentsString(void)
 {
-  static char *comment_string = NULL ;
-
-  if (!comment_string)
-    comment_string = g_strdup_printf("(compiled on %s)\n"
-				     "\n"
-				     "ZMap is a multi-threaded genome viewer program that can"
-				     " be used stand alone or be driven from an external program"
-				     " to provide a seamless annotation package.\n"
-				     "It is currently used as part of the otterlace package"
-				     " and is being added to the wormbase annotation software.",
-				     zmapCompileString()) ;
+  char *comment_string =
+    "ZMap is a multi-threaded genome viewer program\n"
+    "that can be used stand alone or be driven from\n"
+    "an external program to provide a seamless annotation\n"
+    "package. It is currently used as part of the otterlace\n"
+    "package and is being added to the core Wormbase\n"
+    "annotation software.\n" ;
 
   return comment_string ;
 }
@@ -268,6 +264,18 @@ void *zMapUtilsStr2Ptr(char *ptr_str)
 }
 
 
+/* Note this function calls zmapCompileString() which is created by the Makefile
+ * each time zmap is recompiled. The file is dynamically created so that it is not
+ * constantly needing to be committed to GIT our source code control system. */
+char *zMapGetCompileString(void)
+{
+  static char *compile_str = NULL ;
+
+  if (!compile_str)
+    compile_str = g_strdup_printf("(compiled on %s)", zmapCompileString()) ;
+
+  return compile_str ;
+}
 
 
 

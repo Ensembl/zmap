@@ -1,7 +1,7 @@
 /*  Last edited: Jul 13 14:26 2011 (edgrif) */
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -628,22 +628,22 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 		{
 		  styles_list = g_list_append(styles_list, (gpointer) style);
 
-              for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
-              {
-                ZMapFeatureTypeStyle sub;
+		  for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
+		    {
+		      ZMapFeatureTypeStyle sub;
 
-                if((sub = style->sub_style[i]))
-                  {
-                    styles_list = g_list_append(styles_list, (gpointer) sub);
-                  }
-              }
+		      if((sub = style->sub_style[i]))
+			{
+			  styles_list = g_list_append(styles_list, (gpointer) sub);
+			}
+		    }
 		}
-            else
-            {
-                  zMapLogWarning("could not find style %s for column %s in table of %d\n",
-                        g_quark_to_string(style_id),g_quark_to_string(column_id),
-                        g_hash_table_size(map->styles));
-            }
+	      else
+		{
+                  zMapLogWarning("Could not find style %s for column \"%s\" in table of %d\n",
+				 g_quark_to_string(style_id),g_quark_to_string(column_id),
+				 g_hash_table_size(map->styles));
+		}
 	    }
 	  while((list = g_list_next(list)));
 	}

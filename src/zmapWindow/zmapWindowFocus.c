@@ -1,6 +1,6 @@
 /*  File: zmapWindowFocus.c
  *  Author: Ed Griffiths edgrif@sanger.ac.uk
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -807,6 +807,7 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
 }
 
 
+/* UM...that seems the wrong thing to do.....styles shouldn't be deciding that kind of thing...EG */
 /* We pass in the default from the window->colour_item_highlight in case there's no other default */
 /* Actually I've now put one in the zmapFeatureTypes.c file, so this is probably useless and confusing */
 

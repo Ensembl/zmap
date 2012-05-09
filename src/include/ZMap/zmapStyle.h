@@ -1,6 +1,6 @@
 /*  File: zmapStyle.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2011: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -195,6 +195,9 @@ typedef enum
     STYLE_PROP_ALIGNMENT_MIXED_COLOURS,
     STYLE_PROP_ALIGNMENT_MASK_SETS,
     STYLE_PROP_ALIGNMENT_SQUASH,
+    STYLE_PROP_ALIGNMENT_JOIN_OVERLAP,
+    STYLE_PROP_ALIGNMENT_JOIN_THRESHOLD,
+    STYLE_PROP_ALIGNMENT_JOIN_MAX,
 
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
@@ -316,6 +319,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER   "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
 
 /* alignment properties */
@@ -337,6 +341,9 @@ typedef enum
 
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS           "alignment-mask-sets"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH              "alignment-squash"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_OVERLAP        "alignment-join-overlap"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_THRESHOLD      "alignment-join-threshold"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX            "alignment-join-max"
 
 
 /* Sequence properties. */
@@ -472,7 +479,15 @@ _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleSubFeature, ZMAP_STYLE_SUB_FEATURE_LIST);
 
-#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"       // to match what was set up in acedb
+
+/* Splice markers replicate the acedb fmap display of splice sites found by the
+ * Phil Green genefinder code. */
+#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"
+
+#define ZMAPSTYLE_SPLICE_GLYPH_LEN 10
+#define ZMAPSTYLE_SPLICE_GLYPH_3   "<0,0 ; 8,0 ; 8,-8>"
+#define ZMAPSTYLE_SPLICE_GLYPH_5   "<0,0 ; 8,0 ; 8,8>"
+
 
 /*
  * specifies strand specific processing
@@ -748,6 +763,9 @@ typedef struct
    gboolean unique;					/* don't display joined up */
    gboolean squash;					/* combine features that have the same gap */
 
+   int join_overlap;				/* for amalgamating short reads */
+   int join_max;					/* how many */
+
 
    GList *mask_sets;          /* list of featureset Id's to mask this set against */
 
@@ -851,8 +869,6 @@ typedef struct _zmapFeatureTypeStyleStruct
   ZMapStyleGraphScale score_scale;			    // log or linear, for collapse option
   gboolean collapse;					    /* for duplicated features */
   /* see also alignment.squash: even better form of collapse for short reads */
-
-  int join_overlap;				/* for amalgamating short reads */
 
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
@@ -1003,6 +1019,8 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
+gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
+
 
 //unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetWithinAlignError(style)   (style->mode_data.alignment.between_align_error)
@@ -1045,6 +1063,8 @@ void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 #define zMapStyleGetDisplay(style)   (style->col_display_state)
 
 #define zMapStyleIsPfetchable(style) (style->mode_data.alignment.pfetchable)
+
+#define zMapStyleBlixemType(style) (style->mode_data.alignment.blixem_type)
 
 //ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
 #define zMapStyleGlyphShape(style)   (&style->mode_data.glyph.glyph)
@@ -1193,7 +1213,9 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleIsCollapse(style)   (style->collapse)
 #define zMapStyleIsSquash(style)   	 (style->mode_data.alignment.squash)
 
-#define zMapStyleJoinOverlap(style)	 (style->join_overlap)
+#define zMapStyleJoinOverlap(style)	 (style->mode_data.alignment.join_overlap)
+#define zMapStyleJoinThreshold(style)	 (style->mode_data.alignment.join_threshold)
+#define zMapStyleJoinMax(style)	 (style->mode_data.alignment.join_max)
 
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
