@@ -171,8 +171,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug();
 
-  /* Init manager, just happen just once in application. */
-  zMapManagerInit(&app_window_cbs_G) ;
 
   /* app_data->app_context = */
   app_context = createAppContext() ;
