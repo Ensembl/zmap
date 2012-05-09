@@ -40,7 +40,6 @@ zmapString.c \
 zmapUrl.c \
 zmapUrlUtils.c \
 zmapUtils.c \
-zmapUtilsConfig.c \
 zmapUtilsSpawn.c \
 zmapUtilsUsers.c \
 zmapUtils_P.h \
