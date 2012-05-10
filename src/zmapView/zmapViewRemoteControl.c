@@ -1286,41 +1286,57 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
                                       "a feature end tag without a created feature.");
   feature = request_data->feature;
 
-  if((attr = zMapXMLElementGetAttributeByName(sub_element, "ontology")))
+  if ((attr = zMapXMLElementGetAttributeByName(sub_element, "ontology")))
     {
-      GQuark ontology = zMapXMLAttributeGetValue(attr);
-      ZMapSpanStruct span = {0,0};
-      ZMapSpan exon_ptr = NULL, intron_ptr = NULL;
+      GQuark ontology ;
+      ZMapSpanStruct span = {0} ;
+      ZMapSpan exon_ptr = NULL, intron_ptr = NULL ;
+      gboolean valid = TRUE ;
+
+      ontology = zMapXMLAttributeGetValue(attr) ;
 
       feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
 
-      if((attr = zMapXMLElementGetAttributeByName(sub_element, "start")))
+      if (valid && (attr = zMapXMLElementGetAttributeByName(sub_element, "start")))
         {
           span.x1 = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
                            (char **)NULL, 10);
         }
       else
-        zMapXMLParserRaiseParsingError(parser, "start is a required attribute for subfeature.");
+	{
+	  zMapXMLParserRaiseParsingError(parser, "start is a required attribute for subfeature.");
 
-      if((attr = zMapXMLElementGetAttributeByName(sub_element, "end")))
+	  valid = FALSE ;
+	}
+
+      if (valid && (attr = zMapXMLElementGetAttributeByName(sub_element, "end")))
         {
           span.x2 = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-                           (char **)NULL, 10);
+                           (char **)NULL, 10) ;
         }
       else
-        zMapXMLParserRaiseParsingError(parser, "end is a required attribute for subfeature.");
+	{
+	  zMapXMLParserRaiseParsingError(parser, "end is a required attribute for subfeature.");
 
-      /* Don't like this lower case stuff :( */
-      if(ontology == g_quark_from_string("exon"))
-        exon_ptr   = &span;
-      if(ontology == g_quark_from_string("intron"))
-        intron_ptr = &span;
-      if(ontology == g_quark_from_string("cds"))
-        zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, NULL, NULL);
+	  valid = FALSE ;
+	}
 
-      if(exon_ptr != NULL || intron_ptr != NULL) /* Do we need this check isn't it done internally? */
-        zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr);
+      if (valid)
+	{
+	  if (ontology == g_quark_from_string("cds"))
+	    {
+	      zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, NULL, NULL) ;
+	    }
+	  else
+	    {
+	      if (ontology == g_quark_from_string("exon"))
+		exon_ptr = &span ;
+	      else if (ontology == g_quark_from_string("intron"))
+		intron_ptr = &span ;
 
+	      zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
+	    }
+	}
     }
 
   return result ;                  /* tell caller to clean us up. */
