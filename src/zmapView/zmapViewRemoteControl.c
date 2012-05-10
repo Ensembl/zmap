@@ -720,6 +720,37 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
   request_data->source_id = 0 ;			    /* reset needed for remove features. */
 
+
+  /* We allow the client to leave out the align and block tags so if either is missing
+   * use the defaults. */
+  if (!(request_data->orig_align))
+    {
+      /* default to master align. */
+      request_data->orig_align = request_data->orig_context->master_align ;
+
+      if (request_data->cmd_desc->is_edit)
+	{
+	  request_data->align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
+
+	  zMapFeatureContextAddAlignment(request_data->edit_context, request_data->align, FALSE) ;
+	}
+    }
+
+  if (!(request_data->orig_block))
+    {
+      /* Get the first one! */
+      request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+
+      if (request_data->cmd_desc->is_edit)
+	{
+	  request_data->block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
+
+	  zMapFeatureAlignmentAddBlock(request_data->align, request_data->block) ;
+	}
+    }
+
+
+  /* Now process the featureset. */
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
       /* Record original name and unique names for feature set, all look-ups are via the latter. */
