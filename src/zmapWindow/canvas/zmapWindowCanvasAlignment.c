@@ -800,6 +800,19 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
 	if(!feature->feature.homol.align)	/* is un-gapped */
 		return NULL;
 
+	if(!y)	/* interface to legacy code they uses G_OBJECT_DATA */
+	{
+		ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+
+		if(!featureset->point_canvas_feature)
+			return NULL;
+		sub_part.start = !featureset->point_canvas_feature->y1;
+		sub_part.end   = !featureset->point_canvas_feature->y2;
+		sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
+		sub_part.index = 1;
+		return &sub_part;
+	}
+
 	/* get sequence coords for x,y,  well y at least */
 	/* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
 

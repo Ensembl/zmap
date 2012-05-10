@@ -787,7 +787,7 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE) ;
+      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
 
       if (state_saves_position)
 	{
@@ -1418,7 +1418,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names)
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
   ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
@@ -3591,7 +3591,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 			/* this is how features get highlit */
 			if(item)
-				zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE) ;
+				zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE, FALSE) ;
 
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
@@ -5096,7 +5096,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
       /* Pass information about the object clicked on back to the application. */
       zmapWindowUpdateInfoPanel(window, feature, NULL, focus_item, NULL, 0, 0, 0, 0,
-				NULL, replace_highlight, highlight_same_names) ;
+				NULL, replace_highlight, highlight_same_names, FALSE) ;
     }
 
 
@@ -5398,16 +5398,19 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
   gboolean populated = FALSE ;
   ZMapFeatureSubPartSpan item_data ;
 
-  item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
-  zMapAssert(item_data) ;
+//  item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
+  item_data = zMapWindowCanvasItemIntervalGetData(feature_item);
+//  zMapAssert(item_data) ;
+  if(item_data)
+  {
 
-  *selected_start = item_data->start ;
-  *selected_end = item_data->end ;
-  *selected_length = (item_data->end - item_data->start + 1) ;
-  *sub_type = item_data->subpart ;
+	*selected_start = item_data->start ;
+	*selected_end = item_data->end ;
+	*selected_length = (item_data->end - item_data->start + 1) ;
+	*sub_type = item_data->subpart ;
 
-  populated = TRUE ;
-
+	populated = TRUE ;
+  }
   return populated ;
 }
 

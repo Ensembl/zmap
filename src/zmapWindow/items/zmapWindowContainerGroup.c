@@ -259,6 +259,7 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
       container->this_spacing = this_spacing;
       container->flags.column_redraw = FALSE;
 
+
       background = foo_canvas_item_new(group, ZMAP_TYPE_CONTAINER_BACKGROUND,
 				       "original-background", background_fill_colour,
 				       NULL);

@@ -54,6 +54,7 @@ typedef struct
 {
 	long start,end;
 	gulong colour;
+	ZMapFeatureSubpartType type;
 
 } zmapSequenceHighlightStruct, *ZMapSequenceHighlight;
 
@@ -84,6 +85,7 @@ typedef struct _zmapWindowCanvasSequenceStruct
 	long spacing;		/* between rows */
 	long offset;		/* to centre rows in spacing */
 	char *truncated;		/* show ... if we run out of space */
+	int factor;			/* for dna or peptide */
 
 	gboolean background_set;
 

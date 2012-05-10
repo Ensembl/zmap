@@ -209,6 +209,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		     * with common code..... */
 
 		    span = zMapWindowCanvasItemIntervalGetData(item) ;
+		    if(!span)
+			    break;
 
 		    current_exon = (ZMapFullExon)(g_list_nth_data(exon_list, span->index - 1)) ;
 

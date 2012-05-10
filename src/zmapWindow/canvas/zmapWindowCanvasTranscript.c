@@ -207,13 +207,26 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 
 	/* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
 #warning revisit this when canvas items are simplified
-	/* and then we find the transcript data in the feature context which has a list of exaond and introms */
+	/* and then we find the transcript data in the feature context which has a list of exons and introms */
 	/* or we could find the exons/introns in the canvas and process those */
 
 	ZMapSpan exon,intron;
 	int ni = 0, ne = 0, i;
 	GArray *introns,*exons;
 	ZMapTranscript tr = &feature->feature.transcript;
+
+	if(!y)	/* interface to legacy code they uses G_OBJECT_DATA */
+	{
+		ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+
+		if(!featureset->point_canvas_feature)
+			return NULL;
+		sub_part.start = !featureset->point_canvas_feature->y1;
+		sub_part.end   = !featureset->point_canvas_feature->y2;
+		sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
+		sub_part.index = 1;
+		return &sub_part;
+	}
 
 	introns = tr->introns;
 	exons = tr->exons;

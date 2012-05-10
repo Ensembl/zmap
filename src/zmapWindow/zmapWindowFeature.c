@@ -189,7 +189,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
     {
 
        zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
-				NULL, TRUE, FALSE) ;
+				NULL, TRUE, FALSE, FALSE) ;
       result = TRUE ;
     }
 
@@ -992,6 +992,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny my_feature = (ZMapFeatureAny) feature;
+	gboolean control = FALSE;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
       highlight_item = item;
@@ -1006,6 +1007,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	{
 	  /* Only highlight the single item user clicked on. */
 	  highlight_same_names = FALSE ;
+	  control = TRUE;
 
 	  /* Annotators say they don't want subparts sub selections + multiple
 	   * selections for alignments. */
@@ -1074,7 +1076,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 		/* Pass information about the object clicked on back to the application. */
 		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				NULL, replace_highlight, highlight_same_names) ;
+				NULL, replace_highlight, highlight_same_names, control) ;
 	}
     }
 
@@ -1883,7 +1885,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
     }
 
   /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE, FALSE) ;
 
   return FALSE ;
 }

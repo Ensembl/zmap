@@ -501,33 +501,222 @@ gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_fea
 	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
 	{
 		ZMapFeature feature = zMapWindowCanvasItemGetFeature((FooCanvasItem *) sequence_feature);
+		GdkColor *fill;
+		ZMapFeatureSubPartSpanStruct span ;
 
-		/* previous code did this as part of the select operation
-		 * inside the TextItem inside the sequnece feature
+		/*
+		 * previous code did deselect as part of the select operation
+		 * inside the TextItem inside the sequence feature
 		 */
 		zMapWindowSeqDispDeSelect(sequence_feature) ;
+
+		/* code copied from zmapWindowSequenceFeature.c and adjusted */
+
+		/* default: simple features and sub-parts */
 
 		switch(seed_feature->type)
 		{
 		case ZMAPSTYLE_MODE_TRANSCRIPT:
 		{
+			GList *exon_list = NULL, *exon_list_member ;
+			ZMapFullExon current_exon ;
+			ZMapFrame frame = feature->feature.sequence.frame ;
+
+			/* If no frame we just default to frame 1 which seems sensible. */
+			if (!frame)
+				frame = ZMAPFRAME_0 ;
+
+			/* Get positions/translation etc of all exons. */
+			if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list))
+			{
+				zMapLogWarning("Could not find exons/introns in transcript %s", zMapFeatureName((ZMapFeatureAny) seed_feature)) ;
+				break;
+			}
+
+#warning need to populate a calling stack with this flag
+#if 0
+
+			if (sub_feature)
+			{
+				/* Fix up this code in a minute...should be made into an exonlist as well
+				* with common code..... */
+
+				ZMapFeatureSubPartSpan exon_span;
+
+				exon_span = zMapWindowCanvasItemIntervalGetData(item) ;
+				if(!exon_span)
+					break;
+
+				current_exon = (ZMapFullExon)(g_list_nth_data(exon_list, exon_span->index - 1)) ;
+
+				span.start = current_exon->sequence_span.x1 ;
+				span.end   = current_exon->sequence_span.x2 ;
+				span.subpart = ZMAPFEATURE_SUBPART_MATCH;
+				span.index = 0;
+
+				if (zMapFeatureSequenceIsPeptide(feature))
+					zMapSequenceDNA2Pep(&span.start, &span.end, frame) ;
+
+				zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+
+				zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
+					    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+
+//				start = current_exon->sequence_span.x1 ;
+//				end = current_exon->sequence_span.x2 ;
+
+//				zMapFeature2BlockCoords(block, &start, &end) ;
+
+//				if (zMapFeatureSequenceIsPeptide(feature))
+//					coordsDNA2Pep(feature, &start, &end) ;
+
+//				zMapWindowTextItemSelect(text_item, start, end, deselect, deselect) ;
+			}
+			else
+#endif
+			{
+				ZMapFeatureTypeStyle style ;
+				/* most of these colours are just not used */
+				ZMapStyleColourType colour_type = ZMAPSTYLE_COLOURTYPE_NORMAL ;
+				GdkColor *non_coding_background, *non_coding_foreground, *non_coding_outline ;
+				GdkColor *coding_background, *coding_foreground, *coding_outline ;
+				GdkColor *split_codon_5_background, *split_codon_5_foreground, *split_codon_5_outline ;
+				GdkColor *split_codon_3_background, *split_codon_3_foreground, *split_codon_3_outline ;
+				GdkColor *in_frame_background, *in_frame_foreground, *in_frame_outline ;
+				gboolean result ;
+				int index = 1;
+//				int orig_start = 0, orig_end = 0 ;
+
+				style = feature->style ;
+
+				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
+								&non_coding_background, &non_coding_foreground, &non_coding_outline) ;
+
+				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
+								&coding_background, &coding_foreground, &coding_outline) ;
+
+				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, colour_type,
+								&split_codon_5_background, &split_codon_5_foreground, &split_codon_5_outline) ;
+
+				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, colour_type,
+								&split_codon_3_background, &split_codon_3_foreground, &split_codon_3_outline) ;
+
+				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
+								&in_frame_background, &in_frame_foreground, &in_frame_outline) ;
+
+//printf("\nframe %d\n",frame);
+
+
+				for(exon_list_member = g_list_first(exon_list); exon_list_member ; exon_list_member = g_list_next(exon_list_member))
+				{
+					gboolean is_pep = FALSE;
+					gboolean in_frame = FALSE;
+
+					current_exon = (ZMapFullExon)(exon_list_member->data) ;
+
+					span.start = current_exon->sequence_span.x1 ;
+					span.end = current_exon->sequence_span.x2 ;
+					span.index = index++;
+					span.subpart = ZMAPFEATURE_SUBPART_EXON;
+
+					is_pep = zMapFeatureSequenceIsPeptide(feature);
+
+					fill = non_coding_background;
+
+					switch (current_exon->region_type)
+					{
+					case EXON_NON_CODING:
+						fill = non_coding_background;
+						break ;
+
+					case EXON_CODING:
+					{
+						fill = coding_background ;
+						span.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+
+						/* For peptides make in-frame column a different colour. */
+						if (is_pep)
+						{
+
+							if(!((span.start - 1 - frame + ZMAPFRAME_0) % 3))
+								in_frame = TRUE;
+//printf("frame %d coding  %d, %de, in_frame = %d,%d  (%d %d)\n", frame ,span.start,span.end, current_exon->region_type, in_frame, (span.start - 1 - frame + ZMAPFRAME_0), (span.start - 1 - frame + ZMAPFRAME_0) % 3);
+
+							if(in_frame)
+								fill = in_frame_background ;
+						}
+						break ;
+					}
+
+					/* NOTE a 3' split codon is at the 3' end of an exon and 5'split codon at the 5' end of an exon  */
+
+					case EXON_SPLIT_CODON_3:
+						fill = split_codon_3_background ;
+						span.subpart = ZMAPFEATURE_SUBPART_SPLIT_3_CODON;
+						/* fall through */
+
+					case EXON_START_NOT_FOUND:	/* defaults to exon subpart */
+						if (is_pep)
+						{
+							if(!((span.start - 1 - frame + ZMAPFRAME_0) % 3))
+								in_frame = TRUE;
+							if (!in_frame)
+								fill = coding_background ;
+						}
+//printf("frame %d split 3  %d, %d  type, in_frame = %d,%d (%d %d)\n", frame ,span.start, span.end, current_exon->region_type, in_frame, (span.start - 1 - frame + ZMAPFRAME_0), (span.start - 1 - frame + ZMAPFRAME_0) % 3);
+						break;
+
+					case EXON_SPLIT_CODON_5:
+						fill = split_codon_5_background ;
+						span.subpart = ZMAPFEATURE_SUBPART_SPLIT_5_CODON;
+
+						if (is_pep)
+						{
+							if(!((span.end - frame + ZMAPFRAME_0) % 3))
+								in_frame = TRUE;
+//printf("frame %d split 5  %d, %d type, in_frame = %d,%d  (%d %d)\n", frame ,span.start, span.end, current_exon->region_type, in_frame, (span.end - frame + ZMAPFRAME_0), (span.start + frame - ZMAPFRAME_0) % 3);
+
+							/* For peptides only show split codon for inframe col., confusing otherwise. */
+							if (!in_frame)
+								fill = coding_background ;
+						}
+					break ;
+
+					default:
+					zMapAssertNotReached() ;
+					}
+
+					if (current_exon->region_type != EXON_NON_CODING
+						|| (current_exon->region_type == EXON_NON_CODING && !cds_only))
+					{
+						zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
+								ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+					}
+				}
+			}
+
+
+			/* Tidy up. */
+			zMapFeatureAnnotatedExonsDestroy(exon_list) ;
+
+			break ;
 		}
 
 		default:		/* whole feature in red */
 		{
-			ZMapFeatureSubPartSpanStruct sub_feature;
-			GdkColor *fill;
-
-			sub_feature.start = seed_feature->x1 ;
-			sub_feature.end   = seed_feature->x2 ;
+			span.start = seed_feature->x1 ;
+			span.end   = seed_feature->x2 ;
+			span.subpart = ZMAPFEATURE_SUBPART_MATCH;
+			span.index = 0;
 
 			zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
 
-			zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &sub_feature,
+			zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
 					    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
 
 		}
-		}
+		}	/* end of switch */
+
 	}
 	else
 	{

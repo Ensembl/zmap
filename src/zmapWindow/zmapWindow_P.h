@@ -1068,7 +1068,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 void zmapWindowDrawManageWindowWidth(ZMapWindow window);

@@ -539,9 +539,25 @@ void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item)
 
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
 {
-  ZMapFeatureSubPartSpan sub_feature;
+  ZMapFeatureSubPartSpan sub_feature = NULL;
 
-  sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
+  	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  	{
+		/* NOTE x, y coords are not avaiable due to interface to legacy code
+		 * so we pass 0 and this give us the whole canvas item extent
+		 * it's not simple to iron this out properly and we intend to remove canvas items anyway
+		 */
+		FooCanvasGroup *group = (FooCanvasGroup *) item;
+
+		if(group->item_list->data)
+  		/* returns a static data structure */
+  		sub_feature =
+  			zMapWindowCanvasFeaturesetGetSubPartSpan((FooCanvasItem *)group->item_list->data , zMapWindowCanvasItemGetFeature(item) ,0, 0);
+  	}
+  	else
+	{
+		sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
+	}
 
   return sub_feature;
 }

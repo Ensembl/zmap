@@ -455,12 +455,25 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 	func(featureset);
 }
 
-/* if a featureset has any allocated data free it */
+/* return a span struct for the feature */
 static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
 {
 	ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
 	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+
+	if(!y)	/* legacy interface: return canvasfeature from index */
+	{
+		static ZMapFeatureSubPartSpanStruct fred;
+
+		if(!featureset->point_canvas_feature)
+			return NULL;
+		fred.start = featureset->point_canvas_feature->y1;
+		fred.end   = featureset->point_canvas_feature->y2;
+		fred.subpart = ZMAPFEATURE_SUBPART_MATCH;
+		fred.index = 1;
+		return &fred;
+	}
 
 	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 		func = _featureset_subpart_G[featureset->type];
@@ -963,8 +976,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 		if(!*item)
 		{
 			*item = fset->canvas_item;
-			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item,gs->feature);
-
+			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item, gs->feature);
 		}
 		else
 		{
@@ -1138,7 +1150,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
        * then if we move the lassoo that gets silly (button down: calls point())
        */
       static double save_x,save_y;
-      static ZMapWindowCanvasFeature save_gs = NULL;
+//      static ZMapWindowCanvasFeature save_gs = NULL;
 	static double best = 0.0;
 
       /*
@@ -1152,9 +1164,10 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
         */
       *actual_item = NULL;
 
-      if(save_gs && x == save_x && y == save_y)
+      if(fi->point_canvas_feature && x == save_x && y == save_y)
       {
-      	fi->point_feature = save_gs->feature;
+      	fi->point_feature = fi->point_canvas_feature->feature;
+
       	*actual_item = item;
 
       	return best;
@@ -1162,7 +1175,7 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 
 	save_x = x;
 	save_y = y;
-      save_gs = NULL;
+      fi->point_canvas_feature = NULL;
 
 	x += fi->dx;
 	y += fi->dy;
@@ -1211,11 +1224,10 @@ double  zmap_window_featureset_item_item_point (FooCanvasItem *item, double x, d
 			{
 				best = 0.0;
 				fi->point_feature = gs->feature;
+#warning this could concievably cause a memory fault if we freed save_gs but that seems unlikely if we don-t nove the cursor
+				fi->point_canvas_feature = gs;
 				*actual_item = item;
 //printf("overlaps x\n");
-
-#warning this could concievably cause a memory fault if we freed save_gs but that seems unlikely if we don-t nove the cursor
-      			save_gs = gs;
 				break;			/* just find any one */
 			}
 		}
