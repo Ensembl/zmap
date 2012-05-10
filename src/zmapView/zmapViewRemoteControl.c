@@ -325,6 +325,8 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
     {
       localProcessRemoteRequest(view, command_name, view_id, request,
 				app_reply_func, app_reply_data) ;
+
+      result = TRUE ;
     }
   else
     {
@@ -399,11 +401,15 @@ static void processRequest(ZMapView view,
     }
   else
     {
+      request_data.err_msg = g_string_new("") ;
+
       if (!executeRequest(parser, &request_data))
 	{
-	  *command_rc_out = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  *reason_out = g_strdup("New view is to be added to existing view but no existing view_id specified.") ;
+	  *reason_out = request_data.err_msg->str ;
 	}
+      *command_rc_out = request_data.command_rc ;
+
+      g_string_free(request_data.err_msg, FALSE) ;
     }
 
   /* Free the parser!!! */
@@ -524,7 +530,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 
 static gboolean xml_request_end_cb(gpointer user_data, ZMapXMLElement set_element, ZMapXMLParser parser)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* WHY DO WE EXECUTE STUFF HERE....SHOULD BE WHEN WE RETURN FROM PARSING !!!!! */
@@ -859,7 +865,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_element, ZMapXMLParser parser)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   RequestData request_data = (RequestData)user_data;
 
   /* Only do stuff if a feature set was found and has features. */
@@ -883,7 +889,7 @@ static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_ele
 
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_element, ZMapXMLParser parser)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   ZMapXMLAttribute attr = NULL;
   RequestData request_data = (RequestData)user_data;
   ZMapFeatureAny feature_any;
@@ -897,7 +903,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   ZMapFeature feature ;
   ZMapStyleMode mode ;
 
-  result = TRUE ;
 
   /* Must have following attributes for all feature level operations. */
   if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
@@ -1240,6 +1245,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, ZMapXMLParser parser)
 {
+  gboolean result = TRUE ;
   ZMapXMLAttribute attr = NULL;
   RequestData request_data = (RequestData)user_data;
   ZMapFeature feature = NULL;
@@ -1286,7 +1292,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
 
     }
 
-  return TRUE;                  /* tell caller to clean us up. */
+  return result ;                  /* tell caller to clean us up. */
 }
 
 
@@ -1469,13 +1475,8 @@ static CommandDescriptor cmdGetDesc(GQuark command_id)
 /* This is where after all the parsing we finally execute the requests. */
 static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   ZMapView view = request_data->view ;
-
-
-  /* Now we have the window....thanks goodness.... */
-  /* We need to set the window somehow....   */
-
 
   if (request_data->command_id == g_quark_from_string(ZACP_GET_FEATURE_NAMES))
     {
@@ -1487,6 +1488,7 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_FIND_FEATURE))
     {
+      /* ????????? */
       ;
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_DELETE_FEATURE))
@@ -1495,11 +1497,11 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_CREATE_FEATURE))
     {
-      if (!mergeNewFeatures(view, request_data)
-	  || !zmapViewDrawDiffContext(view, &(request_data->edit_context)))
-	{
-	  
-	}
+      /* mergeNewFeatures sets the request error code/msg if it fails. */
+      if (mergeNewFeatures(view, request_data))
+	zmapViewDrawDiffContext(view, &(request_data->edit_context)) ;
+      else
+	result = FALSE ;
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_DUMP_FEATURES))
     {
@@ -1535,7 +1537,7 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
     {
       request_data->code = ZMAPXREMOTE_UNAVAILABLE;
       request_data->handled = FALSE;
-      if(error)
+      if (error)
 	g_string_append(request_data->err_msg, error->message);
     }
   else
