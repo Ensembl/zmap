@@ -60,6 +60,18 @@ _(REMOTE_COMMAND_RC_BAD_XML,       , "bad_xml",        "Command XML is malformed
 ZMAP_DEFINE_ENUM(RemoteCommandRCType, REMOTE_COMMAND_RC_LIST) ;
 
 
+/* Return codes for message validation. */
+#define REMOTE_VALIDATE_RC_LIST(_)                                                                     \
+_(REMOTE_VALIDATE_RC_OK,               , "ok",               "Validation succeeded.",              "") \
+_(REMOTE_VALIDATE_RC_BODY_CONTENT,     , "body_content",     "Error in message body content.",     "") \
+_(REMOTE_VALIDATE_RC_BODY_XML,         , "body_xml",         "Error in message body xml.",         "") \
+_(REMOTE_VALIDATE_RC_ENVELOPE_CONTENT, , "envelope_content", "Error in message envelope content.", "") \
+_(REMOTE_VALIDATE_RC_ENVELOPE_XML,     , "envelope_xml",     "Error in message envelope xml.",     "")
+
+ZMAP_DEFINE_ENUM(RemoteValidateRCType, REMOTE_VALIDATE_RC_LIST) ;
+
+
+
 
 
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
@@ -80,10 +92,12 @@ GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
 				 ZMapXMLUtilsEventStack request_body) ;
 char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **error_out) ;
 
-gboolean zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_control, char *xml_request, char **error_out) ;
-gboolean zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control, char *request, char **error_out) ;
-gboolean zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
-					char *original_request, char *reply, char **error_out) ;
+RemoteValidateRCType zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_control,
+						       char *xml_request, char **error_out) ;
+RemoteValidateRCType zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control,
+						      char *request, char **error_out) ;
+RemoteValidateRCType zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
+						    char *original_request, char *reply, char **error_out) ;
 gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command) ;
 char *zMapRemoteCommandRequestGetCommand(char *request) ;
 
@@ -102,5 +116,7 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
 
 ZMAP_ENUM_AS_NAME_STRING_DEC(zMapRemoteCommandRC2Str, RemoteCommandRCType) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapRemoteCommandStr2RC, RemoteCommandRCType) ;
+
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapRemoteCommandRC2Desc, RemoteValidateRCType) ;
 
 #endif /* ZMAP_REMOTE_COMMAND_H */
