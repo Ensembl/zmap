@@ -192,6 +192,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 			      char *request, ZMapRemoteAppReturnReplyFunc replyHandlerFunc)
 {
   ZMapAppRemote remote = app_context->remote_control ;
+  RemoteValidateRCType valid_rc ;
   gboolean result ;
   char *command_name = NULL ;
   char *id_str = NULL ;
@@ -206,27 +207,26 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 
 
   /* Validate the request envelope. */
-  if (!(result = zMapRemoteCommandValidateEnvelope(remote->remote_controller, request, &err_msg)))
+  if ((valid_rc = zMapRemoteCommandValidateEnvelope(remote->remote_controller, request, &err_msg))
+       != REMOTE_VALIDATE_RC_OK)
     {
-      /* JUST LOG HERE....CAN'T REPLY PROPERLY IF THERE IS INVALID ENVELOPE.... */
-      /* DO WE NEED TO EXPLICITLY TIMEOUT HERE.... */
+      gboolean abort ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (valid_rc == REMOTE_VALIDATE_RC_ENVELOPE_XML || valid_rc == REMOTE_VALIDATE_RC_ENVELOPE_CONTENT)
+	abort = TRUE ;
+      else
+	abort = FALSE ;
+
       command_rc = REMOTE_COMMAND_RC_BAD_XML ;
       reason = g_strdup_printf("Bad xml: %s", err_msg) ;
       reply = NULL ;
 
-      (replyHandlerFunc)(command_name, command_rc, reason, reply, app_context) ;
-
-      g_free(reason) ;
-      g_free(err_msg) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      (replyHandlerFunc)(command_name, abort, command_rc, reason, reply, app_context) ;
 
       zMapLogWarning("Bad request envelope: %s", err_msg) ;
 
-      /* HERE WE NEED TO ABORT THE TRANSACTION...... */
-      (replyHandlerFunc)(command_name, TRUE, command_rc, reason, reply, app_context) ;
-
+      g_free(reason) ;
+      g_free(err_msg) ;
     }
   else if (!(command_name = zMapRemoteCommandRequestGetCommand(remote->curr_request)))
     {
