@@ -943,8 +943,6 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   if ((result = zMapRemoteCommandValidateRequest(remote_control, request, &error_msg))
       == REMOTE_VALIDATE_RC_OK)
     {
-
-
       /* Call handler routine to field requests.... */
       if ((result = processRequest(remote_data, request, &request_rc, &error_msg, &reply)))
 	{
@@ -1016,12 +1014,10 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
   zMapDebugPrint(debug_G, "%s", "Enter...") ;
 
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* signal zmap that we've got the reply. */
   (remote_reply_func)(remote_reply_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   /* Need to parse out reply components..... */
@@ -1187,6 +1183,9 @@ gboolean processRequest(RemoteData remote_data, char *request,
     }
   else
     {
+      char *attribute_value = NULL ;
+      char *err_msg = NULL ;
+
       remote_data->parser = zMapXMLParserCreate(remote_data, FALSE, FALSE) ;
 
       if (g_ascii_strcasecmp(action, ZACP_HANDSHAKE) == 0)
@@ -1203,6 +1202,21 @@ gboolean processRequest(RemoteData remote_data, char *request,
 	}
       else if (g_ascii_strcasecmp(action, ZACP_VIEW_DELETED) == 0)
 	{
+	  /* Closed a view so remove it from our list. */
+	  if (!zMapRemoteCommandGetAttribute(request,
+					     ZACP_VIEW, ZACP_VIEWID, &attribute_value, &err_msg))
+	    {
+	      zMapWarning("Could not find \"%s\" in current request \"%s\".", ZACP_VIEW, request) ;
+	    }
+	  else
+	    {
+	      GQuark view_id ;
+
+	      view_id = g_quark_from_string(attribute_value) ;
+
+	      remote_data->views = g_list_remove(remote_data->views, g_quark_to_string(view_id)) ;
+	    }
+
 	  result = TRUE ;
 
 	  remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
@@ -1211,6 +1225,21 @@ gboolean processRequest(RemoteData remote_data, char *request,
 	}
       else if (g_ascii_strcasecmp(action, ZACP_VIEW_CREATED) == 0)
 	{
+	  /* Get hold of the new view id and store it. */
+	  if (!zMapRemoteCommandGetAttribute(request, 
+					     ZACP_VIEW, ZACP_VIEWID, &attribute_value, &err_msg))
+	    {
+	      zMapWarning("Could not find \"%s\" in current request \"%s\".", ZACP_VIEW, request) ;
+	    }
+	  else
+	    {
+	      GQuark view_id ;
+
+	      view_id = g_quark_from_string(attribute_value) ;
+
+	      remote_data->views = g_list_append(remote_data->views, (char *)g_quark_to_string(view_id)) ;
+	    }
+
 	  result = TRUE ;
 
 	  remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
