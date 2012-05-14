@@ -318,6 +318,40 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
 }
 
 
+/* interface design driven by exsiting application code */
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
+				       ZMapFeature			feature,
+				       ZMapFeatureSubPartSpan sub_feature,
+				       ZMapStyleColourType    colour_type,
+				       int colour_flags,
+				       GdkColor              *default_fill,
+				       GdkColor              *default_border)
+{
+  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) interval;
+  ZMapWindowCanvasFeature gs;
+
+  gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+
+  if(gs)
+    {
+      /* set the focus flags (on or off) */
+      /* zmapWindowFocus.c maintans these and we set/clear then all at once */
+      /* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
+       * colour flags has a window id set into it
+       */
+
+      /* these flags are very fiddly: handle with care */
+      gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
+	((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
+	(gs->flags & FEATURE_FOCUS_BLURRED);
+
+      zmap_window_canvas_featureset_expose_feature(fi, gs);
+      return;
+    }
+}
+
+
+
 #if CANVAS_FEATURESET_LINK_FEATURE
 /* link same name features in a feature type specific way */
 /* must accept NULL as meaning clear local data */
@@ -756,39 +790,6 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
    */
   foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
 }
-
-/* interface design driven by exsiting application code */
-void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
-				       ZMapFeature			feature,
-				       ZMapFeatureSubPartSpan sub_feature,
-				       ZMapStyleColourType    colour_type,
-				       int colour_flags,
-				       GdkColor              *default_fill,
-				       GdkColor              *default_border)
-{
-  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) interval;
-  ZMapWindowCanvasFeature gs;
-
-  gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-
-  if(gs)
-    {
-      /* set the focus flags (on or off) */
-      /* zmapWindowFocus.c maintans these and we set/clear then all at once */
-      /* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
-       * colour flags has a window id set into it
-       */
-
-      /* these flags are very fiddly: handle with care */
-      gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
-	((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
-	(gs->flags & FEATURE_FOCUS_BLURRED);
-
-      zmap_window_canvas_featureset_expose_feature(fi, gs);
-      return;
-    }
-}
-
 
 /* NOTE this function interfaces to user show/hide via zmapWindow/unhideItemsCB() and zmapWindowFocus/hideFocusItemsCB()
  * and could do other things if appropriate if we include some other flags
@@ -1442,7 +1443,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       fi->zoom = item->canvas->pixels_per_unit_y;
       fi->bases_per_pixel = 1.0 / fi->zoom;
       zMapWindowCanvasFeaturesetZoom(fi, drawable) ;
-    } 
+    }
 
   if(!fi->display_index)
     return; 		/* could be an empty column or a mistake */
@@ -1826,7 +1827,7 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
 
 /* Fuller version of zMapFeatureCmp() which handles special glyph code where
  * positions to be compared can be greater than the feature coords.
- * 
+ *
  * NOTE that featb is a 'dummy' just used for coords.
  *  */
 gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
@@ -1871,7 +1872,7 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
 	  /* Look for dummy to be completey inside.... */
 	  if (real_start <= featb->y1 && real_end >= featb->y2)
 	    return(0);
-	  
+
 	  if(real_start < featb->y1)
 	    return(-1);
 	  if(real_start > featb->y1)
