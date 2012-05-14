@@ -725,9 +725,7 @@ gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession)
 }
 
 
-/*!
- * Adds homology data to a feature which may be empty or may already have partial features.
- *  */
+/* Adds splice data for splice features, usually from gene finder output. */
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 {
   gboolean result = TRUE ;

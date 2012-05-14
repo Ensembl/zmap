@@ -195,6 +195,7 @@
 #define ZMAPSTANZA_APP_DATA              "data-dir"
 //#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
+#define ZMAPSTANZA_APP_STYLE_FROM_METHOD "stylename-from-methodname"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
 #define ZMAPSTANZA_APP_COLUMNS           "columns"
 #define ZMAPSTANZA_APP_REPORT_THREAD     "thread-fail-silent"
@@ -898,6 +899,10 @@
 
 
 #define ZMAPSTANZA_GLYPH_CONFIG           "glyphs"
+
+#define ZMAPSTANZA_HEATMAP_CONFIG           "heatmaps"
+#define MAX_HEAT_COLOUR				16	/* more than conceivable, only 8 colours in a rainbow */
+
 
 #define ZMAPSTANZA_COLUMN_CONFIG              "columns"
 #define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"

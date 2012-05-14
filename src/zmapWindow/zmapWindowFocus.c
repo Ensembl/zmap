@@ -807,6 +807,7 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
 }
 
 
+/* UM...that seems the wrong thing to do.....styles shouldn't be deciding that kind of thing...EG */
 /* We pass in the default from the window->colour_item_highlight in case there's no other default */
 /* Actually I've now put one in the zmapFeatureTypes.c file, so this is probably useless and confusing */
 

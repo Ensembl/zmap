@@ -82,11 +82,15 @@ static void doTheExit(int exit_code) ;
 
 static void setup_signal_handlers(void);
 
+static gboolean configureLog(void) ;
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
 
-char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
+#define ZMAPLOG_FILENAME "zmap.log"
+
+
+char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -133,7 +137,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set up user type, i.e. developer or normal user. */
   zMapUtilsUserInit() ;
 
-
   /* Set up command line parsing object, globally available anywhere, this function exits if
    * there are bad command line args. */
   zMapCmdLineArgsCreate(&argc, argv) ;
@@ -147,6 +150,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * accessed. */
   checkConfigDir() ;
 
+  /* Set any global debug flags from config file. */
+  zMapUtilsConfigDebug();
 
   /* Init manager, just happen just once in application. */
   zMapManagerInit(&app_window_cbs_G) ;
@@ -158,11 +163,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application. */
-  if (!zMapLogCreate(NULL))
+  if (!zMapLogCreate(NULL) || !configureLog())
     {
       printf("Zmap cannot create log file.\n") ;
 
       exit(EXIT_FAILURE) ;
+    }
+  else
+    {
+      zMapWriteStartMsg() ;
     }
 
   getConfiguration(app_context) ;
@@ -521,7 +530,7 @@ static void finalCleanUp(ZMapAppContext app_context)
   else
     zMapLogMessage("%s", exit_msg) ;
 
-  /* Logs the "session closed" message. */
+  zMapWriteStopMsg() ;
   zMapLogDestroy() ;
 
   doTheExit(exit_rc) ;
@@ -753,41 +762,41 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-            /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
+      /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
       app_context->default_sequence = (ZMapFeatureSequenceMap) g_new0(ZMapFeatureSequenceMapStruct,1);
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_DATASET, &tmp_string))
-      {
-                  /* if not supplied meeds to appear in all the pipe script URLs */
-            app_context->default_sequence->dataset = tmp_string;
-      }
+					ZMAPSTANZA_APP_DATASET, &tmp_string))
+	{
+	  /* if not supplied meeds to appear in all the pipe script URLs */
+	  app_context->default_sequence->dataset = tmp_string;
+	}
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
-      {
-            ZMapFeatureSequenceMap s = app_context->default_sequence;
+	{
+	  ZMapFeatureSequenceMap s = app_context->default_sequence;
 
-	      s->sequence = tmp_string;
-            s->start = 1;
-            if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_START, &s->start))
+	  s->sequence = tmp_string;
+	  s->start = 1;
+	  if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_START, &s->start))
             {
-                  zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_END, &s->end);
+	      zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_END, &s->end);
 
-                  /* possibly worth checking csname and csver at some point */
-                  tmp_string = NULL;
-                  zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                              ZMAPSTANZA_APP_CSNAME,&tmp_string);
-                  zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
+	      /* possibly worth checking csname and csver at some point */
+	      tmp_string = NULL;
+	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
+	      zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
             }
-            else
+	  else
             {
-                  /* (don't) try to get chromo coords from seq name */
+	      /* (don't) try to get chromo coords from seq name */
             }
 
-      }
+	}
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -839,3 +848,112 @@ static void setup_signal_handlers(void)
 
   return ;
 }
+
+
+
+/* Read logging configuration from ZMap stanza and apply to log. */
+static gboolean configureLog(void)
+{
+  gboolean result = FALSE ;
+  ZMapConfigIniContext context ;
+
+  if ((context = zMapConfigIniContextProvide()))
+    {
+      gboolean tmp_bool ;
+      gboolean logging, log_to_file, show_code_details, show_time, catch_glib, echo_glib ;
+      char *tmp_string = NULL;
+      char *full_dir, *log_name, *logfile_path ;
+
+      /* logging at all */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
+	logging = tmp_bool ;
+      else
+	logging = TRUE ;
+
+      /* logging to the file */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_FILE, &tmp_bool))
+	log_to_file = tmp_bool ;
+      else
+	log_to_file = TRUE ;
+
+      /* how much detail to show...code... */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
+	show_code_details = tmp_bool;
+      else
+	show_code_details = TRUE;
+
+      /* how much detail to show...time... */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+	show_time = tmp_bool;
+      else
+	show_time = TRUE;
+
+      /* catch GLib errors, else they stay on stdout */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
+	catch_glib = tmp_bool;
+      else
+	catch_glib = TRUE;
+
+      /* catch GLib errors, else they stay on stdout */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
+	echo_glib = tmp_bool;
+      else
+	echo_glib = TRUE;
+
+      /* user specified dir, default to config dir */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+	full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+      else
+	full_dir = g_strdup(zMapConfigDirGetDir()) ;
+
+      /* user specified file, default to zmap.log */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_FILENAME, &tmp_string))
+	log_name = tmp_string;
+      else
+	log_name = g_strdup(ZMAPLOG_FILENAME) ;
+
+      logfile_path = zMapGetFile(full_dir, log_name, TRUE) ;
+
+      /* all our strings need freeing */
+      g_free(log_name) ;
+      g_free(full_dir) ;
+
+      /* config context needs freeing */
+      zMapConfigIniContextDestroy(context);
+
+
+      result = zMapLogConfigure(logging, log_to_file,
+				show_code_details, show_time,
+				catch_glib, echo_glib,
+				logfile_path) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* everything was ok */
+      result = TRUE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+  return result ;
+}
+
+
+
+
+

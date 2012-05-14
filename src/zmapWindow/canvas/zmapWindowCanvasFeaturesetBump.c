@@ -229,6 +229,27 @@ BumpColRange bump_col_range_append(BumpColRange list, BumpColRange last, BumpCol
 
 static BCR bump_overlap(ZMapWindowCanvasFeature feature,BumpFeatureset bump_data, BCR pos_list);
 
+
+/* are any exons in the mark ? */
+gboolean zmapWindowCanvasFeatureTestMark(ZMapWindowCanvasFeature feature, double start, double end)
+{
+	ZMapWindowCanvasFeature f;
+
+	for(f = feature; f->left; f = f->left)
+		continue;
+
+	for(; f; f = f->right)
+	{
+		if(f->feature->x2 < start)	/* zMapWindowCanvasFeaturesetGetFeatureExtent mangles f->y2 */
+			continue;
+		if(f->y1 > end)
+			continue;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
 /* FeatureCanvasItems have a normal and bumped x coordinate
  * changing bump-mode causes a recalculate
  * simple and complex features have an extent which is used to decide on positioning
@@ -346,6 +367,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
 			/* just redisplays using normal coords */
+			/* in case of mangled alingments must reset the first exom
+			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
+			 * which extends the feature to catch colinear lines off screen
+			 */
+			feature->y2 = feature->feature->x2;
 
 			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
 				feature->flags |= FEATURE_HIDDEN;
@@ -363,6 +389,14 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
 		if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
 		{
+			/* all the feature's exons are outside the mark on the same side */
+			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+			continue;
+		}
+
+		if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
+		{
+			/* none of the feature's exons are cross the mark */
 			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
 			continue;
 		}

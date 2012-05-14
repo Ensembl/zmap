@@ -2680,19 +2680,8 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
-
-
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
   source_name = (char *)g_quark_to_string(feature->source_id) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (g_ascii_strcasecmp(source_name, "polya_site") == 0
-      || g_ascii_strcasecmp(source_name, "polya_signal") == 0)
-    printf("found it\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   curr = dumpers ;
   while (curr->source_name)

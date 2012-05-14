@@ -905,8 +905,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		    }
 		  if(parser->features_start == 1 && parser->features_end == 0)
 		    {
-		    	/* mh17 else if we read a file://  with no seq sopecified it fails */
-		      parser->features_start = start ;
+		      /* mh17 else if we read a file://  with no seq sopecified it fails */
+			parser->features_start = start ;
 		      parser->features_end = end ;
 		    }
 
@@ -1079,7 +1079,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 
 
   /* If line_length increases then increase the length of the buffers that receive text so that
-   * they cannot overflow and redo the format string. */
+   * they cannot overflow and redo format string to read in more chars. */
   if (!line_length)
     line_length = strlen(line) ;
 
@@ -1101,6 +1101,12 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   phase_str = (char *)(parser->buffers[GFF_BUF_PHASE]) ;
   attributes = (char *)(parser->buffers[GFF_BUF_ATTRIBUTES]) ;
   comments = (char *)(parser->buffers[GFF_BUF_COMMENTS]) ;	/* this is not used */
+
+
+  /* Note that because attributes and comments are optional we reset them to be sure we don't
+   * get text from a previous line. */
+  memset(attributes, (int)'\0', parser->buffer_length) ;
+  memset(comments, (int)'\0', parser->buffer_length) ;
 
 
   /* Parse a GFF line. */
@@ -1406,7 +1412,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
-/*  GQuark column_id = 0;*/
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
@@ -1435,7 +1440,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
 					      GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
-	//                                    GINT_TO_POINTER(g_quark_from_string(source)))))
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
@@ -1617,23 +1621,40 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  return result ;
 	}
     }
-  else if (feature_type == ZMAPSTYLE_MODE_BASIC)
+  else if (feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
     {
-      if (g_ascii_strcasecmp(source, "ensembl_variation") == 0)
+      if (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0))
 	{
-	  /* For variation we need to parse the SO type and string out of the Name attribute. */
-	  if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
+	  /* Genefinder features, we use the ontology as the name.... */
+	  name_string = g_strdup(ontology) ;
+	}
+      else
+	{
+	  if (g_ascii_strcasecmp(source, "ensembl_variation") == 0)
 	    {
-	      *err_text = g_strdup_printf("feature ignored, could not parse variation string");
+	      /* For variation we need to parse the SO type and string out of the Name attribute. */
+	      if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
+		{
+		  *err_text = g_strdup_printf("feature ignored, could not parse variation string");
 
-	      return result ;
+		  return result ;
+		}
+	    }
+	  else
+	    {
+	      name_find = NAME_USE_GIVEN_OR_NAME ;
 	    }
 	}
-	else
-      {
-	      name_find = NAME_USE_GIVEN_OR_NAME ;
-	}
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
+	   && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+    {
+      /* Genefinder features, we use the ontology as the name.... */
+      name_string = g_strdup(ontology) ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Was there a url for the feature ? */
@@ -2119,7 +2140,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    }
 	}
     }
-  else if(name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
+  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
     {
       char *tag_pos ;
 
@@ -2185,19 +2206,18 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 		}
 	    }
 	}
-      else if (feature_type == ZMAPSTYLE_MODE_BASIC
-	       && (g_str_has_prefix(source, "GF_")
-		   || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+      else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
+	       && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
 	{
 	  /* Genefinder features, we use the source field as the name.... */
 
 	  has_name = FALSE ;				    /* is this correct ??? */
 
-	  *feature_name = g_strdup(source) ;
+	  *feature_name = g_strdup(given_name) ;
 	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						   start, end, query_start, query_end) ;
 	}
-      else /* if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT) */
+      else
 	{
 	  has_name = FALSE ;
 

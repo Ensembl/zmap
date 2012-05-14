@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Rob Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  * Exported functions: See XXXXXXXXXXXXX.h
@@ -29,12 +29,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
-
 
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
