@@ -784,6 +784,11 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 #endif
 
   featureset_data.window = window ;
+//{
+//	int x = 0;
+//if(!strncmp(g_quark_to_string(feature_set->unique_id),"3 frame",7))
+//	x = 1;
+//}
 
   if (forward_col_wcp)
     {
@@ -864,6 +869,8 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+
+//printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
 
   {
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
@@ -1213,11 +1220,13 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 #ifdef MH17_NEVER_INCLUDE_THIS_CODE
               zMapLogMessage("3F1: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
+//printf("3F1: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 //	      if (window->display_3_frame)
 		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
 	    }
 	  else
 	    {
+
 	      ZMapStrand column_strand;
 
 	      column_strand = zmapWindowContainerFeatureSetGetStrand(container_set) ;
@@ -1233,6 +1242,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
+//printf("3F3: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 
 		  /* remove all items from hash first !! */
 		  removeAllFeatures(window, container_set) ;
@@ -2390,6 +2400,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 
   /* If we are doing frame specific display then don't display the feature if its the wrong
    * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
+//if(!strncmp(g_quark_to_string(feature->unique_id),"3 frame",7))
+//	printf("process feature %s: %d/%d (%d)\n",g_quark_to_string(feature->unique_id), featureset_data->frame, zmapWindowFeatureFrame(feature), feature->x1);
+
   if (featureset_data->frame != ZMAPFRAME_NONE
       && (featureset_data->frame != zmapWindowFeatureFrame(feature)
 	  || (!(window->show_3_frame_reverse) && display_strand == ZMAPSTRAND_REVERSE)))

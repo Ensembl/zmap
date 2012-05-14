@@ -646,11 +646,13 @@ FooCanvasItem *zMapWindowFeaturesetItemSetFeaturesetItem(FooCanvasItem *foo, GQu
 
 	int stagger;
 
-	/* NOTE need to combined code from cainating canvas item  at some point */
+	/* NOTE need to combine code from the containing canvas item  at some point */
 
             di = (ZMapWindowFeaturesetItem) foo;
             di->id = id;
             g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
+
+//printf("adding %s\n",g_quark_to_string(id));
 
 		/* we record strand and frame for display colours
 		 * the features get added to the appropriate column depending on strand, frame
@@ -2235,13 +2237,13 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 	}
 	featureset_item->features = NULL;
 	featureset_item->n_features = 0;
-}
+  }
 
 
   	/* removing it the second time will fail gracefully */
   g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id));
 
-//  printf("removing %s\n",g_quark_to_string(featureset_item->id));
+//  printf("removing foo item %s\n",g_quark_to_string(featureset_item->id));
 
 //printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
 

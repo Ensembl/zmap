@@ -376,6 +376,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
   container = (ZMapWindowContainerFeatureSet)column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+//printf("set state %s\n",g_quark_to_string(container->unique_id));
 
   /* Do we need a redraw....not every time..... */
   if (!new_col_state || new_col_state != curr_col_state || redraw_if_needed)
@@ -398,6 +399,8 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
       new_visible = zmapWindowGetColumnVisibility(window,column_group);
             /* state we want rather than what's current */
+
+//printf("set visible = %d -> %d\n",cur_visible, new_visible);
 
       if(new_visible)
       {
