@@ -2016,8 +2016,6 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
   frame_specific = zMapStyleIsFrameSpecific(style);
   zMapStyleGetStrandAttrs(style,NULL,NULL,&frame_mode);
 
-  printf("%s\n", zMapStyleGetName(style)) ;
-
   if (frame_specific)
     {
 
