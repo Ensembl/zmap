@@ -43,7 +43,6 @@ zmapUtils.c \
 zmapUtilsSpawn.c \
 zmapUtilsUsers.c \
 zmapUtils_P.h \
-zmapVersion.c \
 zmapWebBrowser.c \
 zmapXRemoteUtils.c \
 $(NULL)
