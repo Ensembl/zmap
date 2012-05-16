@@ -37,6 +37,7 @@ Getopt::Long::GetOptions(
 
 my @libraries = qw(-lX11 
                    -lZMap
+                   -lZMapUtils
                    );
 my @includes  = qw();
 
