@@ -68,6 +68,7 @@ static void handleHighlightTranslation(gboolean highlight,  gboolean item_highli
 				       ZMapSequenceType coords_type, int region_start, int region_end) ;
 static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
 					  FooCanvasItem *translation_item, FooCanvasItem *item,
+					  ZMapFrame required_frame,
 					  gboolean cds_only, ZMapSequenceType coords_type,
 					  int region_start, int region_end) ;
 static FooCanvasItem *getTranslationItemFromItemFrame(ZMapWindow window,
@@ -171,14 +172,14 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 }
 
 
-#if NOT_CALLED
+
 
 /*
  * Sequence highlighting functions, these feel like they should be in the
  * sequence item class objects.
  */
 
-void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item)
+void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end)
 {
   ZMapFeatureAny feature_any ;
 
@@ -189,7 +190,7 @@ void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item)
       block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature_any), ZMAPFEATURE_STRUCT_BLOCK));
       zMapAssert(block);
 
-      highlightSequenceItems(window, block, item, ZMAPSEQUENCE_NONE, ZMAPFRAME_NONE, 0, 0, FALSE) ;
+      highlightSequenceItems(window, block, item, ZMAPSEQUENCE_NONE, ZMAPFRAME_NONE, start, end, FALSE) ;
     }
 
   return ;
@@ -197,7 +198,7 @@ void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-#endif
+
 
 
 
@@ -456,11 +457,11 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 	    }
 	  else
 	    {
-	      if (frame_num == required_frame)
+//	      if (frame_num == required_frame)
 		highlightTranslationRegion(window, TRUE, FALSE, FALSE, item,
 					   ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
-	      else
-		unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num) ;
+//	      else
+//		unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num) ;
 	    }
 	}
 
@@ -533,13 +534,13 @@ gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_fea
 				break;
 			}
 
-#warning need to populate a calling stack with this flag
+#warning single exon select is broken
 #if 0
-
 			if (sub_feature)
 			{
 				/* Fix up this code in a minute...should be made into an exonlist as well
 				* with common code..... */
+				int index;
 
 				ZMapFeatureSubPartSpan exon_span;
 
@@ -547,30 +548,20 @@ gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_fea
 				if(!exon_span)
 					break;
 
-				current_exon = (ZMapFullExon)(g_list_nth_data(exon_list, exon_span->index - 1)) ;
+				index = (exon_span->index - 1) / 2;		/* span index includes introns */
+				current_exon = (ZMapFullExon)(g_list_nth_data(exon_list,index)) ;
+				if(!current_exon)
+					break;
 
 				span.start = current_exon->sequence_span.x1 ;
 				span.end   = current_exon->sequence_span.x2 ;
 				span.subpart = ZMAPFEATURE_SUBPART_MATCH;
 				span.index = 0;
 
-				if (zMapFeatureSequenceIsPeptide(feature))
-					zMapSequenceDNA2Pep(&span.start, &span.end, frame) ;
-
 				zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
 
 				zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
 					    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
-
-//				start = current_exon->sequence_span.x1 ;
-//				end = current_exon->sequence_span.x2 ;
-
-//				zMapFeature2BlockCoords(block, &start, &end) ;
-
-//				if (zMapFeatureSequenceIsPeptide(feature))
-//					coordsDNA2Pep(feature, &start, &end) ;
-
-//				zMapWindowTextItemSelect(text_item, start, end, deselect, deselect) ;
 			}
 			else
 #endif
@@ -585,7 +576,6 @@ gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_fea
 				GdkColor *in_frame_background, *in_frame_foreground, *in_frame_outline ;
 				gboolean result ;
 				int index = 1;
-//				int orig_start = 0, orig_end = 0 ;
 
 				style = feature->style ;
 
@@ -726,16 +716,33 @@ gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_fea
 }
 
 gboolean zMapWindowSeqDispSelectByRegion(ZMapWindowSequenceFeature sequence_feature,
-						 ZMapSequenceType coord_type, int region_start, int region_end)
+						 ZMapSequenceType coord_type, int region_start, int region_end, gboolean out_frame)
 {
 	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
 	{
+		ZMapFeature feature = zMapWindowCanvasItemGetFeature((FooCanvasItem *) sequence_feature);
+		GdkColor *fill;
+		ZMapFeatureSubPartSpanStruct span ;
+
 		/* previous code did this as part of the select operation
 		 * inside the TextItem inside the sequnece feature
 		 */
 		zMapWindowSeqDispDeSelect(sequence_feature) ;
 
-		zMapWarning("sel by region","");
+		span.start = region_start ;
+		span.end   = region_end;
+		span.subpart = ZMAPFEATURE_SUBPART_MATCH;
+		span.index = 0;
+
+		zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+
+		/* calling stack for this gets tangled up so it never triggers, needs restructuring */
+		if(out_frame)
+			zMapStyleGetColours(feature->style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+								&fill, NULL, NULL) ;
+
+		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
+				    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
 	}
 	else
 	{
@@ -768,7 +775,7 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean s
 	    }
 	  else
 	    {
-	      zMapWindowSeqDispSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
+	      zMapWindowSeqDispSelectByRegion(sequence_feature, coords_type, region_start, region_end, FALSE) ;
 	    }
 	}
       else
@@ -826,7 +833,7 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 	    cds_only = TRUE ;
 
 	  handleHighlightTranslationSeq(highlight, item_highlight, sub_feature,
-					translation_item, item,
+					translation_item, item, required_frame,
 					cds_only, coords_type, region_start, region_end) ;
 	}
     }
@@ -837,6 +844,7 @@ static void handleHighlightTranslation(gboolean highlight, gboolean item_highlig
 
 static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
 					  FooCanvasItem *translation_item, FooCanvasItem *item,
+					  ZMapFrame required_frame,
 					  gboolean cds_only, ZMapSequenceType coords_type,
 					  int region_start, int region_end)
 {
@@ -853,7 +861,12 @@ static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_high
 	}
       else
 	{
-	  zMapWindowSeqDispSelectByRegion(sequence_feature, coords_type, region_start, region_end) ;
+		/* mh17: how odd, we start from highlighing a region and end up with a test here
+		 * depending on whether there's a feature... this could use some rationalistion
+		 */
+//	  gboolean out_frame = (required_frame != ZMAPFRAME_NONE && real_frame != required_frame);
+
+	  zMapWindowSeqDispSelectByRegion(sequence_feature, coords_type, region_start, region_end, FALSE) ;
 	}
     }
   else

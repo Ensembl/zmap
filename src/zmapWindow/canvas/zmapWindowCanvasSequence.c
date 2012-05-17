@@ -530,6 +530,8 @@ static void zmapWindowCanvasSequenceFreeSet(ZMapWindowFeaturesetItem featureset)
 
 	/* nominally there is only one feature in a seq column, but we could have 3 franes staggered.
 	 * besides, this data is in the feature not the featureset so we have to iterate regardless
+	 * NOTE the stagger is done in the FeaturesetItem, so we can have only one seq in this featureset
+	 * we can resolve this when ZMapWindowCanvasItems are removed
 	 */
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
@@ -618,17 +620,127 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan (FooCanvasI
 {
 	static ZMapFeatureSubPartSpanStruct sub_part;
 
-	/* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
 #warning revisit this when canvas items are simplified
-	/* and then we find the transcript data in the feature context which has a list of exaond and introms */
-	/* or we could find the exons/introns in the canvas and process those */
 
 	sub_part.start = y;
-	sub_part.end = y + 1;
+	sub_part.end = y;
 	sub_part.index = 1;
 	sub_part.subpart = ZMAPFEATURE_SUBPART_INVALID;
 
 	return &sub_part;
+}
+
+
+/* return sequence coordinate corresponding to a mouse cursor */
+/* NOTE unusually, we call the function directly rhather than going through an array of functions
+ * it's only relevant for sequence features, but could be added as a virtual function/ wrapper in ZWCFS.c if we care about code purity
+ */
+/* if it's a peptide column then we bias coordinates to cover whole residues, taking into account start and end wobble */
+
+gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem featureset, gboolean set, double x, double y, long *seq_start, long *seq_end)
+{
+
+	/* get y coordinate as left hand base/ residue of current row */
+	static ZMapWindowCanvasSequence seq = NULL;
+	static long seq_origin;		/* is fixed once set */
+	ZMapSkipList sl;
+	long seq_y, seq_x;
+
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
+		return FALSE;
+	if(zMapStyleGetMode(featureset->style) != ZMAPSTYLE_MODE_SEQUENCE)
+		return FALSE;
+
+	/* first button press: need to find the seq canvas feature to base out coords on */
+	/* could concievably have 3 features in a column offset by index
+	 * NOTE the stagger is done in the FeaturesetItem, so we can have only one seq in this featureset
+	 * we can resolve this when ZMapWindowCanvasItems are removed
+	 */
+	if(set) for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+	{
+		seq = (ZMapWindowCanvasSequence) sl->data;
+//		if(x >= featureset->x_off + featureset->dx && x <= featureset->x_off + featureset->dx + featureset->width)
+			break;
+	}
+	if(!sl || !seq)
+		return FALSE;	/* should not happen */
+
+	/* get y coordinate as left hand base/ residue of current row */
+
+	/* bias coordinates to stable ones , find the first seq coord in this row */
+	seq_y = (long) (y - featureset->dy) + 1;
+
+//printf("seq coord %.1f, %.1f, %.1f -> %ld\n",x,y,featureset->dy, seq_y);
+
+
+	seq_y -= 1;									/* zero base */
+	if(seq->factor > 1)							/* bias to first base of residue */
+	{
+		seq_y -= featureset->frame - ZMAPFRAME_0;			/* remove frame offset */
+		seq_y -= seq_y % seq->factor;					/* bias to start of residue */
+	}
+
+	if(seq_y < 0)			/* sequence coords are 1 based */
+		return FALSE;
+
+//printf("seq_y (framed) = %ld\n",seq_y);
+
+	seq_y -=  seq_y % (seq->row_size * seq->factor);		/* sequence offset from start, 0 based, biased to row start */
+
+	seq_y += 1;		/* start of this row in seq coords, as we have 1-based coordinates */
+	if(seq->factor > 1)
+		seq_y += featureset->frame - ZMAPFRAME_0;			/* back to frame offset coords */
+
+//printf("row coord %ld\n", seq_y);
+
+
+	/* adjust by x coordinate */
+	seq_x = (long) (x - featureset->x_off - featureset->dx);
+//printf("x,wid = %.1f,%d\n",x,seq->text_width);
+
+	seq_x /= seq->text_width;
+
+	if(seq_x < 0)
+		seq_x = 0;
+	if(seq_x >= seq->row_disp)
+		seq_x = seq->row_disp - 1;
+
+	seq_x *= seq->factor;
+
+//printf("x,row_disp,size: %ld %ld %ld\n",seq_x,seq->row_disp,seq->row_size);
+
+
+	if(seq_x < seq->row_size * seq->factor - 1)	/* first 2 dots are just bases */
+		seq_y += seq_x;
+	else
+		seq_y += seq->row_size * seq->factor - 1;	/* select whole row */
+
+//printf("seq_y = %ld %d\n",seq_y,featureset->frame);
+
+	/* now we have seq coords, adjust the cursor to the start of the selected residue */
+
+	if(set)
+	{
+		*seq_start = seq_origin = seq_y;
+		*seq_end = seq_y + seq->factor - 1;
+	}
+	else
+	{
+//printf("seq,start,end: %ld, %ld, %ld\n", seq_y, *seq_start, *seq_end);
+
+		if(seq_y < seq_origin)
+		{
+			*seq_end = seq_origin + seq->factor - 1;
+			*seq_start = seq_y;
+		}
+		else
+		{
+			*seq_start = seq_origin;
+			*seq_end = seq_y + seq->factor - 1;
+		}
+	}
+
+	return TRUE;
 }
 
 

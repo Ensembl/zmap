@@ -234,7 +234,7 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
-    zmapWindowHighlightObject(window, feature_item, replace, FALSE) ;
+    zmapWindowHighlightObject(window, feature_item, replace, FALSE, FALSE) ;
 
   return ;
 }
@@ -243,9 +243,9 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names)
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
-  zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names) ;
+  zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names, sub_part) ;
 
   return ;
 }
@@ -268,7 +268,7 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
 #endif
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names)
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
@@ -343,10 +343,10 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
-      zmapWindowItemHighlightDNARegion(window, TRUE,!highlight_same_names, item,
+      zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
 				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
 
-      zmapWindowItemHighlightTranslationRegions(window, TRUE, !highlight_same_names, item,
+      zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part, item,
 						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
@@ -356,13 +356,13 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       /* Not completely happy with this...seems a bit hacky, try it and if users want to do
        * translations non-transcripts then I'll change it. */
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
-	zmapWindowItemHighlightShowTranslationRegion(window, TRUE,!highlight_same_names, item,
+	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
 						     ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
       else
 	zmapWindowItemUnHighlightShowTranslations(window, item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, !highlight_same_names, item,
+      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
 						   ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
@@ -400,18 +400,21 @@ void zmapWindowHighlightFocusItems(ZMapWindow window)
 
 void zmapWindowUnHighlightFocusItems(ZMapWindow window)
 {
-  FooCanvasItem *hot_item ;
-  FooCanvasGroup *hot_column ;
+//  FooCanvasItem *hot_item ;
+//  FooCanvasGroup *hot_column ;
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
-  hot_column = zmapWindowFocusGetHotColumn(window->focus);
+//  hot_column = zmapWindowFocusGetHotColumn(window->focus);
 // if (hot_column)
 //  zmapWindowFocusUnHighlightHotColumn(window) ;     // done by reset
 
-  if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
-    zmapWindowFocusUnhighlightFocusItems(window->focus, window) ;
+/* this sets the feature, loosing the currently selected one */
+//if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
+//    zmapWindowFocusUnhighlightFocusItems(window->focus, window) ;
 
-  if (hot_column || hot_item)
+//  if (hot_column || hot_item)
+
+/* don't need any of the above! */
     zmapWindowFocusReset(window->focus) ;
 
   return ;
@@ -1416,7 +1419,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
                         zmapWindowHighlightObject(highlight_data->window, feature_item,
-						  replace_highlight, TRUE) ;
+						  replace_highlight, TRUE, FALSE) ;
                     }
                   for(i = 0; i < feature_in->feature.transcript.introns->len; i++)
                     {
@@ -1426,14 +1429,14 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
                         zmapWindowHighlightObject(highlight_data->window, feature_item,
-						  replace_highlight, TRUE);
+						  replace_highlight, TRUE, FALSE);
                     }
 
                   replace_highlight = !(highlight_data->multiple_select);
                 }
               else
                 /* we need to highlight the full feature */
-                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight, TRUE);
+                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight, TRUE, FALSE);
 
               if(replace_highlight)
                 highlight_data->highlighted = 0;

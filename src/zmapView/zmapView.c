@@ -2225,7 +2225,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 		{
 			zMapWindowHighlightObject(view_window->window, item,
 					  window_select->replace_highlight_item,
-					  window_select->highlight_same_names) ;
+					  window_select->highlight_same_names,
+					  window_select->sub_part) ;
 		}
 
 

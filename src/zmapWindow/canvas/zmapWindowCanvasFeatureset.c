@@ -145,12 +145,11 @@ static gpointer _featureset_set_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_flush_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_extent_G[FEATURE_N_TYPE] = { 0 };
-#if CANVAS_FEATURESET_LINK_FEATURE
-static gpointer _featureset_link_G[FEATURE_N_TYPE] = { 0 };
-#endif
 static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_zoom_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_point_G[FEATURE_N_TYPE] = { 0 };
+static gpointer _featureset_add_G[FEATURE_N_TYPE] = { 0 };
+static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
 
 
 
@@ -345,37 +344,6 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
 }
 
 
-/* interface design driven by exsiting application code */
-void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
-				       ZMapFeature			feature,
-				       ZMapFeatureSubPartSpan sub_feature,
-				       ZMapStyleColourType    colour_type,
-				       int colour_flags,
-				       GdkColor              *default_fill,
-				       GdkColor              *default_border)
-{
-  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) interval;
-  ZMapWindowCanvasFeature gs;
-
-  gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-
-  if(gs)
-    {
-      /* set the focus flags (on or off) */
-      /* zmapWindowFocus.c maintans these and we set/clear then all at once */
-      /* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
-       * colour flags has a window id set into it
-       */
-
-      /* these flags are very fiddly: handle with care */
-      gs->flags = ((gs->flags & ~FEATURE_FOCUS_MASK) | (colour_flags & FEATURE_FOCUS_MASK)) |
-	((gs->flags & FEATURE_FOCUS_ID) | (colour_flags & FEATURE_FOCUS_ID)) |
-	(gs->flags & FEATURE_FOCUS_BLURRED);
-
-      zmap_window_canvas_featureset_expose_feature(fi, gs);
-      return;
-    }
-}
 
 
 
@@ -459,31 +427,8 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 }
 
 
-#if CANVAS_FEATURESET_LINK_FEATURE
-/* link same name features in a feature type specific way */
-/* must accept NULL as meaning clear local data */
-int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature)
-{
-
-	int (*func) (ZMapWindowCanvasFeature feature);
-	zmapWindowCanvasFeatureType type;
-
-	if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
-		return 0;
-
-	type = feature_types[feature->type];
-
-	func = _featureset_link_G[feature->type];
-	if(!func)
-		return 0;
-
-  return func(feature);
-}
-#endif
 
 
-
-static gpointer _featureset_add_G[FEATURE_N_TYPE] = { 0 };
 int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
 {
 	int (*func) (ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
@@ -506,7 +451,6 @@ int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZM
 
 
 /* if a featureset has any allocated data free it */
-static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
 void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 {
   ZMapWindowFeatureFreeFunc func ;
@@ -519,7 +463,6 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 }
 
 /* return a span struct for the feature */
-static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
 {
 	ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
@@ -528,13 +471,18 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 	if(!y)	/* legacy interface: return canvasfeature from index */
 	{
 		static ZMapFeatureSubPartSpanStruct fred;
+		ZMapWindowCanvasFeature wcf;
 
 		if(!featureset->point_canvas_feature)
 			return NULL;
 		fred.start = featureset->point_canvas_feature->y1;
 		fred.end   = featureset->point_canvas_feature->y2;
 		fred.subpart = ZMAPFEATURE_SUBPART_MATCH;
-		fred.index = 1;
+
+		/* work out which one it really is... */
+		for(fred.index = 1, wcf = featureset->point_canvas_feature; wcf->left; fred.index++, wcf = wcf->left)
+			continue;
+
 		return &fred;
 	}
 
@@ -609,6 +557,9 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 }
 
 
+
+
+
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
@@ -621,10 +572,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int st
   _featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
   _featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
   _featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
+  _featureset_colour_G[featuretype]  = funcs[FUNC_COLOUR];
   _featureset_zoom_G[featuretype] = funcs[FUNC_ZOOM];
-#if CANVAS_FEATURESET_LINK_FEATURE
-  _featureset_link_G[featuretype] = funcs[FUNC_LINK];
-#endif
   _featureset_free_G[featuretype] = funcs[FUNC_FREE];
   _featureset_point_G[featuretype] = funcs[FUNC_POINT];
   _featureset_add_G[featuretype]     = funcs[FUNC_ADD];
@@ -1282,9 +1231,7 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
   double y1,y2;
   //      FooCanvasGroup *group;
   double x_off;
-  static double save_best = fi->end - fi->start + 1, save_x = 0.0, save_y = 0.0 ;
-  static ZMapWindowCanvasFeature save_gs = NULL;
-
+  static double save_best = 1.0e36, save_x = 0.0, save_y = 0.0 ;
 
   /* check for feature type specific point code, otherwise default to standard point func. */
   if (fi->type > 0 && fi->type < FEATURE_N_TYPE)
@@ -1311,9 +1258,10 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
    * each one goes through about 12 layers of canvas containers first but that's another issue
    * then if we move the lassoo that gets silly (button down: calls point())
    */
-  if (save_gs && item_x == save_x && item_y == save_y)
+
+  if(fi->point_canvas_feature && item_x == save_x && item_y == save_y)
     {
-      fi->point_feature = save_gs->feature;
+     	fi->point_feature = fi->point_canvas_feature->feature;
       *actual_item = item;
       best = save_best ;
     }
@@ -1321,8 +1269,11 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
     {
       save_x = item_x;
       save_y = item_y;
-      save_gs = NULL;
+      fi->point_canvas_feature = NULL;
 
+	best = fi->end - fi->start + 1;
+
+#warning need to check these coordinate calculations
       local_x = item_x + fi->dx;
       local_y = item_y + fi->dy;
 #warning this code is in the wrong place, review when containers rationalised
@@ -1345,6 +1296,7 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
       for (; sl ; sl = sl->next)
 	{
 	  gs = (ZMapWindowCanvasFeature) sl->data;
+	  double this_one;
 
 	  //printf("gs: %x %f %f\n",gs->flags, gs->y1,gs->y2);
 
@@ -1354,17 +1306,15 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
 	  if (gs->y1 > y2 + best)
 	    break;
 
-	  if ((best = point_func(fi, gs, item_x, item_y, cx, cy, local_x, local_y, x_off)) < 1.0e36)
+	  if ((this_one = point_func(fi, gs, item_x, item_y, cx, cy, local_x, local_y, x_off)) < best)
 	    {
 	      fi->point_feature = gs->feature;
 	      *actual_item = item;
 	      //printf("overlaps x\n");
-#warning this could concievably cause a memory fault if we freed save_gs but that seems unlikely if we don-t nove the cursor
-	      save_gs = gs;
-
-	      break;			/* just find any one */
+#warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
+		fi->point_canvas_feature = gs;
+		best = this_one;
 	    }
-
 	}
     }
 
@@ -1382,8 +1332,12 @@ static double defaultPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature 
   double can_start, can_end ;
 
   /* Get feature extent on display. */
-  can_start = gs->feature->x1 ;
-  can_end = gs->feature->x2 ;
+  /* NOTE cannot use feature coords as transcript exons all point to the same feature */
+  /* alignments have to implement a special fucntion to handle bumped features - the first exon gets expanded to cover the whole */
+  /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
+  /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
+  can_start = gs->y1; 	//feature->x1 ;
+  can_end = gs->y2;	//feature->x2 ;
   zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
 
 
@@ -1440,7 +1394,6 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
   *x2 = maxx;
   *y2 = maxy;
 }
-
 
 
 

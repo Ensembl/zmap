@@ -140,6 +140,7 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 
 
+
 void zmapWindowFeaturesetItemSetColour(   FooCanvasItem         *interval,
 						      ZMapFeature 		feature,
 						      ZMapFeatureSubPartSpan sub_feature,
@@ -167,6 +168,8 @@ guint32 zMap_gdk_color_to_rgba(GdkColor *color);
 int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel);
 
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
+
+gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem featureset, gboolean set, double x, double y, long *start, long *end);
 
 
 
@@ -217,10 +220,6 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
 						    ZMapSpan span, double *width);
 void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable);
 
-#define CANVAS_FEATURESET_LINK_FEATURE	0	/* not needed: is OTT */
-#if CANVAS_FEATURESET_LINK_FEATURE
-int zMapWindowCanvasFeaturesetLinkFeature(ZMapWindowCanvasFeature feature);
-#endif
 
 gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);

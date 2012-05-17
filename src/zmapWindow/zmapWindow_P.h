@@ -1318,7 +1318,7 @@ int zmapWindowItemListStartCoord(GList *item_list);
 
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
 

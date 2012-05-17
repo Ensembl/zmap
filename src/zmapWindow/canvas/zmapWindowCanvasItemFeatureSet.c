@@ -226,6 +226,35 @@ gboolean zMapWindowCanvasFeaturesetItemBump(ZMapWindowCanvasItem item, ZMapStyle
 }
 
 
+#if 0
+/* for sequence features only ... */
+/* i'm not bothering with a class func as we want to get rid of all this ASAP */
+/* but we do need to use this wrapper level FTM */
+long zMapWindowCanvasFeaturesetItemGetSeqCoord(FooCanvasItem *item, gboolean set, double x, double y)
+{
+	FooCanvasGroup *group;
+	ZMapWindowCanvasFeaturesetItem fi;
+	ZMapWindowFeaturesetItem featureset = NULL;
+
+	if(item)
+	{
+		if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+			return 0;
+
+		fi = (ZMapWindowCanvasFeaturesetItem) item;
+		group = (FooCanvasGroup *) fi;
+
+		if(group->item_list)
+			featureset = (ZMapWindowFeaturesetItem) group->item_list->data;
+
+		if(!featureset)
+			return FALSE;
+	}
+
+	return zMapWindowCanvasFeaturesetGetSeqCoord(featureset, set, x, y);
+}
+#endif
+
 
 static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetItemClass featureset_class)
 {

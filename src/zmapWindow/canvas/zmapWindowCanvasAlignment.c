@@ -803,6 +803,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
 	if(!feature->feature.homol.align)	/* is un-gapped */
 		return NULL;
 
+#if 0
 	if(!y)	/* interface to legacy code they uses G_OBJECT_DATA */
 	{
 		ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
@@ -815,6 +816,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
 		sub_part.index = 1;
 		return &sub_part;
 	}
+#endif
 
 	/* get sequence coords for x,y,  well y at least */
 	/* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
@@ -853,6 +855,48 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
 }
 
 
+/* Default function to check if the given x,y coord is within a feature, this
+ * function assumes the feature is box-like. */
+static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+			   double item_x, double item_y, int cx, int cy,
+			   double local_x, double local_y, double x_off)
+{
+  double best = 1.0e36 ;
+  double can_start, can_end ;
+
+  /* Get feature extent on display. */
+  /* NOTE cannot use feature coords as transcript exons all point to the same feature */
+  /* alignments have to implement a special fucntion to handle bumped features - the first exon gets expanded to cover the whole */
+  /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
+  /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
+  can_start = gs->feature->x1 ;
+  can_end = gs->feature->x2 ;
+  zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
+
+
+  if (can_start <= local_y && can_end >= local_y)			    /* overlaps cursor */
+    {
+      double wx ;
+      double left, right ;
+
+      wx = x_off - (gs->width / 2) ;
+
+      if (fi->bumped)
+	wx += gs->bump_offset ;
+
+      /* get coords within one pixel */
+      left = wx - 1 ;					    /* X coords are on fixed zoom, allow one pixel grace */
+      right = wx + gs->width + 1 ;
+
+      if (local_x > left && local_x < right)			    /* item contains cursor */
+	{
+	  best = 0.0;
+	}
+    }
+
+  return best ;
+}
+
 
 
 void zMapWindowCanvasAlignmentInit(void)
@@ -866,7 +910,9 @@ void zMapWindowCanvasAlignmentInit(void)
 
 	funcs[FUNC_ADD]    = zMapWindowCanvasAlignmentAddFeature;
 
-	funcs[FUNC_SUBPART] =zmapWindowCanvasAlignmentGetSubPartSpan;
+	funcs[FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPartSpan;
+
+	funcs[FUNC_POINT]   = alignmentPoint;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
 }

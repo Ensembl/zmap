@@ -1747,12 +1747,14 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
 	select.highlight_item = item ;
+
 	select.feature_list = feature_list;
 
 
       select.replace_highlight_item = replace_highlight_item ;
 
       select.highlight_same_names = highlight_same_names ;
+	select.sub_part = sub_part;
 
 
 	/* dis/enable the filter by score widget and set min and max */
@@ -3151,6 +3153,11 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
  * all mouse events straight through without handling them, they are picked up by the text
  * field code to highlight text.
  *
+ * if the item under the cursor is a CanvasFeatureset the we ask it if it wants to
+ * operate text selection and if so we pass coordinates through to that
+ * NOTE we never handle this in canvasItem EventCB, asn we have priority here
+ * DNA event callbacks will disappear with ZMapWindowCanvasItems
+ *
  * If the user presses button 1 anywhere else we assume they are going to lasso an area for
  * zooming and we track mouse movements, if they have moved far enough then we do the zoom
  * on button release.
@@ -3171,6 +3178,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   double wx, wy;					    /* These hold the current world coords of the event */
   static double window_x, window_y ;			    /* Track number of pixels user moves mouse. */
   static MarkRegionUpdateStruct mark_updater = {0};
+
+  static FooCanvasItem *seq_item = NULL;		/* if not NULL we are selecting text */
+  static long seq_start, seq_end;			/* first coord is fixed, then we can move above or below */
+
 
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
@@ -3231,6 +3242,28 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 		  event_handled = FALSE ;
 		}
+		else if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+		{
+			/* ho hum we get the foo not the containg zmapWindowCanvasItem group, how consistent */
+
+				/* get start coordinate via subpartspan from x and y
+				 * set end coordinate to be the same
+				 * set a flag to say selecting text and remember the canvas item
+				 * highlight the region
+				 */
+
+			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
+			{
+				seq_item = item;
+				/*
+				* Although we start with a base Foo item the highlight code does a FToI lookup on the feature
+				 * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
+				 */
+				zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+
+				event_handled = TRUE;
+			}
+		}
 	      else
 		{
 		  /* Pucka button press that we need to handle. */
@@ -3242,10 +3275,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		  if(mark_updater.in_mark_move_region)
 		    {
 		      mark_updater.activated = TRUE;
-		      /* work out the world of where we are */
-		      foo_canvas_window_to_world(window->canvas,
-						 but_event->x, but_event->y,
-						 &wx, &wy);
+
 		      setupRuler(window, &(window->mark_guide_line), NULL, wy);
 		    }
 		  else
@@ -3351,9 +3381,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
     case GDK_MOTION_NOTIFY:
       {
 	/* interestingly we don't check the button number here.... */
-
-	if (dragging || guide)
-	  {
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 
 
@@ -3363,6 +3390,15 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    foo_canvas_window_to_world(window->canvas,
 				       mot_event->x, mot_event->y,
 				       &wx, &wy);
+
+	 if(seq_item)
+		{
+			zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE, wx, wy, &seq_start, &seq_end);
+
+			zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+		}
+	else if (dragging || guide)
+	  {
 	    if (dragging)
 	      {
 		/* I wanted to change the cursor for this,
@@ -3458,14 +3494,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  }
 	else if ((!mark_updater.in_mark_move_region) && zmapWindowMarkIsSet(window->mark))
 	  {
-	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
 	    double world_dy;
 	    int canvas_dy = 5;
-
-	    /* work out the world of where we are */
-	    foo_canvas_window_to_world(window->canvas,
-				       mot_event->x, mot_event->y,
-				       &wx, &wy);
 
 	    zmapWindowMarkGetWorldRange(window->mark,
 					&(mark_updater.mark_x1),
@@ -3500,7 +3530,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	else if(mark_updater.in_mark_move_region && mark_updater.activated)
 	  {
 	    /* Now we can move... But must return TRUE. */
-	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
 
 	    foo_canvas_window_to_world(window->canvas,
 				       mot_event->x, mot_event->y,
@@ -3513,14 +3542,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	else if (mark_updater.in_mark_move_region && (!mark_updater.activated)
 		 && zmapWindowMarkIsSet(window->mark))
 	  {
-	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
 	    double world_dy;
 	    int canvas_dy = 5;
-
-	    /* work out the world of where we are */
-	    foo_canvas_window_to_world(window->canvas,
-				       mot_event->x, mot_event->y,
-				       &wx, &wy);
 
 	    zmapWindowMarkGetWorldRange(window->mark,
 					&(mark_updater.mark_x1),
@@ -3559,7 +3582,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_release %d", but_event->button) ;
 
-        if (dragging)
+	  if(seq_item)
+	  {
+		seq_item = NULL;
+		event_handled = TRUE;		    /* We _ARE_ handling */
+	  }
+        else if (dragging)
           {
 	      GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
 		/* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
@@ -3591,7 +3619,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 			/* this is how features get highlit */
 			if(item)
-				zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE, FALSE) ;
+				zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE, ctrl) ;
 
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
@@ -5089,7 +5117,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
       ZMapFeature feature ;
 
-      zmapWindowHighlightObject(window, focus_item, TRUE, FALSE) ;
+      zmapWindowHighlightObject(window, focus_item, TRUE, FALSE, FALSE) ;
 
       feature = zmapWindowItemGetFeature(focus_item);
 
@@ -5257,7 +5285,7 @@ static void unhideItemsCB(gpointer data, gpointer user_data)
 	foo_canvas_item_show(item) ;
   }
 
-  zmapWindowHighlightObject(window, item, FALSE, TRUE) ;
+  zmapWindowHighlightObject(window, item, FALSE, TRUE, FALSE) ;
 
 
   return ;

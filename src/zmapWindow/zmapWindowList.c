@@ -766,7 +766,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 	  else
 	      zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
 
-        zMapWindowHighlightObject(window, item, TRUE, TRUE) ;
+        zMapWindowHighlightObject(window, item, TRUE, TRUE, FALSE) ;
 
         zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE, FALSE);
     }

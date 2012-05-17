@@ -164,6 +164,7 @@ typedef struct
   gboolean highlight_same_names ;			    /* TRUE means highlight all other
 							       features with the same name in the
 							       same feature set. */
+  gboolean sub_part;					/* if selecting part of a feature w/ the control key */
 
   ZMapFeatureDescStruct feature_desc ;			    /* Text descriptions of selected feature. */
 
@@ -459,8 +460,10 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
+
+void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end);
 
 void zMapWindowDestroyLists(ZMapWindow window) ;
 void zMapWindowUnlock(ZMapWindow window) ;

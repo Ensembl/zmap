@@ -70,6 +70,9 @@ static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count,int cx
 static void zmap_window_canvas_glyph_draw (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill);
 static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, double y1, GdkDrawable *drawable);
 
+static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+				       GdkDrawable *drawable, GdkEventExpose *expose);
+
 static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature feature,
 			  ZMapFeatureTypeStyle style, double score,
 			  double *origin_out, double *width_out, double *height_out) ;
@@ -102,7 +105,7 @@ GHashTable *glyph_cache_G = NULL;
 
 
 
-/* 
+/*
  *                 External interface
  */
 
@@ -210,11 +213,11 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 }
 
 
-/* THIS FUNCTION IS CURRENTLY NOT CALLED EXTERNALLY...CONSIDER MAKING STATIC.... */
+
 /* Draw handler for the glyph item */
 /* the interface for free-standing glyphs, called via CanvasFeatureset virtual functions  */
 /* must calculate the shape coords etc on first paint */
-void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 				       GdkDrawable *drawable, GdkEventExpose *expose)
 {
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph) feature;
@@ -252,7 +255,7 @@ void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
       int diff ;
 
       diff = feat->x2 - feat->x1 ;
-	
+
       if (diff == 1)
 	y1 = feat->x2 ;
       else
@@ -295,7 +298,7 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 
 
 
-/* 
+/*
  *                    Internal routines
  */
 
@@ -482,11 +485,11 @@ static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature featu
   min_score = zMapStyleGetMinScore(style);
   max_score = zMapStyleGetMaxScore(style);
 
-  if (score <= min_score) 
+  if (score <= min_score)
     x = 0 ;
-  else if (score >= max_score) 
+  else if (score >= max_score)
     x = splice_data->col_width ;
-  else 
+  else
     x = splice_data->scale_factor * (score - min_score) ;
 
   width = fabs(splice_data->origin - fabs(x)) ;
@@ -715,7 +718,7 @@ static void glyphColumnFree(ZMapWindowFeaturesetItem featureset)
   return ;
 }
 
-    
+
 
 
 
@@ -918,11 +921,11 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
 
 /* Checks to see if given x,y coord is within a glyph feature, has to work differently
  * for different glyph types:
- * 
+ *
  * Splice markers: checks point is within extent of the angle bracket.
- * 
+ *
  * Other glyphs: checks if point is within x,y and feature width.
- * 
+ *
  *
  * reimplementation based on coords of glyph, not the feature coords which may
  * be useless for glyph purposes. */

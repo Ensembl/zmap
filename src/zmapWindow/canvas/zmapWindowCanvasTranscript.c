@@ -215,18 +215,27 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 	GArray *introns,*exons;
 	ZMapTranscript tr = &feature->feature.transcript;
 
+#if 0
 	if(!y)	/* interface to legacy code they uses G_OBJECT_DATA */
 	{
 		ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
 
 		if(!featureset->point_canvas_feature)
 			return NULL;
-		sub_part.start = !featureset->point_canvas_feature->y1;
-		sub_part.end   = !featureset->point_canvas_feature->y2;
+
+		sub_part.start = featureset->point_canvas_feature->y1;
+		sub_part.end   = featureset->point_canvas_feature->y2;
 		sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
-		sub_part.index = 1;
+		/* work out which one it really is... */
+		for(sub_part.index = 1, wcf = featureset->point_canvas_feature; wcf->left; wcf = wcf->left)
+		{
+			if()
+				sub_part.index++;
+		}
+
 		return &sub_part;
 	}
+#endif
 
 	introns = tr->introns;
 	exons = tr->exons;
