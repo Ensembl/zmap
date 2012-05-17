@@ -3254,72 +3254,92 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		}
 	      else
 		{
-		  /* Pucka button press that we need to handle. */
-
-		  /* Record where are we in the window at the start of mouse/button movement. */
-		  window_x = but_event->x ;
-		  window_y = but_event->y ;
-
-		  if(mark_updater.in_mark_move_region)
+		  if (dragging || guide)
 		    {
-		      mark_updater.activated = TRUE;
-		      /* work out the world of where we are */
-		      foo_canvas_window_to_world(window->canvas,
-						 but_event->x, but_event->y,
-						 &wx, &wy);
-		      setupRuler(window, &(window->mark_guide_line), NULL, wy);
+		      /* It's possible to press another mouse button while holding the middle
+		       * one down especially if it's a standard PC mouse with the wheel in the middle
+		       * instead of a proper button. */
+		      event_handled = TRUE ;
 		    }
 		  else
 		    {
-		      /* Show a rubber band for zooming/marking. */
-		      dragging = TRUE;
+		      /* Pucka button press that we need to handle. */
 
-		      if (!window->rubberband)
-			window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+		      /* Record where are we in the window at the start of mouse/button movement. */
+		      window_x = but_event->x ;
+		      window_y = but_event->y ;
+
+		      if (mark_updater.in_mark_move_region)
+			{
+			  mark_updater.activated = TRUE;
+			  /* work out the world of where we are */
+			  foo_canvas_window_to_world(window->canvas,
+						     but_event->x, but_event->y,
+						     &wx, &wy);
+			  setupRuler(window, &(window->mark_guide_line), NULL, wy);
+			}
+		      else
+			{
+			  /* Show a rubber band for zooming/marking. */
+			  dragging = TRUE;
+
+			  if (!window->rubberband)
+			    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+			}
+
+		      /* At this stage we don't know if we are rubber banding etc. so pass the
+		       * press on. */
+		      event_handled = FALSE ;
 		    }
-
-		  /* At this stage we don't know if we are rubber banding etc. so pass the
-		   * press on. */
-		  event_handled = FALSE ;
 		}
-
 	      break ;
 	    }
 	  case 2:
 	    {
-	      /* Show a ruler and our exact position. */
-	      guide = TRUE ;
-
-	      /* always clear this if set. */
-	      if(mark_updater.in_mark_move_region)
+	      if (dragging || guide)
 		{
-		  mark_updater.in_mark_move_region = FALSE;
-		  mark_updater.closest_to = NULL;
-
-		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
-		  gdk_cursor_unref(mark_updater.arrow_cursor);
-		  mark_updater.arrow_cursor = NULL;
-		}
-
-	      /* If there are locked, _vertical_ split windows then also show the ruler in all
-	       * of them. */
-	      if (window->locked_display && window->curr_locking == ZMAP_WINLOCK_VERTICAL)
-		{
-		  LockedRulerStruct locked_data = {0} ;
-
-		  locked_data.action   = ZMAP_LOCKED_RULER_SETUP ;
-		  locked_data.origin_y = origin_y ;
-
-		  g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
-
-		  locked = TRUE ;
+		  /* It's possible to press another mouse button while holding the middle
+		   * one down especially if it's a standard PC mouse with the wheel in the middle
+		   * instead of a proper button. */
+		  event_handled = TRUE ;
 		}
 	      else
 		{
-		  setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), origin_y) ;
-		}
 
-	      event_handled = TRUE ;		    /* We _ARE_ handling */
+		  /* Show a ruler and our exact position. */
+		  guide = TRUE ;
+
+		  /* always clear this if set. */
+		  if(mark_updater.in_mark_move_region)
+		    {
+		      mark_updater.in_mark_move_region = FALSE;
+		      mark_updater.closest_to = NULL;
+
+		      gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
+		      gdk_cursor_unref(mark_updater.arrow_cursor);
+		      mark_updater.arrow_cursor = NULL;
+		    }
+
+		  /* If there are locked, _vertical_ split windows then also show the ruler in all
+		   * of them. */
+		  if (window->locked_display && window->curr_locking == ZMAP_WINLOCK_VERTICAL)
+		    {
+		      LockedRulerStruct locked_data = {0} ;
+
+		      locked_data.action   = ZMAP_LOCKED_RULER_SETUP ;
+		      locked_data.origin_y = origin_y ;
+
+		      g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
+
+		      locked = TRUE ;
+		    }
+		  else
+		    {
+		      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), origin_y) ;
+		    }
+
+		  event_handled = TRUE ;		    /* We _ARE_ handling */
+		}
 
 	      break ;
 	    }
@@ -3407,44 +3427,44 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		if (y1 <= wy && y2 >= wy)
 		  {
 		    int bp = 0;
-                int chr_bp;
+		    int chr_bp;
 
 		    chr_bp = bp = (int)floor(wy);
 
-                bp = zmapWindowCoordToDisplay(window, bp) ;
-                chr_bp = zmapWindowWorldToSequenceForward(window,chr_bp);
-                  /* NOTE: this code does not handle multiple blocks */
-                  /* need to get current block and extract start coord */
+		    bp = zmapWindowCoordToDisplay(window, bp) ;
+		    chr_bp = zmapWindowWorldToSequenceForward(window,chr_bp);
+		    /* NOTE: this code does not handle multiple blocks */
+		    /* need to get current block and extract start coord */
 
-                if(window->sequence)
-                {
+		    if(window->sequence)
+		      {
 #warning need a flag here to say chromosome coords have been set
-                  if(window->sequence->start == 1)
-                        /* not using chromo coords internally?? */
-                  {
-                        int start;
-                        char *p;
+			if(window->sequence->start == 1)
+			  /* not using chromo coords internally?? */
+			  {
+			    int start;
+			    char *p;
 
 #warning move this to seq req/load and set sequence coords, then remove from here
-                        /* using zmap coords internally */
-                        for(p = window->sequence->sequence; *p && *p != '_'; p++)
+			    /* using zmap coords internally */
+			    for(p = window->sequence->sequence; *p && *p != '_'; p++)
                               continue;
-                        if(p) p++;
-                        start = atoi(p);
+			    if(p) p++;
+			    start = atoi(p);
 
-                        if(start)
-                        {
-                          if(bp < 0)
-                              chr_bp = start - bp + 1;
-                          else
-                              chr_bp = start + bp - 1;
-                        }
-                  }
-                  if(bp != chr_bp)
-                        tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
-                  else
-                         tip = g_strdup_printf("%d bp", bp);
-                }
+			    if(start)
+			      {
+				if(bp < 0)
+				  chr_bp = start - bp + 1;
+				else
+				  chr_bp = start + bp - 1;
+			      }
+			  }
+			if(bp != chr_bp)
+			  tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
+			else
+			  tip = g_strdup_printf("%d bp", bp);
+		      }
 		  }
 
 		/* If we are a locked, _vertical_ split window then also show the ruler in the
@@ -3582,8 +3602,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
         if (dragging)
           {
-	      GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
-		/* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
+	    GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
+	    /* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
 
             foo_canvas_item_hide(window->rubberband);
 
@@ -3591,32 +3611,32 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	     * and motion must be more than 10 pixels in either direction to zoom. */
 	    if (in_window)
 	      {
-			gboolean ctrl = zMapGUITestModifiers(but_event, control_mask);
-			gboolean shift = zMapGUITestModifiers(but_event, shift_mask);
+		gboolean ctrl = zMapGUITestModifiers(but_event, control_mask);
+		gboolean shift = zMapGUITestModifiers(but_event, shift_mask);
 
 		if(shift || ctrl)
 		  {
-			/* make a list of the foo canvas items */
-			GList *feature_list;
-			FooCanvasItem *item;
-			double rootx1, rootx2, rooty1, rooty2 ;
+		    /* make a list of the foo canvas items */
+		    GList *feature_list;
+		    FooCanvasItem *item;
+		    double rootx1, rootx2, rooty1, rooty2 ;
 
 
-			      /* Get size of item and convert to world coords. */
-			foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-			foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-			foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+		    /* Get size of item and convert to world coords. */
+		    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-				/* only finds features in a canvas featureset, old foo gives nothing */
-			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		    /* only finds features in a canvas featureset, old foo gives nothing */
+		    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
 
-			/* this is how features get highlit */
-			if(item)
-				zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE) ;
+		    /* this is how features get highlit */
+		    if(item)
+		      zmapWindowUpdateInfoPanel(window, ((ZMapWindowCanvasItem) item)->feature, feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE) ;
 
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
-		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
+			 || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
 		  {
 		    /* User has moved pointer quite a lot between press and release so zoom
 		     * to marked area. */
@@ -3631,20 +3651,20 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		     * lasso an area so pass event on and destroy rubberband object. */
 
 		    /* Must get rid of rubberband item as it is not needed. */
-// mh17: was this a memory leak from the other bits of the if ???
-//		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
-//		    window->rubberband = NULL ;
+		    // mh17: was this a memory leak from the other bits of the if ???
+		    //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+		    //		    window->rubberband = NULL ;
 
 		    event_handled = FALSE ;
 		  }
 	      }
 
-		    /* Must get rid of rubberband item as it is not needed. */
+	    /* Must get rid of rubberband item as it is not needed. */
 	    if(window->rubberband)
-	    {
+	      {
 		gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
 		window->rubberband = NULL ;
-	    }
+	      }
 	    dragging = FALSE ;
           }
         else if (guide)

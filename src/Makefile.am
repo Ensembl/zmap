@@ -64,8 +64,8 @@ pkgconfig_DATA = zmap.pc
 # some of these are further combined into 'parent' libXXX.a files.
 #
 
-noinst_LTLIBRARIES = libZMapApp.la libZMapAppServices.la libZMap.la libZMapThr.la \
-                     libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
+noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
+                     libZMapThr.la libZMapXML.la libZMapUtils.la \
                      libzmapfoocanvas.la libPFetch.la
 
 libZMapApp_la_SOURCES =
