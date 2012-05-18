@@ -3405,10 +3405,11 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	break ;
       }
 
-    case ZMAP_SERVERREQ_FEATURES:   /* features and getstatus combined as they can both display data */
+    case ZMAP_SERVERREQ_FEATURES:
     case ZMAP_SERVERREQ_GETSTATUS:
     case ZMAP_SERVERREQ_SEQUENCE:
       {
+	/* features and getstatus combined as they can both display data */
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
 	if(req_any->response != ZMAP_SERVERRESPONSE_OK)
@@ -3440,6 +3441,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 	    connect_data->get_features = get_features;
 	  }
+
 	if (result && req_any->type == ZMAP_SERVERREQ_GETSTATUS)
 	  {
             /* store the exit code and STDERR */
