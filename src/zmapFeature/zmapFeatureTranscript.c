@@ -99,32 +99,51 @@ static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
  */
 
 
+/* Initialises a transcript feature.
+ * 
+ *  */
+gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+	     && ((!(feature->feature.transcript.exons) && !(feature->feature.transcript.introns))
+		 || (feature->feature.transcript.exons && feature->feature.transcript.introns))) ;
+
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+      && (!(feature->feature.transcript.exons) && !(feature->feature.transcript.introns)))
+    {
+
+      feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
+							    sizeof(ZMapSpanStruct), 30) ;
+
+      feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
+							      sizeof(ZMapSpanStruct), 30) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 /* Adds initial data to a transcript feature, will overwrite any existing settings. */
-gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
-				      gboolean cds, Coord cds_start, Coord cds_end,
-				      GArray *exons, GArray *introns)
+gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature,
+				     gboolean cds, Coord cds_start, Coord cds_end)
 {
   gboolean result = FALSE ;
 
   zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
-
   /* There ought to be sanity checking of coords of cds/exons/introns here.... */
-
   if (cds)
     {
       feature->feature.transcript.flags.cds = 1 ;
       feature->feature.transcript.cds_start = cds_start ;
       feature->feature.transcript.cds_end = cds_end ;
+
+      result = TRUE ;
     }
-
-  if (exons)
-    feature->feature.transcript.exons = exons ;
-
-  if (introns)
-    feature->feature.transcript.introns = introns ;
-
-  result = TRUE ;
 
   return result ;
 }
@@ -167,9 +186,12 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
     {
       if (exon)
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!feature->feature.transcript.exons)
 	    feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
 							      sizeof(ZMapSpanStruct), 30) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  g_array_append_val(feature->feature.transcript.exons, *exon) ;
 
@@ -180,9 +202,12 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 
       if (intron)
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!feature->feature.transcript.introns)
 	    feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
 								    sizeof(ZMapSpanStruct), 30) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  g_array_append_val(feature->feature.transcript.introns, *intron) ;
 
@@ -195,6 +220,33 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 
   return result ;
 }
+
+
+/* Checks that transcript has at least one exon, if not then adds an exon to
+ * cover entire extent of transcript.
+ * 
+ * Returns TRUE if the transcript did not need normalising or if it was
+ * normalised successfully, FALSE otherwise.
+ */
+gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
+{
+  gboolean result = TRUE ;
+
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+      && !(feature->feature.transcript.exons->len))
+    {
+      ZMapSpanStruct exon = {0}, *exon_ptr = NULL ;
+
+      exon.x1 = feature->x1 ;
+      exon.x2 = feature->x2 ;
+      exon_ptr = &exon ;
+      
+      result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, NULL) ;
+    }
+
+  return result ;
+}
+
 
 
 /* Takes a transcript feature and produces a list of "annotated" exon regions

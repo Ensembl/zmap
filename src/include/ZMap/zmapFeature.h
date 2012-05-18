@@ -1016,15 +1016,17 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
-gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
-				      gboolean cds, Coord cds_start, Coord cds_end,
-				      GArray *exons, GArray *introns) ;
+
+gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
+gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
+
 
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
