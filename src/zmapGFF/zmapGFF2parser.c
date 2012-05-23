@@ -1446,12 +1446,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark SO_acc = 0 ;
   char *name_string = NULL, *variation_string = NULL ;
 
-
-  if (parser->line_count == 35)
-    printf("found line 35\n") ;
-
-
-
   /* If the parser was given a source -> data mapping then
    * use that to get the style id and other
    * data otherwise use the source itself.
