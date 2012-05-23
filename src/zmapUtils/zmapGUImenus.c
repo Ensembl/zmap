@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code to construct GTK menus in a (hopefully) more
  *              straight forward way.
@@ -31,11 +31,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <zmapUtils_P.h>
@@ -349,7 +344,8 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
     index = *start_index_inout ;
 
   menu_item = menu ;
-  while (menu_item->name != NULL)
+
+  while (menu_item->type != ZMAPGUI_MENU_NONE)
     {
       if (start_index_inout)
 	menu_item->id = index ;
@@ -367,9 +363,6 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
   return ;
 }
 
-
-
-/*! @} end of zmapwindow docs. */
 
 
 
@@ -595,9 +588,7 @@ static int itemsInMenu(ZMapGUIMenuItem menu)
   ZMapGUIMenuItem menu_item ;
 
   /* Count items in menu. */
-  for (num_menu_items = 0, menu_item = menu ;
-       menu_item->type != ZMAPGUI_MENU_NONE ;
-       num_menu_items++, menu_item++) ;
+  for (num_menu_items = 0, menu_item = menu ; menu_item->type != ZMAPGUI_MENU_NONE ; num_menu_items++, menu_item++) ;
 
   return num_menu_items ;
 }
