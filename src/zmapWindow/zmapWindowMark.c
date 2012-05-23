@@ -229,9 +229,9 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 
 gboolean zMapWindowMarkIsSet(ZMapWindow window)
 {
-	/* scope and header isssues... */
+  /* scope and header isssues... */
 
-	return zmapWindowMarkIsSet(window->mark);
+  return zmapWindowMarkIsSet(window->mark) ;
 }
 
 
