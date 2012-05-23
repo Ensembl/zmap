@@ -1572,7 +1572,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 							   function for the feature_set list. */
     }
 
-  /*printf("GFF: src %s, style %s\n",source,g_quark_to_string(feature_style_id)); */
+/* printf("GFF: src %s, style %s\n",source,g_quark_to_string(feature_style_id));*/
 
 
   if(!(feature_style = (ZMapFeatureTypeStyle)

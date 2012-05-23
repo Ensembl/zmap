@@ -753,11 +753,10 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 	  }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("\nfset2style\n");
+	printf("\nini fset2style\n");
 	zMap_g_hashlist_print(view->context_map.column_2_styles);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       }
-
 
       zMapConfigIniContextDestroy(context);
     }
@@ -3033,6 +3032,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 	ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)req_any ;
 
 	feature_sets->featureset_2_stylelist_out = connect_data->column_2_styles ;
+
 	/* MH17: if this is an output parameter why do we set it on dispatch?
 	 * beacuse it's a preallocated hash table
 	 */
@@ -3084,7 +3084,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
       }
     case ZMAP_SERVERREQ_TERMINATE:
       {
-      //ZMapServerReqTerminate terminate = (ZMapServerReqTerminate) req_any ;
+      //ZMapServerReqTerminate terminate = (ZMapServerReqTerminate) req_any ;source_2_sourcedata_inout
 
       break ;
       }
@@ -3104,7 +3104,9 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 void printStyle(GQuark style_id, gpointer data, gpointer user_data)
 {
       char *x = (char *) user_data;
-      printf("%s: style %s\n",x,g_quark_to_string(style_id));
+	ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) data;
+
+	printf("%s: style %s = %s\n",x,g_quark_to_string(style_id), g_quark_to_string(style->unique_id));
 }
 
 void mergeHashTableCB(gpointer key, gpointer value, gpointer user)
@@ -3207,7 +3209,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    GList *sets ;
 
 	    sets = feature_sets->feature_sets_inout ;
-
 	    do
 	      {
 		GQuark feature_set_id, feature_set_name_id;
@@ -3231,8 +3232,9 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	for(fset = feature_sets->feature_sets_inout;fset;fset = fset->next)
 	  {
             ZMapFeatureSource src;
+		GQuark fid = zMapStyleCreateID((char *) g_quark_to_string( GPOINTER_TO_UINT(fset->data)));
 
-            if (!(src = g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,fset->data)))
+            if (!(src = g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,GUINT_TO_POINTER(fid))))
 	      {
 		GQuark src_unique_id ;
 
@@ -3240,20 +3242,11 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		// allocate a new struct and add to the table
 		src = g_new0(ZMapFeatureSourceStruct,1);
 
-		src->source_id = GPOINTER_TO_UINT(fset->data);
+		src->source_id = GPOINTER_TO_UINT(fset->data);	/* may have upper case */
 		src->source_text = src->source_id;
-		src_unique_id = src->style_id = zMapStyleCreateID((char *)g_quark_to_string(src->source_id));
+		src_unique_id = src->style_id = fid;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		/* Puts mixed case string as hash key, cannot be right.... */
-		g_hash_table_insert(feature_sets->source_2_sourcedata_inout,fset->data,src);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		g_hash_table_insert(feature_sets->source_2_sourcedata_inout, GUINT_TO_POINTER(src_unique_id), src) ;
-
-
+		g_hash_table_insert(feature_sets->source_2_sourcedata_inout, GUINT_TO_POINTER(fid), src) ;
 	      }
             else
 	      {
@@ -3262,7 +3255,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		if(!src->source_text)
 		  src->source_text = src->source_id;
 		if(!src->style_id)
-		  src->style_id = zMapStyleCreateID((char *) g_quark_to_string(src->source_id));
+		  src->style_id = fid;
 	      }
 	  }
 
@@ -3397,6 +3390,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	//	connect_data->curr_styles = get_styles->styles_out ;
 	/* as the styles in the window get replaced we need to have all of them not the new ones */
 	connect_data->curr_styles = zmap_view->context_map.styles ;
+
+//g_hash_table_foreach(connect_data->curr_styles, (GHFunc) printStyle, "got styles") ;
 
 	break ;
       }
@@ -3690,6 +3685,9 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	connect_data->dynamic_loading = TRUE ;
 
       connect_data->column_2_styles = zMap_g_hashlist_create() ;
+printf("create connection make new column 2 styles\n");
+// better?      connect_data->column_2_styles = zmap_view->context_map.column_2_styles;
+
       connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;
       connect_data->source_2_sourcedata = zmap_view->context_map.source_2_sourcedata;
 
