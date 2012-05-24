@@ -64,12 +64,9 @@ typedef struct _zmapWindowCanvasSequenceStruct
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
 	/* this->feature->feature.sequence has the useful info, see zmapFeature.h/ZMapSequenceStruct_ */
-	zmapWindowCanvasPangoStruct pango;
 
 	gulong background;
 	GList *highlight;		/* of ZMapSequenceHighlight */
-
-	int text_height, text_width;	/* in pixels, use PANGO_PIXELS() to round */
 
 	char *text;			/* a buffer for one line */
 	int n_text;

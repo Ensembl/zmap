@@ -62,7 +62,16 @@ typedef struct _zmapWindowCanvasLocusStruct
 {
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-
-
 } zmapWindowCanvasLocusStruct, *ZMapWindowCanvasLocus;
+
+
+typedef struct _zmapWindowCanvasLocusSetStruct
+{
+	zmapWindowCanvasPangoStruct pango;
+	/* allow for addition of other pango things eg diff font for diff locus types */
+
+} zmapWindowCanvasLocusSetStruct, *ZMapWindowCanvasLocusSet;
+
+
+
 

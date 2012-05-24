@@ -301,7 +301,7 @@ void zMapWindowCanvasGraphInit(void)
 	funcs[FUNC_FLUSH]  = zMapWindowCanvasGraphPaintFlush;
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasGraphZoomSet;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0);
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0, 0);
 }
 
 

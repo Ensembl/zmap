@@ -99,7 +99,10 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset)
 
 static void zMapWindowCanvasLocusFreeSet(ZMapWindowFeaturesetItem featureset)
 {
-	/* free pango? No: is static to module not featureset */
+	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+
+	if(lset)
+		zmapWindowCanvasFeaturesetFreePango(&lset->pango);
 }
 
 
@@ -113,6 +116,6 @@ void zMapWindowCanvasLocusInit(void)
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasLocusZoomSet;
 	funcs[FUNC_FREE]   = zMapWindowCanvasLocusFreeSet;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, sizeof(zmapWindowCanvasLocusStruct));
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
 }
 

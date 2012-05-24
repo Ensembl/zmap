@@ -914,7 +914,7 @@ void zMapWindowCanvasAlignmentInit(void)
 
 	funcs[FUNC_POINT]   = alignmentPoint;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct), 0);
 }
 
 

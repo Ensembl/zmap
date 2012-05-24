@@ -92,7 +92,7 @@ static double  zmap_window_featureset_item_item_point (FooCanvasItem *item, doub
 static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
 static void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 static void zmap_window_featureset_item_item_destroy     (GObject *object);
-static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem featureset,
+static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem featureset,
 						      GdkDrawable *drawable, GdkEventExpose *expose) ;
 
 static double defaultPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
@@ -263,6 +263,84 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 
 
 }
+
+
+/* get all th epand=go stuff we need for a font on a drawable */
+void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw)
+{
+	GdkScreen *screen = gdk_drawable_get_screen (drawable);
+	PangoFontDescription *desc;
+	int width, height;
+
+	pango->renderer = gdk_pango_renderer_new (screen);
+
+	gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), drawable);
+
+	zMapAssert(featureset->gc);	/* should have been set by caller */
+	gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), featureset->gc);
+
+	/* Create a PangoLayout, set the font and text */
+	pango->context = gdk_pango_context_get_for_screen (screen);
+	pango->layout = pango_layout_new (pango->context);
+
+//		font = findFixedWidthFontFamily(seq->pango.context);
+	desc = pango_font_description_from_string (family);
+#warning mod this function and call from both places
+#if 0
+	/* this must be identical to the one get by the ZoomControl */
+	if(zMapGUIGetFixedWidthFont(view,
+			fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+			NULL,desc))
+	{
+	}
+	else
+	{
+		/* if this fails then we get a proportional font and someone will notice */
+		zmapLogWarning("Paint sequence cannot get fixed font","");
+	}
+#endif
+
+	pango_font_description_set_size (desc,size * PANGO_SCALE);
+	pango_layout_set_font_description (pango->layout, desc);
+	pango_font_description_free (desc);
+
+	pango_layout_set_text (pango->layout, "a", 1);		/* we need to get the size of one character */
+	pango_layout_get_size (pango->layout, &width, &height);
+	pango->text_height = height / PANGO_SCALE;
+	pango->text_width = width / PANGO_SCALE;
+
+	gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (pango->renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+}
+
+
+void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango)
+{
+	if(pango->renderer)		/* free the pango renderer if allocated */
+	{
+		/* Clean up renderer, possiby this is not necessary */
+		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (pango->renderer),
+							PANGO_RENDER_PART_FOREGROUND, NULL);
+		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), NULL);
+		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), NULL);
+
+		/* free other objects we created */
+		if(pango->layout)
+		{
+			g_object_unref(pango->layout);
+			pango->layout = NULL;
+		}
+
+		if(pango->context)
+		{
+			g_object_unref (pango->context);
+			pango->context = NULL;
+		}
+
+		g_object_unref(pango->renderer);
+		pango->renderer = NULL;
+	}
+}
+
 
 
 /* define feature specific functions here */
@@ -559,7 +637,7 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 
 
 /* paint set-level features, e.g. graph base lines etc. */
-static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem featureset,
+static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem featureset,
 						      GdkDrawable *drawable, GdkEventExpose *expose)
 {
   ZMapWindowFeatureItemSetPaintFunc func ;
@@ -578,7 +656,7 @@ static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem f
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int struct_size)
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int feature_struct_size, int set_struct_size)
 {
 
   _featureset_set_init_G[featuretype] = funcs[FUNC_SET_INIT];
@@ -595,7 +673,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int st
   _featureset_subpart_G[featuretype] = funcs[FUNC_SUBPART];
 
 
-  featureset_class_G->struct_size[featuretype] = struct_size;
+  featureset_class_G->struct_size[featuretype] = feature_struct_size;
+  featureset_class_G->set_struct_size[featuretype] = set_struct_size;
 
   return ;
 }
@@ -734,6 +813,8 @@ FooCanvasItem *zMapWindowFeaturesetItemSetInit(FooCanvasItem *foo,
   /* main use is for graph density items */
   featureset->type = type = feature_types[zMapStyleGetMode(featureset->style)];
 
+  if(featureset_class_G->set_struct_size[type])
+	  featureset->opt = g_malloc0(featureset_class_G->set_struct_size[type]);
 
   /* Maybe these should be subsumed into the feature_set_int_G mechanism..... */
   /* mh17: via the set_init_H fucntion, already moved code from here for link_sideways */
@@ -1487,7 +1568,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 
   /* ok...this looks like the place to do feature specific painting..... */
-  zMapWindowCanvasFeaturesetSetPaintFeature(fi, drawable, expose) ;
+  zMapWindowCanvasFeaturesetPaintSet(fi, drawable, expose) ;
 
 
   //if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
@@ -2421,15 +2502,6 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
 
-  zMapWindowCanvasFeaturesetFree(featureset_item);
-
-  if(featureset_item->gc)	/* the featureset code does this but we do it here to have controlover the sequence of events */
-  {
-	g_object_unref(featureset_item->gc);
-	featureset_item->gc = NULL;
-  }
-
-
   if(featureset_item->display_index)
     {
       zMapSkipListDestroy(featureset_item->display_index, NULL);
@@ -2465,6 +2537,15 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 //  printf("removing foo item %s\n",g_quark_to_string(featureset_item->id));
 
 //printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
+
+  zMapWindowCanvasFeaturesetFree(featureset_item);	/* must tidy opt */
+
+  if(featureset_item->opt)
+  {
+	  g_free(featureset_item->opt);
+	  featureset_item->opt = NULL;
+  }
+
 
   if(featureset_item->gc)
   {

@@ -47,63 +47,24 @@
 static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasSequence seq)
 {
 	/* lazy evaluation of pango renderer */
-	if(!seq->pango.renderer)
+	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+
+	if(pango && !pango->renderer)
 	{
-		GdkScreen *screen = gdk_drawable_get_screen (drawable);
-		PangoFontDescription *desc;
-		int width, height;
 		GdkColor *draw;
-
-		seq->pango.renderer = gdk_pango_renderer_new (screen);
-
-		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (seq->pango.renderer), drawable);
-
-		zMapAssert(featureset->gc);	/* should have been set by caller */
-		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (seq->pango.renderer), featureset->gc);
-
-		/* Create a PangoLayout, set the font and text */
-		seq->pango.context = gdk_pango_context_get_for_screen (screen);
-		seq->pango.layout = pango_layout_new (seq->pango.context);
-
-//		font = findFixedWidthFontFamily(seq->pango.context);
-		desc = pango_font_description_from_string (ZMAP_ZOOM_FONT_FAMILY);
-#warning mod this function and call from both places
-#if 0
-		/* this must be identical to the one get by the ZoomControl */
-		if(zMapGUIGetFixedWidthFont(view,
-				fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
-				NULL,desc))
-		{
-		}
-		else
-		{
-			/* if this fails then we get a proportional font and someone will notice */
-			zmapLogWarning("Paint sequence cannot get fixed font","");
-		}
-#endif
-
-		pango_font_description_set_size (desc,ZMAP_ZOOM_FONT_SIZE * PANGO_SCALE);
-		pango_layout_set_font_description (seq->pango.layout, desc);
-		pango_font_description_free (desc);
-
-		pango_layout_set_text (seq->pango.layout, "a", 1);		/* we need to get the size of one character */
-		pango_layout_get_size (seq->pango.layout, &width, &height);
-		seq->text_height = height / PANGO_SCALE;
-		seq->text_width = width / PANGO_SCALE;
-
-		seq->feature.width = zMapStyleGetWidth(featureset->style)  * width;
 
 		zMapStyleGetColours(featureset->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL, &draw, NULL);
 
-		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango.renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+		zmapWindowCanvasFeaturesetInitPango(drawable, featureset, pango, ZMAP_ZOOM_FONT_FAMILY, ZMAP_ZOOM_FONT_SIZE, draw);
 
-//printf("text size: %d,%d\n",seq->text_height, seq->text_width);
+		seq->feature.width = zMapStyleGetWidth(featureset->style)  * pango->text_width;
 	}
 }
 
 
 static void zmapWindowCanvasSequenceSetZoom(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasSequence seq)
 {
+	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
 	if(!seq->row_size)			/* have just zoomed */
 	{
@@ -129,11 +90,11 @@ static void zmapWindowCanvasSequenceSetZoom(ZMapWindowFeaturesetItem featureset,
 		n_bases = seq->end - seq->start + 1;
 		length = seq->feature.feature->feature.sequence.length;	/* is not n_bases for peptide */
 
-		pixels = n_bases * featureset->zoom + seq->text_height - 1;	/* zoom is pixels per unit y; + fiddle factor for integer divide */
+		pixels = n_bases * featureset->zoom + pango->text_height - 1;	/* zoom is pixels per unit y; + fiddle factor for integer divide */
 		width = (int) zMapStyleGetWidth(featureset->style);	/* characters not pixels */
-		n_disp = width; 		// if pixels, divide by seq->text_width;
+		n_disp = width; 		// if pixels, divide by pango->text_width;
 
-		seq->spacing = seq->text_height + ZMAP_WINDOW_TEXT_BORDER;	/* NB: BORDER is 0 */
+		seq->spacing = pango->text_height + ZMAP_WINDOW_TEXT_BORDER;	/* NB: BORDER is 0 */
 		n_rows = pixels / seq->spacing;
 		seq->row_size = length / n_rows;
 		if(length % n_rows)	/* avoid dangling bases at the end */
@@ -167,7 +128,7 @@ static void zmapWindowCanvasSequenceSetZoom(ZMapWindowFeaturesetItem featureset,
 			seq->text = g_malloc(seq->n_text);
 		}
 
-		featureset->width = seq->row_disp * seq->text_width;
+		featureset->width = seq->row_disp * pango->text_width;
 		/* do we need a reposition? */
 		foo_canvas_item_request_update ((FooCanvasItem *) featureset);
 
@@ -190,6 +151,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 	int height,len;
 	int n_show;		/* no of DNA bases not letters eg peptide */
 	int last_paint = 0;
+	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
 	while(highlight)
 	{
@@ -236,7 +198,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 			n_show = (n_bases  + seq->factor - 1) / seq->factor;
 			/* now start and end are the DNA coords to show, n_bases is how many to interpret, n_show is how many to display */
 
-			hcx = cx + ((start - y)  / seq->factor ) * seq->text_width;	/* we need integer truncation from this divide bfreo the multiply */
+			hcx = cx + ((start - y)  / seq->factor ) * pango->text_width;	/* we need integer truncation from this divide bfreo the multiply */
 
 			height = seq->spacing;
 			len = n_bases;	// sh->end - sh->start + 1;
@@ -287,10 +249,10 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 				if(n_show > 1)	/* must be more than one base on the line, spacing = 1 char */
 				{
 					n_show--;
-					hcx += seq->text_width;
+					hcx += pango->text_width;
 				}
 #if 0
-				else if(seq->spacing > seq->text_height)
+				else if(seq->spacing > pamgo->text_height)
 				{
 					/* this gets complicated as the split codons in an out of frame column puts us in mid codon for coding */
 					/* so, as we display these as for coding it does not matter if we overwrite a highlight */
@@ -303,7 +265,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 				last_paint = hcx;
 
 			if(n_show > 0)
-				gdk_draw_rectangle (drawable, featureset->gc, TRUE, hcx, cy, seq->text_width * n_show, height + 1);
+				gdk_draw_rectangle (drawable, featureset->gc, TRUE, hcx, cy, pango->text_width * n_show, height + 1);
 
 		}
 
@@ -311,13 +273,13 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 		{
 			/* paint bases in the ... */
 
-			hcx = cx + seq->n_bases * seq->text_width;
+			hcx = cx + seq->n_bases * pango->text_width;
 
 			n_bases = strlen(seq->truncated);
 			if(!join_left)
 			{
 				n_bases--;
-				hcx += seq->text_width;
+				hcx += pango->text_width;
 			}
 			if(sh->end < y + seq->row_size)
 			{
@@ -328,7 +290,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 			else if(!join_left && done_middle)	/* shrink 2 char blob to one on the right */
 			{
 				n_bases--;
-				hcx += seq->text_width;
+				hcx += pango->text_width;
 			}
 
 			if(!join_left)
@@ -336,7 +298,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 
 //printf("paint ... @ %ld %d, %d (%d)\n", y, cy, cx, n_bases);
 
-			gdk_draw_rectangle (drawable, featureset->gc, TRUE, hcx, cy, seq->text_width * n_bases, seq->spacing + 1);
+			gdk_draw_rectangle (drawable, featureset->gc, TRUE, hcx, cy, pango->text_width * n_bases, seq->spacing + 1);
 		}
 
 		if(sh->end >= y + seq->row_size * seq->factor)	/* there can be no more on this line, return current position for retry on next line */
@@ -367,8 +329,10 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	int nb;
 	GList *hl;	/* iterator through highlight */
 //	ZMapFrame frame = feature->feature->feature.sequence.frame ;
+	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
 	zmapWindowCanvasSequenceGetPango(drawable, featureset, seq);
+
 	zmapWindowCanvasSequenceSetZoom(featureset, seq);
 
 		/* restrict to actual expose area, any expose will fetch the whole feature */
@@ -404,7 +368,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 //if(sequence->frame == ZMAPFRAME_0) printf("%s frame = %d y1, = %.1f  (%ld)\n",g_quark_to_string(featureset->id),sequence->frame, y1, y);
 
-	seq->offset = (seq->spacing - seq->text_height) / 2;		/* vertical padding if relevant */
+	seq->offset = (seq->spacing - pango->text_height) / 2;		/* vertical padding if relevant */
 
 	for(hl = seq->highlight; y < seq_y2; y += seq->row_size * seq->factor)
 	{
@@ -437,7 +401,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		while (*q)
 			q++;
 
-		pango_layout_set_text (seq->pango.layout, seq->text, q - seq->text);	/* be careful of last short row */
+		pango_layout_set_text (pango->layout, seq->text, q - seq->text);	/* be careful of last short row */
 
 		/* need to get pixel coordinates for pango */
 		foo_canvas_w2c (foo->canvas, featureset->dx, y_paint + featureset->dy, &cx, &cy);
@@ -447,7 +411,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 //if(sequence->frame == ZMAPFRAME_0) printf("paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
-		pango_renderer_draw_layout (seq->pango.renderer, seq->pango.layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
+		pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
 
 //printf("frame %d text %s at %ld, canvas %.1f, %.1f = %d, %d \n", seq->feature.feature->feature.sequence.frame, seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
 	}
@@ -494,39 +458,13 @@ static void zmapWindowCanvasSequenceFreeHighlight(ZMapWindowCanvasSequence seq)
 }
 
 
-static void zmapWindowCanvasSequenceFreePango(ZMapWindowCanvasSequence seq)
-{
-	if(seq->pango.renderer)		/* free the pango renderer if allocated */
-	{
-		/* Clean up renderer, possiby this is not necessary */
-		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango.renderer),
-							PANGO_RENDER_PART_FOREGROUND, NULL);
-		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (seq->pango.renderer), NULL);
-		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (seq->pango.renderer), NULL);
-
-		/* free other objects we created */
-		if(seq->pango.layout)
-		{
-			g_object_unref(seq->pango.layout);
-			seq->pango.layout = NULL;
-		}
-
-		if(seq->pango.context)
-		{
-			g_object_unref (seq->pango.context);
-			seq->pango.context = NULL;
-		}
-
-		g_object_unref(seq->pango.renderer);
-		seq->pango.renderer = NULL;
-	}
-
-}
 
 static void zmapWindowCanvasSequenceFreeSet(ZMapWindowFeaturesetItem featureset)
 {
 	ZMapWindowCanvasSequence seq;
 	ZMapSkipList sl;
+	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+
 
 	/* nominally there is only one feature in a seq column, but we could have 3 franes staggered.
 	 * besides, this data is in the feature not the featureset so we have to iterate regardless
@@ -538,8 +476,10 @@ static void zmapWindowCanvasSequenceFreeSet(ZMapWindowFeaturesetItem featureset)
 		seq = (ZMapWindowCanvasSequence) sl->data;
 
 		zmapWindowCanvasSequenceFreeHighlight(seq);
-		zmapWindowCanvasSequenceFreePango(seq);
 	}
+
+	if(pango)
+		zmapWindowCanvasFeaturesetFreePango(pango);
 }
 
 
@@ -645,6 +585,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 	static long seq_origin;		/* is fixed once set */
 	ZMapSkipList sl;
 	long seq_y, seq_x;
+	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
 	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
 		return FALSE;
@@ -696,9 +637,9 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 
 	/* adjust by x coordinate */
 	seq_x = (long) (x - featureset->x_off - featureset->dx);
-//printf("x,wid = %.1f,%d\n",x,seq->text_width);
+//printf("x,wid = %.1f,%d\n",x,pango->text_width);
 
-	seq_x /= seq->text_width;
+	seq_x /= pango->text_width;
 
 	if(seq_x < 0)
 		seq_x = 0;
@@ -756,6 +697,10 @@ void zMapWindowCanvasSequenceInit(void)
 	funcs[FUNC_FREE]    = zmapWindowCanvasSequenceFreeSet;
 	funcs[FUNC_SUBPART] = zmapWindowCanvasSequenceGetSubPartSpan;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_SEQUENCE, funcs, sizeof(zmapWindowCanvasSequenceStruct));
+		/* it would have been better to make a SequenceSet struct to wrap the Pango in case we ant to add anything,
+		 * search for pango-> and ->opt to find all occurences
+		 */
+
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_SEQUENCE, funcs, sizeof(zmapWindowCanvasSequenceStruct), sizeof(zmapWindowCanvasPangoStruct));
 }
 

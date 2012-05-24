@@ -92,6 +92,6 @@ void zMapWindowCanvasBasicInit(void)
 
 	funcs[FUNC_PAINT] = zMapWindowCanvasBasicPaintFeature;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0);
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0, 0);
 }
 

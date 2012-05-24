@@ -121,7 +121,7 @@ void zMapWindowCanvasGlyphInit(void)
   funcs[FUNC_POINT] = glyphPoint ;
   funcs[FUNC_FREE] = glyphColumnFree ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, sizeof(zmapWindowCanvasGlyphStruct));
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, sizeof(zmapWindowCanvasGlyphStruct), 0);
 
   return ;
 }

@@ -287,6 +287,6 @@ void zMapWindowCanvasTranscriptInit(void)
 	funcs[FUNC_SUBPART] = zmapWindowCanvasTranscriptGetSubPartSpan;
 
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct));
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct), 0);
 }
 

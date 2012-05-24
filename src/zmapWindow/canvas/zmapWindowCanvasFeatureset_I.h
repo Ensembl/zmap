@@ -139,6 +139,7 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
 	/* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */
 
   int struct_size[FEATURE_N_TYPE];
+  int set_struct_size[FEATURE_N_TYPE];
 
 } zmapWindowFeaturesetItemClassStruct;
 
@@ -249,7 +250,10 @@ typedef struct _zmapWindowFeaturesetItemStruct
   int n_filtered;
   gboolean enable_filter;	/* has score in a feature and style allows it */
 
+  gpointer opt;			/* feature type optional set level data */
+
 } zmapWindowFeaturesetItemStruct;
+
 
 
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
@@ -261,13 +265,15 @@ void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
  * highlighting is done with coloured boxes behind the text
  */
 
-typedef struct
+typedef struct _zmapWindowCanvasPangoStruct
 {
 	PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
 	PangoContext *context;
 	PangoLayout *layout;
+
+	int text_height, text_width;
 }
-zmapWindowCanvasPangoStruct, ZMapWindowCanvasPango;
+zmapWindowCanvasPangoStruct;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

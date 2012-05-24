@@ -58,7 +58,7 @@
 /* Instance */
 typedef struct _zmapWindowFeaturesetItemStruct  zmapWindowFeaturesetItem, *ZMapWindowFeaturesetItem ;
 typedef struct _zmapWindowCanvasFeatureStruct  zmapWindowCanvasFeature, *ZMapWindowCanvasFeature ;
-
+typedef struct _zmapWindowCanvasPangoStruct   zmapWindowCanvasPango, *ZMapWindowCanvasPango;
 
 /* Class */
 typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemClass, *ZMapWindowFeaturesetItemClass ;
@@ -116,11 +116,15 @@ typedef enum
 GType zMapWindowFeaturesetItemGetType(void);
 
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int size);
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int feature_size, int set_size);
 
 /* GDK wrappers to clip features */
 void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
 void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill);
+
+void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw);
+
+void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
 
 FooCanvasItem *zMapWindowFeaturesetItemSetInit(FooCanvasItem *foo,
