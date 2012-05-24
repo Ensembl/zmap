@@ -22,7 +22,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: General drawing functions for zmap window, e.g.
  *              repositioning columns after one has been bumped
@@ -711,7 +711,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
 
   compressed = zmapWindowContainerBlockRemoveCompressedColumns((ZMapWindowContainerBlock)block_container);
-  bumped     = zmapWindowContainerBlockRemoveBumpedColumns((ZMapWindowContainerBlock)block_container);
+  bumped = zmapWindowContainerBlockRemoveBumpedColumns((ZMapWindowContainerBlock)block_container);
 
   if(compressed || bumped)
     {
