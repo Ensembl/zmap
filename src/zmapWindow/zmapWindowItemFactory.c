@@ -2170,43 +2170,49 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
   double parent_ypos;
   char *text_string = NULL;
 
+  if(!zMapStyleIsFoo(style))
+  {
+	  item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS IS A DISGUSTING HACK.... */
+	/* THIS IS A DISGUSTING HACK.... */
 
-  text_string = (char *)g_quark_to_string(feature->locus_id);
+	text_string = (char *)g_quark_to_string(feature->locus_id);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  text_string = (char *)g_quark_to_string(feature->original_id);
+	text_string = (char *)g_quark_to_string(feature->original_id);
 
 
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
+	zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
 
-  canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style);
-  item        = FOO_CANVAS_ITEM(canvas_item);
-  parent_ypos = FOO_CANVAS_GROUP(item)->ypos;
+	canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style);
+	item        = FOO_CANVAS_ITEM(canvas_item);
+	parent_ypos = FOO_CANVAS_GROUP(item)->ypos;
 
-  y1 -= parent_ypos;
-//  y2 -= parent_ypos;
-  y2 = y1 + 1.0;
-       /* mh17: FooCanvastext sets it's own bounds and we have to avoid
-        * setting the bounds as the length of the locus which does not
-        * correspond to the height of the text
-        * as this results in a text item spanning a very wide region
-        * which makes the navigator mouse events pick random objects
-        *
-        * unfortunaltely there is another fault causing this to happen
-        * even if my theory here was correct
-        * text items do get sized to text size before getting expanded to the bottom of the canvas
-        */
+	y1 -= parent_ypos;
+	//  y2 -= parent_ypos;
+	y2 = y1 + 1.0;
+		/* mh17: FooCanvastext sets it's own bounds and we have to avoid
+		* setting the bounds as the length of the locus which does not
+		* correspond to the height of the text
+		* as this results in a text item spanning a very wide region
+		* which makes the navigator mouse events pick random objects
+		*
+		* unfortunaltely there is another fault causing this to happen
+		* even if my theory here was correct
+		* text items do get sized to text size before getting expanded to the bottom of the canvas
+		*/
 
-  text_item = zMapWindowCanvasItemAddInterval(canvas_item, NULL, y1, y2, x1, x2);
-#if MH17_DEBUG_MAV_FOOBAR
-printf("drawSimpleAsTextFeature %s  %f -> %f (+%f)\n",text_string,y1,y2, parent_ypos);
+	text_item = zMapWindowCanvasItemAddInterval(canvas_item, NULL, y1, y2, x1, x2);
+#if MH17_DEBUG_NAV_FOOBAR
+	printf("drawSimpleAsTextFeature %s  %f -> %f (+%f)\n",text_string,y1,y2, parent_ypos);
 #endif
-  foo_canvas_item_set(text_item,
-		      "text",       text_string,
-		      NULL);
-
+	foo_canvas_item_set(text_item,
+				"text",       text_string,
+				NULL);
+  }
   return item;
 }
 

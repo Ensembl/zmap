@@ -47,25 +47,25 @@
 static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasSequence seq)
 {
 	/* lazy evaluation of pango renderer */
-	if(!seq->pango_renderer)
+	if(!seq->pango.renderer)
 	{
 		GdkScreen *screen = gdk_drawable_get_screen (drawable);
 		PangoFontDescription *desc;
 		int width, height;
 		GdkColor *draw;
 
-		seq->pango_renderer = gdk_pango_renderer_new (screen);
+		seq->pango.renderer = gdk_pango_renderer_new (screen);
 
-		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (seq->pango_renderer), drawable);
+		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (seq->pango.renderer), drawable);
 
 		zMapAssert(featureset->gc);	/* should have been set by caller */
-		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (seq->pango_renderer), featureset->gc);
+		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (seq->pango.renderer), featureset->gc);
 
 		/* Create a PangoLayout, set the font and text */
-		seq->pango_context = gdk_pango_context_get_for_screen (screen);
-		seq->pango_layout = pango_layout_new (seq->pango_context);
+		seq->pango.context = gdk_pango_context_get_for_screen (screen);
+		seq->pango.layout = pango_layout_new (seq->pango.context);
 
-//		font = findFixedWidthFontFamily(seq->pango_context);
+//		font = findFixedWidthFontFamily(seq->pango.context);
 		desc = pango_font_description_from_string (ZMAP_ZOOM_FONT_FAMILY);
 #warning mod this function and call from both places
 #if 0
@@ -83,11 +83,11 @@ static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFe
 #endif
 
 		pango_font_description_set_size (desc,ZMAP_ZOOM_FONT_SIZE * PANGO_SCALE);
-		pango_layout_set_font_description (seq->pango_layout, desc);
+		pango_layout_set_font_description (seq->pango.layout, desc);
 		pango_font_description_free (desc);
 
-		pango_layout_set_text (seq->pango_layout, "a", 1);		/* we need to get the size of one character */
-		pango_layout_get_size (seq->pango_layout, &width, &height);
+		pango_layout_set_text (seq->pango.layout, "a", 1);		/* we need to get the size of one character */
+		pango_layout_get_size (seq->pango.layout, &width, &height);
 		seq->text_height = height / PANGO_SCALE;
 		seq->text_width = width / PANGO_SCALE;
 
@@ -95,7 +95,7 @@ static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFe
 
 		zMapStyleGetColours(featureset->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL, &draw, NULL);
 
-		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango_renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango.renderer), PANGO_RENDER_PART_FOREGROUND, draw );
 
 //printf("text size: %d,%d\n",seq->text_height, seq->text_width);
 	}
@@ -292,7 +292,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 #if 0
 				else if(seq->spacing > seq->text_height)
 				{
-					/* this gets complicated as the ssplit codons in an out of frame column put us in mid codon for coding */
+					/* this gets complicated as the split codons in an out of frame column puts us in mid codon for coding */
 					/* so, as we display these as for coding it does not matter if we overwrite a highlight */
 					/* yes, it's a bodge */
 				}
@@ -437,7 +437,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		while (*q)
 			q++;
 
-		pango_layout_set_text (seq->pango_layout, seq->text, q - seq->text);	/* be careful of last short row */
+		pango_layout_set_text (seq->pango.layout, seq->text, q - seq->text);	/* be careful of last short row */
 
 		/* need to get pixel coordinates for pango */
 		foo_canvas_w2c (foo->canvas, featureset->dx, y_paint + featureset->dy, &cx, &cy);
@@ -447,7 +447,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 //if(sequence->frame == ZMAPFRAME_0) printf("paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
-		pango_renderer_draw_layout (seq->pango_renderer, seq->pango_layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
+		pango_renderer_draw_layout (seq->pango.renderer, seq->pango.layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
 
 //printf("frame %d text %s at %ld, canvas %.1f, %.1f = %d, %d \n", seq->feature.feature->feature.sequence.frame, seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
 	}
@@ -496,29 +496,29 @@ static void zmapWindowCanvasSequenceFreeHighlight(ZMapWindowCanvasSequence seq)
 
 static void zmapWindowCanvasSequenceFreePango(ZMapWindowCanvasSequence seq)
 {
-	if(seq->pango_renderer)		/* free the pango renderer if allocated */
+	if(seq->pango.renderer)		/* free the pango renderer if allocated */
 	{
 		/* Clean up renderer, possiby this is not necessary */
-		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango_renderer),
+		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (seq->pango.renderer),
 							PANGO_RENDER_PART_FOREGROUND, NULL);
-		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (seq->pango_renderer), NULL);
-		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (seq->pango_renderer), NULL);
+		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (seq->pango.renderer), NULL);
+		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (seq->pango.renderer), NULL);
 
 		/* free other objects we created */
-		if(seq->pango_layout)
+		if(seq->pango.layout)
 		{
-			g_object_unref(seq->pango_layout);
-			seq->pango_layout = NULL;
+			g_object_unref(seq->pango.layout);
+			seq->pango.layout = NULL;
 		}
 
-		if(seq->pango_context)
+		if(seq->pango.context)
 		{
-			g_object_unref (seq->pango_context);
-			seq->pango_context = NULL;
+			g_object_unref (seq->pango.context);
+			seq->pango.context = NULL;
 		}
 
-		g_object_unref(seq->pango_renderer);
-		seq->pango_renderer = NULL;
+		g_object_unref(seq->pango.renderer);
+		seq->pango.renderer = NULL;
 	}
 
 }

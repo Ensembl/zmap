@@ -1,7 +1,7 @@
 
-/*  File: zmapWindowCanvasSequence_I.h
+/*  File: zmapWindowCanvasLocus.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem sequence features
+ * implements callback functions for FeaturesetItem locus features
  *-------------------------------------------------------------------
  */
 
@@ -35,58 +35,34 @@
 
 
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasSequence.h>
+#include <zmapWindowCanvasLocus.h>
 
-#define MAX_SEQ_TEXT	32	/* it's nominally 20 i think */
-
-
-
-typedef enum
-{
-	SEQUENCE_INVALID,
-	SEQUENCE_DNA,
-	SEQUENCE_PEPTIDE
-
-} ZMapWindowCanvasSequenceType;
+/* we display loci like this:  (# is area of locus, not displayed)
+   in case of no overlap, then no need to offset the text
+   we get the featureset to de-overlap the names, replacing zmapWindowTextPositioner.c
 
 
-typedef struct
-{
-	long start,end;
-	gulong colour;
-	ZMapFeatureSubpartType type;
+       ENSTMUSG0001234567
+      /
+     /
+    /
+   #---XZYYY.2
+   #
+   #
 
-} zmapSequenceHighlightStruct, *ZMapSequenceHighlight;
+   So we need:
+	y1,y1 as for a normal feature
+	y coord for the LH end of the line
+	y coord for the RH end of the line
+	x-offset of the text (can vary if bumped)
 
+ */
 
-typedef struct _zmapWindowCanvasSequenceStruct
+typedef struct _zmapWindowCanvasLocusStruct
 {
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-	/* this->feature->feature.sequence has the useful info, see zmapFeature.h/ZMapSequenceStruct_ */
-	zmapWindowCanvasPangoStruct pango;
-
-	gulong background;
-	GList *highlight;		/* of ZMapSequenceHighlight */
-
-	int text_height, text_width;	/* in pixels, use PANGO_PIXELS() to round */
-
-	char *text;			/* a buffer for one line */
-	int n_text;
-
-	long start;			/* first coord, normally equals featureset start but for show translation in zmap not so */
-	long end;
-	long row_size;		/* no of bases/ residues between rows */
-	long row_disp; 		/* no to display in each row */
-	long n_bases;		/* actual bases excluding ... */
-	long spacing;		/* between rows */
-	long offset;		/* to centre rows in spacing */
-	char *truncated;		/* show ... if we run out of space */
-	int factor;			/* for dna or peptide */
-
-	gboolean background_set;
 
 
-} zmapWindowCanvasSequenceStruct, *ZMapWindowCanvasSequence;
-
+} zmapWindowCanvasLocusStruct, *ZMapWindowCanvasLocus;
 

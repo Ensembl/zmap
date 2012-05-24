@@ -95,6 +95,9 @@ canvas/zmapWindowCanvasTranscript_I.h \
 canvas/zmapWindowCanvasSequence.c \
 canvas/zmapWindowCanvasSequence.h \
 canvas/zmapWindowCanvasSequence_I.h \
+canvas/zmapWindowCanvasLocus.c \
+canvas/zmapWindowCanvasLocus.h \
+canvas/zmapWindowCanvasLocus_I.h \
 $(NULL)
 
 

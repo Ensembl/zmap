@@ -108,6 +108,7 @@ typedef enum
     FEATURE_ALIGN, FEATURE_GRAPH,
     FEATURE_TRANSCRIPT,
     FEATURE_SEQUENCE,
+    FEATURE_TEXT,
     FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
 
 

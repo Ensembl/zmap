@@ -255,4 +255,19 @@ typedef struct _zmapWindowFeaturesetItemStruct
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 
 
+/*
+ * module generic text interface, initially used by sequence and locus feature types
+ * is used to paint single line text things at given x,y
+ * highlighting is done with coloured boxes behind the text
+ */
+
+typedef struct
+{
+	PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
+	PangoContext *context;
+	PangoLayout *layout;
+}
+zmapWindowCanvasPangoStruct, ZMapWindowCanvasPango;
+
+
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

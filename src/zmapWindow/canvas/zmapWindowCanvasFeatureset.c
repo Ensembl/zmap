@@ -78,6 +78,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasGraphItem.h>
 #include <zmapWindowCanvasTranscript.h>
 #include <zmapWindowCanvasSequence.h>
+#include <zmapWindowCanvasLocus.h>
 
 
 typedef gint (FeatureCmpFunc)(gconstpointer a, gconstpointer b) ;
@@ -130,7 +131,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_TRANSCRIPT,	/* ZMAPSTYLE_MODE_TRANSCRIPT */
 	FEATURE_SEQUENCE,		/* ZMAPSTYLE_MODE_SEQUENCE */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_TEXT */
+	FEATURE_TEXT,		/* ZMAPSTYLE_MODE_TEXT */
 	FEATURE_GRAPH,		/* ZMAPSTYLE_MODE_GRAPH */
 	FEATURE_GLYPH,		/* ZMAPSTYLE_MODE_GLYPH */
 	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
@@ -150,8 +151,7 @@ static gpointer _featureset_zoom_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_point_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_add_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
-
-
+static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
 
 
 
@@ -347,7 +347,7 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
 
 
 
-static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
+
 /* interface design driven by exsiting (ZMapCanvasItem/Foo) application code
  *
  * for normal faatures we only set the colour flags
@@ -558,6 +558,21 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 
 
 
+/* paint set-level features, e.g. graph base lines etc. */
+static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem featureset,
+						      GdkDrawable *drawable, GdkEventExpose *expose)
+{
+  ZMapWindowFeatureItemSetPaintFunc func ;
+
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      &&(func = _featureset_set_paint_G[featureset->type]))
+    func(featureset, drawable, expose) ;
+
+  return ;
+}
+
+
+
 
 
 /* each feature type defines its own functions */
@@ -581,30 +596,6 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int st
 
 
   featureset_class_G->struct_size[featuretype] = struct_size;
-
-  return ;
-}
-
-
-/* Converts a sequence extent into a canvas extent.
- *
- *
- * sequence coords:           1  2  3  4  5  6  7  8
- *
- *                           |__|__|__|__|__|__|__|__|
- *
- *                           |                       |
- * canvas coords:           1.0                     9.0
- *
- * i.e. when we actually come to draw it we need to go one _past_ the sequence end
- * coord because our drawing needs to draw in the whole of the last base.
- *
- */
-void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout)
-{
-  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
-
-  *end_inout += 1 ;
 
   return ;
 }
@@ -635,12 +626,37 @@ void featureset_init_funcs(void)
 	zMapWindowCanvasGraphInit();
 	zMapWindowCanvasTranscriptInit();
 	zMapWindowCanvasSequenceInit();
+	zMapWindowCanvasLocusInit();
 
   /* if you add a new one then update feature_types[N_STYLE_MODE] below */
 
   return ;
 }
 
+
+
+/* Converts a sequence extent into a canvas extent.
+ *
+ *
+ * sequence coords:           1  2  3  4  5  6  7  8
+ *
+ *                           |__|__|__|__|__|__|__|__|
+ *
+ *                           |                       |
+ * canvas coords:           1.0                     9.0
+ *
+ * i.e. when we actually come to draw it we need to go one _past_ the sequence end
+ * coord because our drawing needs to draw in the whole of the last base.
+ *
+ */
+void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout)
+{
+  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+
+  *end_inout += 1 ;
+
+  return ;
+}
 
 
 
@@ -1163,21 +1179,6 @@ static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featu
   return ;
 }
 
-
-
-
-/* paint set-level features, e.g. graph base lines etc. */
-static void zMapWindowCanvasFeaturesetSetPaintFeature(ZMapWindowFeaturesetItem featureset,
-						      GdkDrawable *drawable, GdkEventExpose *expose)
-{
-  ZMapWindowFeatureItemSetPaintFunc func ;
-
-  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
-      &&(func = _featureset_set_paint_G[featureset->type]))
-    func(featureset, drawable, expose) ;
-
-  return ;
-}
 
 
 static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)

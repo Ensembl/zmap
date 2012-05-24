@@ -706,9 +706,17 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
 	  GList *match;
 	  char *text = NULL;
 
-	  g_object_get(G_OBJECT(item),
-		       "text", &text,
-		       NULL);
+	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item)) /* g_object_get() would fail */
+	  {
+		  /* this will be moved in to the canvas featureset, so questions about purity of code here not relevant
+		   * besides, code at a simliar level uses the name directly (drawSimpleAsTextFeature() in the item factory)
+		   */
+		  text = (char *) g_quark_to_string(feature->original_id);
+	  }
+	  else
+	  {
+		g_object_get(G_OBJECT(item), "text", &text, NULL);
+	  }
 
 	  /* This filters the loci on prefixes in hide_list. strcmp_list_find does the prefix check */
 	  if(text && (match = g_list_find_custom(hide_list, text, strcmp_list_find)))
