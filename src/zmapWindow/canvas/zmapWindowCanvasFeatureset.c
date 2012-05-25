@@ -131,7 +131,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_TRANSCRIPT,	/* ZMAPSTYLE_MODE_TRANSCRIPT */
 	FEATURE_SEQUENCE,		/* ZMAPSTYLE_MODE_SEQUENCE */
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
-	FEATURE_TEXT,		/* ZMAPSTYLE_MODE_TEXT */
+	FEATURE_LOCUS,		/* ZMAPSTYLE_MODE_TEXT */
 	FEATURE_GRAPH,		/* ZMAPSTYLE_MODE_GRAPH */
 	FEATURE_GLYPH,		/* ZMAPSTYLE_MODE_GLYPH */
 	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
@@ -696,7 +696,7 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int fe
  */
 void featureset_init_funcs(void)
 {
-  /* set size of iunspecifed features structs to just the base */
+  /* set size of unspecifed features structs to just the base */
   featureset_class_G->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
 
 	zMapWindowCanvasBasicInit();		/* the order of these may be important */
@@ -707,7 +707,7 @@ void featureset_init_funcs(void)
 	zMapWindowCanvasSequenceInit();
 	zMapWindowCanvasLocusInit();
 
-  /* if you add a new one then update feature_types[N_STYLE_MODE] below */
+  /* if you add a new one then update feature_types[N_STYLE_MODE] above */
 
   return ;
 }
@@ -843,6 +843,8 @@ FooCanvasItem *zMapWindowFeaturesetItemSetInit(FooCanvasItem *foo,
   /* width is in characters, need to get the sequence code to adjust this */
   if(zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_SEQUENCE)
     featureset->width *= 10;
+//  if(zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_TEXT)
+//    featureset->width *= 10;
 
   featureset->start = start;
   featureset->end = end;
@@ -1272,6 +1274,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   if (parent_class_G->update)
     (* parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
 
+printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
   /* x_off is needed for staggered graphs, is currently 0 for all other types */
   di->dx = x1 = i2w_dx + di->x_off;

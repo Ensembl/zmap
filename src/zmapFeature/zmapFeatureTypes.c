@@ -1277,6 +1277,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                20.0,		/*number of characters not pixels */
 		 NULL);
     g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
   }

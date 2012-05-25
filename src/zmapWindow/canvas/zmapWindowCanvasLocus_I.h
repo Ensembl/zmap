@@ -61,10 +61,10 @@
 
 typedef struct _zmapWindowCanvasLocusStruct
 {
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff, has locus extent */
 
-	double y1, y2;
-	double x_off;
+	double y1, y2;		/* line coordinates, text appears around y2 */
+	double x_off;		/* of the text = RH x coord of line */
 #define ZMAP_LOCUS_LINE_WIDTH	20
 
 } zmapWindowCanvasLocusStruct, *ZMapWindowCanvasLocus;

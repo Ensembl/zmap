@@ -49,6 +49,21 @@
 #include <zmapWindowCanvasLocus_I.h>
 
 
+static void zmapWindowCanvasLocusGetPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasLocusSet lset)
+{
+	/* lazy evaluation of pango renderer */
+
+	if(lset && !lset->pango.renderer)
+	{
+		GdkColor *draw;
+
+		zMapStyleGetColours(featureset->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL, &draw, NULL);
+
+		zmapWindowCanvasFeaturesetInitPango(drawable, featureset, &lset->pango, ZMAP_ZOOM_FONT_FAMILY, ZMAP_ZOOM_FONT_SIZE, draw);
+	}
+}
+
+
 
 void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -60,8 +75,10 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) feature;
 	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
 	char *text;
-	int len;
+	int len, width;
      	int cx1, cy1, cx2, cy2;
+
+	zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
 
 	x1 = featureset->dx;
 	x2 = x1 + locus->x_off;
@@ -86,29 +103,48 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	pango_layout_set_text (lset->pango.layout, text, len);
 
 		/* need to get pixel coordinates for pango */
-	foo_canvas_w2c (foo->canvas, x2, locus->y1 + featureset->dy, &cx1, &cy1);
+	foo_canvas_w2c (foo->canvas, x1, locus->y1 + featureset->dy, &cx1, &cy1);
+	foo_canvas_w2c (foo->canvas, x2, locus->y2 + featureset->dy, &cx2, &cy2);
 
-	pango_renderer_draw_layout (lset->pango.renderer, lset->pango.layout,  cx1 * PANGO_SCALE , cy1 * PANGO_SCALE);
+	zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
 
+	cy2 -= lset->pango.text_height / 2;		/* centre text on line */
+	pango_renderer_draw_layout (lset->pango.renderer, lset->pango.layout,  cx2 * PANGO_SCALE , cy2 * PANGO_SCALE);
+
+	/* expand the column if needed */
+	width = locus->x_off + len * lset->pango.text_width;
+	if(width > featureset->width)
+	{
+		featureset->width = width;
+printf("locus width = %.1f\n",featureset->width);
+
+		foo_canvas_item_request_update ((FooCanvasItem *) featureset);
+	}
 }
 
 
 
 
-/* de-overlap and hide features if necessary, NOTE that we never change the zoom, but we'll always get called once for display
+/* de-overlap and hide features if necessary,
+ * NOTE that we never change the zoom,
+ * but we'll always get called once for display (NOTE before creating the index)
  * need to be sure we get called if features are added or deleted
  * or if the selection of which to display changes
  */
 static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset)
 {
 	ZMapSkipList sl;
+	GList *l;
 
-	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+
+//	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+	for(l = featureset->features; l ; l = l->next)
 	{
-		ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) sl->data;
+//		ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) sl->data;
+		ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) l->data;
 
-		locus->y1 = locus->feature.y1;
-		locus->y2 = locus->feature.y1;
+		locus->y1 = locus->feature.feature->x1;
+		locus->y2 = locus->feature.feature->x1;
 		locus->x_off = ZMAP_LOCUS_LINE_WIDTH;
 	}
 }
@@ -134,6 +170,6 @@ void zMapWindowCanvasLocusInit(void)
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasLocusZoomSet;
 	funcs[FUNC_FREE]   = zMapWindowCanvasLocusFreeSet;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs, sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
 }
 
