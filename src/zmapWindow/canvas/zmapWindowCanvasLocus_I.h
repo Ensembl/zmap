@@ -51,16 +51,21 @@
    #
 
    So we need:
-	y1,y1 as for a normal feature
+	feature->y1,y2 as for a normal feature
 	y coord for the LH end of the line
 	y coord for the RH end of the line
 	x-offset of the text (can vary if bumped)
+*/
 
- */
+
 
 typedef struct _zmapWindowCanvasLocusStruct
 {
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+
+	double y1, y2;
+	double x_off;
+#define ZMAP_LOCUS_LINE_WIDTH	20
 
 } zmapWindowCanvasLocusStruct, *ZMapWindowCanvasLocus;
 

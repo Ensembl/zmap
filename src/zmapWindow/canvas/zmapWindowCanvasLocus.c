@@ -56,25 +56,39 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	int colours_set, fill_set, outline_set;
 	double x1,x2;
 
-	/* draw a box */
+	FooCanvasItem *foo = (FooCanvasItem *) featureset;
+	ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) feature;
+	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+	char *text;
+	int len;
+     	int cx1, cy1, cx2, cy2;
 
-	/* colours are not defined for the CanvasFeatureSet
-	 * as we can have several styles in a column
-	 * but they are cached by the calling function
-	 * and also the window focus code
-	 */
+	x1 = featureset->dx;
+	x2 = x1 + locus->x_off;
+#if 0
+	{
+		GdkColor c;
+			/* get item canvas coords in pixel coordinates */
+		foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy, &cx2, &cy2);
 
-	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
-	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
-	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
+		c.pixel = outline;
+		gdk_gc_set_foreground (featureset->gc, &c);
+		zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
+		zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+	}
 
+	zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
+#endif
 
-	x1 = featureset->width / 2 - feature->width / 2;
-	if(featureset->bumped)
-		x1 += feature->bump_offset;
+	text = (char *) g_quark_to_string(feature->feature->original_id);
+	len = strlen(text);
+	pango_layout_set_text (lset->pango.layout, text, len);
 
-	x1 += featureset->dx;
-	x2 = x1 + feature->width;
+		/* need to get pixel coordinates for pango */
+	foo_canvas_w2c (foo->canvas, x2, locus->y1 + featureset->dy, &cx1, &cy1);
+
+	pango_renderer_draw_layout (lset->pango.renderer, lset->pango.layout,  cx1 * PANGO_SCALE , cy1 * PANGO_SCALE);
 
 }
 
@@ -92,6 +106,10 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset)
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
 		ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) sl->data;
+
+		locus->y1 = locus->feature.y1;
+		locus->y2 = locus->feature.y1;
+		locus->x_off = ZMAP_LOCUS_LINE_WIDTH;
 	}
 }
 
