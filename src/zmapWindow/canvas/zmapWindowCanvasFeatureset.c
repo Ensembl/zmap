@@ -1274,7 +1274,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   if (parent_class_G->update)
     (* parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
 
-printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
+//printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
   /* x_off is needed for staggered graphs, is currently 0 for all other types */
   di->dx = x1 = i2w_dx + di->x_off;
@@ -1290,7 +1290,6 @@ printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
   item->y1 = cy1;
   item->x2 = cx2+1;
   item->y2 = cy2+1;
-
 }
 
 
@@ -2565,6 +2564,21 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 }
 
 
+
+#include <zmapWindowContainerGroup.h>
+#include <zmapWindowContainerUtils.h>
+/* to resize ourselves and reposition stuff to the right we have to resize the root */
+/* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
+/* hmmmm... you need to call special invocations that set prorperties that then set flags... yet another run-around. */
+
+void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo)
+{
+		/* container and item code is separate despite all of them having parent pointers */
+	foo = (FooCanvasItem *) zmapWindowContainerCanvasItemGetContainer(foo);
+
+		/* this finds the root slowly and sets a flag, slowly */
+	zmapWindowContainerRequestReposition((ZMapWindowContainerGroup) foo);
+}
 
 
 

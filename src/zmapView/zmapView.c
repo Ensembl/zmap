@@ -3686,7 +3686,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	connect_data->dynamic_loading = TRUE ;
 
       connect_data->column_2_styles = zMap_g_hashlist_create() ;
-printf("create connection make new column 2 styles\n");
 // better?      connect_data->column_2_styles = zmap_view->context_map.column_2_styles;
 
       connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;

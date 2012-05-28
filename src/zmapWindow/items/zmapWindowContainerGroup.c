@@ -1135,11 +1135,12 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   this_container->reposition_x = current_x;
   this_container->reposition_y = current_y;
 
+#define MH17_DEBUG_NAV_FOOBAR 0
 #if MH17_DEBUG_NAV_FOOBAR
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 1 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 1 (%s): %f %f = %f\n",name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1 );
 }
 #endif
 
@@ -1238,7 +1239,7 @@ printf("container_group_update 1 (%s): %f %f\n",name,canvas_group->xpos,canvas_g
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 3 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 3 (%s): %f %f = %f\n",name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1);
 }
 #endif
 
@@ -1269,7 +1270,7 @@ printf("container_group_update 3 (%s): %f %f\n",name,canvas_group->xpos,canvas_g
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 4 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 4 (%s): %f %f = %f\n",name,canvas_group->xpos,canvas_group->ypos , item->x2 - item->x1);
 }
 #endif
 
@@ -1281,7 +1282,7 @@ printf("container_group_update 4 (%s): %f %f\n",name,canvas_group->xpos,canvas_g
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 5 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 5 (%s): %f %f = %f\n",name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1);
 }
 #endif
     }
@@ -1316,7 +1317,7 @@ printf("container_group_update 5 (%s): %f %f\n",name,canvas_group->xpos,canvas_g
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 6 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 6 (%s): %f %f = %f\n",name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1);
 }
 #endif
 
@@ -1361,7 +1362,7 @@ printf("container_group_update 6 (%s): %f %f\n",name,canvas_group->xpos,canvas_g
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 7 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 7 (%s): %f %f = %f\n",name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1);
 }
 #endif
 
@@ -1372,7 +1373,7 @@ printf("container_group_update 7 (%s): %f %f\n",name,canvas_group->xpos,canvas_g
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 8/%d (%s): %f %f\n",i,name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 8/%d (%s): %f %f = %f\n",i,name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1);
 }
 #endif
 	    }
@@ -1383,7 +1384,7 @@ printf("container_group_update 8/%d (%s): %f %f\n",i,name,canvas_group->xpos,can
 {
 char *name = "none";
 if(this_container->feature_any) name = zMapFeatureName(this_container->feature_any);
-printf("container_group_update 9 (%s): %f %f\n",name,canvas_group->xpos,canvas_group->ypos);
+printf("container_group_update 9 (%s): %f %f= %f\n",name,canvas_group->xpos,canvas_group->ypos, item->x2 - item->x1);
 }
 #endif
 

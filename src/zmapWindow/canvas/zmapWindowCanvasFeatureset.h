@@ -270,6 +270,8 @@ int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo);
 int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value);
 
 
+void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo);
+
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */

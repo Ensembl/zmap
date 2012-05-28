@@ -118,7 +118,9 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 		featureset->width = width;
 printf("locus width = %.1f\n",featureset->width);
 
-		foo_canvas_item_request_update ((FooCanvasItem *) featureset);
+//		foo_canvas_item_request_update ((FooCanvasItem *) featureset);
+		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
+
 	}
 }
 
