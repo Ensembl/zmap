@@ -936,119 +936,126 @@ static FooCanvasItem *drawAssemblyFeature(RunSet run_data, ZMapFeature feature,
   double canvas_item_position;
   gboolean debug_assembly_drawing = FALSE;
 
-  canvas_item_position = y1 - feature_offset;
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
 
-  if (debug_assembly_drawing)
-    {
-      printf("->drawAssemblyFeature(feature=%p, feature_offset=%f, x1=%f, y1=%f, x2=%f, y2=%f)\n",
-	     feature, feature_offset, x1, y1, x2, y2);
-      printf("y1=%f, drawing@%f\n", y1, canvas_item_position);
-    }
+	canvas_item_position = y1 - feature_offset;
 
-  if((new_canvas_item = zMapWindowCanvasItemCreate(parent, canvas_item_position, feature, style)))
-    {
-      ZMapFeatureSubPartSpanStruct sub_feature = {};
-      ZMapAssemblyPath assembly_path;
-      ZMapSpan golden_span;
-      double item_start, item_end;
-
-      assembly_path = &(feature->feature.assembly_path);
-
-      /* or should this be feature_offset += item_start [feature->x1 - feature_offset in seq2can()] */
-      feature_offset += canvas_item_position; /* the "new" offset of the items */
-
-      if(debug_assembly_drawing)
-	g_object_set(G_OBJECT(new_canvas_item), "debug", debug_assembly_drawing, NULL);
-
-      if(assembly_path->path)
+	if (debug_assembly_drawing)
 	{
-	  int i = 0;
-
-	  golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
-
-	  sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
-	  sub_feature.start   = item_start = golden_span->x1;
-	  sub_feature.end     = item_end   = golden_span->x2;
-
-	  if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				 &item_start, &item_end))
-	    {
-	      zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-					      item_start, item_end,
-					      x1, x2);
-	    }
-
-	  if(feature->x1 != golden_span->x1)
-	    {
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
-	      sub_feature.start   = item_start = feature->x1;
-	      sub_feature.end     = item_end   = golden_span->x1 - 1;
-
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-
-	    }
-
-	  for(i = 1; i < assembly_path->path->len; i++)
-	    {
-	      int prev_start, prev_end;
-
-	      /* record the previous match to draw the gap later */
-	      prev_start = golden_span->x1;
-	      prev_end   = golden_span->x2;
-	      /* get the current match */
-	      golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
-
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
-	      sub_feature.start   = item_start = golden_span->x1;
-	      sub_feature.end     = item_end   = golden_span->x2;
-	      /* possibly draw the current match */
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-
-	      /* now for the gap */
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
-	      sub_feature.start   = item_start = prev_end + 1;
-	      sub_feature.end     = item_end   = golden_span->x1 - 1;
-	      /* possibly draw.... */
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-	    }
-
-	  if(feature->x2 != golden_span->x2)
-	    {
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
-	      sub_feature.start   = item_start = golden_span->x2 + 1;
-	      sub_feature.end     = item_end   = feature->x2;
-
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-	    }
+		printf("->drawAssemblyFeature(feature=%p, feature_offset=%f, x1=%f, y1=%f, x2=%f, y2=%f)\n",
+		feature, feature_offset, x1, y1, x2, y2);
+		printf("y1=%f, drawing@%f\n", y1, canvas_item_position);
 	}
 
-      feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-    }
+	if((new_canvas_item = zMapWindowCanvasItemCreate(parent, canvas_item_position, feature, style)))
+	{
+		ZMapFeatureSubPartSpanStruct sub_feature = {};
+		ZMapAssemblyPath assembly_path;
+		ZMapSpan golden_span;
+		double item_start, item_end;
 
+		assembly_path = &(feature->feature.assembly_path);
+
+		/* or should this be feature_offset += item_start [feature->x1 - feature_offset in seq2can()] */
+		feature_offset += canvas_item_position; /* the "new" offset of the items */
+
+		if(debug_assembly_drawing)
+		g_object_set(G_OBJECT(new_canvas_item), "debug", debug_assembly_drawing, NULL);
+
+		if(assembly_path->path)
+		{
+		int i = 0;
+
+		golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
+
+		sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
+		sub_feature.start   = item_start = golden_span->x1;
+		sub_feature.end     = item_end   = golden_span->x2;
+
+		if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+		{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+		}
+
+		if(feature->x1 != golden_span->x1)
+		{
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
+			sub_feature.start   = item_start = feature->x1;
+			sub_feature.end     = item_end   = golden_span->x1 - 1;
+
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+
+		}
+
+		for(i = 1; i < assembly_path->path->len; i++)
+		{
+			int prev_start, prev_end;
+
+			/* record the previous match to draw the gap later */
+			prev_start = golden_span->x1;
+			prev_end   = golden_span->x2;
+			/* get the current match */
+			golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
+
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
+			sub_feature.start   = item_start = golden_span->x1;
+			sub_feature.end     = item_end   = golden_span->x2;
+			/* possibly draw the current match */
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+
+			/* now for the gap */
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
+			sub_feature.start   = item_start = prev_end + 1;
+			sub_feature.end     = item_end   = golden_span->x1 - 1;
+			/* possibly draw.... */
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+		}
+
+		if(feature->x2 != golden_span->x2)
+		{
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
+			sub_feature.start   = item_start = golden_span->x2 + 1;
+			sub_feature.end     = item_end   = feature->x2;
+
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+		}
+		}
+
+		feature_item = FOO_CANVAS_ITEM(new_canvas_item);
+	}
+  }
   return feature_item ;
 }
 

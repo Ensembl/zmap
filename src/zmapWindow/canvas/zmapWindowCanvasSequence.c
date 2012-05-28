@@ -129,12 +129,8 @@ static void zmapWindowCanvasSequenceSetZoom(ZMapWindowFeaturesetItem featureset,
 		}
 
 		featureset->width = seq->row_disp * pango->text_width;
-		/* do we need a reposition? */
-//		foo_canvas_item_request_update ((FooCanvasItem *) featureset);
-		/* this does not work try to get the parent to do it: may beed the parent of our zmapWindowCanvasItem?? */
 
-		/* NOTE this code runs and does what's expected but the column stays the same size */
-		/* it does resize a locus column so it probably works, there'se something else somewhere causing trouble */
+			/* have to do the whole canvas */
 		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
 	}
 }

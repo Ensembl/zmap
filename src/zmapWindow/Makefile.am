@@ -72,6 +72,9 @@ libZMapWindowCanvas_la_SOURCES = \
 canvas/zmapWindowCanvasAlignment.c \
 canvas/zmapWindowCanvasAlignment.h \
 canvas/zmapWindowCanvasAlignment_I.h \
+canvas/zmapWindowCanvasAssembly.c \
+canvas/zmapWindowCanvasAssembly.h \
+canvas/zmapWindowCanvasAssembly_I.h \
 canvas/zmapWindowCanvasBasic.c \
 canvas/zmapWindowCanvasBasic.h \
 canvas/zmapWindowCanvasBasic_I.h \

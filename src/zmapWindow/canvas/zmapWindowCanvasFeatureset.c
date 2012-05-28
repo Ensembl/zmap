@@ -77,6 +77,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <zmapWindowCanvasAlignment.h>
 #include <zmapWindowCanvasGraphItem.h>
 #include <zmapWindowCanvasTranscript.h>
+#include <zmapWindowCanvasAssembly.h>
 #include <zmapWindowCanvasSequence.h>
 #include <zmapWindowCanvasLocus.h>
 
@@ -130,7 +131,7 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_ALIGN,		/* ZMAPSTYLE_MODE_ALIGNMENT */
 	FEATURE_TRANSCRIPT,	/* ZMAPSTYLE_MODE_TRANSCRIPT */
 	FEATURE_SEQUENCE,		/* ZMAPSTYLE_MODE_SEQUENCE */
-	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
+	FEATURE_ASSEMBLY,		/* ZMAPSTYLE_MODE_ASSEMBLY_PATH */
 	FEATURE_LOCUS,		/* ZMAPSTYLE_MODE_TEXT */
 	FEATURE_GRAPH,		/* ZMAPSTYLE_MODE_GRAPH */
 	FEATURE_GLYPH,		/* ZMAPSTYLE_MODE_GLYPH */
@@ -704,8 +705,10 @@ void featureset_init_funcs(void)
 	zMapWindowCanvasAlignmentInit();
 	zMapWindowCanvasGraphInit();
 	zMapWindowCanvasTranscriptInit();
+	zMapWindowCanvasAssemblyInit();
 	zMapWindowCanvasSequenceInit();
 	zMapWindowCanvasLocusInit();
+
 
   /* if you add a new one then update feature_types[N_STYLE_MODE] above */
 
