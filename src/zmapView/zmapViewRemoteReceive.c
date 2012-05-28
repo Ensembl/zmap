@@ -1523,13 +1523,18 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  result = FALSE ;
 	}
 
+      /* Need the style to get hold of the feature mode, better would be for
+       * xml to contain SO term ?? Maybe not....not sure. */
+      if (result && ((mode = zMapStyleGetMode(request_data->style)) == ZMAPSTYLE_MODE_INVALID))
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
+	  result = FALSE ;
+	}
+
 
       /* Check if feature exists, for some commands it must do, for others it must not. */
       if (result)
 	{
-	  /* Need the style to get hold of the feature mode, better would be for
-	   * xml to contain SO term ?? Maybe not....not sure. */
-	  mode = zMapStyleGetMode(request_data->style) ;
 
 	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
@@ -1657,11 +1662,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		      case ZMAPVIEW_REMOTE_ZOOM_TO:
 			{
 			  ZMapFeature feature ;
-			  ZMapStyleMode mode ;
-
-			  /* Need the style to get hold of the feature mode, better would be for
-			   * xml to contain SO term ?? Maybe not....not sure. */
-			  mode = zMapStyleGetMode(request_data->style) ;
 
 			  /* should be removed.... */
 			  feature_unique_id = zMapFeatureCreateID(mode,
@@ -1669,7 +1669,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 								  strand,
 								  start, end, 0, 0) ;
 
-			  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
+			  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set,
+								      feature_unique_id)))
 			    {
 			      request_data->feature_list = g_list_prepend(request_data->feature_list, feature) ;
 			    }
@@ -1689,14 +1690,13 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		      case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
 		      case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
 			{
-
 			  zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
 							      parser,
 							      "feature tag not contained within featureset tag");
 
 			  if (result
 			      && (request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
-											    ZMAPSTYLE_MODE_BASIC,
+											    mode,
 											    request_data->style,
 											    start, end, has_score,
 											    score, strand)))
@@ -1710,7 +1710,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 			      if (start_not_found || end_not_found)
 				{
-				  request_data->feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
 				  zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
 								   start_phase, end_not_found);
 				}
