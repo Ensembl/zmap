@@ -58,27 +58,30 @@ pkgconfig_DATA = zmap.pc
 ################################################################################
 ################################################################################
 
-# I've commented out all the -all-static stuff because I think I've done it a
-# better way by disabling libtool building of shared libs in configure.ac
 
-# Libraries (These are libtool convenience libraries)
+#
+# Libraries: code is compiled into a series of libXXX.a files, in some cases
+# some of these are further combined into 'parent' libXXX.a files.
+#
 
-noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libzmapfoocanvas.la libPFetch.la
+noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
+                     libZMapThr.la libZMapXML.la libZMapUtils.la \
+                     libzmapfoocanvas.la libPFetch.la
 
 libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
-#libZMapXML_la_LDFLAGS = -all-static
 
-libPFetch_la_SOURCES = 
-libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
-#libPFetch_la_LDFLAGS = -all-static
+libZMapUtils_la_SOURCES = 
+libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
 
-libzmapfoocanvas_la_SOURCES = 
-libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
+libZMapAppServices_la_SOURCES = 
+libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
 
+libZMapApp_la_SOURCES =
+libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
 
+# try moving server stuff to here....
 libZMap_la_SOURCES =
-#libZMap_la_LDFLAGS = -all-static
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
 zmapConfig/libZMapConfig.la   \
@@ -87,22 +90,22 @@ zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
 zmapManager/libZMapManager.la \
-zmapUtils/libZMapUtils.la     \
 zmapView/libZMapView.la       \
 zmapWindow/libZMapWindow.la   \
-$(NULL)
-
-libZMapApp_la_SOURCES =
-libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
-#libZMapApp_la_LDFLAGS = -all-static
-
-libZMapThr_la_SOURCES =
-#libZMapThr_la_LDFLAGS = -all-static
-libZMapThr_la_LIBADD  =       \
 zmapServer/libZMapServer.la   \
 zmapServer/libZMapServers.la  \
+$(NULL)
+
+libZMapThr_la_SOURCES =
+libZMapThr_la_LIBADD  =       \
 zmapThreads/libZMapThreads.la \
 $(NULL)
+
+libPFetch_la_SOURCES = 
+libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
+
+libzmapfoocanvas_la_SOURCES = 
+libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 
 
 # Programs we're going to compile.
@@ -122,12 +125,28 @@ bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
 
 # Give .a files explicitly to ensure we link the right ones.
 #
+#zmap_LDADD =                                                 \
+#	$(top_builddir)/.libs/libZMapApp.a                   \
+#	$(top_builddir)/.libs/libZMap.a                      \
+#	$(top_builddir)/.libs/libZMapThr.a                   \
+#	$(top_builddir)/.libs/libZMap.a                      \
+#	$(top_builddir)/.libs/libZMapXML.a                   \
+#	$(top_builddir)/.libs/libZMapAppServices.a           \
+#	$(top_builddir)/.libs/libZMapUtils.a                 \
+#	$(top_builddir)/.libs/libzmapfoocanvas.a             \
+#	$(top_builddir)/.libs/libPFetch.a                    \
+#        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
+#	$(ACECONN_LIBS) $(GTK_LIBS)                          \
+#	$(LIBCURL) -lexpat -lg2 -lgd                         \
+#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+
 zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
 	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapAppServices.a           \
 	$(top_builddir)/.libs/libZMapThr.a                   \
-	$(top_builddir)/.libs/libZMap.a                      \
 	$(top_builddir)/.libs/libZMapXML.a                   \
+	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \

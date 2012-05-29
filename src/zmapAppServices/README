@@ -1,0 +1,12 @@
+================================================================================   
+ZMapAppServices
+
+Provides application wide services, conceptually these sit above the 'utils'
+directory and include:
+
+	- application wide debug setting
+
+(and in the future)
+	- configuration services
+
+

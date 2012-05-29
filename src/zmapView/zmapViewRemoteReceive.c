@@ -1964,7 +1964,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
       if(ontology == g_quark_from_string("intron"))
         intron_ptr = &span;
       if(ontology == g_quark_from_string("cds"))
-        zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, NULL, NULL);
+        zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
 
       if(exon_ptr != NULL || intron_ptr != NULL) /* Do we need this check isn't it done internally? */
         zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr);

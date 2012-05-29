@@ -98,10 +98,20 @@ static char *getNoteText(char *attributes) ;
 static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length) ;
 static gboolean resizeFormatStrs(ZMapGFFParser parser) ;
 
+static void normaliseFeatures(GData **feature_sets) ;
+static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 
 
 
 
+
+
+
+
+/* 
+ *               External interface.
+ */
 
 
 
@@ -548,35 +558,36 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
       start = parser->features_start;
       end   = parser->features_end;
 
-      if(parser->clip_mode)
-      {
-            if(start < parser->clip_start)
-                  start = parser->clip_start;
-            if(end > parser->clip_end)
-                  end = parser->clip_end;
-      }
+      if (parser->clip_mode)
+	{
+	  if(start < parser->clip_start)
+	    start = parser->clip_start;
+	  if(end > parser->clip_end)
+	    end = parser->clip_end;
+	}
 
 #if MH17_NEED_ACTUAL_FEATURES_COORD_RANGE_FOR_EMPTY_FEATURESETS
-/* MH17: this appears to rebase the features to the start of the sequence span :-( */
-      if(!feature_block->block_to_sequence.block.x2)
+      /* MH17: this appears to rebase the features to the start of the sequence span :-( */
+      if (!feature_block->block_to_sequence.block.x2)
 #endif
-      {
-            /* as request coordinates are often given as 1,0 we need to put real coordinates in */
-            /* ideally chromosome coordinates would be better */
+	{
+	  /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+	  /* ideally chromosome coordinates would be better */
 
-            /* NOTE we need to know the actual data returned as we
-             *  mark empty featuresets as loaded over this range
-             */
-            feature_block->block_to_sequence.block.x1 = start;
-            feature_block->block_to_sequence.block.x2 = end;
-      }
-      if(!feature_block->block_to_sequence.parent.x2)
-      {
-            /* as request coordinates are often given as 1,0 we need to put real coordinates in */
-            /* ideally chromosome coordinates would be better */
-            feature_block->block_to_sequence.parent.x1 = start;
-            feature_block->block_to_sequence.parent.x2 = end;
-      }
+	  /* NOTE we need to know the actual data returned as we
+	   *  mark empty featuresets as loaded over this range
+	   */
+	  feature_block->block_to_sequence.block.x1 = start;
+	  feature_block->block_to_sequence.block.x2 = end;
+	}
+
+      if (!feature_block->block_to_sequence.parent.x2)
+	{
+	  /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+	  /* ideally chromosome coordinates would be better */
+	  feature_block->block_to_sequence.parent.x1 = start;
+	  feature_block->block_to_sequence.parent.x2 = end;
+	}
 
       /* Actually we should only need to test feature_sets here really as there shouldn't be any
        * for parse_only.... */
@@ -586,11 +597,18 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 			     feature_block) ;
 	}
 
+      /* It is possible for features to be incomplete from GFF (e.g. transcripts without
+       * an exon), we attempt to normalise them where possible...currently only
+       * transcripts/exons. */
+      normaliseFeatures(&(parser->feature_sets)) ;
+
+
       result = TRUE ;
     }
 
   return result ;
 }
+
 
 
 /* Optionally set mappings that are keys from the GFF source to feature set and style names. */
@@ -905,8 +923,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		    }
 		  if(parser->features_start == 1 && parser->features_end == 0)
 		    {
-		    	/* mh17 else if we read a file://  with no seq sopecified it fails */
-		      parser->features_start = start ;
+		      /* mh17 else if we read a file://  with no seq sopecified it fails */
+			parser->features_start = start ;
 		      parser->features_end = end ;
 		    }
 
@@ -1079,7 +1097,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 
 
   /* If line_length increases then increase the length of the buffers that receive text so that
-   * they cannot overflow and redo the format string. */
+   * they cannot overflow and redo format string to read in more chars. */
   if (!line_length)
     line_length = strlen(line) ;
 
@@ -1101,6 +1119,12 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   phase_str = (char *)(parser->buffers[GFF_BUF_PHASE]) ;
   attributes = (char *)(parser->buffers[GFF_BUF_ATTRIBUTES]) ;
   comments = (char *)(parser->buffers[GFF_BUF_COMMENTS]) ;	/* this is not used */
+
+
+  /* Note that because attributes and comments are optional we reset them to be sure we don't
+   * get text from a previous line. */
+  memset(attributes, (int)'\0', parser->buffer_length) ;
+  memset(comments, (int)'\0', parser->buffer_length) ;
 
 
   /* Parse a GFF line. */
@@ -1406,14 +1430,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
-/*  GQuark column_id = 0;*/
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0, query_length = 0 ;
   ZMapStrand query_strand ;
   double percent_id = 0 ;
-  ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
   GQuark locus_id = 0 ;
   GArray *gaps = NULL;
@@ -1435,7 +1457,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
 					      GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
-	//                                    GINT_TO_POINTER(g_quark_from_string(source)))))
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
@@ -1551,7 +1572,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 							   function for the feature_set list. */
     }
 
-  /*printf("GFF: src %s, style %s\n",source,g_quark_to_string(feature_style_id)); */
+/* printf("GFF: src %s, style %s\n",source,g_quark_to_string(feature_style_id));*/
 
 
   if(!(feature_style = (ZMapFeatureTypeStyle)
@@ -1617,23 +1638,40 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  return result ;
 	}
     }
-  else if (feature_type == ZMAPSTYLE_MODE_BASIC)
+  else if (feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
     {
-      if (g_ascii_strcasecmp(source, "ensembl_variation") == 0)
+      if (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0))
 	{
-	  /* For variation we need to parse the SO type and string out of the Name attribute. */
-	  if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
+	  /* Genefinder features, we use the ontology as the name.... */
+	  name_string = g_strdup(ontology) ;
+	}
+      else
+	{
+	  if (g_ascii_strcasecmp(source, "ensembl_variation") == 0)
 	    {
-	      *err_text = g_strdup_printf("feature ignored, could not parse variation string");
+	      /* For variation we need to parse the SO type and string out of the Name attribute. */
+	      if (!(result = getVariationString(attributes, &SO_acc, &name_string, &variation_string)))
+		{
+		  *err_text = g_strdup_printf("feature ignored, could not parse variation string");
 
-	      return result ;
+		  return result ;
+		}
+	    }
+	  else
+	    {
+	      name_find = NAME_USE_GIVEN_OR_NAME ;
 	    }
 	}
-	else
-      {
-	      name_find = NAME_USE_GIVEN_OR_NAME ;
-	}
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
+	   && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+    {
+      /* Genefinder features, we use the ontology as the name.... */
+      name_string = g_strdup(ontology) ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Was there a url for the feature ? */
@@ -1655,6 +1693,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    feature_type, strand,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
+
+  if (g_ascii_strcasecmp("RNASEQ_Young_Adult_25dC_46hrs_post-L1_g82_x20_II_p", feature_name) == 0)
+    printf("found it\n") ;
+
 
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
@@ -1725,6 +1767,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
+	  ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
 
 	  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
 	   * out of sync with how homols with gaps are given.... */
@@ -1744,9 +1787,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	  if (g_ascii_strcasecmp(ontology, "CDS") == 0)
 	    {
-	      result = zMapFeatureAddTranscriptData(feature,
-						    TRUE, start, end,
-						    NULL, NULL) ;
+	      result = zMapFeatureAddTranscriptCDS(feature, TRUE, start, end) ;
 	    }
 
 
@@ -2119,7 +2160,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    }
 	}
     }
-  else if(name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
+  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
     {
       char *tag_pos ;
 
@@ -2185,19 +2226,18 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 		}
 	    }
 	}
-      else if (feature_type == ZMAPSTYLE_MODE_BASIC
-	       && (g_str_has_prefix(source, "GF_")
-		   || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+      else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
+	       && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
 	{
 	  /* Genefinder features, we use the source field as the name.... */
 
 	  has_name = FALSE ;				    /* is this correct ??? */
 
-	  *feature_name = g_strdup(source) ;
+	  *feature_name = g_strdup(given_name) ;
 	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						   start, end, query_start, query_end) ;
 	}
-      else /* if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT) */
+      else
 	{
 	  has_name = FALSE ;
 
@@ -3068,3 +3108,53 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser)
   return resized ;
 }
 
+
+
+
+/* Features may be created incomplete by 'faulty' GFF files, here we try
+ * to make them valid. */
+static void normaliseFeatures(GData **feature_sets)
+{
+  /* Look through all datasets.... */
+  g_datalist_foreach(feature_sets, checkFeatureSetCB, NULL) ;
+
+  return ;
+}
+
+
+/* A GDataForeachFunc() which checks to see if the dataset passed in has
+ * mulitline features and if they are then checks each feature to make sure
+ * it is complete/valid. Currently this is only transcripts...see checkFeatureCB().
+ */
+static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+{
+  ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+
+  if (parser_feature_set->multiline_features)
+    {
+      g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB, NULL) ;
+    }
+
+  return ;
+}
+
+/* A GDataForeachFunc() which checks to see if the feature passed in is
+ * complete/valid. Currently just checks transcripts to make sure they
+ * have at least one exon.
+ */
+static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+
+  switch (feature->type)
+    {
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+      zMapFeatureTranscriptNormalise(feature) ;
+      break ;
+
+    default:
+      break ;
+    }
+
+  return ;
+}

@@ -132,33 +132,34 @@ GType zMapWindowCanvasFeaturesetItemGetType(void)
  */
 ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
 {
-      ZMapWindowCanvasFeaturesetItem fi = NULL;
-      FooCanvasItem *foo  = NULL,*interval;
+  ZMapWindowCanvasFeaturesetItem fi = NULL;
+  FooCanvasItem *foo  = NULL,*interval;
 
-            /* class not intialised till we make an item in foo_canvas_item_new() below */
-      if(featureset_class_G && featureset_class_G->featureset_items)
-            foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
+  /* class not intialised till we make an item in foo_canvas_item_new() below */
+  if(featureset_class_G && featureset_class_G->featureset_items)
+    foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
 
-	if(foo)
-      {
-            return((ZMapWindowCanvasItem) foo);
-      }
-      else
-      {
-            /* need a wrapper to get ZWCI with a foo_featureset inside it */
-            foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
+  if(foo)
+    {
+      return((ZMapWindowCanvasItem) foo);
+    }
+  else
+    {
+      /* need a wrapper to get ZWCI with a foo_featureset inside it */
+      foo = foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM, NULL);
 
-            interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
+      interval = foo_canvas_item_new((FooCanvasGroup *) foo, ZMAP_TYPE_WINDOW_FEATURESET_ITEM, NULL);
 
-		zMapWindowFeaturesetItemSetFeaturesetItem(interval, id, start, end, style, strand, frame, index);
+      zMapWindowFeaturesetItemSetInit(interval, id, start, end, style, strand, frame, index);
 
-            fi = (ZMapWindowCanvasFeaturesetItem) foo;
-            fi->id = id;
-		((ZMapWindowFeaturesetItem) interval)->canvas_item = foo;
-            g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
+      fi = (ZMapWindowCanvasFeaturesetItem) foo;
+      fi->id = id;
+      ((ZMapWindowFeaturesetItem) interval)->canvas_item = foo;
+      g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
-      }
-      return ((ZMapWindowCanvasItem) foo);
+    }
+
+  return ((ZMapWindowCanvasItem) foo);
 }
 
 

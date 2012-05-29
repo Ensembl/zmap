@@ -926,21 +926,55 @@ the predefined styles:
 <ol>
   <li>Export methods from the database into a file, say methods.ace.
   <li>Run the methods2style.pl script on the file and output the results to a new ini file, e.g. <pre>methods2style.pl -file methods.ace > styles.ini</pre>
-  <li>Add any <a href="#predefined_styles">predefined styles</a> into your styles.ini file, e.g.:
-  <pre>
-[3 Frame]
-
-[3 Frame Translation]
-colours=selected fill green
-
-[DNA]
-colours=selected fill green
-</pre>
   <li>Set the <code>ZMAP_STYLES_FILE</code> environment variable to the path of your styles file.
   <li><p>To use ZMap from xace, you need to add it as a display type. To do this, add the following in displays.wrm. You should then have ZMap as an option from the "Show As.." menu in xace's KeySet window.</p>
 <pre>
 _DZMAP -g TEXT_FIT -t ZMapFeatures -y  0.3 -w 0.80 -height 0.93 \
 	-help ZMap-Feature-map -m ZMap
+</pre>
+  <li>Add the following methods to your database. These are required in order for the predefined styles and Genefinder features to be displayed in ZMap.
+  <pre>
+//
+// Methods that the database administrator should add so that
+// these features get displayed in zmap.
+//
+// It's not clear what we should do about the Right_priority
+// settings, e.g. Right_priority	 8.0
+//
+
+
+Method : "DNA"
+
+Method : "Show Translation"
+
+Method : "3 Frame"
+
+Method : "3 Frame Translation"
+
+Method : "GeneFinderFeatures"
+
+Method : "ATG"
+
+Method : "GF_ATG"
+Score_bounds	 0.000000 3.000000
+
+Method : "GF_coding_seg"
+Score_bounds	 2.000000 8.000000
+Score_by_width	
+
+Method : "GF_splice"
+Score_bounds	 -2.000000 4.000000
+Score_by_width	
+
+Method : "hexExon"
+Score_bounds	 10.000000 100.000000
+Score_by_width	
+
+Method : "hexExon_span"
+
+Method : "hexIntron"
+Score_bounds	 10.000000 100.000000
+Score_by_width	
 </pre>
 </ol>
 

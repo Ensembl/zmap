@@ -242,6 +242,7 @@ static gboolean get_url_query_boolean(char *full_query, char *key) ;
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
 
+static gboolean isStyleFromMethod(void) ;
 
 /*
  *             Server interface functions.
@@ -308,7 +309,9 @@ static gboolean createConnection(void **server_out,
   if (version_str)
     {
       if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str))
-	server->version_str = g_strdup(version_str) ;
+	{
+	  server->version_str = g_strdup(version_str) ;
+	}
       else
 	{
 	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
@@ -318,7 +321,9 @@ static gboolean createConnection(void **server_out,
 	}
     }
   else
-    server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
+    {
+      server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
+    }
 
   server->has_new_tags = TRUE ;
 
@@ -335,6 +340,8 @@ static gboolean createConnection(void **server_out,
       server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
+
+  server->stylename_from_methodname = isStyleFromMethod() ;
 
   server->zmap_start = 1;
   server->zmap_end = 0;
@@ -543,7 +550,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     {
       featureset_2_stylelist = *featureset_2_stylelist_inout ;
 
-      if (server->has_new_tags)
+      if (server->has_new_tags && !(server->stylename_from_methodname))
 	{
 	  /* Use zmap_style class. */
 	  if ((result = findColStyleTags(server,
@@ -562,18 +569,17 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  /* Use method not zmap_style class. */
 	  all_methods = feature_set_methods ;
 
-
 	  /* CHECK THIS....SHOULD WE ALWAYS DO THIS...??? */
 	  if (sources)
 	    all_methods = sources ;
-
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+	  /* should we copy feature sets or methods here..I'm thinking methods.... */
+	  if (server->stylename_from_methodname)
+	    required_styles = g_list_copy(all_methods) ;
 
 
 	  g_list_foreach(feature_sets, createSet2StyleList, featureset_2_stylelist) ;
@@ -584,6 +590,16 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMap_g_list_quark_print(all_methods, "all_methods", FALSE) ;
+      fflush(stdout) ;
+      zMap_g_list_quark_print(feature_sets, "feature_sets", FALSE) ;
+      fflush(stdout) ;
+      zMap_g_list_quark_print(required_styles, "required_styles", FALSE) ;
+      fflush(stdout) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
       if (result != ZMAP_SERVERRESPONSE_REQFAIL)
@@ -4395,6 +4411,7 @@ static void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTabl
   return ;
 }
 
+
 // if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
 static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
 {
@@ -4402,25 +4419,26 @@ static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_d
   gpointer key,value;
   ZMapFeatureSource method_src,source_data;
 
-  if(!source_2_data)
-      return;
+  if (source_2_data)
+    {
+      zMap_g_hash_table_iter_init(&iter,method_2_data);
 
-  zMap_g_hash_table_iter_init(&iter,method_2_data);
-  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
-  {
-      source_data = (ZMapFeatureSource) g_hash_table_lookup(source_2_data,key);
-      method_src  = (ZMapFeatureSource) value;
+      while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+	{
+	  source_data = (ZMapFeatureSource)g_hash_table_lookup(source_2_data, key) ;
+	  method_src  = (ZMapFeatureSource)value;
 
-      if(source_data)
-      {
-            if(source_data->style_id)
-                  method_src->style_id = source_data->style_id;
-            if(source_data->source_id)
-                  method_src->source_id = source_data->source_id;
-            if(source_data->source_text)
-                  method_src->source_text = source_data->source_text;
-      }
-  }
+	  if (source_data)
+	    {
+	      if(source_data->style_id)
+		method_src->style_id = source_data->style_id;
+	      if(source_data->source_id)
+		method_src->source_id = source_data->source_id;
+	      if(source_data->source_text)
+		method_src->source_text = source_data->source_text;
+	    }
+	}
+    }
 
   return ;
 }
@@ -4573,4 +4591,24 @@ static void createSet2StyleList(gpointer data, gpointer user_data)
 }
 
 
+/* Test for "stylename-from-methodname" in ZMap stanza, returns FALSE (default)
+ * if keyword is not there. */
+static gboolean isStyleFromMethod(void)
+{
+  gboolean style_from_method = FALSE ;
+  ZMapConfigIniContext context;
 
+  if ((context = zMapConfigIniContextProvide()))
+    {
+      gboolean tmp_bool = FALSE;
+
+      /* Should we get style names directly from the method name. */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_STYLE_FROM_METHOD, &tmp_bool))
+	style_from_method = tmp_bool ;
+
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return style_from_method ;
+}

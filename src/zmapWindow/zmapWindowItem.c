@@ -400,18 +400,21 @@ void zmapWindowHighlightFocusItems(ZMapWindow window)
 
 void zmapWindowUnHighlightFocusItems(ZMapWindow window)
 {
-  FooCanvasItem *hot_item ;
-  FooCanvasGroup *hot_column ;
+//  FooCanvasItem *hot_item ;
+//  FooCanvasGroup *hot_column ;
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
-  hot_column = zmapWindowFocusGetHotColumn(window->focus);
+//  hot_column = zmapWindowFocusGetHotColumn(window->focus);
 // if (hot_column)
 //  zmapWindowFocusUnHighlightHotColumn(window) ;     // done by reset
 
-  if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
-    zmapWindowFocusUnhighlightFocusItems(window->focus, window) ;
+/* this sets the feature, loosing the currently selected one */
+//if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
+//    zmapWindowFocusUnhighlightFocusItems(window->focus, window) ;
 
-  if (hot_column || hot_item)
+//  if (hot_column || hot_item)
+
+/* don't need any of the above! */
     zmapWindowFocusReset(window->focus) ;
 
   return ;
