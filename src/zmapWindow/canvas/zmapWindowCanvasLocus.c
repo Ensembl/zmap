@@ -82,21 +82,6 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 
 	x1 = featureset->dx;
 	x2 = x1 + locus->x_off;
-#if 0
-	{
-		GdkColor c;
-			/* get item canvas coords in pixel coordinates */
-		foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy, &cx2, &cy2);
-
-		c.pixel = outline;
-		gdk_gc_set_foreground (featureset->gc, &c);
-		zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
-		zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
-	}
-
-	zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
-#endif
 
 	text = (char *) g_quark_to_string(feature->feature->original_id);
 	len = strlen(text);
@@ -110,18 +95,6 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 
 	cy2 -= lset->pango.text_height / 2;		/* centre text on line */
 	pango_renderer_draw_layout (lset->pango.renderer, lset->pango.layout,  cx2 * PANGO_SCALE , cy2 * PANGO_SCALE);
-
-	/* expand the column if needed */
-	width = locus->x_off + len * lset->pango.text_width;
-	if(width > featureset->width)
-	{
-		featureset->width = width;
-printf("locus width = %.1f\n",featureset->width);
-
-//		foo_canvas_item_request_update ((FooCanvasItem *) featureset);
-		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
-
-	}
 }
 
 
@@ -133,11 +106,18 @@ printf("locus width = %.1f\n",featureset->width);
  * need to be sure we get called if features are added or deleted
  * or if the selection of which to display changes
  */
-static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset)
+static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 	ZMapSkipList sl;
 	GList *l;
+	double len, width, f_width = featureset->width;
+	char *text;
 
+	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+
+	zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
+
+	featureset->width = 0.0;
 
 //	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	for(l = featureset->features; l ; l = l->next)
@@ -148,7 +128,19 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset)
 		locus->y1 = locus->feature.feature->x1;
 		locus->y2 = locus->feature.feature->x1;
 		locus->x_off = ZMAP_LOCUS_LINE_WIDTH;
+
+		/* expand the column if needed */
+		text = (char *) g_quark_to_string(locus->feature.feature->original_id);
+		len = strlen(text);
+
+		width = locus->x_off + len * lset->pango.text_width;
+		if(width > featureset->width)
+			featureset->width = width;
 	}
+
+	if(f_width != featureset->width)
+		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
+
 }
 
 

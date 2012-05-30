@@ -819,8 +819,8 @@ FooCanvasItem *zMapWindowFeaturesetItemSetInit(FooCanvasItem *foo,
   if(featureset_class_G->set_struct_size[type])
 	  featureset->opt = g_malloc0(featureset_class_G->set_struct_size[type]);
 
-  /* Maybe these should be subsumed into the feature_set_int_G mechanism..... */
-  /* mh17: via the set_init_H fucntion, already moved code from here for link_sideways */
+  /* Maybe these should be subsumed into the feature_set_init_G mechanism..... */
+  /* mh17: via the set_init_G fucntion, already moved code from here for link_sideways */
   if(type == FEATURE_ALIGN)
     {
       featureset->link_sideways = TRUE;
@@ -1538,6 +1538,12 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   }
 
 
+  if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
+    fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
+  if(!fi->gc)
+    return;		/* got a draw before realize ?? */
+
+
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
   if(!fi->display_index || fi->zoom != item->canvas->pixels_per_unit_y)
@@ -1551,11 +1557,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     return; 		/* could be an empty column or a mistake */
 
   /* paint all the data in the exposed area */
-
-  if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
-    fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
-  if(!fi->gc)
-    return;		/* got a draw before realize ?? */
 
   width = zMapStyleGetWidth(fi->style) - 1;		/* off by 1 error! width = #pixels not end-start */
 
@@ -2538,8 +2539,6 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 
   	/* removing it the second time will fail gracefully */
   g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id));
-
-//  printf("removing foo item %s\n",g_quark_to_string(featureset_item->id));
 
 //printf("features %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
 

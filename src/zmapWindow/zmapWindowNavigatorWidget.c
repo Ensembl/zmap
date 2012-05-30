@@ -40,6 +40,8 @@
 #include <zmapWindowCanvas.h>
 #include <zmapWindowNavigator_P.h>
 
+#define MH17_DEBUG_MAV_FOOBAR	0
+
 #define NAVIGATOR_WIDTH 100.0
 
 #define ZMAP_NAVIGATOR_CLASS_DATA "ZMAP_WINDOW_NAV_CLASS_DATA"
@@ -55,6 +57,7 @@ typedef struct _ZMapNavigatorClassDataStruct
   GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
   double start,end;
+  double span;
   ZMapWindowNavigator window_navigator;         /* needed to reposition text on resize */
 
 } ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
@@ -281,6 +284,7 @@ printf("nav size request %f %f, %f %f\n",x,y,start,end);
   class_data->container_height = y;
   class_data->start = start;
   class_data->end = end;
+  class_data->span = end - start + 1;
 
   return ;
 }
@@ -299,7 +303,8 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   zMapAssert(class_data);
 
   curr_pixels   = canvas->pixels_per_unit_y;
-  target_pixels = getZoomFactor(class_data->height, class_data->text_height, NAVIGATOR_SIZE);
+//  target_pixels = getZoomFactor(class_data->height, class_data->text_height, NAVIGATOR_SIZE);
+  target_pixels = getZoomFactor(class_data->height, class_data->text_height, class_data->span);
 
   {
       double x1, x2, y1, y2, x3;
@@ -325,14 +330,14 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
       foo_canvas_item_lower_to_bottom(class_data->top_bg);
       foo_canvas_item_set(class_data->bot_bg,
 			  "x1", 0.0,
-			  "y1", (double)NAVIGATOR_SIZE,
+			  "y1", class_data->span,	// (double)NAVIGATOR_SIZE,
 			  "x2", x3,
 			  "y2", y2,
 			  NULL);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
 
 #if MH17_DEBUG_MAV_FOOBAR
-printf("fill widget %f %f, %f %f\n",y1,0.0,(double) NAVIGATOR_SIZE,y2);
+printf("fill widget %f %f, %f %f\n",y1,0.0,class_data->span,y2);
 #endif
       zmapWindowNavigatorWidthChanged(widget, x1, x2);
   }
@@ -438,7 +443,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
   zMapAssert(x1 && x2 && y1 && y2);
 
   max_x = 32000.0;             /* only canvas limit */
-  max_y = (double)(NAVIGATOR_SIZE);
+  max_y = class_data->span;	//(double)(NAVIGATOR_SIZE);
 
   container_width  = class_data->container_width;
   container_height = class_data->container_height;

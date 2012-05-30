@@ -494,7 +494,8 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
   navigate->full_span.x1 = full_context->master_align->sequence_span.x1;
   navigate->full_span.x2 = full_context->master_align->sequence_span.x2 + 1.0;
 
-  navigate->scaling_factor = NAVIGATOR_SIZE / (navigate->full_span.x2 - navigate->full_span.x1 + 1.0);
+//  navigate->scaling_factor = NAVIGATOR_SIZE / (navigate->full_span.x2 - navigate->full_span.x1 + 1.0);
+  navigate->scaling_factor = 1.0;
 
   canvas = fetchCanvas(navigate);
 
@@ -536,9 +537,10 @@ print_foo("draw features");
 void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate)
 {
       /* NOTE this can get called before we even drew in the first place */
-
+#if MH17_CFS_WILL_DO_THIS
   if(navigate)
       repositionText(navigate);
+#endif
   return ;
 }
 
@@ -681,7 +683,7 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
       /* This is where we hide/show text matching the filter */
       foo_canvas_item_show(item); /* _always_ show the item */
 
-      /* If this a redraw, there may be aline item.  If there
+      /* If this a redraw, there may be a line item.  If there
        * is. Destroy it.  It'll get recreated... */
 
       if((line_item = g_object_get_data(G_OBJECT(item), ZMAPWINDOWTEXT_ITEM_TO_LINE)))
@@ -784,13 +786,6 @@ static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
   /* We need this! */
   zMapAssert(navigate->current_window);
 
-  /* Everything to get a context drawn, raised to top and visible. */
-  zMapFeatureContextExecuteComplete((ZMapFeatureAny)(nav_draw->context),
-                                    ZMAPFEATURE_STRUCT_FEATURE,
-                                    drawContext,
-                                    NULL, nav_draw);
-
-  repositionText(navigate);
 
 #if MH17_DEBUG_NAV_FOOBAR
 print_foo("nav draw 1");
@@ -807,6 +802,16 @@ print_foo("nav draw 1");
   zmapWindowNavigatorFillWidget(widget);
 #if MH17_DEBUG_NAV_FOOBAR
 print_foo("nav draw 2");
+#endif
+
+  /* Everything to get a context drawn, raised to top and visible. */
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny)(nav_draw->context),
+                                    ZMAPFEATURE_STRUCT_FEATURE,
+                                    drawContext,
+                                    NULL, nav_draw);
+
+#if MH17_CFS_WILL_DO_THIS
+  repositionText(navigate);
 #endif
 
   return ;
@@ -974,6 +979,8 @@ printf("nav draw block %d %d\n",block_start,block_end);
 	    ZMapWindowContainerFeatureSet container_feature_set;
             FooCanvasGroup *group_feature_set;
 	    ZMapStyleBumpMode bump_mode;
+
+//printf("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
 
             group_feature_set = FOO_CANVAS_GROUP(item);
 	    container_feature_set = (ZMapWindowContainerFeatureSet)item;

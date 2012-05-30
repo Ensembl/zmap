@@ -472,8 +472,6 @@ static void zmap_window_featureset_item_destroy     (GObject *object)
   	/* this can haooen twice: removing it the second time will fail gracefully */
 	g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(fi->id));
 
-//printf("removing canvas item %s\n",g_quark_to_string(fi->id));
-
 	/* canvasitem destroy that calls foo group destroy that calls foo item destroy */
 	/* how efficent! */
   	if(GTK_OBJECT_CLASS (parent_class_G)->destroy)

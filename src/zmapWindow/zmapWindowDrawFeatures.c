@@ -1215,7 +1215,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 #ifdef MH17_NEVER_INCLUDE_THIS_CODE
               zMapLogMessage("3F1: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
-//printf("3F1: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
+// printf("3F1: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 //	      if (window->display_3_frame)
 		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
 	    }
@@ -1237,7 +1237,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
-//printf("3F3: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
+// printf("3F3: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 
 		  /* remove all items from hash first !! */
 		  removeAllFeatures(window, container_set) ;

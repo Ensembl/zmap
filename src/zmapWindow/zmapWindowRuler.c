@@ -665,6 +665,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 	int i;
 	int scr_start;
 	int scr_end;
+//int nlines = 0;
 
 	if(revcomped)
 	{
@@ -811,7 +812,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 
 					zMapDrawLine(lines, scale_width - tick_width,  canvas_coord,
 						scale_width, canvas_coord, colour, 1.0) ;
-
+//nlines++;
 					if((gap > text_height * 2))
 					{
 	      				FooCanvasItem *item = NULL;
@@ -866,7 +867,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 			}
 		}
 	}
-
+//printf("%d lines drawn\n",nlines);
 	/* one vertical line */
 	zMapDrawLine(lines, scale_width, scroll_start * projection_factor,
 		scale_width, scroll_end  * projection_factor, &black, 1.0) ;
