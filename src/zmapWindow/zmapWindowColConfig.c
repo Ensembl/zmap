@@ -1479,11 +1479,16 @@ static void add_name_to_list(gpointer list_data, gpointer user_data)
 
   widget = button_data->column_button;
 
-  if(GTK_IS_RADIO_BUTTON(widget))
+  if (GTK_IS_RADIO_BUTTON(widget))
     {
-      if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
+      /* some buttons are set insensitive because they do not make sense, e.g. there is no
+       * point in fetching data for a marked region if all the data for the column has
+       * already been fetched. */
+      if (gtk_widget_is_sensitive(widget) && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
 	{
 	  *list_out = g_list_append(*list_out,GUINT_TO_POINTER(button_data->column_quark));
+
+	  zMapUtilsDebugPrintf(stdout, "%s\n", g_quark_to_string(button_data->column_quark)) ;
 	}
     }
 
