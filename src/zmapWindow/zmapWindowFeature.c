@@ -358,6 +358,8 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 #endif
 
 
+#if !ZWCI_AS_FOO
+
 /* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
  * AND DRAW A NEW ONE, THIS WILL INVALIDATE ANY CODE THAT IS CACHING THE ITEM.
  *
@@ -412,7 +414,7 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 
   return replaced_feature ;
 }
-
+#endif
 
 /* Remove an existing feature from the displayed feature context.
  *
@@ -1258,6 +1260,7 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 
 
 
+#if !ZXCI_AS_FOO
 /* this is surely a candidate for better encapsulation that this....it should be moved to
  * the items/ subdir in the SequenceFeature object. */
 static gboolean sequenceSelectionCB(FooCanvasItem *item,
@@ -1295,7 +1298,7 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
 
   return FALSE ;
 }
-
+#endif
 
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
@@ -1312,13 +1315,13 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
    * REVISIT THE WHOLE EVENT DELIVERY ORDER STUFF.....
    *
    *  */
-
+#if !ZWCI_AS_FOO
   /* ummmmm....I don't like this....suggests that all is not fully implemented in the new
    * feature item stuff..... */
   if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
     g_signal_connect(G_OBJECT(top_item), "sequence-selected",
 		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
-
+#endif
 
   switch(feature_stack->feature->type)
     {

@@ -3238,6 +3238,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  {
 	  case 1:
 	    {
+#if !ZWCI_AS_FOO
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
 		  && ZMAP_IS_WINDOW_TEXT_ITEM(item))
 		{
@@ -3250,6 +3251,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		  event_handled = FALSE ;
 		}
 		else if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+#else
+	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
+			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+#endif
 		{
 			/* ho hum we get the foo not the containg zmapWindowCanvasItem group, how consistent */
 

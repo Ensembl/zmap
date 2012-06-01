@@ -588,7 +588,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	      if(align->glyph3)
 		sig = g_quark_to_string(zMapWindowCanvasGlyphSignature(homology, feature->feature,3, score));
 
-	      /printf("%s glyph3 %f (%d %d,%d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, feature->feature->feature.homol.length, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
+	      //printf("%s glyph3 %f (%d %d,%d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, feature->feature->feature.homol.length, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
 #endif
 	    }
 

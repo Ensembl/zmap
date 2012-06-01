@@ -96,7 +96,7 @@ static void itemDestroyCB(gpointer data, gpointer user_data);
 /* Local globals. */
 
 
-
+#if !ZWCI_AS_FOO
 
 /*
  *                           External interface
@@ -208,6 +208,7 @@ static void zmap_window_collection_feature_destroy     (GObject *object)
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -592,7 +593,6 @@ zMapLogWarning("nc splice = %d (%.3s, %.3s)",splice,fragment_a,fragment_b);
 
 
 
-
 /* Note that however we do this calculation in the end where an item is an even number
  * of pixels across we end up jumping one side of the other of the true middle. */
 static double get_glyph_mid_point(FooCanvasItem *item)
@@ -626,4 +626,5 @@ static void itemDestroyCB(gpointer data, gpointer user_data_unused)
 }
 
 
+#endif
 

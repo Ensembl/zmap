@@ -267,6 +267,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
   return ;
 }
 
+#if !ZWCI_AS_FOO
 void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet container_set)
 {
   gboolean hidden_features ;
@@ -290,7 +291,7 @@ void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet cont
 
   return ;
 }
-
+#endif
 
 
 /* Bumps either the whole column represented by column_item, or if the item is a feature item
@@ -457,6 +458,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 //		printf("featureset bump in %.3f seconds\n", time);
 	return;
   }
+
+#if !ZWCI_AS_FOO
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
   /* always reset the column */
@@ -751,6 +754,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   zmapWindowBusy(window, FALSE) ;
 
   zMapPrintTimer(NULL, "finished bump") ;
+#endif
 
   return ;
 }
@@ -793,7 +797,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 
 
 
-
+#if !ZWCI_AS_FOO
 /*
  *                       Internal functions.
  */
@@ -2489,6 +2493,8 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
     }
   return colinearity ;
 }
+
+#endif
 
 
 // (menu item commented out)

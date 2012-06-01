@@ -205,6 +205,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
  */
 
 
+#if !ZWCI_AS_FOO
 /* mh17 NOTE
  * this table is indexed by the type paramter (LH column) and asserts if this does not consist of consecutive whole numbers
  * which means we can't subdivide the styles eg for simple graphgs and density plots.
@@ -222,6 +223,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
   {-1,                          NULL}
 };
+#endif
 
 ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash,
                                                 ZMapWindowLongItems long_items)
@@ -235,8 +237,10 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
       factory->ftoi_hash  = feature_to_item_hash;
       factory->long_items = long_items;
 
+#if !ZWCI_AS_FOO
       copyCheckMethodTable(&(factory_methods_G[0]),
                            &(factory->methods));
+#endif
 
       user_funcs->top_item_created = null_top_item_created;
       user_funcs->feature_size_request = null_feature_size_request;
@@ -434,12 +438,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->features++ ;
 	    stats->items++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
-
+	    method = &(method_table[style_mode]);
+#endif
 	    if(feature->flags.has_score)
 	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
-	    method = &(method_table[style_mode]);
 
 	    break;
 	  }
@@ -451,8 +456,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats = zmapWindowStatsAddAlign(parent_stats, feature) ;
 	    stats->total_matches++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
-
+#endif
 	    if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
             zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
           else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
@@ -470,7 +476,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		stats->ungapped_boxes++;
 		stats->total_boxes++;
 #endif
+#if !ZWCI_AS_FOO
 		method = &(method_table[ZMAPSTYLE_MODE_BASIC]);
+#endif
 	      }
 	    else
 	      {
@@ -492,11 +500,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 		  }
 
+#if !ZWCI_AS_FOO
 		method = &(method_table[style_mode]);
+#endif
 	      }
 
+#if !ZWCI_AS_FOO
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -508,10 +519,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->features++ ;
 	    stats->items++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -523,10 +535,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->features++ ;
 	    stats->items++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -557,27 +570,30 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		stats->cds_boxes++ ;
 	      }
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break ;
 	  }
 
 	case ZMAPSTYLE_MODE_SEQUENCE:
 	  {
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
 	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	  {
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -706,6 +722,7 @@ void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 }
 
 
+#if !ZWCI_AS_FOO
 
 /*
  *                          INTERNAL
@@ -747,7 +764,7 @@ static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *tabl
   return ;
 }
 
-
+#endif
 
 static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 {
@@ -897,7 +914,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 }
 
 
-#if ZWCI_AS_FOO
+#if !ZWCI_AS_FOO
 
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,

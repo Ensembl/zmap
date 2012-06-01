@@ -155,8 +155,9 @@ static size_t window_item_feature_size_G = 0;
 
 static gboolean debug_point_method_G = FALSE;
 
+#if !ZWCI_AS_FOO
 static gboolean debug_item_G = FALSE ;
-
+#endif
 
 
 /*!
@@ -212,6 +213,7 @@ void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item)
 }
 
 
+#if !ZWCI_AS_FOO
 /*!
  * \brief Create a ZMapWindowCanvasItem
  *
@@ -278,6 +280,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup *parent,
   return canvas_item;
 }
 
+#endif
 
 /*!
  * \brief   simply the opposite of create
@@ -704,6 +707,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 		  if(debug_point_method_G)
 		    printf("child[%d] is TEXT has dist=%f ", i, dist);
 		}
+#if !ZWCI_AS_FOO
 	      else if(ZMAP_IS_WINDOW_GLYPH_ITEM(child))
 		{
 		  /* glyph items are quite complex and really need to check bounds rather than point. */
@@ -712,6 +716,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 		  if(debug_point_method_G)
 		    printf("child[%d] is GLYPH has dist=%f ", i, dist);
 		}
+#endif
 	      else
 	      {
 	      		/* enables groups to be included in the ZMapWindowCanvasItem tree */
@@ -1679,8 +1684,11 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 			  NULL);
     }
   else if(g_type_is_a(interval_type, FOO_TYPE_CANVAS_RE)      ||
-	  g_type_is_a(interval_type, FOO_TYPE_CANVAS_POLYGON) ||
-	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_FEATURE))
+	  g_type_is_a(interval_type, FOO_TYPE_CANVAS_POLYGON)
+#if !ZWCI_AS_FOO
+	  || 	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_FEATURE)
+#endif
+		)
     {
       foo_canvas_item_set(interval,
 			  "fill_color_gdk", fill,
@@ -1749,6 +1757,7 @@ static double window_canvas_item_invoke_point (FooCanvasItem *item,
   return 1e18;
 }
 
+#if !ZWCI_AS_FOO
 
 static gboolean feature_is_drawable(ZMapFeature          feature_any,
 				    ZMapFeatureTypeStyle feature_style,
@@ -1769,6 +1778,10 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	mode = feature->type;
 	mode = zMapStyleGetMode(feature_style);
 
+
+#if ZWCI_AS_FOO
+	type = ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM;
+#else
 	switch(mode)
 	  {
 	  case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -1797,7 +1810,7 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	    type = ZMAP_TYPE_WINDOW_BASIC_FEATURE;
 	    break;
 	  }
-
+#endif
 	result = TRUE;
       }
       break;
@@ -1814,6 +1827,7 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
   return result;
 }
 
+#endif
 
 static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_data)
 {

@@ -632,6 +632,7 @@ static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expos
   return FALSE;                 /* lets others run. */
 }
 
+#if !ZWCI_AS_FOO
 static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_data)
 {
   RepositionTextData data = (RepositionTextData)user_data;
@@ -765,6 +766,7 @@ static void repositionText(ZMapWindowNavigator navigate)
 
   return ;
 }
+#endif
 
 
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
@@ -1791,6 +1793,8 @@ static void default_locus_names_filter(GList **filter_out)
   return ;
 }
 
+
+#if !ZWCI_AS_FOO
 /* compares the two strings for a list find */
 static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
 {
@@ -1800,7 +1804,7 @@ static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
 
   return result;
 }
-
+#endif
 
 
 /* container update hooks */

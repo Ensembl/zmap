@@ -485,10 +485,12 @@ gboolean zMapWindowSeqDispDeSelect(ZMapWindowSequenceFeature sequence_feature)
 		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, NULL,
 					    ZMAPSTYLE_COLOURTYPE_INVALID,  0,NULL,NULL);
 	}
+#if !ZWCI_AS_FOO
 	else
 	{
 		zMapWindowSequenceDeSelect(sequence_feature) ;
 	}
+#endif
 	return TRUE;
 }
 
@@ -708,10 +710,12 @@ gboolean zMapWindowSeqDispSelectByFeature(ZMapWindowSequenceFeature sequence_fea
 		}	/* end of switch */
 
 	}
+#if !ZWCI_AS_FOO
 	else
 	{
 		zMapWindowSequenceFeatureSelectByFeature(sequence_feature, item, seed_feature, cds_only, sub_feature );
 	}
+#endif
 	return TRUE;
 }
 
@@ -744,10 +748,12 @@ gboolean zMapWindowSeqDispSelectByRegion(ZMapWindowSequenceFeature sequence_feat
 		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
 				    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
 	}
+#if !ZWCI_AS_FOO
 	else
 	{
 	      zMapWindowSequenceFeatureSelectByRegion(sequence_feature, coord_type, region_start, region_end) ;
 	}
+#endif
 	return TRUE;
 }
 
@@ -759,7 +765,11 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean s
   FooCanvasItem *dna_item ;
 
   if ((dna_item = zmapWindowItemGetDNATextItem(window, item))
-      && (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) || ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM (dna_item)) && item != dna_item)
+      && (
+#if !ZWCI_AS_FOO
+		ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) ||
+#endif
+		ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM (dna_item)) && item != dna_item)
     {
       ZMapWindowSequenceFeature sequence_feature ;
       ZMapFeature feature ;

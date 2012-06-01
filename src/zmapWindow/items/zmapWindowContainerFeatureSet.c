@@ -1111,7 +1111,11 @@ gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet cont
 
       l = column_features->item_list;
 
-      if(l && (ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data) || ZMAP_IS_WINDOW_GRAPH_ITEM(l->data)))
+      if(l && (ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data)
+#if !ZWCI_AS_FOO
+		|| ZMAP_IS_WINDOW_GRAPH_ITEM(l->data)
+#endif
+		))
 		return(TRUE);
 
 	return(FALSE);
@@ -1331,9 +1335,9 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 
       container_set->user_hidden_stack = NULL;
     }
-
+#if !ZWCI_AS_FOO
   zMapWindowContainerFeatureSetRemoveSubFeatures(container_set) ;
-
+#endif
   {
     char *col_name ;
 
