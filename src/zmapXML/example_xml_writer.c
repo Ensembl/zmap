@@ -61,7 +61,7 @@ int main(int argc, char **argv)
       /* A SIMPLE XML DOCUMENT */
       events = simple_xml_document();
 
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
+      if((xml_status = zMapXMLWriterProcessEvents(writer, events, FALSE)) == ZMAPXMLWRITER_OK)
         printf("\nXMLDocument:\n%s", buffer->str);
       else
         printf("%s\n", zMapXMLWriterErrorMsg(writer));
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
       /* A MORE COMPLEX XML DOCUMENT */
       events = complex_xml_document();
 
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
+      if((xml_status = zMapXMLWriterProcessEvents(writer, events, FALSE)) == ZMAPXMLWRITER_OK)
         printf("\nXMLDocument:\n%s", buffer->str);
       else
         printf("%s\n", zMapXMLWriterVerboseErrorMsg(writer));
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
         events = xml_document_from_xml();
 
 
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
+      if((xml_status = zMapXMLWriterProcessEvents(writer, events, FALSE)) == ZMAPXMLWRITER_OK)
         printf("XMLDocument:\n\n%s", buffer->str);
       else
         printf("%s\n", zMapXMLWriterVerboseErrorMsg(writer));
