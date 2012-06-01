@@ -1537,6 +1537,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     fi->clip_y2 = rect.y + rect.height + 1;
   }
 
+//printf("paint %s\n",g_quark_to_string(fi->id));
 
   if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
@@ -2006,7 +2007,7 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
 
 /* sort by genomic coordinate for display purposes */
 /* start coord then end coord reversed, mainly for summarise fucntion */
-/* also used by collapse code */
+/* also used by collapse code and locus de-overlap  */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {
   ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;

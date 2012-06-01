@@ -57,6 +57,8 @@
 
 
 
+#if MH17_NOT_USED
+
 
 /* This function translates the bounds of the first and last cells
  * into the bounds for a polygon to highlight both cells and all those
@@ -246,6 +248,8 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
   return index_found;
 }
 
+
+#endif
 
 void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item)
 {

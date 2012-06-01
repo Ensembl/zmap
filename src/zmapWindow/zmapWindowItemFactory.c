@@ -194,6 +194,11 @@ static void drawFeatureExon(FooCanvasItem *feature_item,
 			    gboolean has_cds) ;
 
 
+static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
+                              double feature_offset,
+					double x1, double y1, double x2, double y2,
+                              ZMapFeatureTypeStyle style);
+
 
 /*
  * Static function tables for drawing features in various ways.
@@ -606,7 +611,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
              */
             block_y1 = feature_stack->block->block_to_sequence.block.x1;
             block_y2 = feature_stack->block->block_to_sequence.block.x2;
-            getFactoriedCoordinates(factory, &block_y1,&block_y2);
+// having taken the scaling factor out we don't need this
+//            getFactoriedCoordinates(factory, &block_y1,&block_y2);
             offset =  block_y1;
 
             run_data.factory   = factory;
@@ -614,13 +620,16 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             run_data.feature_stack = feature_stack;
             run_data.canvas_item = current_item;
 
-#if !MH17_TEST_WITHOUT_FOO
+#if ZWCI_AS_FOO
+		item = drawFeaturesetFeature(&run_data, feature, offset,
+     				  points[0], points[1],
+				  points[2], points[3],
+				  style);
+#else
             item   = ((method)->method)(&run_data, feature, offset,
 				  points[0], points[1],
 				  points[2], points[3],
 				  style);
-#else
-            item = g_new0(zmapWindowCanvasItemStruct,0);
 #endif
       }
 
@@ -888,6 +897,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 }
 
 
+#if ZWCI_AS_FOO
 
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,
@@ -2522,6 +2532,8 @@ static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBl
   return ;
 }
 #endif
+
+#endif	// ZWCI_AS_FOO
 
 static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
                                      double feature_offset,

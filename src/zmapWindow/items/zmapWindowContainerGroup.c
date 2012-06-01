@@ -823,7 +823,7 @@ static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *
 {
 #if MH17_REVCOMP_DEBUG
  ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) item;
-      zMapLogWarning("container group draw @ %f,%f - %f,%f, level %d (%d items), canvas %p", item->y1,item->x1,item->y2,item->x2, group->level, g_list_length(group->__parent__.item_list), item->canvas) ;
+      printf("container group draw @ %f,%f - %f,%f, level %d (%d items), canvas %p\n", item->y1,item->x1,item->y2,item->x2, group->level, g_list_length(group->__parent__.item_list), item->canvas) ;
 #endif
 
   if(item_parent_class_G->draw)

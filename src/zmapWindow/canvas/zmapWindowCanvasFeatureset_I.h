@@ -77,7 +77,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
+#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score or something else eg locus prefix */
 #define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
 #define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
 #define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */

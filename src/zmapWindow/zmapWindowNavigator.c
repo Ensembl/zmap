@@ -51,6 +51,8 @@
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
 
+#define MH17_DEBUG_NAV_FOOBAR	1
+
 typedef struct
 {
   /* inputs */
@@ -527,9 +529,6 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
 	}
       /* else { let the current expose handler do it... } */
     }
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("draw features");
-#endif
 
   return ;
 }
@@ -767,18 +766,6 @@ static void repositionText(ZMapWindowNavigator navigate)
   return ;
 }
 
-#if MH17_DEBUG_NAV_FOOBAR
-FooCanvasItem *text_foo = NULL;
-void print_foo(char * where)
-{
-      double x1,x2,y1,y2;
-      if(!text_foo)
-            return;
-
-      foo_canvas_item_get_bounds(text_foo,&x1,&y1,&x2,&y2);
-      printf("foo (%s) %f -> %f\n",where,y1,y2);
-}
-#endif
 
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
@@ -787,9 +774,6 @@ static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
   zMapAssert(navigate->current_window);
 
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("nav draw 1");
-#endif
 
 #warning MH17: NOTE this function does some very complex and bizarre stuff and removing it appears to have no effect.
 //  zmapWindowContainerRequestReposition(navigate->container_root);
@@ -800,9 +784,6 @@ print_foo("nav draw 1");
       (double) navigate->full_span.x2 * navigate->scaling_factor);
 
   zmapWindowNavigatorFillWidget(widget);
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("nav draw 2");
-#endif
 
   /* Everything to get a context drawn, raised to top and visible. */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)(nav_draw->context),
@@ -890,10 +871,13 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
  * in the item factory features get offset by a block start coordinate
  * which also has to be scaled
  */
+{
+int block_start, block_end;
         block_start = feature_block->block_to_sequence.block.x1;
         block_end   = feature_block->block_to_sequence.block.x2;
 
 printf("nav draw block %d %d\n",block_start,block_end);
+}
 #endif
 
         /* create the block and add the item to the hash */
@@ -980,7 +964,7 @@ printf("nav draw block %d %d\n",block_start,block_end);
             FooCanvasGroup *group_feature_set;
 	    ZMapStyleBumpMode bump_mode;
 
-//printf("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
+printf("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
 
             group_feature_set = FOO_CANVAS_GROUP(item);
 	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
@@ -1112,6 +1096,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
   style = zMapFindStyle(draw_data->styles,set_unique_id);
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 
+printf("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_set);
 
   if(!style)
     {
@@ -1657,7 +1642,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
       if(hash_entry->end < *x2_inout)
         hash_entry->end  = *x2_inout;
     }
-
+printf("locus factory %s outside = %d\n",feature? g_quark_to_string(feature->original_id) : "null" ,outside);
   return outside;
 }
 
@@ -1839,7 +1824,6 @@ static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, Fo
 char *name = "none";
 if(container->feature_any) name = zMapFeatureName(container->feature_any);
 printf("highlight locator %d %s\n", level,name);
-print_foo("");
 }
 #endif
       container_underlay = (FooCanvasGroup *)zmapWindowContainerGetUnderlay(container);
@@ -1862,7 +1846,7 @@ print_foo("");
 				      "y2", (double)(navigate->locator_y_coords.x2 * navigate->scaling_factor),
 				      NULL);
 #if MH17_DEBUG_NAV_FOOBAR
-("highlight_locator_area_cb %f %f\n",
+printf("highlight_locator_area_cb %f %f\n",
 (double)(navigate->locator_y_coords.x1),
 (double)(navigate->locator_y_coords.x2));
 #endif
@@ -1877,9 +1861,6 @@ print_foo("");
       break;
     }
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("highlight locator");
-#endif
 
   return TRUE;
 }
@@ -1892,18 +1873,12 @@ static gboolean idle_resize_widget_cb(gpointer navigate_data)
   g_return_val_if_fail(navigate->locator != NULL, FALSE);
 
   widget = GTK_WIDGET( navigate->locator->canvas );
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("idle resize 1");
-#endif
 
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1 * navigate->scaling_factor,
       (double) navigate->full_span.x2 * navigate->scaling_factor);
 
   zmapWindowNavigatorFillWidget(widget);
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("idle resize 2");
-#endif
 
   return FALSE;			/* only run once! */
 }
@@ -1931,7 +1906,7 @@ static gboolean positioning_cb(ZMapWindowContainerGroup container, FooCanvasPoin
   navigate->width  = width;
   navigate->height = height;
 #if MH17_DEBUG_NAV_FOOBAR
-("positioning_cb %f - %f = %f\n",points->coords[1],points->coords[3],height);
+printf("positioning_cb %f - %f = %f\n",points->coords[1],points->coords[3],height);
 #endif
 
   g_idle_add(idle_resize_widget_cb, navigate);

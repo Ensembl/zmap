@@ -57,15 +57,26 @@
 	x-offset of the text (can vary if bumped)
 */
 
+typedef struct
+{
+	double y1,y2;
+	double height;
+	int id;
+
+} LocusGroupStruct, *LocusGroup;
+
 
 
 typedef struct _zmapWindowCanvasLocusStruct
 {
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff, has locus extent */
+	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff, has locus extent as feature->feature->x1,x2 */
+								/* has canvas feature extent as feature->y1,y2 */
 
-	double y1, y2;		/* line coordinates, text appears around y2 */
+	double ylocus, ytext;		/* line coordinates, text appears around y2 */
 	double x_off;		/* of the text = RH x coord of line */
 #define ZMAP_LOCUS_LINE_WIDTH	20
+
+	LocusGroup group;
 
 } zmapWindowCanvasLocusStruct, *ZMapWindowCanvasLocus;
 
