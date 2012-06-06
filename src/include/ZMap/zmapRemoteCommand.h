@@ -63,6 +63,7 @@ ZMAP_DEFINE_ENUM(RemoteCommandRCType, REMOTE_COMMAND_RC_LIST) ;
 /* Return codes for message validation. */
 #define REMOTE_VALIDATE_RC_LIST(_)                                                                     \
 _(REMOTE_VALIDATE_RC_OK,               , "ok",               "Validation succeeded.",              "") \
+_(REMOTE_VALIDATE_RC_BODY_COMMAND,     , "body_command",     "Error in message body command.",     "") \
 _(REMOTE_VALIDATE_RC_BODY_CONTENT,     , "body_content",     "Error in message body content.",     "") \
 _(REMOTE_VALIDATE_RC_BODY_XML,         , "body_xml",         "Error in message body xml.",         "") \
 _(REMOTE_VALIDATE_RC_ENVELOPE_CONTENT, , "envelope_content", "Error in message envelope content.", "") \
