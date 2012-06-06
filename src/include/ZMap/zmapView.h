@@ -81,6 +81,7 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc destroy ;
 
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
 
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
@@ -119,6 +120,11 @@ typedef struct
 } ZMapViewCallbackFubarStruct, *ZMapViewCallbackFubar ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* MOVED TO zmapView_P.h */
+
 // tried to put these into ConnectionData but as ever there's scope issues
 typedef struct
 {
@@ -133,6 +139,8 @@ typedef struct
   unsigned long xwid ;  // X Window id for the xremote widg. */
 
 } LoadFeaturesDataStruct, *LoadFeaturesData ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

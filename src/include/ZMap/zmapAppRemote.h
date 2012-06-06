@@ -45,6 +45,7 @@
 
 #include <ZMap/zmapRemoteCommand.h>
 #include <ZMap/zmapXML.h>
+#include <ZMap/zmapFeature.h>
 
 
 
@@ -75,10 +76,11 @@ typedef struct ZMapViewWindowTreeStructName
 
 
 
-/* All sub-systems that accept or generate xremote requests/replies must use the
- * functions defined here to make and reply to requests. The code that
- * services this interface is in zmapApp/zmapAppRemoteCommand.c which
- * provides the interface between the zmap sub-systems and ZMapRemoteControl.
+/* All ZMap sub-systems (Mananger, Control etc) that accept or generate
+ * xremote requests/replies must use the functions defined here to make
+ * and reply to requests. The code that services this interface is in
+ * zmapApp/zmapAppRemoteCommand.c which provides the interface between
+ * the zmap sub-systems and ZMapRemoteControl.
  * 
  * The functions that respond to requests received by zmapAppRemoteCommand
  * are defined in the public header for the sub-system and then called
@@ -142,10 +144,18 @@ typedef void (*ZMapRemoteAppProcessReplyFunc)(char *command,
  * When a reply is received from the peer the sub-systems reply_func will be called back
  * with the command_rc, reason or reply and the reply_func_data as per the
  * ZMapRemoteAppProcessReplyFunc prototype. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef void (*ZMapRemoteAppMakeRequestFunc)(char *command, ZMapXMLUtilsEventStack request_body,
 					     gpointer app_request_data,
 					     ZMapRemoteAppProcessReplyFunc reply_handler_func,
 					     gpointer reply_handler_func_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+typedef void (*ZMapRemoteAppMakeRequestFunc)(char *command, ZMapXMLUtilsEventStack request_body,
+					     gpointer app_request_data,
+					     ZMapRemoteAppProcessReplyFunc reply_handler_func,
+					     gpointer reply_handler_func_data) ;
+
 
 
 
@@ -159,5 +169,6 @@ gboolean zMapAppRemoteViewParseIDStr(char *view_id_str, ZMapAppRemoteViewID *rem
 gboolean zMapAppRemoteViewParseID(GQuark view_id, ZMapAppRemoteViewID *remote_view_id_inout) ;
 gboolean zMapAppRemoteViewIsValidID(ZMapAppRemoteViewID remote_view_id) ;
 gboolean zMapAppRemoteViewResetID(ZMapAppRemoteViewID remote_view_id) ;
+
 
 #endif /* ZMAP_APP_REMOTE_H */

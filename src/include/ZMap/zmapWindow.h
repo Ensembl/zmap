@@ -182,12 +182,18 @@ typedef struct
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* MUST ALL GO NOW.... */
+
   /* Old xremote stuff.... */
 
   /* For Xremote XML actions/events. */
   ZMapXRemoteSendCommandError remote_result ;
 
   ZMapXMLHandlerStruct xml_handler ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -343,6 +349,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc drawn_data ;
 
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
 
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 

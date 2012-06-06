@@ -67,6 +67,7 @@ typedef struct
   ZMapManagerCallbackFunc quit_req_func ;
 
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  void *remote_request_func_data ;
 } ZMapManagerCallbacksStruct, *ZMapManagerCallbacks ;
 
 

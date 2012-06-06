@@ -59,7 +59,10 @@ typedef struct _ZMapCallbacksStruct
 							       been destroyed. */
   ZMapCallbackFunc quit_req ;				    /* Requests application
 							       termination. */
-  ZMapRemoteAppMakeRequestFunc remote_request_func ;	    /* App level function to call to make requests. */
+
+  /* App level function (+ its data) to call to make remote requests. */
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  void *remote_request_func_data ;
 
 } ZMapCallbacksStruct, *ZMapCallbacks ;
 
