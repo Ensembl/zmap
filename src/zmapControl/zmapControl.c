@@ -1,4 +1,3 @@
-/*  Last edited: Jul  5 10:26 2011 (edgrif) */
 /*  File: zmapControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: This is the ZMap interface code, it controls both
  *              the window code and the threaded server code.
@@ -33,10 +32,6 @@
 #include <ZMap/zmap.h>
 
 
-
-
-
-
 #include <stdio.h>
 #include <gtk/gtk.h>
 #include <ZMap/zmapView.h>
@@ -44,10 +39,15 @@
 #include <ZMap/zmapUtilsGUI.h>
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
 /* need to be sorted out sometime */
 /* but we need this header for an html escaping function */
 #include <ZMap/zmapUrlUtils.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 #include <zmapControl_P.h>
 
@@ -93,7 +93,8 @@ ZMapViewCallbacksStruct view_cbs_G =
     controlVisibilityChangeCB,
     viewStateChangeCB,
     viewKilledCB,
-    NULL						    /* Filled in by caller for xremote stuff. */
+    NULL,						    /* Filled in by caller for xremote stuff. */
+    NULL
   } ;
 
 
@@ -124,10 +125,12 @@ void zMapInit(ZMapCallbacks callbacks)
   zmap_cbs_G->quit_req = callbacks->quit_req ;
 
   zmap_cbs_G->remote_request_func = callbacks->remote_request_func ;
+  zmap_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
 
 
   /* Init view.... */
   view_cbs_G.remote_request_func = callbacks->remote_request_func ;
+  view_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
   zMapViewInit(&view_cbs_G) ;
 
 
@@ -689,14 +692,16 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-  //  if(!view_data)
-  /* need to update per column loaded for exciting feedback to the user */
-  {
-    /* Update title etc. */
-    updateControl(zmap, view) ;
 
-    zmapControlWindowSetGUIState(zmap) ;
-  }
+  /* Update title etc. per column loaded for exciting feedback to the user. */
+  updateControl(zmap, view) ;
+
+  zmapControlWindowSetGUIState(zmap) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Moved to View where it should always have been..... */
 
   //  else
   if (view_data)
@@ -707,7 +712,11 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	{
 	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else if (zmap->xremote_client)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      else if (zmap->remote_control)
 	{
 	  char *request ;
 	  char *response = NULL;
@@ -733,27 +742,27 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 	  if(lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
-	  {
-	  	ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
-	  	emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
-	  	g_free(ok_mess);
+	    {
+	      ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
+	      emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
+	      g_free(ok_mess);
 
-	  	{
-			static long total = 0;
+	      {
+		static long total = 0;
 
-			total += lfd->num_features;
-			zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
-	  	}
-	  }
+		total += lfd->num_features;
+		zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+	      }
+	    }
 	  else
-	  	emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
+	    emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
 
-        if(lfd->stderr_out)
-        {
-       	gchar *old = lfd->stderr_out;
-      	lfd->stderr_out =  html_quote_string(old);
+	  if(lfd->stderr_out)
+	    {
+	      gchar *old = lfd->stderr_out;
+	      lfd->stderr_out =  html_quote_string(old);
     	      g_free(old);
-        }
+	    }
 
 
 	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
@@ -773,12 +782,19 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 	  free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+	  /* OLD STUFF.......REPLACE WITH THE NEW.... */
+
 	  if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
 	      != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
 	    {
 	      response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
 	      zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
 	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  g_free(request);
 	  g_free(featurelist);
@@ -786,6 +802,8 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	}
 
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return ;
@@ -994,7 +1012,7 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
     zmapControlWindowSetGUIState(zmap) ;
 
 #if 1
-  if(zmap->xremote_server)
+  if(zmap->remote_control)
     {
       if(fubar && fubar->state == ZMAPVIEW_MAPPED)
       {
