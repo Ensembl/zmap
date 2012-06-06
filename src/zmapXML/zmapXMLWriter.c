@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -172,7 +172,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *c
   return code;
 }
 
-ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element)
+ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element, gboolean full_format)
 {
   ZMapXMLWriterErrorCode code = ZMAPXMLWRITER_OK;
   GQuark name_quark = 0;
@@ -183,7 +183,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
 
   if ((stack_head = popElement(writer, name_quark)))
     {
-      if(!(writer->stack_top_has_content))
+      if (!(writer->stack_top_has_content) && !full_format)
         {
           /* g_string_append_c(writer->xml_output, ' '); */
           g_string_append_c(writer->xml_output, '/');
@@ -192,6 +192,12 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
         }
       else
         {
+	  if (!(writer->stack_top_has_content) && full_format)
+	    {
+	      g_string_append(writer->xml_output, ">\n");
+	      writer->stack_top_has_content = TRUE;
+	    }
+
           depth = (writer->element_stack->len) * 2;
           for(i=0;i<depth;i++)
             { g_string_append_c(writer->xml_output, ' '); }
@@ -245,7 +251,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer)
   ZMapXMLWriterErrorCode code;
   char *doc_tag = NULL;
 
-  zMapXMLWriterEndElement(writer, doc_tag);
+  zMapXMLWriterEndElement(writer, doc_tag, FALSE);
 
   flushToOutput(writer);
 
@@ -255,8 +261,13 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer)
 }
 
 
-/* Event processing code.  FIFO logic, processed in exactly the same order as created... */
-ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events)
+/* Event processing code.  FIFO logic, processed in exactly the same order as created...
+ * 
+ * If full_format TRUE then both start and end elements are output even if there is no
+ * content. This is useful when the result is to be passed to other code.
+ * 
+ *  */
+ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events, gboolean full_format)
 {
   int event_count = 0, i = 0 ;
   ZMapXMLWriterEvent event = NULL ;
@@ -280,7 +291,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
           break;
         case ZMAPXML_END_ELEMENT_EVENT:
           first  = (char *)g_quark_to_string(event->data.name);
-          status = zMapXMLWriterEndElement(writer, first);
+          status = zMapXMLWriterEndElement(writer, first, full_format);
           break;
         case ZMAPXML_CHAR_DATA_EVENT:
 

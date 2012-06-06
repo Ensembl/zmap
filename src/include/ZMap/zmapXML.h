@@ -349,10 +349,10 @@ ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, gp
 ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name);
 ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value);
 ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *content);
-ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element);
+ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element, gboolean full_format);
 ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer);
 ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag);
-ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events);
+ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events, gboolean full_format);
 char *zMapXMLWriterGetXMLStr(ZMapXMLWriter writer) ;
 ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
 char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer);
@@ -366,7 +366,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
 GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
 						      char *element_name, ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
-char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out) ;
+char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format) ;
 
 
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
