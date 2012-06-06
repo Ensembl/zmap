@@ -52,9 +52,10 @@
 
 
 
+#if !ZWCI_AS_FOO
 typedef enum {FIRST_MATCH, LAST_MATCH} MatchType ;
 
-
+ZMapWindowCanvasItem
 typedef struct
 {
   ZMapWindowCanvasItem parent;
@@ -96,7 +97,7 @@ static void itemDestroyCB(gpointer data, gpointer user_data);
 /* Local globals. */
 
 
-#if !ZWCI_AS_FOO
+
 
 /*
  *                           External interface

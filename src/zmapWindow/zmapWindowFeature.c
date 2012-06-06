@@ -117,9 +117,11 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout,
                                       gpointer handler_data);
 
+#if !ZWCI_AS_FOO
 static gboolean sequenceSelectionCB(FooCanvasItem *item,
 				    int start, int end, int seq_x1, int seq_x2,
 				    gpointer user_data) ;
+#endif
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
 				       GError *error, gpointer user_data) ;
@@ -461,6 +463,10 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             }
 
 
+#if ZWCI_AS_FOO
+	  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
+		zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
+#else
 //zMapLogWarning("OTF: remove %s",g_quark_to_string(feature->unique_id));
 	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(feature_item))
 	  {
@@ -472,6 +478,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 //			gtk_object_destroy(GTK_OBJECT(feature_item)) ;
 		  }
 	  }
+#endif
 	  else
 	  {
 		  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
@@ -803,8 +810,10 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
 
+#if !ZWCI_AS_FOO
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
+#endif
 
   if (window->focus)
     zmapWindowFocusRemoveOnlyFocusItem(window->focus, feature_item) ;
@@ -1178,7 +1187,11 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
   GList *l;
   ZMapStyleBumpMode curr_bump_mode ;
 
+#if ZWCI_AS_FOO
+  if(!daddy || !ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
+#else
   if(!daddy || !ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
+#endif
     {
       zMapLogWarning("compress called for invalid type of foo canvas item", "");
       return;
@@ -1260,7 +1273,7 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 
 
 
-#if !ZXCI_AS_FOO
+#if !ZWCI_AS_FOO
 /* this is surely a candidate for better encapsulation that this....it should be moved to
  * the items/ subdir in the SequenceFeature object. */
 static gboolean sequenceSelectionCB(FooCanvasItem *item,

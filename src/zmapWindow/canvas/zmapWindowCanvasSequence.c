@@ -468,7 +468,7 @@ static void zmapWindowCanvasSequenceFreeSet(ZMapWindowFeaturesetItem featureset)
 	/* nominally there is only one feature in a seq column, but we could have 3 franes staggered.
 	 * besides, this data is in the feature not the featureset so we have to iterate regardless
 	 * NOTE the stagger is done in the FeaturesetItem, so we can have only one seq in this featureset
-	 * we can resolve this when ZMapWindowCanvasItems are removed
+	 * so we expect only one iteration in this loop
 	 */
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
@@ -591,10 +591,9 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 	if(zMapStyleGetMode(featureset->style) != ZMAPSTYLE_MODE_SEQUENCE)
 		return FALSE;
 
-	/* first button press: need to find the seq canvas feature to base out coords on */
+	/* first button press: need to find the seq canvas feature to base our coords on */
 	/* could concievably have 3 features in a column offset by index
 	 * NOTE the stagger is done in the FeaturesetItem, so we can have only one seq in this featureset
-	 * we can resolve this when ZMapWindowCanvasItems are removed
 	 */
 	if(set) for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{

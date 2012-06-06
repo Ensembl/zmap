@@ -51,7 +51,7 @@
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
 
-#define MH17_DEBUG_NAV_FOOBAR	1
+#define MH17_DEBUG_NAV_FOOBAR	0
 
 typedef struct
 {
@@ -101,7 +101,9 @@ typedef struct
 }RepositionTextDataStruct, *RepositionTextData;
 
 
+#if !ZWCI_AS_FOO
 static void repositionText(ZMapWindowNavigator navigate);
+#endif
 
 static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
 						    ZMapWindowContainerGroup container);
@@ -162,7 +164,9 @@ static void destroyLocusEntry(gpointer data);
 static void get_filter_list_up_to(GList **filter_out, int max);
 static void available_locus_names_filter(GList **filter_out);
 static void default_locus_names_filter(GList **filter_out);
+#if !ZWCI_AS_FOO
 static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data);
+#endif
 
 /* The container update hooks */
 static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -1644,7 +1648,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
       if(hash_entry->end < *x2_inout)
         hash_entry->end  = *x2_inout;
     }
-printf("locus factory %s outside = %d\n",feature? g_quark_to_string(feature->original_id) : "null" ,outside);
+//printf("locus factory %s outside = %d\n",feature? g_quark_to_string(feature->original_id) : "null" ,outside);
   return outside;
 }
 
@@ -1655,7 +1659,7 @@ static void customiseFactory(ZMapWindowNavigator navigate)
   ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
   /* create a factory and set up */
-  navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash, NULL);
+  navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash);	//, NULL);
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
   factory_helpers.top_item_created     = factoryItemHandler;
   zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */

@@ -166,7 +166,9 @@ typedef struct
 } MakeNameListsHashDataStruct, *MakeNameListsHashData;
 
 
+#if !ZWCI_AS_FOO
 static void bumpColCB(gpointer data, gpointer user_data) ;
+
 
 
 //static void compareListOverlapCB(gpointer data, gpointer user_data) ;
@@ -233,6 +235,8 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#endif
 
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				   ZMapContainerLevelType level, gpointer user_data);
@@ -308,16 +312,19 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 			       ZMapWindowCompressMode compress_mode)
 {
   BumpColStruct bump_data = {NULL} ;
-  FooCanvasGroup *column_features ;
   ZMapWindowContainerFeatureSet container = NULL;
-  BumpPropertiesStruct bump_properties = {NULL};
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window;
   gboolean column = FALSE ;
-  gboolean bumped = TRUE ;
+
   gboolean mark_set;
   int start, end ;
+#if !ZWCI_AS_FOO
+  FooCanvasGroup *column_features ;
+  BumpPropertiesStruct bump_properties = {NULL};
+  gboolean bumped = TRUE ;
   double width, bump_spacing = 0.0 ;
+#endif
 //double time;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -443,8 +450,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 		for(l = column_features->item_list;l;l = l->next)
       	{
+#if !ZWCI_AS_FOO
       		/* cast to int because of headers catch22 knottiness */
 			if(!zMapWindowCanvasFeaturesetItemBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+#else
+			if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+#endif
 			    ok = FALSE;
       	}
 

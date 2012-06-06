@@ -45,7 +45,7 @@
 
 
 #include <zmapWindowCanvasFeatureset.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
+
 
 /* set a KNOWN initial size for the foo_canvas!
  * ... the same size as foo_canvas sets ...
@@ -653,10 +653,12 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
+#if !ZWCI_AS_FOO
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
    * than this limit as we zoom in and crop them ourselves. */
   ZMapWindowLongItems long_items ;
+#endif
   ZMapWindowFToIFactory item_factory;
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when

@@ -128,10 +128,8 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
 
-FooCanvasItem *zMapWindowFeaturesetItemSetInit(FooCanvasItem *foo,
-					       GQuark id, int start,int end,
-					       ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
-					       int index);
+
+ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index);
 
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y);
 
@@ -176,6 +174,8 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZM
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
 
 gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem featureset, gboolean set, double x, double y, long *start, long *end);
+
+void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2);
 
 
 

@@ -45,7 +45,7 @@
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
+#include <zmapWindowCanvasFeatureset.h>
 
 
 /* The property param ids for the switch statements */
@@ -1016,7 +1016,11 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 		feature = item->feature;
 		style = feature->style;
 
+#if ZWCI_AS_FOO
+        	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
+#else
         	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(list->data))
+#endif
         	{
         		/* each item in the column will be a single CanvasFeatureset wrapped up in a ZMapWindowCanvasItem */
         		GList *l = ((FooCanvasGroup *) item)->item_list;
@@ -1111,11 +1115,14 @@ gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet cont
 
       l = column_features->item_list;
 
-      if(l && (ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data)
-#if !ZWCI_AS_FOO
-		|| ZMAP_IS_WINDOW_GRAPH_ITEM(l->data)
+      if(l &&
+#if ZWCI_AS_FOO
+		ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data)
+#else
+		(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data)
+		|| ZMAP_IS_WINDOW_GRAPH_ITEM(l->data))
 #endif
-		))
+		)
 		return(TRUE);
 
 	return(FALSE);

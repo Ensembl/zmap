@@ -371,7 +371,11 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       while ((exon_list_member = g_list_previous(exon_list_member))) ;
 
 
+#if ZWCI_AS_FOO
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+#else
 	if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
+#endif
 	     zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
 
       pep_start = (pep_start + 2) / 3 ;	/* we assume frame 1, bias other frames backwards */
@@ -392,7 +396,11 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	      pep_start = current_exon->sequence_span.x1 ;
 
+#if ZWCI_AS_FOO
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+#else
 		if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
+#endif
 			zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
 
 		pep_start = (pep_start + 2) / 3 ;
@@ -404,7 +412,11 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       while ((exon_list_member = g_list_next(exon_list_member))) ;
 
 
+#if ZWCI_AS_FOO
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+#else
 	if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
+#endif
 	{
 		/* The redraw call needs to go into the func called by the g_object_set call.....check the
 		* available foo_canvas calls........ */

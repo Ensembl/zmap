@@ -43,7 +43,7 @@
 #include <zmapWindowFeatureList.h>
 #include <zmapWindow_P.h>
 
-#include <items/zmapWindowCanvasItem_I.h> /* for debugguing */
+//#include <items/zmapWindowCanvasItem_I.h> /* for debugguing */
 
 #define ZMAP_WINDOW_LIST_OBJ_KEY "ZMapWindowList"
 

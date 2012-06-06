@@ -815,8 +815,9 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
        * group itself is not a long item. */
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
 	{
-	  FooCanvasItem *long_item ;
 	  double height ;
+#if !ZWCI_AS_FOO
+	  FooCanvasItem *long_item ;
 
 
 	  /* this code tries to deal with long items but fails to deal with the zooming and the
@@ -825,8 +826,10 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  /* Item may have been clipped by long items code so reinstate its true bounds. */
 	  long_item = (FooCanvasItem *)zmapWindowContainerGetBackground(ZMAP_CONTAINER_GROUP(item)) ;
 
-	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item,
-					     &ix1, &iy1, &ix2, &iy2) ;
+	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item, &ix1, &iy1, &ix2, &iy2) ;
+#else
+	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
+#endif
 
 	  /* If we are using the background then we should use it's height as originally set. */
 	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
@@ -1206,6 +1209,8 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 }
 
 
+
+#if !ZWCI_AS_FOO
 /* This function returns the original bounds of an item ignoring any long item clipping that may
  * have been done. */
 void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
@@ -1239,7 +1244,7 @@ void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanva
   return ;
 }
 
-
+#endif
 
 
 

@@ -44,7 +44,7 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
 
-#include <zmapWindowCanvasItemFeatureSet.h>
+#include <zmapWindowCanvasFeatureset.h>
 
 // temp include for timing test
 #include <zmapWindowCanvasItem_I.h>
@@ -70,7 +70,7 @@ typedef struct _ZMapWindowFToIFactoryStruct
   guint line_width ;
   ZMapWindowFToIFactoryMethodsStruct *methods;
   GHashTable                         *ftoi_hash;
-  ZMapWindowLongItems                 long_items;
+//  ZMapWindowLongItems                 long_items;
   ZMapWindowFToIFactoryProductionTeam user_funcs;
   gpointer                            user_data;
   double                              limits[4];
@@ -98,10 +98,14 @@ typedef struct _RunSetStruct
    : ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (ARRAY_INDEX) + 1 : (SUBPART_ARRAY)->len - (ARRAY_INDEX)) )
 
 
+static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
+
+#if !ZWCI_AS_FOO
+
 static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in,
                                  ZMapWindowFToIFactoryMethodsStruct       **table_out) ;
 
-static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
+
 
 /* ZMapWindowFToIFactoryInternalMethod prototypes */
 static FooCanvasItem *invalidFeature(RunSet run_data, ZMapFeature feature,
@@ -172,19 +176,6 @@ static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBl
 					     gboolean *t_indel_gt_1,
 					     gboolean *q_indel_gt_1);
 #endif
-static gboolean null_top_item_created(FooCanvasItem *top_item,
-                                      ZMapWindowFeatureStack feature_stack,
-                                      gpointer handler_data);
-static gboolean null_feature_size_request(ZMapFeature feature,
-                                          double *limits_array,
-                                          double *points_array_inout,
-                                          gpointer handler_data);
-
-static gboolean clip_feature_coords(ZMapWindowFToIFactory factory,
-				    ZMapFeature           feature,
-				    double                offset,
-				    double               *start_inout,
-				    double               *end_inout);
 
 static void drawFeatureExon(FooCanvasItem *feature_item,
 			    double feature_offset,
@@ -193,6 +184,26 @@ static void drawFeatureExon(FooCanvasItem *feature_item,
 			    double item_right, double line_width,
 			    gboolean has_cds) ;
 
+
+
+#endif
+
+
+static gboolean null_top_item_created(FooCanvasItem *top_item,
+                                      ZMapWindowFeatureStack feature_stack,
+                                      gpointer handler_data);
+static gboolean null_feature_size_request(ZMapFeature feature,
+                                          double *limits_array,
+                                          double *points_array_inout,
+                                          gpointer handler_data);
+
+#if !ZWCI_AS_FOO
+static gboolean clip_feature_coords(ZMapWindowFToIFactory factory,
+				    ZMapFeature           feature,
+				    double                offset,
+				    double               *start_inout,
+				    double               *end_inout);
+#endif
 
 static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
                               double feature_offset,
@@ -225,8 +236,8 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
 };
 #endif
 
-ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash,
-                                                ZMapWindowLongItems long_items)
+ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash)
+//                                                ZMapWindowLongItems long_items)
 {
   ZMapWindowFToIFactory factory = NULL;
   ZMapWindowFToIFactoryProductionTeam user_funcs = NULL;
@@ -235,7 +246,7 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
      (user_funcs = g_new0(ZMapWindowFToIFactoryProductionTeamStruct, 1)))
     {
       factory->ftoi_hash  = feature_to_item_hash;
-      factory->long_items = long_items;
+//      factory->long_items = long_items;
 
 #if !ZWCI_AS_FOO
       copyCheckMethodTable(&(factory_methods_G[0]),
@@ -369,8 +380,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       ZMapStyleMode style_mode ;
       double *limits = &(factory->limits[0]);
       double *points = &(factory->points[0]);
+#if !ZWCI_AS_FOO
       ZMapWindowFToIFactoryMethods method = NULL;
       ZMapWindowFToIFactoryMethodsStruct *method_table = NULL;
+#endif
       ZMapWindowStats stats ;
 
       style = feature->style ;
@@ -656,8 +669,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           ZMapFrame frame;
 	  ZMapStrand strand;
 
+#if !ZWCI_AS_FOO
+/* mh17: NOTE not referenced */
           g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, (gpointer) style) ;
-
+#endif
 	  frame  = zmapWindowContainerFeatureSetGetFrame((ZMapWindowContainerFeatureSet)parent_container);
 	  strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet)parent_container);
 
@@ -709,7 +724,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 {
   factory->ftoi_hash  = NULL;
-  factory->long_items = NULL;
+//  factory->long_items = NULL;
   g_free(factory->user_funcs);
   factory->user_data  = NULL;
   /* font desc??? */
@@ -899,10 +914,14 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 	 * not the x1,x2 coordinates
 	 */
   	{
+#if ZWCI_AS_FOO
+	      zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) canvas_item, feature, y1, y2);
+#else
   		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
   		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
 
 	      zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) foo, feature, y1, y2);
+#endif
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;
@@ -2550,8 +2569,6 @@ static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBl
 }
 #endif
 
-#endif	// ZWCI_AS_FOO
-
 static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
                                      double feature_offset,
                                      double x1, double y1, double x2, double y2,
@@ -2562,6 +2579,9 @@ static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
 
   return NULL;
 }
+#endif	// ZWCI_AS_FOO
+
+
 
 static gboolean null_top_item_created(FooCanvasItem *top_item,
                                       ZMapWindowFeatureStack feature_stack,

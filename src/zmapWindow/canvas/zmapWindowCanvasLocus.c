@@ -67,15 +67,15 @@ static void zmapWindowCanvasLocusGetPango(GdkDrawable *drawable, ZMapWindowFeatu
 
 void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
-	gulong fill,outline;
-	int colours_set, fill_set, outline_set;
+//	gulong fill,outline;
+//	int colours_set, fill_set, outline_set;
 	double x1,x2;
 
 	FooCanvasItem *foo = (FooCanvasItem *) featureset;
 	ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) feature;
 	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
 	char *text;
-	int len, width;
+	int len;
      	int cx1, cy1, cx2, cy2;
 
 	zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
@@ -116,8 +116,10 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 	GList *groups = NULL;
 	int n_groups = 0;
 	GList *l;
-	double needed = 0.0, spare, overlap;
-	double group_sep, item_sep;
+	double needed = 0.0, spare;
+//	double overlap;
+//	double group_sep;
+//	double item_sep;
 	double cur_y;
 
 	visible = g_list_sort(visible, zMapFeatureCmp);
@@ -157,7 +159,7 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 			group_span->y2 = locus->feature.feature->x2;
 
 		group_span->height += text_h;
-printf("locus %s in group %d %.1f,%.1f (%.1f)\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, group_span->y1, group_span->y2, group_span->height);
+//printf("locus %s in group %d %.1f,%.1f (%.1f)\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, group_span->y1, group_span->y2, group_span->height);
 
 		needed += text_h;
 	}
@@ -184,7 +186,7 @@ printf("locus %s in group %d %.1f,%.1f (%.1f)\n",g_quark_to_string(locus->featur
 		cur_y = locus->ytext + text_h;
 		group_span->y2 = cur_y;
 		group_span->height = group_span->y2 - group_span->y1;
-printf("locus %s/%d @ %.1f(%.1f)\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, locus->ytext, group_span->height);
+//printf("locus %s/%d @ %.1f(%.1f)\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, locus->ytext, group_span->height);
 	}
 
 		/* de-overlap each group moving upwards  */
@@ -217,7 +219,7 @@ printf("locus %s/%d @ %.1f(%.1f)\n",g_quark_to_string(locus->feature.feature->or
 
 		}
 		cur_y = group_span->y1;
-printf("group %d @ %.1f\n",group_span->id,cur_y);
+//printf("group %d @ %.1f\n",group_span->id,cur_y);
 	}
 
 	/* now move the loci to where the groups are */
@@ -233,7 +235,7 @@ printf("group %d @ %.1f\n",group_span->id,cur_y);
 		}
 
 		locus->ytext = cur_y;
-printf("locus %s/%d @ %.1f\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, cur_y);
+//printf("locus %s/%d @ %.1f\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, cur_y);
 
 		locus->feature.y1 = cur_y - text_h / 2;
 		locus->feature.y2 = cur_y + text_h / 2;
@@ -271,10 +273,10 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 	GList *visible = NULL;
 	double span = featureset->end - featureset->start + 1.0;
 	double text_h;
-	FooCanvasItem *foo = (FooCanvasItem *) featureset;
+//	FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
 	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
-printf("locus zoom\n");
+//printf("locus zoom\n");
 	zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
 
 	featureset->width = 0.0;
@@ -306,7 +308,7 @@ not implemented yet!
 				featureset->width = width;
 			n_loci++;
 			visible = g_list_prepend(visible,(gpointer) locus);
-printf("visible locus %s\n",g_quark_to_string(locus->feature.feature->original_id));
+//printf("visible locus %s\n",g_quark_to_string(locus->feature.feature->original_id));
 		}
 	}
 	/* do more filtering if there are too many loci */
@@ -351,11 +353,11 @@ static void zMapWindowCanvasLocusFreeSet(ZMapWindowFeaturesetItem featureset)
 
 static void zMapWindowCanvasLocusAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
 {
-	ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+	(void) zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
 
 	featureset->zoom = 0.0;		/* force recalc of de-overlap */
 						/* force display at all */
-	printf("added locus feature %s\n",g_quark_to_string(feature->original_id));
+//	printf("added locus feature %s\n",g_quark_to_string(feature->original_id));
 }
 
 

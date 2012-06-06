@@ -47,7 +47,6 @@
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapSkipList.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasItemFeatureSet_I.h>
 
 typedef struct  _BumpColRangeStruct *BumpColRange;
 
@@ -279,10 +278,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	double time;
 #endif
 
-      /* transitional code: the column has 0 or more featureset items
-       * which are ZMapWindowCanvasItems which are FooCanvasGroups
-       * so we need the get the real ZMapWindowFeaturesetItem in the group's item_list
-       */
+
 //printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 
 #if MODULE_STATS
