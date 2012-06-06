@@ -149,7 +149,7 @@ ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
 
       zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers, end_handlers);
 
-      if ((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
+      if ((zMapXMLWriterProcessEvents(xml_creator, xml_events, FALSE)) == ZMAPXMLWRITER_OK)
         {
           result = send_client_command(xremote, parser, full_text, &common_data);
         }
