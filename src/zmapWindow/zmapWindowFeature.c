@@ -911,24 +911,36 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	      /* Second click of a double click means show feature details. */
 	      if (but_event->button == 1)
 		{
-		  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
 
-		  highlight_item = item;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+		  highlight_item = item ;
 
 		  /* If external client then call them to do editing. */
 		  if (window->xremote_client)
-		    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
-								     "edit", highlight_item) ;
+		    zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
+						ZACP_EDIT_FEATURE, highlight_item) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  /* We can't do this like this any more.....leave it for now and if we need to do
+		   * this then code needs a restructure as for showFeature. */
 
 		  /* If there is no external client or the external client times out then show what we can. */
 		  if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
 		    {
 		      if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-			zMapWarning("Request failed to external client to edit feature \"%s\"",
+			zMapWarning("\"%s\" request failed to external client for feature \"%s\"",
+				    ZACP_EDIT_FEATURE,
 				    g_quark_to_string(feature->original_id)) ;
 
 		      zmapWindowFeatureShow(window, highlight_item) ;
 		    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		}
 
 	      second_press = FALSE ;
@@ -987,7 +999,11 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
       gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       ZMapFeatureSubPartSpan sub_feature ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
@@ -1026,21 +1042,35 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    {
 	      replace_highlight = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* CAN'T HAPPEN LIKE THIS ANY MORE, XREMOTE CALL IS ASYNC NOW.... */
 	      if ((window->xremote_client)
 		  && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
-									"multiple_select", highlight_item))
+									ZACP_SELECT_MULTI_FEATURE, highlight_item))
 		      == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
-		zMapWarning("Multi-select call to external client failed for feature \"%s\"",
+		zMapWarning("\"%s\" call to external client failed for feature \"%s\"",
+			    ZACP_SELECT_MULTI_FEATURE,
 			    g_quark_to_string(feature->original_id)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      zmapWindowUpdateXRemoteData(window, my_feature,
+					  ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
 	    }
 	  else
 	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* CAN'T HAPPEN LIKE THIS ANY MORE, XREMOTE CALL IS ASYNC NOW.... */
 	      if ((window->xremote_client)
 		  && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
-									"single_select", highlight_item))
+									ZACP_SELECT_FEATURE, highlight_item))
 		      == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
-		zMapWarning("Single-select call to external client failed for feature \"%s\"",
+		zMapWarning("\"%s\" to external client failed for feature \"%s\"",
+			    ZACP_SELECT_FEATURE,
 			    g_quark_to_string(feature->original_id)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      zmapWindowUpdateXRemoteData(window, my_feature,
+					  ZACP_SELECT_FEATURE, highlight_item) ;
 
 	      window->multi_select = TRUE ;
 	    }
@@ -1048,12 +1078,19 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       else
 	{
 	  /* single select */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* CAN'T HAPPEN LIKE THIS ANY MORE, XREMOTE CALL IS ASYNC NOW.... */
 	  if ((window->xremote_client)
 	      && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
-								    "single_select", highlight_item))
+								    ZACP_SELECT_FEATURE, highlight_item))
 		  == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
-	    zMapWarning("Single-select call to external client failed for feature \"%s\"",
+	    zMapWarning("\"%s\" call to external client failed for feature \"%s\"",
+			ZACP_SELECT_FEATURE,
 			g_quark_to_string(feature->original_id)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  zmapWindowUpdateXRemoteData(window, my_feature,
+				      ZACP_SELECT_FEATURE, highlight_item) ;
 
 	  window->multi_select = FALSE ;
 	}
@@ -1611,7 +1648,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case ITEM_MENU_SHOW_TRANSCRIPT:       /* XML formats are different for evidence and transcripts */
     case ITEM_MENU_ADD_TRANSCRIPT:        /* but we handle that in zmapWindowFeatureGetEvidence() */
       {
-            // show evidence for a transcript
+	// show evidence for a transcript
         ZMapWindowFocus focus = menu_data->window->focus;
 
         if(focus)
@@ -1622,7 +1659,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
             /* clear any existing highlight */
             if(menu_item_id != ITEM_MENU_ADD_EVIDENCE)
-                  zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_EVIDENCE);
+	      zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_EVIDENCE);
 
             /* add the transcript to the evidence group */
             zmapWindowFocusAddItemType(menu_data->window->focus, menu_data->item, menu_data->feature, WINDOW_FOCUS_GROUP_EVIDENCE);
@@ -1633,45 +1670,45 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
             /* search for the features named in the list and find thier canvas items */
 
             for(;evidence;evidence = evidence->next)
-            {
-                  GList *items,*items_free;
-                  GQuark wildcard = g_quark_from_string("*");
-                  char *feature_name;
-                  GQuark feature_search_id;
+	      {
+		GList *items,*items_free;
+		GQuark wildcard = g_quark_from_string("*");
+		char *feature_name;
+		GQuark feature_search_id;
 
-                  /* need to add a * to the end to match strand and frame name mangling */
-
-
-                  feature_name = g_strdup_printf("%s*",g_quark_to_string(GPOINTER_TO_UINT(evidence->data)));
-                  feature_name = zMapFeatureCanonName(feature_name);    /* done in situ */
-                  feature_search_id = g_quark_from_string(feature_name);
-
-			if(feature_search_id == wildcard)
-				/* catch NULL names due to ' getting escaped int &apos; */
-				continue;
-
-                  items_free = zmapWindowFToIFindItemSetFull(menu_data->window,
-                             menu_data->window->context_to_item,
-                             any->parent->parent->parent->unique_id,
-                             any->parent->parent->unique_id,
-                             wildcard,0,"*","*",
-                             feature_search_id,
-                             NULL,NULL);
+		/* need to add a * to the end to match strand and frame name mangling */
 
 
-                  /* zMapLogWarning("evidence %s returns %d features\n", feature_name, g_list_length(items_free));*/
-                  g_free(feature_name);
+		feature_name = g_strdup_printf("%s*",g_quark_to_string(GPOINTER_TO_UINT(evidence->data)));
+		feature_name = zMapFeatureCanonName(feature_name);    /* done in situ */
+		feature_search_id = g_quark_from_string(feature_name);
 
-                  for(items = items_free; items; items = items->next)
+		if(feature_search_id == wildcard)
+		  /* catch NULL names due to ' getting escaped int &apos; */
+		  continue;
+
+		items_free = zmapWindowFToIFindItemSetFull(menu_data->window,
+							   menu_data->window->context_to_item,
+							   any->parent->parent->parent->unique_id,
+							   any->parent->parent->unique_id,
+							   wildcard,0,"*","*",
+							   feature_search_id,
+							   NULL,NULL);
+
+
+		/* zMapLogWarning("evidence %s returns %d features\n", feature_name, g_list_length(items_free));*/
+		g_free(feature_name);
+
+		for(items = items_free; items; items = items->next)
                   {
-                        /* NOTE: need to filter by transcript start and end coords in case of repeat alignments */
-                        /* Not so - annotators want to see duplicated features' data */
+		    /* NOTE: need to filter by transcript start and end coords in case of repeat alignments */
+		    /* Not so - annotators want to see duplicated features' data */
 
-                        evidence_items = g_list_prepend(evidence_items,items->data);
+		    evidence_items = g_list_prepend(evidence_items,items->data);
 
                   }
-                  g_list_free(items_free);
-            }
+		g_list_free(items_free);
+	      }
 
             /* menu_data->item is the transcript and would be the
              * focus hot item if this was a focus highlight
@@ -1679,7 +1716,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
              */
 
             zmapWindowFocusAddItemsType(menu_data->window->focus, evidence_items,
-                  NULL /* menu_data->item */, WINDOW_FOCUS_GROUP_EVIDENCE);
+					NULL /* menu_data->item */, WINDOW_FOCUS_GROUP_EVIDENCE);
 
 
             g_list_free(evidence);
@@ -1689,17 +1726,17 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	break;
       }
 
-	case ITEM_MENU_EXPAND:
-	{
-		zmapWindowFeatureExpand(menu_data->window, menu_data->item, menu_data->feature, menu_data->container_set);
-	}
-	break;
+    case ITEM_MENU_EXPAND:
+      {
+	zmapWindowFeatureExpand(menu_data->window, menu_data->item, menu_data->feature, menu_data->container_set);
+      }
+      break;
 
-	case ITEM_MENU_CONTRACT:
-	{
-		zmapWindowFeatureContract(menu_data->window, menu_data->item, menu_data->feature, menu_data->container_set);
-	}
-	break;
+    case ITEM_MENU_CONTRACT:
+      {
+	zmapWindowFeatureContract(menu_data->window, menu_data->item, menu_data->feature, menu_data->container_set);
+      }
+      break;
 
 
 #ifdef RDS_DONT_INCLUDE
