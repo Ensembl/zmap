@@ -175,13 +175,14 @@ void zMapManagerInit(ZMapManagerCallbacks callbacks)
 							    /* called when zmap does something that gui needs to know about (remote calls) */
   manager_cbs_G->quit_req_func = callbacks->quit_req_func ; /* called when layer below requests that zmap app exits. */
 
+  /* Called when a zmap component wants to make a remote request. */
   manager_cbs_G->remote_request_func = callbacks->remote_request_func ;
-							    /* Called when a zmap component wants
-							       to make a remote request. */
+  manager_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
 
-  /* Init control callbacks.... */
+  /* Init zmap remote control callbacks.... */
   zmap_cbs_G.remote_request_func = callbacks->remote_request_func ;
-  
+  zmap_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
+
   zMapInit(&zmap_cbs_G) ;
 
   return ;
