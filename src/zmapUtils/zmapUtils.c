@@ -171,14 +171,18 @@ char *zMapGetCopyrightString(void)
  *  */
 char *zMapGetWebSiteString(void)
 {
+  char *website_string = NULL ;
+
   /* PACKAGE_URL is an automake/conf generated #define from information given to the AC_INIT
    * macro....on some of our systems the version of autoconf is too old to do this....hence
    * this hack... */
 #ifndef PACKAGE_URL
-#define PACKAGE_URL "http://http://www.sanger.ac.uk/resources/software/zmap/"
+#define PACKAGE_URL "http://www.sanger.ac.uk/resources/software/zmap/"
 #endif
 
-  return PACKAGE_URL ;
+  website_string = PACKAGE_URL ;
+
+  return website_string ;
 }
 
 
