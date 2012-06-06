@@ -188,6 +188,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       /* set up the remote_request_func, subsystems check for this routine to determine
        * if they should make/service xremote calls. */
       app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
+      app_window_cbs_G.remote_request_func_data = (void *)app_context ;
 
       remote_control = TRUE ;
     }
