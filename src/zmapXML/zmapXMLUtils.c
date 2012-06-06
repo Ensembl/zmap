@@ -166,7 +166,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
       char *request ;
       char *err_msg = NULL ;
 
-      request = zMapXMLUtilsStack2XML(result, &err_msg) ;
+      request = zMapXMLUtilsStack2XML(result, &err_msg, FALSE) ;
 
       zMapDebugPrint(debug, "%s", request) ;
     }
@@ -197,7 +197,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsE
 
 
 /* Take a stack of xml parts and convert to the string containing the xml. */
-char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out)
+char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format)
 {
   char *xml_string = NULL ;
   ZMapXMLWriter writer ;
@@ -206,7 +206,7 @@ char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out)
     {
       ZMapXMLWriterErrorCode xml_status ;
 
-      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack)) != ZMAPXMLWRITER_OK)
+      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack, full_format)) != ZMAPXMLWRITER_OK)
         *err_msg_out = g_strdup(zMapXMLWriterErrorMsg(writer)) ;
       else
 	xml_string = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
