@@ -87,9 +87,14 @@
 #define ZACP_LOAD_FEATURES      "load_features"
 #define ZACP_DUMP_FEATURES      "export_context"
 
-#define ZACP_FIND_FEATURE     "find_feature"
-#define ZACP_CREATE_FEATURE   "create_feature"
-#define ZACP_DELETE_FEATURE   "delete_feature"
+
+#define ZACP_CREATE_FEATURE       "create_feature"
+#define ZACP_SELECT_FEATURE       "single_select"
+#define ZACP_SELECT_MULTI_FEATURE "multiple_select"
+#define ZACP_DETAILS_FEATURE      "feature_details"
+#define ZACP_EDIT_FEATURE         "edit"
+#define ZACP_FIND_FEATURE         "find_feature"
+#define ZACP_DELETE_FEATURE       "delete_feature"
 
 
 #define ZACP_GOODBYE       "goodbye"
