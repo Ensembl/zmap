@@ -50,6 +50,15 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapCmdLineArgs.h>
+
+/* This was the comment when this was in zmapControl.c...not sure why... */
+/* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
+/* need to be sorted out sometime */
+/* but we need this header for an html escaping function */
+#include <ZMap/zmapUrlUtils.h>
+
+
+
 #include <zmapView_P.h>
 
 
@@ -213,6 +222,8 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
+static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd) ;
+
 static void print_source_2_sourcedata(char * str,GHashTable *data) ;
 static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
@@ -237,6 +248,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
   viewVisibilityChangeCB,
   commandCB,
   loaded_dataCB,
+  NULL,
   NULL
 } ;
 
@@ -296,10 +308,12 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->state_change = callbacks->state_change ;
   view_cbs_G->destroy = callbacks->destroy ;
   view_cbs_G->remote_request_func = callbacks->remote_request_func ;
+  view_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
 
 
   /* Init windows.... */
   window_cbs_G.remote_request_func = callbacks->remote_request_func ;
+  window_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
   zMapWindowInit(&window_cbs_G) ;
 
   return ;
@@ -2200,83 +2214,90 @@ static void viewFocusCB(ZMapWindow window, void *caller_data, void *window_data)
 
 
 /* Called when some sequence window feature (e.g. column, actual feature etc.)
- * has been selected. */
+ * has been selected, takes care of highlighting of objects....sounds like this
+ * should be done in ZMapControl to me.... */
 static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowSelect window_select = (ZMapWindowSelect)window_data ;
   ZMapViewSelectStruct view_select = {0} ;
 
+
+  /* I DON'T UNDERSTAND HOW WE CAN BE CALLED IF THERE IS NO SELECT...SOUNDS DUBIOUS... */
+
   /* Check we've got a window_select! */
-  if(!window_select)
-    return ;                    /* !!! RETURN !!! */
-
-
-  if ((view_select.type = window_select->type) == ZMAPWINDOW_SELECT_SINGLE)
+  if (window_select)
     {
-      if (window_select->highlight_item)
+      if ((view_select.type = window_select->type) == ZMAPWINDOW_SELECT_SINGLE)
 	{
-	  GList* list_item ;
-
-	  /* Highlight the feature in all windows, BUT note that we may not find it in some
-	   * windows, e.g. if a window has been reverse complemented the item may be hidden. */
-	  list_item = g_list_first(view_window->parent_view->window_list) ;
-
-	  do
+	  if (window_select->highlight_item)
 	    {
-	      ZMapViewWindow view_window ;
-	      FooCanvasItem *item ;
-		GList *l;
+	      GList* list_item ;
 
-	      view_window = list_item->data ;
-
-
-		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+	      /* Highlight the feature in all windows, BUT note that we may not find it in some
+	       * windows, e.g. if a window has been reverse complemented the item may be hidden. */
+	      list_item = g_list_first(view_window->parent_view->window_list) ;
+	      do
 		{
-			zMapWindowHighlightObject(view_window->window, item,
-					  window_select->replace_highlight_item,
-					  window_select->highlight_same_names) ;
+		  ZMapViewWindow view_window ;
+		  FooCanvasItem *item ;
+		  GList *l;
+
+		  view_window = list_item->data ;
+
+		  if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+		    {
+		      zMapWindowHighlightObject(view_window->window, item,
+						window_select->replace_highlight_item,
+						window_select->highlight_same_names) ;
+		    }
+
+		  for (l = window_select->feature_list; l ; l = l->next)
+		    {
+		      ZMapFeature feature = (ZMapFeature) l->data;
+
+		      /* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+		       * NOTE: can have several featuresets in one column
+		       * feature_list inlcudes the second and subsequent features found, the first is given explicitly
+		       */
+		      zMapWindowHighlightFeature(view_window->window, feature, FALSE);
+		    }
 		}
-
-
-		for(l = window_select->feature_list;l; l = l->next)
-		{
-			ZMapFeature feature = (ZMapFeature) l->data;
-
-			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
-			 * NOTE: can have several featuresets in one column
-			 * feature_list inlcudes the second and subsequent features found, the first is given explicitly
-			 */
-			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
-		}
+	      while ((list_item = g_list_next(list_item))) ;
 	    }
-	  while ((list_item = g_list_next(list_item))) ;
+
+	  view_select.feature_desc = window_select->feature_desc ;
+	  view_select.secondary_text = window_select->secondary_text ;
+
+	  view_select.filter = window_select->filter ;
 	}
 
 
-      view_select.feature_desc   = window_select->feature_desc ;
-      view_select.secondary_text = window_select->secondary_text ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /*  THIS NEEDS TO GO...SHOULD BE A CALL TO REMOTE DIRECTLY FROM WINDOW LEVEL....MAKE THIS HAPPEN....*/
 
-      view_select.filter   = window_select->filter ;
-    }
-
-
-  if (window_select->xml_handler.zmap_action)
-    {
-      window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
+	if (window_select->xml_handler.zmap_action)
+	  {
+	    window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
 								     window_select->xml_handler.zmap_action,
 								     window_select->xml_handler.xml_events,
 								     window_select->xml_handler.start_handlers,
 								     window_select->xml_handler.end_handlers,
 								     window_select->xml_handler.handler_data) ;
+
+
+	  }
+
+      /* temporary.... */
+      window_select->xml_handler.handled = FALSE ;
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
+      (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
+
     }
-
-
-  /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
-  (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
-
-  /* temporary.... */
-  window_select->xml_handler.handled = FALSE ;
 
   return ;
 }
@@ -2591,7 +2612,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  gboolean thread_has_died = FALSE ;
 	  gboolean steps_finished = FALSE ;
 	  gboolean is_continue = FALSE;
-	  LoadFeaturesDataStruct lfd;
+	  ZMapViewLoadFeaturesDataStruct lfd ;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
@@ -2607,7 +2628,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  // need to copy this info in case of thread death which clears it up
 
-	  if (cd)
+	  if (zmap_view->remote_control && cd)
 	    {
 	      lfd.feature_sets = cd->feature_sets;
 	      lfd.xwid = zmap_view->xwid;
@@ -2930,17 +2951,26 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		        }
 		    }
 
+		  /* All done, so tell our peer if we have one. */
+		  if (zmap_view->remote_control)
+		    {
+		      lfd.status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
+		      lfd.err_msg = err_msg ;
+		      lfd.start = cd->start;
+		      lfd.end = cd->end;
 
-		  lfd.status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
-		  lfd.err_msg = err_msg ;
-		  lfd.start = cd->start;
-		  lfd.end = cd->end;
+		      lfd.num_features = cd->num_features;
+		      lfd.exit_code = cd->exit_code;
+		      lfd.stderr_out = cd->stderr_out;
 
-		  lfd.num_features = cd->num_features;
-		  lfd.exit_code = cd->exit_code;
-		  lfd.stderr_out = cd->stderr_out;
 
+		      sendViewLoaded(zmap_view, &lfd) ;
+		    }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, &lfd) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
 		}
 	    }
 
@@ -2973,6 +3003,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
       zmap_view->sources_loading = 0;
       state_change = TRUE;
 
+
 #if 0
       /* MH17 NOTE: I'm re-using this flag for the moment just to see if it's effective
        * if restarting a session then load pipes in series (from cached files)
@@ -2989,6 +3020,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 #endif
     }
 
+  /* Inform the layer about us that our state has changed. */
   if (state_change)
     {
       (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
@@ -4966,31 +4998,43 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 {
   gboolean handled = FALSE ;				    /* Allow others to handle. */
   ZMapView zmap_view = (ZMapView)user_data ;
-  ZMapViewCallbackFubarStruct fubar;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapViewCallbackFubarStruct fubar ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* I don't think we need this any more.......so we may not even need this handler any more.... */
   zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
 
 //  if(zmap_view->state == ZMAPVIEW_INIT)
   {
-    if(zmap_view->state < ZMAPVIEW_MAPPED)
-      zmap_view->state = ZMAPVIEW_MAPPED;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* I THINK THIS IS ALL REDUNDANT NOW.... */
 
-    fubar.xwid  = zmap_view->xwid;
-    fubar.state = ZMAPVIEW_MAPPED;
-      /* force this state to make the view_ready message only appear once from the following callback */
+    if (zmap_view->state < ZMAPVIEW_MAPPED)
+      zmap_view->state = ZMAPVIEW_MAPPED ;
 
 
-      /* this is really quite confused:
-       * we have to use a fubar to pass data in the view that we also pass to this callback in the view
-       * on account of private and public headers. The callback cannot use the view data on account of scope.
-       * view->app_data is a blank pointer given to the view containing something unknown
-       * in the calling module there is a ZMap struct that contains a blank pointer called app_data
-       * and there is code that cast the ZMap->app_data into a ZMap
-       * the callback cannot access the view->app_data.
-       */
+    /* force this state to make the view_ready message only appear once from the following callback */
+    fubar.xwid  = zmap_view->xwid ;
+    fubar.state = ZMAPVIEW_MAPPED ;
+
+
+    /* this is really quite confused:
+     * we have to use a fubar to pass data in the view that we also pass to this callback in the view
+     * on account of private and public headers. The callback cannot use the view data on account of scope.
+     * view->app_data is a blank pointer given to the view containing something unknown
+     * in the calling module there is a ZMap struct that contains a blank pointer called app_data
+     * and there is code that cast the ZMap->app_data into a ZMap
+     * the callback cannot access the view->app_data.
+     */
     (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, &fubar) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   }
 
+  /* We don't want to be called again. */
   g_signal_handler_disconnect(zmap_view->xremote_widget, zmap_view->map_event_handler) ;
 
   return handled ;
@@ -5058,5 +5102,192 @@ static void print_col2fset(char * str,GHashTable *data)
 }
 
 
+static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
+{
+  static ZMapXMLUtilsEventStackStruct
+    zmap_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
+	       {0}},
+    zmap_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
+	     {0}},
+    req_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE, {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_CMD, ZMAPXML_EVENT_DATA_QUARK, {0}},
+		   {0}},
+    req_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE,  {0}},
+		 {0}},
+    featureset[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {0}},
+    start[] = {{ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
+	       {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+	       {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
+	       {0}},
+    end[] = {{ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+	     {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+	     {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+	     {0}},
+    status[] = {{ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		{ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{0}},
+      exit_code[] = {{ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		   {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {0}},
+    stderr[] = {{ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		{ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{0}} ;
+    GArray *request_stack = NULL ;
+
+  if (!(lfd->feature_sets))
+    {
+      zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+    }
+  else
+    {
+      char *request ;
+      char *response = NULL;
+      GList *features;
+      char *featurelist = NULL;
+      char *f,*emsg;
+      char *ok_mess = NULL;
+      ZMapXMLUtilsEventStack data_ptr = NULL ;
 
 
+      for (features = lfd->feature_sets ; features ; features = features->next)
+	{
+	  char *prev ;
+
+	  f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+
+	  prev = featurelist ;
+
+	  if (!prev)
+	    featurelist = g_strdup(f) ;
+	  else
+	    featurelist = g_strjoin(";", prev, f, NULL) ;
+
+	  g_free(prev) ;
+	}
+
+      if(lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+	{
+	  ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
+	  emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
+	  g_free(ok_mess);
+
+	  {
+	    static long total = 0;
+
+	    total += lfd->num_features;
+	    zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+	  }
+	}
+      else
+	{
+	  emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
+	}
+
+      if (lfd->stderr_out)
+	{
+	  gchar *old = lfd->stderr_out;
+	  lfd->stderr_out =  html_quote_string(old);
+	  g_free(old);
+	}
+
+      req_start[1].value.q = g_quark_from_string("features_loaded") ;
+      featureset[1].value.s = featurelist ;
+      start[1].value.i = lfd->start ;
+      end[1].value.i = lfd->end ;
+      status[1].value.i = (int)lfd->status ;
+      status[2].value.s = emsg ;
+      exit_code[1].value.i = lfd->exit_code ;
+      stderr[1].value.s = lfd->stderr_out ? lfd->stderr_out : "" ;
+
+
+NO.....WRONG....JUST CREATE THE BODY HERE...........
+
+      /* Create the xml request and display it in our request window. WHAT SHOULD VIEW PARAM BE
+	 HERE ? PROBABLY NOT NULL.....! */
+      request_stack = zMapRemoteCommandCreateRequest(remote_data->remote_cntl, "features_loaded", NULL, -1) ;
+
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    ZACP_REQUEST, &featureset[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    "featureset", &start[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    "start", &end[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    "end", &status[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    "status", &exit_code[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    "exit_code", &stderr[0]) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
+				" <client xwid=\"0x%lx\" />"
+				" <featureset names=\"%s\" />"
+				" <start value=\"%d\" />"
+				" <end value=\"%d\" />"
+				" <status value=\"%d\" message=\"%s\" />"
+				" <exit_code value=\"%d\" />"
+				" <stderr value=\"%s\" />"
+				"</request></zmap>",
+				lfd->xwid, featurelist,
+				lfd->start, lfd->end,
+				(int)lfd->status,
+				emsg, lfd->exit_code,
+				lfd->stderr_out ? lfd->stderr_out : "") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* OLD STUFF.......REPLACE WITH THE NEW.... */
+
+      if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
+	  != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+	{
+	  response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
+	  zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      /* something like this.....need to make a func call to our remote code in zmapview.... */
+
+      /* Send request to peer program. */
+      (*(view_cbs_G->remote_request_func))(command, request_stack,
+					   view_cbs_G->remote_request_func_data,
+					   localProcessReplyFunc, view) ;
+
+
+
+
+
+      g_free(request);
+      g_free(featurelist);
+
+    }
+
+  return ;
+}
+
+
+static void localProcessReplyFunc(char *command,
+				  RemoteCommandRCType command_rc,
+				  char *reason,
+				  char *reply,
+				  gpointer reply_handler_func_data)
+{
+  ZMapView view = (ZMapView)reply_handler_func_data ;
+
+
+  return ;
+}
