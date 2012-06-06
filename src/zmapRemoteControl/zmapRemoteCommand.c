@@ -78,6 +78,7 @@ typedef struct ParseDataStructName
 
 
   /* User for finding reply attributes. */
+  char *reply ;
   RemoteCommandRCType return_code ;
   char *reason ;
   char *reply_body ;
@@ -119,6 +120,7 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
 					     GQuark msg_type, gboolean validate_command,
 					     GQuark version,
 					     GQuark app_id, GQuark clipboard_id, char *xml_request, char **error_out) ;
+static char *getReplyContents(char *reply) ;
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
@@ -185,7 +187,7 @@ static ZMapXMLObjTagFunctionsStruct parse_reply_starts_G[] =
 
 static ZMapXMLObjTagFunctionsStruct parse_reply_ends_G[] =
   {
-    { "reply",    xml_reply_body_cb    },
+    { "reply", xml_reply_body_cb},
     {NULL, NULL}
   };
 
@@ -327,21 +329,27 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 	*error_out = err_msg ;
 	break ;
       }
-    default:
+   default:
       {
-	GQuark req_version ;
-	GQuark req_app_id ;
-	GQuark req_clipboard_id ;
-	char *req_request_id ;
+	GQuark req_version = 0 ;
+	GQuark req_app_id = 0 ;
+	GQuark req_clipboard_id = 0 ;
+	char *request_command = NULL ;
+	char *req_request_id = NULL ;
 
 	if (!getRequestAttrs(xml_request, &req_version, &req_app_id, &req_clipboard_id,
-			     &req_request_id, NULL, &err_msg))
+			     &req_request_id, &request_command, &err_msg))
 	  {
 	    *error_out = err_msg ;
 	  }
 	else
 	  {
-	    char *command = "**error**" ;
+	    char *command ;
+
+	    if (valid_rc == REMOTE_VALIDATE_RC_BODY_COMMAND)
+	      command = "**error**" ;
+	    else
+	      command = request_command ;
 
 	    if ((return_code == REMOTE_COMMAND_RC_OK && !reason) || (return_code != REMOTE_COMMAND_RC_OK && reason))
 	      envelope = createRequestReply(ENVELOPE_REPLY, remote_control->version,
@@ -642,7 +650,7 @@ gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command)
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL,
 				  NULL,
-				  -1, NULL, NULL} ;
+				  NULL, -1, NULL, NULL} ;
   ZMapXMLParser parser;
 
   parser = zMapXMLParserCreate(&command_data, FALSE, FALSE) ;
@@ -670,7 +678,7 @@ char *zMapRemoteCommandRequestGetCommand(char *request)
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL,
 				  NULL,
-				  -1, NULL, NULL} ;
+				  NULL, -1, NULL, NULL} ;
   ZMapXMLParser parser;
 
   parser = zMapXMLParserCreate(&command_data, FALSE, FALSE) ;
@@ -698,8 +706,10 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL,
 				  NULL,
-				  -1, NULL, NULL} ;
-  ZMapXMLParser parser;
+				  NULL, -1, NULL, NULL} ;
+  ZMapXMLParser parser ;
+
+  command_data.reply = reply ;
 
   parser = zMapXMLParserCreate(&command_data, FALSE, FALSE) ;
 
@@ -1010,7 +1020,7 @@ static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
 				   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				   0, 0, 0, NULL,
 				   NULL,
-				   -1, NULL, NULL} ;
+				   NULL, -1, NULL, NULL} ;
   ZMapXMLParser parser;
 
   if (!req_command)
@@ -1053,7 +1063,7 @@ static gboolean getReplyAttrs(char *xml_reply, GQuark *reply_version,
 				   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				   0, 0, 0, NULL,
 				   NULL,
-				   -1, NULL, NULL} ;
+				   NULL, -1, NULL, NULL} ;
   ZMapXMLParser parser;
 
   parser = zMapXMLParserCreate(&validate_data, FALSE, FALSE) ;
@@ -1096,7 +1106,7 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
 				   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				   0, 0, 0, NULL,
 				   NULL,
-				   -1, NULL, NULL} ;
+				   NULL, -1, NULL, NULL} ;
   ZMapXMLParser parser ;
 
   validate_data.message_type = msg_type ;
@@ -1123,6 +1133,8 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
 	result = REMOTE_VALIDATE_RC_ENVELOPE_CONTENT ;
       else if (!validate_data.req_reply_start)
 	result = REMOTE_VALIDATE_RC_BODY_XML ;
+      else if (!validate_data.validate_command)
+	result = REMOTE_VALIDATE_RC_BODY_COMMAND ;
       else if (validate_data.validate_command && !validate_data.req_reply_content)
 	result = REMOTE_VALIDATE_RC_BODY_CONTENT ;
       else if (!validate_data.req_reply_end)
@@ -1441,12 +1453,23 @@ static gboolean xml_reply_body_cb(gpointer user_data, ZMapXMLElement request_ele
 
   if (result)
     {
-      /* if the command failed succeeded then get the reply body. */
+      /* if the command succeeded then get the reply body. */
       if (validate_data->return_code == REMOTE_COMMAND_RC_OK)
 	{
 	  char *reply_body ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* This does not work if what you we want are the nested tags within the reply
+	   * tags....expat does not (correctly) include them in the reply tag "body"
+	   * as they are tags in their own right. */
 	  if ((reply_body = zMapXMLElementContentsToString(request_element)))
+	    {
+	      validate_data->reply_body = g_strdup(reply_body) ;
+	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  if ((reply_body = getReplyContents(validate_data->reply)))
 	    {
 	      validate_data->reply_body = g_strdup(reply_body) ;
 	    }
@@ -1588,3 +1611,35 @@ static gboolean getAttribute(ZMapXMLParser parser, ZMapXMLElement element,
   return result ;
 }
 
+
+/* Takes a full zmap reply and returns all the characters between the reply
+ * tags:
+ * 
+ * <zmap....>
+ *  <reply....>
+ *    RETURNS ALL THE STUFF IN HERE......
+ *  </reply....>
+ * </zmap>
+ *
+ * Returns NULL on error.
+ *  */
+static char *getReplyContents(char *reply)
+{
+  char *reply_contents = NULL ;
+  char *start, *end ;
+  size_t bytes ;
+
+  /* Look for "<reply", then look for closing ">", then look for"</reply" and
+   * copy all text in between. */
+  if ((start = strstr(reply, "<reply"))
+      && (start = strstr(start, ">"))
+      && (end = strstr(start, "</reply")))
+    {
+      start++ ;
+      end -- ;
+      bytes = (end - start) + 1 ;
+      reply_contents = g_strndup(start, bytes) ;
+    }
+
+  return reply_contents ;
+}
