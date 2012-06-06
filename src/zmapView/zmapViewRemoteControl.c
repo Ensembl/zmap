@@ -321,7 +321,8 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
   gboolean result = FALSE ;
 
   if (strcmp(command_name, ZACP_CREATE_FEATURE) == 0
-      || strcmp(command_name, ZACP_DELETE_FEATURE) == 0)
+      || strcmp(command_name, ZACP_DELETE_FEATURE) == 0
+      || strcmp(command_name, ZACP_LOAD_FEATURES) == 0)
     {
       localProcessRemoteRequest(view, command_name, view_id, request,
 				app_reply_func, app_reply_data) ;
@@ -1854,7 +1855,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
       else
 	{
 	  g_string_append(request_data->err_msg, "Load features to marked region failed: no mark set.") ;
-	  request_data->command_rc = ZMAPXREMOTE_BADREQUEST;
+	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
 	}
     }
   else
@@ -1863,7 +1864,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
       end = request_data->block->block_to_sequence.parent.x2 ;
     }
 
-  if (request_data->command_rc == ZMAPXREMOTE_OK)
+  if (request_data->command_rc == REMOTE_COMMAND_RC_OK)
     zmapViewLoadFeatures(view, request_data->block, request_data->feature_sets, start, end,
 			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 
