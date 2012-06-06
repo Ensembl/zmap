@@ -361,6 +361,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->drawn_data = callbacks->drawn_data;
   
   window_cbs_G->remote_request_func = callbacks->remote_request_func ;
+  window_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
 
   return ;
 }
@@ -1796,85 +1797,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 }
 
 
-ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
-							char *action, FooCanvasItem *real_item)
-{
-  ZMapXRemoteSendCommandError result = FALSE ;
-
-  result = zmapWindowUpdateXRemoteDataFull(window, feature_any,
-					   action, real_item, NULL, NULL, NULL) ;
-
-  return result ;
-}
-
-ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
-							    char *action, FooCanvasItem *real_item,
-							    ZMapXMLObjTagFunctions start_handlers,
-							    ZMapXMLObjTagFunctions end_handlers,
-							    gpointer handler_data)
-{
-  ZMapXRemoteSendCommandError result = FALSE ;
-  ZMapWindowSelectStruct select = {0};
-  ZMapFeatureSetStruct feature_set = {0};
-  ZMapFeatureSet multi_set;
-  ZMapFeature feature;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      feature = (ZMapFeature)feature_any;
-      /* This is a quick HACK! */
-#ifdef FEATURES_NEED_MAGIC
-      feature_set.magic       = feature->magic;
-#endif
-      feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
-      feature_set.parent      = feature->parent->parent;
-      feature_set.unique_id   = feature->parent->unique_id;
-      feature_set.original_id = feature->parent->original_id;
-
-      feature_set.features = g_hash_table_new(NULL, NULL) ;
-      g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature->unique_id), feature);
-
-      multi_set = &feature_set;
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      multi_set = (ZMapFeatureSet)feature_any;
-      break;
-    default:
-      break;
-    }
-
-  select.type = ZMAPWINDOW_SELECT_DOUBLE;
-
-  /* Set up xml/xremote request. */
-  select.xml_handler.zmap_action = g_strdup(action);
-  select.xml_handler.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE);
-  select.xml_handler.start_handlers = start_handlers ;
-  select.xml_handler.end_handlers = end_handlers ;
-  select.xml_handler.handler_data = handler_data ;
-
-
-  if(feature_set.unique_id)
-    {
-      g_hash_table_destroy(feature_set.features) ;
-      feature_set.features = NULL ;
-    }
-
-  (*(window->caller_cbs->select))(window, window->app_data, &select) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  result = select.xml_handler.handled ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  result = select.remote_result ;
-
-  /* Free xml/xremote stuff. */
-  if (select.xml_handler.zmap_action)
-    g_free(select.xml_handler.zmap_action);
-  if (select.xml_handler.xml_events)
-    g_array_free(select.xml_handler.xml_events, TRUE);
-
-  return result ;
-}
 
 
 
