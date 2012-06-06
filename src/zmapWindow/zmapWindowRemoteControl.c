@@ -34,9 +34,9 @@
  *-------------------------------------------------------------------
  */
 
-#include <string.h>
-
 #include <ZMap/zmap.h>
+
+#include <string.h>
 
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapRemoteProtocol.h>
@@ -151,7 +151,8 @@ static void processRequest(ZMapWindow window,
  */
 
 
-/* Process the command if we recognise it, otherwise return FALSE. */
+/* Entry point to handle requests from a peer program, process the command if we recognise it,
+ * otherwise return FALSE to indicate we don't know that command. */
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
 					char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
@@ -172,12 +173,154 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
 
 
 
+
+
+/* 
+ *                            Package routines
+ */
+
+
+
+/* MOVED FROM ZMAPWINDOW.C......FIX THIS UP TO WORK WITH NEW REMOTE CONTROL..... */
+
+
+void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
+				 char *action, FooCanvasItem *real_item)
+
+{
+  zmapWindowUpdateXRemoteDataFull(window, feature_any,
+				  action, real_item, NULL, NULL, NULL) ;
+
+  return ;
+}
+
+
+/* It is probably just about worth having this here as a unified place to handle requests but
+ * that may need revisiting.... */
+void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
+				     char *action, FooCanvasItem *real_item,
+				     ZMapXMLObjTagFunctions start_handlers,
+				     ZMapXMLObjTagFunctions end_handlers,
+				     gpointer handler_data)
+{
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapXMLUtilsEventStack xml_elements ;
+  ZMapWindowSelectStruct select = {0};
+  ZMapFeatureSetStruct feature_set = {0};
+  ZMapFeatureSet multi_set;
+  ZMapFeature feature;
+
+
+  /* hack to add feature stuff....... */
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+
+      /* This is a quick HACK! */
+      feature = (ZMapFeature)feature_any;
+#ifdef FEATURES_NEED_MAGIC
+      feature_set.magic       = feature->magic;
+#endif
+      feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
+      feature_set.parent      = feature->parent->parent;
+      feature_set.unique_id   = feature->parent->unique_id;
+      feature_set.original_id = feature->parent->original_id;
+
+      feature_set.features = g_hash_table_new(NULL, NULL) ;
+      g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature->unique_id), feature);
+
+      multi_set = &feature_set;
+      break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      multi_set = (ZMapFeatureSet)feature_any;
+      break;
+
+    default:
+      break;
+    }
+
+
+  /* I don't get this at all... */
+  select.type = ZMAPWINDOW_SELECT_DOUBLE;
+
+  /* Set up xml/xremote request. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  select.xml_handler.zmap_action = g_strdup(action);
+
+  select.xml_handler.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WILL ALL NEED TO BE SET UP FOR FEATURESHOW CODE..... */
+
+  select.xml_handler.start_handlers = start_handlers ;
+  select.xml_handler.end_handlers = end_handlers ;
+  select.xml_handler.handler_data = handler_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  xml_elements = zMapFeatureAnyAsXMLEvents(feature) ;
+
+
+  if (feature_set.unique_id)
+    {
+      g_hash_table_destroy(feature_set.features) ;
+      feature_set.features = NULL ;
+    }
+
+
+  /* HERE VIEW IS CALLED WHICH IS FINE.....BUT.....WE NOW NEED ANOTHER CALL WHERE
+     WINDOW CALLS REMOTE TO MAKE THE REQUEST.....BECAUSE VIEW WILL NO LONGER BE
+     DOING THIS...*/
+  (*(window->caller_cbs->select))(window, window->app_data, &select) ;
+
+
+  /* Send request to peer program. */
+  (*(window_cbs_G->remote_request_func))(action, xml_elements,
+					 window_cbs_G->remote_request_func_data,
+					 localProcessReplyFunc, window) ;
+
+
+
+
+  /* ALL THIS NEEDS TO GO TO..... */
+/* this result bit needs changing too.......... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  result = select.xml_handler.handled ;
+
+  result = select.remote_result ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* ALL NEEDS FIXING UP.... */
+
+  /* Free xml/xremote stuff. */
+  if (select.xml_handler.zmap_action)
+    g_free(select.xml_handler.zmap_action);
+  if (select.xml_handler.xml_events)
+    g_array_free(select.xml_handler.xml_events, TRUE);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
+
+
+
+
 /* 
  *                Internal routines.
  */
 
 
-/* This is where we process a command. */
+
+/* Process requests from remote programs and calls app_reply_func to return the result. */
 static void localProcessRemoteRequest(ZMapWindow window,
 				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
@@ -195,7 +338,7 @@ static void localProcessRemoteRequest(ZMapWindow window,
 }
 
 
-/* This is where we process a reply received from a peer. */
+/* Handles replies from remote program to commands sent from this layer. */
 static void localProcessReplyFunc(char *command,
 				  RemoteCommandRCType command_rc,
 				  char *reason,
@@ -204,17 +347,16 @@ static void localProcessReplyFunc(char *command,
 {
   ZMapWindow window = (ZMapWindow)reply_handler_func_data ;
 
-  if (strcmp(command, ZACP_HANDSHAKE) == 0)
-    {
-      /* do something.... */
-    }
-  else if (strcmp(command, ZACP_GOODBYE) == 0)
-    {
-      /* etc etc...... */
-    }
+  /* Currently we don't have a reply handler for all things, we should but
+   * we don't .....this will change... */
+  if (window->xremote_reply_handler)
+    (window->xremote_reply_handler)(window, window->xremote_reply_data,
+				    command, command_rc, reason, reply) ;
 
   return ;
 }
+
+
 
 
 /* Commands by this routine need the xml to be parsed for arguments etc. */
