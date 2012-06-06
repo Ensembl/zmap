@@ -19,7 +19,6 @@ zmapFeatureData.c   \
 zmapFeatureOutput.c \
 zmapFeatureTypes.c  \
 zmapFeatureUtils.c  \
-zmapFeatureXML.c    \
 zmapStyle.c         \
 zmapStyle_I.h       \
 zmapStyle_P.h       \
