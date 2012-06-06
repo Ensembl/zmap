@@ -255,6 +255,12 @@ typedef struct _zmapWindowFeatureStack
 
 
 
+typedef void (*ZMapWindowRemoteReplyHandlerFunc)(ZMapWindow window, gpointer user_data,
+						 char *command, RemoteCommandRCType command_rc,
+						 char *reason, char *reply) ;
+
+
+
 /* Item features are the canvas items that represent sequence features, they can be of various
  * types, in particular compound features such as transcripts require a parent, a bounding box
  * and children for features such as introns/exons. */
@@ -534,8 +540,12 @@ typedef struct _ZMapWindowStruct
   FooCanvasGroup *tooltip;
   FooCanvasItem  *mark_guide_line;
 
-  gboolean xremote_client ;				    /* Is there a remote client ? */
 
+  /* xremote stuff....xremote_reply_handler is set dynamically by functions that make a remote
+   * request to handle any reply, the data they require is in xremote_reply_data. */
+  gboolean xremote_client ;				    /* Is there a remote client ? */
+  ZMapWindowRemoteReplyHandlerFunc xremote_reply_handler ;
+  gpointer xremote_reply_data ;
 
   /* Handle cursor changes showing when zmap is busy. */
   GdkCursor *normal_cursor ;
@@ -762,8 +772,12 @@ typedef struct
 } zmapWindowFeatureSetStyleStruct, *zmapWindowFeatureSetStyle;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Represents a feature display window. */
 typedef struct ZMapWindowFeatureShowStruct_ *ZMapWindowFeatureShow ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1101,8 +1115,8 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
-ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ;
-ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
+
+void zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 
 GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature);
 
@@ -1182,15 +1196,18 @@ ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
 
-ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteData(ZMapWindow window,
-							ZMapFeatureAny feature_any,
-							char *action,
-							FooCanvasItem *real_item);
-ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
-							    char *action, FooCanvasItem *real_item,
-							    ZMapXMLObjTagFunctions start_handlers,
-							    ZMapXMLObjTagFunctions end_handlers,
-							    gpointer handler_data) ;
+void zmapWindowUpdateXRemoteData(ZMapWindow window,
+				 ZMapFeatureAny feature_any,
+				 char *action,
+				 FooCanvasItem *real_item);
+void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
+				     char *action, FooCanvasItem *real_item,
+				     ZMapXMLObjTagFunctions start_handlers,
+				     ZMapXMLObjTagFunctions end_handlers,
+				     gpointer handler_data) ;
+ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
+
+
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
