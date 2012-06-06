@@ -231,7 +231,7 @@ gboolean zMapWindowMarkIsSet(ZMapWindow window)
 {
   /* scope and header isssues... */
 
-  return zmapWindowMarkIsSet(window->mark);
+  return zmapWindowMarkIsSet(window->mark) ;
 }
 
 
@@ -975,39 +975,44 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
 static void markRange(ZMapWindowMark mark)
 {
   double block_y1, block_y2, tmp_y1, tmp_y2 ;
-  ZMapFeatureBlock block ;
+  ZMapFeatureBlock block = NULL ;
 
   tmp_y1 = mark->seq_start ;
   tmp_y2 = mark->seq_end ;
 
-  zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
+  if(mark->block_container)
+  {
+	  /* mh17: block_container can be null in whiich can black will be invalid */
+	zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
+  }
+  if(block)
+  {
+	block_y1 = block->block_to_sequence.block.x1 ;
+	block_y2 = block->block_to_sequence.block.x2 ;
 
-  block_y1 = block->block_to_sequence.block.x1 ;
-  block_y2 = block->block_to_sequence.block.x2 ;
 
+	/* This seems wierd but it only really happens when we get marks very close to the end of blocks
+	* and it's because items can be slightly bigger than blocks because of the thickness of their
+	* lines and foocanvas does not pick this up. So by reversing coords we can calculate these
+	* marks zones correctly at the very ends of the blocks. */
+	if (tmp_y1 < block_y1)
+	{
+		double tmp ;
 
-  /* This seems wierd but it only really happens when we get marks very close to the end of blocks
-   * and it's because items can be slightly bigger than blocks because of the thickness of their
-   * lines and foocanvas does not pick this up. So by reversing coords we can calculate these
-   * marks zones correctly at the very ends of the blocks. */
-  if (tmp_y1 < block_y1)
-    {
-      double tmp ;
+		tmp = tmp_y1 ;
+		tmp_y1 = block_y1 ;
+		block_y1 = tmp ;
+	}
 
-      tmp = tmp_y1 ;
-      tmp_y1 = block_y1 ;
-      block_y1 = tmp ;
-    }
+	if (block_y2 < tmp_y2)
+	{
+		double tmp ;
 
-  if (block_y2 < tmp_y2)
-    {
-      double tmp ;
-
-      tmp = tmp_y2 ;
-      tmp_y2 = block_y2 ;
-      block_y2 = tmp ;
-    }
-
+		tmp = tmp_y2 ;
+		tmp_y2 = block_y2 ;
+		block_y2 = tmp ;
+	}
+  }
   mark->world_y1 = tmp_y1;
   mark->world_y2 = tmp_y2;
   mark->mark_set = TRUE ;

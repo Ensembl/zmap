@@ -1087,13 +1087,18 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  result = FALSE ;
 	}
 
+      /* Need the style to get hold of the feature mode, better would be for
+       * xml to contain SO term ?? Maybe not....not sure. */
+      if (result && ((mode = zMapStyleGetMode(request_data->style)) == ZMAPSTYLE_MODE_INVALID))
+	{
+	  zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
+	  result = FALSE ;
+	}
+
 
       /* Check if feature exists, for some commands it must do, for others it must not. */
       if (result)
 	{
-	  /* Need the style to get hold of the feature mode, better would be for
-	   * xml to contain SO term ?? Maybe not....not sure. */
-	  mode = zMapStyleGetMode(request_data->style) ;
 
 	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
@@ -1221,11 +1226,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		      case ZMAPVIEW_REMOTE_ZOOM_TO:
 			{
 			  ZMapFeature feature ;
-			  ZMapStyleMode mode ;
-
-			  /* Need the style to get hold of the feature mode, better would be for
-			   * xml to contain SO term ?? Maybe not....not sure. */
-			  mode = zMapStyleGetMode(request_data->style) ;
 
 			  /* should be removed.... */
 			  feature_unique_id = zMapFeatureCreateID(mode,
@@ -1233,7 +1233,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 								  strand,
 								  start, end, 0, 0) ;
 
-			  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
+			  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set,
+								      feature_unique_id)))
 			    {
 			      request_data->feature_list = g_list_prepend(request_data->feature_list, feature) ;
 			    }
@@ -1702,12 +1703,10 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input)
 
       view->xremote_client = client ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* We need to tell any windows we have that there is now an external client. */
       setWindowXremote(view) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       created = 1 ;
       exists = 0 ;
@@ -1733,6 +1732,7 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input)
 static void getChildWindowXID(ZMapView view, RequestData input_data)
 {
 
+<<<<<<< HEAD
   if(view->state < ZMAPVIEW_LOADED)
     {
       input_data->code = ZMAPXREMOTE_PRECOND;
@@ -1742,6 +1742,13 @@ static void getChildWindowXID(ZMapView view, RequestData input_data)
   else
     {
       GList *list_item;
+=======
+			      if (start_not_found || end_not_found)
+				{
+				  zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
+								   start_phase, end_not_found);
+				}
+>>>>>>> develop
 
       list_item = g_list_first(view->window_list);
 
@@ -1921,6 +1928,7 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I DON'T GET THIS, IF THE STRUCT IS VALID SURELY THE FEATURE GOT DRAWN ?? */
 
+<<<<<<< HEAD
   else
     {
       g_string_append_printf(request_data->messages,
@@ -1929,6 +1937,15 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
 			     (char *)g_quark_to_string(feature_any->unique_id));
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+=======
+      /* Don't like this lower case stuff :( */
+      if(ontology == g_quark_from_string("exon"))
+        exon_ptr   = &span;
+      if(ontology == g_quark_from_string("intron"))
+        intron_ptr = &span;
+      if(ontology == g_quark_from_string("cds"))
+        zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
+>>>>>>> develop
 
 
   return ;

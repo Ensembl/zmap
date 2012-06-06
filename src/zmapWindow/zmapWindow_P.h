@@ -1088,8 +1088,16 @@ void zmapWindowDrawManageWindowWidth(ZMapWindow window);
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
+
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
+void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
+gboolean zmapWindowContainerBlockIsCompressedColumn(ZMapWindowContainerBlock block_data) ;
+GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data) ;
+
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode) ;
+void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
+gboolean zmapWindowContainerBlockIsBumpedColumn(ZMapWindowContainerBlock block_data) ;
+GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data) ;
 
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
 void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item);
@@ -1143,13 +1151,26 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item) ;
 
-ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
-                                     ZMapGUIMenuItemCallbackFunc callback_func,
-                                     gpointer callback_data);
+ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
+					    ZMapGUIMenuItemCallbackFunc callback_func,
+					    gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleBumpMode curr_bump_mode) ;
+
+ZMapGUIMenuItem zmapWindowMakeMenuShowTop(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuShowFeature(int *start_index_inout,
+					      ZMapGUIMenuItemCallbackFunc callback_func,
+					      gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
@@ -1168,12 +1189,19 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
-					  ZMapGUIMenuItemCallbackFunc callback_func,
-					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
+					    ZMapGUIMenuItemCallbackFunc callback_func,
+					    gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
+
+ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
 						  gpointer callback_data) ;
@@ -1192,9 +1220,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
-ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
-					      ZMapGUIMenuItemCallbackFunc callback_func,
-					      gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
+
+void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
+			     ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;
+void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
+			       ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;
 
 void zmapWindowUpdateXRemoteData(ZMapWindow window,
 				 ZMapFeatureAny feature_any,
@@ -1446,9 +1482,9 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
-void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
-
 void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
+
+void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;
 
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 

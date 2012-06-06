@@ -4496,7 +4496,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if (key_event->state & GDK_CONTROL_MASK)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
 	else if (key_event->keyval == GDK_a)
-	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+	{
+		requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+		if(!focus_item)
+		  focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
+	}
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 

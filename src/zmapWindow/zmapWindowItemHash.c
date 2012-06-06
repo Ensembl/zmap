@@ -1106,7 +1106,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  ZMapFeature feature,
 							  GQuark      align_id,
 							  GQuark      block_id,
-                                            GQuark      column_id,
+							  GQuark      column_id,
 							  GQuark      set_id,
 							  GQuark      feature_id,
 							  char       *strand_str,

@@ -77,7 +77,6 @@ typedef enum
 enum {BUF_INIT_SIZE = 1500, BUF_MULT = 2, BUF_FORMAT_SIZE = 512} ;
 
 
-
 /* Some features need to be built up from multiple GFF lines so we keep associations
  * of these features in arrays. The arrays are indexed via sources. These arrays are only used
  * while building up the final arrays of features. */
