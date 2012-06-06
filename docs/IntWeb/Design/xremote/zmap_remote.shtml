@@ -1089,6 +1089,21 @@ request will receive notification when its reply has reached the other peer.</p>
 
 
 
+<h4>Recursive Calls</h4>
+
+<p>The application must not make RemoteControl calls from within any of the callbacks it
+supplies to the RemoteControl package, any such calls will be ignored and an error
+message logged.</p>
+
+<p>While it might seem desireable to have the freedom to do this it complicates enormously
+both the RemoteControl code and the application code because both need to keep extra state
+to avoid the potential of either recursing indefintely or of corrupting state because of
+starting a second request/reply before the current one is finished.</p>
+
+<p>In practice this restriction should not prove onerous as the package is designed to be
+used from GUI programs where the whole model is based on callbacks.</p>
+
+
 <h4>Creation/Destruction</h4>
 
 <p>Remote Control has the usual create/destroy interface for an "object" based package:</p>
