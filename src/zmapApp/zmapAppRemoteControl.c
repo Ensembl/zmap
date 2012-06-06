@@ -392,7 +392,7 @@ static void handleZMapRepliesCB(char *command,
 
       /* If we can't make sense of what's passed to us something is wrong in our code so abort
        * the request. */
-      if (!xml_stack || !(full_reply = zMapXMLUtilsStack2XML(xml_stack, &err_msg)))
+      if (!xml_stack || !(full_reply = zMapXMLUtilsStack2XML(xml_stack, &err_msg, FALSE)))
 	{
 	  zMapLogWarning("%s", err_msg) ;
 
@@ -430,32 +430,49 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
       char *err_msg = NULL ;
       char *view = NULL ;					    /* to be filled in later..... */
 
-      request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller, command, view, -1) ;
-
-
-      request = zMapXMLUtilsStack2XML(request_stack, &err_msg) ;
-      
-
-      if (request_body)
-	request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body) ;
-
-      request = zMapXMLUtilsStack2XML(request_stack, &err_msg) ;
-
-
-      /* cache the command and request, need them later. */
-      remote->curr_command = command ;
-      remote->curr_request = request ;
-
-      /* Cache app function to be called when we receive a reply from the peer. */
-      remote->process_reply_func = process_reply_func ;
-      remote->process_reply_func_data = process_reply_func_data ;
-
-
-      if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_request)))
+      if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller, command, view, -1)))
 	{
-	  zMapLogCritical("Could not send request to peer program: %s.", request) ;
+	  err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
+	}
 
-	  zMapCritical("Could not send request to peer program: %s.", request) ;
+      /* for debugging... */
+      request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
+      
+      if (request_body)
+	{
+	  if (!err_msg && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
+	    err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
+	}
+
+      if (!err_msg && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
+	{
+	  err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
+	}
+
+      if (!err_msg)
+	{
+	  /* cache the command and request, need them later. */
+	  remote->curr_command = command ;
+	  remote->curr_request = request ;
+
+	  /* Cache app function to be called when we receive a reply from the peer. */
+	  remote->process_reply_func = process_reply_func ;
+	  remote->process_reply_func_data = process_reply_func_data ;
+
+
+	  if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_request)))
+	    {
+	      err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
+	    }
+	}
+
+      if (err_msg)
+	{
+	  zMapLogCritical("%s", err_msg) ;
+
+	  zMapCritical("%s", err_msg) ;
+
+	  g_free(err_msg) ;
 	}
     }
 
