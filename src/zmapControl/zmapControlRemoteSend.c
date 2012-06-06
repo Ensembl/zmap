@@ -159,7 +159,7 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
       
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, message_data.full_text);
 
-      if((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
+      if((zMapXMLWriterProcessEvents(xml_creator, xml_events, FALSE)) == ZMAPXMLWRITER_OK)
         g_list_foreach(clients, send_client_command, &message_data);
       else
         zMapLogWarning("%s", "Error processing events");
