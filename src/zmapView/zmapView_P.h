@@ -193,6 +193,24 @@ typedef struct _ZMapViewConnectionStruct
 
 
 
+/* Holds data about feature sets loaded. */
+typedef struct ZMapViewLoadFeaturesDataStructName
+{
+  char *err_msg;        // from the server mainly
+  gchar *stderr_out;
+  gint exit_code;
+  int num_features;
+
+  GList *feature_sets ;
+  int start,end;        // requested coords
+  gboolean status;      // load sucessful?
+  unsigned long xwid ;  // X Window id for the xremote widg. */
+
+} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
+
+
+
+
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
  * within a container widget that is supplied as a parent of the View then the View
@@ -212,12 +230,15 @@ typedef struct _ZMapViewStruct
 
   gboolean remote_control ;
 
-  /* Is any of this needed ???? */
+
+  /* THESE WILL NOT BE NEEDED ANY MORE.. */
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
 							       running zmap. */
-  gulong map_event_handler ;				    /* map event handler id for xremote widget. */
   unsigned long xwid ;					    /* X Window id for the xremote widg. */
+
+
+  gulong map_event_handler ;				    /* map event handler id for xremote widget. */
 
   guint idle_handle ;
 
