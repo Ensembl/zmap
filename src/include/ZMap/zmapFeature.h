@@ -1338,10 +1338,6 @@ char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
 gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) ;
 void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 
-GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
-                                  /* ZMapFeatureXMLType xml_type */
-                                  int xml_type);
-
 gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 
 ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
