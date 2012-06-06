@@ -30,11 +30,16 @@
 #ifndef ZMAP_WEBPAGES_H
 #define ZMAP_WEBPAGES_H
 
+
+/* Much of this is sadly redundant because of the Sanger web redesign. Need to find
+ * out how to get our release notes on to the website....and some of our other help docs. */
+
+
 /* http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml */
 
-#define ZMAPWEB_URL "http://wwwdev.sanger.ac.uk/Software/analysis/ZMap"
+#define ZMAPWEB_URL "http://wwwdev.sanger.ac.uk/resources/software/zmap"
 
-#define ZMAPWEB_DOC_URL ZMAPWEB_URL "/user_doc"
+#define ZMAPWEB_DOC_URL ZMAPWEB_URL
 
 /* Reorganising the zmap_update_web.sh and the directories, together
  * with inertia of the way the last release code works, means that the
@@ -47,7 +52,7 @@
  * updating that script as well. */
 #define ZMAPWEB_RELEASE_NOTES "release_notes.2011_06_17.09_47_31.shtml"
 
-#define ZMAPWEB_HELP_DOC  "user_interface.shtml"
+#define ZMAPWEB_HELP_DOC  ""
 #define ZMAPWEB_HELP_ALIGNMENT_SECTION "alignment_display"
 
 #define ZMAPWEB_KEYBOARD_DOC  "keyboard_mouse.shtml"
