@@ -1529,7 +1529,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
       if(ontology == g_quark_from_string("intron"))
         intron_ptr = &span;
       if(ontology == g_quark_from_string("cds"))
-        zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, NULL, NULL);
+        zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
 
       if(exon_ptr != NULL || intron_ptr != NULL) /* Do we need this check isn't it done internally? */
         zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr);
@@ -1732,7 +1732,6 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input)
 static void getChildWindowXID(ZMapView view, RequestData input_data)
 {
 
-<<<<<<< HEAD
   if(view->state < ZMAPVIEW_LOADED)
     {
       input_data->code = ZMAPXREMOTE_PRECOND;
@@ -1742,13 +1741,6 @@ static void getChildWindowXID(ZMapView view, RequestData input_data)
   else
     {
       GList *list_item;
-=======
-			      if (start_not_found || end_not_found)
-				{
-				  zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
-								   start_phase, end_not_found);
-				}
->>>>>>> develop
 
       list_item = g_list_first(view->window_list);
 
@@ -1924,11 +1916,9 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
 			     (char *)g_quark_to_string(feature_any->unique_id));
     }
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I DON'T GET THIS, IF THE STRUCT IS VALID SURELY THE FEATURE GOT DRAWN ?? */
 
-<<<<<<< HEAD
   else
     {
       g_string_append_printf(request_data->messages,
@@ -1937,15 +1927,6 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
 			     (char *)g_quark_to_string(feature_any->unique_id));
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-=======
-      /* Don't like this lower case stuff :( */
-      if(ontology == g_quark_from_string("exon"))
-        exon_ptr   = &span;
-      if(ontology == g_quark_from_string("intron"))
-        intron_ptr = &span;
-      if(ontology == g_quark_from_string("cds"))
-        zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
->>>>>>> develop
 
 
   return ;
