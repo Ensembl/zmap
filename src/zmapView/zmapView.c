@@ -229,6 +229,14 @@ static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
 
 
+static void localProcessReplyFunc(char *command,
+				  RemoteCommandRCType command_rc,
+				  char *reason,
+				  char *reply,
+				  gpointer reply_handler_func_data) ;
+
+
+
 /* These callback routines are global because they are set just once for the lifetime of the
  * process. */
 
@@ -5105,6 +5113,8 @@ static void print_col2fset(char * str,GHashTable *data)
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 {
   static ZMapXMLUtilsEventStackStruct
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     zmap_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 	       {0}},
     zmap_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
@@ -5114,32 +5124,28 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 		   {0}},
     req_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		 {0}},
-    featureset[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_QUARK,   {0}},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    viewloaded[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_STRING,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {0}},
-    start[] = {{ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-	       {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-	       {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-	       {0}},
-    end[] = {{ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
-	     {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-	     {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
-	     {0}},
-    status[] = {{ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
-		{ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{0}},
-      exit_code[] = {{ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		   {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		   {0}},
-    stderr[] = {{ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
-		{ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{0}} ;
-    GArray *request_stack = NULL ;
+		    {ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {0}} ;
 
   if (!(lfd->feature_sets))
     {
@@ -5151,10 +5157,11 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
       char *response = NULL;
       GList *features;
       char *featurelist = NULL;
-      char *f,*emsg;
+      char *f ;
+      char *emsg = NULL ;
       char *ok_mess = NULL;
       ZMapXMLUtilsEventStack data_ptr = NULL ;
-
+      int i ;
 
       for (features = lfd->feature_sets ; features ; features = features->next)
 	{
@@ -5197,34 +5204,20 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 	  g_free(old);
 	}
 
-      req_start[1].value.q = g_quark_from_string("features_loaded") ;
-      featureset[1].value.s = featurelist ;
-      start[1].value.i = lfd->start ;
-      end[1].value.i = lfd->end ;
-      status[1].value.i = (int)lfd->status ;
-      status[2].value.s = emsg ;
-      exit_code[1].value.i = lfd->exit_code ;
-      stderr[1].value.s = lfd->stderr_out ? lfd->stderr_out : "" ;
-
-
-NO.....WRONG....JUST CREATE THE BODY HERE...........
-
-      /* Create the xml request and display it in our request window. WHAT SHOULD VIEW PARAM BE
-	 HERE ? PROBABLY NOT NULL.....! */
-      request_stack = zMapRemoteCommandCreateRequest(remote_data->remote_cntl, "features_loaded", NULL, -1) ;
-
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_REQUEST, &featureset[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    "featureset", &start[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    "start", &end[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    "end", &status[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    "status", &exit_code[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    "exit_code", &stderr[0]) ;
+      i = 1 ;
+      viewloaded[i].value.s = featurelist ;
+      i += 3 ;
+      viewloaded[i].value.i = lfd->start ;
+      i += 3 ;
+      viewloaded[i].value.i = lfd->end ;
+      i += 3 ;
+      viewloaded[i].value.i = (int)lfd->status ;
+      i++ ;
+      viewloaded[i].value.s = emsg ;
+      i += 3 ;
+      viewloaded[i].value.i = lfd->exit_code ;
+      i += 3 ;
+      viewloaded[i].value.s = lfd->stderr_out ? lfd->stderr_out : "" ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -5245,33 +5238,23 @@ NO.....WRONG....JUST CREATE THE BODY HERE...........
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-      /* OLD STUFF.......REPLACE WITH THE NEW.... */
-
-      if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
-	  != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-	{
-	  response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
-	  zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      /* something like this.....need to make a func call to our remote code in zmapview.... */
 
       /* Send request to peer program. */
-      (*(view_cbs_G->remote_request_func))(command, request_stack,
+      /* NOTE WELL....returns a pointer to a static struct in this function, not ideal but will
+       * have to do for now. */
+      (*(view_cbs_G->remote_request_func))(ZACP_FEATURES_LOADED, &viewloaded[0],
 					   view_cbs_G->remote_request_func_data,
-					   localProcessReplyFunc, view) ;
+					   localProcessReplyFunc, zmap_view) ;
 
 
+      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_free(request);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       g_free(featurelist);
 
     }
