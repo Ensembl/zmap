@@ -65,7 +65,7 @@ pkgconfig_DATA = zmap.pc
 #
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
-                     libZMapThr.la libZMapXML.la libZMapUtils.la \
+                     libZMapThr.la libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
                      libzmapfoocanvas.la libPFetch.la
 
 libZMapApp_la_SOURCES =
