@@ -5110,22 +5110,10 @@ static void print_col2fset(char * str,GHashTable *data)
 }
 
 
+/* Sends a message to our peer that all features are now loaded. */
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 {
   static ZMapXMLUtilsEventStackStruct
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    zmap_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
-	       {0}},
-    zmap_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
-	     {0}},
-    req_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE, {0}},
-		   {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_CMD, ZMAPXML_EVENT_DATA_QUARK, {0}},
-		   {0}},
-    req_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE,  {0}},
-		 {0}},
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     viewloaded[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_STRING,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
@@ -5263,6 +5251,7 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 }
 
 
+/* Receives peers reply to our "features_loaded" message. */
 static void localProcessReplyFunc(char *command,
 				  RemoteCommandRCType command_rc,
 				  char *reason,
@@ -5271,6 +5260,11 @@ static void localProcessReplyFunc(char *command,
 {
   ZMapView view = (ZMapView)reply_handler_func_data ;
 
+  if (command_rc != REMOTE_COMMAND_RC_OK)
+    {
+      zMapLogCritical("%s command to peer program returned %s: \"%s\".",
+		      ZACP_FEATURES_LOADED, zMapRemoteCommandRC2Str(command_rc), reason) ;
+    }
 
   return ;
 }
