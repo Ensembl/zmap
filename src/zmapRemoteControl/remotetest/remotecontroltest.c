@@ -1307,6 +1307,24 @@ void processRequest(RemoteData remote_data, char *request,
 					    "  </notebook>") ;
 	    }
 	}
+      else if (g_ascii_strcasecmp(action, ZACP_FEATURES_LOADED) == 0)
+	{
+	  remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
+
+	  remote_data->reply = zMapRemoteCommandMessage2Element("got features loaded...thanks !") ;
+	}
+      else
+	{
+	  /* Catch all for commands we haven't supported yet !!! */
+	  zMapWarning("Support for command \"%s\" has not been implemented yet !!", request) ;
+
+	  remote_data->reply_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;
+
+	  remote_data->error = "Unsupported command !" ;
+	}
+
+
+
     }
 
   *return_code_out = remote_data->reply_rc ;
