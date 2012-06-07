@@ -406,6 +406,8 @@ void zmapAppExit(ZMapAppContext app_context)
 
 void zmapAppExit(ZMapAppContext app_context)
 {
+  gboolean remote_disconnecting = FALSE ;
+
   /* Record we are dying so we know when to quit as last zmap dies. */
   app_context->state = ZMAPAPP_DYING ;
 
@@ -417,9 +419,10 @@ void zmapAppExit(ZMapAppContext app_context)
 
       zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
 
-      zmapAppRemoteControlDisconnect(app_context, app_exit) ;
+      remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
-  else
+
+  if (!(app_context->remote_control) || !remote_disconnecting)
     {
       appExit(app_context) ;
     }
