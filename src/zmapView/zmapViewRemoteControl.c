@@ -1326,7 +1326,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
 	{
 	  if (ontology == g_quark_from_string("cds"))
 	    {
-	      zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, NULL, NULL) ;
+	      zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
 	    }
 	  else
 	    {
