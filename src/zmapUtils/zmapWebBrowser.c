@@ -82,9 +82,10 @@ static char *translateURLChars(char *orig_link) ;
 /* List of browsers for different systems, you can have more than one browser for a system. */
 static BrowserConfigStruct browsers_G[] =
   {
-    {"Linux",  "iceweasel",  "iceweasel -new-window \""BROWSER_PATTERN"\""},
-    {"Linux",  "firefox",  "firefox -browser \""BROWSER_PATTERN"\""},
-    {"Linux",  "mozilla",  "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
+    {"Linux",  "xdg-open", "xdg-open \""BROWSER_PATTERN"\""},
+    {"Linux",  "iceweasel", "iceweasel -new-window \""BROWSER_PATTERN"\""},
+    {"Linux",  "firefox", "firefox -browser \""BROWSER_PATTERN"\""},
+    {"Linux",  "mozilla", "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
     {"OSF",    "netscape", NULL},
     {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open \""BROWSER_PATTERN"\""},
     {NULL, NULL}					    /* Terminator record. */

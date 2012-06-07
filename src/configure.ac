@@ -8,7 +8,7 @@ m4_include([zmap_version.m4])
 
 
 AC_PREREQ(2.61)
-AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://http://www.sanger.ac.uk/resources/software/zmap/])
+AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sanger.ac.uk/resources/software/zmap/])
 
 AC_CONFIG_AUX_DIR([config])
 
