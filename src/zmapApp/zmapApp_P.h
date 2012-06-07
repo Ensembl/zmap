@@ -176,7 +176,7 @@ typedef struct _ZMapAppContextStruct
 
 
   /* The new xremote. */
-
+  gboolean remote_ok ;					    /* Set to FALSE if communication with peer fails. */
   ZMapAppRemote remote_control ;
 
 
