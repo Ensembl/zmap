@@ -466,8 +466,11 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
 	    }
 	}
 
+      /* Serious failure, record that remote is no longer working properly. */
       if (err_msg)
 	{
+	  app_context->remote_ok = FALSE ;
+
 	  zMapLogCritical("%s", err_msg) ;
 
 	  zMapCritical("%s", err_msg) ;

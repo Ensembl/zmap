@@ -407,7 +407,11 @@ gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app
       goodbye_type = zMapRemoteCommandCreateElement(ZACP_GOODBYE, ZACP_GOODBYE_TYPE, ZACP_EXIT) ;
     }
 
+  /* Sets app_context->remote_ok to FALSE if disconnect fails. */
   (request_func)(ZACP_GOODBYE, goodbye_type, app_context, localProcessReplyFunc, app_context) ;
+
+  if (!(app_context->remote_ok))
+    result = app_context->remote_ok ;
 
   return result ;
 }
