@@ -85,6 +85,7 @@
 
 #define ZACP_GET_FEATURE_NAMES  "get_feature_names"
 #define ZACP_LOAD_FEATURES      "load_features"
+#define ZACP_FEATURES_LOADED    "features_loaded"
 #define ZACP_DUMP_FEATURES      "export_context"
 
 
