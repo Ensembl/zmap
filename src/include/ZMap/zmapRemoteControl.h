@@ -103,7 +103,7 @@ typedef void (*ZMapRemoteControlRequestHandlerFunc)(ZMapRemoteControl remote_con
 
 /* Optional app function that RemoteControl calls when peer has signalled
  * that it has received app's request. Enables app that has serviced the
- * request to set state/take action once its reply has been received. */
+ * request to set state/take action once it knows its reply has been received. */
 typedef void (*ZMapRemoteControlReplySentFunc)(void *user_data) ;
 
 
