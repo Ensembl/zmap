@@ -53,7 +53,7 @@
 _(REMOTE_COMMAND_RC_OK,            , "ok",             "Command succeeded.",            "") \
 _(REMOTE_COMMAND_RC_FAILED,        , "cmd_failed",     "Command failed.",               "") \
 _(REMOTE_COMMAND_RC_BAD_ARGS,      , "bad_args",       "Command args are wrong.",       "") \
-_(REMOTE_COMMAND_RC_ID_UNKNOWN,    , "target_unknown", "Command target id is unknown.", "") \
+_(REMOTE_COMMAND_RC_VIEW_UNKNOWN,  , "view_unknown",   "Command target view id is unknown.", "") \
 _(REMOTE_COMMAND_RC_CMD_UNKNOWN,   , "cmd_unknown",    "Command is unknown.",           "") \
 _(REMOTE_COMMAND_RC_BAD_XML,       , "bad_xml",        "Command XML is malformed.",     "")
 
