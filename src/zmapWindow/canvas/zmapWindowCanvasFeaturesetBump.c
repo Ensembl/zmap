@@ -383,18 +383,21 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		if(!zMapWindowCanvasFeaturesetGetFeatureExtent(feature, bump_data->complex, &bump_data->span, &bump_data->width))
 			continue;
 
-		if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+		if(bump_data->mark_set)
 		{
-			/* all the feature's exons are outside the mark on the same side */
-			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-			continue;
-		}
+			if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+			{
+				/* all the feature's exons are outside the mark on the same side */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
 
-		if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
-		{
-			/* none of the feature's exons are cross the mark */
-			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-			continue;
+			if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
+			{
+				/* none of the feature's exons cross the mark */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
 		}
 
 		if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))

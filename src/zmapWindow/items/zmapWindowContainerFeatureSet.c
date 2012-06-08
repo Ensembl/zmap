@@ -1018,16 +1018,20 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 
 #if ZWCI_AS_FOO
         	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
+        	{
+        		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) list->data, show, set_colour);
+			list = list->next;
+        	}
 #else
         	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(list->data))
-#endif
         	{
         		/* each item in the column will be a single CanvasFeatureset wrapped up in a ZMapWindowCanvasItem */
         		GList *l = ((FooCanvasGroup *) item)->item_list;
         		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) l->data, show, set_colour);
 			list = list->next;
         	}
-        	else	/* original foo code */
+#endif
+		else	/* original foo code */
         	{
 			item = ZMAP_CANVAS_ITEM(list->data);
 			feature = item->feature;

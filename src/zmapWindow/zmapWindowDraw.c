@@ -133,7 +133,7 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
 				   ZMapContainerLevelType level, gpointer user_data);
 
 
-static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
+//static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -275,6 +275,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
 
 
+#if MH17_NOT_USED
 /* Sorts the children of a group by horizontal position, sorts all children that
  * are groups and leaves children that are items untouched, this is because item children
  * are background items that do not need to be ordered.
@@ -293,7 +294,7 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
   return ;
 }
 
-
+#endif
 
 
 /*
@@ -1053,6 +1054,7 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 
 
 
+#if MH17_NOT_USED
 
 /* MAY NEED TO INGNORE BACKGROUND BOXES....WHICH WILL BE ITEMS.... */
 
@@ -1079,7 +1081,7 @@ static gint horizPosCompare(gconstpointer a, gconstpointer b)
   return result ;
 }
 
-
+#endif
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

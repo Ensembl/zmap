@@ -131,7 +131,7 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
 #endif
 
 void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double scroll_end,
-	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, double projection_factor);
+	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, double canvas_offset);
 
 
 static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
@@ -430,7 +430,7 @@ void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas ruler)
 }
 
 /* MH17 NOTE this is called from zmapWindowNavigator.c */
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped, double start, double end)
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, gboolean revcomped, double start, double end, double offset)
 {
   FooCanvas *canvas = NULL;
   double zoom_factor = 0.0;
@@ -439,7 +439,7 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolea
 
   zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
 
-  zMapWindowDrawScaleBar(parent, start, end, (int) start,(int) end, zoom_factor, revcomped, project_at);
+  zMapWindowDrawScaleBar(parent, start, end, (int) start,(int) end, zoom_factor, revcomped, offset);
 
   return ;
 }
@@ -592,6 +592,7 @@ static void thaw_notify(ZMapWindowRulerCanvas ruler)
 
 
 /* =================================================== */
+/* this is for the window ruler not the navigator */
 static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
                                            double start,
                                            double end,
@@ -612,7 +613,7 @@ static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
   height      = ruler->line_height / zoom_factor;
 
 	zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(group), start, end, seq_start, seq_end,
-		zoom_factor, ruler->revcomped, 1.0);
+		zoom_factor, ruler->revcomped,  0.0);
 
   return group ;
 }
@@ -627,7 +628,7 @@ start and end window coords?
 text height (font)
 */
 /* we draw the scale on the right and text to the left */
-void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double scroll_end, int seq_start, int seq_end, double zoom_factor, gboolean revcomped, double projection_factor)
+void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double scroll_end, int seq_start, int seq_end, double zoom_factor, gboolean revcomped,  double canvas_offset)
 /*
  * scroll start and end are as displayed (NB navigator always has whole sequence)
  * seq start and end are whole sequence in fwd strand coodinates
@@ -725,7 +726,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 
 	/* get the number of pixels: this used the scroll region */
 
-	n_pixels = (int) (seq_len * zoom_factor * projection_factor);
+	n_pixels = (int) (seq_len * zoom_factor);
 
 	for(n_hide = n_levels,gap = n_pixels * tick / seq_len;gap;gap /= 10,n_hide--)
 		continue;
@@ -792,10 +793,8 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 					}
 
 					label[0] = 0;
-					canvas_coord = (double) draw_at;
+					canvas_coord = (double) draw_at - canvas_offset;
 //if(top) printf("coord: %d %d (%d,%d) = %d\n", tick_coord, digit, seq_start,seq_end,draw_at);
-
-					canvas_coord *= projection_factor;
 
 					tick_width = 4.0 * (level - n_hide);
 					colour = &black;
@@ -869,8 +868,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 	}
 //printf("%d lines drawn\n",nlines);
 	/* one vertical line */
-	zMapDrawLine(lines, scale_width, scroll_start * projection_factor,
-		scale_width, scroll_end  * projection_factor, &black, 1.0) ;
+	zMapDrawLine(lines, scale_width, scroll_start, scale_width, scroll_end, &black, 1.0) ;
 
 //  if(text_left)
     {

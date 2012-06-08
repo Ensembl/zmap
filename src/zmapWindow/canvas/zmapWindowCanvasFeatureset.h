@@ -245,6 +245,7 @@ typedef struct
 	GList *pos_list;	/* list of features in bumped sub-columns */
 	ZMapSpanStruct span;	/* of current feature(s) */
 	gboolean complex;
+	gboolean mark_set;
 
 	/* effciency stats */
 	int features;

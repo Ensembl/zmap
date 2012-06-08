@@ -44,7 +44,8 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
 
-#include <zmapWindowCanvasFeatureset.h>
+//#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasFeatureset_I.h>	// for debug
 
 // temp include for timing test
 #include <zmapWindowCanvasItem_I.h>
@@ -284,6 +285,8 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
 /* mh17: only called from windowNavigator(), no doubt here due to scope issues
  * but what scope issues? factory does not look static
  */
+
+gboolean is_nav = FALSE;
 void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
                                  ZMapFeatureSet set,
                                  FooCanvasGroup *container,
@@ -291,6 +294,8 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 {
   RunSetStruct run_data = {NULL};
   ZMapWindowFeatureStackStruct feature_stack;
+
+  is_nav = TRUE;
 
   run_data.factory = factory;
   /*
@@ -306,10 +311,11 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 
   g_hash_table_foreach(set->features, datalistRun, &run_data);
 
+  is_nav = FALSE;
   return ;
 }
 
-
+#define MH17_REVCOMP_DEBUG	0
 
 /* re-using a factory helper to scale a navigator coordinate */
 /* NOTE all factory helpers must handle a NULL feature arg */
@@ -405,7 +411,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
 	{
 #if MH17_REVCOMP_DEBUG > 2
-	  zMapLogWarning("not reverse","");
+	  printf("not reverse\n");
 #endif
 	  goto undrawn ;
 	}
@@ -425,12 +431,17 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
       /* inline static void normalSizeReq(ZMapFeature f, ... ){ return ; } */
       /* inlined this should be nothing most of the time, question is can it be inlined?? */
+
+	/* mh17: NOTE this is very confusing
+	 * the navigator used this function to say 'outside the block' when it really means 'the name is duplicated'
+	 * incredible, despite knowing that 'size request' means 'is_duiplicated?' it still fools me
+	 */
       if ((no_points_in_block = (factory->user_funcs->feature_size_request)(feature,
 									    &limits[0], &points[0],
 									    factory->user_data)) == TRUE)
 	{
 #if MH17_REVCOMP_DEBUG > 2
-	  zMapLogWarning("no points in block","");
+	  printf("no points in block\n");
 #endif
 	  goto undrawn ;
 	}
@@ -679,7 +690,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           if(factory->ftoi_hash)
 	    {
 #if MH17_REVCOMP_DEBUG > 1
-            zMapLogWarning("FToIAddFeature %s %f,%f - %f,%f to %s",
+if(is_nav)
+            printf("FToIAddFeature %s %f,%f - %f,%f to %s\n",
             g_quark_to_string(feature->unique_id),
             points[1],points[0],points[3],points[2],
             g_quark_to_string(feature_stack->set->unique_id));
@@ -696,7 +708,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           else
           {
 #if MH17_REVCOMP_DEBUG > 2
-        zMapLogWarning("no hash","");
+        printf("no hash\n");
 #endif
           }
 
@@ -709,7 +721,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         else
         {
 #if MH17_REVCOMP_DEBUG > 2
-        zMapLogWarning("no item ","");
+        printf("no item\n");
 #endif
         }
 
@@ -785,6 +797,7 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)list_data;
   RunSet run_data = (RunSet)user_data;
+  FooCanvasItem *foo;
 
   /* filter on frame! */
   if((run_data->frame != ZMAPFRAME_NONE) &&
@@ -800,11 +813,14 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 		run_data->feature_stack->frame = zmapWindowFeatureFrame(feature);
   }
 
-  zmapWindowFToIFactoryRunSingle(run_data->factory,
+  foo = zmapWindowFToIFactoryRunSingle(run_data->factory,
       run_data->canvas_item,
       run_data->container,
       run_data->feature_stack);
 
+  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
+  if(fi)
+	fi->debug = TRUE;
   return ;
 }
 

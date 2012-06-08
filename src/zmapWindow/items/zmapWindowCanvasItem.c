@@ -975,6 +975,12 @@ gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidd
 
 /* If item is the parent item then the whole feature is coloured, otherwise just the sub-item
  * is coloured... */
+/* NOTE
+ * this is a legacy interface, sub-feature is used for sequence features (recent mod)
+ * with ZWCI_AS_FOO we donl't have parent items, so we always do the whole
+ * this reletas to split alignment feature and whole transcripts
+ * which is a user requirement possibly implemented by fluke due the structure of the data given to ZMap
+ */
 void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
@@ -1177,7 +1183,9 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
 /* Class initialization function for ZMapWindowCanvasItemClass */
 static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window_class)
 {
+#if !ZWCI_AS_FOO
   GObjectClass *gobject_class;
+#endif
   GtkObjectClass *object_class;
   FooCanvasItemClass *item_class;
   GType canvas_item_type, parent_type;

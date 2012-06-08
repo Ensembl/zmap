@@ -544,8 +544,8 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem         *foo,
 
 				/* this must match the sequence coords calculated for painting text */
 				/* which are zero based relative to seq start coord and featureset offset (dy) */
-				h->start = sub_feature->start - fi->dy + 1;
-				h->end = sub_feature->end - fi->dy + 1;
+				h->start = sub_feature->start;	// - fi->dy + 1;
+				h->end = sub_feature->end;		// - fi->dy + 1;
 //printf("set highlight for %d,%d @ %ld, %ld\n",sub_feature->start, sub_feature->end, h->start,h->end);
 				seq->highlight = g_list_append(seq->highlight, h);
 				break;
@@ -571,7 +571,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan (FooCanvasI
 
 
 /* return sequence coordinate corresponding to a mouse cursor */
-/* NOTE unusually, we call the function directly rhather than going through an array of functions
+/* NOTE unusually, we call the function directly rather than going through an array of functions
  * it's only relevant for sequence features, but could be added as a virtual function/ wrapper in ZWCFS.c if we care about code purity
  */
 /* if it's a peptide column then we bias coordinates to cover whole residues, taking into account start and end wobble */

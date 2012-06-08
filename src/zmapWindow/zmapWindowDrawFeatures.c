@@ -395,6 +395,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
       zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
 
+#warning seq offset should be in block and/or align? shouldn-t this should go into drawContextCB??
 
       /* Add a background to the root window, must be as long as entire sequence... */
       root_group = zmapWindowContainerGroupCreateFromFoo(foo_canvas_root(window->canvas),

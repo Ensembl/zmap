@@ -721,12 +721,12 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   return drawable;
 }
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items)
 {
   FooCanvasGroup *new_group = NULL ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Sort the list of items for position...this looks like a candidate for a general function. */
   feature_items = zmapWindowItemSortByPostion(feature_items) ;
 
@@ -745,12 +745,12 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
 
   /* Add all the items to the new group correcting their coords. */
   g_list_foreach(feature_items, reparentItemCB, &reparent_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
   return new_group ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* Get the peptide as a fasta string.  All contained in a function so
@@ -1424,6 +1424,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 }
 
 
+#if !ZWCI_AS_FOO
 FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group,
 				ZMapFeature feature, gboolean bump_col)
 {
@@ -1462,4 +1463,4 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
   return new_feature ;
 }
-
+#endif

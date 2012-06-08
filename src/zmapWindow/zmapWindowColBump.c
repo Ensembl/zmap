@@ -446,6 +446,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 		bump_data.start = start ;	/* NOTE: different struct from previous one */
 		bump_data.end = end ;
+		bump_data.mark_set = mark_set;
 		bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
 
 		for(l = column_features->item_list;l;l = l->next)

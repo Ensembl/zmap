@@ -1449,8 +1449,8 @@ void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustmen
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped,
-                             double start, double end);
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, gboolean revcomped,
+                             double start, double end, double canvas_offset);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;

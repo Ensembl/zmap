@@ -4724,6 +4724,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
 	     sizeof(zmapWindowAlignmentFeatureStruct)) ;
       break;
+#endif
+#if 0
+    case GDK_d:
+    case GDK_D:
+    {
+	    extern ZMapWindowContainerGroup nav_root;
+
+	    nav_root = window->feature_root_group;
+	    print_offsets("normal window");
+    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 

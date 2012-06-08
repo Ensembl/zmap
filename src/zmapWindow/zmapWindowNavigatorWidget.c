@@ -40,7 +40,7 @@
 #include <zmapWindowCanvas.h>
 #include <zmapWindowNavigator_P.h>
 
-#define MH17_DEBUG_MAV_FOOBAR	0
+#define MH17_DEBUG_NAV_FOOBAR	0
 
 #define NAVIGATOR_WIDTH 100.0
 
@@ -277,7 +277,7 @@ void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y,double
 
   zMapAssert(class_data);
 
-#if MH17_DEBUG_MAV_FOOBAR
+#if MH17_DEBUG_NAV_FOOBAR
 printf("nav size request %f %f, %f %f\n",x,y,start,end);
 #endif
   class_data->container_width  = x;
@@ -336,11 +336,21 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
 			  NULL);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
 
-#if MH17_DEBUG_MAV_FOOBAR
-printf("fill widget %f %f, %f %f\n",y1,0.0,class_data->span,y2);
+#if MH17_DEBUG_NAV_FOOBAR
+printf("fill widget %f %f, %f %f\n", x1, y1, x2, y2);
 #endif
       zmapWindowNavigatorWidthChanged(widget, x1, x2);
+
+#if DONT_TRY_IT
+	/* forms an endless loop: */
+	if(class_data->window_navigator)
+		zmapWindowNavigatorPositioning(class_data->window_navigator);
+#endif
   }
+
+#if MH17_DEBUG_NAV_FOOBAR
+  print_offsets("after fill widget");
+#endif
 
   return ;
 }
@@ -381,9 +391,6 @@ static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
 
   new_width  = allocation->width;
   new_height = allocation->height;
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("nav size 1");
-#endif
 //printf("navCanvasSizeAllocateCB: width = %d, height = %d\n", new_width, new_height);
 
   if(new_height != class_data->height)
@@ -398,9 +405,6 @@ print_foo("nav size 1");
 
   class_data->width = new_width;
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("nav size 2");
-#endif
   return ;
 }
 
@@ -465,7 +469,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 //      *y2 += (container_height > max_y ? max_y : container_height) + border_y;
     }
 
-#if MH17_DEBUG_MAV_FOOBAR
+#if MH17_DEBUG_NAV_FOOBAR
 printf("fetch scroll coords %f %f (%f %f)\n",*y1,*y2, container_height, border_y);
 #endif
   return ;

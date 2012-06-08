@@ -118,7 +118,6 @@ items/zmapWindowContainerContext.h \
 items/zmapWindowContainerContext_I.h \
 items/zmapWindowContainerFeatureSet.c \
 items/zmapWindowContainerFeatureSet.h \
-items/zmapWindowContainerFeatureSetUtils.c \
 items/zmapWindowContainerFeatureSet_I.h \
 items/zmapWindowContainerGroup.c \
 items/zmapWindowContainerGroup.h \

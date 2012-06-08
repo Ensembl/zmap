@@ -27,12 +27,12 @@
  * Description:
  *
  * implements callback functions for FeaturesetItem locus features
- * locus features are single line (word?) thing (the feature name with maybe a line for decoration
+ * locus features are single line (word?) things (the feature name with maybe a line for decoration)
  * unlike old style ZMWCI i called these locus not text as they are not generic text features
  * but instead a specific sequence region with a name
  *
  * of old there was talk of creating diff features externally for loci (i hear)
- * but here we simply have created a feature form the name and coords of the original, if it has a locus id
+ * but here we simply have created a feature from the name and coords of the original, if it has a locus id
  *-------------------------------------------------------------------
  */
 
@@ -67,8 +67,6 @@ static void zmapWindowCanvasLocusGetPango(GdkDrawable *drawable, ZMapWindowFeatu
 
 void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
-//	gulong fill,outline;
-//	int colours_set, fill_set, outline_set;
 	double x1,x2;
 
 	FooCanvasItem *foo = (FooCanvasItem *) featureset;
@@ -88,8 +86,11 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	pango_layout_set_text (lset->pango.layout, text, len);
 
 		/* need to get pixel coordinates for pango */
-	foo_canvas_w2c (foo->canvas, x1, locus->ylocus - featureset->start + featureset->dy, &cx1, &cy1);
-	foo_canvas_w2c (foo->canvas, x2, locus->ytext - featureset->start + featureset->dy, &cx2, &cy2);
+// (dy = start plus block offset)
+//	foo_canvas_w2c (foo->canvas, x1, locus->ylocus - featureset->start + featureset->dy, &cx1, &cy1);
+//	foo_canvas_w2c (foo->canvas, x2, locus->ytext - featureset->start + featureset->dy, &cx2, &cy2);
+	foo_canvas_w2c (foo->canvas, x1, locus->ylocus, &cx1, &cy1);
+	foo_canvas_w2c (foo->canvas, x2, locus->ytext, &cx2, &cy2);
 
 	zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
 

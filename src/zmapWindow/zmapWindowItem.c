@@ -82,7 +82,9 @@ typedef struct
 
 
 //static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out) ;
+#if !ZWCI_AS_FOO
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
+#endif
 
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
@@ -96,7 +98,8 @@ static void getVisibleCanvas(ZMapWindow window,
  */
 
 
-
+#if !ZWCI_AS_FOO
+/* only called by previous bump code and an orphan fucntion in WindowFeature.c */
 /* This looks like something we will want to do often.... */
 GList *zmapWindowItemSortByPostion(GList *feature_item_list)
 {
@@ -107,7 +110,7 @@ GList *zmapWindowItemSortByPostion(GList *feature_item_list)
 
   return sorted_list ;
 }
-
+#endif
 
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame)
 {
@@ -204,7 +207,7 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
   return feature_list;
 }
 
-
+#if MH17_NOT_USED
 int zmapWindowItemListStartCoord(GList *item_list)
 {
   ID2Canvas id2c;
@@ -217,6 +220,7 @@ int zmapWindowItemListStartCoord(GList *item_list)
   feature = (ZMapFeature) id2c->feature_any;
   return feature->x1;
 }
+#endif
 #endif
 
 
@@ -1460,7 +1464,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
 
 
 
-
+#if !ZWCI_AS_FOO
 /* GCompareFunc() to compare two features by their coords so they are sorted into ascending order. */
 static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 {
@@ -1485,6 +1489,7 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
   return result ;
 }
+#endif
 
 
 
