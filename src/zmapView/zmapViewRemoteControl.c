@@ -172,6 +172,8 @@ typedef struct RequestDataStructName
   ZMapFeatureSet feature_set;
   ZMapFeature feature;
 
+  gboolean found_feature ;
+
   GQuark source_id ;
   GQuark style_id ;
   ZMapFeatureTypeStyle style ;
@@ -238,6 +240,7 @@ static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature fe
 static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data) ;
 static void viewDumpContextToFile(ZMapView view, RequestData request_data) ;
 static void eraseFeatures(ZMapView view, RequestData request_data) ;
+static gboolean findFeature(ZMapView view, RequestData request_data) ;
 static gboolean mergeNewFeatures(ZMapView view, RequestData request_data) ;
 static void draw_failed_make_message(gpointer list_data, gpointer user_data) ;
 static void delete_failed_make_message(gpointer list_data, gpointer user_data) ;
@@ -322,6 +325,7 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
 
   if (strcmp(command_name, ZACP_CREATE_FEATURE) == 0
       || strcmp(command_name, ZACP_DELETE_FEATURE) == 0
+      || strcmp(command_name, ZACP_FIND_FEATURE) == 0
       || strcmp(command_name, ZACP_LOAD_FEATURES) == 0)
     {
       localProcessRemoteRequest(view, command_name, view_id, request,
@@ -982,14 +986,18 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
       result = FALSE ;
     }
 
+  /* Need the style to get hold of the feature mode, better would be for
+   * xml to contain SO term ?? Maybe not....not sure. */
+  if (result && ((mode = zMapStyleGetMode(request_data->style)) == ZMAPSTYLE_MODE_INVALID))
+    {
+      zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
+      result = FALSE ;
+    }
+
 
   /* Check if feature exists, for some commands it must do, for others it must not. */
   if (result)
     {
-      /* Need the style to get hold of the feature mode, better would be for
-       * xml to contain SO term ?? Maybe not....not sure. */
-      mode = zMapStyleGetMode(request_data->style) ;
-
       feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
       feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
@@ -1008,6 +1016,16 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	      g_free(err_msg) ;
 
 	      result = FALSE ;
+	    }
+	}
+      else if (request_data->cmd_desc->exists == FEATURE_DONT_CARE)
+	{
+	  if (request_data->command_id == g_quark_from_string(ZACP_FIND_FEATURE))
+	    {
+	      if (feature)
+		request_data->found_feature = TRUE ;
+	      else
+		request_data->found_feature = FALSE ;
 	    }
 	}
       else if (request_data->cmd_desc->exists == FEATURE_MUST_NOT)
@@ -1032,7 +1050,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   /* Now do something... */
   if (result)
     {
-      if (request_data->cmd_desc->needs_feature_desc)
+      /* Having both options seems redundant.... */
+      if (request_data->cmd_desc->is_edit && request_data->cmd_desc->needs_feature_desc)
 	{
 	  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
 	    {
@@ -1076,7 +1095,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 	  if (result
 	      && (request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
-									    ZMAPSTYLE_MODE_BASIC,
+									    mode,
 									    request_data->style,
 									    start, end, has_score,
 									    score, strand)))
@@ -1090,7 +1109,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 	      if (start_not_found || end_not_found)
 		{
-		  request_data->feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
 		  zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
 						   start_phase, end_not_found);
 		}
@@ -1536,8 +1554,7 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_FIND_FEATURE))
     {
-      /* ????????? */
-      ;
+      findFeature(view, request_data) ;
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_DELETE_FEATURE))
     {
@@ -1670,6 +1687,26 @@ static void eraseFeatures(ZMapView view, RequestData request_data)
   return ;
 }
 
+
+static gboolean findFeature(ZMapView view, RequestData request_data)
+{
+  gboolean result = FALSE ;
+
+  if (request_data->found_feature)
+    {
+      request_data->command_rc = REMOTE_COMMAND_RC_OK ;
+
+      result = TRUE ;
+    }
+  else
+    {
+      request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+
+      g_string_append(request_data->err_msg, "Cannot find feature") ;
+    }
+
+  return result ;
+}
 
 
 static gboolean mergeNewFeatures(ZMapView view, RequestData request_data)
