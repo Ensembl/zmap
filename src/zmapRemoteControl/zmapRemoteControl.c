@@ -1608,18 +1608,17 @@ static void sendRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelect
 /* Reset the state of the Remote Control object to idle, freeing all resources. */
 static void resetRemoteToIdle(ZMapRemoteControl remote_control)
 {
+  RemoteControlState curr_state ;
 
-  /* I think we need to set the state to idle here actually... */
+  /* Record current state, needed to decide if we need to clear our clipboard to prevent
+   * further requests being received. */
+  curr_state = remote_control->state ;
+
+  /* Need to set this state so we when we clear the clipboard we don't try and process
+   * the event in our clear clipboard handler routine thinking it's a genuine request. */
   remote_control->state = REMOTE_STATE_IDLE ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (remote_control->state == REMOTE_STATE_SERVER_WAIT_NEW_REQ
-      || remote_control->state == REMOTE_STATE_SERVER_WAIT_REQ_ACK)
-    loseClipboardOwnership(remote_control) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  /* oh gosh...we no longer call this I see !! seems to work...check it through... */
-  if (remote_control->state == REMOTE_STATE_SERVER_WAIT_NEW_REQ)
+  if (curr_state == REMOTE_STATE_SERVER_WAIT_NEW_REQ)
     gtk_clipboard_clear(remote_control->receive->our_clipboard) ;
 
   resetIdle(remote_control->idle) ;
@@ -1634,8 +1633,6 @@ static void resetRemoteToIdle(ZMapRemoteControl remote_control)
 
   if (haveTimeout(remote_control))
     removeTimeout(remote_control) ;
-
-  remote_control->state = REMOTE_STATE_IDLE ;
 
   return ;
 }
