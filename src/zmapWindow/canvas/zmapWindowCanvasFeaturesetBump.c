@@ -261,8 +261,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	 * COMPRESS_VISIBLE  is in the code as 'UnCompress'
 	 *
 	 * so FTM just implement MARK or visible sequence (ie in scroll region)
-	 * features outsuide the range are flagged as non-vis
-	 * it's a linear scan so we could just flags all regardless of scroll region
+	 * features outside the range are flagged as non-vis
+	 * it's a linear scan so we could just flag all regardless of scroll region
 	 * but it might be quicker to process the scroll region only
 	 *
 	 * erm... compress_mode is implied by start and end coords
@@ -366,8 +366,10 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 			/* in case of mangled alingments must reset the first exom
 			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
 			 * which extends the feature to catch colinear lines off screen
+			 * NOTE we'd do better with some flag set by the alignment code to trigger this.
 			 */
-			feature->y2 = feature->feature->x2;
+			if(feature->type == FEATURE_ALIGN)
+				feature->y2 = feature->feature->x2;
 
 			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
 				feature->flags |= FEATURE_HIDDEN;
