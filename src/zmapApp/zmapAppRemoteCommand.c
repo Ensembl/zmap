@@ -123,7 +123,7 @@ static void parseExecuteRequest(ZMapAppContext app_context,
 
 static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id) ;
 
-static gboolean shutdownHandler(gpointer data) ;
+static gboolean deferredRequestHandler(gpointer data) ;
 
 
 
@@ -202,8 +202,10 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
 
-  /* Set state...for new request (should allocate/deallocate...one step at a time.... */
-  remote->curr_request = request ;
+  /* Hold on to original request, need it later. */
+  if (remote->curr_peer_request)
+    g_free(remote->curr_peer_request) ;
+  remote->curr_peer_request = g_strdup(request) ;
 
 
   /* Validate the request envelope. */
@@ -228,11 +230,8 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
       g_free(reason) ;
       g_free(err_msg) ;
     }
-  else if (!(command_name = zMapRemoteCommandRequestGetCommand(remote->curr_request)))
+  else if (!(command_name = zMapRemoteCommandRequestGetCommand(remote->curr_peer_request)))
     {
-      /* Still record current request, needed for debugging and replying. */
-      remote->curr_request = request ;
-
       command_rc = REMOTE_COMMAND_RC_BAD_XML ;
       reason = "Command is a required attribute for the \"request\" attribute." ;
       reply = NULL ;
@@ -241,18 +240,16 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
     }
   else
     {
-      /* Fill in current request and from that the current command and view_id to which 
-       * the command should be applied. ViewID id defaults to first one allocated if none specified. */
-      remote->curr_request = request ;
-
-      command_name = zMapRemoteCommandRequestGetCommand(remote->curr_request) ;
+      if (remote->curr_peer_command)
+	g_free(remote->curr_peer_command) ;
+      remote->curr_peer_command = g_strdup(command_name) ;
 
       /* Check to see if caller provided a view_id id, if not then set the default
        * view_id if there is one, otherwise pass an empty one (empty one means we don't.
        * have a zmap displayed yet. */
       view_id_ptr = &view_id ;
 
-      if (zMapRemoteCommandGetAttribute(remote->curr_request,
+      if (zMapRemoteCommandGetAttribute(remote->curr_peer_request,
 					ZACP_REQUEST, ZACP_VIEWID, &(id_str),
 					&err_msg))
 	{
@@ -284,7 +281,8 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
       if (result)
 	{
 	  if ((strcmp(command_name, ZACP_PING) == 0
-	       || strcmp(command_name, ZACP_SHUTDOWN) == 0))
+	       || strcmp(command_name, ZACP_SHUTDOWN) == 0
+	       || strcmp(command_name, ZACP_GOODBYE) == 0))
 	    {
 	      localProcessRemoteRequest(app_context,
 					command_name, &view_id, request, replyHandlerFunc, app_context) ;
@@ -409,9 +407,7 @@ gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app
 
   /* Sets app_context->remote_ok to FALSE if disconnect fails. */
   (request_func)(ZACP_GOODBYE, goodbye_type, app_context, localProcessReplyFunc, app_context) ;
-
-  if (!(app_context->remote_ok))
-    result = app_context->remote_ok ;
+  result = app_context->remote_ok ;
 
   return result ;
 }
@@ -442,11 +438,11 @@ void zmapAppRemoteControlTheirRequestEndedCB(void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
-  if (app_context->remote_control->deferred_shutdown)
+  if (app_context->remote_control->deferred_action)
     {
       int exit_timeout = 500 ;				    /* time in milliseconds. */
 
-      g_timeout_add(exit_timeout, shutdownHandler, (gpointer)app_context) ;
+      g_timeout_add(exit_timeout, deferredRequestHandler, (gpointer)app_context) ;
     }
 
 
@@ -490,17 +486,26 @@ static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_i
 }
 
 
-/* A GSourceFunc, called to ensure that we have finished remotecontrol stuff and
- * then this routine is called from the gtk mainloop to start the shutdown. */
-static gboolean shutdownHandler(gpointer data)
+/* A GSourceFunc, called after we have finished any processing to do with
+ * current request, e.g. to service a shutdown. This function is a timeout
+ * routine called from the gtk mainloop. */
+static gboolean deferredRequestHandler(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
+  ZMapAppRemote remote = app_context->remote_control ;
 
   /* kill remotecontrol first so we don't recurse trying to report our exit back to peer. */
-  zmapAppRemoteControlDestroy(app_context) ;
+  if (strcmp(remote->curr_peer_command, ZACP_SHUTDOWN) == 0
+      || strcmp(remote->curr_peer_command, ZACP_GOODBYE) == 0)
+    {
+      zmapAppRemoteControlDestroy(app_context) ;
+    }
 
-  /* now exit. */
-  zmapAppExit(app_context) ;
+
+  if (strcmp(remote->curr_peer_command, ZACP_SHUTDOWN) == 0)
+    {
+      zmapAppExit(app_context) ;
+    }
 
   return FALSE ;
 }
@@ -590,8 +595,20 @@ static void processRequest(ZMapAppContext app_context,
 
 	  *reply_out = zMapRemoteCommandMessage2Element("zmap shutting down now !") ;
 
-	  app_context->remote_control->deferred_shutdown = TRUE ;
+	  app_context->remote_control->deferred_action = TRUE ;
 	}
+    }
+  else if (strcmp(command_name, ZACP_GOODBYE) == 0)
+    {
+      /* Although we return a result here, the shutdown needs to be deferred until our reply gets
+       * through to the peer.  We initiate the shutdown from the remote callback which is called
+       * right at the end of the transaction and get that to work off a timeout routine. */
+      *command_rc_out = REMOTE_COMMAND_RC_OK ;
+      *reason_out = NULL ;
+
+      *reply_out = zMapRemoteCommandMessage2Element("Goodbye !") ;
+
+      app_context->remote_control->deferred_action = TRUE ;
     }
   else if (strcmp(command_name, ZACP_PING) == 0)
     {
