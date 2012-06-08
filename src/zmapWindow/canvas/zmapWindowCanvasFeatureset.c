@@ -266,8 +266,14 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 {
   void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
-  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
-      && (func = _featureset_paint_G[featureset->type]))
+
+  /* NOTE we can have diff types of features in a column eg alignments and basic features in Repeats
+   * if we use featureset->style then we get to call the wrong paint fucntion and crash
+   * NOTE that if we use PaintPrepare and PaintFlush we require one type of feature only in the column
+   * (more complex behavious has not been programmed; alignemnts and basic features don't use this)
+   */
+  if ((feature->type > 0 && feature->type < FEATURE_N_TYPE)
+      && (func = _featureset_paint_G[feature->type]))
     func(featureset, feature, drawable, expose) ;
 
   return ;
@@ -275,7 +281,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 
 /* output any buffered paints: useful eg for poly-line */
-/* paint function and flush must access data via FeaturesetItem */
+/* paint function and flush must access data via FeaturesetItem or globally in thier module */
 /* feature may be NULL to signify end of data */
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
