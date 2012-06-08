@@ -112,12 +112,6 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
       remote->peer_name = peer_name ;
       remote->peer_clipboard = peer_clipboard ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      remote->request_id_num = 0 ;
-      remote->request_id = g_string_new("") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
       remote->remote_controller = remote_control ;
 
       /* set no timeout for now... */
@@ -125,7 +119,7 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
       app_context->remote_control = remote ;
 
-      result = TRUE ;
+      app_context->remote_ok = result = TRUE ;
     }
   else
     {
@@ -182,6 +176,9 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
 
   g_free(remote->app_id) ;
   g_free(remote->app_unique_id) ;
+
+  /* Reset the interface and then destroy it. */
+  zMapRemoteControlReset(remote->remote_controller) ;
 
   zMapRemoteControlDestroy(remote->remote_controller) ;
 
@@ -272,7 +269,8 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
   /* Again.....is this a good idea....the app callback needs to be called whatever happens
    * to reset state...fine to log a bad message but we still need to call the app func. */
 
-  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller, remote->curr_request, reply, &error_out)))
+  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
+						remote->curr_zmap_request, reply, &error_out)))
     {
        /* error message etc...... */
       zMapLogWarning("Bad remote message from peer: %s", error_out) ;
@@ -383,11 +381,11 @@ static void handleZMapRepliesCB(char *command,
       /* Make a zmap protocol reply from the return code etc..... */
       if (command)
 	xml_stack = zMapRemoteCommandCreateReplyFromRequest(remote->remote_controller,
-								remote->curr_request,
+							    remote->curr_peer_request,
 							    command_rc, reason, reply, &err_msg) ;
       else
 	xml_stack = zMapRemoteCommandCreateReplyEnvelopeFromRequest(remote->remote_controller,
-								    remote->curr_request,
+								    remote->curr_peer_request,
 								    command_rc, reason, reply, &err_msg) ;
 
       /* If we can't make sense of what's passed to us something is wrong in our code so abort
@@ -452,15 +450,19 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
       if (!err_msg)
 	{
 	  /* cache the command and request, need them later. */
-	  remote->curr_command = command ;
-	  remote->curr_request = request ;
+	  if (remote->curr_zmap_command)
+	    g_free(remote->curr_zmap_command) ;
+	  remote->curr_zmap_command = g_strdup(command) ;
+	  if (remote->curr_zmap_request)
+	    g_free(remote->curr_zmap_request) ;
+	  remote->curr_zmap_request = g_strdup(request) ;
 
 	  /* Cache app function to be called when we receive a reply from the peer. */
 	  remote->process_reply_func = process_reply_func ;
 	  remote->process_reply_func_data = process_reply_func_data ;
 
 
-	  if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_request)))
+	  if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_zmap_request)))
 	    {
 	      err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
 	    }
