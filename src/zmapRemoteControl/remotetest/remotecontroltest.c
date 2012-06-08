@@ -136,6 +136,7 @@ enum
     XREMOTE_ZOOM_TO,
     XREMOTE_GET_MARK,
 
+    XREMOTE_GOODBYE,
     XREMOTE_SHUTDOWN,
     XREMOTE_ABORT,
 
@@ -459,6 +460,7 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/Commands/Feature Find",   NULL,         cmdCB,      XREMOTE_FIND,     NULL,       NULL},
     {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
 
+    {"/Commands/goodbye",        NULL,         cmdCB,      XREMOTE_GOODBYE,   NULL,       NULL},
     {"/Commands/shutdown",       NULL,         cmdCB,      XREMOTE_SHUTDOWN,   NULL,       NULL},
     {"/Commands/abort",          NULL,         cmdCB,      XREMOTE_ABORT,      NULL,       NULL},
 
@@ -1700,6 +1702,16 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       {
 	*action = g_quark_from_string(ZACP_GET_MARK) ;
 	command = ZACP_GET_MARK ;
+
+	break;
+      }
+
+    case XREMOTE_GOODBYE:
+      {
+	*action  = g_quark_from_string(ZACP_GOODBYE) ;
+	command = ZACP_GOODBYE ;
+
+	data_ptr = NULL ;
 
 	break;
       }
