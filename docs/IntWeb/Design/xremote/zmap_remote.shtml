@@ -33,9 +33,19 @@ legend{ font-weight: bold }
 </style>
 
 
-
-
 <h1 align="center">ZMap Remote Control Interface</h1>
+
+
+<h2>Contents</h2>
+
+<ul>
+  <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
+   <li><a href="#request_reply_format"><b>The Request/Reply Message Format</b></a></li>
+ <li><a href="#commands"><b>ZMap Command Interface</b></a></li>
+ <li><a href="#c_interface"><b>C Programming Interface</b></a></li>
+</ul>
+
+
 
 <h2>Introduction</h2>
 
@@ -619,9 +629,11 @@ no body:</p>
     <b>command:</b> must be the same value as specified in the request.
 <b>return_code:</b> must have one of the following values:
                                                     "ok" - Command succeeded.
-                                               "bad_xml" - Command XML is malformed.
+                                            "cmd_failed" - Command failed.
                                               "bad_args" - Command args are wrong.
-                                                "failed" - Command failed.
+                                          "view_unknown" - Command target view id unknown.
+                                           "cmd_unknown" - Command not recognised.
+                                               "bad_xml" - Command XML is malformed.
      <b>reason:</b> is a short description of the error that occurred and is only specified
              if return_code is <b>not</b> "ok".
 </pre>
@@ -654,13 +666,30 @@ parseable format. They are likely to be refined as the interface is more widely 
 <a name="commands"></a>
 <h2>Commands</h2>
 
-<p>The following sections give details of all the available commands. In each section the
-full xml is given for the request and reply along with notes explaining the command.</p>
+<p>The following sections give details of all the available commands:</p>
+
+<ul>
+  <li><a href="#Application_Commands"><b>Application Commands</b></a>
+  <li><a href="#View_Commands"><b>View Commands</b></a>
+  <li><a href="#Feature_Commands"><b>Feature Commands</b></a>
+</ul>
+
+<p>In each section the full xml is given for the request and reply along with
+notes explaining the command. The sender is given for each command, "zmap",
+"peer" or "either", the receiver is by inference the other program.</p>
 
 
+
+
+<a name="Application_Commands"></a>
+<h3>Application Commands</h3>
+
+<p>The "Application" commands provide basic control of zmap and its peer program.</p>
 
 <fieldset>
 <legend>"handshake"</legend>
+
+<p><b>Sender: zmap</b></p>
 
 <p>Used when one peer knows the clipboard id of another and wants to pass its own
 clipboard id to that peer so they can start two-way communication.</p>
@@ -695,6 +724,8 @@ and braces" check that all is well:</p>
 <fieldset>
 <legend>"ping"</legend>
 
+<p><b>Sender: either</b></p>
+
 <p>Used when one peer wants to check that the other is alive and responding, e.g.
 the peer receiving a handshake command might send a ping after replying to the
 handshake as a "belt and braces" check that two-way communication has been established.</p>
@@ -716,116 +747,10 @@ handshake as a "belt and braces" check that two-way communication has been estab
 </fieldset>
 <br />
 
-
-
-<fieldset>
-<legend>"new_view"</legend>
-
-<p>The "new_view" command is used to display a new section of sequence and associated features
-in zmap (known as a "view"):</p>
-
-<pre class="request">
-
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
-  &lt;request command="new_view"&gt;
-    &lt;sequence name="clone_X" start="2000" end="3000"/&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
-</pre>
-
-<pre class="reply">
-
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
-  &lt;reply command="new_view" return_code="ok"&gt;
-    &lt;view view_id="YYYY"/&gt;
-  &lt;/reply&gt;
-&lt;/zmap&gt;
-
-</pre>
-
-<p>The new view will be displayed in its own window and the reply gives the id
-of the newly created view. This id is only needed if the peer creates more than
-one view at a time in which case the id can be used to specify which view a
-command should be applied to. If there is only one view displayed then zmap
-will apply commands to that view without needing to specify the view id.  Note
-that the view id should only be specified for commands that take a "view_id"
-attribute.</p>
-
-</fieldset>
-<br/>
-
-
-
-<fieldset>
-<legend>"add_to_view"</legend>
-
-<p>The "add_to_view" command is used to display a new section of sequence and associated features
-in the same zmap window as a currently displayed view:</p>
-
-<pre class="request">
-
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
-  &lt;request command="add_to_view" view="NNNNN"&gt;
-    &lt;sequence name="clone_X" start="2000" end="3000"/&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
-</pre>
-
-
-<pre class="reply">
-
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
-  &lt;reply command="add_to_view" return_code="ok"&gt;
-    &lt;view view_id="YYYY"/&gt;
-  &lt;/reply&gt;
-&lt;/zmap&gt;
-
-</pre>
-
-<p>The new view will be displayed in the same window as view "NNNNN", if that
-view does not exist then the view will not be displayed.</p>
-
-<p>The reply gives the id of the newly created view. This id is needed to
-specify which view subsequent commands should be applied to.  Note that the
-view id should only be specified for commands that take a "view"
-attribute.</p>
-
-</fieldset>
-<br/>
-
-
-
-<fieldset>
-<legend>"close_view"</legend>
-
-<p>The "close_view" command is used to close an existing view:</p>
-
-<pre class="request">
-
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="3"&gt;
-  &lt;request command="close_view" view="NNNNN"/&gt;
-&lt;/zmap&gt;
-</pre>
-
-<pre class="reply">
-
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="3"&gt;
-  &lt;reply command="close_view" return_code="ok"&gt;
-    &lt;message&gt; View closed.&lt;/message&gt;
-  &lt;/reply&gt;
-&lt;/zmap&gt;
-
-</pre>
-
-<p>If the view is the only view in the window then the window is closed as well, otherwise
-just that view is removed from the window.</p>
-
-</fieldset>
-<br/>
-
-
 <fieldset>
 <legend>"goodbye"</legend>
+
+<p><b>Sender: either</b></p>
 
 <p>Used to tell the other peer that you are closing the connection to them:</p>
 
@@ -869,6 +794,8 @@ the opposite of the "handshake" request and is the default "goodbye" action.</p>
 <fieldset>
 <legend>"shutdown"</legend>
 
+<p><b>Sender: peer</b></p>
+
 <p>Used to tell the other peer to terminate in an orderly way:</p>
 
 <pre class="request">
@@ -908,6 +835,672 @@ for a reply.</p>
 
 </fieldset>
 <br />
+
+
+
+<a name="View_Commands"></a>
+<h3>View Commands</h3>
+
+<p>The "View" commands create, augment, query and delete sequence/feature views.</p>
+
+<fieldset>
+<legend>"new_view"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>The "new_view" command is used to display a new section of sequence and associated features
+in zmap (known as a "view"):</p>
+
+<pre class="request">
+
+&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+  &lt;request command="new_view"&gt;
+    &lt;sequence name="clone_X" start="2000" end="3000"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="reply">
+
+&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+  &lt;reply command="new_view" return_code="ok"&gt;
+    &lt;view view_id="YYYY"/&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+
+</pre>
+
+<p>The new view will be displayed in its own window and the reply gives the id
+of the newly created view. This id is only needed if the peer creates more than
+one view at a time in which case the id can be used to specify which view a
+command should be applied to. If there is only one view displayed then zmap
+will apply commands to that view without needing to specify the view id.  Note
+that the view id should only be specified for commands that take a "view_id"
+attribute.</p>
+
+</fieldset>
+<br/>
+
+
+
+<fieldset>
+<legend>"add_to_view"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>The "add_to_view" command is used to display a new section of sequence and associated features
+in the same zmap window as a currently displayed view:</p>
+
+<pre class="request">
+
+&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+  &lt;request command="add_to_view" view="NNNNN"&gt;
+    &lt;sequence name="clone_X" start="2000" end="3000"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<pre class="reply">
+
+&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+  &lt;reply command="add_to_view" return_code="ok"&gt;
+    &lt;view view_id="YYYY"/&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+
+</pre>
+
+<p>The new view will be displayed in the same window as view "NNNNN", if that
+view does not exist then the view will not be displayed.</p>
+
+<p>The reply gives the id of the newly created view. This id is needed to
+specify which view subsequent commands should be applied to.  Note that the
+view id should only be specified for commands that take a "view"
+attribute.</p>
+
+</fieldset>
+<br/>
+
+
+
+<fieldset>
+<legend>"close_view"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>The "close_view" command is used to close an existing view:</p>
+
+<pre class="request">
+
+&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="3"&gt;
+  &lt;request command="close_view" view="NNNNN"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="reply">
+
+&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="3"&gt;
+  &lt;reply command="close_view" return_code="ok"&gt;
+    &lt;message&gt; View closed.&lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+
+</pre>
+
+<p>If the view is the only view in the window then the window is closed as well, otherwise
+just that view is removed from the window.</p>
+
+</fieldset>
+<br/>
+
+
+<fieldset>
+<legend>"view_deleted"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>brief description</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
+  &lt;request command="view_deleted"&gt;
+    &lt;view view_id="0x82d1b98.0x83044f8.0x8304d88"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>description of paramsm, reply etc. </p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
+  &lt;reply command="view_deleted" return_code="ok"&gt;
+    &lt;message&gt;view deleted...thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"load_features"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Peer sends command to zmap to tell zmap to load featuresets.</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-27331-1339141750" request_id="2"&gt;
+  &lt;request command="load_features"&gt;
+    &lt;featureset name="genomic_canonical"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that reply from zmap signals that it received and is processing the
+request, <b>not</b> that the features are loaded yet (see
+"features_loaded").</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-27331-1339141750" request_id="2"&gt;
+  &lt;reply command="load_features" return_code="ok"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"features_loaded"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p><b>FORMAT OF THIS COMMAND IS LIKELY TO CHANGE.</b></p>
+
+<p>Sent by zmap to its peer to signal that it has loaded all requested features.</p>
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
+  &lt;request command="features_loaded"&gt;
+    &lt;featureset names="genomic_canonical"/&gt;
+    &lt;start value="1"/&gt;
+    &lt;end value="37801"/&gt;
+    &lt;status value="1" message="1&#32;features&#32;loaded"/&gt;
+    &lt;exit_code value="0"/&gt;
+    &lt;stderr value=""/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Names of all feature sets that zmap loaded are listed. The start/end range over which the features
+were loaded is given as well as the total number of features loaded. When there are errors they
+are also given.</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
+  &lt;reply command="features_loaded" return_code="ok"&gt;
+    &lt;message&gt;got features loaded...thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>"get_mark"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Sent to zmap to find out if a mark is sent and what the top/bottom coordinates of the mark are.</p>
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="4"&gt;
+  &lt;request command="get_mark"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="4"&gt;
+  &lt;reply command="get_mark" return_code="ok"&gt;
+    &lt;mark start="5056" end="6309"/&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+
+<a name="Feature_Commands"></a>
+<h3>Feature Commands</h3>
+
+<p>The "Feature" commands create, query, select and delete individual features.</p>
+
+<fieldset>
+<legend>"zoom_to"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Sent to zmap to request that zmap zooms in to a particular feature as described.</p>
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="3"&gt;
+  &lt;request command="zoom_to"&gt;
+    &lt;featureset name="GenePairs"&gt;
+      &lt;feature name="sjj_AH6.2" start="5113" end="6276" strand="+"&gt;
+     &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="3"&gt;
+  &lt;reply command="zoom_to" return_code="ok"&gt;
+    &lt;message&gt;Zoom to feature sjj_AH6.2 ok    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>If the feature can be found then zmap zooms in to display that feature to occupy most
+the zmap window with a small top/bottom boundary.</p>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"create_feature"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Sent to zmap to request that it creates a new feature in the specified featureset
+at the specified position with the given attributes.</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+  &lt;request command="create_feature"&gt;
+    &lt;featureset name="history"&gt;
+      &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
+        &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;</pre>
+
+<p>If the featureset can be found and the feature does not already exist and all the attributes are
+recognised then zmap creates and displays the feature.</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+  &lt;reply command="create_feature" return_code="ok"/&gt;
+&lt;/zmap&gt;</pre>
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>"find_feature"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Sent to zmap to see if a particular feature is known to zmap.</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-5068-1339084012" request_id="2"&gt;
+  &lt;request command="find_feature"&gt;
+    &lt;featureset name="Orfeome"&gt;
+      &lt;feature name="mv_AH6.5" start="11524" end="13305" strand="+"&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-5068-1339084012" request_id="2"&gt;
+  &lt;reply command="find_feature" return_code="ok"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"delete_feature"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Sent to zmap to delete the given feature.</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="7"&gt;
+  &lt;request command="delete_feature"&gt;
+    &lt;featureset name="history"&gt;
+      &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
+        &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>If the feature can be found in the given featureset at the given position then the
+feature is deleted.</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="7"&gt;
+  &lt;reply command="delete_feature" return_code="ok"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"single_select"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>Sent by zmap to peer to inform peer that user has selected the given feature (usually by clicking on it).</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="7"&gt;
+  &lt;request command="single_select"&gt;
+    &lt;featureset name="curated"&gt;
+      &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
+        &lt;subfeature start="11613" end="11741" ontology="exon"/&gt;
+        &lt;subfeature start="11789" end="12303" ontology="exon"/&gt;
+        &lt;subfeature start="12357" end="12462" ontology="exon"/&gt;
+        &lt;subfeature start="12505" end="12681" ontology="exon"/&gt;
+        &lt;subfeature start="12731" end="12871" ontology="exon"/&gt;
+        &lt;subfeature start="12923" end="13059" ontology="exon"/&gt;
+        &lt;subfeature start="13109" end="13307" ontology="exon"/&gt;
+        &lt;subfeature start="11742" end="11788" ontology="intron"/&gt;
+        &lt;subfeature start="12304" end="12356" ontology="intron"/&gt;
+        &lt;subfeature start="12463" end="12504" ontology="intron"/&gt;
+        &lt;subfeature start="12682" end="12730" ontology="intron"/&gt;
+        &lt;subfeature start="12872" end="12922" ontology="intron"/&gt;
+        &lt;subfeature start="13060" end="13108" ontology="intron"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>zmap sends full details of the feature back to the peer for display or processing.</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="7"&gt;
+  &lt;reply command="single_select" return_code="ok"&gt;
+    &lt;message&gt;single select received..thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"multiple_select"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>Sent by zmap when the user selects a feature as part of a multiple selection
+of features (by clicking on features with the shift key held down). This allows zmap to pass to the
+peer an arbitrary number of selected features, e.g. alignments for building a proposed transcript.</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="11"&gt;
+  &lt;request command="multiple_select"&gt;
+    &lt;featureset name="Gene"&gt;
+      &lt;feature name="WBGene00003231" start="11604" end="13798" strand="+"/&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the information sent is the same as for a "single_select" but the
+command is "multiple_select".  If the user has the shift key held down when the
+select the first feature this will be sent as as a "single_select" while
+subsequent selections will be sent as a "multiple_select".
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="15"&gt;
+  &lt;reply command="multiple_select" return_code="ok"&gt;
+    &lt;message&gt;single select received..thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"edit"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>brief description</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="17"&gt;
+  &lt;request command="edit"&gt;
+    &lt;featureset name="curated"&gt;
+      &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
+        &lt;subfeature start="11613" end="11741" ontology="exon"/&gt;
+        &lt;subfeature start="11789" end="12303" ontology="exon"/&gt;
+        &lt;subfeature start="12357" end="12462" ontology="exon"/&gt;
+        &lt;subfeature start="12505" end="12681" ontology="exon"/&gt;
+        &lt;subfeature start="12731" end="12871" ontology="exon"/&gt;
+        &lt;subfeature start="12923" end="13059" ontology="exon"/&gt;
+        &lt;subfeature start="13109" end="13307" ontology="exon"/&gt;
+        &lt;subfeature start="11742" end="11788" ontology="intron"/&gt;
+        &lt;subfeature start="12304" end="12356" ontology="intron"/&gt;
+        &lt;subfeature start="12463" end="12504" ontology="intron"/&gt;
+        &lt;subfeature start="12682" end="12730" ontology="intron"/&gt;
+        &lt;subfeature start="12872" end="12922" ontology="intron"/&gt;
+        &lt;subfeature start="13060" end="13108" ontology="intron"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>description of paramsm, reply etc. </p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="15"&gt;
+  &lt;reply command="edit" return_code="ok"&gt;
+    &lt;message&gt;edit received..thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"feature_details"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>brief description</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
+  &lt;request command="feature_details"&gt;
+    &lt;featureset name="curated"&gt;
+      &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
+        &lt;subfeature start="11613" end="11741" ontology="exon"/&gt;
+        &lt;subfeature start="11789" end="12303" ontology="exon"/&gt;
+        &lt;subfeature start="12357" end="12462" ontology="exon"/&gt;
+        &lt;subfeature start="12505" end="12681" ontology="exon"/&gt;
+        &lt;subfeature start="12731" end="12871" ontology="exon"/&gt;
+        &lt;subfeature start="12923" end="13059" ontology="exon"/&gt;
+        &lt;subfeature start="13109" end="13307" ontology="exon"/&gt;
+        &lt;subfeature start="11742" end="11788" ontology="intron"/&gt;
+        &lt;subfeature start="12304" end="12356" ontology="intron"/&gt;
+        &lt;subfeature start="12463" end="12504" ontology="intron"/&gt;
+        &lt;subfeature start="12682" end="12730" ontology="intron"/&gt;
+        &lt;subfeature start="12872" end="12922" ontology="intron"/&gt;
+        &lt;subfeature start="13060" end="13108" ontology="intron"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>description of paramsm, reply etc. </p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
+  &lt;reply command="feature_details" return_code="ok"&gt;
+    &lt;notebook&gt;
+      &lt;chapter&gt;
+        &lt;page name="Details"&gt;
+          &lt;subsection name="Annotation"&gt;
+            &lt;paragraph type="tagvalue_table"&gt;
+              &lt;tagvalue name="Transcript Stable ID" type="simple"&gt;
+                OTTHUMT00000254615
+              &lt;/tagvalue&gt;
+              &lt;tagvalue name="Translation Stable ID" type="simple"&gt;
+                OTTHUMP00000162488
+              &lt;/tagvalue&gt;
+              &lt;tagvalue name="Transcript author" type="simple"&gt;
+                mt4
+              &lt;/tagvalue&gt;
+            &lt;/paragraph&gt;
+            &lt;paragraph type="tagvalue_table"&gt;
+              &lt;tagvalue name="Annotation remark" type="scrolled_text"&gt;
+                corf
+              &lt;/tagvalue&gt;
+            &lt;/paragraph&gt;
+            &lt;paragraph columns="&apos;Type&apos; &apos;Accession.SV&apos;" name="Evidence" type="compound_table" column_types="string string"&gt;
+              &lt;tagvalue type="compound"&gt;
+                EST Em:AL528275.3
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                EST Em:AL551081.3
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                EST Em:BF668035.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                EST Em:BG708432.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                EST Em:BU151181.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                EST Em:CB142784.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                Protein Tr:Q969U7
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                cDNA Em:AF276707.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                cDNA Em:AK057005.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                cDNA Em:BC013356.2
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                cDNA Em:CR596477.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                cDNA Em:CR599075.1
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                cDNA Em:CR604839.1
+              &lt;/tagvalue&gt;
+            &lt;/paragraph&gt;
+          &lt;/subsection&gt;
+          &lt;subsection name="Locus"&gt;
+            &lt;paragraph type="tagvalue_table"&gt;
+              &lt;tagvalue name="Symbol" type="simple"&gt;
+                PSMG2
+              &lt;/tagvalue&gt;
+              &lt;tagvalue name="Full name" type="simple"&gt;
+                proteasome (prosome, macropain) assembly chaperone 2
+              &lt;/tagvalue&gt;
+              &lt;tagvalue name="Locus Stable ID" type="simple"&gt;
+                OTTHUMG00000131703
+              &lt;/tagvalue&gt;
+              &lt;tagvalue name="Locus author" type="simple"&gt;
+                mt4
+              &lt;/tagvalue&gt;
+            &lt;/paragraph&gt;
+          &lt;/subsection&gt;
+        &lt;/page&gt;
+        &lt;page name="Exons"&gt;
+          &lt;subsection&gt;
+            &lt;paragraph columns="&apos;Start&apos; &apos;End&apos; &apos;Stable ID&apos;" type="compound_table" column_types="int int string"&gt;
+              &lt;tagvalue type="compound"&gt;
+                82130 82868 OTTHUME00001460988
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                86254 86425 OTTHUME00001460984
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                92406 92464 OTTHUME00001460987
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                98221 98339 OTTHUME00001460985
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                100214 100387 OTTHUME00001460982
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                104203 104323 OTTHUME00001460986
+              &lt;/tagvalue&gt;
+              &lt;tagvalue type="compound"&gt;
+                105143 105444 OTTHUME00001460983
+              &lt;/tagvalue&gt;
+            &lt;/paragraph&gt;
+          &lt;/subsection&gt;
+        &lt;/page&gt;
+      &lt;/chapter&gt;
+    &lt;/notebook&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+
+
+
+
+
+
 
 
 
