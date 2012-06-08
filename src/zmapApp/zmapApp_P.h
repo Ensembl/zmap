@@ -80,11 +80,10 @@ typedef struct _ZMapAppRemoteStruct
   char *peer_name ;
   char *peer_clipboard ;
 
-  /* Currently shutdown is the only command that needs to run _after_ we are sure
-   * the peer has received our reply.....if it turns out other commands need to do
-   * this then we will need to store their names/params here instead of this simple
-   * boolean. */
-  gboolean deferred_shutdown ;
+  /* There are some requests that can only be serviced _after_ we are sure the peer
+   * has received our reply to their request e.g. "shutdown" where we can't exit
+   * otherwise peer will never receive our reply. */
+  gboolean deferred_action ;
 
   ZMapAppCBFunc exit_routine ;				    /* Called to exit application after we
 							       have signalled to peer we are going. */
@@ -98,10 +97,8 @@ typedef struct _ZMapAppRemoteStruct
 
   /* Incoming request FROM a peer. */
 
-  /* remote_reply_func() is RemoteControl callback that gets called
-   * when we receive a reply from a zmap sub-system to this request. */
-  char *curr_command ;
-  char *curr_request ;					    /* DO WE NEED TO CACHE THIS ?? */
+  char *curr_peer_command ;
+  char *curr_peer_request ;				    /* DO WE NEED TO CACHE THIS ?? */
 
 
   ZMapAppRemoteViewIDStruct curr_view_id ;
@@ -119,6 +116,11 @@ typedef struct _ZMapAppRemoteStruct
 
 
   /* Outgoing request TO a peer */
+
+  char *curr_zmap_command ;
+  char *curr_zmap_request ;
+
+
 
   /* App function to be called with peer's reply to the request. */
   ZMapRemoteAppProcessReplyFunc process_reply_func ;
@@ -194,7 +196,8 @@ typedef struct _ZMapAppContextStruct
   ZMapFeatureSequenceMap default_sequence;
 
   char *locale;
-  gboolean sent_finalised ;
+
+  gboolean sent_finalised ;				    /* ?????????????????? */
 
   char *script_dir;					    /* where scripts are kept for the pipeServer module
 							     * can be set in [ZMap] or defaults to run-time directory
