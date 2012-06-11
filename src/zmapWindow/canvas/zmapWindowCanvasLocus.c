@@ -106,12 +106,13 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
  * but if not they will still overlap
  *
  * unlike the previous version this is less optimal, but generally tends to put the names nearer the loci
- * so it looks better with the downsdie of some overlap it it's a bit crowded.
+ * so it looks better with the downside of some overlap it it's a bit crowded.
  * we get groups overlapping, could do zebra stripe colour coding....
  */
+#warning this function need shaking down a bit
 
 
-GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double end)
+double deOverlap(GList *visible,int n_loci, double text_h, double start, double end)
 {
 	LocusGroup group_span = NULL;
 	GList *groups = NULL;
@@ -122,6 +123,7 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 //	double group_sep;
 //	double item_sep;
 	double cur_y;
+	double longest = 0;
 
 	visible = g_list_sort(visible, zMapFeatureCmp);
 
@@ -236,7 +238,6 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 		}
 
 		locus->ytext = cur_y;
-//printf("locus %s/%d @ %.1f\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, cur_y);
 
 		locus->feature.y1 = cur_y - text_h / 2;
 		locus->feature.y2 = cur_y + text_h / 2;
@@ -246,6 +247,10 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 		if(locus->ylocus > locus->feature.y2)
 			locus->feature.y2 = locus->ylocus;
 
+		if(locus->feature.y2 - locus->feature.y1 > longest)
+			longest = locus->feature.y2 - locus->feature.y1;
+//printf("locus %s/%d @ %.1f (%.1f %.1f %.1f)\n",g_quark_to_string(locus->feature.feature->original_id), group_span->id, cur_y, locus->ylocus, locus->feature.y1, locus->feature.y2);
+
 		cur_y += text_h;
 
 	}
@@ -253,7 +258,9 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 	if(groups)
 		g_list_free(groups);
 
-	return visible;
+	g_list_free(visible);
+
+	return longest + 1;
 }
 
 
@@ -267,13 +274,13 @@ GList *deOverlap(GList *visible,int n_loci, double text_h, double start, double 
  */
 static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
+//	ZMapSkipList sl;
 	GList *l;
 	double len, width, f_width = featureset->width;
 	char *text;
 	int n_loci = 0;
 	GList *visible = NULL;
 	double span = featureset->end - featureset->start + 1.0;
-	double text_h;
 //	FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
 	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
@@ -282,9 +289,19 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 
 	featureset->width = 0.0;
 
-	for(l = featureset->features; l ; l = l->next)		/* (we get called before the index is created) */
+	lset->text_h = lset->pango.text_height / featureset->zoom;	/* can't use foo_canvas_c2w as it does a scroll offset */
+
+
+	if(featureset->display_index)		/* make sure it gets re-created if we've been run before */
+      {
+		zMapSkipListDestroy(featureset->display_index, NULL);
+		featureset->display_index = NULL;
+      }
+
+
+		/* but normally we get called before the index is created */
+	for(l = featureset->features; l ; l = l->next)
 	{
-//		ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) sl->data;
 		ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) l->data;
 
 		locus->ylocus = locus->feature.feature->x1;
@@ -314,11 +331,9 @@ not implemented yet!
 	}
 	/* do more filtering if there are too many loci */
 
-	text_h = lset->pango.text_height / featureset->zoom;	/* can't use foo_canvas_c2w as it does a scroll offset */
-
-	if(n_loci * text_h > span)
+	if(n_loci * lset->text_h > span)
 	{
-//		zMapWarning("Need to filter some more %d %.1f %.1f",n_loci,text_h, span);
+//		zMapWarning("Need to filter some more %d %.1f %.1f",n_loci, lset->text_h, span);
 	}
 
 	if(f_width != featureset->width)
@@ -329,16 +344,8 @@ not implemented yet!
 	 * this will move features around and expand their extents
 	 * after this fucntion the featureset code will create the index
 	 */
-	if(featureset->display_index)		/* make sure it gets re-created */
-      {
-		zMapSkipListDestroy(featureset->display_index, NULL);
-		featureset->display_index = NULL;
-      }
-
 	if(n_loci > 1)
-		visible = deOverlap(visible, n_loci, text_h, featureset->start, featureset->end);
-
-	g_list_free(visible);
+		featureset->longest = deOverlap(visible, n_loci, lset->text_h, featureset->start, featureset->end);
 }
 
 
@@ -363,6 +370,28 @@ static void zMapWindowCanvasLocusAddFeature(ZMapWindowFeaturesetItem featureset,
 
 
 
+/* the Canvas feature extends around the text and the line pointing at the start of the locus
+ * but we want to click on the text part only
+ * the CanvasFeatureset needs the visible extent and point has to use the text
+ */
+static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+			 double item_x, double item_y, int cx, int cy,
+			 double local_x, double local_y, double x_off)
+{
+	double best = 1e36;
+	ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) gs;
+	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) fi->opt;
+
+	/* fucntion interface looks too complex, let's just use the feature info */
+	double ytext = locus->ytext - lset->text_h / 2;
+
+	if(item_y >= ytext && item_y <= (ytext + lset->text_h))
+		best = 0.0;
+//printf("locus point: %.1f %s (%.1f, %.1f) -> %.1f\n", item_y, g_quark_to_string(gs->feature->unique_id), ytext, ytext + lset->text_h, best > 0.0 ? 1.0 : 0.0);
+	return best;
+}
+
+
 void zMapWindowCanvasLocusInit(void)
 {
 	gpointer funcs[FUNC_N_FUNC] = { NULL };
@@ -371,6 +400,7 @@ void zMapWindowCanvasLocusInit(void)
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasLocusZoomSet;
 	funcs[FUNC_FREE]   = zMapWindowCanvasLocusFreeSet;
 	funcs[FUNC_ADD]   = zMapWindowCanvasLocusAddFeature;
+	funcs[FUNC_POINT] = locusPoint ;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs, sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
 }

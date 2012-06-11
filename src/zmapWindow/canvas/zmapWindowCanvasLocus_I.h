@@ -73,7 +73,7 @@ typedef struct _zmapWindowCanvasLocusStruct
 								/* has canvas feature extent as feature->y1,y2 */
 
 	double ylocus, ytext;		/* line coordinates, text appears around y2 */
-	double x_off;		/* of the text = RH x coord of line */
+	double x_off;			/* of the text = RH x coord of line */
 #define ZMAP_LOCUS_LINE_WIDTH	20
 
 	LocusGroup group;
@@ -85,6 +85,8 @@ typedef struct _zmapWindowCanvasLocusSetStruct
 {
 	zmapWindowCanvasPangoStruct pango;
 	/* allow for addition of other pango things eg diff font for diff locus types */
+
+	double text_h;			/* height of text in world coords */
 
 } zmapWindowCanvasLocusSetStruct, *ZMapWindowCanvasLocusSet;
 

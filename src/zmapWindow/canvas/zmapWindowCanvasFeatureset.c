@@ -918,7 +918,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
   zmapWindowCanvasFeatureStruct search;
 
   if (!compare_func)
-    compare_func = zMapFeatureCmp ;
+    compare_func = zMapFeatureCmp;
 
   search.y1 = y1;
   search.y2 = y2;
@@ -1474,6 +1474,9 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
 
 
       /* This all seems a bit hokey...who says the glyphs are in the middle of the column ? */
+	/* NOTE histgrams are hooked onto the LHS, but we can click on the row and still get the feature */
+#warning change this to use featurex1 and x2 coords
+	/* NOTE warning even better if we express point() fucntion in pixel coordinates only */
       x_off = fi->dx + fi->x_off + fi->width / 2;
 
       /* NOTE there is a flake in world coords at low zoom */
@@ -1489,12 +1492,14 @@ double  zmap_window_featureset_item_item_point(FooCanvasItem *item,
 	  gs = (ZMapWindowCanvasFeature) sl->data;
 	  double this_one;
 
-	  //printf("gs: %x %f %f\n",gs->flags, gs->y1,gs->y2);
+// printf("y1,2: %.1f %.1f,   gs: %s %lx %f %f\n",y1,y2, g_quark_to_string(gs->feature->unique_id), gs->flags, gs->y1,gs->y2);
 
 	  if(gs->flags & FEATURE_HIDDEN)
 	    continue;
 
-	  if (gs->y1 > y2 + best)
+// mh17: if best is 1e36 this is silly:
+//	  if (gs->y1 > y2  + best)
+	  if(gs->y1 > y2)		/* y2 has close_enough factored in */
 	    break;
 
 	  if ((this_one = point_func(fi, gs, item_x, item_y, cx, cy, local_x, local_y, x_off)) < best)
@@ -2138,6 +2143,41 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
   return(0);
 }
 
+
+/*
+ * look up a feature
+ * < 1 if feature is before b
+ * > 1 if feature is after b
+ * 0 if it overlaps
+ */
+gint zMapFeatureFind(gconstpointer a, gconstpointer b)
+{
+  ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
+  ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
+
+  /* we can get NULLs due to GLib being silly */
+  /* this code is pedantic, but I prefer stable sorting */
+  if(!featb)
+    {
+      if(!feata)
+	return(0);
+      return(1);
+    }
+  if(!feata)
+    return(-1);
+
+  if(feata->y1 < featb->y1)
+    return(-1);
+  if(feata->y1 > featb->y1)
+    return(1);
+
+  if(feata->y2 > featb->y2)
+    return(-1);
+
+  if(feata->y2 < featb->y2)
+    return(1);
+  return(0);
+}
 
 
 int get_heat_rgb(int a,int b,double score)

@@ -1562,9 +1562,13 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
       {
 	GdkEventButton *button = (GdkEventButton *)event ;
 
-        /* Retrieve the feature item info from the canvas item. */
+		/* freeze the selected feature from the point function */
+	  zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, button->x, button->y);
+
+		/* Retrieve the feature item info from the canvas item. */
         feature = zmapWindowItemGetFeature(item);
         zMapAssert(feature) ;
+
 
 #if MH17_DEBUG_NAV_FOOBAR
 { double x1,x2,y1,y2;
