@@ -45,7 +45,7 @@
 
 
 #include <zmapWindowCanvasFeatureset.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
+
 
 /* set a KNOWN initial size for the foo_canvas!
  * ... the same size as foo_canvas sets ...
@@ -293,9 +293,11 @@ typedef struct _zmapWindowFeatureStack
 
 
 
+/* mh17: erm.... why aren't these #defines ?? */
 enum
   {
-    ZMAP_WINDOW_TEXT_BORDER = 2,			    /* border above/below dna text. */
+//     ZMAP_WINDOW_TEXT_BORDER = 2, 			/* border above/below dna text.  */
+// see zmapWindow.h
     ZMAP_WINDOW_STEP_INCREMENT = 10,                        /* scrollbar stepping increment */
     ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
 //    ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
@@ -651,10 +653,12 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
+#if !ZWCI_AS_FOO
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
    * than this limit as we zoom in and crop them ourselves. */
   ZMapWindowLongItems long_items ;
+#endif
   ZMapWindowFToIFactory item_factory;
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
@@ -974,16 +978,16 @@ void zmapWindowHighlightSequenceItems(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
 				       ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
 				       gboolean centre_on_region) ;
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 				      FooCanvasItem *any_item, ZMapFrame required_frame,
 				      ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 					       FooCanvasItem *item,
 					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 						  FooCanvasItem *item,
 						  ZMapFrame required_frame,
 						  ZMapSequenceType coords_type,
@@ -1066,7 +1070,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 void zmapWindowDrawManageWindowWidth(ZMapWindow window);
@@ -1352,7 +1356,7 @@ int zmapWindowItemListStartCoord(GList *item_list);
 
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
 
@@ -1445,8 +1449,8 @@ void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustmen
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped,
-                             double start, double end);
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, gboolean revcomped,
+                             double start, double end, double canvas_offset);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;

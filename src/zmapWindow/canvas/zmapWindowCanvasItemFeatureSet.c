@@ -53,7 +53,6 @@ this does nothing excpet interface to existing canvas item/ group code
 
 static void zmap_window_featureset_item_class_init  (ZMapWindowCanvasFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_init        (ZMapWindowCanvasFeaturesetItem      group);
-static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
 static void zmap_window_featureset_item_set_property(GObject               *object,
                                        guint                  param_id,
                                        const GValue          *value,
@@ -65,13 +64,8 @@ static void zmap_window_featureset_item_get_property(GObject               *obje
 
 static void zmap_window_featureset_item_destroy     (GObject *object);
 
-#if 0
-static FooCanvasItem *zmap_window_featureset_item_add_interval(ZMapWindowCanvasItem   featureset,
-                                               ZMapFeatureSubPartSpan unused,
-                                               double top,  double bottom,
-                                               double left, double right);
-#endif
 
+static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
 static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   thing,
 						      FooCanvasItem         *interval,
 						      ZMapFeature			feature,
@@ -134,6 +128,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 {
   ZMapWindowCanvasFeaturesetItem fi = NULL;
   FooCanvasItem *foo  = NULL,*interval;
+
 
   /* class not intialised till we make an item in foo_canvas_item_new() below */
   if(featureset_class_G && featureset_class_G->featureset_items)
@@ -226,6 +221,7 @@ gboolean zMapWindowCanvasFeaturesetItemBump(ZMapWindowCanvasItem item, ZMapStyle
 
 
 
+
 static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetItemClass featureset_class)
 {
   ZMapWindowCanvasItemClass canvas_class ;
@@ -245,11 +241,6 @@ static void zmap_window_featureset_item_class_init(ZMapWindowCanvasFeaturesetIte
 
   gobject_class->dispose = zmap_window_featureset_item_destroy;
 
-#if OLD_FEATURE
-  canvas_class->add_interval = zmap_window_featureset_item_add_interval;
-#endif
-
-  featureset_class->canvas_item_set_colour = canvas_class->set_colour;
   canvas_class->set_colour = zmap_window_featureset_item_set_colour;
 
   canvas_class->set_feature = zmap_window_featureset_item_set_feature;
@@ -358,41 +349,11 @@ static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 #warning this should be a class function
 		zmapWindowFeaturesetItemSetColour(interval,feature,sub_feature,colour_type,colour_flags,fill,border);
 	}
-#if OLD_FEATURE
-	else
-	{
-		/* revert to normal canvas item handling */
-		ZMapWindowCanvasFeaturesetItemClass class = ZMAP_WINDOW_CANVAS_FEATURESET_ITEM_GET_CLASS(item);
-		if(class->canvas_item_set_colour)
-			(* class->canvas_item_set_colour) (item,interval,feature,sub_feature,colour_type,colour_flags,fill,border);
-	}
-#endif
+
 }
 
 
 
-#if OLD_FEATURE
-static FooCanvasItem *zmap_window_featureset_item_add_interval(ZMapWindowCanvasItem   featureset,
-                                               ZMapFeatureSubPartSpan unused,
-                                               double top,  double bottom,
-                                               double left, double right)
-{
-  FooCanvasItem *item = NULL;
-
-  ZMapFeature feature;
-  feature = featureset->feature;
-
-	/* NOTE: will only be called for non-density mode featuresets */
-
-  item = foo_canvas_item_new(FOO_CANVAS_GROUP(featureset),
-                               FOO_TYPE_CANVAS_RECT,
-                               "x1", left,  "y1", top,
-                               "x2", right, "y2", bottom,
-                               NULL);
-
-  return item;
-}
-#endif
 
 static void zmap_window_featureset_item_set_property(GObject               *object,
                                        guint                  param_id,

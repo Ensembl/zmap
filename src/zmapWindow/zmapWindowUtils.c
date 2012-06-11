@@ -38,9 +38,6 @@
 #include <zmapWindow_P.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-#include <zmapWindowCanvasItem.h>
-
-//#include <ZMap/zmapGFF.h>
 
 
 

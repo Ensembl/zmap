@@ -342,7 +342,7 @@ static void zmap_window_container_features_draw (FooCanvasItem *item, GdkDrawabl
 
 #if MH17_REVCOMP_DEBUG > 1
  ZMapWindowContainerFeatures group = (ZMapWindowContainerFeatures) item;
-      zMapLogWarning("container features draw @ %f,%f - %f,%f,  (%d items), canvas %p", item->y1,item->x1,item->y2,item->x2, g_list_length(group->__parent__.item_list), item->canvas) ;
+      printf("container features draw @ %f,%f - %f,%f,  (%d items), canvas %p\n", item->y1,item->x1,item->y2,item->x2, g_list_length(group->__parent__.item_list), item->canvas) ;
 #endif
 
   if(feature_item_parent_class_G->draw)

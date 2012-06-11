@@ -220,9 +220,9 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
+static void unbumpAllCB(int menu_item_id, gpointer callback_data);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void unbumpAllCB(int menu_item_id, gpointer callback_data);
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void markMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -323,9 +323,9 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *                          External interface
- * 
+ *
  * NOTE: restructuring this lot so all menu function is in this file, this will mean
  *       moving functions around and making many static that were external.
  */
@@ -895,7 +895,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
     menu[NAMED_FEATURE_INDEX].type = ZMAPGUI_MENU_NONE ;
   else
     menu[NAMED_FEATURE_INDEX].type = ZMAPGUI_MENU_NORMAL ;
-    
+
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu ;
@@ -940,7 +940,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 							    /* Keep in step with menu[] positions. */
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data;
   static gboolean menu_set = FALSE ;
+#if NOT_USED
   static int ind_hide_evidence = -1;
+#endif
   static int ind_mask = -1;
   ZMapGUIMenuItem menu_item ;
   static gboolean compress = FALSE ;
@@ -986,7 +988,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       menu_item->id = ZMAPBUMP_UNBUMP ;
     }
 
-  menu_item = &(menu[MENU_INDEX_TOGGLE]) ;  
+  menu_item = &(menu[MENU_INDEX_TOGGLE]) ;
   if (zmapWindowMarkIsSet(menu_data->window->mark))
     {
       menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
@@ -997,7 +999,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     }
 
 
-  menu_item = &(menu[MENU_INDEX_COMPRESS]) ;  
+  menu_item = &(menu[MENU_INDEX_COMPRESS]) ;
   column_container = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
   column_group = (FooCanvasGroup *)column_container;
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
@@ -1064,7 +1066,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
 
 
-/* 
+/*
  *     Following routines set up the feature, dna, peptide and context view or export functions.
  */
 
@@ -1804,7 +1806,6 @@ static void bumpToInitialCB(int menu_item_id, gpointer callback_data) // menu it
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static void unbumpAllCB(int menu_item_id, gpointer callback_data)
@@ -1822,6 +1823,9 @@ static void unbumpAllCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Bump a column and reposition the other columns.
  *
@@ -1938,7 +1942,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                  0, NULL,       NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Style"         , 1, developerMenuCB, NULL},
+#if !ZWCI_AS_FOO
+/* mh17: I took this out so as to not have to recode handling ZMapWindowCanvasItems as not being groups
+ * besides, it wouldn't do much with ZMapWindowFeaturesetItems
+ */
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas"       , 2, developerMenuCB, NULL},
+#endif
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -1995,12 +2004,14 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
 	break ;
       }
+#if !ZWCI_AS_FOO
     case 2:
       {
 	zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
 	break ;
       }
+#endif
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;

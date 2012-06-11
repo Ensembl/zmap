@@ -188,7 +188,7 @@ printf("\n");
 
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature)
 {
-	FooCanvasItem *foo = &featureset->__parent__;
+	FooCanvasItem *foo = (FooCanvasItem *) &featureset->__parent__;
 	PixRect this;
 	PixRect blocks = NULL;
 	PixRect pr,del,last = NULL;

@@ -82,7 +82,9 @@ typedef struct
 
 
 //static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out) ;
+#if !ZWCI_AS_FOO
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
+#endif
 
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
@@ -96,7 +98,8 @@ static void getVisibleCanvas(ZMapWindow window,
  */
 
 
-
+#if !ZWCI_AS_FOO
+/* only called by previous bump code and an orphan fucntion in WindowFeature.c */
 /* This looks like something we will want to do often.... */
 GList *zmapWindowItemSortByPostion(GList *feature_item_list)
 {
@@ -107,7 +110,7 @@ GList *zmapWindowItemSortByPostion(GList *feature_item_list)
 
   return sorted_list ;
 }
-
+#endif
 
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame)
 {
@@ -204,7 +207,7 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
   return feature_list;
 }
 
-
+#if MH17_NOT_USED
 int zmapWindowItemListStartCoord(GList *item_list)
 {
   ID2Canvas id2c;
@@ -217,6 +220,7 @@ int zmapWindowItemListStartCoord(GList *item_list)
   feature = (ZMapFeature) id2c->feature_any;
   return feature->x1;
 }
+#endif
 #endif
 
 
@@ -234,7 +238,7 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
-    zmapWindowHighlightObject(window, feature_item, replace, FALSE) ;
+    zmapWindowHighlightObject(window, feature_item, replace, FALSE, FALSE) ;
 
   return ;
 }
@@ -243,9 +247,9 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names)
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
-  zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names) ;
+  zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names, sub_part) ;
 
   return ;
 }
@@ -268,7 +272,7 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
 #endif
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names)
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
@@ -343,10 +347,10 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
-      zmapWindowItemHighlightDNARegion(window, TRUE, item,
+      zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
 				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
 
-      zmapWindowItemHighlightTranslationRegions(window, TRUE, item,
+      zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part, item,
 						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
@@ -356,13 +360,13 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       /* Not completely happy with this...seems a bit hacky, try it and if users want to do
        * translations non-transcripts then I'll change it. */
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
-	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, item,
+	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
 						     ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
       else
 	zmapWindowItemUnHighlightShowTranslations(window, item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, item,
+      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
 						   ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
@@ -815,8 +819,9 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
        * group itself is not a long item. */
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
 	{
-	  FooCanvasItem *long_item ;
 	  double height ;
+#if !ZWCI_AS_FOO
+	  FooCanvasItem *long_item ;
 
 
 	  /* this code tries to deal with long items but fails to deal with the zooming and the
@@ -825,8 +830,10 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  /* Item may have been clipped by long items code so reinstate its true bounds. */
 	  long_item = (FooCanvasItem *)zmapWindowContainerGetBackground(ZMAP_CONTAINER_GROUP(item)) ;
 
-	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item,
-					     &ix1, &iy1, &ix2, &iy2) ;
+	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item, &ix1, &iy1, &ix2, &iy2) ;
+#else
+	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
+#endif
 
 	  /* If we are using the background then we should use it's height as originally set. */
 	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
@@ -1206,6 +1213,8 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 }
 
 
+
+#if !ZWCI_AS_FOO
 /* This function returns the original bounds of an item ignoring any long item clipping that may
  * have been done. */
 void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
@@ -1239,7 +1248,7 @@ void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanva
   return ;
 }
 
-
+#endif
 
 
 
@@ -1419,7 +1428,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
                         zmapWindowHighlightObject(highlight_data->window, feature_item,
-						  replace_highlight, TRUE) ;
+						  replace_highlight, TRUE, FALSE) ;
                     }
                   for(i = 0; i < feature_in->feature.transcript.introns->len; i++)
                     {
@@ -1429,14 +1438,14 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
                         zmapWindowHighlightObject(highlight_data->window, feature_item,
-						  replace_highlight, TRUE);
+						  replace_highlight, TRUE, FALSE);
                     }
 
                   replace_highlight = !(highlight_data->multiple_select);
                 }
               else
                 /* we need to highlight the full feature */
-                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight, TRUE);
+                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight, TRUE, FALSE);
 
               if(replace_highlight)
                 highlight_data->highlighted = 0;
@@ -1455,7 +1464,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
 
 
 
-
+#if !ZWCI_AS_FOO
 /* GCompareFunc() to compare two features by their coords so they are sorted into ascending order. */
 static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 {
@@ -1480,6 +1489,7 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
   return result ;
 }
+#endif
 
 
 

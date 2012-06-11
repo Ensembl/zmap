@@ -84,6 +84,7 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 /* Public funcs */
 GType zMapWindowCanvasItemGetType(void);
 
+#if !ZWCI_AS_FOO
 ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 						double               feature_start,
 						ZMapFeature          feature_any,
@@ -94,16 +95,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
 					       double top,  double bottom,
 					       double left, double right);
 
-ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
-
 gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item);
-
-void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
-      ZMapStyleColourType    colour_type,
-      GdkColor **fill, GdkColor **draw, GdkColor **outline,
-      GdkColor              *default_fill,
-      GdkColor              *border);
-
 
 void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item);
 
@@ -122,17 +114,35 @@ void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item);
 FooCanvasItem *zMapWindowCanvasItemGetOverlay(FooCanvasItem *canvas_item);
 FooCanvasItem *zMapWindowCanvasItemGetUnderlay(FooCanvasItem *canvas_item);
 
+GList *zMapWindowCanvasItemIntervalGetChildren(ZMapWindowCanvasItem *parent) ;
+
+
+void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
+
+ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
+
+#endif
+
+ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
+
+
+void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
+      ZMapStyleColourType    colour_type,
+      GdkColor **fill, GdkColor **draw, GdkColor **outline,
+      GdkColor              *default_fill,
+      GdkColor              *border);
+
+
+
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,
 					       ZMapFeatureSubPartSpan *sub_feature_out);
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
-GList *zMapWindowCanvasItemIntervalGetChildren(ZMapWindowCanvasItem *parent) ;
-ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item);
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
 
 gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden);
 
-void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature,
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
 					    GdkColor *default_fill_colour,
@@ -143,10 +153,6 @@ gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFe
 
 gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureTypeStyle style);
 
-
-void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
-
-ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
 
 gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature);
 gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show);

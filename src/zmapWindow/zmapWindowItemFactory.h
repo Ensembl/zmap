@@ -50,8 +50,8 @@ typedef struct
 }ZMapWindowFToIFactoryProductionTeamStruct, *ZMapWindowFToIFactoryProductionTeam;
 
 
-ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash,
-                                                ZMapWindowLongItems long_items);
+ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash);
+//                                                ZMapWindowLongItems long_items);
 void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
                                 guint line_width, /* replace with a config struct ? */
                                 ZMapWindowFToIFactoryProductionTeam signal_handlers,

@@ -2224,7 +2224,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 		{
 			zMapWindowHighlightObject(view_window->window, item,
 					  window_select->replace_highlight_item,
-					  window_select->highlight_same_names) ;
+					  window_select->highlight_same_names,
+					  window_select->sub_part) ;
 		}
 
 
@@ -3685,7 +3686,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	connect_data->dynamic_loading = TRUE ;
 
       connect_data->column_2_styles = zMap_g_hashlist_create() ;
-printf("create connection make new column 2 styles\n");
 // better?      connect_data->column_2_styles = zmap_view->context_map.column_2_styles;
 
       connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;

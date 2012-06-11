@@ -371,6 +371,7 @@ static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
 {
   gboolean has_type = TRUE ;
 
+#if !ZWCI_AS_FOO
   if (ZMAP_IS_WINDOW_ALIGNMENT_FEATURE(item))
     *str_out = "ZMAP_WINDOW_ALIGNMENT_FEATURE" ;
   if (ZMAP_IS_WINDOW_ASSEMBLY_FEATURE(item))
@@ -388,6 +389,7 @@ static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
   if (ZMAP_IS_WINDOW_TRANSCRIPT_FEATURE(item))
     *str_out = "ZMAP_WINDOW_TRANSCRIPT_FEATURE" ;
   else
+#endif
     has_type = FALSE ;
 
   return has_type ;
