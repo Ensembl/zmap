@@ -197,7 +197,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 			n_show = (n_bases  + seq->factor - 1) / seq->factor;
 			/* now start and end are the DNA coords to show, n_bases is how many to interpret, n_show is how many to display */
 
-			hcx = cx + ((start - y)  / seq->factor ) * pango->text_width;	/* we need integer truncation from this divide bfreo the multiply */
+			hcx = cx + ((start - y)  / seq->factor ) * pango->text_width;	/* we need integer truncation from this divide before the multiply */
 
 			height = seq->spacing;
 			len = n_bases;	// sh->end - sh->start + 1;
@@ -354,8 +354,8 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	/* we act dumb and just display each row complete, let X do the clipping */
 
 	/* bias coordinates to stable ones , find the first seq coord in this row */
-	seq_y1 = (long) y1 - featureset->dy + 1;
-	seq_y2 = (long) y2 - featureset->dy + 1;
+	seq_y1 = (long) y1  - featureset->dy + 1;
+	seq_y2 = (long) y2  - featureset->dy + 1;
 
 
 	if(seq_y1 < 1)			/* sequence coords are 1 based */
@@ -406,7 +406,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		foo_canvas_w2c (foo->canvas, featureset->dx, y_paint + featureset->dy, &cx, &cy);
 
 		/* NOTE y is 0 based so we have to add 1 to do the highlight properly */
-		hl = zmapWindowCanvasSequencePaintHighlight(drawable, featureset, seq, hl, y_paint + 1, cx, cy);
+		hl = zmapWindowCanvasSequencePaintHighlight(drawable, featureset, seq, hl, y_paint + featureset->start, cx, cy);
 
 //if(sequence->frame == ZMAPFRAME_0) printf("paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
