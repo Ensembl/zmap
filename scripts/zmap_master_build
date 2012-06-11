@@ -29,13 +29,18 @@ respository_name='./ZMap'
 
 # Do args.
 #
-usage="$PROGNAME [ -d -o -p -r <release_sub_branch e.g. Release_0_1_138> ]"
+usage="$PROGNAME [ -d -f <feature_sub_branch e.g. New_XRemote> -o -p -r <release_sub_branch e.g. 0.8.0> ]"
 
-while getopts ":dopr:" opt ; do
+while getopts ":df:opr:" opt ; do
     case $opt in
 	d  ) branch='develop'
 	     headline='DEVELOP'
 	     script='development' ;;
+	f  ) branch='feature'
+	     headline='FEATURE'
+	     sub_branch="/$OPTARG"
+	     branch_arg="$branch$sub_branch"
+	     script='feature' ;;
 	o  ) branch='develop'
 	     headline='OVERNIGHT'
 	     script='overnight' ;;
@@ -53,15 +58,14 @@ while getopts ":dopr:" opt ; do
 done
 
 
-# Process final arg, DON'T HAVE ONE JUST NOW......
+# Process final arg.
 #
-#shift $(($OPTIND - 1))
-#
-#if [ $# == 1 ]; then
-#    # do stuff...
-#else
-#  zmap_message_exit "No blah, blah specifed: $usage"
-#fi
+shift $(($OPTIND - 1))
+
+if [ $# != 0 ]; then
+  zmap_message_exit "Bad args specifed: $usage"
+fi
+
 
 
 # Headline...

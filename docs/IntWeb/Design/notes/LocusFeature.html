@@ -1,0 +1,52 @@
+<h2>Locus Feature</h2>
+
+<h3>Description</h3>
+<p>Historically ZMap has provided Seqeunce feature and Text feature objects, withh sequence features being implemented using a TextItem, and text features implemented using Foo primitives.  Text features are use to show locus names only using text plus a line and are therefore misnamed.
+</p>
+
+<p> Locus names are <i>de-overlapped</i> in the navigator (ie position-adjusted) and this is done via a system of GTK callbacks. They can also be filtered to remove less intersting groups - there can be so many that they cannot fit on the display - note that the navigator is always displayed at minumum zoom.
+</p>
+
+<h3>New implementation</h3>
+<h4>De-Overlap</h4>
+<p>An obvious starting point is to replace the ItemFactory interface for text features and this is very simple.  However, the de-overalpping would be less simple to interface to as it assumes a FooCanvas callback environment, and we propose to move this code into the canvas featureset, where it can be run easily from the Zoom callback.
+</p>
+<p>It's probably a lot of work to preserve Foo based code in parallel so this in not in the plan.
+</p>
+
+<h4>Filtering</h4>
+<p> There is already a filtering interface for configured columns and this is attached to a window status button.  The existing implementation hard codes Loci to hide, but we have an opportunity to add a dialog to the navigator to allow run-time choice, which has become more important as it is now possible to run ZMap with larger sequences.  It's necessary to remove Loci until there are few enough to see, but by doing this we also need to allow user choice.  This should be relatively easy to add, but necessarily different from the score based one.
+</p>
+
+<h3>GDK interface</h3>
+<p>The necessarily requires a Pango layout and we will allocate one as a module global per window.  (Sequence features allocate one per sequence object - this could also be optimised to match; what matters is the the font settings do not change).
+As we expect a few features (0-500) then we want avoid one per feature.  If we later decide  to use different fonts for different types of locus that will be easy to add.
+</p>
+
+<p>
+Some extra data needs to be stored to handle drawing lines and re-positioning text:
+<ul>
+<li> locus y (NB: the feature has the extent) as LH end of line
+<li> text y as RH end of line
+<li> x-offset (typically all set to one value, but possibly not
+</ul>
+</p>
+
+
+<h3>Implications for the navigator</h3>
+<p>If we define the user and code interface to the navigator it may be simpler to update the code:
+<ul>
+<li> zmapControlNavigator.c creates GTK widgets to hold the navigator pane and has callbacks that can redraw the locus names if the window is resized.  (NOTE that the zoom never changes, but if the window size does the pixels_per_unit_y will change, and this is the zoom level; this will require a locus re-position).
+<li> zmapView.c calls zMapWindowNavigatorReset() and zMapWindowNavigatorDrawFeatures(), on draw-window and revcomp.
+<li> the window locator is drawn and an underlay item in the locus column and resizes on zoom and can be dragged by the mouse
+<li> double cliciking on a locus zooms to that region
+<li> there is a context menu, mainly operating on locus names
+<li> there is a poorly defined bump option
+</ul>
+</p>
+
+<h3>How will locus filtering work?<h3>
+<p>The current hard coded defaults will be used to remove unwanted names and if there is still not enough space to display names readably then more data will be removed until there is only one set of data left.
+</p>
+<p>A menu option will be provided to allow choice of groups to display - this will be a dialog of check boxes (plus a default button) and selections made will override default values, which the same processs of attrition being used to produce a legible display. Choosing an extra set of names to display will result in this taking precedence over the default groups.
+</p>

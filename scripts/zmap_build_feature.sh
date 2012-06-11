@@ -20,19 +20,15 @@ BUILD_PREFIX='FEATURE'
 #ERROR_ID='edgrif@sanger.ac.uk'
 ERROR_ID=''
 
-
-# Script takes 2 args, first is the directory to copy the source
-# code from, second is name to give directory under ~zmap...
-if (( $# != 2 )) ; then
-  echo "script needs two args:  $0 <src_dir> <dest_dir>"
+# Script takes 1 arg which is the name of the feature branch.
+#
+if (( $# != 1 )) ; then
+  echo "script needs feature branch name:  $0 <feature_branch_name>"
   exit 1
 else
-  SRC_DIR=$1
-  DEST_DIR=$2
+  FEATURE_BRANCH=$1
 fi
 
-
-./build_run.sh $ERROR_ID -d -i $SRC_DIR -o $DEST_DIR -g $BUILD_PREFIX || RC=1
-
+./build_run.sh $ERROR_ID -b $FEATURE_BRANCH -d -g -m $BUILD_PREFIX || RC=1
 
 exit $RC
