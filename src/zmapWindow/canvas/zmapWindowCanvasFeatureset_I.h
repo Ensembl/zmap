@@ -247,8 +247,6 @@ typedef struct _zmapWindowFeaturesetItemStruct
   int n_filtered;
   gboolean enable_filter;	/* has score in a feature and style allows it */
 
-  gboolean debug;
-
   gpointer opt;			/* feature type optional set level data */
 
 } zmapWindowFeaturesetItemStruct;

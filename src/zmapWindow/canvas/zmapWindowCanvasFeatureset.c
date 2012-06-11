@@ -1391,9 +1391,6 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   item->y1 = cy1;
   item->x2 = cx2+1;
   item->y2 = cy2+1;
-
-if(di->debug) printf("update %s %d %d\n",g_quark_to_string(di->id),cy1,cy2);
-
 }
 
 
@@ -1638,15 +1635,11 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     fi->clip_y2 = rect.y + rect.height + 1;
   }
 
-if(fi->debug) printf("got paint %s %d %d\n",g_quark_to_string(fi->id), fi->clip_y1,fi->clip_y2);
-
   if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
   if(!fi->gc)
-  {
-	  if(fi->debug) printf("no gc\n");
     return;		/* got a draw before realize ?? */
-  }
+
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
   if(!fi->display_index || fi->zoom != item->canvas->pixels_per_unit_y)
@@ -1657,10 +1650,8 @@ if(fi->debug) printf("got paint %s %d %d\n",g_quark_to_string(fi->id), fi->clip_
     }
 
   if(!fi->display_index)
-  {
-	  if(fi->debug) printf("no index\n");
     return; 		/* could be an empty column or a mistake */
-  }
+
   /* paint all the data in the exposed area */
 
   width = zMapStyleGetWidth(fi->style) - 1;		/* off by 1 error! width = #pixels not end-start */
@@ -1674,8 +1665,8 @@ if(fi->debug) printf("got paint %s %d %d\n",g_quark_to_string(fi->id), fi->clip_
   fi->dx = fi->dy = 0.0;		/* this gets the offset of the parent of this item */
   foo_canvas_item_i2w (item, &fi->dx, &fi->dy);
 
-  foo_canvas_c2w(item->canvas,0,floor(expose->area.y),NULL,&y1);
-  foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height),NULL,&y2);
+  foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
+  foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
 
   /* ok...this looks like the place to do feature specific painting..... */
@@ -1688,10 +1679,8 @@ if(fi->debug) printf("got paint %s %d %d\n",g_quark_to_string(fi->id), fi->clip_
   //if(debug) printf("draw %s	%f,%f: %p\n",g_quark_to_string(fi->id),y1,y2,sl);
 
   if(!sl)
-  {
-	  if(fi->debug) printf("no features\n");
 	return;
-  }
+
   /* we have already found the first matching or previous item */
   /* get the previous one to handle wiggle plots that must go off screen */
   is_line = (zMapStyleGetMode(fi->style) == ZMAPSTYLE_MODE_GRAPH && fi->style->mode_data.graph.mode == ZMAPSTYLE_GRAPH_LINE);
@@ -1706,9 +1695,6 @@ if(fi->debug) printf("got paint %s %d %d\n",g_quark_to_string(fi->id), fi->clip_
     {
       feat = (ZMapWindowCanvasFeature) sl->data;
       //printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
-  if(fi->debug)
-	  printf("paint feature %s @ %.1f %.1f\n", g_quark_to_string(feat->feature->unique_id),feat->y1,feat->y2);
-
 
       //if(debug) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
 

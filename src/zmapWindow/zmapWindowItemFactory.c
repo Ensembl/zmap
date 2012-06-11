@@ -818,9 +818,6 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
       run_data->container,
       run_data->feature_stack);
 
-  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
-  if(fi)
-	fi->debug = TRUE;
   return ;
 }
 
