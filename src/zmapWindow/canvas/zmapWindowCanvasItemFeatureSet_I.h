@@ -49,17 +49,6 @@ typedef struct _zmapWindowCanvasFeaturesetItemClassStruct
 {
   zmapWindowCanvasItemClass __parent__;
 
-	/* to save parent's original function */
-  void (* canvas_item_set_colour)(ZMapWindowCanvasItem   window_canvas_item,
-		      FooCanvasItem         *interval,
-		      ZMapFeature		     feature,
-		      ZMapFeatureSubPartSpan sub_feature,
-		      ZMapStyleColourType    colour_type,
-		      int 			     colour_flags,
-		      GdkColor              *default_fill_gdk,
-                  GdkColor              *border_gdk) ;
-
-
   GHashTable *featureset_items;
 
 } zmapWindowCanvasFeaturesetItemClassStruct;

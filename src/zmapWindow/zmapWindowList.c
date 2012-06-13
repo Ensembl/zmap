@@ -43,7 +43,7 @@
 #include <zmapWindowFeatureList.h>
 #include <zmapWindow_P.h>
 
-#include <items/zmapWindowCanvasItem_I.h> /* for debugguing */
+//#include <items/zmapWindowCanvasItem_I.h> /* for debugguing */
 
 #define ZMAP_WINDOW_LIST_OBJ_KEY "ZMapWindowList"
 
@@ -766,9 +766,9 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 	  else
 	      zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
 
-        zMapWindowHighlightObject(window, item, TRUE, TRUE) ;
+        zMapWindowHighlightObject(window, item, TRUE, TRUE, FALSE) ;
 
-        zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE);
+        zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE, FALSE);
     }
   }
 

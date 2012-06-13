@@ -150,7 +150,7 @@ GType zMapWindowSequenceFeatureGetType(void)
 /* Highlight sequence in sequence_feature corresponding to seed_feature. */
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
 						  FooCanvasItem *item, ZMapFeature seed_feature,
-						  gboolean cds_only)
+						  gboolean cds_only, gboolean sub_part)
 {
   gboolean result = TRUE ;
   FooCanvasGroup *sequence_group;
@@ -158,7 +158,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
-  gboolean sub_part ;
+//  gboolean sub_part ;
 
 
   sequence_group = FOO_CANVAS_GROUP(sequence_feature) ;
@@ -168,7 +168,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
   block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK)) ;
 
   /* Is the given item a sub-part of a feature or the whole feature ? */
-  sub_part = zMapWindowCanvasItemIsSubPart(item) ;
+//  sub_part = zMapWindowCanvasItemIsSubPart(item) ;
 
 
   if ((list = sequence_group->item_list))
@@ -209,6 +209,8 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		     * with common code..... */
 
 		    span = zMapWindowCanvasItemIntervalGetData(item) ;
+		    if(!span)
+			    break;
 
 		    current_exon = (ZMapFullExon)(g_list_nth_data(exon_list, span->index - 1)) ;
 
@@ -650,7 +652,7 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
   FooCanvasItem *item = NULL;
   ZMapFeatureTypeStyle style;
   ZMapFeature feature;
-  char *font_name = "monospace" ;
+  char *font_name = ZMAP_ZOOM_FONT_FAMILY ;
 
 
 

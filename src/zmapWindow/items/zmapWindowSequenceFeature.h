@@ -88,7 +88,7 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 						 ZMapSequenceType coord_type, int region_start, int region_end) ;
 
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature, FooCanvasItem *item,
-						  ZMapFeature seed_feature, gboolean cds_only) ;
+						  ZMapFeature seed_feature, gboolean cds_only, gboolean sub_part) ;
 
 gboolean zMapWindowSequenceDeSelect(ZMapWindowSequenceFeature sequence_feature) ;
 

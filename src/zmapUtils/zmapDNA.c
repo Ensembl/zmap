@@ -76,10 +76,12 @@ static char dnaEncodeChar[0x80] =
 } ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 /* 1<<4 = 16, not big enough for the 45th element in dnaDecodeString() */
 static char dnaDecodeChar[1<<6] = { 0 };
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 /* Copied from acedb code.....We'll need this some time I guess..... */
 static void dnaDecodeString(char *cp)
 {

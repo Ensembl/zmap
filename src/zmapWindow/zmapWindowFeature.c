@@ -117,9 +117,11 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout,
                                       gpointer handler_data);
 
+#if !ZWCI_AS_FOO
 static gboolean sequenceSelectionCB(FooCanvasItem *item,
 				    int start, int end, int seq_x1, int seq_x2,
 				    gpointer user_data) ;
+#endif
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
 				       GError *error, gpointer user_data) ;
@@ -149,7 +151,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
     {
 
        zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
-				NULL, TRUE, FALSE) ;
+				NULL, TRUE, FALSE, FALSE) ;
       result = TRUE ;
     }
 
@@ -358,6 +360,8 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 #endif
 
 
+#if !ZWCI_AS_FOO
+
 /* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
  * AND DRAW A NEW ONE, THIS WILL INVALIDATE ANY CODE THAT IS CACHING THE ITEM.
  *
@@ -412,7 +416,7 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 
   return replaced_feature ;
 }
-
+#endif
 
 /* Remove an existing feature from the displayed feature context.
  *
@@ -459,6 +463,10 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             }
 
 
+#if ZWCI_AS_FOO
+	  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
+		zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
+#else
 //zMapLogWarning("OTF: remove %s",g_quark_to_string(feature->unique_id));
 	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(feature_item))
 	  {
@@ -470,6 +478,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 //			gtk_object_destroy(GTK_OBJECT(feature_item)) ;
 		  }
 	  }
+#endif
 	  else
 	  {
 		  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
@@ -712,12 +721,12 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   return drawable;
 }
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items)
 {
   FooCanvasGroup *new_group = NULL ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Sort the list of items for position...this looks like a candidate for a general function. */
   feature_items = zmapWindowItemSortByPostion(feature_items) ;
 
@@ -736,12 +745,12 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
 
   /* Add all the items to the new group correcting their coords. */
   g_list_foreach(feature_items, reparentItemCB, &reparent_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
   return new_group ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* Get the peptide as a fasta string.  All contained in a function so
@@ -801,8 +810,10 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
 
+#if !ZWCI_AS_FOO
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
+#endif
 
   if (window->focus)
     zmapWindowFocusRemoveOnlyFocusItem(window->focus, feature_item) ;
@@ -1030,6 +1041,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny my_feature = (ZMapFeatureAny) feature;
+	gboolean control = FALSE;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
       highlight_item = item;
@@ -1044,6 +1056,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	{
 	  /* Only highlight the single item user clicked on. */
 	  highlight_same_names = FALSE ;
+	  control = TRUE;
 
 	  /* Annotators say they don't want subparts sub selections + multiple
 	   * selections for alignments. */
@@ -1117,9 +1130,24 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	  window->multi_select = FALSE ;
 	}
 
-      /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, 0, 0,  0, 0,
-				NULL, replace_highlight, highlight_same_names) ;
+	{
+		/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
+		/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
+		/* InfoPanel has two sets of coords, but they appear the same in totalview */
+		/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
+
+		int start = feature->x1, end = feature->x2;
+
+		if(sub_feature)
+		{
+			start = sub_feature->start;
+			end = sub_feature->end;
+		}
+
+		/* Pass information about the object clicked on back to the application. */
+		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+				NULL, replace_highlight, highlight_same_names, control) ;
+	}
     }
 
 
@@ -1196,7 +1224,11 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
   GList *l;
   ZMapStyleBumpMode curr_bump_mode ;
 
+#if ZWCI_AS_FOO
+  if(!daddy || !ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
+#else
   if(!daddy || !ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
+#endif
     {
       zMapLogWarning("compress called for invalid type of foo canvas item", "");
       return;
@@ -1278,6 +1310,7 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 
 
 
+#if !ZWCI_AS_FOO
 /* this is surely a candidate for better encapsulation that this....it should be moved to
  * the items/ subdir in the SequenceFeature object. */
 static gboolean sequenceSelectionCB(FooCanvasItem *item,
@@ -1294,28 +1327,28 @@ static gboolean sequenceSelectionCB(FooCanvasItem *item,
 
   if (feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
     {
-      zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
+      zmapWindowItemHighlightTranslationRegions(window, FALSE, FALSE,  item,
 						ZMAPFRAME_NONE,
 						feature->feature.sequence.type,
 						start, end) ;
     }
   else
     {
-      zmapWindowItemHighlightDNARegion(window, FALSE, item, feature->feature.sequence.frame,
+      zmapWindowItemHighlightDNARegion(window, FALSE, FALSE, item, feature->feature.sequence.frame,
 				       feature->feature.sequence.type, start, end) ;
 
-      zmapWindowItemHighlightTranslationRegions(window, FALSE, item,
+      zmapWindowItemHighlightTranslationRegions(window, FALSE, FALSE, item,
 						feature->feature.sequence.frame,
 						feature->feature.sequence.type,
 						start, end) ;
     }
 
   /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE, FALSE) ;
 
   return FALSE ;
 }
-
+#endif
 
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
@@ -1332,13 +1365,13 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
    * REVISIT THE WHOLE EVENT DELIVERY ORDER STUFF.....
    *
    *  */
-
+#if !ZWCI_AS_FOO
   /* ummmmm....I don't like this....suggests that all is not fully implemented in the new
    * feature item stuff..... */
   if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
     g_signal_connect(G_OBJECT(top_item), "sequence-selected",
 		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
-
+#endif
 
   switch(feature_stack->feature->type)
     {
@@ -1428,6 +1461,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 }
 
 
+#if !ZWCI_AS_FOO
 FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group,
 				ZMapFeature feature, gboolean bump_col)
 {
@@ -1466,4 +1500,4 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
   return new_feature ;
 }
-
+#endif

@@ -1,6 +1,7 @@
-/*  File: zmapWindowCanvasGlyph.c
+
+/*  File: zmapWindowCanvasTranscript_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,27 +23,37 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem glyph features
+ * implements callback functions for FeaturesetItem transcript features
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
 
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasTranscript.h>
 
-typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph;
+typedef enum
+{
+	TRANSCRIPT_INVALID,
+	TRANSCRIPT_EXON,
+	TRANSCRIPT_INTRON
+
+} ZMapWindowCanvasTranscriptSubType;
 
 
+typedef struct _zmapWindowCanvasTranscriptStruct
+{
+	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score);
-ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,
-					       ZMapFeatureTypeStyle style, ZMapFeature feature,
-					       int which, double score);
-void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
+	int index;		/* of intron or exon */
+	ZMapWindowCanvasTranscriptSubType sub_type;
+	/* can tell if exon has CDS/  UTR from feature->feature struct */
 
-void zMapWindowCanvasGlyphInit(void);
+} zmapWindowCanvasTranscriptStruct, *ZMapWindowCanvasTranscript;
+
+

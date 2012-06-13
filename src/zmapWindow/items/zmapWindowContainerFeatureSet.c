@@ -45,7 +45,7 @@
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
+#include <zmapWindowCanvasFeatureset.h>
 
 
 /* The property param ids for the switch statements */
@@ -1016,6 +1016,13 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 		feature = item->feature;
 		style = feature->style;
 
+#if ZWCI_AS_FOO
+        	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
+        	{
+        		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) list->data, show, set_colour);
+			list = list->next;
+        	}
+#else
         	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(list->data))
         	{
         		/* each item in the column will be a single CanvasFeatureset wrapped up in a ZMapWindowCanvasItem */
@@ -1023,7 +1030,8 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
         		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) l->data, show, set_colour);
 			list = list->next;
         	}
-        	else	/* original foo code */
+#endif
+		else	/* original foo code */
         	{
 			item = ZMAP_CANVAS_ITEM(list->data);
 			feature = item->feature;
@@ -1042,7 +1050,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 
 					if(!delete)
 						{
-						zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature,
+						zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature, NULL,
 							ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
 							0,	// will zap focus
 							fill,outline);
@@ -1111,7 +1119,14 @@ gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet cont
 
       l = column_features->item_list;
 
-      if(l && (ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data) || ZMAP_IS_WINDOW_GRAPH_ITEM(l->data)))
+      if(l &&
+#if ZWCI_AS_FOO
+		ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data)
+#else
+		(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data)
+		|| ZMAP_IS_WINDOW_GRAPH_ITEM(l->data))
+#endif
+		)
 		return(TRUE);
 
 	return(FALSE);
@@ -1331,9 +1346,9 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 
       container_set->user_hidden_stack = NULL;
     }
-
+#if !ZWCI_AS_FOO
   zMapWindowContainerFeatureSetRemoveSubFeatures(container_set) ;
-
+#endif
   {
     char *col_name ;
 

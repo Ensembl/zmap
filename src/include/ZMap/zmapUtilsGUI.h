@@ -37,6 +37,12 @@
 #include <ZMap/zmapFeature.h>
 
 
+/* font used fpr seqeunece and zoom control */
+#define ZMAP_ZOOM_FONT_FAMILY "Monospace"
+#define ZMAP_ZOOM_FONT_SIZE (10)
+
+
+
 typedef enum {ZMAPGUI_USERDATA_INVALID, ZMAPGUI_USERDATA_BOOL, ZMAPGUI_USERDATA_TEXT} ZMapGUIMsgUserDataType ;
 
 

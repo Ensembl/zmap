@@ -98,7 +98,12 @@ typedef enum {
   ZMAPFEATURE_SUBPART_EXON       = 1 << 2,
   ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
   ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
-  ZMAPFEATURE_SUBPART_MATCH      = 1 << 5
+  ZMAPFEATURE_SUBPART_MATCH      = 1 << 5,
+
+  /* following added by mh17 to allow easier snazzy display of split codons */
+  ZMAPFEATURE_SUBPART_SPLIT_3_CODON = 1 << 6,		/*NOTE: is 3' end of exon = 5' end of split codon */
+  ZMAPFEATURE_SUBPART_SPLIT_5_CODON = 1 << 7,
+
 } ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;

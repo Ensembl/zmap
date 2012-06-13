@@ -44,7 +44,8 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowCanvasItem.h>
 
-#include <zmapWindowCanvasItemFeatureSet.h>
+//#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasFeatureset_I.h>	// for debug
 
 // temp include for timing test
 #include <zmapWindowCanvasItem_I.h>
@@ -70,7 +71,7 @@ typedef struct _ZMapWindowFToIFactoryStruct
   guint line_width ;
   ZMapWindowFToIFactoryMethodsStruct *methods;
   GHashTable                         *ftoi_hash;
-  ZMapWindowLongItems                 long_items;
+//  ZMapWindowLongItems                 long_items;
   ZMapWindowFToIFactoryProductionTeam user_funcs;
   gpointer                            user_data;
   double                              limits[4];
@@ -98,10 +99,14 @@ typedef struct _RunSetStruct
    : ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (ARRAY_INDEX) + 1 : (SUBPART_ARRAY)->len - (ARRAY_INDEX)) )
 
 
+static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
+
+#if !ZWCI_AS_FOO
+
 static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in,
                                  ZMapWindowFToIFactoryMethodsStruct       **table_out) ;
 
-static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
+
 
 /* ZMapWindowFToIFactoryInternalMethod prototypes */
 static FooCanvasItem *invalidFeature(RunSet run_data, ZMapFeature feature,
@@ -172,19 +177,6 @@ static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBl
 					     gboolean *t_indel_gt_1,
 					     gboolean *q_indel_gt_1);
 #endif
-static gboolean null_top_item_created(FooCanvasItem *top_item,
-                                      ZMapWindowFeatureStack feature_stack,
-                                      gpointer handler_data);
-static gboolean null_feature_size_request(ZMapFeature feature,
-                                          double *limits_array,
-                                          double *points_array_inout,
-                                          gpointer handler_data);
-
-static gboolean clip_feature_coords(ZMapWindowFToIFactory factory,
-				    ZMapFeature           feature,
-				    double                offset,
-				    double               *start_inout,
-				    double               *end_inout);
 
 static void drawFeatureExon(FooCanvasItem *feature_item,
 			    double feature_offset,
@@ -195,11 +187,37 @@ static void drawFeatureExon(FooCanvasItem *feature_item,
 
 
 
+#endif
+
+
+static gboolean null_top_item_created(FooCanvasItem *top_item,
+                                      ZMapWindowFeatureStack feature_stack,
+                                      gpointer handler_data);
+static gboolean null_feature_size_request(ZMapFeature feature,
+                                          double *limits_array,
+                                          double *points_array_inout,
+                                          gpointer handler_data);
+
+#if !ZWCI_AS_FOO
+static gboolean clip_feature_coords(ZMapWindowFToIFactory factory,
+				    ZMapFeature           feature,
+				    double                offset,
+				    double               *start_inout,
+				    double               *end_inout);
+#endif
+
+static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
+                              double feature_offset,
+					double x1, double y1, double x2, double y2,
+                              ZMapFeatureTypeStyle style);
+
+
 /*
  * Static function tables for drawing features in various ways.
  */
 
 
+#if !ZWCI_AS_FOO
 /* mh17 NOTE
  * this table is indexed by the type paramter (LH column) and asserts if this does not consist of consecutive whole numbers
  * which means we can't subdivide the styles eg for simple graphgs and density plots.
@@ -217,9 +235,10 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
   {-1,                          NULL}
 };
+#endif
 
-ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash,
-                                                ZMapWindowLongItems long_items)
+ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash)
+//                                                ZMapWindowLongItems long_items)
 {
   ZMapWindowFToIFactory factory = NULL;
   ZMapWindowFToIFactoryProductionTeam user_funcs = NULL;
@@ -228,10 +247,12 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
      (user_funcs = g_new0(ZMapWindowFToIFactoryProductionTeamStruct, 1)))
     {
       factory->ftoi_hash  = feature_to_item_hash;
-      factory->long_items = long_items;
+//      factory->long_items = long_items;
 
+#if !ZWCI_AS_FOO
       copyCheckMethodTable(&(factory_methods_G[0]),
                            &(factory->methods));
+#endif
 
       user_funcs->top_item_created = null_top_item_created;
       user_funcs->feature_size_request = null_feature_size_request;
@@ -264,6 +285,8 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
 /* mh17: only called from windowNavigator(), no doubt here due to scope issues
  * but what scope issues? factory does not look static
  */
+
+gboolean is_nav = FALSE;
 void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
                                  ZMapFeatureSet set,
                                  FooCanvasGroup *container,
@@ -271,6 +294,8 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 {
   RunSetStruct run_data = {NULL};
   ZMapWindowFeatureStackStruct feature_stack;
+
+  is_nav = TRUE;
 
   run_data.factory = factory;
   /*
@@ -286,10 +311,11 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 
   g_hash_table_foreach(set->features, datalistRun, &run_data);
 
+  is_nav = FALSE;
   return ;
 }
 
-
+#define MH17_REVCOMP_DEBUG	0
 
 /* re-using a factory helper to scale a navigator coordinate */
 /* NOTE all factory helpers must handle a NULL feature arg */
@@ -360,8 +386,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       ZMapStyleMode style_mode ;
       double *limits = &(factory->limits[0]);
       double *points = &(factory->points[0]);
+#if !ZWCI_AS_FOO
       ZMapWindowFToIFactoryMethods method = NULL;
       ZMapWindowFToIFactoryMethodsStruct *method_table = NULL;
+#endif
       ZMapWindowStats stats ;
 
       style = feature->style ;
@@ -383,7 +411,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
 	{
 #if MH17_REVCOMP_DEBUG > 2
-	  zMapLogWarning("not reverse","");
+	  printf("not reverse\n");
 #endif
 	  goto undrawn ;
 	}
@@ -403,12 +431,17 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
       /* inline static void normalSizeReq(ZMapFeature f, ... ){ return ; } */
       /* inlined this should be nothing most of the time, question is can it be inlined?? */
+
+	/* mh17: NOTE this is very confusing
+	 * the navigator used this function to say 'outside the block' when it really means 'the name is duplicated'
+	 * incredible, despite knowing that 'size request' means 'is_duiplicated?' it still fools me
+	 */
       if ((no_points_in_block = (factory->user_funcs->feature_size_request)(feature,
 									    &limits[0], &points[0],
 									    factory->user_data)) == TRUE)
 	{
 #if MH17_REVCOMP_DEBUG > 2
-	  zMapLogWarning("no points in block","");
+	  printf("no points in block\n");
 #endif
 	  goto undrawn ;
 	}
@@ -429,12 +462,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->features++ ;
 	    stats->items++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
-
+	    method = &(method_table[style_mode]);
+#endif
 	    if(feature->flags.has_score)
 	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
-	    method = &(method_table[style_mode]);
 
 	    break;
 	  }
@@ -446,8 +480,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats = zmapWindowStatsAddAlign(parent_stats, feature) ;
 	    stats->total_matches++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
-
+#endif
 	    if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_WIDTH && feature->flags.has_score))
             zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
           else if(zMapStyleGetScoreMode(style) == ZMAPSCORE_PERCENT)
@@ -465,7 +500,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		stats->ungapped_boxes++;
 		stats->total_boxes++;
 #endif
+#if !ZWCI_AS_FOO
 		method = &(method_table[ZMAPSTYLE_MODE_BASIC]);
+#endif
 	      }
 	    else
 	      {
@@ -487,11 +524,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #endif
 		  }
 
+#if !ZWCI_AS_FOO
 		method = &(method_table[style_mode]);
+#endif
 	      }
 
+#if !ZWCI_AS_FOO
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -503,10 +543,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->features++ ;
 	    stats->items++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -518,10 +559,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->features++ ;
 	    stats->items++ ;
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -552,27 +594,30 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		stats->cds_boxes++ ;
 	      }
 #endif
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break ;
 	  }
 
 	case ZMAPSTYLE_MODE_SEQUENCE:
 	  {
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
 	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	  {
+#if !ZWCI_AS_FOO
 	    method_table = factory->methods;
 
 	    method = &(method_table[style_mode]);
-
+#endif
 	    break;
 	  }
 
@@ -606,7 +651,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
              */
             block_y1 = feature_stack->block->block_to_sequence.block.x1;
             block_y2 = feature_stack->block->block_to_sequence.block.x2;
-            getFactoriedCoordinates(factory, &block_y1,&block_y2);
+// having taken the scaling factor out we don't need this
+//            getFactoriedCoordinates(factory, &block_y1,&block_y2);
             offset =  block_y1;
 
             run_data.factory   = factory;
@@ -614,13 +660,16 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             run_data.feature_stack = feature_stack;
             run_data.canvas_item = current_item;
 
-#if !MH17_TEST_WITHOUT_FOO
+#if ZWCI_AS_FOO
+		item = drawFeaturesetFeature(&run_data, feature, offset,
+     				  points[0], points[1],
+				  points[2], points[3],
+				  style);
+#else
             item   = ((method)->method)(&run_data, feature, offset,
 				  points[0], points[1],
 				  points[2], points[3],
 				  style);
-#else
-            item = g_new0(zmapWindowCanvasItemStruct,0);
 #endif
       }
 
@@ -631,15 +680,18 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           ZMapFrame frame;
 	  ZMapStrand strand;
 
+#if !ZWCI_AS_FOO
+/* mh17: NOTE not referenced */
           g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, (gpointer) style) ;
-
+#endif
 	  frame  = zmapWindowContainerFeatureSetGetFrame((ZMapWindowContainerFeatureSet)parent_container);
 	  strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet)parent_container);
 
           if(factory->ftoi_hash)
 	    {
 #if MH17_REVCOMP_DEBUG > 1
-            zMapLogWarning("FToIAddFeature %s %f,%f - %f,%f to %s",
+if(is_nav)
+            printf("FToIAddFeature %s %f,%f - %f,%f to %s\n",
             g_quark_to_string(feature->unique_id),
             points[1],points[0],points[3],points[2],
             g_quark_to_string(feature_stack->set->unique_id));
@@ -656,7 +708,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           else
           {
 #if MH17_REVCOMP_DEBUG > 2
-        zMapLogWarning("no hash","");
+        printf("no hash\n");
 #endif
           }
 
@@ -669,7 +721,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         else
         {
 #if MH17_REVCOMP_DEBUG > 2
-        zMapLogWarning("no item ","");
+        printf("no item\n");
 #endif
         }
 
@@ -684,7 +736,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 {
   factory->ftoi_hash  = NULL;
-  factory->long_items = NULL;
+//  factory->long_items = NULL;
   g_free(factory->user_funcs);
   factory->user_data  = NULL;
   /* font desc??? */
@@ -697,6 +749,7 @@ void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 }
 
 
+#if !ZWCI_AS_FOO
 
 /*
  *                          INTERNAL
@@ -738,12 +791,13 @@ static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *tabl
   return ;
 }
 
-
+#endif
 
 static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)list_data;
   RunSet run_data = (RunSet)user_data;
+  FooCanvasItem *foo;
 
   /* filter on frame! */
   if((run_data->frame != ZMAPFRAME_NONE) &&
@@ -759,7 +813,7 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 		run_data->feature_stack->frame = zmapWindowFeatureFrame(feature);
   }
 
-  zmapWindowFToIFactoryRunSingle(run_data->factory,
+  foo = zmapWindowFToIFactoryRunSingle(run_data->factory,
       run_data->canvas_item,
       run_data->container,
       run_data->feature_stack);
@@ -873,10 +927,14 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 	 * not the x1,x2 coordinates
 	 */
   	{
+#if ZWCI_AS_FOO
+	      zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) canvas_item, feature, y1, y2);
+#else
   		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
   		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
 
-	      zMapWindowFeaturesetAddFeature(foo, feature, y1, y2);
+	      zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) foo, feature, y1, y2);
+#endif
 	}
 
       feature_item = (FooCanvasItem *)canvas_item;
@@ -888,6 +946,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 }
 
 
+#if !ZWCI_AS_FOO
 
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,
@@ -936,119 +995,126 @@ static FooCanvasItem *drawAssemblyFeature(RunSet run_data, ZMapFeature feature,
   double canvas_item_position;
   gboolean debug_assembly_drawing = FALSE;
 
-  canvas_item_position = y1 - feature_offset;
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
 
-  if (debug_assembly_drawing)
-    {
-      printf("->drawAssemblyFeature(feature=%p, feature_offset=%f, x1=%f, y1=%f, x2=%f, y2=%f)\n",
-	     feature, feature_offset, x1, y1, x2, y2);
-      printf("y1=%f, drawing@%f\n", y1, canvas_item_position);
-    }
+	canvas_item_position = y1 - feature_offset;
 
-  if((new_canvas_item = zMapWindowCanvasItemCreate(parent, canvas_item_position, feature, style)))
-    {
-      ZMapFeatureSubPartSpanStruct sub_feature = {};
-      ZMapAssemblyPath assembly_path;
-      ZMapSpan golden_span;
-      double item_start, item_end;
-
-      assembly_path = &(feature->feature.assembly_path);
-
-      /* or should this be feature_offset += item_start [feature->x1 - feature_offset in seq2can()] */
-      feature_offset += canvas_item_position; /* the "new" offset of the items */
-
-      if(debug_assembly_drawing)
-	g_object_set(G_OBJECT(new_canvas_item), "debug", debug_assembly_drawing, NULL);
-
-      if(assembly_path->path)
+	if (debug_assembly_drawing)
 	{
-	  int i = 0;
-
-	  golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
-
-	  sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
-	  sub_feature.start   = item_start = golden_span->x1;
-	  sub_feature.end     = item_end   = golden_span->x2;
-
-	  if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				 &item_start, &item_end))
-	    {
-	      zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-					      item_start, item_end,
-					      x1, x2);
-	    }
-
-	  if(feature->x1 != golden_span->x1)
-	    {
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
-	      sub_feature.start   = item_start = feature->x1;
-	      sub_feature.end     = item_end   = golden_span->x1 - 1;
-
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-
-	    }
-
-	  for(i = 1; i < assembly_path->path->len; i++)
-	    {
-	      int prev_start, prev_end;
-
-	      /* record the previous match to draw the gap later */
-	      prev_start = golden_span->x1;
-	      prev_end   = golden_span->x2;
-	      /* get the current match */
-	      golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
-
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
-	      sub_feature.start   = item_start = golden_span->x1;
-	      sub_feature.end     = item_end   = golden_span->x2;
-	      /* possibly draw the current match */
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-
-	      /* now for the gap */
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
-	      sub_feature.start   = item_start = prev_end + 1;
-	      sub_feature.end     = item_end   = golden_span->x1 - 1;
-	      /* possibly draw.... */
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-	    }
-
-	  if(feature->x2 != golden_span->x2)
-	    {
-	      sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
-	      sub_feature.start   = item_start = golden_span->x2 + 1;
-	      sub_feature.end     = item_end   = feature->x2;
-
-	      if(clip_feature_coords(run_data->factory, feature, feature_offset,
-				     &item_start, &item_end))
-		{
-		  zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
-						  item_start, item_end,
-						  x1, x2);
-		}
-	    }
+		printf("->drawAssemblyFeature(feature=%p, feature_offset=%f, x1=%f, y1=%f, x2=%f, y2=%f)\n",
+		feature, feature_offset, x1, y1, x2, y2);
+		printf("y1=%f, drawing@%f\n", y1, canvas_item_position);
 	}
 
-      feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-    }
+	if((new_canvas_item = zMapWindowCanvasItemCreate(parent, canvas_item_position, feature, style)))
+	{
+		ZMapFeatureSubPartSpanStruct sub_feature = {};
+		ZMapAssemblyPath assembly_path;
+		ZMapSpan golden_span;
+		double item_start, item_end;
 
+		assembly_path = &(feature->feature.assembly_path);
+
+		/* or should this be feature_offset += item_start [feature->x1 - feature_offset in seq2can()] */
+		feature_offset += canvas_item_position; /* the "new" offset of the items */
+
+		if(debug_assembly_drawing)
+		g_object_set(G_OBJECT(new_canvas_item), "debug", debug_assembly_drawing, NULL);
+
+		if(assembly_path->path)
+		{
+		int i = 0;
+
+		golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
+
+		sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
+		sub_feature.start   = item_start = golden_span->x1;
+		sub_feature.end     = item_end   = golden_span->x2;
+
+		if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+		{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+		}
+
+		if(feature->x1 != golden_span->x1)
+		{
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
+			sub_feature.start   = item_start = feature->x1;
+			sub_feature.end     = item_end   = golden_span->x1 - 1;
+
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+
+		}
+
+		for(i = 1; i < assembly_path->path->len; i++)
+		{
+			int prev_start, prev_end;
+
+			/* record the previous match to draw the gap later */
+			prev_start = golden_span->x1;
+			prev_end   = golden_span->x2;
+			/* get the current match */
+			golden_span = &(g_array_index(assembly_path->path, ZMapSpanStruct, i));
+
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_MATCH;
+			sub_feature.start   = item_start = golden_span->x1;
+			sub_feature.end     = item_end   = golden_span->x2;
+			/* possibly draw the current match */
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+
+			/* now for the gap */
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
+			sub_feature.start   = item_start = prev_end + 1;
+			sub_feature.end     = item_end   = golden_span->x1 - 1;
+			/* possibly draw.... */
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+		}
+
+		if(feature->x2 != golden_span->x2)
+		{
+			sub_feature.subpart = ZMAPFEATURE_SUBPART_GAP;
+			sub_feature.start   = item_start = golden_span->x2 + 1;
+			sub_feature.end     = item_end   = feature->x2;
+
+			if(clip_feature_coords(run_data->factory, feature, feature_offset,
+					&item_start, &item_end))
+			{
+			zMapWindowCanvasItemAddInterval(new_canvas_item, &sub_feature,
+							item_start, item_end,
+							x1, x2);
+			}
+		}
+		}
+
+		feature_item = FOO_CANVAS_ITEM(new_canvas_item);
+	}
+  }
   return feature_item ;
 }
 
@@ -1586,177 +1652,186 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   gboolean rev_comped = ((ZMapWindow)(factory->user_data))->revcomped_features ;
 
 
-  feature_start = y1;
-  feature_end   = y2;
 
-  zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
+  if(!zMapStyleIsFoo(style))
+  {
+	feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
+	feature_start = y1;
+	feature_end   = y2;
 
-  if (status)
-    {
-      if (!feature_item)
+	zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
+
+	if (status)
 	{
-	  canvas_item = zMapWindowCanvasItemCreate(parent, feature_start, feature, style);
-	  feature_item = FOO_CANVAS_ITEM(canvas_item);
-	}
-      else
-	{
-	  canvas_item = ZMAP_CANVAS_ITEM(feature_item);
-
-            // MH17 NOTE the transcriptFeature class does not implement a clear fucntion so this does nothing
-            // see canvasItem.c  "currently fantasy psuedo code"
-            // feature item will alsways be NULL anyway
-        zMapAssertNotReached();
-
-	  zMapWindowCanvasItemClear(canvas_item);
-	  foo_canvas_item_set(feature_item, "y", feature_start, NULL);
-	}
-    }
-
-  if(status && feature->feature.transcript.flags.cds)
-    {
-      has_cds = TRUE;
-
-      /* Set up the cds coords if there is one. */
-      cds_start = feature->feature.transcript.cds_start ;
-      cds_end   = feature->feature.transcript.cds_end ;
-
-      /* clip the coords to the block, extending end to canvas drawing coords. */
-      /* we _must_ do this to the cds as it will be compared later to the exon coords */
-      if(!clip_feature_coords(factory, feature, feature_offset, &cds_start, &cds_end))
-        {
-	  g_warning("CDS coords clipped");
-	}
-    }
-
-  item_left  = x1;
-  item_right = x2 ;
-
-  if (status && feature_item
-      && feature->feature.transcript.introns && feature->feature.transcript.exons)
-    {
-      double line_width = 1.5;
-      double parent_ypos = 0.0;
-      int i, num_parts ;
-
-
-      /* Note that we do assume here that introns and exons have been sorted for position. */
-
-      parent_ypos = FOO_CANVAS_GROUP(feature_item)->ypos;
-      num_parts = feature->feature.transcript.introns->len ;
-      for (i = 0 ; i < num_parts ; i++)
-	{
-	  ZMapFeatureSubPartSpanStruct intron;
-	  FooCanvasItem  *intron_line ;
-	  double item_top, item_bottom ;
-	  ZMapSpan intron_span ;
-
-	  intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
-
-	  item_top    = intron_span->x1;
-	  item_bottom = intron_span->x2;
-
-	  /* clip the coords to the block, extending end to canvas drawing coords. */
-	  if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
-	    {
-	      /* set up the item sub feature data */
-	      intron.index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.transcript.introns, i) ;
-	      intron.start = intron_span->x1;
-	      intron.end = intron_span->x2;
-
-	      if (has_cds)
+		if (!feature_item)
 		{
-		  /* Note that an introns start/end coords are the _same_ as its bounding exon
-		   * end/start coords as they butt up against each other, therefore we must
-		   * check for <= and >= ! */
-		  if ((item_bottom <= cds_start) || (item_top >= cds_end))
-		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON ;
-		  else
-		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS ;
+		canvas_item = zMapWindowCanvasItemCreate(parent, feature_start, feature, style);
+		feature_item = FOO_CANVAS_ITEM(canvas_item);
 		}
-	      else
+		else
 		{
-		  intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+		canvas_item = ZMAP_CANVAS_ITEM(feature_item);
+
+			// MH17 NOTE the transcriptFeature class does not implement a clear fucntion so this does nothing
+			// see canvasItem.c  "currently fantasy psuedo code"
+			// feature item will alsways be NULL anyway
+		zMapAssertNotReached();
+
+		zMapWindowCanvasItemClear(canvas_item);
+		foo_canvas_item_set(feature_item, "y", feature_start, NULL);
+		}
+	}
+
+	if(status && feature->feature.transcript.flags.cds)
+	{
+		has_cds = TRUE;
+
+		/* Set up the cds coords if there is one. */
+		cds_start = feature->feature.transcript.cds_start ;
+		cds_end   = feature->feature.transcript.cds_end ;
+
+		/* clip the coords to the block, extending end to canvas drawing coords. */
+		/* we _must_ do this to the cds as it will be compared later to the exon coords */
+		if(!clip_feature_coords(factory, feature, feature_offset, &cds_start, &cds_end))
+		{
+		g_warning("CDS coords clipped");
+		}
+	}
+
+	item_left  = x1;
+	item_right = x2 ;
+
+	if (status && feature_item
+		&& feature->feature.transcript.introns && feature->feature.transcript.exons)
+	{
+		double line_width = 1.5;
+		double parent_ypos = 0.0;
+		int i, num_parts ;
+
+
+		/* Note that we do assume here that introns and exons have been sorted for position. */
+
+		parent_ypos = FOO_CANVAS_GROUP(feature_item)->ypos;
+		num_parts = feature->feature.transcript.introns->len ;
+		for (i = 0 ; i < num_parts ; i++)
+		{
+		ZMapFeatureSubPartSpanStruct intron;
+		FooCanvasItem  *intron_line ;
+		double item_top, item_bottom ;
+		ZMapSpan intron_span ;
+
+		intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
+
+		item_top    = intron_span->x1;
+		item_bottom = intron_span->x2;
+
+		/* clip the coords to the block, extending end to canvas drawing coords. */
+		if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
+		{
+			/* set up the item sub feature data */
+			intron.index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.transcript.introns, i) ;
+			intron.start = intron_span->x1;
+			intron.end = intron_span->x2;
+
+			if (has_cds)
+			{
+			/* Note that an introns start/end coords are the _same_ as its bounding exon
+			* end/start coords as they butt up against each other, therefore we must
+			* check for <= and >= ! */
+			if ((item_bottom <= cds_start) || (item_top >= cds_end))
+			intron.subpart = ZMAPFEATURE_SUBPART_INTRON ;
+			else
+			intron.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS ;
+			}
+			else
+			{
+			intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+			}
+
+			/* this is a sub item we're drawing _within_ the feature_item,
+			* so we need to zero in its space. drawFeatureExon does
+			* this for exons */
+			item_top       -= parent_ypos;
+			item_bottom    -= parent_ypos;
+
+			/* And draw the item. */
+			intron_line     = zMapWindowCanvasItemAddInterval(canvas_item, &intron,
+									item_top, item_bottom,
+									item_left, item_right);
+		}
 		}
 
-	      /* this is a sub item we're drawing _within_ the feature_item,
-	       * so we need to zero in its space. drawFeatureExon does
-	       * this for exons */
-	      item_top       -= parent_ypos;
-	      item_bottom    -= parent_ypos;
+		for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+		{
+		ZMapSpan exon_span ;
+		int item_index ;
+		double item_top, item_bottom ;
 
-	      /* And draw the item. */
-	      intron_line     = zMapWindowCanvasItemAddInterval(canvas_item, &intron,
-								item_top, item_bottom,
-								item_left, item_right);
-	    }
+		exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+
+		item_index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.transcript.exons, i) ;
+		item_top = exon_span->x1 ;
+		item_bottom = exon_span->x2 ;
+
+		/* clip the coords to the block, extending end to canvas drawing coords, only
+		* draw if clip works. */
+		if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
+		{
+			drawFeatureExon(feature_item, feature_offset,
+					item_index, item_top, item_bottom,
+					cds_start, cds_end,
+					item_right, line_width, has_cds) ;
+		}
+		}
 	}
-
-      for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+	else if (status && feature_item)
 	{
-	  ZMapSpan exon_span ;
-	  int item_index ;
-	  double item_top, item_bottom ;
+		double item_top, item_bottom;
+		float line_width = 1.5 ;
+		int item_index = 1 ;
 
-	  exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+		/* item_top gets feature_offset added and item_bottom gets 1 added,
+		* as feature_start & feature_end have already been through
+		* zmapWindowSeq2CanOffset(), but we still need to clip_feature_coords(). */
+		item_top    = feature_start + feature_offset;
+		item_bottom = feature_end   + feature_offset - 1.0;
 
-	  item_index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.transcript.exons, i) ;
-	  item_top = exon_span->x1 ;
-	  item_bottom = exon_span->x2 ;
-
-	  /* clip the coords to the block, extending end to canvas drawing coords, only
-	   * draw if clip works. */
-	  if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
-	    {
-	      drawFeatureExon(feature_item, feature_offset,
-			      item_index, item_top, item_bottom,
-			      cds_start, cds_end,
-			      item_right, line_width, has_cds) ;
-	    }
+		/* clip the coords to the block, extending end to canvas drawing coords. */
+		if(clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
+		{
+		/* This is a single exon transcript.  We can't just get away
+		* with using the simple feature code.. Single exons may have a
+		* cds */
+		drawFeatureExon(feature_item, feature_offset,
+				item_index, item_top, item_bottom,
+				cds_start, cds_end,
+				item_right, line_width, has_cds);
+		}
 	}
-    }
-  else if (status && feature_item)
-    {
-      double item_top, item_bottom;
-      float line_width = 1.5 ;
-      int item_index = 1 ;
-
-      /* item_top gets feature_offset added and item_bottom gets 1 added,
-       * as feature_start & feature_end have already been through
-       * zmapWindowSeq2CanOffset(), but we still need to clip_feature_coords(). */
-      item_top    = feature_start + feature_offset;
-      item_bottom = feature_end   + feature_offset - 1.0;
-
-      /* clip the coords to the block, extending end to canvas drawing coords. */
-      if(clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
+	else
 	{
-	  /* This is a single exon transcript.  We can't just get away
-	   * with using the simple feature code.. Single exons may have a
-	   * cds */
-	  drawFeatureExon(feature_item, feature_offset,
-			  item_index, item_top, item_bottom,
-			  cds_start, cds_end,
-			  item_right, line_width, has_cds);
+		zMapLogWarning("Must have failed to create a canvas item for feature '%s' [%s]",
+			g_quark_to_string(feature->original_id),
+			g_quark_to_string(feature->unique_id));
 	}
-    }
-  else
-    {
-      zMapLogWarning("Must have failed to create a canvas item for feature '%s' [%s]",
-		     g_quark_to_string(feature->original_id),
-		     g_quark_to_string(feature->unique_id));
-    }
 
-  if(feature_item)
-    {
-      GError *error = NULL;
-      if(!(zMapWindowCanvasItemCheckData(canvas_item, &error)))
+	if(feature_item)
 	{
-	  zMapLogCritical("Error: %s", (error ? error->message : "No error produced"));
-	  g_error_free(error);
+		GError *error = NULL;
+		if(!(zMapWindowCanvasItemCheckData(canvas_item, &error)))
+		{
+		zMapLogCritical("Error: %s", (error ? error->message : "No error produced"));
+		g_error_free(error);
+		}
 	}
-    }
-
+  }
   return feature_item;
 }
+
+
 
 static FooCanvasItem *drawSequenceFeature(RunSet run_data,  ZMapFeature feature,
 					  double feature_offset,
@@ -1778,9 +1853,16 @@ static FooCanvasItem *drawSequenceFeature(RunSet run_data,  ZMapFeature feature,
 			  style) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  item = drawFullColumnTextFeature(run_data, feature, feature_offset,
-				   x1, y1, x2, y2, style) ;
 
+  if(!zMapStyleIsFoo(style))
+  {
+	item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
+
+	item = drawFullColumnTextFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style) ;
+  }
   return item ;
 }
 
@@ -2154,43 +2236,49 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
   double parent_ypos;
   char *text_string = NULL;
 
+  if(!zMapStyleIsFoo(style))
+  {
+	  item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
+  }
+  else      // original code preserved unchangesd
+  {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS IS A DISGUSTING HACK.... */
+	/* THIS IS A DISGUSTING HACK.... */
 
-  text_string = (char *)g_quark_to_string(feature->locus_id);
+	text_string = (char *)g_quark_to_string(feature->locus_id);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  text_string = (char *)g_quark_to_string(feature->original_id);
+	text_string = (char *)g_quark_to_string(feature->original_id);
 
 
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
+	zmapWindowSeq2CanOffset(&y1, &y2, feature_offset);
 
-  canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style);
-  item        = FOO_CANVAS_ITEM(canvas_item);
-  parent_ypos = FOO_CANVAS_GROUP(item)->ypos;
+	canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style);
+	item        = FOO_CANVAS_ITEM(canvas_item);
+	parent_ypos = FOO_CANVAS_GROUP(item)->ypos;
 
-  y1 -= parent_ypos;
-//  y2 -= parent_ypos;
-  y2 = y1 + 1.0;
-       /* mh17: FooCanvastext sets it's own bounds and we have to avoid
-        * setting the bounds as the length of the locus which does not
-        * correspond to the height of the text
-        * as this results in a text item spanning a very wide region
-        * which makes the navigator mouse events pick random objects
-        *
-        * unfortunaltely there is another fault causing this to happen
-        * even if my theory here was correct
-        * text items do get sized to text size before getting expanded to the bottom of the canvas
-        */
+	y1 -= parent_ypos;
+	//  y2 -= parent_ypos;
+	y2 = y1 + 1.0;
+		/* mh17: FooCanvastext sets it's own bounds and we have to avoid
+		* setting the bounds as the length of the locus which does not
+		* correspond to the height of the text
+		* as this results in a text item spanning a very wide region
+		* which makes the navigator mouse events pick random objects
+		*
+		* unfortunaltely there is another fault causing this to happen
+		* even if my theory here was correct
+		* text items do get sized to text size before getting expanded to the bottom of the canvas
+		*/
 
-  text_item = zMapWindowCanvasItemAddInterval(canvas_item, NULL, y1, y2, x1, x2);
-#if MH17_DEBUG_MAV_FOOBAR
-printf("drawSimpleAsTextFeature %s  %f -> %f (+%f)\n",text_string,y1,y2, parent_ypos);
+	text_item = zMapWindowCanvasItemAddInterval(canvas_item, NULL, y1, y2, x1, x2);
+#if MH17_DEBUG_NAV_FOOBAR
+	printf("drawSimpleAsTextFeature %s  %f -> %f (+%f)\n",text_string,y1,y2, parent_ypos);
 #endif
-  foo_canvas_item_set(text_item,
-		      "text",       text_string,
-		      NULL);
-
+	foo_canvas_item_set(text_item,
+				"text",       text_string,
+				NULL);
+  }
   return item;
 }
 
@@ -2216,103 +2304,6 @@ static FooCanvasItem *drawGraphFeature(RunSet run_data, ZMapFeature feature,
   {
 	  feature_item = drawFeaturesetFeature(run_data, feature, feature_offset, x1, y1, x2, y2, style);
   }
-#if 0
-      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
-      ZMapFeatureBlock block = run_data->feature_stack->block;
-
-      /* density or histogram graph mode */
-      /* NOTE we also have to handle line ploots with -ve values perhaps?? NOT implemnented */
-
-	min_score = zMapStyleGetMinScore(style) ;
-	max_score = zMapStyleGetMaxScore(style) ;
-
-	numerator = feature->score - min_score ;
-	denominator = max_score - min_score ;
-
-	if(numerator < 0)			/* coverage and histgrams do not have -ve values */
-		numerator = 0;
-	if(denominator < 0)		/* dumb but wise, could conceivably be mis-configured and not checked */
-		denominator = 0;
-
-	if(style->mode_data.graph.scale == ZMAPSTYLE_GRAPH_SCALE_LOG)
-	{
-		numerator++;	/* as log(1) is zero we need to bodge values of 1 to distingish from zero */
-					/* and as log(0) is big -ve number bias zero to come out as zero */
-
-		numerator = log(numerator);
-		denominator = log(denominator) ;
-	}
-
-	if (denominator == 0)                         /* catch div by zero */
-	{
-		if (numerator < 0)
-			dx = 0 ;
-		else if (numerator > 0)
-			dx = 1 ;
-	}
-	else
-	{
-		dx = numerator / denominator ;
-		if (dx < 0)
-			dx = 0 ;
-		if (dx > 1)
-			dx = 1 ;
-	}
-
-      if(!run_data->feature_stack->id)
-      {
-            GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
-            FooCanvasItem * foo = FOO_CANVAS_ITEM(fset);
-            GQuark fset_id = run_data->feature_stack->set->unique_id;
-
-		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
-		if(run_data->feature_stack->maps_to)
-			fset_id = run_data->feature_stack->maps_to;
-
-            char *x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),run_data->feature_stack->strand,run_data->feature_stack->frame);
-
-            run_data->feature_stack->id = g_quark_from_string(x);
-            g_free(x);
-      }
-
-            /* adds once per canvas+column+style, then returns that repeatedly */
-            /* also adds an 'interval' foo canvas item which we need to look up */
-      canvas_item = zMapWindowGraphDensityItemGetDensityItem(parent, run_data->feature_stack->id,
-            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
-            run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
-
-      zMapAssert(canvas_item);
-
-/* NOTE the iten hash used canvas _item->feature to set up a pointer to the feature
- * so I changed FToIAddfeature to take the feature explicitly
- * setting the feature here every time also fixes the problem but by fluke
- */
-//      if(!canvas_item->feature)
-      	canvas_item->feature = feature;     /* must have one */
-
-
-	/* now we are outisde the normal ZMapWindowCanvasItem dogma */
-	/* NOTE we know that graph items are not processed by another route
- 	 * unlike alignments that get zMapWindowFeatureReplaced()
- 	 */
- 	/* NOTE normally AddInterval adds a foo canvas item and then runs another function to set the colour
-  	 * we add a data struct and add colours to that in situ, as the feature has its style handy
-  	 */
-
-	/* NOTE as density items get re-binned on zoom and also get drawn in different ways
-	 * (line, histogram, heatmap) we only set the item's score/width here
-	 * not the x1,x2 coordinates
-	 */
-  	{
-  		GList *item_list = ((FooCanvasGroup *) canvas_item)->item_list;
-  		FooCanvasItem *foo = (FooCanvasItem *) item_list->data;
-
-	      zMapWindowGraphDensityAddItem(foo, feature, dx, y1, y2);
-	}
-
-      feature_item = (FooCanvasItem *)canvas_item;
-  }
-#endif
   else      // original code preserved unchangesd
   {
 	// NOTE this is for a histogram, -ve values are meaningless
@@ -2601,6 +2592,9 @@ static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
 
   return NULL;
 }
+#endif	// ZWCI_AS_FOO
+
+
 
 static gboolean null_top_item_created(FooCanvasItem *top_item,
                                       ZMapWindowFeatureStack feature_stack,
