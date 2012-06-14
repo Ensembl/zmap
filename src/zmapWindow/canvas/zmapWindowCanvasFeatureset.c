@@ -142,7 +142,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 /* this is in parallel with the ZMapStyleMode enum */
 /* beware, traditionally glyphs ended up as basic features */
 /* This is a retro-fit ... i noticed that i'd defined a struct/feature type but not set it as orignally there was only one  */
-static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
+static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE + 1] =
 {
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
 	FEATURE_BASIC, 		/* ZMAPSTYLE_MODE_BASIC */
@@ -156,6 +156,9 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
 };
 
+#if N_STYLE_MODE != FEATURE_N_TYPE
+#error N_STYLE_MODE and FEATURE_N_TYPE differ
+#endif
 
 
 /* Tables of function pointers for individual feature types, only required ones have to be provided. */
@@ -185,11 +188,21 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 		return;
 	if(cy2 < featureset->clip_y1)
 		return;
+#if 0
+/*
+	the problem is long vertical lines that wrap round
+	we don't draw big horizontal ones
+*/
 	if(cx1 > featureset->clip_x2)
 		return;
 	if(cx2 < featureset->clip_x1)
+	{
+		/* this will return if we expose part of a line that runs TR to BL
+		 * we'd have to swap x1 and x2 round for the comparison to work
+		 */
 		return;
-
+	}
+#endif
 	if(cx1 == cx2)	/* is vertical */
 	{
 #if 0
@@ -209,24 +222,22 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 	}
 	else
 	{
-		gint dx = cx2 - cx1;
-		gint dy = cy2 - cy1;
+		double dx = cx2 - cx1;
+		double dy = cy2 - cy1;
 
-#warning somehow this clips the top right of lines like this: / when scrolling to the left
 		if(cy1 < featureset->clip_y1)
 		{
-			cx1 += dx * (featureset->clip_y1 - cy1) / dy;
+				/* need to round to get partial lines joining up neatly */
+			cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
 			cy1 = featureset->clip_y1;
-
 		}
 		if(cy2 > featureset->clip_y2)
 		{
-			cx2 -= dx * (cy2 - featureset->clip_y2) / dy;
+			cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
 			cy2 = featureset->clip_y2;
 		}
 
 	}
-
 	gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
 }
 
@@ -1948,12 +1959,12 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 
   if(type <= FEATURE_INVALID || type >= FEATURE_N_TYPE)
   {
-	  /* there was a crash where type and ftype were bith rubbigh and different
+	  /* there was a crash where type and ftype were bth rubbigh and different
 	   * adding this if 'cured' it
 	   * look like stack corruption ??
 	   * but how???
 	   */
-	  int x = 0;	/* try to make totalview work */
+//	  int x = 0;	/* try to make totalview work */
 	  zMapAssert("bad feature type in alloc");
   }
 

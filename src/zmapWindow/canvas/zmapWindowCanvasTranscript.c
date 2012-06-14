@@ -68,7 +68,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-	x1 = featureset->width / 2 - feature->width / 2;
+	x1 = featureset->width / 2 - feature->width / 2;	/* NOTE works for exons not introns */
 	if(featureset->bumped)
 		x1 += feature->bump_offset;
 
@@ -129,6 +129,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	{
 		GdkColor c;
       	int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
+
 			/* get item canvas coords in pixel coordinates */
 		foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
 		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy, &cx2, &cy2);
