@@ -341,12 +341,13 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		cx = featureset->clip_y1 - seq->spacing + 1;
 	if(cy > featureset->clip_y2)
 		cy = featureset->clip_y2 + seq->spacing - 1;
+//if(sequence->frame == ZMAPFRAME_2) printf("expose: %d %d (%d %d) -> %d %d\n",expose->area.y - 1,expose->area.y + expose->area.height + 1, featureset->clip_y1,featureset->clip_y2, cx,cy);
 
 	/* get the expose area: copied from calling code, we have one item here and it's normally bigger than the expose area */
 	foo_canvas_c2w(foo->canvas,0,floor(cx),NULL,&y1);
 	foo_canvas_c2w(foo->canvas,0,ceil(cy),NULL,&y2);
 
-//printf("paint from %.1f to %.1f\n",y1,y2);
+//if(sequence->frame == ZMAPFRAME_2) printf("paint from %.1f to %.1f\n",y1,y2);
 
 //	NOTE need to sort highlight list here if it's not added in ascending coord order */
 
@@ -357,6 +358,12 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	seq_y1 = (long) y1  - featureset->dy + 1;
 	seq_y2 = (long) y2  - featureset->dy + 1;
 
+	if(seq->row_disp == 1 && seq->factor > 1)
+	{
+			/* bias backwards as we bias fwds later */
+		seq_y1-= sequence->frame - ZMAPFRAME_0;
+		seq_y2 -= sequence->frame - ZMAPFRAME_0;
+	}
 
 	if(seq_y1 < 1)			/* sequence coords are 1 based */
 		seq_y1 = 1;
@@ -365,7 +372,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	y -= 1;
 	y -=  y % (seq->row_size  * seq->factor);		/* sequence offset from start, 0 based, biased to row start */
 
-//if(sequence->frame == ZMAPFRAME_0) printf("%s frame = %d y1, = %.1f  (%ld)\n",g_quark_to_string(featureset->id),sequence->frame, y1, y);
+//if(sequence->frame == ZMAPFRAME_2) printf("%s frame = %d y1, = %.1f  (%ld)\n",g_quark_to_string(featureset->id),sequence->frame, y1, y);
 
 	seq->offset = (seq->spacing - pango->text_height) / 2;		/* vertical padding if relevant */
 
@@ -384,7 +391,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 			y_paint += sequence->frame - ZMAPFRAME_0;
 
 
-//if(sequence->frame == ZMAPFRAME_0) printf("y, seq: %ld (%ld %ld) start,end %ld %ld, ybase %ld\n",y, seq_y1,seq_y2,seq->start, seq->end, y_base);
+//if(sequence->frame == ZMAPFRAME_2) printf("y, seq: %ld (%ld %ld) start,end %ld %ld, ybase %ld\n",y, seq_y1,seq_y2,seq->start, seq->end, y_base);
 
 		p = sequence->sequence + y_base;
 		q = seq->text;
@@ -408,7 +415,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		/* NOTE y is 0 based so we have to add 1 to do the highlight properly */
 		hl = zmapWindowCanvasSequencePaintHighlight(drawable, featureset, seq, hl, y_paint + featureset->start, cx, cy);
 
-//if(sequence->frame == ZMAPFRAME_0) printf("paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
+//if(sequence->frame == ZMAPFRAME_2) printf("paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
 		pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
 
