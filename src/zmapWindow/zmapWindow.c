@@ -2881,8 +2881,6 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
    * sequence as the previous one, will trigger another call to this function.  */
   g_signal_handler_disconnect(G_OBJECT(widget), realiseData->window->exposeHandlerCB);
 
-printf("exposeHandlerCB send client event\n");
-
   sendClientEvent(realiseData->window, realiseData->feature_sets) ;
 
   if(realiseData->window->curr_locking == ZMAP_WINLOCK_VERTICAL)

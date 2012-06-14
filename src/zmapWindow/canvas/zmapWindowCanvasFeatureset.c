@@ -623,7 +623,7 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
       if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 	  && (func = _featureset_zoom_G[featureset->type]))
 	{
-	  /* zoom can (re)create the index eg ig graphs density stuff gets re-binned */
+	  /* zoom can (re)create the index eg if graphs density stuff gets re-binned */
 	  func(featureset, drawable) ;
 	}
 
@@ -1944,11 +1944,23 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
   gpointer mem;
   int size;
   ZMapWindowCanvasFeature feat;
+  zmapWindowCanvasFeatureType ftype = type;
+
+  if(type <= FEATURE_INVALID || type >= FEATURE_N_TYPE)
+  {
+	  /* there was a crash where type and ftype were bith rubbigh and different
+	   * adding this if 'cured' it
+	   * look like stack corruption ??
+	   * but how???
+	   */
+	  int x = 0;	/* try to make totalview work */
+	  zMapAssert("bad feature type in alloc");
+  }
 
   size = featureset_class_G->struct_size[type];
   if(!size)
     {
-      type = FEATURE_INVALID;		/* catch all for simple features */
+      type = FEATURE_INVALID;		/* catch all for simple features (one common free list) */
       size = sizeof(zmapWindowCanvasFeatureStruct);
     }
 
@@ -1976,7 +1988,7 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
   /* these can get re-allocated so must zero */
   memset((gpointer) feat,0,size);
 
-  feat->type = type;
+  feat->type = ftype;
 
   n_feature_alloc++;
   return(feat);
@@ -2468,7 +2480,6 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
   if(style)
     type = feature_types[zMapStyleGetMode(feature->style)];
   if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
-
   	return NULL;
 
   feat = zmapWindowCanvasFeatureAlloc(type);
