@@ -42,11 +42,10 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemFactory.h>
-#include <zmapWindowItemTextFillColumn.h>
-#include <zmapWindowFeatures.h>
+#include <zmapWindowCanvasItem.h>
 #include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowFeatures.h>
+
 
 #include <ZMap/zmapThreads.h> // for ForkLock functions
 
@@ -66,41 +65,7 @@ typedef struct
 }PFetchDataStruct, *PFetchData;
 
 
-typedef struct
-{
-  ZMapWindow window;
-  FooCanvasGroup *column;
-}processFeatureDataStruct, *processFeatureData;
 
-typedef struct
-{
-  gboolean exists;
-}BlockHasDNAStruct, *BlockHasDNA;
-
-
-typedef struct
-{
-  FooCanvasGroup *new_parent ;
-  double x_origin, y_origin ;
-} ReparentDataStruct, *ReparentData ;
-
-/* This struct needs rationalising. */
-typedef struct
-{
-  FooCanvasItem   *dna_item;
-  PangoLayoutIter *iterator;
-  GdkEvent        *event;
-  int              origin_index;
-  double           origin_x, origin_y;
-  gboolean         selected;
-  gboolean         result;
-  FooCanvasPoints *points;
-  double           index_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
-}DNAItemEventStruct, *DNAItemEvent;
-
-
-FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group, ZMapFeature feature,
-				gboolean bump_col) ;
 
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCanvasItem *item, ZMapFeature feature) ;
@@ -117,11 +82,6 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout,
                                       gpointer handler_data);
 
-#if !ZWCI_AS_FOO
-static gboolean sequenceSelectionCB(FooCanvasItem *item,
-				    int start, int end, int seq_x1, int seq_x2,
-				    gpointer user_data) ;
-#endif
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
 				       GError *error, gpointer user_data) ;
@@ -225,198 +185,11 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
 
 
-#if MH17_NOT_CALLED
-
-/* NOTE that we make some assumptions in this code including:
- *
- * - the caller has found the correct context, alignment, block and set
- *   to put the feature in. Probably we will have to write some helper
- *   helper functions to do this if they have not already been written.
- *   There will need to map stuff like  "block spec" -> ZMapFeatureBlock etc.
- *
- *
- *  */
-
-/*
- * NOTE TO ROY: I've written the functions so that when you get the xml from James, you can
- * get the align/block/set information and then
- * use the hash calls to get the foocanvasgroup that is the column you want to add/modify the feature
- * in. The you can just call these routines with the group and the feature.
- *
- * This way if there are errors in the xml and you can't find the right align/block/set then
- * you can easily report back to lace what the error was....
- *  */
 
 
-/* Add a new feature to the feature_set given by the set canvas item.
- *
- * Returns the new canvas feature item or NULL if there is some problem, e.g. the feature already
- * exists in the feature_set.
- *  */
-FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
-				    FooCanvasGroup *feature_group, ZMapFeature feature)
-{
-  FooCanvasItem *new_feature = NULL ;
-  ZMapFeatureSet feature_set ;
-
-  zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
 
-  feature_set = zmapWindowContainerGetFeatureSet((ZMapWindowContainerGroup)feature_group);
-  zMapAssert(feature_set) ;
 
-
-  /* Check the feature does not already exist in the feature_set. */
-  if (!zMapFeatureSetFindFeature(feature_set, feature))
-    {
-      /* Add it to the feature set. */
-      if (zMapFeatureSetAddFeature(feature_set, feature))
-	{
-	  new_feature = addNewCanvasItem(window, feature_group, feature, TRUE) ;
-	}
-    }
-
-  return new_feature ;
-}
-
-#endif
-
-#if MH17_NOT_CALLED
-/* N.B. This function creates TWO columns.  One Forward (returned) and One Reverse.
- * To get hold of the reverse one you'll need to use a FToI call.
- * Also to note. If the feature_set_name is NOT in the window feature_set_names list
- * the columns will NOT be created.
- */
-FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
-                                       FooCanvasGroup *block_group,
-                                       char *feature_set_name)
-{
-  FooCanvasItem *new_canvas_item = NULL ;
-  FooCanvasGroup *new_forward_set = NULL;
-  FooCanvasGroup *new_reverse_set;
-  ZMapFeatureSet     feature_set;
-  ZMapFeatureBlock feature_block;
-  ZMapFeatureContext     context;
-  ZMapFeatureTypeStyle     style;
-  ZMapWindowContainerStrand forward_strand, reverse_strand;
-  ZMapWindowContainerFeatures forward_features, reverse_features;
-  GQuark style_id,feature_set_id;
-
-  feature_block = zmapWindowContainerGetFeatureBlock(ZMAP_CONTAINER_GROUP( block_group ));
-  zMapAssert(feature_block);
-
-  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT));
-  zMapAssert(context);
-
-  feature_set_id = zMapFeatureSetCreateID(feature_set_name);
-  style_id = zMapStyleCreateID(feature_set_name);
-
-  /* Make sure it's somewhere in our list of feature set names.... columns to draw. */
-  if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)) &&
-     (style = zMapFindStyle(window->context_map->styles, style_id)))
-    {
-      /* Check feature set does not already exist. */
-      if(!(feature_set = zMapFeatureBlockGetSetByID(feature_block, feature_set_id)))
-        {
-          /* Create the new feature set... */
-          if((feature_set = zMapFeatureSetCreate(feature_set_name, NULL)))
-            {
-              /* Setup the style */
-              zMapFeatureSetStyle(feature_set, style);
-              /* Add it to the block */
-              zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-            }
-          else
-            zMapAssertNotReached();
-        }
-
-      /* Get the strand groups */
-      forward_strand   = zmapWindowContainerBlockGetContainerStrand(ZMAP_CONTAINER_BLOCK( block_group ), ZMAPSTRAND_FORWARD);
-      forward_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)forward_strand);
-      reverse_strand   = zmapWindowContainerBlockGetContainerStrand(ZMAP_CONTAINER_BLOCK( block_group ), ZMAPSTRAND_REVERSE);
-      reverse_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)reverse_strand);
-
-      /* Create the columns */
-      zmapWindowCreateSetColumns(window,
-                                 forward_features,
-                                 reverse_features,
-                                 feature_block,
-                                 feature_set,
-				 window->context_map->styles,
-                                 ZMAPFRAME_NONE,
-                                 &new_forward_set,
-                                 &new_reverse_set,
-				 NULL);
-
-      zmapWindowColOrderColumns(window);
-
-    }
-
-  if (new_forward_set != NULL)
-    new_canvas_item = FOO_CANVAS_ITEM(new_forward_set) ;
-
-  return new_canvas_item ;
-}
-#endif
-
-
-#if !ZWCI_AS_FOO
-
-/* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
- * AND DRAW A NEW ONE, THIS WILL INVALIDATE ANY CODE THAT IS CACHING THE ITEM.
- *
- * THE FIX IS FOR ALL OUR CODE TO USE THE HASH TO GET TO FEATURE ITEMS AND NOT CACHE THEM....*/
-
-/* Replace an existing feature in the feature context, this is the only way to modify
- * a feature currently.
- *
- * Returns FALSE if the feature does not exist. */
-
-/* NOTE only called from legacy bump code if alignments have foo=true in style */
-
-FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
-					FooCanvasItem *curr_feature_item,
-					ZMapFeature new_feature,
-					gboolean destroy_orig_feature)
-{
-  FooCanvasItem *replaced_feature = NULL ;
-  ZMapFeatureSet feature_set ;
-  ZMapFeature curr_feature ;
-
-  zMapAssert(zmap_window && curr_feature_item
-	     && new_feature && zMapFeatureIsValid((ZMapFeatureAny)new_feature)) ;
-
-  curr_feature = zmapWindowItemGetFeature(curr_feature_item);
-  zMapAssert(curr_feature && zMapFeatureIsValid((ZMapFeatureAny)curr_feature)) ;
-
-  feature_set = (ZMapFeatureSet)(curr_feature->parent) ;
-
-  /* Feature must exist in current set to be replaced...belt and braces....??? */
-  if (zMapFeatureSetFindFeature(feature_set, curr_feature))
-    {
-      FooCanvasGroup *set_group ;
-
-      set_group = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(curr_feature_item) ;
-      zMapAssert(set_group) ;
-
-      /* Remove it completely. */
-      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item, curr_feature, destroy_orig_feature))
-	{
-	  replaced_feature = addNewCanvasItem(zmap_window, set_group, new_feature, FALSE) ;
-	}
-      else
-      {
-            printf("Could not remove feature\n");
-      }
-    }
-    else
-    {
-            printf("Could not find feature\n");
-    }
-
-  return replaced_feature ;
-}
-#endif
 
 /* Remove an existing feature from the displayed feature context.
  *
@@ -463,22 +236,8 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             }
 
 
-#if ZWCI_AS_FOO
 	  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
 		zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
-#else
-//zMapLogWarning("OTF: remove %s",g_quark_to_string(feature->unique_id));
-	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(feature_item))
-	  {
-		  if(!zMapWindowCanvasFeaturesetItemRemoveFeature(feature_item,feature))
-		  {
-//zMapLogWarning("OTF: destroy feature item","");
-			/* destroy the canvas item...this will invoke canvasItemDestroyCB() */
-// don't destroy it as the process fails obscurely, leave an empty container
-//			gtk_object_destroy(GTK_OBJECT(feature_item)) ;
-		  }
-	  }
-#endif
 	  else
 	  {
 		  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
@@ -810,10 +569,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
 
-#if !ZWCI_AS_FOO
-  /* Check to see if there is an entry in long items for this feature.... */
-  zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
-#endif
 
   if (window->focus)
     zmapWindowFocusRemoveOnlyFocusItem(window->focus, feature_item) ;
@@ -1187,11 +942,7 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
   GList *l;
   ZMapStyleBumpMode curr_bump_mode ;
 
-#if ZWCI_AS_FOO
   if(!daddy || !ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
-#else
-  if(!daddy || !ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
-#endif
     {
       zMapLogWarning("compress called for invalid type of foo canvas item", "");
       return;
@@ -1273,45 +1024,6 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 
 
 
-#if !ZWCI_AS_FOO
-/* this is surely a candidate for better encapsulation that this....it should be moved to
- * the items/ subdir in the SequenceFeature object. */
-static gboolean sequenceSelectionCB(FooCanvasItem *item,
-				    int start, int end, int seq_x1, int seq_x2,
-				    gpointer user_data)
-{
-  ZMapWindow window = (ZMapWindow)user_data ;
-  ZMapWindowSequenceFeature sequence_feature ;
-  ZMapFeature feature;
-
-  sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item) ;
-
-  feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
-
-  if (feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
-    {
-      zmapWindowItemHighlightTranslationRegions(window, FALSE, FALSE,  item,
-						ZMAPFRAME_NONE,
-						feature->feature.sequence.type,
-						start, end) ;
-    }
-  else
-    {
-      zmapWindowItemHighlightDNARegion(window, FALSE, FALSE, item, feature->feature.sequence.frame,
-				       feature->feature.sequence.type, start, end) ;
-
-      zmapWindowItemHighlightTranslationRegions(window, FALSE, FALSE, item,
-						feature->feature.sequence.frame,
-						feature->feature.sequence.type,
-						start, end) ;
-    }
-
-  /* Pass information about the object clicked on back to the application. */
-  zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, start, end, seq_x1, seq_x2, NULL, FALSE, FALSE, FALSE) ;
-
-  return FALSE ;
-}
-#endif
 
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
@@ -1328,13 +1040,6 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
    * REVISIT THE WHOLE EVENT DELIVERY ORDER STUFF.....
    *
    *  */
-#if !ZWCI_AS_FOO
-  /* ummmmm....I don't like this....suggests that all is not fully implemented in the new
-   * feature item stuff..... */
-  if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
-    g_signal_connect(G_OBJECT(top_item), "sequence-selected",
-		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
-#endif
 
   switch(feature_stack->feature->type)
     {
@@ -1424,43 +1129,3 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 }
 
 
-#if !ZWCI_AS_FOO
-FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group,
-				ZMapFeature feature, gboolean bump_col)
-{
-  FooCanvasItem *new_feature = NULL ;
-  ZMapFeatureTypeStyle style ;
-  gboolean column_is_empty = FALSE;
-  FooCanvasGroup *container_features;
-  ZMapStyleBumpMode bump_mode;
-  ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) feature_group;
-  ZMapWindowFeatureStackStruct feature_stack;
-
-  style = feature->style;
-
-  container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)feature_group));
-  column_is_empty = !(container_features->item_list);
-
-#warning this should be moved into zmapWindowColBump.c/addGapsCB() for better effciency
-  zmapGetFeatureStack(&feature_stack,NULL,feature, zmapWindowFeatureFrame(feature));
-
-  /* This function will add the new feature to the hash. */
-  /* NOTE now not called as alingments are in CanvasFeatureset s */
-  /* check for feature_stack->filter if you revive this */
-  new_feature = zmapWindowFeatureDraw(window, style, FOO_CANVAS_GROUP(feature_group), &feature_stack) ;
-
-  if (bump_col)
-    {
-      if((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_set)) != ZMAPBUMP_UNBUMP)
-	{
-	  zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
-	}
-
-      if (column_is_empty)
-	zmapWindowColOrderPositionColumns(window);
-    }
-
-
-  return new_feature ;
-}
-#endif

@@ -50,16 +50,8 @@
 typedef struct _zmapWindowCanvasItemClassStruct
 {
 
-#if ZWCI_AS_FOO
   FooCanvasItemClass __parent__;			    /* extends FooCanvasItemClass  */
-#else
-  FooCanvasGroupClass __parent__;			    /* extends FooCanvasGroupClass  */
-#endif
 
-#if !ZWCI_AS_FOO
-/* long items is really class level. */
-  ZMapWindowLongItems long_items;
-#endif
 
   GdkBitmap *fill_stipple;
 
@@ -69,12 +61,6 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
   /* methods */
 
-#if !ZWCI_AS_FOO
-	/* (removed earlier) */
-  /* We want to use foo_canvas_item_new and have default items created.  These
-   * might not be the same for all our items... */
-  void (* post_create)(ZMapWindowCanvasItem window_canvas_item) ;
-#endif
   ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item) ;
 
   /* Returns item bounds in _world_ coords. */
@@ -82,13 +68,6 @@ typedef struct _zmapWindowCanvasItemClassStruct
 				  double top, double bottom,
 				  double left, double right) ;
 
-#if !ZWCI_AS_FOO
-  /* This might be a no-op for some... */
-  FooCanvasItem *(* add_interval)(ZMapWindowCanvasItem window_canvas_item,
-				  ZMapFeatureSubPartSpan sub_feature, /* can be NULL */
-				  double top, double bottom,
-				  double left, double right) ;
-#endif
   void (* set_colour)(ZMapWindowCanvasItem   window_canvas_item,
 		      FooCanvasItem         *interval,
 		      ZMapFeature		     feature,
@@ -109,13 +88,6 @@ typedef struct _zmapWindowCanvasItemClassStruct
   ZMapWindowCanvasItem (*fetch_parent)(FooCanvasItem *any_child);
 #endif /* CATCH_22 */
 
-#if !ZWCI_AS_FOO
-/* Ability to check all subitems... */
-  gboolean (* check_data)(ZMapWindowCanvasItem window_canvas_item, GError **error) ;
-
-  /* clear items... */
-  void (* clear)(ZMapWindowCanvasItem window_canvas_item) ;
-#endif
 
 } zmapWindowCanvasItemClassStruct ;
 
@@ -127,11 +99,7 @@ typedef struct _zmapWindowCanvasItemClassStruct
  *  */
 typedef struct _zmapWindowCanvasItemStruct
 {
-#if ZWCI_AS_FOO
   FooCanvasItem __parent__;				    /* extends FooCanvasItem  */
-#else
-  FooCanvasGroup __parent__;				    /* extends FooCanvasGroup  */
-#endif
 
   ZMapFeature feature ;					    /* The Feature that this Canvas Item represents  */
 

@@ -130,12 +130,6 @@ items/zmapWindowContainerUtils.h \
 items/zmapWindowContainerUtils_P.h \
 items/zmapWindowContainers.h \
 items/zmapWindowContainers_I.h \
-items/zmapWindowFeatures.h \
-items/zmapWindowFeatures_I.h \
-items/zmapWindowLongItem.c \
-items/zmapWindowLongItem.h \
-items/zmapWindowLongItem_I.h \
-items/zmapWindowLongItems_P.h \
 $(NULL)
 
 # We need the top_builddir to find the generated marshal code

@@ -607,11 +607,8 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
   /* it's quite difficult to tell how true this is, need to trawl thro'
    * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
    */
-#if ZWCI_AS_FOO
+
   if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-#else
-  if(item && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-#endif
     zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
 
   return item ;
@@ -940,11 +937,7 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
   id2c->feature_any = (ZMapFeatureAny) list_item->feature;
   /* hash table is NULL, that is correct */
 
-#if ZWCI_AS_FOO
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-#else
-  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-#endif
   {
 	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) list_item->feature);
 	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) item, FALSE);

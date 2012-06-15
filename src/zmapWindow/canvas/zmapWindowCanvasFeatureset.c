@@ -2666,20 +2666,13 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 
 #warning make this into a foo canvas item class func
 /* get the bounds of the current feature which has been set by the caller */
-/* item is a foo canvas group, we have one foo canvas item in the item list */
 void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2)
 {
 	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
 	ZMapWindowFeaturesetItem fi;
-#if ZWCI_AS_FOO
+
 	fi = (ZMapWindowFeaturesetItem) foo;
-#else
-	FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
 
-	zMapAssert(group && group->item_list);
-
-	fi = (ZMapWindowFeaturesetItem) group->item_list->data;
-#endif
 	if(rootx1)
 		*rootx1 = fi->dx;
 	if(rootx2)

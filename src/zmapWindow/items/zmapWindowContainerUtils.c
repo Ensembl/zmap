@@ -874,12 +874,6 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
   if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
     zMapWindowCanvasUnBusy(zmap_canvas);
 
-  /* RDS_CANT_CROP_LONG_ITEMS_HERE
-   * This seems like a good idea, but is flawed in a number of ways, here's 2:
-   * 1) The scroll region can move after this call... needs to be done again.
-   * 2) The scroll region results in unclamped coords meaning extra unneccessary
-   *    calls to the guts in LongItemCrop.
-   */
 
   return ;
 }

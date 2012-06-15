@@ -59,10 +59,6 @@ GType      zMapWindowCanvasGetType(void) ;
 GtkWidget *zMapWindowCanvasNew          (double max_zoom) ;
 gboolean   zMapWindowCanvasBusy         (ZMapWindowCanvas canvas) ;
 gboolean   zMapWindowCanvasUnBusy       (ZMapWindowCanvas canvas) ;
-void       zMapWindowCanvasLongItemCheck(ZMapWindowCanvas canvas,
-					 FooCanvasItem   *item,
-					 double start, double end) ;
-void zMapWindowCanvasLongItemRemove(ZMapWindowCanvas canvas, FooCanvasItem *item_to_remove);
 
 gboolean zMapWindowCanvasUnBusy(ZMapWindowCanvas canvas);
 gboolean zMapWindowCanvasBusy(ZMapWindowCanvas canvas);
