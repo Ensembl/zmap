@@ -664,6 +664,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 //printf("seq_y = %ld %d\n",seq_y,featureset->frame);
 
 	/* now we have seq coords, adjust the cursor to the start of the selected residue */
+	seq_y += featureset->start - 1;
 
 	if(set)
 	{

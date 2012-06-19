@@ -1194,9 +1194,10 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 	  *item = (FooCanvasItem *) &(fset->__parent__);
 	  zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item,gs->feature);
 	}
-      else
+//     else	// why? item has the first one and feature list is the others if present
+// mh17: always include the first in the list to filter duplicates eg transcript exons
 	{
-	  feature_list = g_list_prepend(feature_list,gs->feature);
+	  feature_list = zMap_g_list_append_unique(feature_list,gs->feature);
 	}
     }
   return feature_list;

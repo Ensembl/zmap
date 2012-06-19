@@ -42,7 +42,7 @@
 #include <zmapWindowItemTextFillColumn.h>
 #include <zmapWindowFeatures.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-
+#include <zmapWindowCanvasFeatureset_I.h>
 
 
 static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
@@ -450,7 +450,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       ZMapFullExon current_exon ;
       char *pep_ptr ;
       int pep_start, pep_end ;
-
+	ZMapWindowFeaturesetItem fset;
 
       wild_id = zMapStyleCreateID("*") ;
 
@@ -479,10 +479,16 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       seq = trans_feature->feature.sequence.sequence ;
       len = trans_feature->feature.sequence.length ;
 
+	fset = (ZMapWindowFeaturesetItem) trans_item;
 
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
 
+	/* NOTE
+	 * to display exons well we need to offset the the phse in each one at high zoom
+	 * however, this code is not set up to do that so we are stuck with frame 1
+	 * unless we do a rewrite
+	 */
 
       /* Get the exon descriptions from the feature. */
       zMapFeatureAnnotatedExonsCreate(feature, TRUE, &exon_list) ;
@@ -495,7 +501,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  if (current_exon->region_type == EXON_CODING)
 	    {
-	      pep_start = current_exon->sequence_span.x1 ;
+	      pep_start = current_exon->sequence_span.x1 - fset->start + 1;
 	      break ;
 	    }
 	}
@@ -509,7 +515,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  if (current_exon->region_type == EXON_CODING)
 	    {
-	      pep_end = current_exon->sequence_span.x2 ;
+	      pep_end = current_exon->sequence_span.x2 - fset->start + 1;
 
 	      break ;
 	    }
@@ -540,7 +546,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 	    {
 	      int tmp = 0 ;
 
-	      pep_start = current_exon->sequence_span.x1 ;
+	      pep_start = current_exon->sequence_span.x1 - fset->start + 1 ;
 
 #if ZWCI_AS_FOO
 		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))

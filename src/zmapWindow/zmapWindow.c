@@ -3275,7 +3275,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
 #endif
 		{
-			/* ho hum we get the foo not the containg zmapWindowCanvasItem group, how consistent */
+			/* ho hum we get the foo not the containing zmapWindowCanvasItem group, how consistent */
 
 				/* get start coordinate via subpartspan from x and y
 				 * set end coordinate to be the same

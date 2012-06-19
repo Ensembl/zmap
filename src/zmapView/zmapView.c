@@ -2235,8 +2235,11 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
 			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
 			 * NOTE: can have several featuresets in one column
-			 * feature_list inlcudes the second and subsequent features found, the first is given explicitly
+			 * feature_list inlcudes the first and second and subsequent features found,
+			 * the first is also given explicitly in the item
 			 */
+			if(!l->prev)	/* skip the first as we have already done it */
+				continue;
 			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
 		}
 	    }
