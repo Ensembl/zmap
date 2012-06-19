@@ -470,7 +470,9 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
   ZMapWindowContainerFeatureSet container;
+#if !ZWCI_AS_FOO
   ZMapFeatureSubPartSpan item_subfeature_data ;
+#endif
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item) ;
@@ -479,6 +481,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
+#if !ZWCI_AS_FOO
   if ((item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
 									ITEM_SUBFEATURE_DATA)))
     {
@@ -489,6 +492,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 						  item_subfeature_data->end) ;
     }
   else
+#endif
     {
       matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    container->strand, container->frame,

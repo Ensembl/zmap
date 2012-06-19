@@ -1002,8 +1002,11 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
-      GList *list,*del;
+#if !ZWCI_AS_FOO
+      GList *del;
       gboolean delete = FALSE;
+#endif
+	GList *list;
 	ZMapWindowCanvasItem item;
 	ZMapFeature feature;
 	ZMapFeatureTypeStyle style;
@@ -1099,23 +1102,6 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 }
 
 
-
-/* transitonal code: featureset items don't get mixed with simple foo items
- * just look at the first one, we do not want to scan 200k TrEMBL features
- */
-gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container)
-{
-	FooCanvasGroup *column_features;
-	column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
-	GList *l;
-
-      l = column_features->item_list;
-
-      if(l && ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data))
-		return(TRUE);
-
-	return(FALSE);
-}
 
 
 /*!

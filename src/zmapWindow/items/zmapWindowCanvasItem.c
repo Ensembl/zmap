@@ -84,6 +84,7 @@ static void zmap_window_canvas_item_init        (ZMapWindowCanvasItem      group
 static void zmap_window_canvas_item_destroy     (GtkObject *gtkobject);
 
 
+#if !ZWCI_AS_FOO
 //static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item);
 static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 					       FooCanvasItem         *interval,
@@ -93,6 +94,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 					       int 				colour_flags,
 					       GdkColor              *default_fill,
                                      GdkColor              *border);
+#endif
 
 static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item);
 
@@ -199,12 +201,6 @@ ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
 		  sub_feature =
   			zMapWindowCanvasFeaturesetGetSubPartSpan(item , zMapWindowCanvasItemGetFeature(item) ,0, 0);
 	}
-#if !ZWCI_AS_FOO
-	else
-	{
-		sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
-	}
-#endif
 
   return sub_feature;
 }
@@ -275,8 +271,10 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   		*sub_feature_out =
   			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
   	}
+#if !ZWCI_AS_FOO
   	else
   		*sub_feature_out = g_object_get_data(G_OBJECT(matching_interval), ITEM_SUBFEATURE_DATA);
+#endif
   }
 
   return matching_interval;
@@ -432,18 +430,6 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature fea
 
 
 
-
-
-/*
- *                Internals routines
- */
-
-
-
-
-
-
-
 /*
  *                Internal routines.
  */
@@ -477,9 +463,9 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 
   object_class->destroy = zmap_window_canvas_item_destroy;
 
-
-//  window_class->post_create  = zmap_window_canvas_item_post_create;
+#if !ZWCI_AS_FOO
   window_class->set_colour   = zmap_window_canvas_item_set_colour;
+#endif
   window_class->get_style    = zmap_window_canvas_item_get_style;
 
   window_class->fill_stipple = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
@@ -638,6 +624,7 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
     }
 }
 
+#if !ZWCI_AS_FOO
 static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 					       FooCanvasItem         *interval,
 					       ZMapFeature 		feature,
@@ -707,7 +694,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 
   return ;
 }
-
+#endif
 
 
 
@@ -738,13 +725,16 @@ static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_d
 
   if(interval_data->feature)
     {
-      ZMapFeatureSubPartSpanStruct local_struct;
+#if !ZWCI_AS_FOO
+	ZMapFeatureSubPartSpanStruct local_struct;
+#endif
       ZMapFeatureSubPartSpan sub_feature = NULL;
 
 
 	/* new interface via calling stack */
 	sub_feature = interval_data->sub_feature;
 
+#if !ZWCI_AS_FOO
 	/* if not provided (eg via window focus) the revert to the old */
 	/* i'd rather get rid of these lurking pointers but I'm doing somehting else ATM */
 	if(!sub_feature && !(sub_feature = g_object_get_data(G_OBJECT(interval), ITEM_SUBFEATURE_DATA)))
@@ -752,6 +742,7 @@ static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_d
 	  sub_feature = &local_struct;
 	  sub_feature->subpart = ZMAPFEATURE_SUBPART_INVALID;
 	}
+#endif
 
       if(interval_data->klass->set_colour)
 	interval_data->klass->set_colour(interval_data->parent, interval, interval_data->feature, sub_feature,

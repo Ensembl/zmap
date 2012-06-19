@@ -36,11 +36,12 @@
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-/* NOTE item header moved to after ZMapCanvasItem decls to allow sensible return types */
 
 
+#if !ZWCI_AS_FOO
 /* This still gets added as a g_object_set_data on FooCanvasItem objects. */
 #define ITEM_SUBFEATURE_DATA  "item_subfeature_data"
+#endif
 
 /* The type name for the ZMapWindowCanvasItem GType */
 #define ZMAP_WINDOW_CANVAS_ITEM_NAME 	"ZMapWindowCanvasItem"
@@ -72,8 +73,8 @@ typedef struct _zmapWindowCanvasItemStruct  zmapWindowCanvasItem, *ZMapWindowCan
 typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMapWindowCanvasItemClass ;
 
 
+#include <zmapWindowCanvasFeatureset.h>	/* need typedefs to stop gcc from barfing */
 
-#include <zmapWindowCanvasFeatureset.h>
 
 
 

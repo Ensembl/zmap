@@ -583,15 +583,18 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
                                     ZMapFeature feature_out,
                                     FooCanvasItem *selected)
 {
+#if !ZWCI_AS_FOO
   ZMapFeatureSubPartSpan item_feature_data;
   ZMapSpanStruct span = {0};
   ZMapAlignBlockStruct alignBlock = {0};
+#endif
 
   if (feature_in && feature_out)
     memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
   else
     zMapAssertNotReached();
 
+#if !ZWCI_AS_FOO
   if ((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
     {
       if (feature_out->type == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -617,6 +620,7 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
           feature_out->feature.homol.align = g_array_sized_new(FALSE, TRUE, sizeof(ZMapAlignBlockStruct), 1);
         }
     }
+#endif
 
   return ;
 }

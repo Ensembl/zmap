@@ -126,7 +126,9 @@ static void destroyIDHash(gpointer data) ;
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
+#if !ZWCI_AS_FOO
 static void childSearchCB(gpointer data, gpointer user_data) ;
+#endif
 static GQuark rootCanvasID(void);
 
 static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature);
@@ -648,7 +650,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 }
 
 
-
+#if !ZWCI_AS_FOO
 /* Find the child item that matches the supplied start/end, use for finding feature items
  * that are part of a compound feature, e.g. exons/introns in a transcript.
  * Warning, may return null so result MUST BE TESTED by caller. */
@@ -680,7 +682,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
   return item ;
 }
-
+#endif
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
@@ -1287,6 +1289,7 @@ static void destroyIDHash(gpointer data)
 }
 
 
+#if !ZWCI_AS_FOO
 
 /* This is a g_list callback function. */
 static void childSearchCB(gpointer data, gpointer user_data)
@@ -1313,6 +1316,7 @@ static void childSearchCB(gpointer data, gpointer user_data)
   return ;
 }
 
+#endif
 
 
 /*

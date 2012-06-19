@@ -5346,9 +5346,9 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
   gboolean populated = FALSE ;
   ZMapFeatureSubPartSpan item_data ;
 
-//  item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
+
   item_data = zMapWindowCanvasItemIntervalGetData(feature_item);
-//  zMapAssert(item_data) ;
+
   if(item_data)
   {
 
