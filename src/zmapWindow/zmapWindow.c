@@ -1858,6 +1858,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       select.secondary_text = makePrimarySelectionText(window);
     }
 
+	/* this puts the DNA in the clipbaord */
   zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
 
   g_free(select.secondary_text) ;
