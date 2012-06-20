@@ -53,7 +53,14 @@ static void zmapWindowCanvasLocusGetPango(GdkDrawable *drawable, ZMapWindowFeatu
 {
 	/* lazy evaluation of pango renderer */
 
-	if(lset && !lset->pango.renderer)
+
+	if(!lset)
+		return;
+
+	if(lset->pango.drawable && lset->pango.drawable != drawable)
+		zmapWindowCanvasFeaturesetFreePango(&lset->pango);
+
+	if(!lset->pango.renderer)
 	{
 		GdkColor *draw;
 

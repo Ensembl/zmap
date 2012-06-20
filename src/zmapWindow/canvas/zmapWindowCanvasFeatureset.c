@@ -295,6 +295,8 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 }
 
 
+
+
 /* get all th epand=go stuff we need for a font on a drawable */
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw)
 {
@@ -302,19 +304,25 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 	PangoFontDescription *desc;
 	int width, height;
 
-	pango->renderer = gdk_pango_renderer_new (screen);
+	if(pango->drawable && pango->drawable != drawable)
+		zmapWindowCanvasFeaturesetFreePango(pango);
 
-	gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), drawable);
+	if(!pango->renderer)
+	{
+		pango->renderer = gdk_pango_renderer_new (screen);
+		pango->drawable = drawable;
 
-	zMapAssert(featureset->gc);	/* should have been set by caller */
-	gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), featureset->gc);
+		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), drawable);
 
-	/* Create a PangoLayout, set the font and text */
-	pango->context = gdk_pango_context_get_for_screen (screen);
-	pango->layout = pango_layout_new (pango->context);
+		zMapAssert(featureset->gc);	/* should have been set by caller */
+		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), featureset->gc);
 
-//		font = findFixedWidthFontFamily(seq->pango.context);
-	desc = pango_font_description_from_string (family);
+		/* Create a PangoLayout, set the font and text */
+		pango->context = gdk_pango_context_get_for_screen (screen);
+		pango->layout = pango_layout_new (pango->context);
+
+	//		font = findFixedWidthFontFamily(seq->pango.context);
+		desc = pango_font_description_from_string (family);
 #warning mod this function and call from both places
 #if 0
 	/* this must be identical to the one get by the ZoomControl */
@@ -330,16 +338,17 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 	}
 #endif
 
-	pango_font_description_set_size (desc,size * PANGO_SCALE);
-	pango_layout_set_font_description (pango->layout, desc);
-	pango_font_description_free (desc);
+		pango_font_description_set_size (desc,size * PANGO_SCALE);
+		pango_layout_set_font_description (pango->layout, desc);
+		pango_font_description_free (desc);
 
-	pango_layout_set_text (pango->layout, "a", 1);		/* we need to get the size of one character */
-	pango_layout_get_size (pango->layout, &width, &height);
-	pango->text_height = height / PANGO_SCALE;
-	pango->text_width = width / PANGO_SCALE;
+		pango_layout_set_text (pango->layout, "a", 1);		/* we need to get the size of one character */
+		pango_layout_get_size (pango->layout, &width, &height);
+		pango->text_height = height / PANGO_SCALE;
+		pango->text_width = width / PANGO_SCALE;
 
-	gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (pango->renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (pango->renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+	}
 }
 
 
@@ -368,6 +377,7 @@ void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango)
 
 		g_object_unref(pango->renderer);
 		pango->renderer = NULL;
+//		pango->drawable = NULL;
 	}
 }
 

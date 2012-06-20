@@ -49,7 +49,13 @@ static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFe
 	/* lazy evaluation of pango renderer */
 	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
-	if(pango && !pango->renderer)
+	if(!pango)
+		return;
+
+	if(pango->drawable && pango->drawable != drawable)
+		zmapWindowCanvasFeaturesetFreePango(pango);
+
+	if(!pango->renderer)
 	{
 		GdkColor *draw;
 
