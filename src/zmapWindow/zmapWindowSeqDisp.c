@@ -669,8 +669,23 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 	}
 
       if (centre_on_region && !done_centring)
-	zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
+		zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
+	done_centring = TRUE ;
     }
+
+  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
+					 block->parent->unique_id, block->unique_id,
+					 set_id, tmp_strand, tmp_frame, 0)))
+	{
+	      highlightTranslationRegion(window, TRUE, FALSE, FALSE,
+					 item, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, required_frame, seq_type, start, end) ;
+
+		if (centre_on_region && !done_centring)
+			zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
+
+	}
 
 
   return ;
