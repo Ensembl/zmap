@@ -3195,7 +3195,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 {
   gboolean event_handled = FALSE ;			    /* FALSE means other handlers run. */
   ZMapWindow window = (ZMapWindow)data ;
-  static double origin_x, origin_y;			    /* The world coords of the source of the button 1 event */
+  static double origin_x, origin_y;			    /* The world coords of the source of the button event */
   static gboolean dragging = FALSE, guide = FALSE ;	    /* Rubber banding or ruler ? */
   static gboolean locked = FALSE ;			    /*
 							       For ruler, are there locked windows ? */
@@ -3231,6 +3231,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_press %d", but_event->button) ;
 
+	    /* work out the world of where we are */
+	foo_canvas_window_to_world(window->canvas,
+				       but_event->x, but_event->y,
+				       &wx, &wy);
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
 	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
@@ -3244,10 +3248,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    invokeVisibilityChange(window);
 	  }
 
-	foo_canvas_window_to_world(window->canvas,
-				   but_event->x, but_event->y,
-				   &origin_x, &origin_y);
-
 
 	/* Button 1 is for selecting features OR lasso for zoom/mark.
 	 * Button 2 is handled, we display ruler and maybe centre on that position,
@@ -3257,6 +3257,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  {
 	  case 1:
 	    {
+		    origin_x = wx;
+		    origin_y = wy;
+
 #if !ZWCI_AS_FOO
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
 		  && ZMAP_IS_WINDOW_TEXT_ITEM(item))
@@ -3292,6 +3295,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 				 */
 				zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
+				/* NOTE we set feature list to NULL here, update info panel must handle */
+				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+
 				event_handled = TRUE;
 			}
 		}
@@ -3316,10 +3322,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		      if (mark_updater.in_mark_move_region)
 			{
 			  mark_updater.activated = TRUE;
-			  /* work out the world of where we are */
-			  foo_canvas_window_to_world(window->canvas,
-						     but_event->x, but_event->y,
-						     &wx, &wy);
+
 			  setupRuler(window, &(window->mark_guide_line), NULL, wy);
 			}
 		      else
@@ -3438,19 +3441,21 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	/* interestingly we don't check the button number here.... */
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 
-
-	    zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
-
 	    /* work out the world of where we are */
 	    foo_canvas_window_to_world(window->canvas,
 				       mot_event->x, mot_event->y,
 				       &wx, &wy);
 
+	    zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
+
 	 if(seq_item)
 		{
-			zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE, wx, wy, &seq_start, &seq_end);
+			zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
 			zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+
+			/* NOTE we set feature list to NULL here, update info panel must handle */
+			zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 		}
 	else if (dragging || guide)
 	  {
@@ -3633,12 +3638,23 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 
+	    /* work out the world of where we are */
+	foo_canvas_window_to_world(window->canvas,
+				       but_event->x, but_event->y,
+				       &wx, &wy);
 	/* interestingly we don't check the button number here.... */
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_release %d", but_event->button) ;
 
 	  if(seq_item)
 	  {
+		zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+
+		zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+
+		  /* NOTE we set feature list to NULL here, update info panel must handle */
+		zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+
 		seq_item = NULL;
 		event_handled = TRUE;		    /* We _ARE_ handling */
 	  }
@@ -3694,7 +3710,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 		    /* Must get rid of rubberband item as it is not needed. */
 		    // mh17: was this a memory leak from the other bits of the if ???
-		    //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+		    //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;origin_
 		    //		    window->rubberband = NULL ;
 
 		    event_handled = FALSE ;
