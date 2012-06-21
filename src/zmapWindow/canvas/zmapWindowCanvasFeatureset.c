@@ -592,11 +592,12 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 }
 
 /* return a span struct for the feature */
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
+ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo, ZMapFeature feature, double x,double y)
 {
 	ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
 	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
 
+#if !ZWCI_AS_FOO
 	if(!y)	/* legacy interface: return canvasfeature from index */
 	{
 		static ZMapFeatureSubPartSpanStruct fred;
@@ -614,6 +615,7 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 
 		return &fred;
 	}
+#endif
 
 	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 		func = _featureset_subpart_G[featureset->type];
@@ -895,7 +897,6 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 		featureset->set_index = index;
 		featureset->x_off = stagger * featureset->set_index;
 	}
-zMapLogWarning("BUG create set %s: %d %d",g_quark_to_string(featureset->id),featureset->link_sideways,featureset->linked_sideways);
 
 	featureset->width = zMapStyleGetWidth(featureset->style);
 
@@ -1668,10 +1669,6 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 {
   GList *features;
 
-
-zMapLogWarning("BUG index %s",g_quark_to_string(fi->id));
-zMapLogStack();
-
   /*
    * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump, which can happen before we get a paint
    * i tried to move it into alignments (it's a bodge to cope with the data being shredded before we get it)
@@ -1707,8 +1704,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
-  char *xxx = g_quark_to_string(fi->id);
-
 
   /* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
    * this avoids artifacts due to wrap round
@@ -1734,8 +1729,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
   if(!fi->gc)
     return;		/* got a draw before realize ?? */
-
-zMapLogWarning("BUG paint %s",g_quark_to_string(fi->id));
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */

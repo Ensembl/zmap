@@ -687,8 +687,6 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 {
 	ZMapSkipList sl;
 
-zMapLogWarning("BUG zoom %s: %d %d",g_quark_to_string(featureset->id),featureset->link_sideways,featureset->linked_sideways);
-
 	/* NOTE display index will be null on first call */
 
 		/* feature specific eg bumped gapped alignments - adjust gaps display */
@@ -732,7 +730,6 @@ static void zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem feature
 	/* eg on OTF w/ delete existing selected */
 	if(featureset->link_sideways)
 		featureset->linked_sideways = FALSE;
-zMapLogWarning("BUG add feature %s %s",g_quark_to_string(featureset->id), g_quark_to_string(feature->unique_id));
 }
 
 

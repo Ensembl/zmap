@@ -581,7 +581,7 @@ void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item)
 
 #endif
 
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_feature = NULL;
 
@@ -589,7 +589,7 @@ ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
   	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
 	{
 		  sub_feature =
-  			zMapWindowCanvasFeaturesetGetSubPartSpan(item , zMapWindowCanvasItemGetFeature(item) ,0, 0);
+  			zMapWindowCanvasFeaturesetGetSubPartSpan(item , feature, x, y);
 	}
 #else
   	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
