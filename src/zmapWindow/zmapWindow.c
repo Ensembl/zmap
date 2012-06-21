@@ -3258,8 +3258,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  {
 	  case 1:
 	    {
-		    origin_x = wx;
-		    origin_y = wy;
+	    origin_x = wx;
+	    origin_y = wy;
 
 #if !ZWCI_AS_FOO
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
@@ -3383,7 +3383,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    }
 		  else
 		    {
-		      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), origin_y) ;
+		      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), wy) ;
 		    }
 
 		  event_handled = TRUE ;		    /* We _ARE_ handling */
