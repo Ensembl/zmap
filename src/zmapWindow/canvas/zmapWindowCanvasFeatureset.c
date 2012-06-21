@@ -67,6 +67,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <string.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapWindow.h>
 
 #include <zmapWindowCanvasItem.h>
@@ -894,6 +895,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 		featureset->set_index = index;
 		featureset->x_off = stagger * featureset->set_index;
 	}
+zMapLogWarning("BUG create set %s: %d %d",g_quark_to_string(featureset->id),featureset->link_sideways,featureset->linked_sideways);
 
 	featureset->width = zMapStyleGetWidth(featureset->style);
 
@@ -1615,10 +1617,67 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
 
 
 
+/* a slightly ad-hoc function
+ * really the feature context should specify complex features
+ * but for historical reasons alignments come disconnected
+ * and we have to join them up by inference (same name)
+ * we may have several context featuresets but by convention all these have features with different names
+ * do we have to do the same w/ transcripts? watch this space:
+ *
+ */
+#warning revisit this when transcripts are implemented: call from zmapView code
+void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
+{
+	GList *l;
+	ZMapWindowCanvasFeature left,right;		/* feat -ures */
+	GQuark name = 0;
+
+	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
+	/* sort by name and start coord */
+	/* link same name features with ascending query start coord */
+
+	/* if we ever need to link by something other than same name
+	 * then we can define a feature type specific sort function
+	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
+	 */
+
+	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
+	fi->features_sorted = FALSE;
+
+	for(l = fi->features;l;l = l->next)
+	{
+		right = (ZMapWindowCanvasFeature) l->data;
+		right->left = right->right = NULL;		/* we can re-calculate so must zero */
+
+		if(name == right->feature->original_id)
+		{
+			right->left = left;
+			left->right = right;
+		}
+		left = right;
+		name = left->feature->original_id;
+
+	}
+
+	fi->linked_sideways = TRUE;
+}
+
+
+
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 {
   GList *features;
 
+
+zMapLogWarning("BUG index %s",g_quark_to_string(fi->id));
+zMapLogStack();
+
+  /*
+   * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump, which can happen before we get a paint
+   * i tried to move it into alignments (it's a bodge to cope with the data being shredded before we get it)
+   */
+  if(fi->link_sideways && !fi->linked_sideways)
+	zmap_window_featureset_item_link_sideways(fi);
 
   features = fi->display;		/* NOTE: is always sorted */
 
@@ -1648,6 +1707,9 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
+  char *xxx = g_quark_to_string(fi->id);
+
+
   /* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
    * this avoids artifacts due to wrap round
    * NOTE we cannot calc this post zoom as we get scroll afterwards
@@ -1672,6 +1734,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
   if(!fi->gc)
     return;		/* got a draw before realize ?? */
+
+zMapLogWarning("BUG paint %s",g_quark_to_string(fi->id));
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
@@ -2539,6 +2603,7 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
     }
   /* must set this independantly as empty columns with no index get flagged as sorted */
   featureset_item->features_sorted = FALSE;
+//  featureset_item->zoom = 0.0;	/* trigger a recalc */
 #else
   // untested code
   {

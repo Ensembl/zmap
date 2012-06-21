@@ -68,7 +68,7 @@ static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFe
 }
 
 
-static void zmapWindowCanvasSequenceSetZoom(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasSequence seq)
+static void zmapWindowCanvasSequenceSetRow(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasSequence seq)
 {
 	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
@@ -338,7 +338,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 	zmapWindowCanvasSequenceGetPango(drawable, featureset, seq);
 
-	zmapWindowCanvasSequenceSetZoom(featureset, seq);
+	zmapWindowCanvasSequenceSetRow(featureset, seq);
 
 		/* restrict to actual expose area, any expose will fetch the whole feature */
 	cx = expose->area.y - 1;
@@ -431,7 +431,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 
 
-static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset)
+static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 	ZMapWindowCanvasSequence seq;
 	ZMapSkipList sl;

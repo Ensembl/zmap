@@ -675,65 +675,19 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 }
 
 
-/* a slightly ad-hoc function
- * really the feature context should specify complex features
- * but for historical reasons alignments come disconnected
- * and we have to join them up by inference (same name)
- * we may have several context featuresets but by convention all these have features with different names
- * do we have to do the same w/ transcripts? watch this space:
- *
- */
-#warning revisit this when transcripts are implemented: call from zmapView code
-void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
-{
-	GList *l;
-	ZMapWindowCanvasFeature left,right;		/* feat -ures */
-	GQuark name = 0;
-
-	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
-	/* sort by name and start coord */
-	/* link same name features with ascending query start coord */
-
-	/* if we ever need to link by something other than same name
-	 * then we can define a feature type specific sort function
-	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
-	 */
-
-	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
-	fi->features_sorted = FALSE;
-
-	for(l = fi->features;l;l = l->next)
-	{
-		right = (ZMapWindowCanvasFeature) l->data;
-		right->left = right->right = NULL;		/* we can re-calculate so must zero */
-
-		if(name == right->feature->original_id)
-		{
-			right->left = left;
-			left->right = right;
-		}
-		left = right;
-		name = left->feature->original_id;
-
-	}
-
-	fi->linked_sideways = TRUE;
-}
 
 
 /*
  * if we are displaying a gapped alignment, recalculate this data
  * do this by freeing the existing data, new stuff will be added by the paint function
  *
- * NOTE ref to FreeSet() below
+ * NOTE ref to FreeSet() below -> drawable may be NULL
  */
-static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset)
+static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 	ZMapSkipList sl;
 
-	if(featureset->link_sideways && !featureset->linked_sideways)
-		zmap_window_featureset_item_link_sideways(featureset);
-
+zMapLogWarning("BUG zoom %s: %d %d",g_quark_to_string(featureset->id),featureset->link_sideways,featureset->linked_sideways);
 
 	/* NOTE display index will be null on first call */
 
@@ -778,14 +732,14 @@ static void zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem feature
 	/* eg on OTF w/ delete existing selected */
 	if(featureset->link_sideways)
 		featureset->linked_sideways = FALSE;
-
+zMapLogWarning("BUG add feature %s %s",g_quark_to_string(featureset->id), g_quark_to_string(feature->unique_id));
 }
 
 
 static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset)
 {
 	/* frees gapped data _and does not alloc any more_ */
-	zMapWindowCanvasAlignmentZoomSet(featureset);
+	zMapWindowCanvasAlignmentZoomSet(featureset,NULL);
 }
 
 
