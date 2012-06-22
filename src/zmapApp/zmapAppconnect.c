@@ -135,8 +135,6 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
   if (sequence_map->sequence && (sequence_map->start < 1 || sequence_map->end < sequence_map->start))
     {
       *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
-
-      zMapWarning("%s", *err_msg_out) ;
     }
   else
     {
@@ -151,14 +149,10 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 	{
 	  *err_msg_out = g_strdup_printf("%s", "Failed to create ZMap and then failed to clean up properly,"
 				     " save your work and exit now !") ;
-
-	  zMapWarning("%s", *err_msg_out) ;
 	}
       else if (add_result == ZMAPMANAGER_ADD_FAIL)
 	{
 	  *err_msg_out = g_strdup_printf("%s", "Failed to create ZMap") ;
-
-	  zMapWarning("%s", *err_msg_out) ;
 	}
       else
 	{
