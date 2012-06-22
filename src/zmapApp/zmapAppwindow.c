@@ -141,6 +141,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     sleep(sleep_seconds) ;
 
 
+
   /* Since thread support is crucial we do compile and run time checks that its all intialised.
    * the function calls look obscure but its what's recommended in the glib docs. */
 #if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
@@ -150,7 +151,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   if (!g_thread_supported())
     g_thread_init(NULL);
 
+
   setup_signal_handlers();
+
 
   /* Set up user type, i.e. developer or normal user. */
   zMapUtilsUserInit() ;
@@ -170,6 +173,20 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug();
+
+
+  /* Set up logging for application, this is the earliest logging can be set up as currently it
+   * needs to find the .ZMap directory which is set up by checkConfigDir() */
+  if (!zMapLogCreate(NULL) || !configureLog())
+    {
+      printf("Zmap cannot create log file.\n") ;
+
+      exit(EXIT_FAILURE) ;
+    }
+  else
+    {
+      zMapWriteStartMsg() ;
+    }
 
 
   /* app_data->app_context = */
@@ -200,17 +217,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Create the ZMaps manager. */
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
-  /* Set up logging for application. */
-  if (!zMapLogCreate(NULL) || !configureLog())
-    {
-      printf("Zmap cannot create log file.\n") ;
-
-      exit(EXIT_FAILURE) ;
-    }
-  else
-    {
-      zMapWriteStartMsg() ;
-    }
 
   getConfiguration(app_context) ;
 
@@ -232,6 +238,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       }
     /* should we store locale_in_use and new_locale somewhere? */
   }
+
 
   /*             GTK initialisation              */
 
@@ -1115,6 +1122,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 }
 
 
+/* Called  */
 static void setup_signal_handlers(void)
 {
   /* Not much point if there's no sigaction! */
