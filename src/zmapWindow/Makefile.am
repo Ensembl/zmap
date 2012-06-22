@@ -36,7 +36,6 @@ zmapWindowItemDebug.c \
 zmapWindowItemFactory.c \
 zmapWindowItemFactory.h \
 zmapWindowItemHash.c \
-zmapWindowItemTextFillColumn.h \
 zmapWindowList.c \
 zmapWindowMark.c \
 zmapWindowMark_P.h \
