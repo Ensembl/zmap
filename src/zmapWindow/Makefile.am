@@ -32,10 +32,13 @@ zmapWindowFeatureShow.c \
 zmapWindowFocus.c \
 zmapWindowFrame.c \
 zmapWindowItem.c \
+zmapWindowItemDebug.c \
 zmapWindowItemFactory.c \
 zmapWindowItemFactory.h \
 zmapWindowItemHash.c \
+zmapWindowItemTextFillColumn.h \
 zmapWindowList.c \
+zmapWindowLongItems.c \
 zmapWindowMark.c \
 zmapWindowMark_P.h \
 zmapWindowMenus.c \
@@ -54,6 +57,8 @@ zmapWindowSeqDisp.c \
 zmapWindowState.c \
 zmapWindowState.h \
 zmapWindowStats.c \
+zmapWindowTextPositioner.c \
+zmapWindowTextPositioner.h \
 zmapWindowUtils.c \
 zmapWindowZoomControl.c \
 zmapWindowZoomControl_P.h \
@@ -92,6 +97,7 @@ canvas/zmapWindowCanvasSequence_I.h \
 canvas/zmapWindowCanvasLocus.c \
 canvas/zmapWindowCanvasLocus.h \
 canvas/zmapWindowCanvasLocus_I.h \
+canvas/zmapWindowCanvasItemFeatureSet.h \
 $(NULL)
 
 
@@ -130,6 +136,7 @@ items/zmapWindowContainerUtils.h \
 items/zmapWindowContainerUtils_P.h \
 items/zmapWindowContainers.h \
 items/zmapWindowContainers_I.h \
+
 $(NULL)
 
 # We need the top_builddir to find the generated marshal code

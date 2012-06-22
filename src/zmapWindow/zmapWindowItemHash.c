@@ -67,6 +67,7 @@ typedef struct
 {
   int child_start, child_end ;
   FooCanvasItem *child_item ;
+  ZMapFeature feature;
 } ChildSearchStruct, *ChildSearch ;
 
 
@@ -671,6 +672,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
       child_search.child_start = child_start ;
       child_search.child_end = child_end ;
+	child_search.feature = feature;
 
       g_list_foreach(group->item_list, childSearchCB, (void *)&child_search) ;
 
@@ -1303,7 +1305,7 @@ static void childSearchCB(gpointer data, gpointer user_data)
     {
       ZMapFeatureSubPartSpan item_subfeature_data ;
 
-      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item)))
+      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item, child_search->feature, 0, child_search->child_start)))
 	{
 	  if (item_subfeature_data->start == child_search->child_start &&
 	      item_subfeature_data->end   == child_search->child_end)

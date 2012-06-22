@@ -192,14 +192,14 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
 
 
 
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_feature = NULL;
 
   	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
 	{
 		  sub_feature =
-  			zMapWindowCanvasFeaturesetGetSubPartSpan(item , zMapWindowCanvasItemGetFeature(item) ,0, 0);
+  			zMapWindowCanvasFeaturesetGetSubPartSpan(item , feature, x, y);
 	}
 
   return sub_feature;

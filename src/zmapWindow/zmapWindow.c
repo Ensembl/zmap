@@ -228,11 +228,13 @@ static void swapColumns(ZMapWindow window, guint keyval);
 static void unhideItemsCB(gpointer data, gpointer user_data) ;
 
 
+#if POINTLESS
 static gboolean possiblyPopulateWithChildData(ZMapWindow window,
                                               FooCanvasItem *feature_item,
 //                                              FooCanvasItem *highlight_item,
                                               ZMapFeatureSubpartType *sub_type,
                                               int *selected_start, int *selected_end, int *selected_length) ;
+
 static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              ZMapFeature feature,
                                              FooCanvasItem *feature_item,
@@ -241,6 +243,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              int *feature_length,
                                              int *selected_start, int *selected_end,
                                              int *selected_length);
+#endif
 static char *makePrimarySelectionText(ZMapWindow window);
 
 static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand) ;
@@ -3110,8 +3113,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  {
 	  case 1:
 	    {
-		    origin_x = wx;
-		    origin_y = wy;
+	    origin_x = wx;
+	    origin_y = wy;
 
 
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
@@ -3221,7 +3224,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    }
 		  else
 		    {
-		      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), origin_y) ;
+		      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), wy) ;
 		    }
 
 		  event_handled = TRUE ;		    /* We _ARE_ handling */
@@ -5231,7 +5234,7 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
       ZMapWindowCanvasItem canvas_item;
       ZMapFeature item_feature ;
       gint i = 0 ;
-      int selected_start, selected_end, selected_length, dummy ;
+      int selected_start, selected_end, selected_length; //, dummy ;
       ZMapFeatureSubpartType item_type_int ;
 
       text = g_string_sized_new(512) ;
@@ -5281,7 +5284,7 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	}
       else
 	{
-	  ZMapFeatureSubPartSpan sub_feature ;
+//	  ZMapFeatureSubPartSpan sub_feature ;
 
 	  while (selected)
 	    {
@@ -5297,10 +5300,26 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 //	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 		item_feature = (ZMapFeature) id2c->feature_any;
 
-	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item)))
+#if ZWCI_AS_FOO
+/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
+		selected_start = item_feature->x1 ;
+		selected_end = item_feature->x2 ;
+		selected_length = item_feature->x2 - item_feature->x1 + 1 ;
+		item_type_int = ZMAPFEATURE_SUBPART_MATCH ;
+#else
+	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item, item_feature, 0, item_feature->x1)))
 		{
+#if POINTLESS
 		  possiblyPopulateWithChildData(window, item, // highlight_item,
 						&item_type_int, &selected_start, &selected_end, &selected_length) ;
+#else
+			selected_start = sub_feature->start ;
+			selected_end = sub_feature->end ;
+			selected_length = sub_feature->end - sub_feature->start + 1 ;
+			item_type_int = sub_feature->subpart ;
+
+#endif
+
 		}
 	      else
 		{
@@ -5308,7 +5327,7 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 					       &dummy, &dummy, &dummy, &selected_start,
 					       &selected_end, &selected_length) ;
 		}
-
+#endif
 	      feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
 	      feature_coord.start = selected_start ;
 	      feature_coord.end = selected_end ;
@@ -5335,6 +5354,8 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 }
 
 
+#if POINTLESS
+/* this function does nothing and is called from one place */
 
 /* If feature_item is a sub_feature, e.g. an exon, then return its position/length etc. */
 static gboolean possiblyPopulateWithChildData(ZMapWindow window,
@@ -5361,6 +5382,7 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
   }
   return populated ;
 }
+
 
 /* Return full_item data.... */
 static gboolean possiblyPopulateWithFullData(ZMapWindow window,
@@ -5417,7 +5439,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
   return populated ;
 }
 
-
+#endif
 
 
 void zmapWindowReFocusHighlights(ZMapWindow window)
