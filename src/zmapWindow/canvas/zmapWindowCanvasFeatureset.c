@@ -2656,22 +2656,32 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
   GList *l;
   ZMapWindowCanvasFeature feat;
 
-  for(l = fi->features;l;l = l->next)
+  for(l = fi->features;l;)
     {
+	GList *del;
+
       feat = (ZMapWindowCanvasFeature) l->data;
+
       if(feat->feature == feature)
 	{
-	  ZMapWindowCanvasFeature gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-	  if(gs)
-	    {
-	      zmap_window_canvas_featureset_expose_feature(fi, gs);
-	    }
+		/* NOTE the features list and display index both point to the same structs */
 
-	  zmapWindowCanvasFeatureFree(feat);
-	  fi->features = g_list_delete_link(fi->features,l);
-	  fi->n_features--;
-	  break;
-	}
+		zmap_window_canvas_featureset_expose_feature(fi, feat);
+
+		zmapWindowCanvasFeatureFree(feat);
+		del = l;
+		l = l->next;
+		fi->features = g_list_delete_link(fi->features,del);
+		fi->n_features--;
+
+		if(fi->link_sideways)	/* we'll get calls for each sub-feature */
+			break;
+		/* else have to go through the whole list; fortunately transcripts are low volume */
+	  }
+	  else
+	  {
+		  l = l->next;
+	  }
     }
 
   /* NOTE we may not have an index so this flag must be unset seperately */
