@@ -298,7 +298,7 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 
 
 
-/* get all th epand=go stuff we need for a font on a drawable */
+/* get all the pango stuff we need for a font on a drawable */
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw)
 {
 	GdkScreen *screen = gdk_drawable_get_screen (drawable);
