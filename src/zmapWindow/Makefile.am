@@ -32,10 +32,13 @@ zmapWindowFeatureShow.c \
 zmapWindowFocus.c \
 zmapWindowFrame.c \
 zmapWindowItem.c \
+zmapWindowItemDebug.c \
 zmapWindowItemFactory.c \
 zmapWindowItemFactory.h \
 zmapWindowItemHash.c \
+zmapWindowItemTextFillColumn.h \
 zmapWindowList.c \
+zmapWindowLongItems.c \
 zmapWindowMark.c \
 zmapWindowMark_P.h \
 zmapWindowMenus.c \
@@ -54,6 +57,8 @@ zmapWindowSeqDisp.c \
 zmapWindowState.c \
 zmapWindowState.h \
 zmapWindowStats.c \
+zmapWindowTextPositioner.c \
+zmapWindowTextPositioner.h \
 zmapWindowUtils.c \
 zmapWindowZoomControl.c \
 zmapWindowZoomControl_P.h \
@@ -92,6 +97,7 @@ canvas/zmapWindowCanvasSequence_I.h \
 canvas/zmapWindowCanvasLocus.c \
 canvas/zmapWindowCanvasLocus.h \
 canvas/zmapWindowCanvasLocus_I.h \
+canvas/zmapWindowCanvasItemFeatureSet.h \
 $(NULL)
 
 
@@ -136,6 +142,25 @@ items/zmapWindowLongItem.c \
 items/zmapWindowLongItem.h \
 items/zmapWindowLongItem_I.h \
 items/zmapWindowLongItems_P.h \
+items/zmapWindowSequenceFeature.h \
+items/zmapWindowAlignmentFeature.h \
+items/zmapWindowAssemblyFeature.h \
+items/zmapWindowBasicFeature.h \
+items/zmapWindowGlyphItem.h \
+items/zmapWindowGlyphItem_I.h \
+items/zmapWindowGraphItem.h \
+items/zmapWindowTextFeature.h \
+items/zmapWindowTextItem.h \
+items/zmapWindowTranscriptFeature.h \
+items/zmapWindowTranscriptFeature_I.h \
+items/zmapWindowTextItem_I.h \
+items/zmapWindowTextFeature_I.h \
+items/zmapWindowSequenceFeature_I.h \
+items/zmapWindowGraphItem_I.h \
+items/zmapWindowGlyphItem_I.h \
+items/zmapWindowBasicFeature_I.h \
+items/zmapWindowAssemblyFeature_I.h \
+items/zmapWindowAlignmentFeature_I.h \
 $(NULL)
 
 # We need the top_builddir to find the generated marshal code
