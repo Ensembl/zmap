@@ -584,6 +584,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
  *  */
 
 
+
 /*! @struct ZMapStyleColour zmapStyle_P.h
  *  @brief ZMap object colours
  *
@@ -1089,10 +1090,14 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 #define zMapStyleIsFilter(style)   (style->filter)
 
 #define zMapStyleGetShowWhenEmpty(style)   (style->show_when_empty)
+
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                             GdkColor **background, GdkColor **foreground, GdkColor **outline);
+char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
+				char *selected_fill, char *selected_draw, char *selected_border) ;
+
 //char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDescription(style) (style->description)
 
