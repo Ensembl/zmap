@@ -45,13 +45,19 @@ typedef struct
 {
   ZMapWindow window ;
 
-  ZMapFeatureBlock block ;
-
   GtkWidget *toplevel ;
   GtkWidget *dna_entry ;
   GtkWidget *strand_entry ;
   GtkWidget *frame_entry ;
 
+  GtkWidget *forward_widget ;
+  GtkWidget *reverse_widget ;
+  char *forward_colour_str ;
+  char *reverse_colour_str ;
+
+  gboolean keep_previous_hits ;
+
+  ZMapFeatureBlock block ;
   ZMapSequenceType sequence_type ;
 
   int search_start ;
@@ -70,8 +76,10 @@ typedef struct
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
-static void searchCB(GtkWidget *widget, gpointer cb_data) ;
 static void clearCB(GtkWidget *widget, gpointer cb_data) ;
+static void colourSetCB(GtkColorButton *widget, gpointer user_data) ;
+static void keepHitsCB(GtkToggleButton *toggle_button, gpointer user_data) ;
+static void searchCB(GtkWidget *widget, gpointer cb_data) ;
 static void startSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static void endSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static void errorSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
@@ -94,6 +102,8 @@ static ZMapFeatureSet my_feature_set_copy(ZMapFeatureSet feature_set);
 static void matches_to_features(gpointer list_data, gpointer user_data);
 static void remove_current_matches_from_display(DNASearchData search_data);
 
+static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle style) ;
+
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
@@ -108,8 +118,10 @@ static gboolean window_dna_debug_G = FALSE;
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type)
 {
-  GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry,
-    *search_button, *start_end, *errors, *buttonBox, *clear_button;
+  GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry, *label, *button,
+    *start_end, *errors,
+    *buttonBox, *search_button, *forward_colour_button, *reverse_colour_button, *clear_button ;
+  GdkColor colour = {0} ;
   DNASearchData search_data ;
   ZMapFeatureAny feature_any ;
   ZMapFeatureBlock block ;
@@ -155,6 +167,9 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   if (proceed)
     {
       search_data = g_new0(DNASearchDataStruct, 1) ;
+
+      search_data->forward_colour_str = g_strdup("red") ;
+      search_data->reverse_colour_str = g_strdup("green") ;
 
       search_data->window = window ;
       search_data->block  = block ;
@@ -285,7 +300,52 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 	  gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
 	}
 
-      /* Make control buttons. */
+      /* Make colour buttons. */
+      frame = gtk_frame_new("Set Hit Properties:") ;
+      gtk_container_set_border_width(GTK_CONTAINER(frame),
+				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+      gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
+
+      hbox = gtk_hbox_new(FALSE, 0) ;
+      gtk_container_add(GTK_CONTAINER(frame), hbox) ;
+      gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
+      gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+
+
+      label = gtk_label_new("Forward Strand\nColour:") ;
+      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+      search_data->forward_widget = forward_colour_button = gtk_color_button_new() ;
+      gdk_color_parse(search_data->forward_colour_str, &colour) ;
+      gtk_color_button_set_color(GTK_COLOR_BUTTON(forward_colour_button), &colour) ;
+      g_signal_connect(G_OBJECT(forward_colour_button), "color-set",
+		       G_CALLBACK(colourSetCB), search_data) ;
+      gtk_box_pack_start(GTK_BOX(hbox), forward_colour_button, FALSE, FALSE, 0) ;
+
+      label = gtk_label_new("Reverse Strand\nColour:") ;
+      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+      search_data->reverse_widget = reverse_colour_button = gtk_color_button_new() ;
+      gdk_color_parse(search_data->reverse_colour_str, &colour) ;
+      gtk_color_button_set_color(GTK_COLOR_BUTTON(reverse_colour_button), &colour) ;
+      g_signal_connect(G_OBJECT(reverse_colour_button), "color-set",
+		       G_CALLBACK(colourSetCB), search_data) ;
+      gtk_box_pack_start(GTK_BOX(hbox), reverse_colour_button, FALSE, FALSE, 0) ;
+
+      label = gtk_label_new("Keep Previous\nSearch:") ;
+      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+      button = gtk_check_button_new() ;
+      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, TRUE, 0) ;
+      g_signal_connect(G_OBJECT(button), "toggled",
+		       G_CALLBACK(keepHitsCB), search_data) ;
+
+
+
+      /* Make control buttons along bottom of dialog. */
       frame = gtk_frame_new(NULL) ;
       gtk_container_set_border_width(GTK_CONTAINER(frame),
 				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
@@ -294,15 +354,11 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
       buttonBox = gtk_hbutton_box_new();
       gtk_container_add(GTK_CONTAINER(frame), buttonBox);
-      //gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
-      gtk_box_set_spacing (GTK_BOX(buttonBox),
-			   ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-      gtk_container_set_border_width (GTK_CONTAINER (buttonBox),
-				      ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+      gtk_box_set_spacing(GTK_BOX(buttonBox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
+      gtk_container_set_border_width(GTK_CONTAINER (buttonBox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
       clear_button = gtk_button_new_from_stock(GTK_STOCK_CLEAR);
       gtk_box_pack_start(GTK_BOX(buttonBox), clear_button, FALSE, FALSE, 0);
-
       g_signal_connect(G_OBJECT(clear_button), "clicked",
 		       G_CALLBACK(clearCB), search_data);
 
@@ -310,8 +366,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       gtk_box_pack_end(GTK_BOX(buttonBox), search_button, FALSE, FALSE, 0) ;
       gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
 			 GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
-      /* set search button as default. */
-      GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ;
+      GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ; /* set search button as default. */
       gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
 
 
@@ -614,7 +669,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 					  search_data->search_start, search_data->search_end,
 					  search_data->max_errors, search_data->max_Ns) ;
 
-
 	  /* Need to convert coords back to block coords here.... */
 	  g_list_foreach(match_list, remapCoords, search_data) ;
 
@@ -624,10 +678,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 				  match_details,
 				  search_data->block) ;
 
-	  remove_current_matches_from_display(search_data);
+	  if (!(search_data->keep_previous_hits))
+	    remove_current_matches_from_display(search_data);
 
 	  if (zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
+	      setColoursInStyle(search_data, new_style) ;
+
 	      zmapWindowDrawSeparatorFeatures(search_data->window,
 					      search_data->block,
 					      new_feature_set,
@@ -669,10 +726,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 				  match_details,
 				  search_data->block) ;
 
-	  remove_current_matches_from_display(search_data);
+	  if (!(search_data->keep_previous_hits))
+	    remove_current_matches_from_display(search_data);
 
 	  if (zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
+	      setColoursInStyle(search_data, new_style) ;
+
 	      zmapWindowDrawSeparatorFeatures(search_data->window,
 					      search_data->block,
 					      new_feature_set,
@@ -697,6 +757,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* "clear" button callback, resets the DNA entry text to an empty string. */
 static void clearCB(GtkWidget *widget, gpointer cb_data)
 {
   DNASearchData search_data = (DNASearchData)cb_data;
@@ -709,6 +770,46 @@ static void clearCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+
+
+/* Slightly obscure GTK interface...this function is called when the user selects a colour 
+ * from the colour chooser dialog displayed when they click on the colour button,
+ * i.e. it is _not_ a callback for the button itself. */
+static void colourSetCB(GtkColorButton *widget, gpointer user_data) 
+{
+  DNASearchData search_data = (DNASearchData)user_data ;
+  GdkColor colour = {0} ;
+  char *colour_string = NULL ;
+  char **target_string ;
+
+  if (GTK_WIDGET(widget) == search_data->forward_widget)
+    target_string = &(search_data->forward_colour_str) ;
+  else
+    target_string = &(search_data->reverse_colour_str) ;
+
+  if (*target_string)
+    g_free(*target_string) ;
+
+  gtk_color_button_get_color(widget, &colour) ;
+
+  *target_string = gdk_color_to_string(&colour) ;
+ 
+  return ;
+}
+
+
+
+static void keepHitsCB(GtkToggleButton *toggle_button, gpointer user_data)
+{
+  DNASearchData search_data = (DNASearchData)user_data ;
+
+  search_data->keep_previous_hits = gtk_toggle_button_get_active(toggle_button) ;
+
+  return ;
+}
+
+
+
 
 
 /* This is not the way to do help, we should really used html and have a set of help files. */
@@ -995,3 +1096,24 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 
   return ;
 }
+
+
+static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle style)
+{
+  char *forward_colour_spec, *reverse_colour_spec ;
+
+  forward_colour_spec = zMapStyleMakeColourString(search_data->forward_colour_str, "black", NULL,
+						  search_data->forward_colour_str, "black", NULL) ;
+  
+  reverse_colour_spec = zMapStyleMakeColourString(search_data->reverse_colour_str, "black", NULL,
+						  search_data->reverse_colour_str, "black", NULL) ;
+  
+  g_object_set(G_OBJECT(style),
+		 ZMAPSTYLE_PROPERTY_COLOURS, forward_colour_spec,
+		 ZMAPSTYLE_PROPERTY_REV_COLOURS, reverse_colour_spec,
+		 NULL);
+
+  return ;
+}
+
+
