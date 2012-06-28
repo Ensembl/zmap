@@ -416,6 +416,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
 
 
+
 /* read in rather a lot of stanzas and add the data to a few hash tables and lists
  * This sets up:
  * view->context->map formerly as:
@@ -955,6 +956,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
   return result ;
 }
+
 
 
 
@@ -3363,6 +3365,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    g_hash_table_foreach(feature_sets->source_2_sourcedata_inout,
 				 mergeHashTableCB,zmap_view->context_map.source_2_sourcedata);
 	  }
+
 
 	//print_source_2_sourcedata("got featuresets",zmap_view->context_map.source_2_sourcedata);
 	//print_fset2col("got featuresets",zmap_view->context_map.featureset_2_column);
