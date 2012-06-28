@@ -280,6 +280,37 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 }
 
 
+/* get sequence extent of compound alignment (for bumping) */
+/* NB: canvas coords could overlap due to sub-pixel base pairs
+ * which could give incorrect de-overlapping
+ * that would be revealed on zoom
+ */
+static void zMapWindowCanvasTranscriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
+{
+	ZMapWindowCanvasFeature first = feature;
+
+	*width = feature->width;
+
+	while(first->left)
+	{
+		first = first->left;
+		if(first->width > *width)
+			*width = first->width;
+	}
+
+	while(feature->right)
+	{
+		feature = feature->right;
+		if(feature->width > *width)
+			*width = feature->width;
+	}
+
+	span->x1 = first->y1;
+	span->x2 = feature->y2;
+}
+
+
+
 void zMapWindowCanvasTranscriptInit(void)
 {
 	gpointer funcs[FUNC_N_FUNC] = { NULL };
@@ -287,7 +318,7 @@ void zMapWindowCanvasTranscriptInit(void)
 	funcs[FUNC_PAINT] = zMapWindowCanvasTranscriptPaintFeature;
 	funcs[FUNC_ADD]   = zMapWindowCanvasTranscriptAddFeature;
 	funcs[FUNC_SUBPART] = zmapWindowCanvasTranscriptGetSubPartSpan;
-
+	funcs[FUNC_EXTENT] = zMapWindowCanvasTranscriptGetFeatureExtent;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct), 0);
 }

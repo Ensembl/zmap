@@ -840,24 +840,16 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   featureset_data.feature_stack.filter = TRUE;
 
-//  if(zMapStyleDensity(feature_set->style))
-/* now works with any CanvasFeatureset */
-    {
-      ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-	if(zMapStyleDensityStagger(feature_set->style))
-	{
-      	featureset_data.feature_stack.set_index =
-			get_featureset_column_index(window->context_map,feature_set->unique_id);
-	}
-      if(f_src)
-		featureset_data.feature_stack.maps_to = f_src->maps_to;
+  ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-      //printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
-
-      //  	if(!featureset_data.feature_stack.maps_to)
-      //  		featureset_data.feature_stack.maps_to = feature_set->unique_id;	/* maps to self */
-    }
+  if(zMapStyleDensityStagger(feature_set->style))
+  {
+     	featureset_data.feature_stack.set_index =
+		get_featureset_column_index(window->context_map,feature_set->unique_id);
+  }
+  if(f_src)
+  	featureset_data.feature_stack.maps_to = f_src->maps_to;
 
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
