@@ -84,17 +84,7 @@ _(REMOTE_STATE_SERVER_WAIT_GET,     ,\
 _(REMOTE_STATE_SERVER_WAIT_REPLY_ACK,     ,\
   "server-waiting-for-reply-ack"    , "Server - sent reply, waiting for client to acknowledge they have it."    , "") \
 
-
 ZMAP_DEFINE_ENUM(RemoteControlState, REMOTE_STATE_LIST) ;
-
-
-
-/* 
- *    Data type descriptors for the GtkSelectionData used for passing requests/replies.
- */
-#define ZACP_DATA_TYPE   "ZACP_COMMAND_STR"
-#define ZACP_DATA_FORMAT 8			    /* Bits per unit. */
-
 
 
 
