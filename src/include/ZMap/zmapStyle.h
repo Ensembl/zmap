@@ -319,6 +319,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER   "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
 
 
 /* alignment properties */
@@ -393,7 +394,7 @@ _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling disp
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
-#define N_STYLE_MODE	(ZMAPSTYLE_MODE_META + 1)
+#define N_STYLE_MODE	(ZMAPSTYLE_MODE_META)
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
@@ -478,7 +479,15 @@ _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleSubFeature, ZMAP_STYLE_SUB_FEATURE_LIST);
 
-#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"       // to match what was set up in acedb
+
+/* Splice markers replicate the acedb fmap display of splice sites found by the
+ * Phil Green genefinder code. */
+#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"
+
+#define ZMAPSTYLE_SPLICE_GLYPH_LEN 10
+#define ZMAPSTYLE_SPLICE_GLYPH_3   "<0,0 ; 8,0 ; 8,-8>"
+#define ZMAPSTYLE_SPLICE_GLYPH_5   "<0,0 ; 8,0 ; 8,8>"
+
 
 /*
  * specifies strand specific processing
@@ -573,6 +582,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
 /*! @addtogroup zmapstyles
  * @{
  *  */
+
 
 
 /*! @struct ZMapStyleColour zmapStyle_P.h
@@ -1010,6 +1020,8 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
 ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
+gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
+
 
 //unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetWithinAlignError(style)   (style->mode_data.alignment.between_align_error)
@@ -1078,10 +1090,14 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 #define zMapStyleIsFilter(style)   (style->filter)
 
 #define zMapStyleGetShowWhenEmpty(style)   (style->show_when_empty)
+
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                             GdkColor **background, GdkColor **foreground, GdkColor **outline);
+char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
+				char *selected_fill, char *selected_draw, char *selected_border) ;
+
 //char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDescription(style) (style->description)
 

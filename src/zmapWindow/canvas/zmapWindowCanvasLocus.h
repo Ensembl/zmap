@@ -1,4 +1,5 @@
-/*  File: zmapWindowCanvasFeaturesetItem_I.h
+
+/*  File: zmapWindowCanvasLocus.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -26,59 +27,12 @@
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
+ * implements callback functions for FeaturesetItem locus features
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_CANVAS_FEATURESET_ITEM_I_H
-#define ZMAP_WINDOW_CANVAS_FEATURESET_ITEM_I_H
-
-#include <glib.h>
-#include <glib-object.h>
-#include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowCanvasItem_I.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
-#include <ZMap/zmapStyle.h>
+#include <ZMap/zmap.h>
 
 
 
-
-
-typedef struct _zmapWindowCanvasFeaturesetItemClassStruct
-{
-  zmapWindowCanvasItemClass __parent__;
-
-	/* to save parent's original function */
-  void (* canvas_item_set_colour)(ZMapWindowCanvasItem   window_canvas_item,
-		      FooCanvasItem         *interval,
-		      ZMapFeature		     feature,
-		      ZMapFeatureSubPartSpan sub_feature,
-		      ZMapStyleColourType    colour_type,
-		      int 			     colour_flags,
-		      GdkColor              *default_fill_gdk,
-                  GdkColor              *border_gdk) ;
-
-
-  GHashTable *featureset_items;
-
-} zmapWindowCanvasFeaturesetItemClassStruct;
-
-
-/*
- * this is a container for Featureset data masquerading as a ZMapWindowCanvasItem
- * and the prior canvas handling of item is subverted to move most of the compute into ZMap from the foo canvas
- */
-
-typedef struct _zmapWindowCanvasFeaturesetItemStruct
-{
-  zmapWindowCanvasItem __parent__;
-
-  GQuark id;
-
-
-} zmapWindowCanvasFeaturesetItemStruct;
-
-
-
-#endif /* ZMAP_WINDOW_Featureset_ITEM_I_H */
+void zMapWindowCanvasLocusInit(void);

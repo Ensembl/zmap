@@ -47,7 +47,6 @@
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapSkipList.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasItemFeatureSet_I.h>
 
 typedef struct  _BumpColRangeStruct *BumpColRange;
 
@@ -229,6 +228,27 @@ BumpColRange bump_col_range_append(BumpColRange list, BumpColRange last, BumpCol
 
 static BCR bump_overlap(ZMapWindowCanvasFeature feature,BumpFeatureset bump_data, BCR pos_list);
 
+
+/* are any exons in the mark ? */
+gboolean zmapWindowCanvasFeatureTestMark(ZMapWindowCanvasFeature feature, double start, double end)
+{
+	ZMapWindowCanvasFeature f;
+
+	for(f = feature; f->left; f = f->left)
+		continue;
+
+	for(; f; f = f->right)
+	{
+		if(f->feature->x2 < start)	/* zMapWindowCanvasFeaturesetGetFeatureExtent mangles f->y2 */
+			continue;
+		if(f->y1 > end)
+			continue;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
 /* FeatureCanvasItems have a normal and bumped x coordinate
  * changing bump-mode causes a recalculate
  * simple and complex features have an extent which is used to decide on positioning
@@ -241,8 +261,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	 * COMPRESS_VISIBLE  is in the code as 'UnCompress'
 	 *
 	 * so FTM just implement MARK or visible sequence (ie in scroll region)
-	 * features outsuide the range are flagged as non-vis
-	 * it's a linear scan so we could just flags all regardless of scroll region
+	 * features outside the range are flagged as non-vis
+	 * it's a linear scan so we could just flag all regardless of scroll region
 	 * but it might be quicker to process the scroll region only
 	 *
 	 * erm... compress_mode is implied by start and end coords
@@ -258,11 +278,10 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	double time;
 #endif
 
-      /* transitional code: the column has 0 or more featureset items
-       * which are ZMapWindowCanvasItems which are FooCanvasGroups
-       * so we need the get the real ZMapWindowFeaturesetItem in the group's item_list
-       */
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
+		return FALSE;
 
+//printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 
 #if MODULE_STATS
 	time = zMapElapsedSeconds;
@@ -332,7 +351,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
 	/* in case we get a bump before a paint eg in initial display */
 	if(!featureset->display_index || (featureset->link_sideways && !featureset->linked_sideways))
-	  zMapWindowCanvasFeaturesetIndex(featureset);
+		zMapWindowCanvasFeaturesetIndex(featureset);
 
 
 	/* process all features */
@@ -342,9 +361,17 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
 		double extra;
 
+//printf("bump feature %s %lx\n", g_quark_to_string(feature->feature->original_id),feature->flags);
 		if(bump_mode == ZMAPBUMP_UNBUMP)
 		{
 			/* just redisplays using normal coords */
+			/* in case of mangled alingments must reset the first exom
+			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
+			 * which extends the feature to catch colinear lines off screen
+			 * NOTE we'd do better with some flag set by the alignment code to trigger this.
+			 */
+			if(feature->type == FEATURE_ALIGN)
+				feature->y2 = feature->feature->x2;
 
 			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
 				feature->flags |= FEATURE_HIDDEN;
@@ -360,10 +387,21 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		if(!zMapWindowCanvasFeaturesetGetFeatureExtent(feature, bump_data->complex, &bump_data->span, &bump_data->width))
 			continue;
 
-		if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+		if(bump_data->mark_set)
 		{
-			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-			continue;
+			if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+			{
+				/* all the feature's exons are outside the mark on the same side */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
+
+			if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
+			{
+				/* none of the feature's exons cross the mark */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
 		}
 
 		if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))
@@ -457,7 +495,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		{
 			g_hash_table_insert(sub_col_offset_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
 			featureset->bump_width += width + bump_data->spacing;
-//zMapLogWarning("bump: offset of %d = %f (%f)",featureset->bump_width, width, bump_data->spacing);
+//printf("bump: offset of %f = %f (%f)\n",featureset->bump_width, width, bump_data->spacing);
 
 		}
 
@@ -474,7 +512,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 				 * features are displayed relative to the centre of the column when unbumped
 				 * so we have to offset the feature as if that is still the case
 				 */
-//zMapLogWarning("bump: feature of %d = %f",feature->bump_col,feature->bump_offset);
+//printf("bump: feature off %d = %f\n", feature->bump_col,feature->bump_offset);
 
 				feature->bump_offset -= (featureset->width - width) / 2;
 
@@ -516,7 +554,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
  * so we keep a pos_list of features per sub-column
  * which get trimmed as the start coordinate increases
  * that way we know that we are unlikely to reach O(n**2)
- * :-( tests reval O(n**2) / 3
+ * :-( tests reveal O(n**2) / 3
  * obvious worst case is one feature per column
  * it ought to be possible to do this more efficiently
  */
@@ -588,6 +626,8 @@ BCR bump_overlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR 
 
 	/* store the column for later calculation of the offset */
   feature->bump_col = (double) new_range->column;
+
+//printf("bumped feature %s to column %d\n",g_quark_to_string(feature->feature->unique_id),feature->bump_col);
 
 	/* get the max width of a feature in each column */
 	/* totally yuk casting here but bear with me */

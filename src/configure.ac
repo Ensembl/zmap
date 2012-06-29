@@ -8,7 +8,7 @@ m4_include([zmap_version.m4])
 
 
 AC_PREREQ(2.61)
-AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://http://www.sanger.ac.uk/resources/software/zmap/])
+AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sanger.ac.uk/resources/software/zmap/])
 
 AC_CONFIG_AUX_DIR([config])
 
@@ -374,6 +374,7 @@ AC_SUBST(ZMAPSTYLESFILE)
 
 # THE zmap* source directories
 ZMAP_SRC_DIRS="zmapApp \
+zmapAppServices \
 zmapConfig \
 zmapControl \
 zmapControl/remote \
@@ -409,6 +410,7 @@ AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 AC_CONFIG_FILES([Makefile
 zmapApp/Makefile
+zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
 zmapControl/remote/Makefile

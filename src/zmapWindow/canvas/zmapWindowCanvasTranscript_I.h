@@ -1,6 +1,7 @@
-/*  File: zmapWindowFeatures.h
- *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+
+/*  File: zmapWindowCanvasTranscript_I.h
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,26 +25,35 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Include this header to get access to all public
- *              zmapWindowNNNN.h feature headers. This header includes
- *              the other headers in the correct order, if you don't
- *              use this header then you are on your own.
+ * Description:
  *
+ * implements callback functions for FeaturesetItem transcript features
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_WINDOW_FEATURES_H
-#define ZMAP_WINDOW_FEATURES_H
 
-#include <zmapWindowCanvasItem.h>
-#include <zmapWindowAlignmentFeature.h>
-#include <zmapWindowAssemblyFeature.h>
-#include <zmapWindowBasicFeature.h>
-#include <zmapWindowTranscriptFeature.h>
-#include <zmapWindowTextFeature.h>
-#include <zmapWindowSequenceFeature.h>
-#include <zmapWindowGraphItem.h>
-#include <zmapWindowGlyphItem.h>
-#include <zmapWindowLongItem.h>
-#include <zmapWindowTextItem.h>
+#include <ZMap/zmap.h>
 
-#endif /* ZMAP_WINDOW_FEATURES_H */
+
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasTranscript.h>
+
+typedef enum
+{
+	TRANSCRIPT_INVALID,
+	TRANSCRIPT_EXON,
+	TRANSCRIPT_INTRON
+
+} ZMapWindowCanvasTranscriptSubType;
+
+
+typedef struct _zmapWindowCanvasTranscriptStruct
+{
+	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+
+	int index;		/* of intron or exon */
+	ZMapWindowCanvasTranscriptSubType sub_type;
+	/* can tell if exon has CDS/  UTR from feature->feature struct */
+
+} zmapWindowCanvasTranscriptStruct, *ZMapWindowCanvasTranscript;
+
+

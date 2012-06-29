@@ -39,13 +39,12 @@
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowMark_P.h>
 #include <zmapWindowOverlays.h>
-#include <zmapWindowTextPositioner.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 
 
 #include <zmapWindowCanvasFeatureset.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
+
 
 /* set a KNOWN initial size for the foo_canvas!
  * ... the same size as foo_canvas sets ...
@@ -250,6 +249,7 @@ typedef struct _zmapWindowFeatureStack
       int set_index;	/* used by density plots for stagger */
       ZMapStrand strand;
       ZMapFrame frame;
+	gboolean filter;	/* don't add to camvas if hidden */
 } ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 
@@ -292,9 +292,11 @@ typedef struct _zmapWindowFeatureStack
 
 
 
+/* mh17: erm.... why aren't these #defines ?? */
 enum
   {
-    ZMAP_WINDOW_TEXT_BORDER = 2,			    /* border above/below dna text. */
+//     ZMAP_WINDOW_TEXT_BORDER = 2, 			/* border above/below dna text.  */
+// see zmapWindow.h
     ZMAP_WINDOW_STEP_INCREMENT = 10,                        /* scrollbar stepping increment */
     ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
 //    ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
@@ -650,11 +652,7 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
-  /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
-   * limit, so we have to keep a list of the canvas items that can generate graphics greater
-   * than this limit as we zoom in and crop them ourselves. */
-  ZMapWindowLongItems long_items ;
-  ZMapWindowFToIFactory item_factory;
+ ZMapWindowFToIFactory item_factory;
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
    * the zmap window is destroyed. */
@@ -838,19 +836,6 @@ void zmapWindowResetWidth(ZMapWindow window) ;
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
-ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom) ;
-void zmapWindowLongItemPushInterruption(ZMapWindowLongItems long_item);
-void zmapWindowLongItemPopInterruption(ZMapWindowLongItems long_item);
-gulong zmapWindowLongItemsInitialiseExpose(ZMapWindowLongItems long_item, FooCanvas *canvas);
-void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom) ;
-void zmapWindowLongItemCheck(ZMapWindowLongItems long_item, FooCanvasItem *item, double start, double end) ;
-gboolean zmapWindowLongItemCoords(ZMapWindowLongItems long_items, FooCanvasItem *item,
-				  double *start_out, double *end_out) ;
-void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, double x1, double y1, double x2, double y2) ;
-gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *item) ;
-void zmapWindowLongItemPrint(ZMapWindowLongItems long_items) ;
-void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
-void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window,
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context, GList *masked) ;
@@ -973,16 +958,16 @@ void zmapWindowHighlightSequenceItems(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowHighlightSequenceRegion(ZMapWindow window, ZMapFeatureBlock block,
 				       ZMapSequenceType seq_type, ZMapFrame frame, int start, int end,
 				       gboolean centre_on_region) ;
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 				      FooCanvasItem *any_item, ZMapFrame required_frame,
 				      ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightDNA(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 					       FooCanvasItem *item,
 					       ZMapFrame required_frame,
 					       ZMapSequenceType coords_type, int region_start, int region_end) ;
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight,
+void zmapWindowItemHighlightShowTranslationRegion(ZMapWindow window, gboolean item_highlight, gboolean sub_feature,
 						  FooCanvasItem *item,
 						  ZMapFrame required_frame,
 						  ZMapSequenceType coords_type,
@@ -1031,9 +1016,6 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 					double *rootx1_inout, double *rooty1_inout,
 					double *rootx2_inout, double *rooty2_inout) ;
 void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
-void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
-					double *x1_out, double *y1_out,
-					double *x2_out, double *y2_out) ;
 
 
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
@@ -1065,7 +1047,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 void zmapWindowDrawManageWindowWidth(ZMapWindow window);
@@ -1073,8 +1055,16 @@ void zmapWindowDrawManageWindowWidth(ZMapWindow window);
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
+
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
+void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
+gboolean zmapWindowContainerBlockIsCompressedColumn(ZMapWindowContainerBlock block_data) ;
+GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data) ;
+
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode) ;
+void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
+gboolean zmapWindowContainerBlockIsBumpedColumn(ZMapWindowContainerBlock block_data) ;
+GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data) ;
 
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
 void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item);
@@ -1128,13 +1118,26 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item) ;
 
-ZMapGUIMenuItem zmapWindowMakeMenuSeqData(int *start_index_inout,
-                                     ZMapGUIMenuItemCallbackFunc callback_func,
-                                     gpointer callback_data);
+ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
+					    ZMapGUIMenuItemCallbackFunc callback_func,
+					    gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleBumpMode curr_bump_mode) ;
+
+ZMapGUIMenuItem zmapWindowMakeMenuShowTop(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuShowFeature(int *start_index_inout,
+					      ZMapGUIMenuItemCallbackFunc callback_func,
+					      gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
@@ -1153,12 +1156,19 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
-					  ZMapGUIMenuItemCallbackFunc callback_func,
-					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
+					    ZMapGUIMenuItemCallbackFunc callback_func,
+					    gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
+
+ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
 						  gpointer callback_data) ;
@@ -1177,9 +1187,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
-ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
-					      ZMapGUIMenuItemCallbackFunc callback_func,
-					      gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
+
+void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
+			     ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;
+void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
+			       ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;
 
 ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteData(ZMapWindow window,
 							ZMapFeatureAny feature_any,
@@ -1315,7 +1333,7 @@ int zmapWindowItemListStartCoord(GList *item_list);
 
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
 
@@ -1408,8 +1426,8 @@ void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustmen
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, gboolean revcomped,
-                             double start, double end);
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, gboolean revcomped,
+                             double start, double end, double canvas_offset);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
@@ -1428,9 +1446,9 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
-void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
-
 void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
+
+void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;
 
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 

@@ -713,7 +713,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
 {
   ZMapWindowFeatureShow show;
-  GList *evidence;
+  GList *evidence = NULL;
   ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
 
   show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
@@ -728,6 +728,7 @@ GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature)
 
   show->get_evidence = WANT_EVIDENCE;
   show->evidence_column = -1;     /* invalid */
+  show->evidence = NULL;
 
   externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
 						       (ZMapFeatureAny)feature,

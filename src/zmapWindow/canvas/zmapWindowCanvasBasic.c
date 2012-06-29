@@ -57,7 +57,6 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	 * but they are cached by the calling function
 	 * and also the window focus code
 	 */
-
 	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
@@ -81,7 +80,7 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	x1 += featureset->dx;
 	x2 = x1 + feature->width;
 
-	zMapCanvasFeaturesetDrawBoxMacro(featureset,feature,x1,x2, drawable, fill_set,outline_set,fill,outline);
+	zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->y1, feature->y2, drawable, fill_set,outline_set,fill,outline);
 }
 
 
@@ -92,6 +91,6 @@ void zMapWindowCanvasBasicInit(void)
 
 	funcs[FUNC_PAINT] = zMapWindowCanvasBasicPaintFeature;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0);
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0, 0);
 }
 

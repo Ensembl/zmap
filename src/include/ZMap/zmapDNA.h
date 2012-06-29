@@ -108,10 +108,8 @@ On disk, we store the dna as 4 bases per byte, if there is no ambiguity, or
 #define N_ (A_ | T_ | G_ | C_)
 #define X_ N_     // "NCBI sometimes uses X in place of N"  (X should really be for peptides)
 
-char dnaEncodeChar[0x80];
-char dnaDecodeChar[1<<6];
-void dnaEncodeString(char *cp);
 
+void zMapDNAEncodeString(char *cp) ;
 gboolean zMapDNACanonical(char *dna) ;
 gboolean zMapDNAValidate(char *dna) ;
 gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,

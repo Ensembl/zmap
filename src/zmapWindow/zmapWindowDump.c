@@ -34,13 +34,13 @@
 #include <ZMap/zmap.h>
 
 
-/* 
+/*
  * THIS CODE IS ESSENTIALLY COMMENTED OUT BECAUSE THE g2 LIBRARY CALLS
  * ARE BEING REPLACED WITH THE GtkPrint FUNCTIONS.
- * 
+ *
  * OPTIONS THAT CALL THIS CODE WILL BE NO-OPS.....
- * 
- * 
+ *
+ *
  */
 
 
@@ -73,15 +73,9 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
-#include <zmapWindowGlyphItem_I.h>
-// MH17: we need too many glyph data items in dumpGlyph()
-// it would delay making this work for a while
-// not sure how to implement get_all_points() which is really really internal to glyph
-// a FooCanvasGlyph might be a good idea
-
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainers.h>
-#include <zmapWindowFeatures.h>
+#include <zmapWindowCanvasItem.h>
 
 
 /* dump data/options. */
@@ -927,168 +921,6 @@ static void itemCB(gpointer data, gpointer user_data)
 }
 
 
-// as for dumpFeatureCB send a glyph to G2, based on draw function in zmapWindowGlyphItem.c
-
-// better to hava a function in GlyphItem.c to return all the points, the colours etc
-// even better to get FooCanvas to do it
-// but for now it's in here and we need to include the glyphitem_I.h
-// however, foo tiems get accessed directly and by analogy so should glyphs
-// this func is a hack of zmap_window_glyph_item_draw()
-static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
-{
-  double points[GLYPH_SHAPE_MAX_POINT], *point_x, *point_y ;
-  int bytes_to_copy ;
-  int i;
-  ZMapWindowGlyphItem glyph = ZMAP_WINDOW_GLYPH_ITEM(foo);
-  int fill_colour = 0 ;                         /* default to white. */
-  int outline_colour = 1 ;                      /* default to black. */
-  guint composite ;
-  double x,y;
-  double canvas_to_g2_x;
-  double canvas_to_g2_y;
-  int start,end;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if(!glyph->num_points)
-    return;
-
-
-  // get glyph coords as points array in g2 coords
-  {
-      bytes_to_copy = glyph->num_points * 2 * sizeof(double) ;
-      memcpy(points, glyph->coords, bytes_to_copy) ;
-
-      x = glyph->wx;          // the centre of the glyph
-      y = glyph->wy;          // the offset from the parent container group ->ypos
-      foo_canvas_item_i2w(foo,&x,&y);     // the real world coordinates
-
-      canvas_to_g2_x = 1.0 / cb_data->window->canvas->pixels_per_unit_x;
-      canvas_to_g2_y = 1.0 / cb_data->window->canvas->pixels_per_unit_y;
-
-      for (i = 0, point_x = points, point_y = points + 1 ;
-           i < glyph->num_points ;
-           i++, point_x += 2, point_y += 2)
-        {
-            // get relative coords from glyph centre
-          *point_x -= glyph->cx;
-          *point_y -= glyph->cy;
-
-            // scale to g2 for constant size (6.0 pixels as in GlyphItem.c)
-          *point_x *= canvas_to_g2_x;
-          *point_y *= canvas_to_g2_y;
-
-            // add in world coords of glyph pos
-          *point_y += y;
-          *point_x += x;
-
-            // remove x-offset
-          *point_x -= cb_data->x1;
-            // orient for paper not screen, this removes any y-offset by fluke
-          COORDINVERT(*point_y, cb_data->y2) ;
-        }
-  }
-
-      // get line/outline colour
-  if(glyph->line_set)
-    {
-      composite = glyph->line_rgba ;
-      outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
-    }
-  if (glyph->area_set)    // get fill colour and paint it
-    {
-      int fill_set;
-
-      if(!(fill_set = glyph->area_set))
-            foo_canvas_item_set(foo,
-            "fill_color_gdk", cb_data->current_background_colour,
-            NULL);
-
-      composite = glyph->area_rgba ;
-      fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
-
-      if(!fill_set)
-            foo_canvas_item_set(foo,
-                  "fill_color_gdk", NULL,
-                  NULL);
-    }
-
-  switch(glyph->shape.type)
-    {
-    case GLYPH_DRAW_LINES:
-      g2_poly_line(cb_data->g2_id, glyph->num_points, points) ;
-      break;
-
-    case GLYPH_DRAW_BROKEN:
-      /*
-       * in the shape structure the array of coords has invalid values at the break
-       * and we draw lines between the points in between
-       * NB: GDK uses points we have coordinate pairs
-       */
-      for(start = 0;start < glyph->shape.n_coords;start = end+1)
-        {
-          for(end = start;end < glyph->shape.n_coords && glyph->shape.coords[end+end] != GLYPH_COORD_INVALID; end++)
-            continue;
-
-          g2_poly_line(cb_data->g2_id, end - start, points + start) ;
-
-        }
-      break;
-
-    case GLYPH_DRAW_POLYGON:
-      if(glyph->area_set)
-      {
-            g2_pen(cb_data->g2_id, fill_colour) ;
-            g2_filled_polygon(cb_data->g2_id, glyph->num_points, points) ;
-      }
-
-      if (glyph->line_set)    // paint the outline
-      {
-            g2_pen(cb_data->g2_id, outline_colour) ;
-            g2_polygon(cb_data->g2_id, glyph->num_points, points) ;
-      }
-
-      break;
-
-    case GLYPH_DRAW_ARC:
-      {
-        double x1, y1, x2, y2;
-        int a1,a2;
-        double xc,yc,xr,yr;   // centre and radius for g2
-
-        x1 = points[0];
-        y1 = points[1];
-        x2 = points[2];
-        y2 = points[3];
-        a1 = (int) glyph->shape.coords[4] * 64;
-        a2 = (int) glyph->shape.coords[5] * 64;
-
-        xr = (x2 - x1) / 2;
-        yr = (y2 - y1) / 2;
-        xc = x1 + xr;
-        yc = y1 + yr;
-
-        if(glyph->area_set)
-          {
-            g2_pen(cb_data->g2_id, fill_colour) ;
-            g2_filled_arc(cb_data->g2_id,xc,yc,xr,yr,a1,a2);
-          }
-        if(glyph->line_set)
-          {
-            g2_pen(cb_data->g2_id, outline_colour) ;
-            g2_filled_arc(cb_data->g2_id,xc,yc,xr,yr,a1,a2);
-          }
-      }
-      break;
-
-    default:
-      g_warning("Unknown Glyph Style");
-      break;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
 
 
 
@@ -1101,16 +933,6 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
   DumpOptions cb_data = (DumpOptions)user_data ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if(zmapWindowIsLongItem(item))
-    {
-      // have to paint these anyway if clipped
-      // some are not clipped yet are still long (always)
-      // those not in the visible region at all will not be processed
-      item = zmapWindowGetLongItem(item);
-      if(!item)
-        return;
-    }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("Paint %s @ %f,%f %f,%f\n", G_OBJECT_TYPE_NAME(item),item->x1,item->y1,item->x2,item->y2);
@@ -1246,15 +1068,6 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
         g2_set_font_size(cb_data->g2_id,20.0);
 	  g2_string(cb_data->g2_id, x, y, text_item->text) ;
 	}
-      else if (zmapWindowIsGlyphItem(item))
-      {
-            // mh17: glyphs are not FOO items, they get added as ZMapWindowGlyphItem
-            // there are FooCanvasLineGlyph but these are not used.
-            // we need to implement a FooCanvasGlyph as well
-            // cleaner to say FOO_IS_GLYPH_ITEM()
-#warning this function should be obsolete
-            dumpGlyph(item,cb_data);
-      }
       else
 	{
         zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));

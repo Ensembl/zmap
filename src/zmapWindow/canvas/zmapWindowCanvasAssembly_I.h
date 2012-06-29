@@ -1,5 +1,6 @@
-/*  File: zmapWindowTranscriptFeature_I.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
+
+/*  File: zmapWindowCanvasAssembly_I.h
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -26,33 +27,17 @@
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * implements callback functions for FeaturesetItem assembly features
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_WINDOW_TRANSCRIPT_FEATURE_I_H
-#define ZMAP_WINDOW_TRANSCRIPT_FEATURE_I_H
 
-#include <zmapWindowCanvasItem_I.h>
-#include <zmapWindowTranscriptFeature.h>
+#include <ZMap/zmap.h>
 
 
-typedef struct _zmapWindowTranscriptFeatureClassStruct
-{
-  zmapWindowCanvasItemClass __parent__;
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasAssembly.h>
 
-} zmapWindowTranscriptFeatureClassStruct;
+/* NOTE
+ * The  assembly feature struct is just the zmapWindowCanvasFeatureStruct as defined in zmapWindowCanvasFeatureset_I.h
+ */
 
-
-
-
-typedef struct _zmapWindowTranscriptFeatureStruct
-{
-  zmapWindowCanvasItem __parent__ ;
-
-// MH17 NOT USED
-// GList *overlay_reparented ;
-
-} zmapWindowTranscriptFeatureStruct ;
-
-
-#endif /* ZMAP_WINDOW_TRANSCRIPT_FEATURE_I_H */

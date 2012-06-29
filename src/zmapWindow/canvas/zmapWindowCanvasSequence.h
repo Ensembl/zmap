@@ -1,6 +1,7 @@
-/*  File: zmapWindowLongItem_I.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+
+/*  File: zmapWindowCanvasTranscript.c
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,50 +27,11 @@
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * implements callback functions for FeaturesetItem transcript features
  *-------------------------------------------------------------------
  */
 
-#ifndef __ZMAP_WINDOW_LONG_ITEM_I_H__
-#define __ZMAP_WINDOW_LONG_ITEM_I_H__
-
-#include <glib-object.h>
-#include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowLongItem.h>
+#include <ZMap/zmap.h>
 
 
-
-typedef struct _zmapWindowLongItemClassStruct
-{
-  FooCanvasItemClass __parent__;
-
-} zmapWindowLongItemClassStruct;
-
-typedef struct _zmapWindowLongItemStruct
-{
-  FooCanvasItem __parent__;
-
-  FooCanvasItem      *long_item;
-  FooCanvasItemClass *long_item_class; /* save get_class calls */
-  GObjectClass       *object_class; /* save get_parent_class calls */
-
-  struct
-  {
-    union
-    {
-      FooCanvasPoints *points;
-
-      double box_coords[4];
-    } shape;
-
-    gboolean has_points;
-
-    double extent_box[4];
-
-  } shape;
-
-
-} zmapWindowLongItemStruct;
-
-
-#endif /* __ZMAP_WINDOW_LONG_ITEM_I_H__ */
+void zMapWindowCanvasSequenceInit(void);

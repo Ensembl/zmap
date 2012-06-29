@@ -22,7 +22,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: General drawing functions for zmap window, e.g.
  *              repositioning columns after one has been bumped
@@ -133,7 +133,7 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
 				   ZMapContainerLevelType level, gpointer user_data);
 
 
-static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
+//static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -275,6 +275,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
 
 
+#if MH17_NOT_USED
 /* Sorts the children of a group by horizontal position, sorts all children that
  * are groups and leaves children that are items untouched, this is because item children
  * are background items that do not need to be ordered.
@@ -293,7 +294,7 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
   return ;
 }
 
-
+#endif
 
 
 /*
@@ -376,6 +377,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
   container = (ZMapWindowContainerFeatureSet)column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+//printf("set state %s\n",g_quark_to_string(container->unique_id));
 
   /* Do we need a redraw....not every time..... */
   if (!new_col_state || new_col_state != curr_col_state || redraw_if_needed)
@@ -398,6 +400,8 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
       new_visible = zmapWindowGetColumnVisibility(window,column_group);
             /* state we want rather than what's current */
+
+//printf("set visible = %d -> %d\n",cur_visible, new_visible);
 
       if(new_visible)
       {
@@ -708,7 +712,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
 
   compressed = zmapWindowContainerBlockRemoveCompressedColumns((ZMapWindowContainerBlock)block_container);
-  bumped     = zmapWindowContainerBlockRemoveBumpedColumns((ZMapWindowContainerBlock)block_container);
+  bumped = zmapWindowContainerBlockRemoveBumpedColumns((ZMapWindowContainerBlock)block_container);
 
   if(compressed || bumped)
     {
@@ -1050,6 +1054,7 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 
 
 
+#if MH17_NOT_USED
 
 /* MAY NEED TO INGNORE BACKGROUND BOXES....WHICH WILL BE ITEMS.... */
 
@@ -1076,7 +1081,7 @@ static gint horizPosCompare(gconstpointer a, gconstpointer b)
   return result ;
 }
 
-
+#endif
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

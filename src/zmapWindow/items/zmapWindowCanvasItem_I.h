@@ -49,10 +49,9 @@
 
 typedef struct _zmapWindowCanvasItemClassStruct
 {
-  FooCanvasGroupClass __parent__;			    /* extends FooCanvasGroupClass  */
 
-  /* long items is really class level. */
-  ZMapWindowLongItems long_items;
+  FooCanvasItemClass __parent__;			    /* extends FooCanvasItemClass  */
+
 
   GdkBitmap *fill_stipple;
 
@@ -62,20 +61,10 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
   /* methods */
 
-  /* We want to use foo_canvas_item_new and have default items created.  These
-   * might not be the same for all our items... */
-  void (* post_create)(ZMapWindowCanvasItem window_canvas_item) ;
-
   ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item) ;
 
   /* Returns item bounds in _world_ coords. */
   void (*get_bounds)(ZMapWindowCanvasItem window_canvas_item,
-				  double top, double bottom,
-				  double left, double right) ;
-
-  /* This might be a no-op for some... */
-  FooCanvasItem *(* add_interval)(ZMapWindowCanvasItem window_canvas_item,
-				  ZMapFeatureSubPartSpan sub_feature, /* can be NULL */
 				  double top, double bottom,
 				  double left, double right) ;
 
@@ -99,12 +88,6 @@ typedef struct _zmapWindowCanvasItemClassStruct
   ZMapWindowCanvasItem (*fetch_parent)(FooCanvasItem *any_child);
 #endif /* CATCH_22 */
 
-  /* Ability to check all subitems... */
-  gboolean (* check_data)(ZMapWindowCanvasItem window_canvas_item, GError **error) ;
-
-
-  /* clear items... */
-  void (* clear)(ZMapWindowCanvasItem window_canvas_item) ;
 
 } zmapWindowCanvasItemClassStruct ;
 
@@ -116,7 +99,7 @@ typedef struct _zmapWindowCanvasItemClassStruct
  *  */
 typedef struct _zmapWindowCanvasItemStruct
 {
-  FooCanvasGroup __parent__;				    /* extends FooCanvasGroup  */
+  FooCanvasItem __parent__;				    /* extends FooCanvasItem  */
 
   ZMapFeature feature ;					    /* The Feature that this Canvas Item represents  */
 

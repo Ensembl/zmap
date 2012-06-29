@@ -36,6 +36,12 @@
 #include <ZMap/zmapFeature.h>
 
 
+/* font used fpr seqeunece and zoom control */
+#define ZMAP_ZOOM_FONT_FAMILY "Monospace"
+#define ZMAP_ZOOM_FONT_SIZE (10)
+
+
+
 typedef enum {ZMAPGUI_USERDATA_INVALID, ZMAPGUI_USERDATA_BOOL, ZMAPGUI_USERDATA_TEXT} ZMapGUIMsgUserDataType ;
 
 
@@ -68,11 +74,13 @@ typedef enum
 
 
 /* ZMap custom cursors that can be returned by zMapGUIGetCursor(), they must all have the "zmap_" prefix. */
-#define ZMAPGUI_CURSOR_PREFIX    "zmap_"
-#define ZMAPGUI_CURSOR_CROSS     "zmap_cross"
-#define ZMAPGUI_CURSOR_CROSSHAIR "zmap_crosshair"
-#define ZMAPGUI_CURSOR_CIRCLE    "zmap_circle"
-#define ZMAPGUI_CURSOR_NOENTRY   "zmap_noentry"
+#define ZMAPGUI_CURSOR_PREFIX         "zmap_"
+#define ZMAPGUI_CURSOR_COLOUR_CROSS   "zmap_colour_cross"
+#define ZMAPGUI_CURSOR_CROSS          "zmap_cross"
+#define ZMAPGUI_THINCURSOR_CROSS      "zmap_thincross"
+#define ZMAPGUI_CURSOR_CROSSHAIR      "zmap_crosshair"
+#define ZMAPGUI_CURSOR_CIRCLE         "zmap_circle"
+#define ZMAPGUI_CURSOR_NOENTRY        "zmap_noentry"
 
 
 
@@ -445,6 +453,9 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 				  PangoFont **font_out, PangoFontDescription **desc_out) ;
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
+
+gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout) ;
+
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 
 GdkCursor *zMapGUIGetCursor(char *cursor_name) ;

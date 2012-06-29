@@ -112,6 +112,11 @@ static GdkCursor *makeStandardCursor(char *cursor_name) ;
 
 static void setTextAttrs(gpointer data, gpointer user_data) ;
 
+static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data) ;
+static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused) ;
+
+
+
 
 /* Holds an alternative URL for help pages if set by the application. */
 static char *help_URL_base_G = NULL ;
@@ -332,24 +337,47 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
  *  */
 void zMapGUIShowAbout(void)
 {
+  GtkAboutDialog *about_dialog ;
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
-
   char *comment_str ;
 
   comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
 
-  gtk_show_about_dialog(NULL,
-			"authors", authors,
-			"comments", comment_str,
-			"copyright", zMapGetCopyrightString(),
-			"license", zMapGetLicenseString(),
-			"program-name", zMapGetAppName(),
-			"version", zMapGetAppVersionString(),
-			"website", zMapGetWebSiteString(),
-			NULL) ;
+  if (gtk_major_version == 2 && gtk_minor_version < 24)
+    {
+      gtk_about_dialog_set_url_hook(aboutLinkOldCB, NULL, NULL) ;
+
+      gtk_show_about_dialog(NULL,
+			    "authors", authors,
+			    "comments", comment_str,
+			    "copyright", zMapGetCopyrightString(),
+			    "license", zMapGetLicenseString(),
+			    "program-name", zMapGetAppName(),
+			    "version", zMapGetAppVersionString(),
+			    "website", zMapGetWebSiteString(),
+			    NULL) ;
+    }
+  else
+    {
+      about_dialog = (GtkAboutDialog *)gtk_about_dialog_new() ;
+
+      gtk_about_dialog_set_program_name(about_dialog, zMapGetAppName()) ;
+      gtk_about_dialog_set_version(about_dialog, zMapGetAppVersionString()) ;
+      gtk_about_dialog_set_copyright(about_dialog, zMapGetCopyrightString()) ;
+      gtk_about_dialog_set_comments(about_dialog, comment_str) ;
+      gtk_about_dialog_set_license(about_dialog, zMapGetLicenseString()) ;
+      gtk_about_dialog_set_website(about_dialog, zMapGetWebSiteString()) ;
+      gtk_about_dialog_set_authors(about_dialog, authors) ;
+
+      g_signal_connect(GTK_OBJECT(about_dialog), "activate-link",
+		       GTK_SIGNAL_FUNC(aboutLinkNewCB),
+		       NULL) ;
+
+      gtk_widget_show_all(GTK_WIDGET(about_dialog)) ;
+    }
 
   g_free(comment_str) ;
 
@@ -671,14 +699,15 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
   /* Construct a list of possible fonts to use, they must be fixed width but take care
    * altering this list as some fixed width fonts seem to come back as variable width ! */
-  fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
+
+  fixed_font_list = g_list_append(fixed_font_list, ZMAP_ZOOM_FONT_FAMILY) ;
   fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
 
 
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
    * so that a sensible amount of text is displayed. */
   if (!zMapGUIGetFixedWidthFont(view,
-				fixed_font_list, 10, PANGO_WEIGHT_NORMAL,
+				fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
 				&font, &font_desc))
     {
       zMapGUIShowMsg(ZMAP_MSG_WARNING, "Could not get fixed width font, "
@@ -785,6 +814,30 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
 
   return file;
 }
+
+
+
+/* Takes a colour spec in the standard string form given for X11 in the file rgb.txt, parses it
+ * and allocates it in the colormap returning the colour description in colour_inout
+ * (the contents of which are overwritten).
+ * 
+ * Returns TRUE if all worked, FALSE otherwise. */
+gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout)
+{
+  gboolean result = FALSE ;
+  GdkColormap *colourmap ;
+
+  if ((result = gdk_color_parse(colour_spec, colour_inout)))
+    {
+      colourmap = gtk_widget_get_colormap(widget) ;
+
+      gdk_rgb_find_color(colourmap, colour_inout) ;
+    }
+
+  return result ;
+}
+
+
 
 
 
@@ -1612,13 +1665,25 @@ static GdkCursor *makeCustomCursor(char *cursor_name)
 #define zmap_cross_shape_x_hot 7
 #define zmap_cross_shape_y_hot 7
 static unsigned char zmap_cross_shape_bits[] = {
-   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
-   0x00, 0x00, 0x3f, 0x7e, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
-   0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
-static unsigned char zmap_cross_mask_bits[] = {
    0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
-   0x3f, 0x7e, 0x3f, 0x7e, 0x3f, 0x7e, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
-   0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0x00, 0x00};
+   0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01,
+   0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01, 0xc0, 0x01};
+static unsigned char zmap_cross_mask_bits[] = {
+   0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xff, 0x7f,
+   0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xe0, 0x03, 0xe0, 0x03,
+   0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03, 0xe0, 0x03};
+
+/* Thin cross. */
+#define zmap_thincross_shape_x_hot 7
+#define zmap_thincross_shape_y_hot 7
+static unsigned char zmap_thincross_shape_bits[] = {
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x7f, 0xfe, 0x7f, 0xfe, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01};
+static unsigned char zmap_thincross_mask_bits[] = {
+   0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03,
+   0xff, 0xff, 0x7f, 0xfe, 0x7f, 0xfe, 0xff, 0xff, 0xc0, 0x03, 0xc0, 0x03,
+   0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03, 0xc0, 0x03};
 
   /* My crosshair cursor. */
 #define zmap_crosshair_shape_x_hot 7
@@ -1631,6 +1696,18 @@ static unsigned char zmap_crosshair_mask_bits[] = {
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
    0x00, 0x00, 0x0f, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00};
+
+  /* My colour cross cursor. */
+#define zmap_colour_cross_shape_x_hot 7
+#define zmap_colour_cross_shape_y_hot 7
+static unsigned char zmap_colour_cross_shape_bits[] = {
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0xff, 0xff, 0xff, 0xff, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01,
+   0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01};
+static unsigned char zmap_colour_cross_mask_bits[] = {
+   0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02,
+   0x7f, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x7f, 0xfe, 0x40, 0x02, 0x40, 0x02,
+   0x40, 0x02, 0x40, 0x02, 0x40, 0x02, 0x40, 0x02};
 
 /* My circle cursor. */
 #define zmap_circle_shape_x_hot 7
@@ -1668,15 +1745,35 @@ static unsigned char zmap_noentry_mask_bits[] = {
  GdkColor *fg, *bg ;
 
 
- if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
+ if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_COLOUR_CROSS) == 0)
+   {
+     shape_data = (gchar *)zmap_colour_cross_shape_bits ;
+     mask_data = (gchar *)zmap_colour_cross_mask_bits ;
+     hot_x = zmap_colour_cross_shape_x_hot ;
+     hot_y = zmap_colour_cross_shape_y_hot ;
+     fg = &red ;
+     bg = &blue ;
+
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
    {
      shape_data = (gchar *)zmap_cross_shape_bits ;
      mask_data = (gchar *)zmap_cross_mask_bits ;
      hot_x = zmap_cross_shape_x_hot ;
      hot_y = zmap_cross_shape_y_hot ;
-     fg = &red ;
-     bg = &blue ;
-
+     fg = &black ;
+     bg = &white ;
+     found_cursor = TRUE ;
+   }
+ else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_THINCURSOR_CROSS) == 0)
+   {
+     shape_data = (gchar *)zmap_thincross_shape_bits ;
+     mask_data = (gchar *)zmap_thincross_mask_bits ;
+     hot_x = zmap_thincross_shape_x_hot ;
+     hot_y = zmap_thincross_shape_y_hot ;
+     fg = &black ;
+     bg = &white ;
      found_cursor = TRUE ;
    }
  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSSHAIR) == 0)
@@ -2023,4 +2120,26 @@ static void setTextAttrs(gpointer data, gpointer user_data)
   return ;
 }
 
+/* A GtkAboutDialogActivateLinkFunc() called when user clicks on website link in "About" window.
+ * This is the pre GTK 2.24 version. */
+static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data)
+  {
 
+    aboutLinkNewCB(NULL, (gchar *)link, NULL) ;
+
+    return ;
+  }
+
+
+/* "activate-link" callback called when user clicks on website link in "About" window.
+ * This is the GTK 2.24 and later version. */
+static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused)
+{
+  gboolean result = TRUE ;
+  GError *error = NULL ;
+
+  if (!zMapLaunchWebBrowser(uri, &error))
+    zMapLogWarning("Cannot show link in web browser: \"%s\"", uri) ;
+
+  return result ;
+}

@@ -40,6 +40,13 @@
 #include <zmapStyle_I.h>
 
 
+/* For colour spec building. */
+typedef struct ColourSpecStructName
+{
+  char *colour_type ;
+  char *colour ;
+} ColourSpecStruct, *ColourSpec ;
+
 
 
 /*
@@ -165,6 +172,73 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixem
  *
  *  */
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText,            ZMapStyleBumpMode,               ZMAP_STYLE_BUMP_MODE_LIST);
+
+
+
+
+/* Our style objects take a colour spec in the form:
+ * 
+ *     "[<colour_type> <colour_target> <colour>] ; etc..."
+ * 
+ * where    colour_type = [normal | selected]
+ *        colour_target = [fill | draw | border]
+ *               colour = any X11 format colour string
+ *      
+ * e.g.    "normal fill white ; normal draw black ; selected fill red"
+ * 
+ * This function takes a series of string pointers to colours for the 6
+ * possible colours that can be set and then creates the string that
+ * can be used for the colour spec argument for the style.
+ * 
+ * The returned string should be g_free()'d when finished with.
+ * 
+ *  */
+char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
+				char *selected_fill, char *selected_draw, char *selected_border)
+{
+  char *colour = NULL ;
+  GString *colour_str ;
+  ColourSpecStruct colours[] = {{"normal fill", NULL}, {"normal draw", NULL}, {"normal border", NULL},
+				{"selected fill", NULL}, {"selected draw", NULL}, {"selected border", NULL},
+				{NULL, NULL}} ;
+  ColourSpec curr_colour ;
+
+  colour_str = g_string_sized_new(1024) ;
+
+  curr_colour = colours ;
+
+  if (normal_fill && *normal_fill)
+    curr_colour->colour = normal_fill ;
+  curr_colour++ ;
+  if (normal_draw && *normal_draw)
+    curr_colour->colour = normal_draw ;
+  curr_colour++ ;
+  if (normal_border && *normal_border)
+    curr_colour->colour = normal_border ;
+  curr_colour++ ;
+
+  if (selected_fill && *selected_fill)
+    curr_colour->colour = selected_fill ;
+  curr_colour++ ;
+  if (selected_draw && *selected_draw)
+    curr_colour->colour = selected_draw ;
+  curr_colour++ ;
+  if (selected_border && *selected_border)
+    curr_colour->colour = selected_border ;
+
+  curr_colour = colours ;
+  while (curr_colour->colour_type)
+    {
+      if (curr_colour->colour)
+	g_string_append_printf(colour_str, "%s %s ; ", curr_colour->colour_type, curr_colour->colour ) ;
+
+      curr_colour++ ;
+    }
+
+  colour = g_string_free(colour_str, FALSE) ;
+
+  return colour ;
+}
 
 
 

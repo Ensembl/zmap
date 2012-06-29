@@ -67,6 +67,7 @@ typedef struct
 {
   int child_start, child_end ;
   FooCanvasItem *child_item ;
+  ZMapFeature feature;
 } ChildSearchStruct, *ChildSearch ;
 
 
@@ -126,7 +127,9 @@ static void destroyIDHash(gpointer data) ;
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
+#if !ZWCI_AS_FOO
 static void childSearchCB(gpointer data, gpointer user_data) ;
+#endif
 static GQuark rootCanvasID(void);
 
 static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature);
@@ -347,7 +350,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 
 	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_group) ;
 // MH17: despite looking as if this is set up we still get an assert
-// i suspect this assert was added recently and now prevents the navigator pfrom being displayed
+// i suspect this assert was added recently and now prevents the navigator from being displayed
 //	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
@@ -433,20 +436,34 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
                                                    GUINT_TO_POINTER(set_id))))
     {
+          ID2Canvas ID2C ;
+	    /* mh17: changed insert to replace to allow bumping of compressed features
+	     * if compressed, underlying data points to the compressed feature
+	     * if not they are on display
+	     */
+#if 0
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
         {
-          ID2Canvas ID2C ;
+	     ID2C = g_new0(ID2CanvasStruct, 1) ;
+           ID2C->item = feature_item ;
+           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+           ID2C->feature_any = (ZMapFeatureAny) feature ;
 
-          ID2C = g_new0(ID2CanvasStruct, 1) ;
+          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+        }
+#else
+	    ID2C = g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id));
+	    if(!ID2C)
+	    {
+		    ID2C = g_new0(ID2CanvasStruct, 1) ;
+		    g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+	    }
+
           ID2C->item = feature_item ;
           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
           ID2C->feature_any = (ZMapFeatureAny) feature ;
-
-          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
-	  }
-
-      result = TRUE ;
-
+#endif
+	    result = TRUE ;
     }
   return result ;
 }
@@ -634,7 +651,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 }
 
 
-
+#if !ZWCI_AS_FOO
 /* Find the child item that matches the supplied start/end, use for finding feature items
  * that are part of a compound feature, e.g. exons/introns in a transcript.
  * Warning, may return null so result MUST BE TESTED by caller. */
@@ -655,6 +672,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
       child_search.child_start = child_start ;
       child_search.child_end = child_end ;
+	child_search.feature = feature;
 
       g_list_foreach(group->item_list, childSearchCB, (void *)&child_search) ;
 
@@ -666,7 +684,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
   return item ;
 }
-
+#endif
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
@@ -1092,7 +1110,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  ZMapFeature feature,
 							  GQuark      align_id,
 							  GQuark      block_id,
-                                            GQuark      column_id,
+							  GQuark      column_id,
 							  GQuark      set_id,
 							  GQuark      feature_id,
 							  char       *strand_str,
@@ -1273,6 +1291,7 @@ static void destroyIDHash(gpointer data)
 }
 
 
+#if !ZWCI_AS_FOO
 
 /* This is a g_list callback function. */
 static void childSearchCB(gpointer data, gpointer user_data)
@@ -1286,7 +1305,7 @@ static void childSearchCB(gpointer data, gpointer user_data)
     {
       ZMapFeatureSubPartSpan item_subfeature_data ;
 
-      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item)))
+      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item, child_search->feature, 0, child_search->child_start)))
 	{
 	  if (item_subfeature_data->start == child_search->child_start &&
 	      item_subfeature_data->end   == child_search->child_end)
@@ -1299,6 +1318,7 @@ static void childSearchCB(gpointer data, gpointer user_data)
   return ;
 }
 
+#endif
 
 
 /*

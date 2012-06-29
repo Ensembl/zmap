@@ -99,7 +99,12 @@ typedef enum {
   ZMAPFEATURE_SUBPART_EXON       = 1 << 2,
   ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
   ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
-  ZMAPFEATURE_SUBPART_MATCH      = 1 << 5
+  ZMAPFEATURE_SUBPART_MATCH      = 1 << 5,
+
+  /* following added by mh17 to allow easier snazzy display of split codons */
+  ZMAPFEATURE_SUBPART_SPLIT_3_CODON = 1 << 6,		/*NOTE: is 3' end of exon = 5' end of split codon */
+  ZMAPFEATURE_SUBPART_SPLIT_5_CODON = 1 << 7,
+
 } ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
@@ -1016,15 +1021,17 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
-gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
-				      gboolean cds, Coord cds_start, Coord cds_end,
-				      GArray *exons, GArray *introns) ;
+
+gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
+gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
+
 
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,

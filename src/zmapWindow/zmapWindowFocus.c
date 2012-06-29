@@ -608,7 +608,7 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
    * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
    */
 
-  if(item && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
     zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
 
   return item ;
@@ -807,6 +807,7 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
 }
 
 
+/* UM...that seems the wrong thing to do.....styles shouldn't be deciding that kind of thing...EG */
 /* We pass in the default from the window->colour_item_highlight in case there's no other default */
 /* Actually I've now put one in the zmapFeatureTypes.c file, so this is probably useless and confusing */
 
@@ -936,7 +937,7 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
   id2c->feature_any = (ZMapFeatureAny) list_item->feature;
   /* hash table is NULL, that is correct */
 
-  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
   {
 	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) list_item->feature);
 	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) item, FALSE);
@@ -1036,13 +1037,13 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
              border = &(window->colour_evidence_border);
            }
       }
-      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border);
+      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border);
       foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(item->item)) ;
 
     }
   else
     {
-      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, ZMAPSTYLE_COLOURTYPE_NORMAL, 0, NULL,NULL);
+      zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_NORMAL, 0, NULL,NULL);
       /* foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;*/
 
       /* this is a pain: to keep ordering stable we have to put the focus item back where it was

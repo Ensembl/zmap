@@ -499,36 +499,34 @@ GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
 
 
 
+/* Splice marker features for displaying splice junctions (e.g. results of gene finder programs). */
 ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
+  ZMapStyleGlyphShape shape ;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
-	shape = &style->mode_data.glyph.glyph5;
-
-  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5_REV))
-		shape = &style->mode_data.glyph.glyph5rev;
+  if (!reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5))
+    shape = &style->mode_data.glyph.glyph5 ;
+  else if (reverse && zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_SHAPE_5_REV))
+    shape = &style->mode_data.glyph.glyph5rev ;
+  else
+    shape = &style->mode_data.glyph.glyph ;
 
   return(shape);
 }
-
 
 ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style, gboolean reverse)
 {
-  ZMapStyleGlyphShape shape = &style->mode_data.glyph.glyph;
+  ZMapStyleGlyphShape shape ;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
-	shape = &style->mode_data.glyph.glyph3;
-
-  if(reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
-		shape = &style->mode_data.glyph.glyph3rev;
+  if (!reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
+    shape = &style->mode_data.glyph.glyph3;
+  else if (reverse && zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3_REV))
+    shape = &style->mode_data.glyph.glyph3rev;
+  else
+    shape = &style->mode_data.glyph.glyph;
 
   return(shape);
 }
-
-//---------------------------------
-
-
 
 
 
@@ -1149,7 +1147,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr) ;
 
 
-  /* 3 Frame Translation 
+  /* 3 Frame Translation
    * The translation width is the width for the whole column if
    * all three frames are displayed in one column.  When displayed
    * in the frame specfic mode the width of each of the columns
@@ -1172,9 +1170,9 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_ALL,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_ALL,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                10.0,		/*number of characters not pixels */
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
 		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_ONLY_3,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
@@ -1210,7 +1208,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                30.0,		/*number of characters not pixels */
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
@@ -1244,7 +1242,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                30.0,		/*number of characters not pixels */
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
@@ -1279,6 +1277,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                20.0,		/*number of characters not pixels */
+//		 ZMAPSTYLE_PROPERTY_FOO,      TRUE,
 		 NULL);
     g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
   }
@@ -1330,8 +1330,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
   /* Search results hits */
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
   {
-    char *colours = "normal fill red ; normal draw black ; selected fill red; selected draw black" ;
-    char *strand_colours = "normal fill green ; normal draw black ; selected fill green ; selected draw black" ;
+    char *for_colours = "normal fill red ; normal draw black ; selected fill red; selected draw black" ;
+    char *rev_colours = "normal fill green ; normal draw black ; selected fill green ; selected draw black" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                   ZMAPSTYLE_MODE_BASIC,
@@ -1343,8 +1343,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_WIDTH,                  15.0,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,        FALSE,
 		 ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR, TRUE,
-		 ZMAPSTYLE_PROPERTY_COLOURS,                colours,
-		 ZMAPSTYLE_PROPERTY_REV_COLOURS,            strand_colours,
+		 ZMAPSTYLE_PROPERTY_COLOURS,                for_colours,
+		 ZMAPSTYLE_PROPERTY_REV_COLOURS,            rev_colours,
 //		 ZMAPSTYLE_PROPERTY_FOO,                    TRUE,
 		 NULL);
   }

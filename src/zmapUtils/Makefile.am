@@ -5,7 +5,7 @@ SUBDIRS = . tests
 
 noinst_LTLIBRARIES = libZMapUtils.la
 
-libZMapUtils_la_SOURCES = zmapUtilsConfig.c \
+libZMapUtils_la_SOURCES = \
 zmapCompileDate.c \
 zmapGUITreeView_I.h \
 zmapCmdLineArgs_P.h \

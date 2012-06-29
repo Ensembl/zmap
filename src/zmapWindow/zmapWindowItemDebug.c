@@ -36,7 +36,6 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowCanvasItem_I.h>
-#include <zmapWindowFeatures.h>
 #include <zmapWindow_P.h>
 
 
@@ -371,23 +370,6 @@ static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
 {
   gboolean has_type = TRUE ;
 
-  if (ZMAP_IS_WINDOW_ALIGNMENT_FEATURE(item))
-    *str_out = "ZMAP_WINDOW_ALIGNMENT_FEATURE" ;
-  if (ZMAP_IS_WINDOW_ASSEMBLY_FEATURE(item))
-    *str_out = "ZMAP_WINDOW_ASSEMBLY_FEATURE" ;
-  if (ZMAP_IS_WINDOW_BASIC_FEATURE(item))
-    *str_out = "ZMAP_WINDOW_BASIC_FEATURE" ;
-  if (ZMAP_IS_WINDOW_GLYPH_ITEM(item))
-    *str_out = "ZMAP_WINDOW_GLYPH_FEATURE" ;
-  if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(item))
-    *str_out = "ZMAP_WINDOW_SEQUENCE_FEATURE" ;
-  if (ZMAP_IS_WINDOW_TEXT_FEATURE(item))
-    *str_out = "ZMAP_WINDOW_TEXT_FEATURE" ;
-  if (ZMAP_IS_WINDOW_TEXT_ITEM(item))
-    *str_out = "ZMAP_WINDOW_TEXT_ITEM" ;
-  if (ZMAP_IS_WINDOW_TRANSCRIPT_FEATURE(item))
-    *str_out = "ZMAP_WINDOW_TRANSCRIPT_FEATURE" ;
-  else
     has_type = FALSE ;
 
   return has_type ;

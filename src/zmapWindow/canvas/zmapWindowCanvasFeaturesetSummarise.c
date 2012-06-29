@@ -188,7 +188,7 @@ printf("\n");
 
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature)
 {
-	FooCanvasItem *foo = &featureset->__parent__;
+	FooCanvasItem *foo = (FooCanvasItem *) &featureset->__parent__;
 	PixRect this;
 	PixRect blocks = NULL;
 	PixRect pr,del,last = NULL;
@@ -414,6 +414,7 @@ summarise 0x82c72a8_solexa_introns_+0 (0.401186): 2393+485/1111 = 1097)
 
 NOTE solexa/ zebrafish is a much more varied dataset than encode and includes about a dozen featuresets
 The list size is a bit dissappointing: it starts to look quadratic
+(but see comment about the bug a few lines above)
 
 ENCODE includes a lot of ungapped features which helps matters somewhat
 */

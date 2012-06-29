@@ -668,27 +668,27 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 	  if(lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
-	  {
-	  	ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
-	  	emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
-	  	g_free(ok_mess);
+	    {
+	      ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
+	      emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
+	      g_free(ok_mess);
 
-	  	{
-			static long total = 0;
+	      {
+		static long total = 0;
 
-			total += lfd->num_features;
-			zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
-	  	}
-	  }
+		total += lfd->num_features;
+		zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+	      }
+	    }
 	  else
-	  	emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
+	    emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
 
-        if(lfd->stderr_out)
-        {
-       	gchar *old = lfd->stderr_out;
-      	lfd->stderr_out =  html_quote_string(old);
+	  if(lfd->stderr_out)
+	    {
+	      gchar *old = lfd->stderr_out;
+	      lfd->stderr_out =  html_quote_string(old);
     	      g_free(old);
-        }
+	    }
 
 
 	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"

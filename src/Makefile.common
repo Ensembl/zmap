@@ -23,6 +23,10 @@ LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \
 	$(top_builddir)/.libs/libZMapThr.la \
 	$(top_builddir)/.libs/libZMapXML.a \
 	$(top_builddir)/.libs/libZMapXML.la \
+	$(top_builddir)/.libs/libZMapAppServices.a \
+	$(top_builddir)/.libs/libZMapAppServices.la \
+	$(top_builddir)/.libs/libZMapUtils.a \
+	$(top_builddir)/.libs/libZMapUtils.la \
 	$(top_builddir)/.libs/libzmapfoocanvas.a \
 	$(top_builddir)/.libs/libzmapfoocanvas.la \
 	$(top_builddir)/.libs/libPFetch.a \

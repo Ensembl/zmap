@@ -532,7 +532,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
       blixem_data.sequence_map = view->view_sequence;
 
-	blixem_data.isSeq = isSeq;
+      blixem_data.isSeq = isSeq;
     }
 
 
@@ -1208,10 +1208,10 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   gboolean status = TRUE ;
   int missed = 0;					    /* keep track of options we don't specify */
 
-/* MH17 NOTE
-   this code must operate in the same order as the enums at the top of the file
-   better to recode without the 'missed flag' as this code is VERY error prone
- */
+  /* MH17 NOTE
+     this code must operate in the same order as the enums at the top of the file
+     better to recode without the 'missed flag' as this code is VERY error prone
+  */
 
 
   /* we need to do this as blixem has pretty simple argv processing */
@@ -1268,7 +1268,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 #if MH17_WONT_WORK_POST_CHROMO_COORDS
       /* NOTE this function swaps start and end and inverts them, you have to provide both */
       if (blixem_data->view->revcomped_features)
-		zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
+	zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
 #endif
 
 
@@ -1281,18 +1281,18 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
 
   /* Set up initial view start/end.... */
-    {
-      int start, end ;
+  {
+    int start, end ;
 
-      start = blixem_data->window_start ;
-      end = blixem_data->window_end ;
+    start = blixem_data->window_start ;
+    end = blixem_data->window_end ;
 
-      if (blixem_data->view->revcomped_features)
-	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+    if (blixem_data->view->revcomped_features)
+      zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
-      paramString[BLX_ARGV_ZOOM_FLAG - missed] = g_strdup("-z") ;
-      paramString[BLX_ARGV_ZOOM - missed] = g_strdup_printf("%d:%d", start, end) ;
-    }
+    paramString[BLX_ARGV_ZOOM_FLAG - missed] = g_strdup("-z") ;
+    paramString[BLX_ARGV_ZOOM - missed] = g_strdup_printf("%d:%d", start, end) ;
+  }
 
 
   /* Show whole blixem range ? */
@@ -1348,25 +1348,25 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     }
 
   if(blixem_data->sequence_map->dataset)
-  {
+    {
       paramString[BLX_ARGV_DATASET - missed] = g_strdup_printf("--dataset=%s",blixem_data->sequence_map->dataset);
-  }
+    }
   else
-  {
+    {
       missed += 1;
 
-  }
+    }
 
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ || blixem_data->isSeq)
-  {
-  	paramString[BLX_ARGV_COVERAGE - missed] = g_strdup("--show-coverage");
-  	paramString[BLX_ARGV_SQUASH - missed] = g_strdup("--squash-matches");
-  	paramString[BLX_ARGV_SORT - missed] = g_strdup("--sort-mode=p");
-  }
+    {
+      paramString[BLX_ARGV_COVERAGE - missed] = g_strdup("--show-coverage");
+      paramString[BLX_ARGV_SQUASH - missed] = g_strdup("--squash-matches");
+      paramString[BLX_ARGV_SORT - missed] = g_strdup("--sort-mode=p");
+    }
   else
-  {
-  	missed += 3;
-  }
+    {
+      missed += 3;
+    }
 
 
   return status ;
@@ -1476,7 +1476,8 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 
       blixem_data->align_list = NULL ;
 
-      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES
+	  || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1511,10 +1512,11 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	  g_list_foreach(set_list, getSetList, blixem_data) ;
 	}
 
+
+      /* NOTE the request data is a column which contains multiple featuresets
+       * we have to include a line for each one. Theese are given in the course GList
+       */
       if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-	/* NOTE the request data is a column which contains multiple featuresets
-	 * we have to include a line for each one. Theese are given in the course GList
-	 */
 	{
 	  // chr4-04     source1     region      215000      300000      0.000000    .     .     dataType=short-read
 
@@ -1526,21 +1528,20 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	  GList *l;
 
 	  for(l = blixem_data->source; l ; l = l->next)
-	  {
-		char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
+	    {
+	      char *ref_name = (char *)g_quark_to_string(blixem_data->block->original_id);
 
-		g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
-					ref_name, g_quark_to_string(GPOINTER_TO_UINT(l->data)),
-					"region",          // zMapSOAcc2Term(feature->SO_accession),
-					//                   blixem_data->mark_start, blixem_data->mark_end,
-					start,end,		/* these have been revcomped and wwere set from the mark */
-					0.0, "dataType=short-read" ) ;       // is this also SO??
+	      g_string_append_printf(blixem_data->line, "%s\t%s\t%s\t%d\t%d\t%f\t.\t.\t%s\n",
+				     ref_name, g_quark_to_string(GPOINTER_TO_UINT(l->data)),
+				     "region",          // zMapSOAcc2Term(feature->SO_accession),
+				     //                   blixem_data->mark_start, blixem_data->mark_end,
+				     start,end,		/* these have been revcomped and wwere set from the mark */
+				     0.0, "dataType=short-read" ) ;       // is this also SO??
 
-		printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
-		printf("Blixem file: %s",blixem_data->line->str);
-	  }
+	      printLine(blixem_data->gff_channel, &(blixem_data->errorMsg), blixem_data->line->str) ;
+	      printf("Blixem file: %s",blixem_data->line->str);
+	    }
 	}
-
 
       if (blixem_data->homol_max)
 	{
@@ -1563,6 +1564,12 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
       if (blixem_data->align_list)
 	g_list_foreach(blixem_data->align_list, writeListEntry, blixem_data) ;
 
+      /* If user clicked on something not an alignment then show that feature
+       * and others nearby in blixems overview window. */
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_NONE && feature_set)
+	{
+	  g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data) ;
+	}
 
       /*
        * Now do transcripts (may need to filter further...)
@@ -2680,19 +2687,8 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
-
-
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
   source_name = (char *)g_quark_to_string(feature->source_id) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (g_ascii_strcasecmp(source_name, "polya_site") == 0
-      || g_ascii_strcasecmp(source_name, "polya_signal") == 0)
-    printf("found it\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   curr = dumpers ;
   while (curr->source_name)

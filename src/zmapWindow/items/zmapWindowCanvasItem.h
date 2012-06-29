@@ -36,11 +36,12 @@
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-/* NOTE item header moved to after ZMapCanvasItem decls to allow sensible return types */
 
 
+#if !ZWCI_AS_FOO
 /* This still gets added as a g_object_set_data on FooCanvasItem objects. */
 #define ITEM_SUBFEATURE_DATA  "item_subfeature_data"
+#endif
 
 /* The type name for the ZMapWindowCanvasItem GType */
 #define ZMAP_WINDOW_CANVAS_ITEM_NAME 	"ZMapWindowCanvasItem"
@@ -72,31 +73,17 @@ typedef struct _zmapWindowCanvasItemStruct  zmapWindowCanvasItem, *ZMapWindowCan
 typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMapWindowCanvasItemClass ;
 
 
-#include <zmapWindowGlyphItem.h>
-#include <zmapWindowGraphItem.h>
-#include <zmapWindowCanvasFeatureset.h>
-#include <zmapWindowCanvasItemFeatureSet.h>
-#include <zmapWindowLongItem.h>
-#include <zmapWindowTextItem.h>
+#include <zmapWindowCanvasFeatureset.h>	/* need typedefs to stop gcc from barfing */
+
 
 
 
 /* Public funcs */
 GType zMapWindowCanvasItemGetType(void);
 
-ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
-						double               feature_start,
-						ZMapFeature          feature_any,
-						ZMapFeatureTypeStyle feature_style);
-
-FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_item,
-					       ZMapFeatureSubPartSpan sub_feature,
-					       double top,  double bottom,
-					       double left, double right);
 
 ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
-gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item);
 
 void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
       ZMapStyleColourType    colour_type,
@@ -105,34 +92,16 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
       GdkColor              *border);
 
 
-void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item);
-
-void zMapWindowCanvasItemSetIntervalType(ZMapWindowCanvasItem canvas_item, guint type);
-
-void zMapWindowCanvasItemGetBumpBounds(ZMapWindowCanvasItem canvas_item,
-				       double *x1_out, double *y1_out,
-				       double *x2_out, double *y2_out);
-
-gboolean zMapWindowCanvasItemCheckData(ZMapWindowCanvasItem canvas_item, GError **error);
-
-void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item);
-void zMapWindowCanvasItemClearOverlay(ZMapWindowCanvasItem canvas_item);
-void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item);
-
-FooCanvasItem *zMapWindowCanvasItemGetOverlay(FooCanvasItem *canvas_item);
-FooCanvasItem *zMapWindowCanvasItemGetUnderlay(FooCanvasItem *canvas_item);
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,
 					       ZMapFeatureSubPartSpan *sub_feature_out);
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
-GList *zMapWindowCanvasItemIntervalGetChildren(ZMapWindowCanvasItem *parent) ;
-ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item);
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y);
 
 gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden);
 
-void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature,
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
 					    GdkColor *default_fill_colour,
@@ -143,10 +112,6 @@ gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFe
 
 gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureTypeStyle style);
 
-
-void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
-
-ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
 
 gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature);
 gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show);

@@ -189,12 +189,12 @@ Note also that if we also try to paint lines upstream of a feature this will not
 Using a sorted index to find features to display for a given expose event is a simple idea and works well and it is worth preserving this for other kinds of feature.
 
 <li> <i>Handle colinear lines in the first alignment in a series</i><br />
-The initial implementation added one line per feature but this has proved tricky.  If we adjust the first feature's extent to cover the whole series and make its paint function draw all colinear lines for the series and it's own feature, then we are guaranteed to pick up all the expose events.  As we bump each series of features together it is easy to calculate the total extent and also to maintain a featureset wide bump overlap limit.  Note that this is stricly a downstream extension of the feature extent and avoids problems with re-ordering the index.  2nd and subsequent features will paint themselves.  We also avoid adding an alignemt wide feature just fo decorations - this distrube the index and added extra complexity at the cost of adjusting one coordinate.
+The initial implementation added one line per feature but this has proved tricky.  If we adjust the first feature's extent to cover the whole series and make its paint function draw all colinear lines for the series and it's own feature, then we are guaranteed to pick up all the expose events.  As we bump each series of features together it is easy to calculate the total extent and also to maintain a featureset wide bump overlap limit.  Note that this is stricly a downstream extension of the feature extent and avoids problems with re-ordering the index.  2nd and subsequent features will paint themselves.  We also avoid adding an alignment wide feature just for decorations - this disturbed the index and added extra complexity at the cost of adjusting one coordinate.
 
 <li> <i>Handle glyphs via a separate bump overlap range.</i><br />
 These can occur between features (nc-splice) in which case they are handled as above. They can also occur at the start and end of a series and extend beyond these bounds. As the exisitng overlap mechanism will pick up expose events for the top end we need no concern ourselfves with that. The bottom end however requires further processing of features beyond the expose region to pick up features just beyond it. As glyphs are defined in pixel coordinates we can calculate maximum value of these and adjust for the current zoom level in the draw function.  Glyphs will be drawn per feature, and this process can be added regardless of bump state, which will keep the code cleaner.
 </ul>
-Here's an pictorial repepresentation:
+Here's an pictorial repepresentation:<br />
 <img src="Design/notes/bumped_align.png"  class="img">
 
 <h4>Handling alignment glyphs</h4>
@@ -219,6 +219,18 @@ This gives: a) efficient memory use for stable glyph styles, b) once only calcul
 <p><b>Note</b> this code is part of the glyph implementation and not restricted to alignment features, although other types of features would have to code the interface if requried.
 </p>
 <p><i>A Nuance</i>: score_mode ALT displays the glyph using a different colour, and this can be implemented by the calling code easily enough, we have the options to use shorter signatures and fewer glyph instances,; however this is not hugely significant in terms of speed or memory use.
+</p>
+
+<h4>Transcripts</h4>
+<h5>Compared with alignments</h5>
+<p>Due to historical constraints alignments are soucred from multiple features and then linked together and in future we expect this to change, with a single cigar string and sequence for a whole series.  Transcripts appear in several lines of GFF but are assembled on input into complex features.  These then have to be added to the canvas as a series of simple features linked together.  Data volumes are much lower and they are normally viewed bumped, and there is no difference in the display format whether bumped or not.
+</p>
+<p>Alignments were implmented by having all decorations (such as co-linear lines) as virtual canvas items a) to handle alternate display formats without deleting and adding large amounts of data to the canvas on bumping. and b) to reduce the amount of features in the canvas.  Niether of these constraints are relevant to transcripts.
+</p>
+<h5>Displaying a Transcript</h5>
+<p>A new feature specific fucntion will be written to handle adding transcripts to the canvas, whcih will display each exon and intron as simple canvas features and ink these together via the existing left and right links.  CDS and UTR regions could be added as distinct canvas features but this would make selection of a complete exon more complex and ths will not be done. An exon with a CDS/UTR split will be dislayed as a single feature but my consist of 1, 2, or 3 boxes.  Unlike alignments intron lines will be added as explicit canvas features.
+</p>
+<p>There will be no data structure in the canvas for a composite transcript object, just an intron/exon structure, each of which will refer to the transcript feature in the feature context and be linked to its siblings.
 </p>
 
 <h4>Handling focus highlight</h4>

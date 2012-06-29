@@ -191,11 +191,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
 
-static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data) ;
-static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
-
 static void setColours(ZMapWindow window) ;
 
 void zmapWindowHideEmpty(ZMapWindow window);
@@ -291,7 +286,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   if(!window->item_factory)
     {
-      window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item, window->long_items);
+      window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item); //, window->long_items);
       zmapWindowFeatureFactoryInit(window);
     }
 
@@ -330,9 +325,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   zmapWindowRulerCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
-
-  /* HOPE THIS IS THE RIGHT PLACE TO SET ZOOM FOR LONG_ITEMS... */
-  zmapWindowLongItemSetMaxZoom(window->long_items, zMapWindowGetZoomMax(window)) ;
 
 
       /* we use diff coords from the sequence if RevComped */
@@ -399,6 +391,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
       zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
 
+#warning seq offset should be in block and/or align? shouldn-t this should go into drawContextCB??
 
       /* Add a background to the root window, must be as long as entire sequence... */
       root_group = zmapWindowContainerGroupCreateFromFoo(foo_canvas_root(window->canvas),
@@ -693,6 +686,8 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   feature_stack->feature = feature;   /* may be NULL in which case featureset must not be */
 
+  feature_stack->filter = FALSE;
+
   if(feature && feature->style)	/* chicken */
     {
       if(zMapStyleIsStrandSpecific(feature->style))
@@ -782,6 +777,11 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 #endif
 
   featureset_data.window = window ;
+//{
+//	int x = 0;
+//if(!strncmp(g_quark_to_string(feature_set->unique_id),"3 frame",7))
+//	x = 1;
+//}
 
   if (forward_col_wcp)
     {
@@ -838,29 +838,24 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   zmapGetFeatureStack(&featureset_data.feature_stack,feature_set,NULL,frame);
 
+  featureset_data.feature_stack.filter = TRUE;
 
-//  if(zMapStyleDensity(feature_set->style))
-/* now works with any CanvasFeatureset */
-    {
-      ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-	if(zMapStyleDensityStagger(feature_set->style))
-	{
-      	featureset_data.feature_stack.set_index =
-			get_featureset_column_index(window->context_map,feature_set->unique_id);
-	}
-      if(f_src)
-		featureset_data.feature_stack.maps_to = f_src->maps_to;
+  ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-      //printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
-
-      //  	if(!featureset_data.feature_stack.maps_to)
-      //  		featureset_data.feature_stack.maps_to = feature_set->unique_id;	/* maps to self */
-    }
+  if(zMapStyleDensityStagger(feature_set->style))
+  {
+     	featureset_data.feature_stack.set_index =
+		get_featureset_column_index(window->context_map,feature_set->unique_id);
+  }
+  if(f_src)
+  	featureset_data.feature_stack.maps_to = f_src->maps_to;
 
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
       g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+
+//printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
 
   {
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
@@ -1210,11 +1205,13 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 #ifdef MH17_NEVER_INCLUDE_THIS_CODE
               zMapLogMessage("3F1: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
+// printf("3F1: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 //	      if (window->display_3_frame)
 		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
 	    }
 	  else
 	    {
+
 	      ZMapStrand column_strand;
 
 	      column_strand = zmapWindowContainerFeatureSetGetStrand(container_set) ;
@@ -1230,6 +1227,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
+// printf("3F3: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 
 		  /* remove all items from hash first !! */
 		  removeAllFeatures(window, container_set) ;
@@ -1357,7 +1355,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
   if(!f_col)
     {
-      zMapLogWarning("No column defined for featureset %s", g_quark_to_string(feature_set_id));
+      zMapLogWarning("No column defined for featureset \"%s\"", g_quark_to_string(feature_set_id));
       return NULL;
     }
   zMapAssert(f_col && f_col->style);
@@ -1911,7 +1909,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	  }
 	if(!style)
 	  {
-            zMapLogCritical("no column style for featureset %s\n",g_quark_to_string(feature_set->unique_id));
+            zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
             break;
 	  }
 	canvas_data->style = style;
@@ -2387,6 +2385,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 
   /* If we are doing frame specific display then don't display the feature if its the wrong
    * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
+//if(!strncmp(g_quark_to_string(feature->unique_id),"3 frame",7))
+//	printf("process feature %s: %d/%d (%d)\n",g_quark_to_string(feature->unique_id), featureset_data->frame, zmapWindowFeatureFrame(feature), feature->x1);
+
   if (featureset_data->frame != ZMAPFRAME_NONE
       && (featureset_data->frame != zmapWindowFeatureFrame(feature)
 	  || (!(window->show_3_frame_reverse) && display_strand == ZMAPSTRAND_REVERSE)))
@@ -2582,16 +2583,11 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 			select.filter.enable = FALSE;
 
 			foo = zmapWindowContainerGetNthFeatureItem((ZMapWindowContainerGroup) container_set, ZMAPCONTAINER_ITEM_FIRST) ;
-			if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
+			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
 			{
-				/* get the canvasFeatureset inside the canvas item */
-				FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
 				ZMapWindowFeaturesetItem fi;
 				ZMapFeatureTypeStyle style;
-				zMapAssert(group && group->item_list);
-
-				fi = (ZMapWindowFeaturesetItem) group->item_list->data;
-
+				fi = (ZMapWindowFeaturesetItem) foo;
 				style = zMapWindowContainerFeatureSetGetStyle(container_set);
 				if(style)
 				{
@@ -2653,11 +2649,15 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   GList *menu_sets = NULL ;
   ItemMenuCBData cbdata ;
   ZMapFeature feature;
-  ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
+  ZMapFeatureSet feature_set ;
+  ZMapGUIMenuItem seq_menus ;
+
+
   menu_title = (char *) g_quark_to_string(container_set->original_id);
 
-  cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
+  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set) ;
 
+  cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
   cbdata->x = button_event->x ;
   cbdata->y = button_event->y ;
   cbdata->item_cb = FALSE ;
@@ -2675,19 +2675,6 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       menu_sets = g_list_append(menu_sets, separator) ;
     }
 
-  menu_sets
-    = g_list_append(menu_sets,
-		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-					   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
-
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, cbdata)) ;
-
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-  menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
-
   if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
     {
       if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
@@ -2696,8 +2683,6 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	}
       else if (zMapStyleIsPfetchable(feature->style))
 	{
-	  menu_sets = g_list_append(menu_sets, separator) ;
-
 	  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	    {
 	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomolFeature(NULL, NULL, cbdata)) ;
@@ -2712,113 +2697,32 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
 	{
 	  menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
-
 	}
 
+      if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
+	menu_sets = g_list_append(menu_sets, seq_menus) ;
     }
 
-  {
-    ZMapGUIMenuItem seq_menus = zmapWindowMakeMenuSeqData(NULL, NULL, cbdata);
-    /* list all short reads data, temp access till we get wiggle plots running */
-    if (seq_menus)
-      menu_sets = g_list_append(menu_sets, seq_menus);
-  }
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, separator) ;
+
+  menu_sets
+    = g_list_append(menu_sets,
+		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
+					   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
+
+  if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, cbdata)))
+    menu_sets = g_list_append(menu_sets, seq_menus);
+
+  menu_sets = g_list_append(menu_sets, separator) ;
+
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
+
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
-
-  return ;
-}
-
-
-
-
-/* this is in the general menu and needs to be handled separately perhaps as the index is a global
- * one shared amongst all general menu functions... */
-
-static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
-					 ZMapGUIMenuItemCallbackFunc callback_func,
-					 gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "List All Column Features",     1, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Feature Search Window", 2, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",     5, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window", 6, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Toggle Mark",           7, columnMenuCB, NULL, "M"},
-      {ZMAPGUI_MENU_NONE, NULL,                      0, NULL,         NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-static void columnMenuCB(int menu_item_id, gpointer callback_data)
-{
-  ZMapWindowContainerFeatureSet container_set;
-  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-
-      /* MH17: if you move this function please update the comment in zmapWindowFeature.c/zmapMakeItemMenu() */
-      /* if we get here they clicked on a column background */
-
-  container_set = (ZMapWindowContainerFeatureSet)(menu_data->item) ;
-
-  switch (menu_item_id)
-    {
-    case 1:
-      {
-      ZMapFeatureSet feature_set ;
-	ZMapWindowFToISetSearchData search_data;
-	gboolean zoom_to_item = TRUE;
-
-      feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
-
-#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
-	zoom_to_item = FALSE;
-#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
-
-	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
-						    feature_set->parent->parent->unique_id,
-						    feature_set->parent->unique_id,
-						    container_set->unique_id,
-                                        0,
-						    g_quark_from_string("*"),
-						    zMapFeatureStrand2Str(zmapWindowContainerFeatureSetGetStrand(container_set)),
-						    zMapFeatureFrame2Str(zmapWindowContainerFeatureSetGetFrame(container_set)));
-
-	zmapWindowListWindow(menu_data->window,
-			     NULL, (char *)g_quark_to_string(container_set->original_id),
-			     NULL, NULL,
-			     menu_data->window->context_map,
-			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
-	break ;
-      }
-    case 2:
-      zmapWindowCreateSearchWindow(menu_data->window, NULL, NULL, menu_data->context_map, menu_data->item) ;
-      break ;
-
-    case 5:
-      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
-
-      break ;
-
-    case 6:
-      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
-
-      break ;
-
-    case 7:
-      zmapWindowToggleMark(menu_data->window, 0);
-      break;
-
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
-  g_free(menu_data) ;
 
   return ;
 }

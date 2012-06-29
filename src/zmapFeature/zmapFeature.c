@@ -629,9 +629,12 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
   return feature;
 }
 
-/*!
- * Adds the standard data fields to an empty feature.
- *  */
+/* Adds the standard data fields to an empty feature. 
+ * 
+ * 
+ * 
+ * 
+ */
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *SO_accession,
 				    ZMapStyleMode feature_type,
@@ -642,7 +645,6 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 {
   gboolean result = FALSE ;
 
-  /* Currently we don't overwrite features, they must be empty. */
   zMapAssert(feature) ;
 
   if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
@@ -661,10 +663,29 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 	  feature->flags.has_score = 1 ;
 	  feature->score = (float) score ;
 	}
+
+      /* will need expanding.... */
+      switch (feature->type)
+	{
+	case ZMAPSTYLE_MODE_TRANSCRIPT:
+	  {
+	    result = zMapFeatureTranscriptInit(feature) ;
+
+	    break ;
+	  }
+	default:
+	  {
+	    break ;
+	  }
+	}
+
+      result = TRUE ;
     }
 
+  /* UGH....WHAT IS THIS LOGIC....HORRIBLE...... */
   if(feature->unique_id)      /* some DAS servers give use  Name "" which is an error */
     result = TRUE ;
+
 
   return result ;
 }
@@ -725,9 +746,7 @@ gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession)
 }
 
 
-/*!
- * Adds homology data to a feature which may be empty or may already have partial features.
- *  */
+/* Adds splice data for splice features, usually from gene finder output. */
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 {
   gboolean result = TRUE ;
