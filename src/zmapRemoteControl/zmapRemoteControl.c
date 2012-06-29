@@ -1,4 +1,4 @@
-/*  Last edited: Apr 11 09:37 2012 (edgrif) */
+/*  Last edited: Jun 28 10:53 2012 (edgrif) */
 /*  File: zmapRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2010: Genome Research Ltd.
@@ -186,6 +186,7 @@ static gboolean clipboardTakeOwnership(GtkClipboard *clipboard,
 				       gpointer user_data) ;
 static void resetRemoteToIdle(ZMapRemoteControl remote_control) ;
 static gboolean isClipboardDataValid(GtkSelectionData *selection_data, char *curr_selection, char **err_msg_out) ;
+static char *getClipboardData(GtkSelectionData *selection_data, char **err_msg_out) ;
 gboolean isInReceiveState(RemoteControlState state) ;
 gboolean isInSendState(RemoteControlState state) ;
 
@@ -881,6 +882,7 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
       else
 	{
 	  char *err_msg = NULL ;
+	  char *selection_str ;
 
 	  REMOTELOGMSG(remote_control,
 		       "Received request from peer on receive clipboard \"%s\".",
@@ -893,14 +895,20 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
 
 	      g_free(err_msg) ;
 	    }
+	  else if (!(selection_str = getClipboardData(selection_data, &err_msg)))
+	    {
+	      CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+			       "%s", err_msg) ;
+
+	      g_free(err_msg) ;
+	    }
 	  else
 	    {
 	      REMOTELOGMSG(remote_control,
 			   "Retrieved peers request from clipboard \"%s\", request is:\n \"%s\".",
-			   receive_request->our_atom_string, selection_data->data) ;
+			   receive_request->our_atom_string, selection_str) ;
 
-	      receive_request->their_request = g_strdup((char *)(selection_data->data)) ;
-
+	      receive_request->their_request = selection_str ;
 
 	      /* Retake ownership so they know we have got request. */
 	      if (!clipboardTakeOwnership(receive_request->our_clipboard,
@@ -1134,12 +1142,12 @@ static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData
 			   receive->our_atom_string,
 			   target_name, receive->our_reply) ;
 
-	      /* Set the data in the selection data param. */
+	      /* Set the data in the selection data param, N.B. terminating NULL is not sent. */
 	      gtk_selection_data_set(selection_data,
 				     remote_control->target_atom,
 				     8,
 				     (guchar *)(receive->our_reply),
-				     (int)(strlen(receive->our_reply) + 1)) ;
+				     (int)(strlen(receive->our_reply))) ;
 
 	      remote_control->state = REMOTE_STATE_SERVER_WAIT_REPLY_ACK ;
 
@@ -1269,12 +1277,12 @@ static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData
 			   send->their_atom_string,
 			   target_name, send->our_request) ;
 
-	      /* Set the data in the selection data param. */
+	      /* Set the data in the selection data param, N.B. the terminating NULL is not sent. */
 	      gtk_selection_data_set(selection_data,
 				     remote_control->target_atom,
 				     8,
 				     (guchar *)(send->our_request),
-				     (int)(strlen(send->our_request) + 1)) ;
+				     (int)(strlen(send->our_request))) ;
 
 	      remote_control->state = REMOTE_STATE_CLIENT_WAIT_REQ_ACK ;
 
@@ -1469,26 +1477,37 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
 	}
       else
 	{
+	  char *selection_str ;
+	  char *err_msg = NULL ;
+
 	  REMOTELOGMSG(remote_control,
 		       "Received reply from peer on receive clipboard \"%s\".",
 		       send->their_atom_string) ;
 
 
-	  /* All ok so record the reply, we'll process it when we get a clear from the peer. */
-	  if (selection_data->length < 0)
+	  /* Check and record the reply if all ok, we'll process it when we get a clear from the peer. */
+	  if (!isClipboardDataValid(selection_data, send->their_atom_string, &err_msg))
 	    {
 	      CALL_ERR_HANDLER(remote_control,
 			       ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "Could not retrieve peer data from clipboard \"%s\".",
-			       send->their_atom_string) ;
+			       "%s", err_msg) ;
+
+	      g_free(err_msg) ;
 	    }
+	  else if (!(selection_str = getClipboardData(selection_data, &err_msg)))
+	    {
+	      CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+			       "%s", err_msg) ;
+
+	      g_free(err_msg) ;
+	    }	  
 	  else
 	    {
 	      REMOTELOGMSG(remote_control,
 			   "Retrieved peers reply from clipboard \"%s\", reply is:\n \"%s\".",
-			   send->their_atom_string, selection_data->data) ;
+			   send->their_atom_string, selection_str) ;
 
-	      send->their_reply = g_strdup((char *)(selection_data->data)) ;
+	      send->their_reply = selection_str ;
 
 	      /* Retake ownership so they know we have got reply. */
 	      if (!clipboardTakeOwnership(send->their_clipboard,
@@ -2012,6 +2031,7 @@ gboolean isInSendState(RemoteControlState state)
   return result ;
 }
 
+
 /* Checks to see that the data specified in selection_data is a format that we support
  * and that there is data.
  * Returns TRUE if data format is correct otherwise returns FALSE and sets err_msg_out
@@ -2082,3 +2102,43 @@ static gboolean isClipboardDataValid(GtkSelectionData *selection_data, char *cur
 
   return result ;
 }
+
+
+/* 
+ * All requests are strings but they do _NOT_ have a null terminator as they must
+ * be language independent. This function checks to see that the string is non-NULL
+ * and then returns a valid C string made from the clipboard contents, the string
+ * should be g_free()'d when finished with.
+ * 
+ * Note, function expects format etc. of selection to already have been checked using
+ * isClipboardDataValid().
+ * 
+ * Returns NULL and an error message in err_msg_out if there was a problem.
+ */
+static char *getClipboardData(GtkSelectionData *selection_data, char **err_msg_out)
+{
+  char *clipboard_str = NULL ;
+  int length ;
+  guchar *data_ptr ;
+
+  length = gtk_selection_data_get_length(selection_data) ;
+  data_ptr = gtk_selection_data_get_data(selection_data) ;
+
+  if (!(*data_ptr))
+    {
+      *err_msg_out = g_strdup_printf("First char in clipboard data is NULL, data length was \"%d\".", length) ;
+
+      clipboard_str = NULL ;
+    }
+  else
+    {
+      clipboard_str = g_strndup(data_ptr, length) ;
+    }
+
+  return clipboard_str ;
+}
+
+
+
+
+
