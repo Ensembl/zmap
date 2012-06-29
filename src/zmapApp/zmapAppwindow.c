@@ -208,6 +208,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       app_window_cbs_G.remote_request_func_data = (void *)app_context ;
 
       remote_control = TRUE ;
+      app_context->defer_hiding = TRUE ;
     }
 
 
@@ -311,7 +312,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* We don't always want to show this window, for lace users it is useless.... */
-  if (!(app_context->show_mainwindow))
+  if (!(app_context->show_mainwindow) && !(app_context->defer_hiding))
     gtk_widget_unmap(toplevel) ;
 
 
@@ -1174,6 +1175,9 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
       zMapLogCritical("%s", "Cannot initialise zmap remote control interface.") ;
     }
 
+  /* Hide main window if required. */
+  if (!(app_context->show_mainwindow) && app_context->defer_hiding)
+    gtk_widget_unmap(app_context->app_widg) ;
 
   return ;
 }

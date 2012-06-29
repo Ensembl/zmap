@@ -191,6 +191,8 @@ typedef struct _ZMapAppContextStruct
 
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
+  gboolean defer_hiding ;				    /* Should hide of main window be deferred ? */
+
 
   /* Was a default sequence specified in the config. file.*/
   ZMapFeatureSequenceMap default_sequence;
