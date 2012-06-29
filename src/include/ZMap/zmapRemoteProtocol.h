@@ -46,6 +46,21 @@
  */
 
 
+
+/* 
+ *    Data type descriptors for the GtkSelectionData used for passing requests/replies.
+ */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Wanted to use our own but lookds like Perl/Tk won't support it.... */
+#define ZACP_DATA_TYPE   "ZACP_COMMAND_STR"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define ZACP_DATA_TYPE   "STRING"
+#define ZACP_DATA_FORMAT 8			    /* Bits per unit. */
+
+
+
 /* Protocol "types", describe what type of message it is.
  * 
  * This is version 2 of the protocol because there will be some incompatible changes
