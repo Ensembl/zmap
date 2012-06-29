@@ -2119,10 +2119,10 @@ static char *getClipboardData(GtkSelectionData *selection_data, char **err_msg_o
 {
   char *clipboard_str = NULL ;
   int length ;
-  guchar *data_ptr ;
+  char *data_ptr ;
 
   length = gtk_selection_data_get_length(selection_data) ;
-  data_ptr = gtk_selection_data_get_data(selection_data) ;
+  data_ptr = (char *)gtk_selection_data_get_data(selection_data) ;
 
   if (!(*data_ptr))
     {
