@@ -214,10 +214,11 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
+#ifdef DEBUG_CONTEXT_MAP
 static void print_source_2_sourcedata(char * str,GHashTable *data) ;
 static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
-
+#endif
 
 /* These callback routines are global because they are set just once for the lifetime of the
  * process. */
@@ -4988,7 +4989,7 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 }
 
 
-
+#ifdef DEBUG_CONTEXT_MAP
 
 static void print_source_2_sourcedata(char * str,GHashTable *data)
 {
@@ -5048,6 +5049,6 @@ static void print_col2fset(char * str,GHashTable *data)
     }
 }
 
-
+#endif
 
 
