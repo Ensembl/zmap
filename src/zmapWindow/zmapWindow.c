@@ -4333,6 +4333,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
+    case GDK_1:
+	    zMapLogWarning("point 1","");
+	    break;
+    case GDK_2:
+	    zMapLogWarning("point 2","");
+	    break;
+    case GDK_3:
+	    zMapLogWarning("point 3","");
+	    break;
+
     case GDK_Delete:
     case GDK_BackSpace:					    /* Good for Macs which have no delete key. */
       {

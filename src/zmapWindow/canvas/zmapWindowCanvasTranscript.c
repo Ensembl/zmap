@@ -146,7 +146,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 
 
 
-static void zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
 {
 	int ni = 0, ne = 0, i;
 	GArray *introns,*exons;
@@ -198,6 +198,8 @@ static void zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featur
 			tr->index = i;
 		}
 	}
+
+	return feat;
 }
 
 

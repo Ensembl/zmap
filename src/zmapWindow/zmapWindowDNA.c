@@ -772,14 +772,14 @@ static void clearCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-/* Slightly obscure GTK interface...this function is called when the user selects a colour 
+/* Slightly obscure GTK interface...this function is called when the user selects a colour
  * from the colour chooser dialog displayed when they click on the colour button,
  * i.e. it is _not_ a callback for the button itself. */
-static void colourSetCB(GtkColorButton *widget, gpointer user_data) 
+static void colourSetCB(GtkColorButton *widget, gpointer user_data)
 {
   DNASearchData search_data = (DNASearchData)user_data ;
   GdkColor colour = {0} ;
-  char *colour_string = NULL ;
+//  char *colour_string = NULL ;
   char **target_string ;
 
   if (GTK_WIDGET(widget) == search_data->forward_widget)
@@ -793,7 +793,7 @@ static void colourSetCB(GtkColorButton *widget, gpointer user_data)
   gtk_color_button_get_color(widget, &colour) ;
 
   *target_string = gdk_color_to_string(&colour) ;
- 
+
   return ;
 }
 
@@ -1104,10 +1104,10 @@ static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle st
 
   forward_colour_spec = zMapStyleMakeColourString(search_data->forward_colour_str, "black", NULL,
 						  search_data->forward_colour_str, "black", NULL) ;
-  
+
   reverse_colour_spec = zMapStyleMakeColourString(search_data->reverse_colour_str, "black", NULL,
 						  search_data->reverse_colour_str, "black", NULL) ;
-  
+
   g_object_set(G_OBJECT(style),
 		 ZMAPSTYLE_PROPERTY_COLOURS, forward_colour_spec,
 		 ZMAPSTYLE_PROPERTY_REV_COLOURS, reverse_colour_spec,

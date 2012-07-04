@@ -713,7 +713,7 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 
 
 
-static void zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+static ZMapWindowCanvasFeature zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
 {
 	ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
 
@@ -722,14 +722,22 @@ static void zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem feature
   	if(feat->feature->feature.homol.flags.masked)
   		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
 
+#if MH17_DO_HIDE
 	/* NOTE if we configure styles to not load these into the canvas we don't get here */
+	/* however if the user selects 'Expand feature' then we do */
+	/* so we can comment out this line and remove a showhide call from zmapWindowFeatureExpand()
+	 * _follow this link if you revert this code_
+	 */
 	if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
 	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
+#endif
 
 	/* NOTE we may not have an index so this flag must be unset seperately */
 	/* eg on OTF w/ delete existing selected */
 	if(featureset->link_sideways)
 		featureset->linked_sideways = FALSE;
+
+	return feat;
 }
 
 

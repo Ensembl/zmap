@@ -959,7 +959,10 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
       feature_stack.feature = (ZMapFeature) l->data;
       item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style, (FooCanvasGroup *) container_set, &feature_stack);
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
+#if MH17_DO_HIDE
+// ref to same #if in zmapWindowCanvasAlignment.c
       zMapWindowCanvasItemShowHide(item, TRUE);
+#endif
     }
 
 
