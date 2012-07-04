@@ -94,7 +94,7 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
 static void storeSpliceCoords(ZMapFeature feature, GList **splice_list);
 
 
-/* collapse squash and join simple reads into composite features weher these overlap meaningfully */
+/* collapse squash and join simple reads into composite features where these overlap meaningfully */
 gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_context)
 {
       zMapFeatureContextExecute((ZMapFeatureAny) diff_context,

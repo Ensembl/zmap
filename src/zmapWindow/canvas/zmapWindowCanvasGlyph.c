@@ -73,13 +73,15 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
 static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 				       GdkDrawable *drawable, GdkEventExpose *expose);
 
+static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
+
 static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature feature,
 			  ZMapFeatureTypeStyle style, double score,
 			  double *origin_out, double *width_out, double *height_out) ;
 
 static void glyphColumnInit(ZMapWindowFeaturesetItem featureset) ;
 static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable, GdkEventExpose *expose) ;
-static void glyphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
+//static void glyphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			 double item_x, double item_y, int cx, int cy,
 			 double x, double y, double x_off) ;
@@ -89,11 +91,11 @@ static void glyphColumnFree(ZMapWindowFeaturesetItem featureset) ;
 /*
  * Caching glyphs
  *
- * alignments are the most populous features and may have a lot of glpyhs attached when bumped
- * to avoid excessive memory use and pointless recalculation ofs glyph shapes
+ * alignments are the most populous features and may have a lot of glyphs attached when bumped
+ * to avoid excessive memory use and pointless recalculation of glyph shapes
  * we cache thse if they have limited variability, determined by a signature.
  *
- * as glyphs are pixel base features and generally quite small there is the possibility to do this
+ * as glyphs are pixel based features and generally quite small there is the possibility to do this
  * even for fully variable configurations, imposing a maximum limit on the memory used and also display time
  * (not done in first implementation)
  *
@@ -116,10 +118,11 @@ void zMapWindowCanvasGlyphInit(void)
 
   funcs[FUNC_SET_INIT] = glyphColumnInit ;
   funcs[FUNC_SET_PAINT] = glyphSetPaint ;
-  funcs[FUNC_ZOOM] = glyphZoom ;
+//  funcs[FUNC_ZOOM] = glyphZoom ;
   funcs[FUNC_PAINT] = zMapWindowCanvasGlyphPaintFeature ;
   funcs[FUNC_POINT] = glyphPoint ;
   funcs[FUNC_FREE] = glyphColumnFree ;
+  funcs[FUNC_ADD] = zMapWindowCanvasGlyphAddFeature ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, sizeof(zmapWindowCanvasGlyphStruct), 0);
 
@@ -222,11 +225,10 @@ static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featurese
 {
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph) feature;
   ZMapFeature feat = feature->feature;
-  ZMapStyleGlyphShape shape;
-  FooCanvasItem *foo = (FooCanvasItem *) featureset;
   double y1;
-  double col_width;
 
+#if 0
+// now done in add function
   if (!glyph->coords_set)
     {
       /* for stand-alone glyphs which will be unset ie zero */
@@ -246,6 +248,7 @@ static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featurese
       if(!zmap_window_canvas_set_glyph(foo, glyph, feat->style, feat, col_width, feat->score ))
 	return;
     }
+#endif
 
   /* Boundary features are usually given by the bases either side so the actual position
    * of the feature is given (counter-intuitively) by feat->x2 which is the point between
@@ -313,6 +316,7 @@ static ZMapStyleGlyphShape get_glyph_shape(ZMapFeatureTypeStyle style, int which
 
   return shape;	/* may be NULL */
 }
+
 
 
 
@@ -384,7 +388,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
 
   /* We need splice markers to behave in a particular way for wormbase, I've added this function
-   * to get the positions so it doesn't interfer with the general workings of glyphs. */
+   * to get the positions so it doesn't interfere with the general workings of glyphs. */
   if (zMapStyleIsSpliceStyle(feature->style))
     {
       calcSplicePos(featureset, feature, style, score, &origin, &width, &height) ;
@@ -588,6 +592,7 @@ static void glyph_set_coords(ZMapWindowCanvasGlyph glyph)
 
 
 /* oh gosh...what do 'points' end up measuring ?????? */
+/* pixel coordinates, the glyph is based arounf cx,cy */
 static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count, int cx, int cy)
 {
   int i;
@@ -701,12 +706,14 @@ static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *draw
 
 
 
+#if 0
 static void glyphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
   /* Not sure if I will need this later so left in for now. */
 
   return ;
 }
+#endif
 
 
 /* Free the glyph column. */
@@ -944,6 +951,7 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   /* Glyphs only have shape when drawn (I think...) so it's possible when looking for nearby
    * glyphs for the point operation to be looking at glyphs that haven't been drawn and
    * do not have a shape. */
+  /* mh17: i added a GlyphAdd fucntion, so we can set the shape etc before paint, but this test is harmless */
   if (glyph->shape)
     {
       /* Get feature extent on display. */
@@ -994,5 +1002,45 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
     }
 
   return best ;
+}
+
+
+/* we need to calculate the exten og the glyph which is somewhere around the single base coordinate */
+static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+{
+	ZMapWindowCanvasFeature feat;
+	ZMapWindowCanvasGlyph glyph;
+	ZMapStyleGlyphShape shape;
+	FooCanvasItem *foo = (FooCanvasItem *) featureset;
+	double col_width;
+	double longest = featureset->longest;
+
+	feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+	glyph = (ZMapWindowCanvasGlyph) feat;
+
+	/* work out the real coords of the glyph on display and asign the shape */
+      /* for stand-alone glyphs which will be unset ie zero */
+      /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
+      if (zMapStyleIsSpliceStyle(feature->style))
+		glyph->which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
+
+      shape = get_glyph_shape(feature->style, glyph->which, feature->strand) ;
+
+      if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
+		return feat;
+
+      glyph->shape = shape;
+
+      col_width = zMapStyleGetWidth(featureset->style);
+
+      zmap_window_canvas_set_glyph(foo, glyph, feature->style, feature, col_width, feature->score );
+
+		/* as glyphs are fixed size we store the longest as pixels and expand on search */
+		/* so here we overwrite the values set by zMapWindowFeaturesetAddFeature(); */
+	if(longest < shape->height)
+		longest = shape->height;
+	featureset->longest = longest;
+
+	return feat;
 }
 
