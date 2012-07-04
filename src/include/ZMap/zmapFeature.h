@@ -1300,6 +1300,10 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, GList **exon_list_out) ;
 void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
+ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
+                                                         gpointer data,
+                                                         gpointer user_data,
+                                                         char **error_out);
 
 
 /* ============================================================== for teh === */
