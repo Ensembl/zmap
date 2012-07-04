@@ -1,4 +1,4 @@
-/*  File: zmapWindowCanvasBasic.c
+/*  File: zmapWindowCanvasAssembly.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -26,7 +26,9 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem basic features
+ * implements callback functions for FeaturesetItem assembly features
+ * NOTE originally assemebly feature has display option to shade overlaps and show the actual path chosen
+ * this was never immplemented in ZMapWindowCanvasItems and this mopdule is initially a copy of CanvasBasic
  *-------------------------------------------------------------------
  */
 
@@ -40,11 +42,11 @@
 #include <string.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic_I.h>
+#include <zmapWindowCanvasAssembly_I.h>
 
 
 /* not static as we want to use this in alignments */
-void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
+void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
 	gulong fill,outline;
 	int colours_set, fill_set, outline_set;
@@ -57,21 +59,10 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	 * but they are cached by the calling function
 	 * and also the window focus code
 	 */
+
 	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
-
-	if(fill_set && feature->feature->population)
-	{
-		FooCanvasItem *foo = (FooCanvasItem *) featureset;
-		ZMapFeatureTypeStyle style = feature->feature->style;
-
-		if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
-		{
-			fill = (fill << 8) | 0xff;	/* convert back to RGBA */
-			fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
-		}
-	}
 
 	x1 = featureset->width / 2 - feature->width / 2;
 	if(featureset->bumped)
@@ -85,12 +76,12 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 
 
 
-void zMapWindowCanvasBasicInit(void)
+void zMapWindowCanvasAssemblyInit(void)
 {
 	gpointer funcs[FUNC_N_FUNC] = { NULL };
 
-	funcs[FUNC_PAINT] = zMapWindowCanvasBasicPaintFeature;
+	funcs[FUNC_PAINT] = zMapWindowCanvasAssemblyPaintFeature;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0, 0);
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, 0, 0);
 }
 

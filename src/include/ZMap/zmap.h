@@ -34,3 +34,5 @@
 /* global #defines */
 
 #define GOBJ_CAST      1      // use static casts where possible
+
+#define ZWCI_AS_FOO	1		// zmap window canvas items as foo canvas items not groups

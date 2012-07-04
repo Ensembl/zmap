@@ -40,6 +40,8 @@
 #include <zmapWindowCanvas.h>
 #include <zmapWindowNavigator_P.h>
 
+#define MH17_DEBUG_NAV_FOOBAR	0
+
 #define NAVIGATOR_WIDTH 100.0
 
 #define ZMAP_NAVIGATOR_CLASS_DATA "ZMAP_WINDOW_NAV_CLASS_DATA"
@@ -55,6 +57,7 @@ typedef struct _ZMapNavigatorClassDataStruct
   GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
   double start,end;
+  double span;
   ZMapWindowNavigator window_navigator;         /* needed to reposition text on resize */
 
 } ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
@@ -274,13 +277,14 @@ void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y,double
 
   zMapAssert(class_data);
 
-#if MH17_DEBUG_MAV_FOOBAR
+#if MH17_DEBUG_NAV_FOOBAR
 printf("nav size request %f %f, %f %f\n",x,y,start,end);
 #endif
   class_data->container_width  = x;
   class_data->container_height = y;
   class_data->start = start;
   class_data->end = end;
+  class_data->span = end - start + 1;
 
   return ;
 }
@@ -299,7 +303,8 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   zMapAssert(class_data);
 
   curr_pixels   = canvas->pixels_per_unit_y;
-  target_pixels = getZoomFactor(class_data->height, class_data->text_height, NAVIGATOR_SIZE);
+//  target_pixels = getZoomFactor(class_data->height, class_data->text_height, NAVIGATOR_SIZE);
+  target_pixels = getZoomFactor(class_data->height, class_data->text_height, class_data->span);
 
   {
       double x1, x2, y1, y2, x3;
@@ -325,17 +330,27 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
       foo_canvas_item_lower_to_bottom(class_data->top_bg);
       foo_canvas_item_set(class_data->bot_bg,
 			  "x1", 0.0,
-			  "y1", (double)NAVIGATOR_SIZE,
+			  "y1", class_data->span,	// (double)NAVIGATOR_SIZE,
 			  "x2", x3,
 			  "y2", y2,
 			  NULL);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
 
-#if MH17_DEBUG_MAV_FOOBAR
-printf("fill widget %f %f, %f %f\n",y1,0.0,(double) NAVIGATOR_SIZE,y2);
+#if MH17_DEBUG_NAV_FOOBAR
+printf("fill widget %f %f, %f %f\n", x1, y1, x2, y2);
 #endif
       zmapWindowNavigatorWidthChanged(widget, x1, x2);
+
+#if DONT_TRY_IT
+	/* forms an endless loop: */
+	if(class_data->window_navigator)
+		zmapWindowNavigatorPositioning(class_data->window_navigator);
+#endif
   }
+
+#if MH17_DEBUG_NAV_FOOBAR
+  print_offsets("after fill widget");
+#endif
 
   return ;
 }
@@ -376,9 +391,6 @@ static void navCanvasSizeAllocateCB(GtkWidget     *allocatee,
 
   new_width  = allocation->width;
   new_height = allocation->height;
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("nav size 1");
-#endif
 //printf("navCanvasSizeAllocateCB: width = %d, height = %d\n", new_width, new_height);
 
   if(new_height != class_data->height)
@@ -393,9 +405,6 @@ print_foo("nav size 1");
 
   class_data->width = new_width;
 
-#if MH17_DEBUG_NAV_FOOBAR
-print_foo("nav size 2");
-#endif
   return ;
 }
 
@@ -438,7 +447,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
   zMapAssert(x1 && x2 && y1 && y2);
 
   max_x = 32000.0;             /* only canvas limit */
-  max_y = (double)(NAVIGATOR_SIZE);
+  max_y = class_data->span;	//(double)(NAVIGATOR_SIZE);
 
   container_width  = class_data->container_width;
   container_height = class_data->container_height;
@@ -460,7 +469,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 //      *y2 += (container_height > max_y ? max_y : container_height) + border_y;
     }
 
-#if MH17_DEBUG_MAV_FOOBAR
+#if MH17_DEBUG_NAV_FOOBAR
 printf("fetch scroll coords %f %f (%f %f)\n",*y1,*y2, container_height, border_y);
 #endif
   return ;
@@ -509,7 +518,7 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
   */
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
-                               g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
+                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &font, &font_desc))
     printf("Couldn't get fixed width font\n");
   else

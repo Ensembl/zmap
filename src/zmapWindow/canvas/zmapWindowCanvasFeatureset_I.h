@@ -38,7 +38,7 @@
 #include <glib-object.h>
 
 #include <libzmapfoocanvas/libfoocanvas.h>
-//#include <zmapWindowCanvasItem_I.h>
+#include <zmapWindowCanvasItem_I.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <ZMap/zmapStyle.h>
@@ -77,7 +77,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
 #define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
 #define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score */
+#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score or something else eg locus prefix */
 #define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
 #define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
 #define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
@@ -127,8 +127,7 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 
 typedef struct _zmapWindowFeaturesetItemClassStruct
 {
-//  zmapWindowCanvasItemClass __parent__;
-  FooCanvasItemClass __parent__;
+  zmapWindowCanvasItemClass __parent__;
 
   GHashTable *featureset_items;         /* singleton canvas items per column, indexed by unique id */
   /* NOTE duplicated in container canvas item till we get rid of that */
@@ -139,6 +138,7 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
 	/* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */
 
   int struct_size[FEATURE_N_TYPE];
+  int set_struct_size[FEATURE_N_TYPE];
 
 } zmapWindowFeaturesetItemClassStruct;
 
@@ -153,9 +153,7 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
 
 typedef struct _zmapWindowFeaturesetItemStruct
 {
-  FooCanvasItem __parent__;
-
-  FooCanvasItem *canvas_item;		/* containing ZMapWindowCanvasItem: these are a pain they do nothing and we can't get rid of them yet */
+  zmapWindowCanvasItemStruct __parent__;		/* itself derived from FooCanvasItem */
 
   GQuark id;
   ZMapFeatureTypeStyle style;				    /* column style: NB could have several
@@ -193,9 +191,13 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean link_sideways;	/* has complex features */
   gboolean linked_sideways;	/* that have been constructed */
 
+  gboolean highlight_sideways;/* temp bodge to allow old code to drive this */
+					/* transcripts do alignments don't they get highlit by calling code */
+
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
 					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
 					 * but we need to sort features so GList is more convenient */
+
   long n_features;
   gboolean features_sorted;	/* by start coord */
 
@@ -239,15 +241,38 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean outline_set;	 	/* Is outline color set? */
 
   ZMapFeature point_feature;	/* set by cursor movement */
+  ZMapWindowCanvasFeature point_canvas_feature;		/* last clicked canvasfeature, set by select, need for legacy code interface */
 
   double filter_value;		/* active level, default 0.0 */
   int n_filtered;
   gboolean enable_filter;	/* has score in a feature and style allows it */
 
+  gpointer opt;			/* feature type optional set level data */
+
 } zmapWindowFeaturesetItemStruct;
 
 
+
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
+
+
+/*
+ * module generic text interface, initially used by sequence and locus feature types
+ * is used to paint single line text things at given x,y
+ * highlighting is done with coloured boxes behind the text
+ */
+
+typedef struct _zmapWindowCanvasPangoStruct
+{
+	GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
+
+	PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
+	PangoContext *context;
+	PangoLayout *layout;
+
+	int text_height, text_width;
+}
+zmapWindowCanvasPangoStruct;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

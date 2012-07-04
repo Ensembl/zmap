@@ -47,7 +47,6 @@
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapSkipList.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasItemFeatureSet_I.h>
 
 typedef struct  _BumpColRangeStruct *BumpColRange;
 
@@ -262,8 +261,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	 * COMPRESS_VISIBLE  is in the code as 'UnCompress'
 	 *
 	 * so FTM just implement MARK or visible sequence (ie in scroll region)
-	 * features outsuide the range are flagged as non-vis
-	 * it's a linear scan so we could just flags all regardless of scroll region
+	 * features outside the range are flagged as non-vis
+	 * it's a linear scan so we could just flag all regardless of scroll region
 	 * but it might be quicker to process the scroll region only
 	 *
 	 * erm... compress_mode is implied by start and end coords
@@ -279,10 +278,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	double time;
 #endif
 
-      /* transitional code: the column has 0 or more featureset items
-       * which are ZMapWindowCanvasItems which are FooCanvasGroups
-       * so we need the get the real ZMapWindowFeaturesetItem in the group's item_list
-       */
+
 //printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 
 #if MODULE_STATS
@@ -370,8 +366,10 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 			/* in case of mangled alingments must reset the first exom
 			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
 			 * which extends the feature to catch colinear lines off screen
+			 * NOTE we'd do better with some flag set by the alignment code to trigger this.
 			 */
-			feature->y2 = feature->feature->x2;
+			if(feature->type == FEATURE_ALIGN)
+				feature->y2 = feature->feature->x2;
 
 			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
 				feature->flags |= FEATURE_HIDDEN;
@@ -387,18 +385,21 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 		if(!zMapWindowCanvasFeaturesetGetFeatureExtent(feature, bump_data->complex, &bump_data->span, &bump_data->width))
 			continue;
 
-		if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+		if(bump_data->mark_set)
 		{
-			/* all the feature's exons are outside the mark on the same side */
-			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-			continue;
-		}
+			if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+			{
+				/* all the feature's exons are outside the mark on the same side */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
 
-		if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
-		{
-			/* none of the feature's exons are cross the mark */
-			feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-			continue;
+			if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
+			{
+				/* none of the feature's exons cross the mark */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
 		}
 
 		if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))

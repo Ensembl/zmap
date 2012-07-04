@@ -56,7 +56,7 @@
 #define COLUMN_BACKGROUND "grey"
 
 #define LOCATOR_BORDER    "darkred"
-#define LOCATOR_DRAG      "white"
+#define LOCATOR_DRAG      "green"
 #define LOCATOR_FILL      "grey"
 #define LOCATOR_HIGHLIGHT "white"
 #define LOCATOR_LINE_WIDTH 1

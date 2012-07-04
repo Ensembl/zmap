@@ -1147,7 +1147,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
   g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr) ;
 
 
-  /* 3 Frame Translation 
+  /* 3 Frame Translation
    * The translation width is the width for the whole column if
    * all three frames are displayed in one column.  When displayed
    * in the frame specfic mode the width of each of the columns
@@ -1170,9 +1170,9 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_ALL,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_ALL,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                10.0,		/*number of characters not pixels */
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
 		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_ONLY_3,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
@@ -1208,7 +1208,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                30.0,		/*number of characters not pixels */
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
@@ -1242,7 +1242,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                30.0,		/*number of characters not pixels */
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
@@ -1277,6 +1277,8 @@ GHashTable *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                20.0,		/*number of characters not pixels */
+//		 ZMAPSTYLE_PROPERTY_FOO,      TRUE,
 		 NULL);
     g_hash_table_insert(style_list, GUINT_TO_POINTER(curr->unique_id), curr);
   }

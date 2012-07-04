@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -104,7 +104,7 @@ void zmapWindowItemStatsInit(ZMapWindowItemStats stats, GType item_type)
       stats->size = object_data->obj_size ;
       stats->total = stats->curr = 0 ;
     }
-  
+
   return ;
 }
 
@@ -128,7 +128,7 @@ void zmapWindowItemStatsDecr(ZMapWindowItemStats stats)
 
 
 
-/* 
+/*
  *                  Internal routines.
  */
 
@@ -136,7 +136,7 @@ void zmapWindowItemStatsDecr(ZMapWindowItemStats stats)
 
 /* Returns the most derived class type for an item, i.e. effectively this is the "true"
  * type of the object and optionally prints out the types as it goes.
- * 
+ *
  * NOTE that for this to work correctly we rely on the objects description array to be correctly
  * ordered.
  */
@@ -208,11 +208,11 @@ static MyGObjectInfo findObjectInfo(GType type)
 
 /* Fills in an array of structs which can be used for various operations on all the
  * items we use on the canvas in zmap.
- * 
+ *
  * NOTE that the array is ordered so that for the getType/print functions the
  * subclassing order and final type will be correct, i.e. we have parent classes
  * followed by derived classes.
- * 
+ *
  *  */
 static MyGObjectInfo initObjectDescriptions(void)
 {
@@ -236,27 +236,32 @@ static MyGObjectInfo initObjectDescriptions(void)
       /* zmap item types */
       {zMapWindowCanvasItemGetType, 0, NULL, sizeof(zmapWindowCanvasItem)},
       {zmapWindowContainerGroupGetType, 0, NULL, sizeof(zmapWindowContainerGroup)},
+#if !ZWCI_AS_FOO
       {zMapWindowAlignmentFeatureGetType, 0, NULL, sizeof(zmapWindowAlignmentFeature)},
       {zMapWindowAssemblyFeatureGetType, 0, NULL, sizeof(zmapWindowAssemblyFeature)},
       {zMapWindowBasicFeatureGetType, 0, NULL, sizeof(zmapWindowBasicFeature)},
+#endif
       {zmapWindowContainerAlignmentGetType, 0, NULL, sizeof(zmapWindowContainerAlignment)},
       {zmapWindowContainerBlockGetType, 0, NULL, sizeof(zmapWindowContainerBlock)},
       {zmapWindowContainerFeaturesGetType, 0, NULL, sizeof(zmapWindowContainerFeatures)},
       {zmapWindowContainerContextGetType, 0, NULL, sizeof(zmapWindowContainerContext)},
       {zmapWindowContainerFeatureSetGetType, 0, NULL, sizeof(zmapWindowContainerFeatureSet)},
       {zmapWindowContainerStrandGetType, 0, NULL, sizeof(zmapWindowContainerStrand)},
+#if !ZWCI_AS_FOO
       {zMapWindowGlyphItemGetType, 0, NULL, sizeof(zmapWindowGlyphItem)},
+#endif
       {zMapWindowLongItemGetType, 0, NULL, sizeof(zmapWindowLongItem)},
+#if !ZWCI_AS_FOO
       {zMapWindowSequenceFeatureGetType, 0, NULL, sizeof(zmapWindowSequenceFeature)},
       {zMapWindowTextFeatureGetType, 0, NULL, sizeof(zmapWindowTextFeature)},
       {zMapWindowTextItemGetType, 0, NULL, sizeof(zmapWindowTextItem)},
       {zMapWindowTranscriptFeatureGetType, 0, NULL, sizeof(zmapWindowTranscriptFeature)},
-
+#endif
       /* end of array. */
       {NULL, 0, NULL, 0}
     } ;
   MyGObjectInfo tmp ;
-  
+
   tmp = object_descriptions ;
 
   while (tmp->get_type_func)

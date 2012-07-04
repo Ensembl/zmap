@@ -665,7 +665,7 @@ static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data)
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-        ZMapFeature feature = (ZMapFeature)feature_any;
+//        ZMapFeature feature = (ZMapFeature)feature_any;
 
 #ifdef THIS_LOCUS_STUFF_IS_A_PAIN
 	/* quick fix to zmapWindowNavigatorShowSameNameList...  */
@@ -683,9 +683,15 @@ static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data)
 	   && (feature->feature.transcript.locus_id != feature->original_id))
           match = TRUE ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#if MH17_CANNOT_BE
+//locus is a separate featureset and is not a transcript feature??
         if (locus_name == feature->feature.transcript.locus_id)
           match = TRUE ;
-
+#else
+	if(locus_name == feature_any->original_id)
+	  match = TRUE;
+#endif
 
 	break;
       }

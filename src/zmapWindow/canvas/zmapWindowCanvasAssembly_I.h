@@ -1,5 +1,6 @@
-/*  File: zmapWindowZoomControl_P.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
+
+/*  File: zmapWindowCanvasAssembly_I.h
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -18,64 +19,25 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
+ * originally written by:
+ *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * implements callback functions for FeaturesetItem assembly features
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAPWINDOWZOOMCONTROL_P_H
-#define ZMAPWINDOWZOOMCONTROL_P_H
-
-#include <ZMap/zmapUtils.h>
-#include <zmapWindow_P.h>
+#include <ZMap/zmap.h>
 
 
+#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasAssembly.h>
 
+/* NOTE
+ * The  assembly feature struct is just the zmapWindowCanvasFeatureStruct as defined in zmapWindowCanvasFeatureset_I.h
+ */
 
-/* This is the same as MAX_TEXT_COLUMN_WIDTH in zmapDraw_P.h This
- * isn't good, but there's must more to do to make it part of the
- * style for dna!!! */
-#define ZMAP_ZOOM_MAX_TEXT_COLUMN_WIDTH (300.0)
-
-
-
-enum {
-  ZMAP_WINDOW_BROWSER_HEIGHT = 160,
-  ZMAP_WINDOW_BROWSER_WIDTH  = 200
-};
-
-typedef struct _ZMapWindowZoomControlStruct
-{
-  ZMapMagic magic;
-
-  double zF;
-  double minZF;
-  double maxZF;
-
-  double textHeight;
-  double textWidth;
-
-  double pix2mmy ;					    /* Convert pixels -> screen mm. */
-  double pix2mmx ;					    /* Convert pixels -> screen mm. */
-
-  double max_window_size;
-  int border;
-
-  PangoFontDescription *font_desc;
-  PangoFont *font; /* This needs to be a fixed
-                    * width font. We use it to
-                    * display the DNA which
-                    * absolutely requires
-                    * that. */
-
-  ZMapWindowZoomStatus status;
-} ZMapWindowZoomControlStruct;
-
-#endif

@@ -112,6 +112,11 @@ static GdkCursor *makeStandardCursor(char *cursor_name) ;
 
 static void setTextAttrs(gpointer data, gpointer user_data) ;
 
+static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data) ;
+static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused) ;
+
+
+
 
 /* Holds an alternative URL for help pages if set by the application. */
 static char *help_URL_base_G = NULL ;
@@ -332,24 +337,47 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
  *  */
 void zMapGUIShowAbout(void)
 {
+  GtkAboutDialog *about_dialog ;
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
 			    NULL} ;
-
   char *comment_str ;
 
   comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
 
-  gtk_show_about_dialog(NULL,
-			"authors", authors,
-			"comments", comment_str,
-			"copyright", zMapGetCopyrightString(),
-			"license", zMapGetLicenseString(),
-			"program-name", zMapGetAppName(),
-			"version", zMapGetAppVersionString(),
-			"website", zMapGetWebSiteString(),
-			NULL) ;
+  if (gtk_major_version == 2 && gtk_minor_version < 24)
+    {
+      gtk_about_dialog_set_url_hook(aboutLinkOldCB, NULL, NULL) ;
+
+      gtk_show_about_dialog(NULL,
+			    "authors", authors,
+			    "comments", comment_str,
+			    "copyright", zMapGetCopyrightString(),
+			    "license", zMapGetLicenseString(),
+			    "program-name", zMapGetAppName(),
+			    "version", zMapGetAppVersionString(),
+			    "website", zMapGetWebSiteString(),
+			    NULL) ;
+    }
+  else
+    {
+      about_dialog = (GtkAboutDialog *)gtk_about_dialog_new() ;
+
+      gtk_about_dialog_set_program_name(about_dialog, zMapGetAppName()) ;
+      gtk_about_dialog_set_version(about_dialog, zMapGetAppVersionString()) ;
+      gtk_about_dialog_set_copyright(about_dialog, zMapGetCopyrightString()) ;
+      gtk_about_dialog_set_comments(about_dialog, comment_str) ;
+      gtk_about_dialog_set_license(about_dialog, zMapGetLicenseString()) ;
+      gtk_about_dialog_set_website(about_dialog, zMapGetWebSiteString()) ;
+      gtk_about_dialog_set_authors(about_dialog, authors) ;
+
+      g_signal_connect(GTK_OBJECT(about_dialog), "activate-link",
+		       GTK_SIGNAL_FUNC(aboutLinkNewCB),
+		       NULL) ;
+
+      gtk_widget_show_all(GTK_WIDGET(about_dialog)) ;
+    }
 
   g_free(comment_str) ;
 
@@ -671,14 +699,15 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
   /* Construct a list of possible fonts to use, they must be fixed width but take care
    * altering this list as some fixed width fonts seem to come back as variable width ! */
-  fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
+
+  fixed_font_list = g_list_append(fixed_font_list, ZMAP_ZOOM_FONT_FAMILY) ;
   fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
 
 
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
    * so that a sensible amount of text is displayed. */
   if (!zMapGUIGetFixedWidthFont(view,
-				fixed_font_list, 10, PANGO_WEIGHT_NORMAL,
+				fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
 				&font, &font_desc))
     {
       zMapGUIShowMsg(ZMAP_MSG_WARNING, "Could not get fixed width font, "
@@ -2091,4 +2120,26 @@ static void setTextAttrs(gpointer data, gpointer user_data)
   return ;
 }
 
+/* A GtkAboutDialogActivateLinkFunc() called when user clicks on website link in "About" window.
+ * This is the pre GTK 2.24 version. */
+static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data)
+  {
 
+    aboutLinkNewCB(NULL, (gchar *)link, NULL) ;
+
+    return ;
+  }
+
+
+/* "activate-link" callback called when user clicks on website link in "About" window.
+ * This is the GTK 2.24 and later version. */
+static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused)
+{
+  gboolean result = TRUE ;
+  GError *error = NULL ;
+
+  if (!zMapLaunchWebBrowser(uri, &error))
+    zMapLogWarning("Cannot show link in web browser: \"%s\"", uri) ;
+
+  return result ;
+}

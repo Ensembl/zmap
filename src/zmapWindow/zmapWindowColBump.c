@@ -166,7 +166,9 @@ typedef struct
 } MakeNameListsHashDataStruct, *MakeNameListsHashData;
 
 
+#if !ZWCI_AS_FOO
 static void bumpColCB(gpointer data, gpointer user_data) ;
+
 
 
 //static void compareListOverlapCB(gpointer data, gpointer user_data) ;
@@ -234,6 +236,8 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#endif
+
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				   ZMapContainerLevelType level, gpointer user_data);
 static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -267,6 +271,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
   return ;
 }
 
+#if !ZWCI_AS_FOO
 void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet container_set)
 {
   gboolean hidden_features ;
@@ -290,7 +295,7 @@ void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet cont
 
   return ;
 }
-
+#endif
 
 
 /* Bumps either the whole column represented by column_item, or if the item is a feature item
@@ -307,16 +312,19 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 			       ZMapWindowCompressMode compress_mode)
 {
   BumpColStruct bump_data = {NULL} ;
-  FooCanvasGroup *column_features ;
   ZMapWindowContainerFeatureSet container = NULL;
-  BumpPropertiesStruct bump_properties = {NULL};
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window;
   gboolean column = FALSE ;
-  gboolean bumped = TRUE ;
+
   gboolean mark_set;
   int start, end ;
+#if !ZWCI_AS_FOO
+  FooCanvasGroup *column_features ;
+  BumpPropertiesStruct bump_properties = {NULL};
+  gboolean bumped = TRUE ;
   double width, bump_spacing = 0.0 ;
+#endif
 //double time;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -438,12 +446,17 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 		bump_data.start = start ;	/* NOTE: different struct from previous one */
 		bump_data.end = end ;
+		bump_data.mark_set = mark_set;
 		bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
 
 		for(l = column_features->item_list;l;l = l->next)
       	{
+#if !ZWCI_AS_FOO
       		/* cast to int because of headers catch22 knottiness */
 			if(!zMapWindowCanvasFeaturesetItemBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+#else
+			if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+#endif
 			    ok = FALSE;
       	}
 
@@ -457,6 +470,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 //		printf("featureset bump in %.3f seconds\n", time);
 	return;
   }
+
+#if !ZWCI_AS_FOO
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
   /* always reset the column */
@@ -751,6 +766,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   zmapWindowBusy(window, FALSE) ;
 
   zMapPrintTimer(NULL, "finished bump") ;
+#endif
 
   return ;
 }
@@ -793,7 +809,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 
 
 
-
+#if !ZWCI_AS_FOO
 /*
  *                       Internal functions.
  */
@@ -2489,6 +2505,8 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
     }
   return colinearity ;
 }
+
+#endif
 
 
 // (menu item commented out)

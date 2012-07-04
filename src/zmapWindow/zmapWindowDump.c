@@ -894,6 +894,7 @@ static void itemCB(gpointer data, gpointer user_data)
 }
 
 
+#if !ZWCI_AS_FOO
 // as for dumpFeatureCB send a glyph to G2, based on draw function in zmapWindowGlyphItem.c
 
 // better to hava a function in GlyphItem.c to return all the points, the colours etc
@@ -1053,6 +1054,7 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
   return ;
 }
 
+#endif
 
 
 /* Sadly the g2 package doesn't really allow relative drawing in any consistent way,
@@ -1207,6 +1209,7 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
         g2_set_font_size(cb_data->g2_id,20.0);
 	  g2_string(cb_data->g2_id, x, y, text_item->text) ;
 	}
+#if !ZWCI_AS_FOO
       else if (zmapWindowIsGlyphItem(item))
       {
             // mh17: glyphs are not FOO items, they get added as ZMapWindowGlyphItem
@@ -1216,6 +1219,7 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 #warning this function should be obsolete
             dumpGlyph(item,cb_data);
       }
+#endif
       else
 	{
         zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));

@@ -416,6 +416,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
 
 
+
 /* read in rather a lot of stanzas and add the data to a few hash tables and lists
  * This sets up:
  * view->context->map formerly as:
@@ -955,6 +956,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
   return result ;
 }
+
 
 
 
@@ -2224,7 +2226,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 		{
 			zMapWindowHighlightObject(view_window->window, item,
 					  window_select->replace_highlight_item,
-					  window_select->highlight_same_names) ;
+					  window_select->highlight_same_names,
+					  window_select->sub_part) ;
 		}
 
 
@@ -2234,8 +2237,11 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
 			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
 			 * NOTE: can have several featuresets in one column
-			 * feature_list inlcudes the second and subsequent features found, the first is given explicitly
+			 * feature_list inlcudes the first and second and subsequent features found,
+			 * the first is also given explicitly in the item
 			 */
+			if(!l->prev)	/* skip the first as we have already done it */
+				continue;
 			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
 		}
 	    }
@@ -3360,6 +3366,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 				 mergeHashTableCB,zmap_view->context_map.source_2_sourcedata);
 	  }
 
+
 	//print_source_2_sourcedata("got featuresets",zmap_view->context_map.source_2_sourcedata);
 	//print_fset2col("got featuresets",zmap_view->context_map.featureset_2_column);
 	//print_col2fset("got columns",zmap_view->context_map.columns);
@@ -3685,7 +3692,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	connect_data->dynamic_loading = TRUE ;
 
       connect_data->column_2_styles = zMap_g_hashlist_create() ;
-printf("create connection make new column 2 styles\n");
 // better?      connect_data->column_2_styles = zmap_view->context_map.column_2_styles;
 
       connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;

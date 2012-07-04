@@ -69,6 +69,7 @@ typedef struct
 {
   ZMapWindowCanvasItem parent;
   ZMapFeature          feature;
+  ZMapFeatureSubPartSpan sub_feature;
   ZMapStyleColourType  style_colour_type;
   int 			colour_flags;
   GdkColor            *default_fill_colour;
@@ -79,6 +80,8 @@ typedef struct
 
 static void zmap_window_canvas_item_class_init  (ZMapWindowCanvasItemClass class);
 static void zmap_window_canvas_item_init        (ZMapWindowCanvasItem      group);
+
+#if !ZWCI_AS_FOO
 static void zmap_window_canvas_item_set_property(GObject               *object,
 						 guint                  param_id,
 						 const GValue          *value,
@@ -87,22 +90,7 @@ static void zmap_window_canvas_item_get_property(GObject               *object,
 						 guint                  param_id,
 						 GValue                *value,
 						 GParamSpec            *pspec);
-static void zmap_window_canvas_item_destroy     (GtkObject *gtkobject);
-
-
-//static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item);
-static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
-					       FooCanvasItem         *interval,
-					       ZMapFeature 	      feature,
-					       ZMapFeatureSubPartSpan unused,
-					       ZMapStyleColourType    colour_type,
-					       int 				colour_flags,
-					       GdkColor              *default_fill,
-                                     GdkColor              *border);
-
-static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item);
-
-/* FooCanvasItem interface methods */
+* FooCanvasItem interface methods */
 static void   zmap_window_canvas_item_update      (FooCanvasItem *item,
 						   double           i2w_dx,
 						   double           i2w_dy,
@@ -126,22 +114,48 @@ static void window_canvas_item_bounds (FooCanvasItem *item,
 #endif /* WINDOW_CANVAS_ITEM_BOUNDS_REQUIRED */
 
 
+#endif
 
-static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_item, GError **error);
+static void zmap_window_canvas_item_destroy     (GtkObject *gtkobject);
+
+
+//static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item);
+static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
+					       FooCanvasItem         *interval,
+					       ZMapFeature 	      feature,
+					       ZMapFeatureSubPartSpan unused,
+					       ZMapStyleColourType    colour_type,
+					       int 				colour_flags,
+					       GdkColor              *default_fill,
+                                     GdkColor              *border);
+
+static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item);
+
+
+
 
 /* A couple of accessories */
 static double window_canvas_item_invoke_point (FooCanvasItem *item,
 					       double x, double y,
 					       int cx, int cy,
 					       FooCanvasItem **actual_item);
+
+#if !ZWCI_AS_FOO
+static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_item, GError **error);
+
+
 static gboolean feature_is_drawable(ZMapFeature          feature_any,
 				    ZMapFeatureTypeStyle feature_style,
 				    ZMapStyleMode       *mode_to_use,
 				    GType               *type_to_use);
-static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_data);
+
 static void window_item_feature_destroy(gpointer window_item_feature_data);
 
 static GQuark zmap_window_canvas_item_get_domain(void) ;
+#endif
+
+static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_data);
+
 
 
 
@@ -149,13 +163,15 @@ static GQuark zmap_window_canvas_item_get_domain(void) ;
 /* Globals.... */
 
 static FooCanvasItemClass *group_parent_class_G;
+#if !ZWCI_AS_FOO
 static size_t window_item_feature_size_G = 0;
-
+#endif
 
 static gboolean debug_point_method_G = FALSE;
 
+#if !ZWCI_AS_FOO
 static gboolean debug_item_G = FALSE ;
-
+#endif
 
 
 /*!
@@ -187,15 +203,24 @@ GType zMapWindowCanvasItemGetType (void)
 	  NULL
 	};
 
+#if ZWCI_AS_FOO
+      group_type = g_type_register_static (foo_canvas_item_get_type (),
+					   ZMAP_WINDOW_CANVAS_ITEM_NAME,
+					   &group_info,
+					   0);
+#else
       group_type = g_type_register_static (foo_canvas_group_get_type (),
 					   ZMAP_WINDOW_CANVAS_ITEM_NAME,
 					   &group_info,
 					   0);
+#endif
   }
 
   return group_type;
 }
 
+
+#if MH17_NOT_USED
 /*!
  * \brief Intended to check the long item status of an item, but I
  * think I've usurped its remit and functionality now.
@@ -209,8 +234,10 @@ void zMapWindowCanvasItemCheckSize(ZMapWindowCanvasItem canvas_item)
 
   return ;
 }
+#endif
 
-
+#if !ZWCI_AS_FOO
+/* only called from the item factire in iffed out code */
 /*!
  * \brief Create a ZMapWindowCanvasItem
  *
@@ -277,7 +304,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup *parent,
   return canvas_item;
 }
 
-
+/* this is just not referenced anywhere */
 /*!
  * \brief   simply the opposite of create
  * \code
@@ -306,6 +333,8 @@ ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_ite
   return canvas_item;
 }
 
+#endif
+
 /*!
  * \brief   Function to access the ZMapFeature
  * \details Although a little surprising, NULL maybe returned legitimately,
@@ -332,6 +361,9 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
   return feature ;
 }
 
+#if !ZMWCI_AS_FOO
+/* NOTE  made obsolete by code refactoring for CFS sequence features: not called */
+
 /* Returns TRUE if any_item is a subpart of a canvas_item, FALSE if the
  * item _is_ the canvas_item. */
 gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item)
@@ -344,11 +376,11 @@ gboolean zMapWindowCanvasItemIsSubPart(FooCanvasItem *any_item)
   return is_subpart ;
 }
 
+#endif
 
 
 
-
-
+#if !ZWCI_AS_FOO
 
 /*!
  * \brief   Add an "Interval" to the canvas representation.
@@ -443,6 +475,11 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
   return interval;
 }
 
+#endif
+
+
+#if !ZWCI_AS_FOO
+/* only called by obsolelet bump code */
 /*!
  * \brief   Designed to fix a buglet in FooCanvasItem get_bounds()
  * \details Size of Foo canvas items are zero while not being mapped.
@@ -484,6 +521,9 @@ void zMapWindowCanvasItemGetBumpBounds(ZMapWindowCanvasItem canvas_item,
   return ;
 }
 
+#endif
+
+#if !ZWCI_AS_FOO
 /*!
  * \brief unused?
  */
@@ -506,6 +546,11 @@ gboolean zMapWindowCanvasItemCheckData(ZMapWindowCanvasItem canvas_item, GError 
 
   return result;
 }
+
+#endif
+
+
+#if !ZWCI_AS_FOO
 
 /*!
  * \brief   Calls the interface function clear
@@ -534,13 +579,37 @@ void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item)
   return ;
 }
 
+#endif
 
-
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y)
 {
-  ZMapFeatureSubPartSpan sub_feature;
+  ZMapFeatureSubPartSpan sub_feature = NULL;
 
-  sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
+#if ZWCI_AS_FOO
+  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+	{
+		  sub_feature =
+  			zMapWindowCanvasFeaturesetGetSubPartSpan(item , feature, x, y);
+	}
+#else
+  	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
+  	{
+		/* NOTE x, y coords are not avaiable due to interface to legacy code
+		 * so we pass 0 and this give us the whole canvas item extent
+		 * it's not simple to iron this out properly and we intend to remove canvas items anyway
+		 */
+		FooCanvasGroup *group = (FooCanvasGroup *) item;
+
+		if(group->item_list->data)
+  		/* returns a static data structure */
+  		sub_feature =
+  			zMapWindowCanvasFeaturesetGetSubPartSpan((FooCanvasItem *)group->item_list->data , zMapWindowCanvasItemGetFeature(item) ,0, 0);
+  	}
+#endif
+	else
+	{
+		sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
+	}
 
   return sub_feature;
 }
@@ -550,17 +619,21 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       ZMapFeatureSubPartSpan *sub_feature_out)
 {
   FooCanvasItem *matching_interval = NULL;
-  FooCanvasItem *point_item;
   FooCanvasItem *item, *check;
+#if !ZWCI_AS_FOO
+  FooCanvasItem *point_item;
   FooCanvasGroup *group;
-  FooCanvas *canvas;
+  double x1, x2, y1, y2;
   GList *list;
+  int has_point, i = 0;
+  double best;
+#endif
+  FooCanvas *canvas;
   double ix1, ix2, iy1, iy2;
   double wx1, wx2, wy1, wy2;
-  double x1, x2, y1, y2;
-  double gx, gy, best, dist;
-  int cx, cy, i = 0;
-  int has_point, small_enough;
+  double gx, gy, dist;
+  int cx, cy;
+  int small_enough;
 
   zMapLogReturnValIfFail(ZMAP_IS_CANVAS_ITEM(canvas_item), matching_interval);
 
@@ -569,7 +642,9 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
    * this far really! */
 
   item   = (FooCanvasItem *)canvas_item;
-  group  = (FooCanvasGroup *)item;
+#if !ZWCI_AS_FOO
+  group  = (FooCanvasGroup *) item;
+#endif
   canvas = item->canvas;
   gx = x;
   gy = y;
@@ -594,6 +669,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 	   ix1, iy1, ix2, iy2,
 	   wx1, wy1, wx2, wy2);
 
+	   /* mh17 NOTE this invoke function work with simple foo canvas items and groups */
   dist = window_canvas_item_invoke_point(item, gx, gy, cx, cy, &check);
 
   small_enough = (int)(dist * canvas->pixels_per_unit_x + 0.5);
@@ -601,6 +677,10 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   if(small_enough <= canvas->close_enough)
     {
       /* we'll continue! */
+
+#if !ZWCI_AS_FOO
+	/* find the nearest foo canvas itme int he ZWCI group */
+
       gx -= group->xpos;
       gy -= group->ypos;
 
@@ -687,6 +767,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 		  if(debug_point_method_G)
 		    printf("child[%d] is TEXT has dist=%f ", i, dist);
 		}
+#if !ZWCI_AS_FOO
 	      else if(ZMAP_IS_WINDOW_GLYPH_ITEM(child))
 		{
 		  /* glyph items are quite complex and really need to check bounds rather than point. */
@@ -695,6 +776,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 		  if(debug_point_method_G)
 		    printf("child[%d] is GLYPH has dist=%f ", i, dist);
 		}
+#endif
 	      else
 	      {
 	      		/* enables groups to be included in the ZMapWindowCanvasItem tree */
@@ -737,7 +819,10 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 	    matching_interval = (FooCanvasItem *)(group->item_list->data);
 
 	}
+#else
+  matching_interval = item;
     }
+#endif
 
   if(matching_interval == NULL)
     g_warning("No matching interval!");
@@ -745,7 +830,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   {
   	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
   	{
-  		/* returns a static dara structure */
+  		/* returns a static data structure */
   		*sub_feature_out =
   			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
   	}
@@ -761,7 +846,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 /* for composite items (eg ZMapWindowGraphDensity)
  * set the pointed at feature to be the one nearest to cursor
  * We need this to stabilise the feature while processing a mouse click (item/feature select)
- * point used to set this bu the cursor is still moving while we trundle thro the code
+ * point used to set this but the cursor is still moving while we trundle thro the code
  * causing the feature to change with unpredictable results
  * write up in density.html when i get round to correcting it.
  */
@@ -832,31 +917,28 @@ gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show)
 
 
 /* Get at parent... */
+/* mh17 NOTE this is now a null function, unless we have naked foo items on the canvas */
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item)
 {
   ZMapWindowCanvasItem canvas_item = NULL;
 
   if(ZMAP_IS_CANVAS_ITEM(item))
     canvas_item = ZMAP_CANVAS_ITEM(item);
+#if !ZWCI_AS_FOO
   else if(FOO_IS_CANVAS_ITEM(item) && item->parent)
     {
       if(ZMAP_IS_CANVAS_ITEM(item->parent))
 	canvas_item = ZMAP_CANVAS_ITEM(item->parent);
     }
+#endif
 
   return canvas_item;
 }
 
-ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item)
-{
-  ZMapWindowCanvasItem canvas_item = NULL;
-
-  canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-
-  return canvas_item ;
-}
 
 
+#if !ZWCI_AS_FOO
+/* mh17 NOTE not referenced */
 GList *zMapWindowCanvasItemGetChildren(ZMapWindowCanvasItem *parent)
 {
   GList *children =  NULL ;
@@ -869,6 +951,8 @@ GList *zMapWindowCanvasItemGetChildren(ZMapWindowCanvasItem *parent)
 
   return children ;
 }
+#endif
+
 
 gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden)
 {
@@ -891,7 +975,13 @@ gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidd
 
 /* If item is the parent item then the whole feature is coloured, otherwise just the sub-item
  * is coloured... */
-void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature feature,
+/* NOTE
+ * this is a legacy interface, sub-feature is used for sequence features (recent mod)
+ * with ZWCI_AS_FOO we donl't have parent items, so we always do the whole
+ * this reletas to split alignment feature and whole transcripts
+ * which is a user requirement possibly implemented by fluke due the structure of the data given to ZMap
+ */
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
                                   GdkColor *default_fill_colour,
@@ -901,39 +991,26 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature fea
   GList *item_list, dummy_item = {NULL} ;
   EachIntervalDataStruct interval_data = {NULL};
 
-
   zMapLogReturnIfFail(FOO_IS_CANVAS_ITEM(item)) ;
 
+#if !ZWCI_AS_FOO
   if (ZMAP_IS_CANVAS_ITEM(item))
     {
       canvas_item = ZMAP_CANVAS_ITEM(item) ;
       item_list = FOO_CANVAS_GROUP(canvas_item)->item_list ;
     }
   else
+#endif
     {
-      canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
+      canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
       dummy_item.data = item ;
       item_list = &dummy_item ;
     }
 
-  /* Oh gosh...why is this code in here....it isn't up to the object to decide if its raised..... */
-  /* mh17: i move this code into zmapWindowFocus.c
-   * which is where stuff should be raised/lowered
-   * here is caused a bug scanning through the list and using SELECTED rather than NORMAL
-   * raise/lower re-orders the list
-   * it would be better to copy to the overlay list for items on top
-   * Given that the old focus code remembered an item's place so as to be able to put it back
-   * this is all very odd.
-   */
-  /*
-  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
-    foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(canvas_item)) ;
-  else
-    foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(canvas_item)) ;
-   */
 
   interval_data.parent = canvas_item ;
   interval_data.feature = feature; // zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
+  interval_data.sub_feature = sub_feature;
   interval_data.style_colour_type = colour_type ;
   interval_data.colour_flags = colour_flags;
   interval_data.default_fill_colour = default_fill_colour ;
@@ -949,12 +1026,11 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature fea
 
 
 
-
 /*
  *                Internals routines
  */
 
-
+#if !ZWCI_AS_FOO
 static GQuark zmap_window_canvas_item_get_domain(void)
 {
   GQuark domain;
@@ -963,11 +1039,11 @@ static GQuark zmap_window_canvas_item_get_domain(void)
 
   return domain;
 }
+#endif
 
 
 
-
-
+#if !ZWCI_AS_FOO
 static void redraw_and_repick_if_mapped (FooCanvasItem *item)
 {
   if (item->object.flags & FOO_CANVAS_ITEM_MAPPED)
@@ -989,6 +1065,7 @@ static int is_descendant (FooCanvasItem *item, FooCanvasItem *parent)
 
   return FALSE;
 }
+
 
 /* Adds an item to a group */
 static void group_add (FooCanvasGroup *group, FooCanvasItem *item)
@@ -1060,6 +1137,8 @@ static void group_remove (FooCanvasGroup *group, FooCanvasItem *item)
   return ;
 }
 
+
+/* mh17 NOTE not called */
 void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group)
 {
   zMapLogReturnIfFail (FOO_IS_CANVAS_ITEM (item));
@@ -1092,7 +1171,7 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
 
   return ;
 }
-
+#endif
 
 
 
@@ -1104,7 +1183,9 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
 /* Class initialization function for ZMapWindowCanvasItemClass */
 static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window_class)
 {
+#if !ZWCI_AS_FOO
   GObjectClass *gobject_class;
+#endif
   GtkObjectClass *object_class;
   FooCanvasItemClass *item_class;
   GType canvas_item_type, parent_type;
@@ -1118,14 +1199,16 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
       0x00, 0x00
     } ;
 
-  gobject_class = (GObjectClass *)window_class;
+//  gobject_class = (GObjectClass *)window_class;
   object_class  = (GtkObjectClass *)window_class;
   item_class    = (FooCanvasItemClass *)window_class;
 
   canvas_item_type = g_type_from_name(ZMAP_WINDOW_CANVAS_ITEM_NAME);
   parent_type      = g_type_parent(canvas_item_type);
+
   group_parent_class_G = gtk_type_class(parent_type);
 
+#if !ZWCI_AS_FOO
   gobject_class->set_property = zmap_window_canvas_item_set_property;
   gobject_class->get_property = zmap_window_canvas_item_get_property;
 
@@ -1153,10 +1236,12 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 				  g_param_spec_boolean("debug", "debug",
 						       "Turn on debug printing.",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
-
+#endif
 
   object_class->destroy = zmap_window_canvas_item_destroy;
 
+#if !ZWCI_AS_FOO
+/* mh17: just use the FooCanvasItem functions provided, CanvasFeatureset can override the ones it needs */
   item_class->update    = zmap_window_canvas_item_update;
   item_class->realize   = zmap_window_canvas_item_realize;
   item_class->unrealize = zmap_window_canvas_item_unrealize;
@@ -1167,9 +1252,12 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   item_class->point     = zmap_window_canvas_item_point;
   item_class->translate = zmap_window_canvas_item_translate;
   item_class->bounds    = zmap_window_canvas_item_bounds;
+#endif
 
 //  window_class->post_create  = zmap_window_canvas_item_post_create;
+#if !ZWCI_AS_FOO
   window_class->check_data   = zmap_window_canvas_item_check_data;
+#endif
   window_class->set_colour   = zmap_window_canvas_item_set_colour;
   window_class->get_style    = zmap_window_canvas_item_get_style;
 
@@ -1177,8 +1265,9 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 							   make_clickable_bmp_width,
 							   make_clickable_bmp_height) ;
 
+#if !ZWCI_AS_FOO
   window_item_feature_size_G = sizeof(ZMapFeatureSubPartSpanStruct);
-
+#endif
   /* init the stats fields. */
   zmapWindowItemStatsInit(&(window_class->stats), ZMAP_TYPE_CANVAS_ITEM) ;
 
@@ -1189,20 +1278,26 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 /* Object initialization function for ZMapWindowCanvasItem */
 static void zmap_window_canvas_item_init (ZMapWindowCanvasItem canvas_item)
 {
-  FooCanvasGroup *group;
   ZMapWindowCanvasItemClass canvas_item_class ;
-
-  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
+#if !ZWCI_AS_FOO
+  FooCanvasGroup *group;
 
   group = FOO_CANVAS_GROUP(canvas_item);
   group->xpos = 0.0;
   group->ypos = 0.0;
+#endif
+
+  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
   zmapWindowItemStatsIncr(&(canvas_item_class->stats)) ;
 
   return ;
 }
 
+
+#if !ZWCI_AS_FOO
+
+/* mh17 NOTE none of these weere used anywhere */
 
 /* Set_property handler for canvas groups */
 static void zmap_window_canvas_item_set_property (GObject *gobject, guint param_id,
@@ -1293,6 +1388,8 @@ static void zmap_window_canvas_item_get_property (GObject *gobject, guint param_
   return ;
 }
 
+#endif
+
 /* Destroy handler for canvas groups */
 static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 {
@@ -1362,32 +1459,37 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item)
 {
   ZMapFeatureTypeStyle style = NULL;
-  FooCanvasItem *item;
-  ZMapWindowCanvasItem canvas_item_parent = NULL;
 
   zMapLogReturnValIfFail(canvas_item != NULL, NULL);
   zMapLogReturnValIfFail(canvas_item->feature != NULL, NULL);
 
   style = canvas_item->feature->style;
 
+#if !ZWCI_AS_FOO
   if(!style)
   {
+  ZMapWindowCanvasItem canvas_item_parent = NULL;
+  FooCanvasItem *item;
+
   zMapLogWarning("%s","legacy get_style() code called");
 
-  canvas_item_parent = zMapWindowCanvasItemIntervalGetTopLevelObject((FooCanvasItem *)canvas_item);
+  canvas_item_parent = zMapWindowCanvasItemIntervalGetObject((FooCanvasItem *)canvas_item);
 
   item = FOO_CANVAS_ITEM(canvas_item_parent);
 
+// WTH is this for??
   if(item->parent && item->parent->parent)
     {
       style = canvas_item->feature->style;
     }
   }
+#endif
   return style;
 }
 
 
 
+#if !ZWCI_AS_FOO
 /* Update handler for canvas groups */
 static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
@@ -1457,6 +1559,8 @@ static void zmap_window_canvas_item_unmap (FooCanvasItem *item)
 
   return ;
 }
+
+
 
 /* Draw handler for canvas groups */
 static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *drawable,
@@ -1554,6 +1658,8 @@ static void window_canvas_item_bounds (FooCanvasItem *item, double *x1, double *
   return ;
 }
 #endif /* WINDOW_CANVAS_ITEM_BOUNDS_REQUIRED */
+
+#endif
 
 
 void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
@@ -1661,8 +1767,11 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 			  NULL);
     }
   else if(g_type_is_a(interval_type, FOO_TYPE_CANVAS_RE)      ||
-	  g_type_is_a(interval_type, FOO_TYPE_CANVAS_POLYGON) ||
-	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_FEATURE))
+	  g_type_is_a(interval_type, FOO_TYPE_CANVAS_POLYGON)
+#if !ZWCI_AS_FOO
+	  || 	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_FEATURE)
+#endif
+		)
     {
       foo_canvas_item_set(interval,
 			  "fill_color_gdk", fill,
@@ -1683,6 +1792,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 
 
 
+#if !ZWCI_AS_FOO
 static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_item, GError **error)
 {
   FooCanvasGroup *group;
@@ -1710,7 +1820,7 @@ static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_i
   return result;
 }
 
-
+#endif
 
 
 /*
@@ -1731,6 +1841,7 @@ static double window_canvas_item_invoke_point (FooCanvasItem *item,
   return 1e18;
 }
 
+#if !ZWCI_AS_FOO
 
 static gboolean feature_is_drawable(ZMapFeature          feature_any,
 				    ZMapFeatureTypeStyle feature_style,
@@ -1751,6 +1862,10 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	mode = feature->type;
 	mode = zMapStyleGetMode(feature_style);
 
+
+#if ZWCI_AS_FOO
+	type = ZMAP_TYPE_WINDOW_CANVAS_FEATURESET_ITEM;
+#else
 	switch(mode)
 	  {
 	  case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -1779,7 +1894,7 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	    type = ZMAP_TYPE_WINDOW_BASIC_FEATURE;
 	    break;
 	  }
-
+#endif
 	result = TRUE;
       }
       break;
@@ -1796,6 +1911,7 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
   return result;
 }
 
+#endif
 
 static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_data)
 {
@@ -1807,7 +1923,13 @@ static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_d
       ZMapFeatureSubPartSpanStruct local_struct;
       ZMapFeatureSubPartSpan sub_feature = NULL;
 
-      if(!(sub_feature = g_object_get_data(G_OBJECT(interval), ITEM_SUBFEATURE_DATA)))
+
+	/* new interface via calling stack */
+	sub_feature = interval_data->sub_feature;
+
+	/* if not provided (eg via window focus) the revert to the old */
+	/* i'd rather get rid of these lurking pointers but I'm doing somehting else ATM */
+	if(!sub_feature && !(sub_feature = g_object_get_data(G_OBJECT(interval), ITEM_SUBFEATURE_DATA)))
 	{
 	  sub_feature = &local_struct;
 	  sub_feature->subpart = ZMAPFEATURE_SUBPART_INVALID;
@@ -1824,6 +1946,8 @@ static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_d
   return ;
 }
 
+
+#if !ZWCI_AS_FOO
 static void window_item_feature_destroy(gpointer window_item_feature_data)
 {
 #ifdef NEVER_INCLUDE_BUT_TYPE_OF_DATA_HERE_IS
@@ -1843,6 +1967,9 @@ static void window_item_feature_destroy(gpointer window_item_feature_data)
 
   return ;
 }
+
+#endif
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printBounds(FooCanvasItem *item, char *txt)

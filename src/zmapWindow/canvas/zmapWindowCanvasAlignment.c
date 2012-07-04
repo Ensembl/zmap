@@ -430,7 +430,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       x1 += featureset->dx;
       x2 = x1 + feature->width;
 
-      zMapCanvasFeaturesetDrawBoxMacro(featureset,feature, x1,x2, drawable, fill_set,outline_set,fill,outline)
+	/* must use feature coords here as the first alignemtn in the series gets expanded to pick up colinear lines
+	 * if it's ungapped we'd draw a big box over the whole series
+	 */
+	zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->feature->x1, feature->feature->x2, drawable, fill_set,outline_set,fill,outline);
 	}
   else	/* draw gapped boxes */
     {
@@ -585,7 +588,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	      if(align->glyph3)
 		sig = g_quark_to_string(zMapWindowCanvasGlyphSignature(homology, feature->feature,3, score));
 
-	      /printf("%s glyph3 %f (%d %d,%d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, feature->feature->feature.homol.length, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
+	      //printf("%s glyph3 %f (%d %d,%d) %d/%d = %s\n", g_quark_to_string(feature->feature->original_id), score, feature->feature->feature.homol.length, feature->feature->feature.homol.y1, feature->feature->feature.homol.y2, feature->feature->feature.homol.strand, feature->feature->strand, sig);
 #endif
 	    }
 
@@ -673,15 +676,18 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
 
 
+
 /*
  * if we are displaying a gapped alignment, recalculate this data
  * do this by freeing the existing data, new stuff will be added by the paint function
  *
- * NOTE ref to FreeSet() below
+ * NOTE ref to FreeSet() below -> drawable may be NULL
  */
-static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset)
+static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 	ZMapSkipList sl;
+
+	/* NOTE display index will be null on first call */
 
 		/* feature specific eg bumped gapped alignments - adjust gaps display */
 	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
@@ -705,11 +711,143 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 //printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
 }
 
+
+
+static void zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+{
+	ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+
+	zMapWindowFeaturesetSetFeatureWidth(featureset, feat);
+
+  	if(feat->feature->feature.homol.flags.masked)
+  		feat->flags |= focus_group_mask[WINDOW_FOCUS_GROUP_MASKED];
+
+	/* NOTE if we configure styles to not load these into the canvas we don't get here */
+	if(feature->flags.collapsed || feature->flags.squashed || feature->flags.joined)
+	  feat->flags |= FEATURE_HIDE_COMPOSITE | FEATURE_HIDDEN;
+
+	/* NOTE we may not have an index so this flag must be unset seperately */
+	/* eg on OTF w/ delete existing selected */
+	if(featureset->link_sideways)
+		featureset->linked_sideways = FALSE;
+}
+
+
 static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset)
 {
 	/* frees gapped data _and does not alloc any more_ */
-	zMapWindowCanvasAlignmentZoomSet(featureset);
+	zMapWindowCanvasAlignmentZoomSet(featureset,NULL);
 }
+
+
+static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
+{
+	static ZMapFeatureSubPartSpanStruct sub_part;
+	ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
+
+	ZMapAlignBlock ab;
+	int i;
+
+	/* find the gap or match if we are bumped */
+	if(!fi->bumped)
+		return NULL;
+	if(!feature->feature.homol.align)	/* is un-gapped */
+		return NULL;
+
+#if 0
+	if(!y)	/* interface to legacy code they uses G_OBJECT_DATA */
+	{
+		ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+
+		if(!featureset->point_canvas_feature)
+			return NULL;
+		sub_part.start = !featureset->point_canvas_feature->y1;
+		sub_part.end   = !featureset->point_canvas_feature->y2;
+		sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
+		sub_part.index = 1;
+		return &sub_part;
+	}
+#endif
+
+	/* get sequence coords for x,y,  well y at least */
+	/* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
+
+
+	/* we refer to the actual feature gaps data not the display data
+	* as that may be compressed and does not contain sequence info
+	* return the type index and target start and end
+	*/
+	for(i = 0; i < feature->feature.homol.align->len;i++)
+	{
+		ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+		/* in the original foo based code
+			* match n corresponds to the match block indexed from 1
+			* gap n corresponds to the following match block
+			*/
+
+		sub_part.index = i + 1;
+		sub_part.start = ab->t1;
+		sub_part.end = ab->t2;
+
+		if(y >= ab->t1 && y <= ab->t2)
+		{
+			sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
+			return &sub_part;
+		}
+		if(y < ab->t1)
+		{
+			sub_part.start = sub_part.end + 1;
+			sub_part.end = ab->t1;
+			sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
+			return &sub_part;
+		}
+	}
+	return NULL;
+}
+
+
+/* Default function to check if the given x,y coord is within a feature, this
+ * function assumes the feature is box-like. */
+static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+			   double item_x, double item_y, int cx, int cy,
+			   double local_x, double local_y, double x_off)
+{
+  double best = 1.0e36 ;
+  double can_start, can_end ;
+
+  /* Get feature extent on display. */
+  /* NOTE cannot use feature coords as transcript exons all point to the same feature */
+  /* alignments have to implement a special fucntion to handle bumped features - the first exon gets expanded to cover the whole */
+  /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
+  /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
+  can_start = gs->feature->x1 ;
+  can_end = gs->feature->x2 ;
+  zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
+
+
+  if (can_start <= local_y && can_end >= local_y)			    /* overlaps cursor */
+    {
+      double wx ;
+      double left, right ;
+
+      wx = x_off - (gs->width / 2) ;
+
+      if (fi->bumped)
+	wx += gs->bump_offset ;
+
+      /* get coords within one pixel */
+      left = wx - 1 ;					    /* X coords are on fixed zoom, allow one pixel grace */
+      right = wx + gs->width + 1 ;
+
+      if (local_x > left && local_x < right)			    /* item contains cursor */
+	{
+	  best = 0.0;
+	}
+    }
+
+  return best ;
+}
+
 
 
 void zMapWindowCanvasAlignmentInit(void)
@@ -719,67 +857,20 @@ void zMapWindowCanvasAlignmentInit(void)
 	funcs[FUNC_PAINT]  = zMapWindowCanvasAlignmentPaintFeature;
 	funcs[FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent;
 	funcs[FUNC_ZOOM]   = zMapWindowCanvasAlignmentZoomSet;
-#if CANVAS_FEATURESET_LINK_FEATURE
-	funcs[FUNC_LINK]   = zMapWindowCanvasAlignmentLinkFeature;
-#endif
 	funcs[FUNC_FREE]   = zMapWindowCanvasAlignmentFreeSet;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct));
+	funcs[FUNC_ADD]    = zMapWindowCanvasAlignmentAddFeature;
 
+	funcs[FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPartSpan;
+
+	funcs[FUNC_POINT]   = alignmentPoint;
+
+	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct), 0);
 }
 
 
 
 
 
-#if CANVAS_FEATURESET_LINK_FEATURE
-
-/* set up same name links by proxy and add homology data to CanvasAlignment struct */
-
-int zMapWindowCanvasAlignmentLinkFeature(ZMapWindowCanvasFeature feature)
-{
-	static ZMapFeature prev_feat;
-	static GQuark name = 0;
-	static double start, end;
-	ZMapFeature feat;
-//	ZMapHomol homol;
-	gboolean link = FALSE;
-
-	if(!feature)
-	{
-		start = end = 0;
-		name = 0;
-		prev_feat = NULL;
-		return FALSE;
-	}
-
-	zMapAssert(feature->type == FEATURE_ALIGN);
-
-	/* link by same name
-	 * homologies can get confusing...
-	 * we get alignments from exonerate the get chopped into pieces
-	 * and we can sort these into target (genomic) start coord order
-	 * the query coords do not always form an ascendign series
-	 * ESTs tend to be OK (almost all green), proteins are often not (red)
-	 */
-	/* so we link by name only */
-
-	feat = feature->feature;
-//	homol  = &feat->feature.homol;
-
-	if(name == feat->original_id && feat->strand == prev_feat->strand)
-	{
-		link = TRUE;
-	}
-	prev_feat = feat;
-	name = feat->original_id;
-	start = homol->y1;
-	end = homol->y2;
-
-	/* leave homology and gaps data till we need it */
-
-	return link;
-}
-#endif
 
 

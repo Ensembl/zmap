@@ -57,6 +57,8 @@
 
 
 
+#if MH17_NOT_USED
+
 
 /* This function translates the bounds of the first and last cells
  * into the bounds for a polygon to highlight both cells and all those
@@ -247,6 +249,8 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
 }
 
 
+#endif
+
 void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item)
 {
   FooCanvasItem *translation_column = NULL;
@@ -367,10 +371,15 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       while ((exon_list_member = g_list_previous(exon_list_member))) ;
 
 
-      zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
+#if ZWCI_AS_FOO
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+#else
+	if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
+#endif
+	     zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
 
-      pep_start /= 3 ;
-      pep_end /= 3 ;
+      pep_start = (pep_start + 2) / 3 ;	/* we assume frame 1, bias other frames backwards */
+      pep_end = (pep_end + 2) / 3 ;
 
       memset(((seq + pep_start) - 1), (int)SHOW_TRANS_INTRON, ((pep_end - pep_start))) ;
 
@@ -387,9 +396,14 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	      pep_start = current_exon->sequence_span.x1 ;
 
-	      zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
+#if ZWCI_AS_FOO
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+#else
+		if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
+#endif
+			zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
 
-	      pep_start /= 3 ;
+		pep_start = (pep_start + 2) / 3 ;
 
 	      pep_ptr = (seq + pep_start) - 1 ;
 	      memcpy(pep_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
@@ -398,12 +412,19 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       while ((exon_list_member = g_list_next(exon_list_member))) ;
 
 
-      /* The redraw call needs to go into the func called by the g_object_set call.....check the
-       * available foo_canvas calls........ */
-      foo_canvas_item_request_redraw(trans_item) ;
-      g_object_set(G_OBJECT(trans_item),
-		   PROP_TEXT_CHANGED_STR, TRUE,
-		   NULL) ;
+#if ZWCI_AS_FOO
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+#else
+	if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
+#endif
+	{
+		/* The redraw call needs to go into the func called by the g_object_set call.....check the
+		* available foo_canvas calls........ */
+		foo_canvas_item_request_redraw(trans_item) ;
+		g_object_set(G_OBJECT(trans_item),
+			PROP_TEXT_CHANGED_STR, TRUE,
+			NULL) ;
+	}
 
       /* Revist whether we need to do this call or just a redraw...... */
       zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
