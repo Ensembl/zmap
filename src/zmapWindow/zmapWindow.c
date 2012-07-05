@@ -3174,19 +3174,15 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 /* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
  * event handlers here, you could override a canvas item event handler and stop something
- * important working (e.g. dna text highlighting...!!)
+ * important working (e.g. dna text highlighting...!!) mh17: previous code, DNA now handled here
  *
  *
  * There is some slightly arcane handling of button 1 here:
  *
- * When the user presses button 1 while on a text field (e.g. dna) then this routine passes
- * all mouse events straight through without handling them, they are picked up by the text
- * field code to highlight text.
- *
  * if the item under the cursor is a CanvasFeatureset the we ask it if it wants to
  * operate text selection and if so we pass coordinates through to that
- * NOTE we never handle this in canvasItem EventCB, asn we have priority here
- * DNA event callbacks will disappear with ZMapWindowCanvasItems
+ * NOTE we never handle this in canvasItem EventCB, as we have priority here
+ * DNA event callbacks disappeared with ZMapWindowCanvasItems as groups
  *
  * If the user presses button 1 anywhere else we assume they are going to lasso an area for
  * zooming and we track mouse movements, if they have moved far enough then we do the zoom
@@ -3279,18 +3275,17 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		else if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
 #else
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
+			&& zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
 #endif
 		{
-			/* ho hum we get the foo not the containing zmapWindowCanvasItem group, how consistent */
-
 				/* get start coordinate via subpartspan from x and y
 				 * set end coordinate to be the same
 				 * set a flag to say selecting text and remember the canvas item
 				 * highlight the region
 				 */
 
-			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
+//			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
 			{
 				seq_item = item;
 				/*
