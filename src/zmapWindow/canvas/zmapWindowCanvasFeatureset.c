@@ -1140,6 +1140,7 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
  * we restrict the features to one column as previously multi-select was restricted to one column
  * the column is defined by the centre of the lassoo and we include features inside not overlapping
  * NOTE we implement this for CanvasFeatureset only, not old style foo
+ * NOTE due to happenstance (sic) transcripts are selected if they overlap
  */
 
 GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
@@ -1210,7 +1211,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 //     else	// why? item has the first one and feature list is the others if present
 // mh17: always include the first in the list to filter duplicates eg transcript exons
 	{
-	  feature_list = zMap_g_list_append_unique(feature_list,gs->feature);
+	  feature_list = zMap_g_list_append_unique(feature_list, gs->feature);
 	}
     }
   return feature_list;

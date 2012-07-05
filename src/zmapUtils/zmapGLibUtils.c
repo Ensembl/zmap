@@ -309,7 +309,7 @@ GList *zMap_g_list_append_unique(GList *list, gpointer data)
 	}
 
 	/* we reached the end or there was no list: add to the end */
-	last = g_list_append(last,data);
+	last = g_list_append(list,data);
 
 	if(!list)
 		list = last;
