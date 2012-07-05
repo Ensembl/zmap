@@ -43,6 +43,7 @@
 #include <string.h>
 
 #include <ZMap/zmapConfigStrings.h>			    /* For peer-id etc. */
+#include <ZMap/zmapCmdLineArgs.h>			    /* For cmd line args. */
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
@@ -89,11 +90,17 @@
 #define XREMOTEARG_CMD_DEBUG "command-debug"
 #define XREMOTEARG_CMD_DEBUG_DESC "Display command debugging output (default true)."
 
+
+/* Args passed to zmap... */
+
 #define XREMOTEARG_SLEEP "sleep"
 #define XREMOTEARG_SLEEP_DESC "Make ZMap sleep for given seconds."
 
 #define XREMOTEARG_SEQUENCE "sequence"
 #define XREMOTEARG_SEQUENCE_DESC "Set up xremote with supplied sequence."
+
+#define XREMOTEARG_ZMAP_CONFIG "zmap-config-file"
+#define XREMOTEARG_ZMAP_CONFIG_DESC "Specify path for zmaps config file."
 
 #define XREMOTEARG_START "start"
 #define XREMOTEARG_START_DESC "Start coord in sequence."
@@ -158,14 +165,17 @@ typedef struct
   GOptionContext *opt_context;
   GError *error;
 
-  /* and the commandline args */
+  /* and the commandline args for remote control */
   gboolean version;
   char *config_file;
   char *command_file;
   gboolean debugger ;
-  char *sleep_seconds ;
   gboolean xremote_debug ;
   gboolean cmd_debug ;
+
+  /* and those to be passed to zmap */
+  char *sleep_seconds ;
+  char *zmap_config_file ;
   char *sequence ;
   char *start ;
   char *end ;
@@ -2525,6 +2535,9 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       XREMOTEARG_XREMOTE_DEBUG_DESC, XREMOTEARG_NO_ARG },
     { XREMOTEARG_CMD_DEBUG, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
       XREMOTEARG_CMD_DEBUG_DESC, XREMOTEARG_NO_ARG },
+
+    { XREMOTEARG_ZMAP_CONFIG, 0, 0, G_OPTION_ARG_STRING, NULL,
+      XREMOTEARG_ZMAP_CONFIG, "zmap-config-file" },
     { XREMOTEARG_SEQUENCE, 0, 0, G_OPTION_ARG_STRING, NULL,
       XREMOTEARG_SEQUENCE_DESC, "sequence" },
     { XREMOTEARG_START, 0, 0, G_OPTION_ARG_STRING, NULL,
@@ -2548,12 +2561,14 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       entries[3].arg_data = &(arg_context->debugger) ;
       entries[4].arg_data = &(arg_context->xremote_debug) ;
       entries[5].arg_data = &(arg_context->cmd_debug) ;
-      entries[6].arg_data = &(arg_context->sequence) ;
-      entries[7].arg_data = &(arg_context->start) ;
-      entries[8].arg_data = &(arg_context->end) ;
-      entries[9].arg_data = &(arg_context->sleep_seconds) ;
-      entries[10].arg_data = &(arg_context->timeout) ;
-      entries[11].arg_data = &(arg_context->zmap_path) ;
+
+      entries[6].arg_data = &(arg_context->zmap_config_file);
+      entries[7].arg_data = &(arg_context->sequence) ;
+      entries[8].arg_data = &(arg_context->start) ;
+      entries[9].arg_data = &(arg_context->end) ;
+      entries[10].arg_data = &(arg_context->sleep_seconds) ;
+      entries[11].arg_data = &(arg_context->timeout) ;
+      entries[12].arg_data = &(arg_context->zmap_path) ;
     }
 
   return entries;
@@ -2899,6 +2914,11 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
       g_string_append_printf(cmd_str, " --%s=%s",
 			     ZMAPSTANZA_APP_PEER_CLIPBOARD,
 			     remote_data->unique_atom_str) ;
+
+      /* HACK.... */
+      if (remote_data->cmd_line_args->zmap_config_file)
+	g_string_append_printf(cmd_str, " --%s=/nfs/users/nfs_e/edgrif/.ZMap/ --%s=ZMap",
+			       ZMAPARG_CONFIG_DIR, ZMAPARG_CONFIG_FILE) ;
 
       if (tmp_string)
 	g_string_append(cmd_str, tmp_string) ;
