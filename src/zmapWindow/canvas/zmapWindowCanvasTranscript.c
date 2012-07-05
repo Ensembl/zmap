@@ -254,8 +254,31 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 			sub_part.start = exon->x1;
 			sub_part.end = exon->x2;
 			sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
-			if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
-				sub_part.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+			if(tr->flags.cds)
+			{
+				if(tr->cds_start <= y && tr->cds_end >= y)
+				{
+					/* cursor in CDS but could have UTR in this exon */
+					sub_part.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+
+					if(sub_part.start < tr->cds_start)
+						sub_part.start = tr->cds_start;
+					if(sub_part.end > tr->cds_end)		/* these coordinates are inclusive according to EG */
+						sub_part.end = tr->cds_end;
+				}
+				/* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
+				else if(y >= tr->cds_end)
+				{
+					/* cursor not in CDS but could have some in this exon */
+					if(sub_part.start <= tr->cds_end)
+						sub_part.start = tr->cds_end + 1;
+				}
+				else if(y <= tr->cds_start)
+				{
+					if(sub_part.end >= tr->cds_start)
+						sub_part.end = tr->cds_start - 1;
+				}
+			}
 			return &sub_part;
 		}
 
