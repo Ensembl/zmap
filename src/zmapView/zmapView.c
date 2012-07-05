@@ -222,12 +222,16 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
+<<<<<<< HEAD
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd) ;
 
+=======
+#ifdef DEBUG_CONTEXT_MAP
+>>>>>>> develop
 static void print_source_2_sourcedata(char * str,GHashTable *data) ;
 static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
-
+#endif
 
 static void localProcessReplyFunc(char *command,
 				  RemoteCommandRCType command_rc,
@@ -440,6 +444,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
   return ;
 }
+
 
 
 
@@ -982,6 +987,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
   return result ;
 }
+
 
 
 
@@ -2264,12 +2270,23 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 		    {
 		      ZMapFeature feature = (ZMapFeature) l->data;
 
+<<<<<<< HEAD
 		      /* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
 		       * NOTE: can have several featuresets in one column
 		       * feature_list inlcudes the second and subsequent features found, the first is given explicitly
 		       */
 		      zMapWindowHighlightFeature(view_window->window, feature, FALSE);
 		    }
+=======
+			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+			 * NOTE: can have several featuresets in one column
+			 * feature_list inlcudes the first and second and subsequent features found,
+			 * the first is also given explicitly in the item
+			 */
+			if(!l->prev)	/* skip the first as we have already done it */
+				continue;
+			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
+>>>>>>> develop
 		}
 	      while ((list_item = g_list_next(list_item))) ;
 	    }
@@ -3413,6 +3430,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 				 mergeHashTableCB,zmap_view->context_map.source_2_sourcedata);
 	  }
 
+
 	//print_source_2_sourcedata("got featuresets",zmap_view->context_map.source_2_sourcedata);
 	//print_fset2col("got featuresets",zmap_view->context_map.featureset_2_column);
 	//print_col2fset("got columns",zmap_view->context_map.columns);
@@ -4039,6 +4057,18 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 }
 
 
+static gboolean zMapViewSortExons(ZMapFeatureContext diff_context)
+{
+      zMapFeatureContextExecute((ZMapFeatureAny) diff_context,
+                                   ZMAPFEATURE_STRUCT_FEATURESET,
+                                   zMapFeatureTranscriptSortExons,
+                                   NULL);
+
+      return(TRUE);
+}
+
+
+
 static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
 				 GHashTable *styles, GList **masked,
 				 gboolean request_as_columns, gboolean revcomp_if_needed)
@@ -4192,6 +4222,12 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  zMapLogWarning(x,"");
 	  printf("%s\n",x);
 	}
+
+	/* ensure transcripts have exons in fwd strand order
+	 * needed for CanvasTranscript... ACEDB did this but pipe scripts return exons in transcript (strand) order
+	 */
+	zMapViewSortExons(diff_context);
+
 
 	/* collpase short reads if configured
 	 * NOTE this is simpler than EST masking as we simply don't display the collapsed features
@@ -5049,7 +5085,7 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 }
 
 
-
+#ifdef DEBUG_CONTEXT_MAP
 
 static void print_source_2_sourcedata(char * str,GHashTable *data)
 {
@@ -5109,6 +5145,7 @@ static void print_col2fset(char * str,GHashTable *data)
     }
 }
 
+<<<<<<< HEAD
 
 /* Sends a message to our peer that all features are now loaded. */
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
@@ -5156,6 +5193,9 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 	  char *prev ;
 
 	  f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+=======
+#endif
+>>>>>>> develop
 
 	  prev = featurelist ;
 

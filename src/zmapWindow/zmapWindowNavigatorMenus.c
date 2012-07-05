@@ -665,7 +665,7 @@ static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data)
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-        ZMapFeature feature = (ZMapFeature)feature_any;
+//        ZMapFeature feature = (ZMapFeature)feature_any;
 
 #ifdef THIS_LOCUS_STUFF_IS_A_PAIN
 	/* quick fix to zmapWindowNavigatorShowSameNameList...  */

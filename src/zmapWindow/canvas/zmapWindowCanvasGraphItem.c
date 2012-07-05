@@ -267,10 +267,9 @@ void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWi
 }
 
 /*
- * if we are displaying a gapped alignment, recalculate this data
- * do this by freeing the existing data, new stuff will be added by the paint fucntion
+ * recalculate the bins if the zoom level changes
  */
-static void zMapWindowCanvasGraphZoomSet(ZMapWindowFeaturesetItem featureset)
+static void zMapWindowCanvasGraphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 	if(featureset->re_bin)		/* if it's a density item we always re-bin */
 	{

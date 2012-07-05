@@ -264,6 +264,8 @@ void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 
 typedef struct _zmapWindowCanvasPangoStruct
 {
+	GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
+
 	PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
 	PangoContext *context;
 	PangoLayout *layout;

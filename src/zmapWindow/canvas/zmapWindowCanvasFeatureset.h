@@ -104,13 +104,16 @@ typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 typedef enum
   {
     FEATURE_INVALID,
-    FEATURE_BASIC, FEATURE_GLYPH,
-    FEATURE_ALIGN, FEATURE_GRAPH,
+    FEATURE_BASIC,
+    FEATURE_GLYPH,
+    FEATURE_ALIGN,
+    FEATURE_GRAPH,
     FEATURE_TRANSCRIPT,
     FEATURE_ASSEMBLY,
     FEATURE_SEQUENCE,
     FEATURE_LOCUS,
-    FEATURE_N_TYPE } zmapWindowCanvasFeatureType;
+    FEATURE_N_TYPE
+  } zmapWindowCanvasFeatureType;
 
 
 /* Public funcs */

@@ -67,6 +67,7 @@ typedef struct
 {
   int child_start, child_end ;
   FooCanvasItem *child_item ;
+  ZMapFeature feature;
 } ChildSearchStruct, *ChildSearch ;
 
 
@@ -126,7 +127,9 @@ static void destroyIDHash(gpointer data) ;
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
+#if !ZWCI_AS_FOO
 static void childSearchCB(gpointer data, gpointer user_data) ;
+#endif
 static GQuark rootCanvasID(void);
 
 static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature);
@@ -648,7 +651,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 }
 
 
-
+#if !ZWCI_AS_FOO
 /* Find the child item that matches the supplied start/end, use for finding feature items
  * that are part of a compound feature, e.g. exons/introns in a transcript.
  * Warning, may return null so result MUST BE TESTED by caller. */
@@ -669,6 +672,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
       child_search.child_start = child_start ;
       child_search.child_end = child_end ;
+	child_search.feature = feature;
 
       g_list_foreach(group->item_list, childSearchCB, (void *)&child_search) ;
 
@@ -680,7 +684,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 
   return item ;
 }
-
+#endif
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
@@ -1287,6 +1291,7 @@ static void destroyIDHash(gpointer data)
 }
 
 
+#if !ZWCI_AS_FOO
 
 /* This is a g_list callback function. */
 static void childSearchCB(gpointer data, gpointer user_data)
@@ -1300,7 +1305,7 @@ static void childSearchCB(gpointer data, gpointer user_data)
     {
       ZMapFeatureSubPartSpan item_subfeature_data ;
 
-      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item)))
+      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item, child_search->feature, 0, child_search->child_start)))
 	{
 	  if (item_subfeature_data->start == child_search->child_start &&
 	      item_subfeature_data->end   == child_search->child_end)
@@ -1313,6 +1318,7 @@ static void childSearchCB(gpointer data, gpointer user_data)
   return ;
 }
 
+#endif
 
 
 /*

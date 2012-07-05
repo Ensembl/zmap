@@ -39,7 +39,6 @@
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowMark_P.h>
 #include <zmapWindowOverlays.h>
-#include <zmapWindowTextPositioner.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 
@@ -663,13 +662,7 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
-#if !ZWCI_AS_FOO
-  /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
-   * limit, so we have to keep a list of the canvas items that can generate graphics greater
-   * than this limit as we zoom in and crop them ourselves. */
-  ZMapWindowLongItems long_items ;
-#endif
-  ZMapWindowFToIFactory item_factory;
+ ZMapWindowFToIFactory item_factory;
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
    * the zmap window is destroyed. */
@@ -857,19 +850,6 @@ void zmapWindowResetWidth(ZMapWindow window) ;
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
-ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom) ;
-void zmapWindowLongItemPushInterruption(ZMapWindowLongItems long_item);
-void zmapWindowLongItemPopInterruption(ZMapWindowLongItems long_item);
-gulong zmapWindowLongItemsInitialiseExpose(ZMapWindowLongItems long_item, FooCanvas *canvas);
-void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom) ;
-void zmapWindowLongItemCheck(ZMapWindowLongItems long_item, FooCanvasItem *item, double start, double end) ;
-gboolean zmapWindowLongItemCoords(ZMapWindowLongItems long_items, FooCanvasItem *item,
-				  double *start_out, double *end_out) ;
-void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, double x1, double y1, double x2, double y2) ;
-gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *item) ;
-void zmapWindowLongItemPrint(ZMapWindowLongItems long_items) ;
-void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
-void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window,
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context, GList *masked) ;
@@ -1050,9 +1030,6 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 					double *rootx1_inout, double *rooty1_inout,
 					double *rootx2_inout, double *rooty2_inout) ;
 void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
-void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
-					double *x1_out, double *y1_out,
-					double *x2_out, double *y2_out) ;
 
 
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;

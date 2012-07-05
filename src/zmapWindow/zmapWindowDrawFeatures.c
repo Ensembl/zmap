@@ -326,10 +326,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
-#if !ZWCI_AS_FOO
-  /* HOPE THIS IS THE RIGHT PLACE TO SET ZOOM FOR LONG_ITEMS... */
-  zmapWindowLongItemSetMaxZoom(window->long_items, zMapWindowGetZoomMax(window)) ;
-#endif
 
       /* we use diff coords from the sequence if RevComped */
   window->min_coord = seq_start;
@@ -844,24 +840,16 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   featureset_data.feature_stack.filter = TRUE;
 
-//  if(zMapStyleDensity(feature_set->style))
-/* now works with any CanvasFeatureset */
-    {
-      ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-	if(zMapStyleDensityStagger(feature_set->style))
-	{
-      	featureset_data.feature_stack.set_index =
-			get_featureset_column_index(window->context_map,feature_set->unique_id);
-	}
-      if(f_src)
-		featureset_data.feature_stack.maps_to = f_src->maps_to;
+  ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
-      //printf("draw f to f: %s -> %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(f_src->maps_to));
-
-      //  	if(!featureset_data.feature_stack.maps_to)
-      //  		featureset_data.feature_stack.maps_to = feature_set->unique_id;	/* maps to self */
-    }
+  if(zMapStyleDensityStagger(feature_set->style))
+  {
+     	featureset_data.feature_stack.set_index =
+		get_featureset_column_index(window->context_map,feature_set->unique_id);
+  }
+  if(f_src)
+  	featureset_data.feature_stack.maps_to = f_src->maps_to;
 
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
@@ -2595,23 +2583,11 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 			select.filter.enable = FALSE;
 
 			foo = zmapWindowContainerGetNthFeatureItem((ZMapWindowContainerGroup) container_set, ZMAPCONTAINER_ITEM_FIRST) ;
-#if ZWCI_AS_FOO
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
-#else
-			if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
-#endif
 			{
 				ZMapWindowFeaturesetItem fi;
 				ZMapFeatureTypeStyle style;
-#if ZWCI_AS_FOO
 				fi = (ZMapWindowFeaturesetItem) foo;
-#else
-				/* get the canvasFeatureset inside the canvas item */
-				FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
-				zMapAssert(group && group->item_list);
-
-				fi = (ZMapWindowFeaturesetItem) group->item_list->data;
-#endif
 				style = zMapWindowContainerFeatureSetGetStyle(container_set);
 				if(style)
 				{

@@ -92,18 +92,7 @@ typedef struct
 }TransparencyEventStruct, *TransparencyEvent;
 
 
-typedef struct
-{
-  ZMapWindowNavigator navigate;
-  FooCanvasItem *item;
-  ZMapWindowTextPositioner positioner;
-  double wheight;
-}RepositionTextDataStruct, *RepositionTextData;
 
-
-#if !ZWCI_AS_FOO
-static void repositionText(ZMapWindowNavigator navigate);
-#endif
 
 static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
 						    ZMapWindowContainerGroup container);
@@ -163,9 +152,6 @@ static void destroyLocusEntry(gpointer data);
 static void get_filter_list_up_to(GList **filter_out, int max);
 static void available_locus_names_filter(GList **filter_out);
 static void default_locus_names_filter(GList **filter_out);
-#if !ZWCI_AS_FOO
-static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data);
-#endif
 
 /* The container update hooks */
 static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -653,141 +639,6 @@ static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expos
   return FALSE;                 /* lets others run. */
 }
 
-#if !ZWCI_AS_FOO
-static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_data)
-{
-  RepositionTextData data = (RepositionTextData)user_data;
-  ZMapFeature feature = NULL;
-  FooCanvasItem *item = NULL;
-  LocusEntry locus_data = (LocusEntry)hash_value;
-  double text_height, start, end, mid, draw_here, dummy_x = 0.0;
-  double iy1, iy2, wy1, wy2;
-  int cx = 0, cy1, cy2;
-
-      // mh17: start end are as feature but limited to block ??? (i'm guessing)
-  feature = locus_data->feature;
-  start   = locus_data->start;
-  end     = locus_data->end;
-
-  if((item = zmapWindowFToIFindFeatureItem(data->navigate->current_window,
-					   data->navigate->ftoi_hash,
-                                           locus_data->strand, ZMAPFRAME_NONE,
-                                           feature)))
-    {
-      FooCanvasItem *line_item;
-      GList *hide_list;
-      double x1, x2, y1, y2;
-
-      text_height = data->wheight;
-      mid         = start + ((end - start + 1.0) / 2.0);
-      draw_here   = mid - (text_height / 2.0);
-
-      iy1 = wy1 = start;
-      iy2 = wy2 = start + text_height;
-
-      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-
-      /* move to the start of the locus... */
-      foo_canvas_item_move(item, 0.0, start - y1);
-
-      foo_canvas_item_get_bounds(item, &x1, &(iy1), &x2, &(iy2));
-
-      wy1 = iy1;
-      wy2 = iy2;
-
-      foo_canvas_item_i2w(item, &dummy_x, &(wy1));
-      foo_canvas_item_i2w(item, &dummy_x, &(wy2));
-
-      foo_canvas_w2c(item->canvas, dummy_x, wy1, &cx, &(cy1));
-      foo_canvas_w2c(item->canvas, dummy_x, wy2, &cx, &(cy2));
-
-      /* This is where we hide/show text matching the filter */
-      foo_canvas_item_show(item); /* _always_ show the item */
-
-      /* If this a redraw, there may be a line item.  If there
-       * is. Destroy it.  It'll get recreated... */
-
-      if((line_item = g_object_get_data(G_OBJECT(item), ZMAPWINDOWTEXT_ITEM_TO_LINE)))
-	{
-	  gboolean move_back_to_zero = TRUE;
-
-	  gtk_object_destroy(GTK_OBJECT(line_item));
-	  line_item = NULL;
-	  g_object_set_data(G_OBJECT(item), ZMAPWINDOWTEXT_ITEM_TO_LINE, line_item);
-
-	  if(move_back_to_zero)
-	    {
-	      double x1, x2, y1, y2;
-	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-	      x1 = 0 - x1;
-	      foo_canvas_item_move(item, x1, 0.0);
-	    }
-	}
-
-      if((hide_list = data->navigate->hide_filter))
-	{
-	  GList *match;
-	  char *text = NULL;
-
-	  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item)) /* g_object_get() would fail */
-	  {
-		  /* this will be moved in to the canvas featureset, so questions about purity of code here not relevant
-		   * besides, code at a simliar level uses the name directly (drawSimpleAsTextFeature() in the item factory)
-		   */
-		  text = (char *) g_quark_to_string(feature->original_id);
-	  }
-	  else
-	  {
-		g_object_get(G_OBJECT(item), "text", &text, NULL);
-	  }
-
-	  /* This filters the loci on prefixes in hide_list. strcmp_list_find does the prefix check */
-	  if(text && (match = g_list_find_custom(hide_list, text, strcmp_list_find)))
-	    {
-	      foo_canvas_item_hide(item);
-	    }
-	  else
-	    zmapWindowTextPositionerAddItem(data->positioner, item);
-
-	  if(text)
-	    g_free(text);
-	}
-      else
-	zmapWindowTextPositionerAddItem(data->positioner, item);
-    }
-
-  return ;
-}
-
-static void repositionText(ZMapWindowNavigator navigate)
-{
-  RepositionTextDataStruct repos_data = {NULL};
-
-  if(navigate->locus_display_hash)
-    {
-      FooCanvas *canvas = NULL;
-
-      canvas = fetchCanvas(navigate);
-
-      repos_data.navigate = navigate;
-      repos_data.positioner = zmapWindowTextPositionerCreate(
-            navigate->full_span.x1,
-            navigate->full_span.x2);
-
-      zmapWindowNavigatorTextSize(GTK_WIDGET(canvas),
-                                  NULL, &(repos_data.wheight));
-
-      g_hash_table_foreach(navigate->locus_display_hash,
-                           locus_gh_func,
-                           &repos_data);
-
-      zmapWindowTextPositionerUnOverlap(repos_data.positioner, TRUE);
-      zmapWindowTextPositionerDestroy(repos_data.positioner);
-    }
-
-  return ;
-}
-#endif
 
 
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
@@ -1849,17 +1700,6 @@ static void default_locus_names_filter(GList **filter_out)
 }
 
 
-#if !ZWCI_AS_FOO
-/* compares the two strings for a list find */
-static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
-{
-  gint result = -1;
-
-  result = strncmp(list_data, user_data, strlen(list_data));
-
-  return result;
-}
-#endif
 
 
 /* container update hooks */

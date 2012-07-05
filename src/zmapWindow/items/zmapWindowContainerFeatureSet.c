@@ -1002,8 +1002,11 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
-      GList *list,*del;
+#if !ZWCI_AS_FOO
+      GList *del;
       gboolean delete = FALSE;
+#endif
+	GList *list;
 	ZMapWindowCanvasItem item;
 	ZMapFeature feature;
 	ZMapFeatureTypeStyle style;
@@ -1016,21 +1019,12 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 		feature = item->feature;
 		style = feature->style;
 
-#if ZWCI_AS_FOO
         	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
         	{
         		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) list->data, show, set_colour);
 			list = list->next;
         	}
-#else
-        	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(list->data))
-        	{
-        		/* each item in the column will be a single CanvasFeatureset wrapped up in a ZMapWindowCanvasItem */
-        		GList *l = ((FooCanvasGroup *) item)->item_list;
-        		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) l->data, show, set_colour);
-			list = list->next;
-        	}
-#endif
+#if !ZWCI_AS_FOO
 		else	/* original foo code */
         	{
 			item = ZMAP_CANVAS_ITEM(list->data);
@@ -1076,6 +1070,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
 					}
 			}
 		}
+#endif
         }
     }
             /* if we are adding/ removing features we may need to compress and/or rebump */
@@ -1107,30 +1102,6 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 }
 
 
-
-/* transitonal code: featureset items don't get mixed with simple foo items
- * just look at the first one, we do not want to scan 200k TrEMBL features
- */
-gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container)
-{
-	FooCanvasGroup *column_features;
-	column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
-	GList *l;
-
-      l = column_features->item_list;
-
-      if(l &&
-#if ZWCI_AS_FOO
-		ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data)
-#else
-		(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(l->data)
-		|| ZMAP_IS_WINDOW_GRAPH_ITEM(l->data))
-#endif
-		)
-		return(TRUE);
-
-	return(FALSE);
-}
 
 
 /*!
@@ -1346,9 +1317,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 
       container_set->user_hidden_stack = NULL;
     }
-#if !ZWCI_AS_FOO
-  zMapWindowContainerFeatureSetRemoveSubFeatures(container_set) ;
-#endif
+
   {
     char *col_name ;
 

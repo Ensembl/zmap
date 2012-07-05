@@ -11,7 +11,10 @@ LIBTOOLIZE=glibtoolize
 DX_COND_doc=no
 
 LDFLAGS_args="-Xlinker -bind_at_load"
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
 
 PATH=$GTK_PREFIX/bin:$PATH
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"

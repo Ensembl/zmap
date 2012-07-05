@@ -394,7 +394,7 @@ _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling disp
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
-#define N_STYLE_MODE	(ZMAPSTYLE_MODE_META + 1)
+#define N_STYLE_MODE	(ZMAPSTYLE_MODE_META)
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
@@ -582,6 +582,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
 /*! @addtogroup zmapstyles
  * @{
  *  */
+
 
 
 /*! @struct ZMapStyleColour zmapStyle_P.h
@@ -1089,10 +1090,14 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 #define zMapStyleIsFilter(style)   (style->filter)
 
 #define zMapStyleGetShowWhenEmpty(style)   (style->show_when_empty)
+
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                             GdkColor **background, GdkColor **foreground, GdkColor **outline);
+char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
+				char *selected_fill, char *selected_draw, char *selected_border) ;
+
 //char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDescription(style) (style->description)
 

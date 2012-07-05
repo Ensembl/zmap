@@ -67,6 +67,7 @@ Draw featureset basic_100000: 99985 features in 8.968 seconds
 #include <string.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapWindow.h>
 
 #include <zmapWindowCanvasItem.h>
@@ -142,7 +143,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 /* this is in parallel with the ZMapStyleMode enum */
 /* beware, traditionally glyphs ended up as basic features */
 /* This is a retro-fit ... i noticed that i'd defined a struct/feature type but not set it as orignally there was only one  */
-static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
+static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE + 1] =
 {
 	FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
 	FEATURE_BASIC, 		/* ZMAPSTYLE_MODE_BASIC */
@@ -156,6 +157,9 @@ static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE] =
 	FEATURE_INVALID		/* ZMAPSTYLE_MODE_META */
 };
 
+#if N_STYLE_MODE != FEATURE_N_TYPE
+#error N_STYLE_MODE and FEATURE_N_TYPE differ
+#endif
 
 
 /* Tables of function pointers for individual feature types, only required ones have to be provided. */
@@ -185,11 +189,21 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 		return;
 	if(cy2 < featureset->clip_y1)
 		return;
+#if 0
+/*
+	the problem is long vertical lines that wrap round
+	we don't draw big horizontal ones
+*/
 	if(cx1 > featureset->clip_x2)
 		return;
 	if(cx2 < featureset->clip_x1)
+	{
+		/* this will return if we expose part of a line that runs TR to BL
+		 * we'd have to swap x1 and x2 round for the comparison to work
+		 */
 		return;
-
+	}
+#endif
 	if(cx1 == cx2)	/* is vertical */
 	{
 #if 0
@@ -209,24 +223,22 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 	}
 	else
 	{
-		gint dx = cx2 - cx1;
-		gint dy = cy2 - cy1;
+		double dx = cx2 - cx1;
+		double dy = cy2 - cy1;
 
-#warning somehow this clips the top right of lines like this: / when scrolling to the left
 		if(cy1 < featureset->clip_y1)
 		{
-			cx1 += dx * (featureset->clip_y1 - cy1) / dy;
+				/* need to round to get partial lines joining up neatly */
+			cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
 			cy1 = featureset->clip_y1;
-
 		}
 		if(cy2 > featureset->clip_y2)
 		{
-			cx2 -= dx * (cy2 - featureset->clip_y2) / dy;
+			cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
 			cy2 = featureset->clip_y2;
 		}
 
 	}
-
 	gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
 }
 
@@ -284,26 +296,34 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 }
 
 
-/* get all th epand=go stuff we need for a font on a drawable */
+
+
+/* get all the pango stuff we need for a font on a drawable */
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw)
 {
 	GdkScreen *screen = gdk_drawable_get_screen (drawable);
 	PangoFontDescription *desc;
 	int width, height;
 
-	pango->renderer = gdk_pango_renderer_new (screen);
+	if(pango->drawable && pango->drawable != drawable)
+		zmapWindowCanvasFeaturesetFreePango(pango);
 
-	gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), drawable);
+	if(!pango->renderer)
+	{
+		pango->renderer = gdk_pango_renderer_new (screen);
+		pango->drawable = drawable;
 
-	zMapAssert(featureset->gc);	/* should have been set by caller */
-	gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), featureset->gc);
+		gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), drawable);
 
-	/* Create a PangoLayout, set the font and text */
-	pango->context = gdk_pango_context_get_for_screen (screen);
-	pango->layout = pango_layout_new (pango->context);
+		zMapAssert(featureset->gc);	/* should have been set by caller */
+		gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), featureset->gc);
 
-//		font = findFixedWidthFontFamily(seq->pango.context);
-	desc = pango_font_description_from_string (family);
+		/* Create a PangoLayout, set the font and text */
+		pango->context = gdk_pango_context_get_for_screen (screen);
+		pango->layout = pango_layout_new (pango->context);
+
+	//		font = findFixedWidthFontFamily(seq->pango.context);
+		desc = pango_font_description_from_string (family);
 #warning mod this function and call from both places
 #if 0
 	/* this must be identical to the one get by the ZoomControl */
@@ -319,16 +339,17 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 	}
 #endif
 
-	pango_font_description_set_size (desc,size * PANGO_SCALE);
-	pango_layout_set_font_description (pango->layout, desc);
-	pango_font_description_free (desc);
+		pango_font_description_set_size (desc,size * PANGO_SCALE);
+		pango_layout_set_font_description (pango->layout, desc);
+		pango_font_description_free (desc);
 
-	pango_layout_set_text (pango->layout, "a", 1);		/* we need to get the size of one character */
-	pango_layout_get_size (pango->layout, &width, &height);
-	pango->text_height = height / PANGO_SCALE;
-	pango->text_width = width / PANGO_SCALE;
+		pango_layout_set_text (pango->layout, "a", 1);		/* we need to get the size of one character */
+		pango_layout_get_size (pango->layout, &width, &height);
+		pango->text_height = height / PANGO_SCALE;
+		pango->text_width = width / PANGO_SCALE;
 
-	gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (pango->renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+		gdk_pango_renderer_set_override_color (GDK_PANGO_RENDERER (pango->renderer), PANGO_RENDER_PART_FOREGROUND, draw );
+	}
 }
 
 
@@ -357,6 +378,7 @@ void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango)
 
 		g_object_unref(pango->renderer);
 		pango->renderer = NULL;
+//		pango->drawable = NULL;
 	}
 }
 
@@ -570,11 +592,12 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 }
 
 /* return a span struct for the feature */
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y)
+ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo, ZMapFeature feature, double x,double y)
 {
 	ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
 	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
 
+#if !ZWCI_AS_FOO
 	if(!y)	/* legacy interface: return canvasfeature from index */
 	{
 		static ZMapFeatureSubPartSpanStruct fred;
@@ -592,6 +615,7 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 
 		return &fred;
 	}
+#endif
 
 	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 		func = _featureset_subpart_G[featureset->type];
@@ -623,7 +647,7 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
       if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 	  && (func = _featureset_zoom_G[featureset->type]))
 	{
-	  /* zoom can (re)create the index eg ig graphs density stuff gets re-binned */
+	  /* zoom can (re)create the index eg if graphs density stuff gets re-binned */
 	  func(featureset, drawable) ;
 	}
 
@@ -1116,6 +1140,7 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
  * we restrict the features to one column as previously multi-select was restricted to one column
  * the column is defined by the centre of the lassoo and we include features inside not overlapping
  * NOTE we implement this for CanvasFeatureset only, not old style foo
+ * NOTE due to happenstance (sic) transcripts are selected if they overlap
  */
 
 GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
@@ -1183,9 +1208,10 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 	  *item = (FooCanvasItem *) &(fset->__parent__);
 	  zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item,gs->feature);
 	}
-      else
+//     else	// why? item has the first one and feature list is the others if present
+// mh17: always include the first in the list to filter duplicates eg transcript exons
 	{
-	  feature_list = g_list_prepend(feature_list,gs->feature);
+	  feature_list = zMap_g_list_append_unique(feature_list, gs->feature);
 	}
     }
   return feature_list;
@@ -1593,10 +1619,63 @@ void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, 
 
 
 
+/* a slightly ad-hoc function
+ * really the feature context should specify complex features
+ * but for historical reasons alignments come disconnected
+ * and we have to join them up by inference (same name)
+ * we may have several context featuresets but by convention all these have features with different names
+ * do we have to do the same w/ transcripts? watch this space:
+ *
+ */
+#warning revisit this when transcripts are implemented: call from zmapView code
+void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
+{
+	GList *l;
+	ZMapWindowCanvasFeature left,right;		/* feat -ures */
+	GQuark name = 0;
+
+	/* we use the featureset features list which sits there in parallel with the skip list (display index) */
+	/* sort by name and start coord */
+	/* link same name features with ascending query start coord */
+
+	/* if we ever need to link by something other than same name
+	 * then we can define a feature type specific sort function
+	 * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
+	 */
+
+	fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
+	fi->features_sorted = FALSE;
+
+	for(l = fi->features;l;l = l->next)
+	{
+		right = (ZMapWindowCanvasFeature) l->data;
+		right->left = right->right = NULL;		/* we can re-calculate so must zero */
+
+		if(name == right->feature->original_id)
+		{
+			right->left = left;
+			left->right = right;
+		}
+		left = right;
+		name = left->feature->original_id;
+
+	}
+
+	fi->linked_sideways = TRUE;
+}
+
+
+
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 {
   GList *features;
 
+  /*
+   * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump, which can happen before we get a paint
+   * i tried to move it into alignments (it's a bodge to cope with the data being shredded before we get it)
+   */
+  if(fi->link_sideways && !fi->linked_sideways)
+	zmap_window_featureset_item_link_sideways(fi);
 
   features = fi->display;		/* NOTE: is always sorted */
 
@@ -1625,6 +1704,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   //gboolean debug = FALSE;
 
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
+
 
   /* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
    * this avoids artifacts due to wrap round
@@ -1944,11 +2024,23 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
   gpointer mem;
   int size;
   ZMapWindowCanvasFeature feat;
+  zmapWindowCanvasFeatureType ftype = type;
+
+  if(type <= FEATURE_INVALID || type >= FEATURE_N_TYPE)
+  {
+	  /* there was a crash where type and ftype were bth rubbigh and different
+	   * adding this if 'cured' it
+	   * look like stack corruption ??
+	   * but how???
+	   */
+//	  int x = 0;	/* try to make totalview work */
+	  zMapAssert("bad feature type in alloc");
+  }
 
   size = featureset_class_G->struct_size[type];
   if(!size)
     {
-      type = FEATURE_INVALID;		/* catch all for simple features */
+      type = FEATURE_INVALID;		/* catch all for simple features (one common free list) */
       size = sizeof(zmapWindowCanvasFeatureStruct);
     }
 
@@ -1976,7 +2068,7 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
   /* these can get re-allocated so must zero */
   memset((gpointer) feat,0,size);
 
-  feat->type = type;
+  feat->type = ftype;
 
   n_feature_alloc++;
   return(feat);
@@ -2468,7 +2560,6 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
   if(style)
     type = feature_types[zMapStyleGetMode(feature->style)];
   if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
-
   	return NULL;
 
   feat = zmapWindowCanvasFeatureAlloc(type);
@@ -2506,6 +2597,7 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
     }
   /* must set this independantly as empty columns with no index get flagged as sorted */
   featureset_item->features_sorted = FALSE;
+//  featureset_item->zoom = 0.0;	/* trigger a recalc */
 #else
   // untested code
   {
@@ -2565,22 +2657,32 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
   GList *l;
   ZMapWindowCanvasFeature feat;
 
-  for(l = fi->features;l;l = l->next)
+  for(l = fi->features;l;)
     {
+	GList *del;
+
       feat = (ZMapWindowCanvasFeature) l->data;
+
       if(feat->feature == feature)
 	{
-	  ZMapWindowCanvasFeature gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-	  if(gs)
-	    {
-	      zmap_window_canvas_featureset_expose_feature(fi, gs);
-	    }
+		/* NOTE the features list and display index both point to the same structs */
 
-	  zmapWindowCanvasFeatureFree(feat);
-	  fi->features = g_list_delete_link(fi->features,l);
-	  fi->n_features--;
-	  break;
-	}
+		zmap_window_canvas_featureset_expose_feature(fi, feat);
+
+		zmapWindowCanvasFeatureFree(feat);
+		del = l;
+		l = l->next;
+		fi->features = g_list_delete_link(fi->features,del);
+		fi->n_features--;
+
+		if(fi->link_sideways)	/* we'll get calls for each sub-feature */
+			break;
+		/* else have to go through the whole list; fortunately transcripts are low volume */
+	  }
+	  else
+	  {
+		  l = l->next;
+	  }
     }
 
   /* NOTE we may not have an index so this flag must be unset seperately */
@@ -2633,20 +2735,13 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 
 #warning make this into a foo canvas item class func
 /* get the bounds of the current feature which has been set by the caller */
-/* item is a foo canvas group, we have one foo canvas item in the item list */
 void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2)
 {
 	ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
 	ZMapWindowFeaturesetItem fi;
-#if ZWCI_AS_FOO
+
 	fi = (ZMapWindowFeaturesetItem) foo;
-#else
-	FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
 
-	zMapAssert(group && group->item_list);
-
-	fi = (ZMapWindowFeaturesetItem) group->item_list->data;
-#endif
 	if(rootx1)
 		*rootx1 = fi->dx;
 	if(rootx2)

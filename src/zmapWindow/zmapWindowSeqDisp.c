@@ -39,10 +39,9 @@
 #include <ZMap/zmapSequence.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowItemTextFillColumn.h>
-#include <zmapWindowFeatures.h>
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-
+#include <zmapWindowCanvasFeatureset_I.h>
 
 
 static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
@@ -450,7 +449,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       ZMapFullExon current_exon ;
       char *pep_ptr ;
       int pep_start, pep_end ;
-
+	ZMapWindowFeaturesetItem fset;
 
       wild_id = zMapStyleCreateID("*") ;
 
@@ -479,10 +478,16 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       seq = trans_feature->feature.sequence.sequence ;
       len = trans_feature->feature.sequence.length ;
 
+	fset = (ZMapWindowFeaturesetItem) trans_item;
 
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
 
+	/* NOTE
+	 * to display exons well we need to offset the the phse in each one at high zoom
+	 * however, this code is not set up to do that so we are stuck with frame 1
+	 * unless we do a rewrite
+	 */
 
       /* Get the exon descriptions from the feature. */
       zMapFeatureAnnotatedExonsCreate(feature, TRUE, &exon_list) ;
@@ -495,7 +500,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  if (current_exon->region_type == EXON_CODING)
 	    {
-	      pep_start = current_exon->sequence_span.x1 ;
+	      pep_start = current_exon->sequence_span.x1 - fset->start + 1;
 	      break ;
 	    }
 	}
@@ -509,7 +514,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  if (current_exon->region_type == EXON_CODING)
 	    {
-	      pep_end = current_exon->sequence_span.x2 ;
+	      pep_end = current_exon->sequence_span.x2 - fset->start + 1;
 
 	      break ;
 	    }
@@ -517,11 +522,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       while ((exon_list_member = g_list_previous(exon_list_member))) ;
 
 
-#if ZWCI_AS_FOO
 	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-#else
-	if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
-#endif
 	     zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
 
       pep_start = (pep_start + 2) / 3 ;	/* we assume frame 1, bias other frames backwards */
@@ -540,13 +541,9 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 	    {
 	      int tmp = 0 ;
 
-	      pep_start = current_exon->sequence_span.x1 ;
+	      pep_start = current_exon->sequence_span.x1 - fset->start + 1 ;
 
-#if ZWCI_AS_FOO
 		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-#else
-		if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
-#endif
 			zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
 
 		pep_start = (pep_start + 2) / 3 ;
@@ -558,18 +555,16 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       while ((exon_list_member = g_list_next(exon_list_member))) ;
 
 
-#if ZWCI_AS_FOO
 	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-#else
-	if(!ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(trans_item))
-#endif
 	{
 		/* The redraw call needs to go into the func called by the g_object_set call.....check the
 		* available foo_canvas calls........ */
 		foo_canvas_item_request_redraw(trans_item) ;
+#if !ZWCI_AS_FOO
 		g_object_set(G_OBJECT(trans_item),
 			PROP_TEXT_CHANGED_STR, TRUE,
 			NULL) ;
+#endif
 	}
 
       /* Revist whether we need to do this call or just a redraw...... */
@@ -663,8 +658,23 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 	}
 
       if (centre_on_region && !done_centring)
-	zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
+		zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
+	done_centring = TRUE ;
     }
+
+  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
+					 block->parent->unique_id, block->unique_id,
+					 set_id, tmp_strand, tmp_frame, 0)))
+	{
+	      highlightTranslationRegion(window, TRUE, FALSE, FALSE,
+					 item, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, required_frame, seq_type, start, end) ;
+
+		if (centre_on_region && !done_centring)
+			zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end) ;
+
+	}
 
 
   return ;
@@ -675,23 +685,13 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 gboolean zMapWindowSeqDispDeSelect(FooCanvasItem *sequence_feature)
 {
 
-#if ZWCI_AS_FOO
 	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(sequence_feature))
-#else
-	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
-#endif
 	{
 		ZMapWindowCanvasItem canvas_item = ZMAP_CANVAS_ITEM(sequence_feature) ;
 		ZMapFeature feature = zMapWindowCanvasItemGetFeature((FooCanvasItem * )canvas_item);
 		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, NULL,
 					    ZMAPSTYLE_COLOURTYPE_INVALID,  0,NULL,NULL);
 	}
-#if !ZWCI_AS_FOO
-	else
-	{
-		zMapWindowSequenceDeSelect((ZMapWindowSequenceFeature) sequence_feature) ;
-	}
-#endif
 	return TRUE;
 }
 
@@ -702,11 +702,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 						  FooCanvasItem *item, ZMapFeature seed_feature,
 						  gboolean cds_only, gboolean sub_feature)
 {
-#if ZWCI_AS_FOO
 	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(sequence_feature))
-#else
-	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
-#endif
 	{
 		ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
 		GdkColor *fill;
@@ -915,23 +911,13 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 		}	/* end of switch */
 
 	}
-#if !ZWCI_AS_FOO
-	else
-	{
-		zMapWindowSequenceFeatureSelectByFeature((ZMapWindowSequenceFeature sequence_feature, item, seed_feature, cds_only, sub_feature );
-	}
-#endif
 	return TRUE;
 }
 
 gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
 						 ZMapSequenceType coord_type, int region_start, int region_end, gboolean out_frame)
 {
-#if ZWCI_AS_FOO
 	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(sequence_feature))
-#else
-	if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(sequence_feature))
-#endif
 	{
 		ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
 		GdkColor *fill;
@@ -957,12 +943,6 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
 		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
 				    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
 	}
-#if !ZWCI_AS_FOO
-	else
-	{
-	      zMapWindowSequenceFeatureSelectByRegion((ZMapWindowSequenceFeature) sequence_feature, coord_type, region_start, region_end) ;
-	}
-#endif
 	return TRUE;
 }
 
@@ -975,12 +955,7 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean s
 
   if ((dna_item = zmapWindowItemGetDNATextItem(window, item))
       &&
-#if !ZWCI_AS_FOO
-		(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) ||
-		ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM (dna_item))
-#else
 		ZMAP_IS_WINDOW_FEATURESET_ITEM (dna_item)
-#endif
 		&& item != dna_item)
     {
       ZMapFeature feature ;

@@ -278,6 +278,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	double time;
 #endif
 
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
+		return FALSE;
 
 //printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 

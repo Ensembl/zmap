@@ -53,7 +53,14 @@ static void zmapWindowCanvasLocusGetPango(GdkDrawable *drawable, ZMapWindowFeatu
 {
 	/* lazy evaluation of pango renderer */
 
-	if(lset && !lset->pango.renderer)
+
+	if(!lset)
+		return;
+
+	if(lset->pango.drawable && lset->pango.drawable != drawable)
+		zmapWindowCanvasFeaturesetFreePango(&lset->pango);
+
+	if(!lset->pango.renderer)
 	{
 		GdkColor *draw;
 
@@ -383,7 +390,7 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) fi->opt;
 
 	/* fucntion interface looks too complex, let's just use the feature info */
-	double ytext = locus->ytext - lset->text_h / 2;
+	double ytext = locus->ytext - lset->text_h / 2 - fi->dy + 1;
 
 	if(item_y >= ytext && item_y <= (ytext + lset->text_h))
 		best = 0.0;

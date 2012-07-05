@@ -792,6 +792,7 @@ GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
 
   show->get_evidence = WANT_EVIDENCE;
   show->evidence_column = -1;     /* invalid */
+  show->evidence = NULL;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

@@ -68,7 +68,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
 	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-	x1 = featureset->width / 2 - feature->width / 2;
+	x1 = featureset->width / 2 - feature->width / 2;	/* NOTE works for exons not introns */
 	if(featureset->bumped)
 		x1 += feature->bump_offset;
 
@@ -129,9 +129,11 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	{
 		GdkColor c;
       	int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
+
 			/* get item canvas coords in pixel coordinates */
+			/* NOTE not quite sure why y1 is 1 out when y2 isn't */
 		foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy, &cx2, &cy2);
+		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 		cy1_5 = (cy1 + cy2) / 2;
 		cx1_5 = (cx1 + cx2) / 2;
 		c.pixel = outline;
@@ -253,8 +255,31 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 			sub_part.start = exon->x1;
 			sub_part.end = exon->x2;
 			sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
-			if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
-				sub_part.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+			if(tr->flags.cds)
+			{
+				if(tr->cds_start <= y && tr->cds_end >= y)
+				{
+					/* cursor in CDS but could have UTR in this exon */
+					sub_part.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+
+					if(sub_part.start < tr->cds_start)
+						sub_part.start = tr->cds_start;
+					if(sub_part.end > tr->cds_end)		/* these coordinates are inclusive according to EG */
+						sub_part.end = tr->cds_end;
+				}
+				/* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
+				else if(y >= tr->cds_end)
+				{
+					/* cursor not in CDS but could have some in this exon */
+					if(sub_part.start <= tr->cds_end)
+						sub_part.start = tr->cds_end + 1;
+				}
+				else if(y <= tr->cds_start)
+				{
+					if(sub_part.end >= tr->cds_start)
+						sub_part.end = tr->cds_start - 1;
+				}
+			}
 			return &sub_part;
 		}
 
@@ -278,6 +303,37 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 }
 
 
+/* get sequence extent of compound alignment (for bumping) */
+/* NB: canvas coords could overlap due to sub-pixel base pairs
+ * which could give incorrect de-overlapping
+ * that would be revealed on zoom
+ */
+static void zMapWindowCanvasTranscriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
+{
+	ZMapWindowCanvasFeature first = feature;
+
+	*width = feature->width;
+
+	while(first->left)
+	{
+		first = first->left;
+		if(first->width > *width)
+			*width = first->width;
+	}
+
+	while(feature->right)
+	{
+		feature = feature->right;
+		if(feature->width > *width)
+			*width = feature->width;
+	}
+
+	span->x1 = first->y1;
+	span->x2 = feature->y2;
+}
+
+
+
 void zMapWindowCanvasTranscriptInit(void)
 {
 	gpointer funcs[FUNC_N_FUNC] = { NULL };
@@ -285,7 +341,7 @@ void zMapWindowCanvasTranscriptInit(void)
 	funcs[FUNC_PAINT] = zMapWindowCanvasTranscriptPaintFeature;
 	funcs[FUNC_ADD]   = zMapWindowCanvasTranscriptAddFeature;
 	funcs[FUNC_SUBPART] = zmapWindowCanvasTranscriptGetSubPartSpan;
-
+	funcs[FUNC_EXTENT] = zMapWindowCanvasTranscriptGetFeatureExtent;
 
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct), 0);
 }
