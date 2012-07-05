@@ -3114,13 +3114,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-<<<<<<< HEAD
-			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-=======
 			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
 			&& zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
-#endif
->>>>>>> hotfix/0.8.1
 		{
 				/* get start coordinate via subpartspan from x and y
 				 * set end coordinate to be the same
