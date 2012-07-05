@@ -341,8 +341,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   checkForCmdLineStartEndArg(argc, argv, &seq_map->start, &seq_map->end) ;
 
 
-  /* THIS LOGIC IS NOT CORRECT, IF WE ARE CONTROLLED BY XREMOTE THEN CONFIG FILE
-   * SHOULD NOT CONTAIN A DEFAULT SEQUENCE...... */
+  /* OK, there is a potential problem that needs testing here...is it ok to show a sequence
+   * and then set up the xremote stuff.....??? Need to make sure it all works... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* show default sequence is based on whether or not we are controlled via XRemote */
   if (seq_map->sequence && !peer_name)
     {
@@ -354,6 +356,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
 	zMapWarning("%s", err_msg) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (seq_map->sequence)
+    {
+      ZMap zmap = NULL ;
+      ZMapView view = NULL ;
+      char *err_msg = NULL ;
+
+
+      if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
+	zMapWarning("%s", err_msg) ;
+    }
+
 
 
   app_context->state = ZMAPAPP_RUNNING ;
