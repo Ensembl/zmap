@@ -423,7 +423,7 @@ void zmapControlClose(ZMap zmap)
     }
 
   /* If stuff was destroyed then report it....... */
-  if (destroyed_zmap)
+  if (destroyed_zmap && zmap->remote_control)
     {
       zmapControlSendViewDeleted(zmap, destroyed_zmap) ;
     }

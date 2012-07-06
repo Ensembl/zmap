@@ -244,7 +244,8 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
   zmapControlWindowSetGUIState(zmap) ;
 
   /* If there's a remote peer we need to tell them a window's been created.... */
-  zmapControlSendViewCreated(zmap, zMapViewGetView(view_window), zMapViewGetWindow(view_window)) ;
+  if (zmap->remote_control)
+    zmapControlSendViewCreated(zmap, zMapViewGetView(view_window), zMapViewGetWindow(view_window)) ;
 
   return ;
 }
