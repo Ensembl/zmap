@@ -1214,6 +1214,11 @@ static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpoin
   return ;
 }
 
+/* 
+ *               End of callbacks for receiving requests.
+ */ 
+
+
 
 
 
@@ -1622,6 +1627,13 @@ static void sendRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelect
 
   return ;
 }
+
+/* 
+ *             End of Callbacks for making requests.
+ */
+
+
+
 
 
 /* Reset the state of the Remote Control object to idle, freeing all resources. */
