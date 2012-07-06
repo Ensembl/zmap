@@ -983,13 +983,22 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
 static void replySentCB(void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
+  gboolean normal = TRUE ;
 
 
-  /* Need to return to waiting here..... */
-  if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
-    zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
+  if (normal)
+    {
+      /* Need to return to waiting here..... */
+      if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
+	zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
+    }
+  else
+    {
+      /* try sending another command from here... */
+      cmdCB(remote_data, XREMOTE_PING, NULL) ;
 
-
+      sendCommandCB(NULL, remote_data) ;
+    }
 
   return ;
 }
