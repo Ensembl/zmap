@@ -222,12 +222,9 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
-<<<<<<< HEAD
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd) ;
 
-=======
 #ifdef DEBUG_CONTEXT_MAP
->>>>>>> develop
 static void print_source_2_sourcedata(char * str,GHashTable *data) ;
 static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
@@ -2269,24 +2266,18 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 		  for (l = window_select->feature_list; l ; l = l->next)
 		    {
 		      ZMapFeature feature = (ZMapFeature) l->data;
-
-<<<<<<< HEAD
-		      /* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+		      
+		      /* NOTE we restrict multi select to one column in line with previous policy
+		       * (in the calling code)
 		       * NOTE: can have several featuresets in one column
-		       * feature_list inlcudes the second and subsequent features found, the first is given explicitly
+		       * feature_list inlcudes the first and second and subsequent features found,
+		       * the first is also given explicitly in the item
 		       */
+		      if(!l->prev)	/* skip the first as we have already done it */
+			continue;
 		      zMapWindowHighlightFeature(view_window->window, feature, FALSE);
+		      
 		    }
-=======
-			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
-			 * NOTE: can have several featuresets in one column
-			 * feature_list inlcudes the first and second and subsequent features found,
-			 * the first is also given explicitly in the item
-			 */
-			if(!l->prev)	/* skip the first as we have already done it */
-				continue;
-			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
->>>>>>> develop
 		}
 	      while ((list_item = g_list_next(list_item))) ;
 	    }
@@ -5145,7 +5136,8 @@ static void print_col2fset(char * str,GHashTable *data)
     }
 }
 
-<<<<<<< HEAD
+#endif
+
 
 /* Sends a message to our peer that all features are now loaded. */
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
@@ -5193,10 +5185,6 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 	  char *prev ;
 
 	  f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
-=======
-#endif
->>>>>>> develop
-
 	  prev = featurelist ;
 
 	  if (!prev)
