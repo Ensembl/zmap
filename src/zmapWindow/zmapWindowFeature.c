@@ -847,8 +847,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 			    ZACP_SELECT_MULTI_FEATURE,
 			    g_quark_to_string(feature->original_id)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	      zmapWindowUpdateXRemoteData(window, my_feature,
-					  ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
+	      if (window->xremote_client)
+		zmapWindowUpdateXRemoteData(window, my_feature,
+					    ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
 	    }
 	  else
 	    {
@@ -863,8 +864,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 			    ZACP_SELECT_FEATURE,
 			    g_quark_to_string(feature->original_id)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	      zmapWindowUpdateXRemoteData(window, my_feature,
-					  ZACP_SELECT_FEATURE, highlight_item) ;
+	      if (window->xremote_client)
+		zmapWindowUpdateXRemoteData(window, my_feature,
+					    ZACP_SELECT_FEATURE, highlight_item) ;
 
 	      window->multi_select = TRUE ;
 	    }
@@ -883,30 +885,31 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 			ZACP_SELECT_FEATURE,
 			g_quark_to_string(feature->original_id)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  zmapWindowUpdateXRemoteData(window, my_feature,
-				      ZACP_SELECT_FEATURE, highlight_item) ;
+	  if (window->xremote_client)
+	    zmapWindowUpdateXRemoteData(window, my_feature,
+					ZACP_SELECT_FEATURE, highlight_item) ;
 
 	  window->multi_select = FALSE ;
 	}
 
-	{
-		/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
-		/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
-		/* InfoPanel has two sets of coords, but they appear the same in totalview */
-		/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
+      {
+	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
+	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
+	/* InfoPanel has two sets of coords, but they appear the same in totalview */
+	/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
 
-		int start = feature->x1, end = feature->x2;
+	int start = feature->x1, end = feature->x2;
 
-		if(sub_feature)
-		{
-			start = sub_feature->start;
-			end = sub_feature->end;
-		}
+	if(sub_feature)
+	  {
+	    start = sub_feature->start;
+	    end = sub_feature->end;
+	  }
 
-		/* Pass information about the object clicked on back to the application. */
-		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				NULL, replace_highlight, highlight_same_names, control) ;
-	}
+	/* Pass information about the object clicked on back to the application. */
+	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+				  NULL, replace_highlight, highlight_same_names, control) ;
+      }
     }
 
 
