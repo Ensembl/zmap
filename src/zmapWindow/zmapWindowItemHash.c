@@ -127,9 +127,6 @@ static void destroyIDHash(gpointer data) ;
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
-#if !ZWCI_AS_FOO
-static void childSearchCB(gpointer data, gpointer user_data) ;
-#endif
 static GQuark rootCanvasID(void);
 
 static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature);
@@ -421,7 +418,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
 
   /* We need special quarks that incorporate strand indication as there are separate column
    * hashes are per strand. */
-  set_id = makeSetID(set_id, set_strand, set_frame) ;
+  GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
 
   if(window_ftoi_debug_G)
     {
@@ -434,7 +431,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
 						 GUINT_TO_POINTER(block_id)))
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-                                                   GUINT_TO_POINTER(set_id))))
+                                                   GUINT_TO_POINTER(tmp_set_id))))
     {
           ID2Canvas ID2C ;
 	    /* mh17: changed insert to replace to allow bumping of compressed features
@@ -651,40 +648,6 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 }
 
 
-#if !ZWCI_AS_FOO
-/* Find the child item that matches the supplied start/end, use for finding feature items
- * that are part of a compound feature, e.g. exons/introns in a transcript.
- * Warning, may return null so result MUST BE TESTED by caller. */
-FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature_context_to_item,
-					   ZMapStrand set_strand, ZMapFrame set_frame,
-					   ZMapFeature feature,
-					   int child_start, int child_end)
-{
-  FooCanvasItem *item = NULL ;
-
-  /* If the returned item is not a compound item then return NULL, otherwise look for the correct
-   * child using the start/end. */
-  if ((item = zmapWindowFToIFindFeatureItem(window, feature_context_to_item, set_strand, set_frame, feature))
-      && FOO_IS_CANVAS_GROUP(item))
-    {
-      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
-      ChildSearchStruct child_search = {0} ;
-
-      child_search.child_start = child_start ;
-      child_search.child_end = child_end ;
-	child_search.feature = feature;
-
-      g_list_foreach(group->item_list, childSearchCB, (void *)&child_search) ;
-
-      if (child_search.child_item)
-	item = child_search.child_item ;
-      else
-	item = NULL;
-    }
-
-  return item ;
-}
-#endif
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
@@ -1291,34 +1254,7 @@ static void destroyIDHash(gpointer data)
 }
 
 
-#if !ZWCI_AS_FOO
 
-/* This is a g_list callback function. */
-static void childSearchCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  ChildSearch child_search = (ChildSearch)user_data ;
-
-  /* We take the first match we find so this function does nothing if we have already
-   * found matching child item. */
-  if (!(child_search->child_item))
-    {
-      ZMapFeatureSubPartSpan item_subfeature_data ;
-
-      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item, child_search->feature, 0, child_search->child_start)))
-	{
-	  if (item_subfeature_data->start == child_search->child_start &&
-	      item_subfeature_data->end   == child_search->child_end)
-	    {
-	      child_search->child_item = item ;
-	    }
-	}
-    }
-
-  return ;
-}
-
-#endif
 
 
 /*

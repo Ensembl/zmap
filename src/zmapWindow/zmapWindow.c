@@ -3461,13 +3461,18 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    double rootx1, rootx2, rooty1, rooty2 ;
 
 
-		    /* Get size of item and convert to world coords. */
+		    /* Get size of item and convert to world coords, bounds are relative to item's parent */
 		    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-		    /* only finds features in a canvas featureset, old foo gives nothing */
-		    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+// can-t do this as the canvas featureset point function returns n/a if there's no feature under the cursor
+//		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
+		    {
+			/* only finds features in a canvas featureset, old foo gives nothing */
+			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		    }
 
 			/* this is how features get highlit */
 			if(item)
@@ -5233,8 +5238,6 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	}
       else
 	{
-//	  ZMapFeatureSubPartSpan sub_feature ;
-
 	  while (selected)
 	    {
 	      FeatureCoordStruct feature_coord ;
@@ -5246,38 +5249,15 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
 
-//	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 		item_feature = (ZMapFeature) id2c->feature_any;
 
-#if ZWCI_AS_FOO
-/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
+		/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
 		selected_start = item_feature->x1 ;
 		selected_end = item_feature->x2 ;
 		selected_length = item_feature->x2 - item_feature->x1 + 1 ;
 		item_type_int = ZMAPFEATURE_SUBPART_MATCH ;
-#else
-	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item, item_feature, 0, item_feature->x1)))
-		{
-#if POINTLESS
-		  possiblyPopulateWithChildData(window, item, // highlight_item,
-						&item_type_int, &selected_start, &selected_end, &selected_length) ;
-#else
-			selected_start = sub_feature->start ;
-			selected_end = sub_feature->end ;
-			selected_length = sub_feature->end - sub_feature->start + 1 ;
-			item_type_int = sub_feature->subpart ;
 
-#endif
-
-		}
-	      else
-		{
-		  possiblyPopulateWithFullData(window, item_feature, item, // highlight_item,
-					       &dummy, &dummy, &dummy, &selected_start,
-					       &selected_end, &selected_length) ;
-		}
-#endif
-	      feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
+		feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
 	      feature_coord.start = selected_start ;
 	      feature_coord.end = selected_end ;
 	      feature_coord.length = selected_length ;
@@ -5303,92 +5283,6 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 }
 
 
-#if POINTLESS
-/* this function does nothing and is called from one place */
-
-/* If feature_item is a sub_feature, e.g. an exon, then return its position/length etc. */
-static gboolean possiblyPopulateWithChildData(ZMapWindow window,
-                                              FooCanvasItem *feature_item,
-//                                              FooCanvasItem *highlight_item,
-                                              ZMapFeatureSubpartType *sub_type,
-                                              int *selected_start, int *selected_end, int *selected_length)
-{
-  gboolean populated = FALSE ;
-  ZMapFeatureSubPartSpan item_data ;
-
-
-  item_data = zMapWindowCanvasItemIntervalGetData(feature_item);
-
-  if(item_data)
-  {
-
-	*selected_start = item_data->start ;
-	*selected_end = item_data->end ;
-	*selected_length = (item_data->end - item_data->start + 1) ;
-	*sub_type = item_data->subpart ;
-
-	populated = TRUE ;
-  }
-  return populated ;
-}
-
-
-/* Return full_item data.... */
-static gboolean possiblyPopulateWithFullData(ZMapWindow window,
-                                             ZMapFeature feature,
-                                             FooCanvasItem *feature_item,
- //                                            FooCanvasItem *highlight_item,
-                                             int *feature_start, int *feature_end,
-                                             int *feature_length,
-                                             int *selected_start, int *selected_end,
-                                             int *selected_length)
-{
-  gboolean populated = TRUE;
-  int type;
-
-  zMapAssert(feature_start  && feature_end  &&
-             selected_start && selected_end &&
-             feature_length && selected_length);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* We could be using this here..... */
-
-	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
-			     "start",  &selected_start,
-			     "end",    &selected_end,
-			     "length", &selected_length,
-			     NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-
-
-  switch (feature->type)
-    {
-    case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_SEQUENCE:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
-      break ;
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_SPLICED) ;
-      break ;
-    case ZMAPSTYLE_MODE_ALIGNMENT:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_QUERY) ;
-      break ;
-    default:
-      *feature_length = 0 ;
-      break ;
-    }
-
-  *selected_start = feature->x1 ;
-  *selected_end = feature->x2 ;
-  *selected_length = *feature_length ;
-
-  return populated ;
-}
-
-#endif
 
 
 void zmapWindowReFocusHighlights(ZMapWindow window)
