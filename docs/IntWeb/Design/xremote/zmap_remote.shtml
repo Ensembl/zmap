@@ -89,7 +89,7 @@ rationalisation and reordering.</p>
 
 
 <p>The protocol section in particular makes use of the UML "Sequence" diagram to
-show the (surprise, surprise) sequence of messaging, if you are not familiar
+show (surprise, surprise) the sequence of messaging, if you are not familiar
 with this style of diagram then <a href="http://en.wikipedia.org/wiki/Sequence_diagram">wikipedia</a>
 has an introduction and references.</p>
 
@@ -121,7 +121,7 @@ need to fufil a simple set of rules:</p>
   <li>Outside of a request/reply transaction the protocol is stateless.
   <li>Both peers have a timeout for each transaction that if exceeded will
       result in the transaction being aborted.
-  <li>Only one request/reply transaction between peers may be active at a time.
+  <li>Only one request/reply transaction per "connection" between peers may be active at a time.
 </ol>
 
 </fieldset>
@@ -220,8 +220,9 @@ they are waiting for a reply:</p>
 <img src="./Clipboard_Timeout.png" align="center">
 
 <p>Peers set timeouts in all the functions where they will be waiting for some
-form of reply ("wait" in the above diagram). The timeout should be in the form
-of a callback function which will be called if the specified time is
+form of reply ("wait" in the above diagram). The precise timeout mechanism will
+depend on the programming environment but probably the timeout will be in the
+form of a callback function which will be called if the specified time is
 exceeded. On entering the timeout function the peer must abandon the current
 request ignoring all further messages for the request from the other peer,
 reset it's state and return to waiting for the next request.</p>
@@ -317,14 +318,19 @@ data format would be "16".</p>
 <p>The ZMap clipboard protocol defines these properties as:</p>
 
 <pre class="code">
-Clipboard data type   "ZACP_COMMAND_STR"
+Clipboard data type   "STRING"
 
 Clipboard data format 8			    /* Bits per unit. */
 </pre>
 
-<p>The clipboard data used to support the protocol is just a string but having
-a unique data type means that applications can be sure that the string
-contains data in the protocol format.</p>
+<p><i>In an ideal world the protocol would define its own data type,
+e.g. "ZACP_COMMAND_STR", but not all Peer programming interfaces allow
+this so the standard X Selection data type of "STRING" is used.</i></p>
+
+<p>The clipboard data used to support the protocol is a string but note that
+the string has <b>no</b> terminating character so programming interfaces
+(e.g. the C language) must be sure not to add one but instead give the
+length of the string.</p>
 
 <p>Applications implementing the protocol must be sure to support this
 type and format.</p>
@@ -500,7 +506,7 @@ initiating their own request and once again reset themselves.</p>
 <h4>Synchronisation</h4>
 
 <p>Although unlikely it is possible through programming error and perhaps
-unusual commimnication delays that requests and replies could become out of
+unusual communication delays that requests and replies could become out of
 synch. To deal with this all request/reply pairs must have a unique id which
 allows verification that a particular reply belongs to a particular
 request. This id should be unique within the context of requests and replies
@@ -689,7 +695,7 @@ notes explaining the command. The sender is given for each command, "zmap",
 <fieldset>
 <legend>"handshake"</legend>
 
-<p><b>Sender: zmap</b></p>
+<p><b>Sender: either</b></p>
 
 <p>Used when one peer knows the clipboard id of another and wants to pass its own
 clipboard id to that peer so they can start two-way communication.</p>
@@ -1554,7 +1560,7 @@ shell):</p>
 
 
 
-<a name="#c_interface"></a>
+<a name="c_interface"></a>
 <h2>C Programming Interface</h2>
 
 
@@ -1580,18 +1586,18 @@ and <a href="#commands"><b>command</b></a> sections.</p>
 (e.g. ZMapXML), all of these functions are available in the following libraries:</p>
 
 <pre>
-             libZMap.a    utility functions provided by zmap
-
 libZMapRemoteControl.a    the remote control functions
 
           libZMapXML.a    XML parsing/writing code
+
+        libZMapUtils.a    utility functions used by other libraries
 </pre>
 
 <p>At the link stage these archive files need to be included using whatever flags are required
 by the system linker, for instance:</p>
 
 <pre>
-./.libs/libZMap.a ./.libs/libZMapRemoteControl.a ./.libs/libZMapXML.a 
+ ./.libs/libZMapRemoteControl.a ./.libs/libZMapXML.a  ./.libs/libZMapUtils.a
 </pre>
 
 
@@ -1839,7 +1845,8 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *pe
 </pre>
 
 <p>Once again the function is non-blocking and control is returned to the
-application directly. Remote Control then passes the request to the peer program.</p>
+application directly. Remote Control then passes the request to the peer
+program when the peer signals that it wants it.</p>
 
 
 
@@ -1852,17 +1859,25 @@ application directly. Remote Control then passes the request to the peer program
 ZMapRemoteControl interface which provides the functions to send and receive
 requests and replies. These functions do not examine the contents of the
 requests or replies at all, functions to do this are described in the
-<a href="#remotecommand">ZMapRemoteCommand</a> section.
+<a href="#remotecommand">ZMapRemoteCommand</a> section.</p>
 
-
-
-The snippets are given as a series of simple functions
+<p>The snippets are given as a series of simple functions
 without error handling, the precise arrangement of the calls to these functions
-will of course vary between applications.<p>
+will of course vary between applications.</p>
 
 <p>(Note for the purposes of these examples AppContext is a pointer to the
 applications state data and itself contains a pointer to the remote control
 object.</p>
+
+
+<h4>Messages and C String Format</h4>
+
+<p>The C language by default stores strings with a terminating NULL byte
+('\0'), other languages cannot easily handle this so messages are held as raw
+strings with no terminator. To make the ZMapRemoteControl interface easy to use
+it all messages are standard C language null-terminated strings and the remote
+control code does the conversion to non-terminated strings before sending them
+and vice-versa.</p>
 
 
 
@@ -2208,9 +2223,29 @@ retrieve and process the main parts of the zmap messages:</p>
 
 
 
+<h4>Validating a Request or Reply</h4>
+
+<p>Functions exist to validate the whole of a request or reply but also to validate
+just the message envelope for circumstances where the message body may be incomplete
+(e.g. when there are transmission errors). All these functions return a type that
+indicates the error and an error message which gives the error in human readable form:</p>
+
+<pre class="code">
+REMOTE_VALIDATE_RC_OK                 "Validation succeeded."
+REMOTE_VALIDATE_RC_BODY_COMMAND       "Error in message body command."
+REMOTE_VALIDATE_RC_BODY_CONTENT       "Error in message body content."
+REMOTE_VALIDATE_RC_BODY_XML           "Error in message body xml."
+REMOTE_VALIDATE_RC_ENVELOPE_CONTENT   "Error in message envelope content."
+REMOTE_VALIDATE_RC_ENVELOPE_XML       "Error in message envelope xml."
 
 
-
+RemoteValidateRCType zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_control,
+						       char *xml_request, char **error_out) ;
+RemoteValidateRCType zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control,
+						      char *request, char **error_out) ;
+RemoteValidateRCType zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
+						    char *original_request, char *reply, char **error_out) ;
+</pre>
 
 
 
@@ -2247,6 +2282,7 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
 			     char *request, void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
+  RemoteValidateRCType validate_rc ;
   gboolean result = TRUE ;
   RemoteCommandRCType request_rc ;
   ZMapXMLUtilsEventStack reply = NULL ;
@@ -2254,7 +2290,7 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   char *error_msg = NULL ;
 
 
-  if ((result = zMapRemoteCommandValidateRequest(remote_control, request, &error_msg)))
+  if ((validate_rc = zMapRemoteCommandValidateRequest(remote_control, request, &error_msg)) == REMOTE_VALIDATE_RC_OK)
     {
       /* Valid request. */
 
