@@ -604,25 +604,6 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 	ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
 	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
 
-#if !ZWCI_AS_FOO
-	if(!y)	/* legacy interface: return canvasfeature from index */
-	{
-		static ZMapFeatureSubPartSpanStruct fred;
-		ZMapWindowCanvasFeature wcf;
-
-		if(!featureset->point_canvas_feature)
-			return NULL;
-		fred.start = featureset->point_canvas_feature->y1;
-		fred.end   = featureset->point_canvas_feature->y2;
-		fred.subpart = ZMAPFEATURE_SUBPART_MATCH;
-
-		/* work out which one it really is... */
-		for(fred.index = 1, wcf = featureset->point_canvas_feature; wcf->left; fred.index++, wcf = wcf->left)
-			continue;
-
-		return &fred;
-	}
-#endif
 
 	if(featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 		func = _featureset_subpart_G[featureset->type];
@@ -1164,34 +1145,43 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
  * NOTE due to happenstance (sic) transcripts are selected if they overlap
  */
 
+/*
+ * coordinates are canvas not world, we have to compare with foo bounds for each canvasfeatureset
+ */
 GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
 {
-  double mid_x = (x1 + x2) / 2;
-  GList *l, *lx;
   ZMapWindowFeaturesetItem fset;
   ZMapSkipList sl;
   GList *feature_list = NULL;
-  double width;
+  FooCanvasItem *foo = NULL;
 
   *item = NULL;
+
+  double mid_x = (x1 + x2) / 2;
+  GList *l, *lx;
 
   zMap_g_hash_table_get_data(&lx,featureset_class_G->featureset_items);
 
   for(l = lx;l ;l = l->next)
     {
-      fset = (ZMapWindowFeaturesetItem) l->data;
-      width = fset->width;
-      if(fset->bumped)
-	width = fset->bump_width;
-      if(fset->dx < mid_x && (fset->dx + width) > mid_x)
-	break;
+
+
+	foo = (FooCanvasItem *) l->data;
+
+	if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+		continue;
+
+      if(foo->x1 < mid_x && foo->x2 > mid_x)
+		break;
     }
 
   if(lx)
     g_list_free(lx);
 
-  if(!l || !fset)
+  if(!l || !foo)
     return(NULL);
+
+  fset = (ZMapWindowFeaturesetItem) foo;
 
   sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fset, y1, y2);
 
@@ -1224,10 +1214,15 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 	}
       /* else just match */
 
-      if(!*item)
+      if(!feature_list)
 	{
-	  *item = (FooCanvasItem *) &(fset->__parent__);
-	  zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item,gs->feature);
+		*item = (FooCanvasItem *) fset;
+		zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) *item, gs->feature);
+
+		/* rather boringly these could get revived later and overwrite the canvas item feature ?? */
+		/* NOTE probably not, the bug was a missing * in the line above */
+		fset->point_feature = gs->feature;
+		fset->point_canvas_feature = gs;
 	}
 //     else	// why? item has the first one and feature list is the others if present
 // mh17: always include the first in the list to filter duplicates eg transcript exons

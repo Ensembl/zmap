@@ -1002,10 +1002,6 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
-#if !ZWCI_AS_FOO
-      GList *del;
-      gboolean delete = FALSE;
-#endif
 	GList *list;
 	ZMapWindowCanvasItem item;
 	ZMapFeature feature;
@@ -1024,53 +1020,6 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
         		zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) list->data, show, set_colour);
 			list = list->next;
         	}
-#if !ZWCI_AS_FOO
-		else	/* original foo code */
-        	{
-			item = ZMAP_CANVAS_ITEM(list->data);
-			feature = item->feature;
-			style = feature->style;
-			del = list;
-			list = list->next;
-			delete = FALSE;
-
-			if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
-			{
-				if(set_colour)      /* called on masking by another featureset */
-				{
-					GdkColor *fill,*outline;
-
-					delete = !zMapWindowGetMaskedColour(container->window,&fill,&outline);
-
-					if(!delete)
-						{
-						zMapWindowCanvasItemSetIntervalColours(FOO_CANVAS_ITEM(item), feature, NULL,
-							ZMAPSTYLE_COLOURTYPE_NORMAL,  /* SELECTED used to re-order this list... */
-							0,	// will zap focus
-							fill,outline);
-						}
-				}
-
-				if(delete)
-					{
-					/* if colours are not defined we should remove the item from the canvas here */
-					group->item_list = g_list_delete_link(group->item_list,del);
-					gtk_object_destroy(GTK_OBJECT(item)) ;
-					feature->feature.homol.flags.displayed = FALSE;
-					}
-				else if(show)
-					{
-					foo_canvas_item_show(FOO_CANVAS_ITEM(item));
-					feature->feature.homol.flags.displayed = TRUE;
-					}
-				else
-					{
-					foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
-					feature->feature.homol.flags.displayed = FALSE;
-					}
-			}
-		}
-#endif
         }
     }
             /* if we are adding/ removing features we may need to compress and/or rebump */

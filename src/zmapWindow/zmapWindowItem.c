@@ -143,11 +143,20 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace)
 {
   FooCanvasItem *feature_item ;
+  ZMapStrand set_strand = ZMAPSTRAND_NONE;
+  ZMapFrame set_frame = ZMAPFRAME_NONE;
+
+  if(zMapStyleIsStrandSpecific(feature->style))
+	set_strand = feature->strand;
+  if(zMapStyleIsFrameSpecific(feature->style))
+	set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
-						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
+						    set_strand, set_frame, feature)))
     zmapWindowHighlightObject(window, feature_item, replace, FALSE, FALSE) ;
 
+  else
+	  printf("didn't find the canvas item\n");
   return ;
 }
 
@@ -470,34 +479,16 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
   ZMapWindowContainerFeatureSet container;
-#if !ZWCI_AS_FOO
-  ZMapFeatureSubPartSpan item_subfeature_data ;
-#endif
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item) ;
   zMapAssert(feature);
 
-
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-#if !ZWCI_AS_FOO
-  if ((item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
-									ITEM_SUBFEATURE_DATA)))
-    {
-      matching_item = zmapWindowFToIFindItemChild(window,window->context_to_item,
-						  container->strand, container->frame,
-						  feature,
-						  item_subfeature_data->start,
-						  item_subfeature_data->end) ;
-    }
-  else
-#endif
-    {
-      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    container->strand, container->frame,
 						    feature) ;
-    }
 
   return matching_item ;
 }
