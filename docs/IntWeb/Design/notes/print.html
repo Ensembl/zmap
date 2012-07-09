@@ -3,9 +3,9 @@
 <h3>What we'd like to do</h3>
 <p>This is quite simple really:
 <ul>
-<li>Drive the operation from a dialog like the current (which as based on output to a file).  There is also a direct print option which is thought to send a screenshot to the printer without any great user interaction, which looks like a good thing to review.
+<li>Drive the operation from a dialog like the current (which as based on output to a file).  There is also a direct print option which is thought to send a screenshot to the printer without any great user interaction, which looks like a good thing to review.<br />
 <img src="Design/notes/print_dialog.png">
-<li>Provide options for png, pdf and poscritpt output formats: bitmaps are quite useful for slides and PDF much better for publications
+<li>Provide options for png, pdf and poscript output formats: bitmaps are quite useful for slides and PDF much better for publications
 <li>Use a common API for screen and printer (vector <i>and</i> raster images).
 <li>Allow the choice of screenshot (visible features only) whole sequence (include stuff off screen)
 We need to choose how to handle detail at higher zoom: PDF and PS formats could handle this at the cost of a slow performance with high volume data , but there is an arguement for only printing what the user can see: ZMap does not display hidden features.
@@ -68,5 +68,15 @@ Other than this zmapDraw.c appears to be maily code that has fallen out of use, 
 <li>replace gdk with cairo or run in parallel?
 </ul>
 <p>
+
+
+<h3>Some notes about the scale bar</h3>
+<p>CanvasFeatureset code and data has been optimised for drawing genomic features which may overlap and change appearance depending on zoom level.  The scale bar also changes appearance with zoom, but this is driven by externally with knowledge of the current scroll window (not accessable to the CanvasFeatureset code).  There are a few problems that need to be resolved:
+<ul>
+<li> Implement simple features such as lines and text and interface to existing external code. This has the advantage of providing code that can be re-used eg for the ruler and tooltip, but is less trivail than first appears as canvasfeatureset items do nopt have indivudiual x1 and x2 coordinates: it will be necessary to extend the basic featuresetItem structure to add on x coordinates.
+<li> It is assumed that items added to adisplay column will derive froma genomic feature and the case of graphics primitives this is unlikely.  It will be necessary to ensure that a NULL feature does not cause errors in the code.
+<li> Feature style is used to control colours etc and this is assumed to be provided via a style.  It may be possible to provide a style via the CanvasFeatureset, but this limits the use of colours somewhat and assumes that all features are of the same type (not the case wehn mixinf lines and text).
+<li> Normally features are added vai the ItemFactory, which again assumes that each obne corresponds to a genomic feature (and more so, as they are added to the FtoIhash.
+</ul>
 
 
