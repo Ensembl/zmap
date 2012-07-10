@@ -1037,6 +1037,31 @@ now that we can use Zmap while data is loading this is a bit silly
 }
 
 
+
+/* User passes in a view ID struct which this function fills in with the first view in
+ * its list and the first window within that view and returns TRUE. Returns FALSE if
+ * the view or window are missing.
+ *  */
+gboolean zMapViewGetDefaultWindow(ZMapAppRemoteViewID view_inout)
+{
+  gboolean result = FALSE ;
+  ZMapView view = view_inout->view ;
+
+  if (view->window_list)
+    {
+      ZMapAppRemoteViewIDStruct tmp_view = *view_inout ;
+
+      tmp_view.window = ((ZMapViewWindow)(view->window_list->data))->window ;
+
+      *view_inout = tmp_view ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 /* Returns number of windows for current view. */
 int zMapViewNumWindows(ZMapViewWindow view_window)
 {

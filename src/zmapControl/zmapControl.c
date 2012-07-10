@@ -209,6 +209,34 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
   return view_window ;
 }
 
+
+/* User passes in a view ID struct which this function fills in with the first view in
+ * its list and the first window within that view and returns TRUE. Returns FALSE if
+ * the view or window are missing.
+ *  */
+gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout)
+{
+  gboolean result = FALSE ;
+  ZMap zmap = view_inout->zmap ;
+
+  if (zmap->view_list)
+    {
+      ZMapAppRemoteViewIDStruct tmp_view = *view_inout ;
+
+      tmp_view.view = (ZMapView)(zmap->view_list->data) ;
+
+      if (zMapViewGetDefaultWindow(&tmp_view))
+	{
+	  *view_inout = tmp_view ;
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
+}
+
+
+
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 {
   gboolean result = FALSE ;

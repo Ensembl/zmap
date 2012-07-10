@@ -74,15 +74,19 @@ typedef struct
 
 void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
+
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
 				    ZMap *zmap_out, ZMapView *view_out) ;
+gboolean zMapManagerGetDefaultView(ZMapManager zmaps, ZMapAppRemoteViewID view_inout) ;
 void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;
+
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
 gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+
 void zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
 gboolean zMapManagerKillAllZMaps(ZMapManager zmaps);
 gboolean zMapManagerDestroy(ZMapManager zmaps) ;

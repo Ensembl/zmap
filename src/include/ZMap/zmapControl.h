@@ -72,6 +72,7 @@ void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 int zMapNumViews(ZMap zmap) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
