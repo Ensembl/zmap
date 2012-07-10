@@ -90,10 +90,6 @@ typedef struct _ZMapAppRemoteStruct
 
   ZMapRemoteControl remote_controller ;
 
-  /* Default id to send commands to. Initially NULL meaning only app level commands
-   * will work, gets filled in with first zmap.view.window created. */
-  ZMapAppRemoteViewIDStruct default_view_id ;
-
 
   /* Incoming request FROM a peer. */
 
