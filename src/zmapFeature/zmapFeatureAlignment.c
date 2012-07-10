@@ -37,6 +37,7 @@
 #include <ZMap/zmap.h>
 
 #include <errno.h>
+#include <string.h>
 
 #include <zmapFeature_P.h>
 

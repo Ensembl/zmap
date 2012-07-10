@@ -2158,14 +2158,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   double x1, y1, x2, y2, width ;
   double new_canvas_span ;
 
-	zMapLogTime(TIMER_ZOOM,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"zoom");
-      zMapLogTime(TIMER_ZOOM,TIMER_START,0,"");
-
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -2247,8 +2239,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
 
   zMapWindowRedraw(window);
-
-  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
 
  uninterrupt:
   return ;
@@ -3004,7 +2994,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   static FooCanvasItem *seq_item = NULL;		/* if not NULL we are selecting text */
   static long seq_start, seq_end;			/* first coord is fixed, then we can move above or below */
 
-
+#if MOUSE_DEBUG
+zMapLogWarning("canvas event %d",  event->type);
+#endif
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */

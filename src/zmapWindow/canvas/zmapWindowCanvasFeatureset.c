@@ -1350,6 +1350,13 @@ static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, dou
 	if (g_type_is_a(G_OBJECT_TYPE(item), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 	{
 		ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
+#if MOUSE_DEBUG
+zMapLogWarning("set feature %p",fi->point_feature);
+#endif
+
+#if !USE_FOO_POINT
+ 		zmap_window_featureset_item_point(item, x, y);
+#endif
 
 zMapLogWarning("set feature %p",fi->point_feature);
 
@@ -1567,19 +1574,32 @@ n++;
 		fi->point_canvas_feature = gs;
 		best = this_one;
 
-//		if(!best)	/* can't get better */
-//			break;
+		if(!best)	/* can't get better */
+		{
+			/* and if we don't quit we will look at every other feature,
+			 * pointlessly, although that makes no difference to the user
+			 */
+			break;
+		}
 	    }
 	}
     }
 
+
+    /* experiment: this prevents the delay: 	*actual_item = NULL;  best = 1e36; */
+
+#if MOUSE_DEBUG
+
 { char *x = "";
+	extern int n_item_pick; // foo canvas debug
 
 if(fi->point_feature) x = (char *) g_quark_to_string(fi->point_feature->unique_id);
 
-zMapLogWarning("point tried %d/ %d features (%.1f,%.1f) @ %s \n",
-		   n,fi->n_features, item_x, item_y, x);
+zMapLogWarning("point tried %d/ %d features (%.1f,%.1f) @ %s (picked = %d)\n",
+		   n,fi->n_features, item_x, item_y, x, n_item_pick);
 }
+#endif
+
   return best;
 }
 #else
@@ -1938,6 +1958,9 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
+#if MOUSE_DEBUG
+zMapLogWarning("expose %d,%d x %d,%d", expose->area.x, expose->area.y, expose->area.width, expose->area.height);
+#endif
 
   /* ok...this looks like the place to do feature specific painting..... */
   zMapWindowCanvasFeaturesetPaintSet(fi, drawable, expose) ;
@@ -2033,6 +2056,10 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 	}
       zMapWindowCanvasFeaturesetPaintFlush(fi, feat ,drawable, expose);
     }
+
+#if MOUSE_DEBUG
+zMapLogWarning("expose completes","");
+#endif
 }
 
 
