@@ -87,22 +87,11 @@ static void localProcessRemoteRequest(ZMapManager manager,
 static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static void processRequest(ZMapManager app_context,
 			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void parseExecuteRequest(ZMapManager app_context,
-				char *command_name, ZMapAppRemoteViewID view_id, char *request,
-				RemoteCommandRCType *command_rc_out, char **reason_out,
-				ZMapXMLUtilsEventStack *reply_out) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
-
 
 static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
@@ -273,6 +262,29 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
 
 
+/* User passes in a view ID struct which this function fills in the first zmap in
+ * the list and the first view within that zmap and the first window within that
+ * view and returns TRUE. Returns FALSE if any of zmap, view or window are missing. */
+gboolean zMapManagerGetDefaultView(ZMapManager manager, ZMapAppRemoteViewID view_inout)
+{
+  gboolean result = FALSE ;
+
+  if (manager->zmap_list)
+    {
+      ZMapAppRemoteViewIDStruct tmp_view = {0} ;
+
+      tmp_view.zmap = (ZMap)(manager->zmap_list->data) ;
+
+      if (zMapGetDefaultView(&tmp_view))
+	{
+	  *view_inout = tmp_view ;
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
+}
+
 
 
 /* Delete a view from within a zmap. */
@@ -343,6 +355,7 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
   else if (manager->zmap_list)
     {
       GList *next_zmap ;
+      gboolean zmap_found = FALSE ;
 
       /* Look for the right zmap. */
       next_zmap = g_list_first(manager->zmap_list) ;
@@ -352,6 +365,7 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 
 	  if (zmap == view_id->zmap)
 	    {
+	      zmap_found = TRUE ;
 	      result = zMapControlProcessRemoteRequest(zmap,
 						       command_name, view_id, request,
 						       app_reply_func, app_reply_data) ;
@@ -359,6 +373,20 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 	    }
 	}
       while ((next_zmap = g_list_next(next_zmap))) ;
+
+      /* If we were passed a zmap but did not find it this is an error... */
+      if (!zmap_found)
+	{
+	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  char *reason ;
+	  ZMapXMLUtilsEventStack reply = NULL ;
+
+	  reason = g_strdup_printf("zmap id %p not found.", view_id->zmap) ;
+
+	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+
+	  result = TRUE ;				    /* Signals we have handled the request. */
+	}
     }
 
   return result ;

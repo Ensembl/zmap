@@ -331,11 +331,12 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
       localProcessRemoteRequest(view, command_name, view_id, request,
 				app_reply_func, app_reply_data) ;
 
-      result = TRUE ;
+      result = TRUE ;					    /* Signal we have handled the request. */
     }
   else
     {
       GList* list_item ;
+      gboolean window_found = FALSE ;
 
       list_item = g_list_first(view->window_list) ;
       do
@@ -345,10 +346,28 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
 	  view_window = list_item->data ;
 
 	  if (view_window->window == view_id->window)
-	    result = zMapWindowProcessRemoteRequest(view_window->window, command_name, view_id, request,
-						    app_reply_func, app_reply_data) ;
+	    {
+	      window_found = TRUE ;
+	      result = zMapWindowProcessRemoteRequest(view_window->window, command_name, view_id, request,
+						      app_reply_func, app_reply_data) ;
+	      break ;
+	    }
 	}
       while ((list_item = g_list_next(list_item))) ;
+
+      /* If we were passed a window but did not find it this is an error... */
+      if (!window_found)
+	{
+	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  char *reason ;
+	  ZMapXMLUtilsEventStack reply = NULL ;
+
+	  reason = g_strdup_printf("window id %p not found.", view_id->window) ;
+
+	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+
+	  result = TRUE ;				    /* Signal we have handled the request. */
+	}
     }
 
   return result ;
@@ -422,10 +441,6 @@ static void processRequest(ZMapView view,
 
   return ;
 }
-
-
-
-
 
 
 
