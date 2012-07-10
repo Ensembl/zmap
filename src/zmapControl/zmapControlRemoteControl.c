@@ -185,60 +185,12 @@ static gboolean xml_return_true_cb(gpointer user_data,
 
 
 
-
-
+/* 
+ *                  Globals.
+ */
 
 static gboolean control_execute_debug_G = FALSE;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-
-static ZMapXMLObjTagFunctionsStruct control_starts_G[] = {
-  { "zmap",       xml_zmap_start_cb       },
-  { "request",    xml_request_start_cb    },
-
-#ifdef NOT_YET
-  { "featureset", xml_featureset_start_cb },
-  { "feature",    xml_feature_start_cb    },
-#endif
-
-  { "client",     zMapXRemoteXMLGenericClientStartCB },
-  {NULL, NULL}
-};
-static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
-  { "zmap",       xml_return_true_cb    },
-  { "request",    xml_return_true_cb    },
-  { "feature",    xml_return_true_cb    },
-  { "segment",    xml_segment_end_cb    },
-
-#ifdef NOT_YET
-  { "subfeature", xml_subfeature_end_cb },
-#endif
-
-  { "location",   xml_location_end_cb   },
-  { "style",      xml_style_end_cb      },
-  {NULL, NULL}
-};
-
-
-/* NONE OF THESE LOOK RELEVANT ANY MORE..... */
-
-static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
-  {
-    NULL,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    "zoom_in", "zoom_out",
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    "register_client",
-    "new_view", "close_view",
-    NULL
-  };
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -268,23 +220,40 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 
       result = TRUE ;
     }
-  else
+  else if (zmap->view_list)
     {
-      if (zmap->view_list)
+      GList *next_view ;
+      gboolean view_found = FALSE ;
+
+      /* Try all the views. */
+      next_view = g_list_first(zmap->view_list) ;
+      do
 	{
-	  GList *next_view ;
+	  ZMapView view = (ZMapView)(next_view->data) ;
 
-	  /* Try all the views. */
-	  next_view = g_list_first(zmap->view_list) ;
-	  do
+	  if (view == view_id->view)
 	    {
-	      ZMapView view = (ZMapView)(next_view->data) ;
+	      view_found = TRUE ;
+	      result = zMapViewProcessRemoteRequest(view, command_name, view_id, request,
+						    app_reply_func, app_reply_data) ;
 
-	      if (view == view_id->view)
-		result = zMapViewProcessRemoteRequest(view, command_name, view_id, request,
-						      app_reply_func, app_reply_data) ;
+	      break ;
 	    }
-	  while ((next_view = g_list_next(next_view))) ;
+	}
+      while ((next_view = g_list_next(next_view))) ;
+
+      /* If we were passed a view but did not find it this is an error... */
+      if (!view_found)
+	{
+	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  char *reason ;
+	  ZMapXMLUtilsEventStack reply = NULL ;
+
+	  reason = g_strdup_printf("view id %p not found.", view_id->view) ;
+
+	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+
+	  result = TRUE ;				    /* Signals we have handled the request. */
 	}
     }
 
@@ -359,18 +328,6 @@ static void handlePeerReply(char *command,
 
   return ;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* THIS FUNCTION COULD CALL control_execute_command...... */
