@@ -204,6 +204,9 @@ typedef struct RemoteDataStructName
   GtkWidget *app_toplevel, *vbox, *menu, *buttons ;
   GtkWidget *zmap_path_entry, *sequence_entry, *start_entry, *end_entry ;
 
+  GtkWidget *send_init, *receive_init ;
+  GtkWidget *idle, *waiting, *sending, *receiving ;
+
   gulong mapCB_id ;
 
   ReqRespTextStruct our_req ;
@@ -306,17 +309,13 @@ static GtkWidget *makeReqRespBox(RemoteData remote_data,
 				 ReqRespText text_widgs, char *request_title, char *response_title) ;
 static void addTextArea(RemoteData remote_data, GtkBox *parent_box, char *text_title,
 			GtkWidget **text_area_out, GtkTextBuffer **text_buffer_out) ;
+static GtkWidget *makeStateBox(RemoteData remote_data) ;
 
 static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
-
-
 
 static gboolean messageProcess(char *message_xml_in, gboolean full_process,
 			       char **action_out, XRemoteMessage *message_out) ;
 
-
-static void ourRequestEndedCB(void *user_data) ;
-static void theirRequestEndedCB(void *user_data) ;
 static void errorCB(ZMapRemoteControl remote_control,
 		    ZMapRemoteControlRCType error_type, char *err_msg,
 		    void *user_data) ;
@@ -401,6 +400,8 @@ static void addClientCB(GtkWidget *button, gpointer user_data);
 static void quitCB(GtkWidget *button, gpointer user_data);
 static void clearCB(GtkWidget *button, gpointer user_data);
 static void parseCB(GtkWidget *button, gpointer user_data);
+
+static void toggleAndUpdate(GtkWidget *toggle_button) ;
 
 static gboolean api_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean api_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
 static GtkWidget *makeTestWindow(RemoteData remote_data)
 {
   GtkWidget *toplevel = NULL ;
-  GtkWidget *top_hbox, *top_vbox, *menu_bar, *buttons, *entry_box ;
+  GtkWidget *top_hbox, *top_vbox, *menu_bar, *buttons, *entry_box, *state_box ;
 
   toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
 
@@ -586,13 +587,18 @@ static GtkWidget *makeTestWindow(RemoteData remote_data)
 
 
   /* Make the buttons. */
-  remote_data->buttons = buttons  = button_bar(remote_data) ;
+  remote_data->buttons = buttons = button_bar(remote_data) ;
   gtk_box_pack_start(GTK_BOX(top_vbox), buttons, TRUE, TRUE, 5) ;
 
 
   /* Make the sub text entry boxes. */
   entry_box = entry_box_widgets(remote_data) ;
   gtk_box_pack_start(GTK_BOX(top_vbox), entry_box, TRUE, TRUE, 5);
+
+
+  /* Make the State box. */
+  state_box = makeStateBox(remote_data) ;
+  gtk_box_pack_start(GTK_BOX(top_vbox), state_box, TRUE, TRUE, 5);
 
 
   /* Main request/response display */
@@ -610,7 +616,7 @@ static GtkWidget *makeMainReqResp(RemoteData remote_data)
   GtkWidget *top_hbox = NULL ;
   GtkWidget *send_vbox, *receive_vbox ;
 
-  top_hbox = gtk_hbox_new(FALSE, 0) ;
+  top_hbox = gtk_hbox_new(FALSE, 10) ;
 
   /* Build Send command boxes. */
   send_vbox = GTK_WIDGET(makeReqRespBox(remote_data,
@@ -704,13 +710,15 @@ static GtkWidget *entry_box_widgets(RemoteData remote_data)
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5) ;
   remote_data->start_entry = sequence = gtk_entry_new() ;
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5) ;
-  gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->start) ;
+  if (remote_data->cmd_line_args->start)
+    gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->start) ;
 
   label = gtk_label_new("start :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   remote_data->end_entry = sequence = gtk_entry_new();
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
-  gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->end) ;
+  if (remote_data->cmd_line_args->end)
+    gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->end) ;
 
   label = gtk_label_new("zmap path :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
@@ -804,6 +812,72 @@ static GtkWidget *button_bar(RemoteData remote_data)
   return button_bar;
 }
 
+
+/* Make a set of radio buttons which show current state of remote control. */
+static GtkWidget *makeStateBox(RemoteData remote_data)
+{
+  GtkWidget *frame, *hbox, *init_box, *state_box, *button = NULL ;
+
+  hbox = gtk_hbox_new(FALSE, 0);
+
+  frame = gtk_frame_new("RemoteControl Initialisation") ;
+  gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 5) ;
+
+  init_box = gtk_hbutton_box_new() ;
+  gtk_container_add(GTK_CONTAINER(frame), init_box) ;
+
+  remote_data->send_init = button = gtk_check_button_new_with_label("Send Interface initialised") ;
+  gtk_box_pack_start(GTK_BOX(init_box), button, TRUE, TRUE, 5) ;
+  remote_data->receive_init = button = gtk_check_button_new_with_label("Receive Interface initialised") ;
+  gtk_box_pack_start(GTK_BOX(init_box), button, TRUE, TRUE, 5) ;
+
+
+  frame = gtk_frame_new("RemoteControl State") ;
+  gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 5) ;
+
+  state_box = gtk_hbutton_box_new() ;
+  gtk_container_add(GTK_CONTAINER(frame), state_box) ;
+
+  button = NULL ;
+  remote_data->idle = button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(button), "Idle") ;
+  gtk_box_pack_start(GTK_BOX(state_box), button, TRUE, TRUE, 5) ;
+  remote_data->waiting = button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(button), "Waiting") ;
+  gtk_box_pack_start(GTK_BOX(state_box), button, TRUE, TRUE, 5) ;
+  remote_data->sending = button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(button), "Sending") ;
+  gtk_box_pack_start(GTK_BOX(state_box), button, TRUE, TRUE, 5) ;
+  remote_data->receiving = button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(button), "Receiving") ;
+  gtk_box_pack_start(GTK_BOX(state_box), button, TRUE, TRUE, 5) ;
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->idle), TRUE) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_signal_connect(G_OBJECT(run_zmap), "clicked",
+                   G_CALLBACK(runZMapCB), remote_data);
+
+
+
+  g_signal_connect(G_OBJECT(send_command), "clicked",
+                   G_CALLBACK(sendCommandCB), remote_data);
+
+  g_signal_connect(G_OBJECT(list_views), "clicked",
+                   G_CALLBACK(listViewsCB), remote_data);
+
+  g_signal_connect(G_OBJECT(clear), "clicked",
+                   G_CALLBACK(clearCB), remote_data);
+
+  g_signal_connect(G_OBJECT(parse), "clicked",
+                   G_CALLBACK(parseCB), remote_data);
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return hbox ;
+}
+
+
+
 /* ---------------- */
 /* Widget callbacks */
 /* ---------------- */
@@ -885,14 +959,24 @@ static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 								  NULL, NULL)) != NULL) ;
 
   if (result)
-    result = zMapRemoteControlReceiveInit(remote_data->remote_cntl,
-					  remote_data->unique_atom_str,
-					  requestHandlerCB, remote_data,
-					  replySentCB, remote_data) ;
+    {
+      if ((result = zMapRemoteControlReceiveInit(remote_data->remote_cntl,
+						 remote_data->unique_atom_str,
+						 requestHandlerCB, remote_data,
+						 replySentCB, remote_data)))
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->receive_init), TRUE) ;
+    }
 
   if (result)
-    result = zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl) ;
+    {
+      if ((result = zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl)))
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      toggleAndUpdate(remote_data->waiting) ;
+
+    }
 
   if (!result)
     {
@@ -900,7 +984,6 @@ static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
       
       appExit(FALSE) ;
     }
-
 
   return ;
 }
@@ -924,6 +1007,14 @@ static void appExit(gboolean exit_ok)
 
 
 
+
+/* 
+ *             Functions handling requests received from zmap
+ */
+
+/* Called our remotecontrol receives a request from zmap, we should check the request and
+ * handle it and then call our remotecontrol back to pass our reply back.
+ */
 static void requestHandlerCB(ZMapRemoteControl remote_control,
 			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
 			     char *request, void *user_data)
@@ -941,6 +1032,13 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
 
 
   zMapDebugPrint(debug_G, "%s", "Enter...") ;
+
+  /* Set state, we are receiving now... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->receiving), TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      toggleAndUpdate(remote_data->receiving) ;
 
 
   /* Set their request in the window and blank reply window.... */
@@ -980,31 +1078,47 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   return ;
 }
 
+
+/* Called by our remotecontrol when it receives acknowledgement that the reply
+ * has been received by zmap, at this point we are free to send another command
+ * or to wait for the next command. */
 static void replySentCB(void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
-  gboolean normal = TRUE ;
+  static int req_count = 0 ;
 
 
-  if (normal)
-    {
-      /* Need to return to waiting here..... */
-      if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
-	zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
-    }
+  toggleAndUpdate(remote_data->idle) ;
+
+  /* Need to return to waiting here..... */
+  if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
+    zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
   else
+    toggleAndUpdate(remote_data->waiting) ;
+
+  if (!(req_count % 2))
     {
       /* try sending another command from here... */
       cmdCB(remote_data, XREMOTE_PING, NULL) ;
 
       sendCommandCB(NULL, remote_data) ;
+
+      req_count++ ;
     }
+
 
   return ;
 }
 
 
 
+/* 
+ *             Functions handling requests sent to zmap
+ */
+
+
+/* Called by our remotecontrol when it receives acknowledgement from zmap
+ * that it has our request. */
 static void requestSentCB(void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
@@ -1013,7 +1127,7 @@ static void requestSentCB(void *user_data)
 }
 
 
-
+/* Called by our remotecontrol to process the reply it gets from zmap. */
 static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
@@ -1120,39 +1234,21 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
     }
 
 
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->idle), TRUE) ;
+
+
+
   /* Need to return to waiting here..... */
   if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
     zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
+  else
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
 
 
   zMapDebugPrint(debug_G, "%s", "Exit...") ;
 
   return ;
 }
-
-
-/* Called by RemoteControl when a request we sent has been replied to by the peer
- * and the transaction is ended. */
-static void ourRequestEndedCB(void *user_data)
-{
-
-
-
-  return ;
-}
-
-
-
-/* Called by RemoteControl when our peer sent a request and our reply has been sent
- * and the transaction is ended. */
-static void theirRequestEndedCB(void *user_data)
-{
-
-
-
-  return ;
-}
-
 
 
 static void errorCB(ZMapRemoteControl remote_control,
@@ -1164,9 +1260,11 @@ static void errorCB(ZMapRemoteControl remote_control,
   zMapDebugPrint(debug_G, "%s", "Enter...") ;
 
 
+  /* NOTE QUITE SURE WE ARE GOING BACK TO WAITING HERE.......... */
   if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
     zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
-
+  else
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
 
 
   zMapDebugPrint(debug_G, "%s", "Exit...") ;
@@ -1403,6 +1501,8 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 	      remote_data->reply = zMapRemoteCommandMessage2Element(message) ;
 
 	      remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
+
+	      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->send_init), TRUE) ;
 	    }
 	  else
 	    {
@@ -1977,6 +2077,8 @@ static void sendCommandCB(GtkWidget *button, gpointer user_data)
 	    g_free(remote_data->curr_request) ;
 
 	  remote_data->curr_request = g_strdup(request) ;
+
+	  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->sending), TRUE) ;
 	}
     }
 
@@ -3126,5 +3228,22 @@ static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_eleme
   return TRUE;
 }
 
+
+
+
+/* Try to get toggle updates displayed immediately.... */
+static void toggleAndUpdate(GtkWidget *toggle_button)
+{
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggle_button), TRUE) ;
+
+
+  while (gtk_events_pending())
+    {
+      gtk_main_iteration () ;
+    }
+
+  return ;
+}
 
 
