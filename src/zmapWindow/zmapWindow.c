@@ -445,7 +445,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   foo_canvas_set_pixels_per_unit_xy(new_window->canvas,
 				    original_window->canvas->pixels_per_unit_x,
 				    original_window->canvas->pixels_per_unit_y) ;
-  zmapWindowRulerCanvasSetPixelsPerUnit(new_window->ruler,
+  zmapWindowScaleCanvasSetPixelsPerUnit(new_window->ruler,
                                         original_window->canvas->pixels_per_unit_x,
                                         original_window->canvas->pixels_per_unit_y);
 
@@ -1915,7 +1915,7 @@ ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteDataFull(ZMapWindow window, Z
 void zMapWindowSiblingWasRemoved(ZMapWindow window)
 {
   /* Currently this is all we do here. */
-  zmapWindowRulerCanvasOpenAndMaximise(window->ruler);
+  zmapWindowScaleCanvasOpenAndMaximise(window->ruler);
 
   return ;
 }
@@ -2084,15 +2084,15 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 	       NULL);
 
   {
-    ZMapWindowRulerCanvasCallbackListStruct callbacks = {NULL};
+    ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
     GtkAdjustment *vadjust = NULL;
 
     vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
     callbacks.paneResize = panedResizeCB;
     callbacks.user_data  = (gpointer)window;
 
-    window->ruler = zmapWindowRulerCanvasCreate(&callbacks);
-    zmapWindowRulerCanvasInit(window->ruler, window->pane, vadjust);
+    window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
+    zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
   }
 
   /* Attach callback to monitor size changes in canvas, this works but bizarrely
@@ -2267,7 +2267,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
 
       /* Try this here as a hack to avoid double call to work out widget set ups... */
-      zmapWindowRulerCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
+      zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
 
 
 
@@ -4135,7 +4135,7 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
         {
           gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
           /* Need to set the scalebar one too if vertical locked */
-          zmapWindowRulerCanvasSetVAdjustment(window->ruler, adjuster);
+          zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
         }
     }
 
@@ -5855,20 +5855,20 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 
 // this was set in WindowDrawFeatures and is now incorrect here after a revcomp
 // sequence->start,end are fwd stranc coords, we need the revcomp'ed equivalents
-//	  zmapWindowRulerCanvasSetRevComped(window->ruler, window->revcomped_features);
-//        zmapWindowRulerCanvasSetSpan(window->ruler, window->sequence->start,window->sequence->end) ;
+//	  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features);
+//        zmapWindowScaleCanvasSetSpan(window->ruler, window->sequence->start,window->sequence->end) ;
 
 	  foo_canvas_get_scroll_offsets(canvas, &scroll_x, &scroll_y);
 
-	  if(zmapWindowRulerCanvasDraw(window->ruler, y1, y2, window->sequence->start, window->sequence->end, FALSE))
+	  if(zmapWindowScaleCanvasDraw(window->ruler, y1, y2, window->sequence->start, window->sequence->end, FALSE))
 	    {
 	      zmapWindowGetBorderSize(window, &border);
 	      y1 -= ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0);
 	      y2 += ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0);
-	      zmapWindowRulerCanvasMaximise(window->ruler, y1, y2);
+	      zmapWindowScaleCanvasMaximise(window->ruler, y1, y2);
 	      /* Cause a never ending loop ? */
 
-	      /* The zmapWindowRulerCanvasMaximise does a set scroll
+	      /* The zmapWindowScaleCanvasMaximise does a set scroll
 	       * region on the ruler canvas which has the side effect
 	       * of a scroll_to call in the canvas. As that canvas
 	       * and this canvas share adjusters, this canvas scrolls

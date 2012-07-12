@@ -56,8 +56,8 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 	c.pixel = feat->outline;
 	gdk_gc_set_foreground (featureset->gc, &c);
 
-	foo_canvas_w2c(foo->canvas, feat->x1, feat->y1, &cx1, &cy1);
-	foo_canvas_w2c(foo->canvas, feat->x2, feat->y2, &cx2, &cy2);
+	foo_canvas_w2c(foo->canvas, feat->x1 + featureset->dx, feat->y1 - featureset->start + 1 + featureset->dy, &cx1, &cy1);
+	foo_canvas_w2c(foo->canvas, feat->x2 + featureset->dx, feat->y2 - featureset->start + 1 + featureset->dy, &cx2, &cy2);
 
 	zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
 }
@@ -109,7 +109,7 @@ void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 	len = strlen(gfx->text);
 	pango_layout_set_text (pango->layout, gfx->text, len);
 
-	foo_canvas_w2c (foo->canvas, featureset->dx + gfx->x1, featureset->dy + gfx->y1, &cx, &cy);
+	foo_canvas_w2c (foo->canvas, gfx->x1 + featureset->dx, gfx->y1  - featureset->start + 1 + featureset->dy, &cx, &cy);
 	cy -= pango->text_height / 2;		/* centre text on line */
 
 	pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE , cy * PANGO_SCALE);

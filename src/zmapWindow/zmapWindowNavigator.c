@@ -991,7 +991,7 @@ static void drawScale(NavigateDraw draw_data)
 #if MH17_DEBUG_NAV_FOOBAR
 printf("nav draw scale %d %d\n",min,max);
 #endif
-      zmapWindowRulerGroupDraw(features, draw_data->navigate->is_reversed, (double)min, (double)max, min);
+      zmapWindowScaleGroupDraw(features, draw_data->navigate->is_reversed, (double)min, (double)max, min);
     }
 
   return ;

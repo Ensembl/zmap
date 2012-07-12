@@ -158,25 +158,6 @@ int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
 }
 
 
-#if MH17_NO_GOOD
-/* Use if you have no window.... */
-/* ZMap seq coord to display, is not always 1 based, start is the smallest seq coord in the range*/
-/* calculation as for zmapWindowCoordToDisplay() */
-
-/* mh17: NOTE this was only called from zmapWindowRuler.c
- * but was bot useful due to various curcumstances documented in zMapWindowRulerDrawScale()
- */
-int zmapWindowCoordFromOriginRaw(int start, int end, int coord, gboolean revcomped)
-{
-  int new_coord ;
-
-  new_coord = coord - start + 1;
-  if(revcomped)
-      new_coord -= end - start + 2;
-
-  return new_coord ;
-}
-#endif
 
 
 

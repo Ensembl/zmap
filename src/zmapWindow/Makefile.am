@@ -49,7 +49,7 @@ zmapWindowOverlays.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
 zmapWindowRemoteReceive.c \
-zmapWindowRuler.c \
+zmapWindowScale.c \
 zmapWindowSearch.c \
 zmapWindowSeqDisp.c \
 zmapWindowState.c \
