@@ -2565,4 +2565,26 @@ using the remote_reply_func and RemoteControl then sends the reply
 to the peer.</p>
 
 
+
+
+<a name="zmap_xremote"></a>
+<h2>Implementation of Remote Control in ZMap</h2>
+
+
+<h3>Overview</h3>
+
+<p>ZMap is a reasonably complex program that is composed of several distinct
+sub-systems each of which must respond to requests and return responses. The
+remote control code in ZMap sits in the "ZMapApp" layer and handles all
+communication with the peer program via xremote. Therefore there needs to be a
+way for the remote control code to send requests to and to receive responses
+from the rest of ZMap. The interface that supports this cannot be synchronous
+as some of the requests will result in actions where the response will come
+back "some time later" so it must be based on a callback interface.</p>
+
+<p>The 
+
+
+
+
 <!--#include virtual="/perl/footer"-->
