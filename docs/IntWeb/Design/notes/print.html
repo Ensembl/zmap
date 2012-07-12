@@ -89,13 +89,33 @@ Other than this zmapDraw.c appears to be maily code that has fallen out of use, 
 <li> the canvas featureset code will be ammended to handle NULL features and styles.
 <li> alternative interface functions will be provided to add and remove featureless graphics primitives
 <li> graphics primitives will not repsond to the mouse and as such will not accept focus.
+<li> the canvas featureset itself must have a style, if necessary a hard coded one.
+<li> it will be possible to mix genomic an dgraphic features in one CanvasFeatureeet
 </ul>
 </p>
+
+<h5>A problem to solve</h5>
+<p>The navigator has a scroll region rectangle that can be dragged by the mouse which implies that it can have focus.  The ZMap focus module assumes that focussed items are genomic features and previous code handled the scroll regioon foo canvas item directly.  If not better solution can be found then the navigator code will handle this featureset item directly, and maintain a pointer to it explicitly.
+</p>
+
 <h5>Is this heading back to a 2D FooCanvas?</h5>
 <p>CanvasFeaturesets were implemented a) to allow presentation of heatmaps that get re-binned on zoom (necessarily requires a columns wide structure) b) effciently.  They were later extended to handle basic features and alignments with a view to providing a faster user experience.  The FooCanvas is explicitly 2D whereas CanvasFeaturesets are explicitly orgainsed in columns which correspond roughly to FooCanvas groups as used in the Zmap display and as such are quite specific to the ZMap application.
-The use of graphics primitives in a column such as the Scale Bar maintains this close link to the ZMap run-time environment and we should remain aware that this is not an attempt at producing a generalised graphics engine.  Note especially that there is very little explicit Z-ordering, execpt within drawing a single feature and the use of focus (which only applies to genomic features).
+The use of graphics primitives in a column such as the Scale Bar maintains this close link to the ZMap run-time environment and we should remain aware that this is not an attempt at producing a generalised graphics engine.  Note especially that there is very little explicit Z-ordering, execpt within drawing a single feature and the use of focus (which only applies to genomic features).  To subvert this code into 2D operation wih no restriction on x-coordinates would require a major rethink of indexing methodology,
 </p>
 <p>If we use CanvasFeaturesets to overlay/ underlay the whole canvas with decorative features (eg ruler, mark) then the assumption is that this will have little effect on performance: the bulk of display items will remain as genomic features, operating in a similar way as at present.
+</p>
+<h5>Why use CanvasFeaturesets for this?</h5>
+<p>There are two simple reasons:
+<ul>
+<li> we provide a single interface to GDK which can be changed to cairo and can be use for printing/ screenshots
+<li> CanvasFeatureset items are indexed and thereby run faster
+</ul>
+</p>
+
+<h4>Scale Bar Foo Canvas environment</h4>
+<p>The Scale Bar is drawn in two different contexts a) in a pane next the window on its own in its own canvas ad b) in the navigator in a ZMapWindowContainerFeatureSet.  Regardless of theis it consists of two foo canvas groups, one for text and one for ticks, which are then oriented left and right.
+</p>
+<p>Theoretically the ticks and text could be swapped round but this would require correct horizontal justifcation and therefore would be more complicated that re-positioning the groups.  To avoid having the extra complexity of positioning CanvasFeaturesets we propose to display ticks and text in one CanvasFeatureset, which will require pre-calculation of x-offsets to prevent the need to bump ticks and text after intial display.  Note also that as we implement text and ticks as generic simple graphics features we cannot use a CanvasFeatureset zoom function to operate any such bump operation.
 </p>
 
 
