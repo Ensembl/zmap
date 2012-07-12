@@ -1,4 +1,3 @@
-/*  Last edited: Apr 11 10:51 2012 (edgrif) */
 /*  File: zmapWindowRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
