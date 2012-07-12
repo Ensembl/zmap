@@ -1132,7 +1132,7 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
 		       "Lost ownership of peer clipboard \"%s\", they now know we have the reply.",
 		       send->their_atom_string) ;
 
-	  REMOTELOGMSG(remote_control, "About to call apps callback to process the reply:\n \"%s\"", send->their_reply) ;
+
 
 	  /* Hang on to reply otherwise it will be free'd by reset call. */
 	  their_reply = send->their_reply ;
@@ -1142,9 +1142,18 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
 	  /* Reset to idle, app then needs to decide whether to wait again. */
 	  resetRemoteToIdle(remote_control) ;
 
+	  if (send->process_reply_func)
+	    {
+	      REMOTELOGMSG(remote_control, "About to call apps ReplyHandlerFunc callback"
+			   " to process the reply:\n \"%s\"",
+			   send->their_reply) ;
 
-	  /* Call the app callback. */
-	  (send->process_reply_func)(remote_control, their_reply, send->process_reply_func_data) ;
+	      /* Call the app callback, this MUST be last because app may make a new call
+	       * to this code causing us to re-enter. */
+	      (send->process_reply_func)(remote_control, their_reply, send->process_reply_func_data) ;
+
+	      REMOTELOGMSG(remote_control, "\"%s\"", "Back from apps ReplyHandlerFunc callback.") ;
+	    }
 	}
     }
 
@@ -1633,8 +1642,8 @@ static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpoin
 	  /* Reset to idle. */
 	  resetRemoteToIdle(remote_control) ;
 
-	  /* Optionally call back to app to signal that peer has received reply, enables app
-	   * to go back to waiting for a reply or make its own request. */
+	  /* Optionally call back to app to signal that peer has received reply, must be
+	   * last because app may call this code to go back to waiting for a reply or make its own request. */
 	  if (receive->reply_sent_func)
 	    {
 	      REMOTELOGMSG(remote_control,
